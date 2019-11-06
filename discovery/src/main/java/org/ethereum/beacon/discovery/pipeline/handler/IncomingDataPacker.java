@@ -21,9 +21,6 @@ import org.ethereum.beacon.discovery.pipeline.Envelope;
 import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
-import org.ethereum.beacon.discovery.type.BytesValue;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Handles raw Bytes incoming data in {@link Field#INCOMING} */
 public class IncomingDataPacker implements EnvelopeHandler {
@@ -45,8 +42,7 @@ public class IncomingDataPacker implements EnvelopeHandler {
                 "Envelope %s in IncomingDataPacker, requirements are satisfied!",
                 envelope.getId()));
 
-    UnknownPacket unknownPacket =
-        new UnknownPacket(BytesValue.wrap(((Bytes) envelope.get(Field.INCOMING)).toArray()));
+    UnknownPacket unknownPacket = new UnknownPacket((Bytes) envelope.get(Field.INCOMING));
     envelope.put(Field.PACKET_UNKNOWN, unknownPacket);
     logger.trace(
         () -> String.format("Incoming packet %s in envelope #%s", unknownPacket, envelope.getId()));

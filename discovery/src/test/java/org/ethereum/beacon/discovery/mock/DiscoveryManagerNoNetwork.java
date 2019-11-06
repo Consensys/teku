@@ -49,13 +49,10 @@ import org.ethereum.beacon.discovery.storage.AuthTagRepository;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
 import org.ethereum.beacon.discovery.task.TaskType;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.ReplayProcessor;
-
-// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /**
  * Implementation of {@link DiscoveryManager} without network as an opposite to Netty network
@@ -67,7 +64,7 @@ public class DiscoveryManagerNoNetwork implements DiscoveryManager {
   private static final Logger logger = LogManager.getLogger(DiscoveryManagerImpl.class);
   private final ReplayProcessor<NetworkParcel> outgoingMessages = ReplayProcessor.cacheLast();
   private final FluxSink<NetworkParcel> outgoingSink = outgoingMessages.sink();
-  private final Publisher<BytesValue> incomingPackets;
+  private final Publisher<Bytes> incomingPackets;
   private final Pipeline incomingPipeline = new PipelineImpl();
   private final Pipeline outgoingPipeline = new PipelineImpl();
   private final NodeRecordFactory nodeRecordFactory =
@@ -77,15 +74,15 @@ public class DiscoveryManagerNoNetwork implements DiscoveryManager {
       NodeTable nodeTable,
       NodeBucketStorage nodeBucketStorage,
       NodeRecord homeNode,
-      BytesValue homeNodePrivateKey,
-      Publisher<BytesValue> incomingPackets,
+      Bytes homeNodePrivateKey,
+      Publisher<Bytes> incomingPackets,
       Scheduler taskScheduler) {
     AuthTagRepository authTagRepo = new AuthTagRepository();
     this.incomingPackets = incomingPackets;
     NodeIdToSession nodeIdToSession =
         new NodeIdToSession(
             homeNode,
-            Bytes.wrap(homeNodePrivateKey.extractArray()),
+            homeNodePrivateKey,
             nodeBucketStorage,
             authTagRepo,
             nodeTable,

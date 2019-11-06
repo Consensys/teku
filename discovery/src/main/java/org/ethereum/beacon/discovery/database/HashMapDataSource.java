@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.Nonnull;
 
-/** Created by Anton Nashatyrev on 19.11.2018. */
 public class HashMapDataSource<K, V> implements DataSource<K, V> {
 
   Map<K, V> store = new ConcurrentHashMap<>();

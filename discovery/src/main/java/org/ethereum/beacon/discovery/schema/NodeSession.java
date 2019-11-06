@@ -36,11 +36,6 @@ import org.ethereum.beacon.discovery.storage.NodeTable;
 import org.ethereum.beacon.discovery.task.TaskStatus;
 import org.ethereum.beacon.discovery.task.TaskType;
 
-// import org.ethereum.beacon.util.ExpirationScheduler;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * Stores session status and all keys for discovery session between us (homeNode) and the other node
  */

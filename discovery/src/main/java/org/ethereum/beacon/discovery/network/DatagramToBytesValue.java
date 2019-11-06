@@ -20,8 +20,6 @@ import io.netty.handler.codec.MessageToMessageDecoder;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-
 /** UDP Packet -> BytesValue converter with default Netty interface */
 public class DatagramToBytesValue extends MessageToMessageDecoder<DatagramPacket> {
   @Override

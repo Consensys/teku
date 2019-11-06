@@ -28,12 +28,7 @@ import org.ethereum.beacon.discovery.database.HoleyList;
 import org.ethereum.beacon.discovery.database.SingleValueSource;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
-import org.ethereum.beacon.discovery.type.BytesValue;
-import org.ethereum.beacon.discovery.type.Hash32;
 import org.ethereum.beacon.discovery.util.Functions;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Stores Ethereum Node Records in {@link NodeRecordInfo} containers. Also stores home node as node
@@ -44,12 +39,12 @@ public class NodeTableImpl implements NodeTable {
   private static final Logger logger = LogManager.getLogger(NodeTableImpl.class);
   private static final int MAXIMUM_INFO_IN_ONE_BYTE = 256;
   private static final boolean START_FROM_BEGINNING = true;
-  private final DataSource<Hash32, NodeRecordInfo> nodeTable;
+  private final DataSource<Bytes, NodeRecordInfo> nodeTable;
   private final HoleyList<NodeIndex> indexTable;
   private final SingleValueSource<NodeRecordInfo> homeNodeSource;
 
   public NodeTableImpl(
-      DataSource<Hash32, NodeRecordInfo> nodeTable,
+      DataSource<Bytes, NodeRecordInfo> nodeTable,
       HoleyList<NodeIndex> indexTable,
       SingleValueSource<NodeRecordInfo> homeNodeSource) {
     this.nodeTable = nodeTable;
@@ -58,7 +53,7 @@ public class NodeTableImpl implements NodeTable {
   }
 
   @VisibleForTesting
-  static long getNodeIndex(BytesValue nodeKey) {
+  static long getNodeIndex(Bytes nodeKey) {
     int activeBytes = 1;
     long required = NUMBER_OF_INDEXES;
     while (required > 0) {
@@ -74,8 +69,8 @@ public class NodeTableImpl implements NodeTable {
     }
 
     int start = START_FROM_BEGINNING ? 0 : nodeKey.size() - activeBytes;
-    BytesValue active = nodeKey.slice(start, activeBytes);
-    BigInteger activeNumber = new BigInteger(1, active.extractArray());
+    Bytes active = nodeKey.slice(start, activeBytes);
+    BigInteger activeNumber = new BigInteger(1, active.toArray());
     // XXX: could be optimized for small NUMBER_OF_INDEXES
     BigInteger index = activeNumber.mod(BigInteger.valueOf(NUMBER_OF_INDEXES));
 
@@ -84,10 +79,10 @@ public class NodeTableImpl implements NodeTable {
 
   @Override
   public void save(NodeRecordInfo node) {
-    Hash32 nodeKey = Hash32.wrap(BytesValue.wrap(node.getNode().getNodeId().toArray()));
+    Bytes nodeKey = node.getNode().getNodeId();
     nodeTable.put(nodeKey, node);
     NodeIndex activeIndex = indexTable.get(getNodeIndex(nodeKey)).orElseGet(NodeIndex::new);
-    List<Hash32> nodes = activeIndex.getEntries();
+    List<Bytes> nodes = activeIndex.getEntries();
     if (!nodes.contains(nodeKey)) {
       nodes.add(nodeKey);
       indexTable.put(getNodeIndex(nodeKey), activeIndex);
@@ -96,10 +91,10 @@ public class NodeTableImpl implements NodeTable {
 
   @Override
   public void remove(NodeRecordInfo node) {
-    Hash32 nodeKey = Hash32.wrap(BytesValue.wrap(node.getNode().getNodeId().toArray()));
+    Bytes nodeKey = node.getNode().getNodeId();
     nodeTable.remove(nodeKey);
     NodeIndex activeIndex = indexTable.get(getNodeIndex(nodeKey)).orElseGet(NodeIndex::new);
-    List<Hash32> nodes = activeIndex.getEntries();
+    List<Bytes> nodes = activeIndex.getEntries();
     if (nodes.contains(nodeKey)) {
       nodes.remove(nodeKey);
       indexTable.put(getNodeIndex(nodeKey), activeIndex);
@@ -108,7 +103,7 @@ public class NodeTableImpl implements NodeTable {
 
   @Override
   public Optional<NodeRecordInfo> getNode(Bytes nodeId) {
-    return nodeTable.get(Hash32.wrap(BytesValue.wrap(nodeId.toArray())));
+    return nodeTable.get(nodeId);
   }
 
   /**
@@ -117,7 +112,7 @@ public class NodeTableImpl implements NodeTable {
    */
   @Override
   public List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit) {
-    long start = getNodeIndex(BytesValue.wrap(nodeId.toArray()));
+    long start = getNodeIndex(nodeId);
     boolean limitReached = false;
     long currentIndexUp = start;
     long currentIndexDown = start;
@@ -133,26 +128,26 @@ public class NodeTableImpl implements NodeTable {
       }
       if (upNodesOptional.isPresent()) {
         NodeIndex upNodes = upNodesOptional.get();
-        for (Hash32 currentNodeId : upNodes.getEntries()) {
-          if (Functions.logDistance(Bytes.wrap(currentNodeId.extractArray()), nodeId) >= logLimit) {
+        for (Bytes currentNodeId : upNodes.getEntries()) {
+          if (Functions.logDistance(currentNodeId, nodeId) >= logLimit) {
             limitReached = true;
             break;
           } else {
-            res.add(getNode(Bytes.wrap(currentNodeId.extractArray())).get());
+            res.add(getNode(currentNodeId).get());
           }
         }
       }
       if (downNodesOptional.isPresent()) {
         NodeIndex downNodes = downNodesOptional.get();
-        List<Hash32> entries = downNodes.getEntries();
+        List<Bytes> entries = downNodes.getEntries();
         // XXX: iterate in reverse order to reach logDistance limit from the right side
         for (int i = entries.size() - 1; i >= 0; i--) {
-          Hash32 currentNodeId = entries.get(i);
-          if (Functions.logDistance(Bytes.wrap(currentNodeId.extractArray()), nodeId) >= logLimit) {
+          Bytes currentNodeId = entries.get(i);
+          if (Functions.logDistance(currentNodeId, nodeId) >= logLimit) {
             limitReached = true;
             break;
           } else {
-            res.add(getNode(Bytes.wrap(currentNodeId.extractArray())).get());
+            res.add(getNode(currentNodeId).get());
           }
         }
       }

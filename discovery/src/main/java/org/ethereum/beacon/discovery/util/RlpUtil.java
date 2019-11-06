@@ -22,10 +22,6 @@ import org.javatuples.Pair;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 
-// import tech.pegasys.artemis.util.bytes.Bytes8;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 public class RlpUtil {
   public static int calcListLen(Bytes data) {
     int prefix = data.get(0) & 0xFF;

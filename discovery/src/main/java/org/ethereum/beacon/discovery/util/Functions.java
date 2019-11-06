@@ -25,20 +25,14 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.MutableBytes;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.math.ec.ECPoint;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Sign;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytess;
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class Functions {
 
@@ -100,15 +94,6 @@ public class Functions {
     }
   }
 
-  public static Bytes aesgcm_encrypt(
-      BytesValue privateKey, BytesValue nonce, BytesValue message, BytesValue aad) {
-    return aesgcm_encrypt(
-        Bytes.wrap(privateKey.extractArray()),
-        Bytes.wrap(nonce.extractArray()),
-        Bytes.wrap(message.extractArray()),
-        Bytes.wrap(aad.extractArray()));
-  }
-
   public static Bytes aesgcm_decrypt(Bytes privateKey, Bytes nonce, Bytes encoded, Bytes aad) {
     try {
       Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
@@ -121,29 +106,6 @@ public class Functions {
     } catch (Exception e) {
       throw new RuntimeException("No AES/GCM cipher provider", e);
     }
-  }
-
-  public static Bytes aesgcm_decrypt(
-      BytesValue privateKey, BytesValue nonce, BytesValue encoded, BytesValue aad) {
-    return aesgcm_decrypt(
-        Bytes.wrap(privateKey.extractArray()),
-        Bytes.wrap(nonce.extractArray()),
-        Bytes.wrap(encoded.extractArray()),
-        Bytes.wrap(aad.extractArray()));
-  }
-
-  public static HKDFKeys hkdf_expand(
-      BytesValue srcNodeId,
-      BytesValue destNodeId,
-      BytesValue srcPrivKey,
-      BytesValue destPubKey,
-      BytesValue idNonce) {
-    return hkdf_expand(
-        Bytes.wrap(srcNodeId.extractArray()),
-        Bytes.wrap(destNodeId.extractArray()),
-        Bytes.wrap(srcPrivKey.extractArray()),
-        Bytes.wrap(destPubKey.extractArray()),
-        Bytes.wrap(idNonce.extractArray()));
   }
 
   /**
@@ -209,21 +171,18 @@ public class Functions {
    * in XOR)
    */
   public static int logDistance(Bytes nodeId1, Bytes nodeId2) {
-    Bytes distance = nodeId1.xor(nodeId2, MutableBytes.create(nodeId2.size()));
+    Bytes distance = nodeId1.xor(nodeId2);
     int logDistance = Byte.SIZE * distance.size(); // 256
     final int maxLogDistance = logDistance;
     for (int i = 0; i < maxLogDistance; ++i) {
-      if (BytesValue.wrap(distance.toArray()).getHighBit(i)) {
+      boolean highBit = ((distance.get(i / 8) >> (7 - (i % 8))) & 1) == 1;
+      if (highBit) {
         break;
       } else {
         logDistance--;
       }
     }
     return logDistance;
-  }
-
-  public static int logDistance(BytesValue nodeId1, BytesValue nodeId2) {
-    return logDistance(Bytes.wrap(nodeId1.extractArray()), Bytes.wrap(nodeId2.extractArray()));
   }
 
   public static class HKDFKeys {

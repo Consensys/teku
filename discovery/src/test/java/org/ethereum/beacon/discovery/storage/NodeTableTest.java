@@ -33,17 +33,11 @@ import org.ethereum.beacon.discovery.schema.EnrScheme;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
 
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.bytes.Bytes4;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 public class NodeTableTest {
+
   private Function<UInt64, NodeRecord> homeNodeSupplier =
       (oldSeq) -> {
         try {
@@ -56,12 +50,12 @@ public class NodeTableTest {
                   add(
                       Pair.with(
                           NodeRecord.FIELD_IP_V4,
-                          BytesValue.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
+                          Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
                   add(Pair.with(NodeRecord.FIELD_UDP_V4, 30303));
                   add(
                       Pair.with(
                           NodeRecord.FIELD_PKEY_SECP256K1,
-                          BytesValue.fromHexString(
+                          Bytes.fromHexString(
                               "0bfb48004b1698f05872cf18b1f278998ad8f7d4c135aa41f83744e7b850ab6b98")));
                 }
               });
@@ -127,12 +121,12 @@ public class NodeTableTest {
                 add(
                     Pair.with(
                         NodeRecord.FIELD_IP_V4,
-                        BytesValue.wrap(InetAddress.getByName("127.0.0.2").getAddress())));
+                        Bytes.wrap(InetAddress.getByName("127.0.0.2").getAddress())));
                 add(Pair.with(NodeRecord.FIELD_UDP_V4, 30303));
                 add(
                     Pair.with(
                         NodeRecord.FIELD_PKEY_SECP256K1,
-                        BytesValue.fromHexString(
+                        Bytes.fromHexString(
                             "aafb48004b1698f05872cf18b1f278998ad8f7d4c135aa41f83744e7b850ab6b98")));
               }
             });
@@ -157,12 +151,12 @@ public class NodeTableTest {
                 add(
                     Pair.with(
                         NodeRecord.FIELD_IP_V4,
-                        BytesValue.wrap(InetAddress.getByName("127.0.0.3").getAddress())));
+                        Bytes.wrap(InetAddress.getByName("127.0.0.3").getAddress())));
                 add(Pair.with(NodeRecord.FIELD_UDP_V4, 30303));
                 add(
                     Pair.with(
                         NodeRecord.FIELD_PKEY_SECP256K1,
-                        BytesValue.fromHexString(
+                        Bytes.fromHexString(
                             "bafb48004b1698f05872cf18b1f278998ad8f7d4c135aa41f83744e7b850ab6b98")));
               }
             });
@@ -170,18 +164,14 @@ public class NodeTableTest {
     List<NodeRecordInfo> closestNodes =
         nodeTableStorage.get().findClosestNodes(closestNode.getNodeId(), 252);
     assertEquals(2, closestNodes.size());
-    Set<BytesValue> publicKeys = new HashSet<>();
+    Set<Bytes> publicKeys = new HashSet<>();
     closestNodes.forEach(
         n -> {
           Object key3 = n.getNode().get(NodeRecord.FIELD_PKEY_SECP256K1);
-          if (key3 instanceof BytesValue) {
-            publicKeys.add((BytesValue) key3);
-          } else {
-            publicKeys.add(BytesValue.wrap(((Bytes) key3).toArray()));
-          }
+          publicKeys.add((Bytes) key3);
         });
-    //    assertTrue(publicKeys.contains(localHostNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
-    //    assertTrue(publicKeys.contains(closestNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
+    assertTrue(publicKeys.contains(localHostNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
+    assertTrue(publicKeys.contains(closestNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
     List<NodeRecordInfo> farNodes = nodeTableStorage.get().findClosestNodes(farNode.getNodeId(), 1);
     assertEquals(1, farNodes.size());
     assertEquals(
@@ -195,24 +185,18 @@ public class NodeTableTest {
    */
   @Test
   public void testIndexCalculation() {
-    BytesValue nodeId0 =
-        BytesValue.fromHexString(
-            "0000000000000000000000000000000000000000000000000000000000000000");
-    BytesValue nodeId1a =
-        BytesValue.fromHexString(
-            "0000000000000000000000000000000000000000000000000000000000000001");
-    BytesValue nodeId1b =
-        BytesValue.fromHexString(
-            "1000000000000000000000000000000000000000000000000000000000000000");
-    BytesValue nodeId1s =
-        BytesValue.fromHexString(
-            "1111111111111111111111111111111111111111111111111111111111111111");
-    BytesValue nodeId9s =
-        BytesValue.fromHexString(
-            "9999999999999999999999999999999999999999999999999999999999999999");
-    BytesValue nodeIdfs =
-        BytesValue.fromHexString(
-            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+    Bytes nodeId0 =
+        Bytes.fromHexString("0000000000000000000000000000000000000000000000000000000000000000");
+    Bytes nodeId1a =
+        Bytes.fromHexString("0000000000000000000000000000000000000000000000000000000000000001");
+    Bytes nodeId1b =
+        Bytes.fromHexString("1000000000000000000000000000000000000000000000000000000000000000");
+    Bytes nodeId1s =
+        Bytes.fromHexString("1111111111111111111111111111111111111111111111111111111111111111");
+    Bytes nodeId9s =
+        Bytes.fromHexString("9999999999999999999999999999999999999999999999999999999999999999");
+    Bytes nodeIdfs =
+        Bytes.fromHexString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
     assertEquals(0, NodeTableImpl.getNodeIndex(nodeId0));
     assertEquals(0, NodeTableImpl.getNodeIndex(nodeId1a));
     assertEquals(16, NodeTableImpl.getNodeIndex(nodeId1b));

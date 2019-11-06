@@ -24,8 +24,6 @@ import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.task.TaskStatus;
 import org.ethereum.beacon.discovery.task.TaskType;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 public class NodesHandler implements MessageHandler<NodesMessage> {
   private static final Logger logger = LogManager.getLogger(FindNodeHandler.class);
 

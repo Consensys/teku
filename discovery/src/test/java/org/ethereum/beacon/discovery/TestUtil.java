@@ -25,15 +25,9 @@ import org.ethereum.beacon.discovery.schema.EnrScheme;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.storage.NodeSerializerFactory;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Utils;
 import org.javatuples.Pair;
 import org.web3j.crypto.ECKeyPair;
-
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.bytes.Bytes96;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class TestUtil {
   public static final NodeRecordFactory NODE_RECORD_FACTORY_NO_VERIFICATION =
@@ -48,23 +42,22 @@ public class TestUtil {
    *
    * @return <code><private key, node record></code>
    */
-  public static Pair<BytesValue, NodeRecord> generateNode(int port) {
+  public static Pair<Bytes, NodeRecord> generateNode(int port) {
     final Random rnd = new Random(SEED);
-    BytesValue localIp = null;
+    Bytes localIp = null;
     try {
-      localIp = BytesValue.wrap(InetAddress.getByName("127.0.0.1").getAddress());
+      localIp = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
     } catch (UnknownHostException e) {
       throw new RuntimeException(e);
     }
-    final BytesValue finalLocalIp = localIp;
+    final Bytes finalLocalIp = localIp;
     for (int i = 0; i < port; ++i) {
       rnd.nextBoolean(); // skip according to input
     }
     byte[] privateKey = new byte[32];
     rnd.nextBytes(privateKey);
     ECKeyPair ecKeyPair = ECKeyPair.create(privateKey);
-    final BytesValue pubKey =
-        BytesValue.wrap(Utils.extractBytesFromUnsignedBigInt(ecKeyPair.getPublicKey()));
+    final Bytes pubKey = Bytes.wrap(Utils.extractBytesFromUnsignedBigInt(ecKeyPair.getPublicKey()));
     NodeRecord nodeRecord =
         NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
             EnrScheme.V4,
@@ -77,6 +70,6 @@ public class TestUtil {
                 add(Pair.with(NodeRecord.FIELD_PKEY_SECP256K1, pubKey));
               }
             });
-    return Pair.with(BytesValue.wrap(privateKey), nodeRecord);
+    return Pair.with(Bytes.wrap(privateKey), nodeRecord);
   }
 }

@@ -24,10 +24,6 @@ import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 
-// import tech.pegasys.artemis.util.bytes.Bytes8;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 public class DiscoveryV5Message implements DiscoveryMessage {
   private final Bytes bytes;
   private List<RlpType> payload = null;

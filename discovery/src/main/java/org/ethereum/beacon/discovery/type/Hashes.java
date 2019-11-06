@@ -15,10 +15,9 @@ package org.ethereum.beacon.discovery.type;
 
 import java.security.MessageDigest;
 import java.security.Security;
+import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.jcajce.provider.digest.SHA256.Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-// import tech.pegasys.artemis.util.bytes.Bytes32;
 
 /** Utility methods to calculate message hashes */
 public abstract class Hashes {
@@ -39,7 +38,7 @@ public abstract class Hashes {
    * @param algorithm an algorithm.
    * @return the hash.
    */
-  private static byte[] digestUsingAlgorithm(BytesValue input, String algorithm) {
+  private static byte[] digestUsingAlgorithm(Bytes input, String algorithm) {
     MessageDigest digest;
     try {
       // TODO integrate with JCA without performance loose
@@ -58,8 +57,8 @@ public abstract class Hashes {
    * @param input input message.
    * @return the hash.
    */
-  public static Hash32 sha256(BytesValue input) {
+  public static Bytes sha256(Bytes input) {
     byte[] output = digestUsingAlgorithm(input, SHA256);
-    return Hash32.wrap(BytesValue.wrap(output));
+    return Bytes.wrap(Bytes.wrap(output));
   }
 }

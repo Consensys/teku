@@ -31,15 +31,9 @@ import org.ethereum.beacon.discovery.schema.EnrScheme;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
-
-// import tech.pegasys.artemis.util.bytes.Bytes4;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class NodeBucketTest {
   private final Random rnd = new Random();
@@ -58,9 +52,9 @@ public class NodeBucketTest {
                   add(
                       Pair.with(
                           NodeRecord.FIELD_IP_V4,
-                          BytesValue.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
+                          Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
                   add(Pair.with(NodeRecord.FIELD_UDP_V4, 30303));
-                  add(Pair.with(NodeRecord.FIELD_PKEY_SECP256K1, BytesValue.wrap(pkey)));
+                  add(Pair.with(NodeRecord.FIELD_PKEY_SECP256K1, Bytes.wrap(pkey)));
                 }
               });
       return new NodeRecordInfo(nodeRecord, (long) rnd.nextInt(1000), NodeStatus.ACTIVE, 0);

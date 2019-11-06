@@ -29,10 +29,6 @@ import org.ethereum.beacon.discovery.schema.NodeStatus;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
 
-// import org.ethereum.beacon.schedulers.Scheduler;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /** Manages recurrent node check task(s) */
 public class DiscoveryTaskManager {
   private static final int LIVE_CHECK_DISTANCE = DEFAULT_DISTANCE;

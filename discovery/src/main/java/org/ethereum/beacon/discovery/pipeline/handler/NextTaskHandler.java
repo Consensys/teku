@@ -31,10 +31,6 @@ import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.task.TaskMessageFactory;
 import org.ethereum.beacon.discovery.task.TaskStatus;
 
-// import org.ethereum.beacon.schedulers.Scheduler;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /** Gets next request task in session and processes it */
 public class NextTaskHandler implements EnvelopeHandler {
   private static final Logger logger = LogManager.getLogger(NextTaskHandler.class);

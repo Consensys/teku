@@ -21,11 +21,6 @@ import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytes8;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 /**
  * The WHOAREYOU packet, used during the handshake as a response to any message received from
  * unknown host

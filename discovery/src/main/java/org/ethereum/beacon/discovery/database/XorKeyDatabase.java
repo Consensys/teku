@@ -14,30 +14,27 @@
 package org.ethereum.beacon.discovery.database;
 
 import java.util.function.Function;
-import org.ethereum.beacon.discovery.type.BytesValue;
-
-// import org.ethereum.beacon.db.source.impl.XorDataSource;
+import org.apache.tuweni.bytes.Bytes;
 
 /** An abstract class that uses {@link XorDataSource} for storage multiplexing. */
 public abstract class XorKeyDatabase implements Database {
 
-  private final DataSource<BytesValue, BytesValue> backingDataSource;
-  private final Function<BytesValue, BytesValue> sourceNameHasher;
+  private final DataSource<Bytes, Bytes> backingDataSource;
+  private final Function<Bytes, Bytes> sourceNameHasher;
 
   public XorKeyDatabase(
-      DataSource<BytesValue, BytesValue> backingDataSource,
-      Function<BytesValue, BytesValue> sourceNameHasher) {
+      DataSource<Bytes, Bytes> backingDataSource, Function<Bytes, Bytes> sourceNameHasher) {
     this.backingDataSource = backingDataSource;
     this.sourceNameHasher = sourceNameHasher;
   }
 
   @Override
-  public DataSource<BytesValue, BytesValue> createStorage(String name) {
+  public DataSource<Bytes, Bytes> createStorage(String name) {
     return new XorDataSource<>(
-        backingDataSource, sourceNameHasher.apply(BytesValue.wrap(name.getBytes())));
+        backingDataSource, sourceNameHasher.apply(Bytes.wrap(name.getBytes())));
   }
 
-  public DataSource<BytesValue, BytesValue> getBackingDataSource() {
+  public DataSource<Bytes, Bytes> getBackingDataSource() {
     return backingDataSource;
   }
 }

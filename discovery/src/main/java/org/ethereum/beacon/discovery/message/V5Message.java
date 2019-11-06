@@ -13,8 +13,6 @@
 
 package org.ethereum.beacon.discovery.message;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 import org.apache.tuweni.bytes.Bytes;
 
 public interface V5Message {

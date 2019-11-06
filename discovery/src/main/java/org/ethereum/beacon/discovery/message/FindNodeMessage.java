@@ -19,9 +19,6 @@ import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 
-// import tech.pegasys.artemis.util.bytes.Bytes1;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * FINDNODE queries for nodes at the given logarithmic distance from the recipient's node ID. The
  * node IDs of all nodes in the response must have a shared prefix length of distance with the

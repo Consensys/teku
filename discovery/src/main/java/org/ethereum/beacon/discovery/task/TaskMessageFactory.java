@@ -21,8 +21,6 @@ import org.ethereum.beacon.discovery.message.V5Message;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.schema.NodeSession;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 public class TaskMessageFactory {
   public static final int DEFAULT_DISTANCE = 10;
 

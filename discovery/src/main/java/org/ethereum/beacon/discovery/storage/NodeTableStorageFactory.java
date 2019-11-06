@@ -21,8 +21,6 @@ import org.ethereum.beacon.discovery.database.Database;
 import org.ethereum.beacon.discovery.format.SerializerFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 public interface NodeTableStorageFactory {
   /**
    * Creates storage for nodes table

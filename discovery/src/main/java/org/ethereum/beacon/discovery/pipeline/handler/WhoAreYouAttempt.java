@@ -22,8 +22,6 @@ import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * Tries to get WHOAREYOU packet from unknown incoming packet in {@link Field#PACKET_UNKNOWN}. If it
  * was successful, places the result in {@link Field#PACKET_WHOAREYOU}

@@ -16,16 +16,14 @@ package org.ethereum.beacon.discovery.storage;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.format.SerializerFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
-import org.ethereum.beacon.discovery.type.BytesValue;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class NodeSerializerFactory implements SerializerFactory {
-  private final Map<Class, Function<BytesValue, Object>> deserializerMap = new HashMap<>();
-  private final Map<Class, Function<Object, BytesValue>> serializerMap = new HashMap<>();
+  private final Map<Class, Function<Bytes, Object>> deserializerMap = new HashMap<>();
+  private final Map<Class, Function<Object, Bytes>> serializerMap = new HashMap<>();
 
   public NodeSerializerFactory(NodeRecordFactory nodeRecordFactory) {
     deserializerMap.put(
@@ -39,7 +37,7 @@ public class NodeSerializerFactory implements SerializerFactory {
   }
 
   @Override
-  public <T> Function<BytesValue, T> getDeserializer(Class<? extends T> objectClass) {
+  public <T> Function<Bytes, T> getDeserializer(Class<? extends T> objectClass) {
     if (!deserializerMap.containsKey(objectClass)) {
       throw new RuntimeException(String.format("Type %s is not supported", objectClass));
     }
@@ -47,7 +45,7 @@ public class NodeSerializerFactory implements SerializerFactory {
   }
 
   @Override
-  public <T> Function<T, BytesValue> getSerializer(Class<? extends T> objectClass) {
+  public <T> Function<T, Bytes> getSerializer(Class<? extends T> objectClass) {
     if (!serializerMap.containsKey(objectClass)) {
       throw new RuntimeException(String.format("Type %s is not supported", objectClass));
     }

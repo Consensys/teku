@@ -20,8 +20,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import reactor.core.publisher.FluxSink;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * Netty interface handler for incoming packets in form of raw bytes data wrapped as {@link Bytes}
  * Implementation forwards all incoming packets in {@link FluxSink} provided via constructor, so it

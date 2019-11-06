@@ -14,18 +14,12 @@
 package org.ethereum.beacon.discovery.packet;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.type.Hashes;
-
-// import org.ethereum.beacon.crypto.Hashes;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytess;
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Default packet form until its goal is known */
 public class UnknownPacket extends AbstractPacket {
 
-  public UnknownPacket(BytesValue bytes) {
+  public UnknownPacket(Bytes bytes) {
     super(bytes);
   }
 
@@ -58,9 +52,8 @@ public class UnknownPacket extends AbstractPacket {
   // src-node-id      = xor(sha256(dest-node-id), tag)
   public Bytes getSourceNodeId(Bytes destNodeId) {
     assert !isWhoAreYouPacket(destNodeId);
-    Bytes xorTag = Bytes.wrap(getBytes().toArray()).slice(0, 32);
-    return Bytes.wrap(Hashes.sha256(BytesValue.wrap(destNodeId.toArray())).extractArray())
-        .xor(Bytes.wrap(Bytes.concatenate(xorTag, Bytes.of(0))));
+    Bytes xorTag = getBytes().slice(0, 32);
+    return Hashes.sha256(destNodeId).xor(xorTag);
   }
 
   @Override

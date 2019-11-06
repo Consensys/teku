@@ -25,11 +25,6 @@ import org.ethereum.beacon.discovery.scheduler.ExpirationScheduler;
 import org.ethereum.beacon.discovery.scheduler.Scheduler;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
-// import org.ethereum.beacon.schedulers.Scheduler;
-// import org.ethereum.beacon.util.ExpirationScheduler;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * Sends {@link TaskType#PING} to closest NodeRecords added via {@link #add(NodeRecordInfo,
  * Runnable, Runnable)}. Tasks is called failed if timeout is reached and reply from node is not

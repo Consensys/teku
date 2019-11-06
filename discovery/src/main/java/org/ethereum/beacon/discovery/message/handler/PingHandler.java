@@ -20,9 +20,6 @@ import org.ethereum.beacon.discovery.message.PongMessage;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeSession;
-import org.ethereum.beacon.discovery.type.BytesValue;
-
-// import tech.pegasys.artemis.util.bytes.Bytes4;
 
 public class PingHandler implements MessageHandler<PingMessage> {
   @Override
@@ -31,8 +28,7 @@ public class PingHandler implements MessageHandler<PingMessage> {
         new PongMessage(
             message.getRequestId(),
             session.getNodeRecord().getSeq(),
-            (Bytes.wrap(
-                ((BytesValue) session.getNodeRecord().get(NodeRecord.FIELD_IP_V4)).extractArray())),
+            ((Bytes) session.getNodeRecord().get(NodeRecord.FIELD_IP_V4)),
             (int) session.getNodeRecord().get(NodeRecord.FIELD_UDP_V4));
     session.sendOutgoing(
         MessagePacket.create(

@@ -23,9 +23,6 @@ import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 
-// import tech.pegasys.artemis.util.bytes.Bytes1;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * NODES is the response to a FINDNODE or TOPICQUERY message. Multiple NODES messages may be sent as
  * responses to a single query.

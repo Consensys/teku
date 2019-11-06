@@ -29,10 +29,6 @@ import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 
-// import tech.pegasys.artemis.util.bytes.Bytes32;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 /**
  * Ethereum Node Record
  *

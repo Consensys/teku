@@ -21,8 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeSession;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * In memory repository with authTags, corresponding sessions {@link NodeSession} and 2-way getters:
  * {@link #get(Bytes)} and {@link #getTag(NodeSession)}

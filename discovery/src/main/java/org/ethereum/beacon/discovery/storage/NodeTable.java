@@ -19,8 +19,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * Stores Ethereum Node Records in {@link NodeRecordInfo} containers. Also stores home node as node
  * record.

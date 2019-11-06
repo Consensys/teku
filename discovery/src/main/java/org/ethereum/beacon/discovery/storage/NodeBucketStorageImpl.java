@@ -22,11 +22,7 @@ import org.ethereum.beacon.discovery.database.HoleyList;
 import org.ethereum.beacon.discovery.format.SerializerFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Stores {@link NodeRecordInfo}'s in {@link NodeBucket}'s calculating index number of bucket as
@@ -41,8 +37,7 @@ public class NodeBucketStorageImpl implements NodeBucketStorage {
 
   public NodeBucketStorageImpl(
       Database database, SerializerFactory serializerFactory, NodeRecord homeNode) {
-    DataSource<BytesValue, BytesValue> nodeBucketsSource =
-        database.createStorage(NODE_BUCKET_STORAGE_NAME);
+    DataSource<Bytes, Bytes> nodeBucketsSource = database.createStorage(NODE_BUCKET_STORAGE_NAME);
     this.nodeBucketsTable =
         new DataSourceList<>(
             nodeBucketsSource,

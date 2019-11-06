@@ -17,8 +17,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.scheduler.Scheduler;
 import org.reactivestreams.Publisher;
 
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-
 /** Discovery server which listens to incoming messages according to setup */
 public interface DiscoveryServer {
   void start(Scheduler scheduler);

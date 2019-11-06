@@ -13,9 +13,6 @@
 
 package org.ethereum.beacon.discovery.database;
 
-// import org.ethereum.beacon.crypto.Hashes;
-// import org.ethereum.beacon.db.source.impl.HashMapDataSource;
-
 import org.ethereum.beacon.discovery.type.Hashes;
 
 /** In memory database implementation based on {@link HashMapDataSource}. */

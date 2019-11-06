@@ -13,7 +13,6 @@
 
 package org.ethereum.beacon.discovery.storage;
 
-// import org.ethereum.beacon.db.source.SingleValueSource;
 import org.ethereum.beacon.discovery.database.SingleValueSource;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 

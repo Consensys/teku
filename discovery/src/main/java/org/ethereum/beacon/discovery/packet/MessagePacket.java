@@ -17,15 +17,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.ethereum.beacon.discovery.message.DiscoveryMessage;
 import org.ethereum.beacon.discovery.message.DiscoveryV5Message;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpString;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytess;
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Used when handshake is completed as a {@link DiscoveryMessage} authenticated container
@@ -43,19 +38,13 @@ public class MessagePacket extends AbstractPacket {
     super(bytes);
   }
 
-  public MessagePacket(BytesValue bytes) {
-    super(bytes);
-  }
-
   public static MessagePacket create(
       Bytes homeNodeId,
       Bytes destNodeId,
       Bytes authTag,
       Bytes initiatorKey,
       DiscoveryMessage message) {
-    Bytes tag =
-        Bytes.wrap(
-            Packet.createTag(BytesValue.wrap(homeNodeId.toArray()), destNodeId).extractArray());
+    Bytes tag = Packet.createTag(homeNodeId, destNodeId);
     byte[] authTagBytesRlp = RlpEncoder.encode(RlpString.create(authTag.toArray()));
     Bytes authTagEncoded = Bytes.wrap(authTagBytesRlp);
     Bytes encryptedData = Functions.aesgcm_encrypt(initiatorKey, authTag, message.getBytes(), tag);

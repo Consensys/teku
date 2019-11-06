@@ -55,9 +55,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.ReplayProcessor;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 public class DiscoveryManagerImpl implements DiscoveryManager {
   private static final Logger logger = LogManager.getLogger(DiscoveryManagerImpl.class);
   private final ReplayProcessor<NetworkParcel> outgoingMessages = ReplayProcessor.cacheLast();

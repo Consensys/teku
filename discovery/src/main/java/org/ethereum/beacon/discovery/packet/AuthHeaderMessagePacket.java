@@ -19,7 +19,6 @@ import org.ethereum.beacon.discovery.message.DiscoveryMessage;
 import org.ethereum.beacon.discovery.message.DiscoveryV5Message;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.ethereum.beacon.discovery.util.RlpUtil;
 import org.javatuples.Pair;
@@ -27,8 +26,6 @@ import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Used as first encrypted message sent in response to WHOAREYOU {@link WhoAreYouPacket}. Contains
@@ -75,9 +72,7 @@ public class AuthHeaderMessagePacket extends AbstractPacket {
       Bytes authTag,
       Bytes initiatorKey,
       DiscoveryMessage message) {
-    Bytes tag =
-        Bytes.wrap(
-            Packet.createTag(BytesValue.wrap(homeNodeId.toArray()), destNodeId).extractArray());
+    Bytes tag = Packet.createTag(homeNodeId, destNodeId);
     Bytes idNonceSig =
         Functions.sign(
             staticNodeKey,

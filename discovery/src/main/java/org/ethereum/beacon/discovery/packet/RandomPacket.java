@@ -15,15 +15,10 @@ package org.ethereum.beacon.discovery.packet;
 
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpString;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytess;
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Sent if no session keys are available to initiate handshake
@@ -41,9 +36,7 @@ public class RandomPacket extends AbstractPacket {
   }
 
   public static RandomPacket create(Bytes homeNodeId, Bytes destNodeId, Bytes authTag, Random rnd) {
-    Bytes tag =
-        Bytes.wrap(
-            Packet.createTag(BytesValue.wrap(homeNodeId.toArray()), destNodeId).extractArray());
+    Bytes tag = Packet.createTag(homeNodeId, destNodeId);
     byte[] authTagRlp = RlpEncoder.encode(RlpString.create(authTag.toArray()));
     Bytes authTagEncoded = Bytes.wrap(authTagRlp);
     byte[] randomBytes = new byte[44];

@@ -29,10 +29,6 @@ import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.util.Functions;
 
-// import org.ethereum.beacon.schedulers.Scheduler;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /** Handles {@link AuthHeaderMessagePacket} in {@link Field#PACKET_AUTH_HEADER_MESSAGE} field */
 public class AuthHeaderMessagePacketHandler implements EnvelopeHandler {
   private static final Logger logger = LogManager.getLogger(AuthHeaderMessagePacketHandler.class);

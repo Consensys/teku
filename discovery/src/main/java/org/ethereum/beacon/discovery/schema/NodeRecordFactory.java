@@ -26,10 +26,6 @@ import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 
-// import tech.pegasys.artemis.util.bytes.Bytes8;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 public class NodeRecordFactory {
   public static final NodeRecordFactory DEFAULT =
       new NodeRecordFactory(new EnrSchemeV4Interpreter());

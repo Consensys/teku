@@ -14,13 +14,13 @@
 package org.ethereum.beacon.discovery.format;
 
 import java.util.function.Function;
-import org.ethereum.beacon.discovery.type.BytesValue;
+import org.apache.tuweni.bytes.Bytes;
 
 public interface SerializerFactory {
 
-  <T> Function<BytesValue, T> getDeserializer(Class<? extends T> objectClass);
+  <T> Function<Bytes, T> getDeserializer(Class<? extends T> objectClass);
 
-  <T> Function<T, BytesValue> getSerializer(Class<? extends T> objectClass);
+  <T> Function<T, Bytes> getSerializer(Class<? extends T> objectClass);
 
   //  static SimpleOffsetSerializer createSSZ() {
   //    return SimpleOffsetSerializer.();

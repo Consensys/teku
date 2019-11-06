@@ -36,9 +36,6 @@ import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
 import org.javatuples.Pair;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * Performs {@link Field#SESSION_LOOKUP} request. Looks up for Node session based on NodeId, which
  * should be in request field and stores it in {@link Field#SESSION} field.

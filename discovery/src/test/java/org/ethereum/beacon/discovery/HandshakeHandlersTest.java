@@ -55,24 +55,19 @@ import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.task.TaskMessageFactory;
 import org.ethereum.beacon.discovery.task.TaskType;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
-
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-// import tech.pegasys.artemis.util.uint.UInt64;
 
 public class HandshakeHandlersTest {
 
   @Test
   public void authHandlerWithMessageRoundTripTest() throws Exception {
     // Node1
-    Pair<BytesValue, NodeRecord> nodePair1 = TestUtil.generateNode(30303);
+    Pair<Bytes, NodeRecord> nodePair1 = TestUtil.generateNode(30303);
     NodeRecord nodeRecord1 = nodePair1.getValue1();
     // Node2
-    Pair<BytesValue, NodeRecord> nodePair2 = TestUtil.generateNode(30304);
+    Pair<Bytes, NodeRecord> nodePair2 = TestUtil.generateNode(30304);
     NodeRecord nodeRecord2 = nodePair2.getValue1();
     Random rnd = new Random();
     NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
@@ -120,7 +115,7 @@ public class HandshakeHandlersTest {
         new NodeSession(
             nodeRecord2,
             nodeRecord1,
-            Bytes.wrap(nodePair1.getValue0().extractArray()),
+            nodePair1.getValue0(),
             nodeTableStorage1.get(),
             nodeBucketStorage1,
             authTagRepository1,
@@ -134,7 +129,7 @@ public class HandshakeHandlersTest {
         new NodeSession(
             nodeRecord1,
             nodeRecord2,
-            Bytes.wrap(nodePair2.getValue0().extractArray()),
+            nodePair2.getValue0(),
             nodeTableStorage2.get(),
             nodeBucketStorage2,
             new AuthTagRepository(),
@@ -148,17 +143,13 @@ public class HandshakeHandlersTest {
     Envelope envelopeAt1From2 = new Envelope();
     byte[] idNonceBytes = new byte[32];
     Functions.getRandom().nextBytes(idNonceBytes);
-    BytesValue idNonce = BytesValue.wrap(idNonceBytes);
-    nodeSessionAt2For1.setIdNonce(Bytes.wrap(idNonce.extractArray()));
-    BytesValue authTag = BytesValue.wrap(nodeSessionAt2For1.generateNonce().toArray());
-    authTagRepository1.put(Bytes.wrap(authTag.extractArray()), nodeSessionAt1For2);
+    Bytes idNonce = Bytes.wrap(idNonceBytes);
+    nodeSessionAt2For1.setIdNonce(idNonce);
+    Bytes authTag = nodeSessionAt2For1.generateNonce();
+    authTagRepository1.put(authTag, nodeSessionAt1For2);
     envelopeAt1From2.put(
         Field.PACKET_WHOAREYOU,
-        WhoAreYouPacket.create(
-            nodePair1.getValue1().getNodeId(),
-            Bytes.wrap(authTag.extractArray()),
-            Bytes.wrap(idNonce.extractArray()),
-            UInt64.ZERO));
+        WhoAreYouPacket.create(nodePair1.getValue1().getNodeId(), authTag, idNonce, UInt64.ZERO));
     envelopeAt1From2.put(Field.SESSION, nodeSessionAt1For2);
     CompletableFuture<Void> future = new CompletableFuture<>();
     nodeSessionAt1For2.createNextRequest(TaskType.FINDNODE, future);
@@ -180,10 +171,10 @@ public class HandshakeHandlersTest {
     // Node 1 handles message from Node 2
     MessagePacketHandler messagePacketHandler1 = new MessagePacketHandler();
     Envelope envelopeAt1From2WithMessage = new Envelope();
-    BytesValue pingAuthTag = BytesValue.wrap(nodeSessionAt1For2.generateNonce().toArray());
+    Bytes pingAuthTag = nodeSessionAt1For2.generateNonce();
     MessagePacket pingPacketFrom2To1 =
         TaskMessageFactory.createPingPacket(
-            Bytes.wrap(pingAuthTag.extractArray()),
+            pingAuthTag,
             nodeSessionAt2For1,
             nodeSessionAt2For1
                 .createNextRequest(TaskType.PING, new CompletableFuture<>())

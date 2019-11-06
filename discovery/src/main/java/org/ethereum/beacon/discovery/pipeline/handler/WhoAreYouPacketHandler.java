@@ -34,11 +34,8 @@ import org.ethereum.beacon.discovery.scheduler.Scheduler;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.task.TaskMessageFactory;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.web3j.crypto.ECKeyPair;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /** Handles {@link WhoAreYouPacket} in {@link Field#PACKET_WHOAREYOU} field */
 public class WhoAreYouPacketHandler implements EnvelopeHandler {
@@ -77,9 +74,7 @@ public class WhoAreYouPacketHandler implements EnvelopeHandler {
       if (packet.getEnrSeq().compareTo(session.getHomeNodeRecord().getSeq()) < 0) {
         respRecord = session.getHomeNodeRecord();
       }
-      Bytes remotePubKey =
-          Bytes.wrap(
-              ((BytesValue) session.getNodeRecord().getKey(FIELD_PKEY_SECP256K1)).extractArray());
+      Bytes remotePubKey = (Bytes) session.getNodeRecord().getKey(FIELD_PKEY_SECP256K1);
       byte[] ephemeralKeyBytes = new byte[32];
       Functions.getRandom().nextBytes(ephemeralKeyBytes);
       ECKeyPair ephemeralKey = ECKeyPair.create(ephemeralKeyBytes);

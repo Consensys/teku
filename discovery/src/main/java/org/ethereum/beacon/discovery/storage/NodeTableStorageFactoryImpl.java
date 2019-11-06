@@ -22,8 +22,6 @@ import org.ethereum.beacon.discovery.format.SerializerFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 public class NodeTableStorageFactoryImpl implements NodeTableStorageFactory {
 
   private boolean isStorageEmpty(NodeTableStorage nodeTableStorage) {

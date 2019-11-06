@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.database.Database;
 import org.ethereum.beacon.discovery.mock.DiscoveryManagerNoNetwork;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
@@ -35,13 +36,10 @@ import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.task.TaskType;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import reactor.core.publisher.Flux;
-
-// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /**
  * Discovery test without real network, instead outgoing stream of each peer is connected with
@@ -52,9 +50,9 @@ public class DiscoveryNoNetworkTest {
   @Test
   public void test() throws Exception {
     // 1) start 2 nodes
-    Pair<BytesValue, NodeRecord> nodePair1 = TestUtil.generateNode(30303);
-    Pair<BytesValue, NodeRecord> nodePair2 = TestUtil.generateNode(30304);
-    Pair<BytesValue, NodeRecord> nodePair3 = TestUtil.generateNode(40412);
+    Pair<Bytes, NodeRecord> nodePair1 = TestUtil.generateNode(30303);
+    Pair<Bytes, NodeRecord> nodePair2 = TestUtil.generateNode(30304);
+    Pair<Bytes, NodeRecord> nodePair3 = TestUtil.generateNode(40412);
     NodeRecord nodeRecord1 = nodePair1.getValue1();
     NodeRecord nodeRecord2 = nodePair2.getValue1();
     NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
@@ -87,10 +85,10 @@ public class DiscoveryNoNetworkTest {
                 });
     NodeBucketStorage nodeBucketStorage2 =
         nodeTableStorageFactory.createBucketStorage(database2, TEST_SERIALIZER, nodeRecord2);
-    SimpleProcessor<BytesValue> from1to2 =
+    SimpleProcessor<Bytes> from1to2 =
         new SimpleProcessor<>(
             Schedulers.createDefault().newSingleThreadDaemon("from1to2-thread"), "from1to2");
-    SimpleProcessor<BytesValue> from2to1 =
+    SimpleProcessor<Bytes> from2to1 =
         new SimpleProcessor<>(
             Schedulers.createDefault().newSingleThreadDaemon("from2to1-thread"), "from2to1");
     DiscoveryManagerNoNetwork discoveryManager1 =
@@ -112,9 +110,9 @@ public class DiscoveryNoNetworkTest {
 
     // 2) Link outgoing of each one with incoming of another
     Flux.from(discoveryManager1.getOutgoingMessages())
-        .subscribe(t -> from1to2.onNext(BytesValue.wrap(t.getPacket().getBytes().toArray())));
+        .subscribe(t -> from1to2.onNext(t.getPacket().getBytes()));
     Flux.from(discoveryManager2.getOutgoingMessages())
-        .subscribe(t -> from2to1.onNext(BytesValue.wrap(t.getPacket().getBytes().toArray())));
+        .subscribe(t -> from2to1.onNext(t.getPacket().getBytes()));
 
     // 3) Expect standard 1 => 2 dialog
     CountDownLatch randomSent1to2 = new CountDownLatch(1);
@@ -162,13 +160,13 @@ public class DiscoveryNoNetworkTest {
     discoveryManager2.start();
     discoveryManager1.executeTask(nodeRecord2, TaskType.FINDNODE);
 
-    assert randomSent1to2.await(1, TimeUnit.SECONDS);
-    assert whoareyouSent2to1.await(1, TimeUnit.SECONDS);
+    assert randomSent1to2.await(10, TimeUnit.SECONDS);
+    assert whoareyouSent2to1.await(10, TimeUnit.SECONDS);
     int distance1To2 = Functions.logDistance(nodeRecord1.getNodeId(), nodeRecord2.getNodeId());
     assertFalse(nodeBucketStorage1.get(distance1To2).isPresent());
-    assert authPacketSent1to2.await(1, TimeUnit.SECONDS);
-    assert nodesSent2to1.await(1, TimeUnit.SECONDS);
-    Thread.sleep(50);
+    assert authPacketSent1to2.await(10, TimeUnit.SECONDS);
+    assert nodesSent2to1.await(10, TimeUnit.SECONDS);
+    Thread.sleep(500);
     // 1 sent findnodes to 2, received only (2) in answer, because 3 is not checked
     // 1 added 2 to its nodeBuckets, because its now checked, but not before
     NodeBucket bucketAt1With2 = nodeBucketStorage1.get(distance1To2).get();

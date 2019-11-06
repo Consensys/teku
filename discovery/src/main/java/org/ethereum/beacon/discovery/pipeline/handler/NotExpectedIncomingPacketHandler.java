@@ -27,9 +27,6 @@ import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.util.Functions;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /** Handles {@link UnknownPacket} from node, which is not on any stage of the handshake with us */
 public class NotExpectedIncomingPacketHandler implements EnvelopeHandler {
   private static final Logger logger = LogManager.getLogger(NotExpectedIncomingPacketHandler.class);

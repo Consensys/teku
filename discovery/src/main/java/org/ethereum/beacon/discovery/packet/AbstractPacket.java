@@ -14,28 +14,21 @@
 package org.ethereum.beacon.discovery.packet;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.type.BytesValue;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public abstract class AbstractPacket implements Packet {
-  private final BytesValue bytes;
-
-  AbstractPacket(BytesValue bytes) {
-    this.bytes = bytes;
-  }
+  private final Bytes bytes;
 
   AbstractPacket(Bytes bytes) {
-    this.bytes = BytesValue.wrap(bytes.toArray());
+    this.bytes = bytes;
   }
 
   @Override
   public Bytes getBytes() {
-    return Bytes.wrap(bytes.extractArray());
+    return bytes;
   }
 
   @Override
-  public BytesValue getBytesValue() {
+  public Bytes getBytesValue() {
     return bytes;
   }
 }

@@ -16,17 +16,10 @@ package org.ethereum.beacon.discovery.util;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
 public class CryptoUtil {
   public static Bytes sha256(final Bytes indexBytes) {
-    final MessageDigest sha256Digest = getSha256Digest();
-    indexBytes.update(sha256Digest);
-    return Bytes.wrap(sha256Digest.digest());
-  }
-
-  public static Bytes sha256(final BytesValue indexBytes) {
     final MessageDigest sha256Digest = getSha256Digest();
     indexBytes.update(sha256Digest);
     return Bytes.wrap(sha256Digest.digest());

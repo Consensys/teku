@@ -15,18 +15,15 @@ package org.ethereum.beacon.discovery.packet;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.ethereum.beacon.discovery.util.Functions;
 
 public interface Packet {
-  static BytesValue createTag(BytesValue homeNodeId, Bytes destNodeId) {
-    return BytesValue.wrap(
-        Bytes.wrap(homeNodeId.extractArray())
-            .xor(Functions.hash(destNodeId), MutableBytes.create(destNodeId.size()))
-            .toArray());
+
+  static Bytes createTag(Bytes homeNodeId, Bytes destNodeId) {
+    return homeNodeId.xor(Functions.hash(destNodeId), MutableBytes.create(destNodeId.size()));
   }
 
   Bytes getBytes();
 
-  BytesValue getBytesValue();
+  Bytes getBytesValue();
 }

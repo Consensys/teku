@@ -29,9 +29,6 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.ReplayProcessor;
 
-// import tech.pegasys.artemis.util.bytes.Bytes4;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 public class DiscoveryServerImpl implements DiscoveryServer {
   private static final int RECREATION_TIMEOUT = 5000;
   private static final int STOPPING_TIMEOUT = 10000;

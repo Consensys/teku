@@ -14,9 +14,7 @@
 package org.ethereum.beacon.discovery.format;
 
 import java.util.function.Function;
-import org.ethereum.beacon.discovery.type.BytesValue;
-
-// import org.ethereum.beacon.ssz.SSZSerializer;
+import org.apache.tuweni.bytes.Bytes;
 
 public class SSZSerializerFactory implements SerializerFactory {
 
@@ -27,12 +25,12 @@ public class SSZSerializerFactory implements SerializerFactory {
   }
 
   @Override
-  public <T> Function<BytesValue, T> getDeserializer(Class<? extends T> objectClass) {
+  public <T> Function<Bytes, T> getDeserializer(Class<? extends T> objectClass) {
     return bytes -> serializer.getDeserializer(objectClass).apply(bytes);
   }
 
   @Override
-  public <T> Function<T, BytesValue> getSerializer(Class<? extends T> objectClass) {
+  public <T> Function<T, Bytes> getSerializer(Class<? extends T> objectClass) {
     return serializer.getSerializer(objectClass);
   }
 }

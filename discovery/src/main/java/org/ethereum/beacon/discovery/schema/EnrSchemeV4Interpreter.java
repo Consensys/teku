@@ -29,16 +29,10 @@ import java.util.Map;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.util.Arrays;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.web3j.crypto.ECDSASignature;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.rlp.RlpString;
-
-// import tech.pegasys.artemis.util.bytes.Bytes16;
-// import tech.pegasys.artemis.util.bytes.Bytes32;
-// import tech.pegasys.artemis.util.bytes.Bytes4;
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
 
@@ -62,7 +56,7 @@ public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
           String.format(
               "Field %s not exists but required for scheme %s", FIELD_PKEY_SECP256K1, getScheme()));
     }
-    Bytes pubKey = Bytes.wrap(((BytesValue) nodeRecord.get(FIELD_PKEY_SECP256K1)).extractArray());
+    Bytes pubKey = (Bytes) nodeRecord.get(FIELD_PKEY_SECP256K1);
     ECDSASignature ecdsaSignature =
         new ECDSASignature(
             new BigInteger(1, nodeRecord.getSignature().slice(0, 32).toArray()),
@@ -89,8 +83,8 @@ public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
   public Bytes getNodeId(NodeRecord nodeRecord) {
     verify(nodeRecord);
     Object key = nodeRecord.getKey(FIELD_PKEY_SECP256K1);
-    if (key instanceof BytesValue) {
-      return sha256((BytesValue) key);
+    if (key instanceof Bytes) {
+      return sha256((Bytes) key);
     }
     return sha256((Bytes) key);
   }
@@ -108,8 +102,8 @@ public class EnrSchemeV4Interpreter implements EnrSchemeInterpreter {
   public RlpString encode(String key, Object object) {
     if (object instanceof Bytes) {
       return fromBytes((Bytes) object);
-    } else if (object instanceof BytesValue) {
-      return fromBytes(Bytes.wrap(((BytesValue) object).extractArray()));
+    } else if (object instanceof Bytes) {
+      return fromBytes((Bytes) object);
     } else if (object instanceof Number) {
       return fromNumber((Number) object);
     } else if (object == null) {

@@ -16,8 +16,6 @@ package org.ethereum.beacon.discovery.message;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.IdentityScheme;
 
-// import tech.pegasys.artemis.util.bytes.BytesValue;
-
 public interface DiscoveryMessage {
   IdentityScheme getIdentityScheme();
 

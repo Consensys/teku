@@ -34,9 +34,6 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
-// import tech.pegasys.artemis.util.bytes.Bytes4;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /** Discovery UDP client */
 public class DiscoveryClientImpl implements DiscoveryClient {
   private static final int RECREATION_TIMEOUT = 5000;

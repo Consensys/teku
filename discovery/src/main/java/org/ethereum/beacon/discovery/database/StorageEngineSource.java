@@ -13,7 +13,7 @@
 
 package org.ethereum.beacon.discovery.database;
 
-import org.ethereum.beacon.discovery.type.BytesValue;
+import org.apache.tuweni.bytes.Bytes;
 
 /**
  * Data source supplier based on a specific key-value storage engine like RocksDB, LevelDB, etc.
@@ -23,8 +23,7 @@ import org.ethereum.beacon.discovery.type.BytesValue;
  *
  * @param <ValueType> a value type.
  */
-public interface StorageEngineSource<ValueType>
-    extends BatchUpdateDataSource<BytesValue, ValueType> {
+public interface StorageEngineSource<ValueType> extends BatchUpdateDataSource<Bytes, ValueType> {
 
   /**
    * Opens key-value storage.

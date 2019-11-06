@@ -24,8 +24,6 @@ import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.javatuples.Pair;
 
-// import tech.pegasys.artemis.util.bytes.Bytes;
-
 /**
  * Assuming we have some unknown packet in {@link Field#PACKET_UNKNOWN}, resolves sender node id
  * using `tag` field of the packet. Next, puts it to the {@link Field#SESSION_LOOKUP} so sender

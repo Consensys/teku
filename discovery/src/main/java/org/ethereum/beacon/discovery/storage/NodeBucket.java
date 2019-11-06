@@ -24,13 +24,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
-import org.ethereum.beacon.discovery.type.BytesValue;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
-
-// import tech.pegasys.artemis.util.bytes.Bytes;
 
 /**
  * Storage for nodes, K-Bucket. Holds only {@link #K} nodes, replacing nodes with the same nodeId
@@ -53,20 +50,16 @@ public class NodeBucket {
       };
   private final TreeSet<NodeRecordInfo> bucket = new TreeSet<>(COMPARATOR);
 
-  public static NodeBucket fromRlpBytes(BytesValue bytes, NodeRecordFactory nodeRecordFactory) {
+  public static NodeBucket fromRlpBytes(Bytes bytes, NodeRecordFactory nodeRecordFactory) {
     NodeBucket nodeBucket = new NodeBucket();
-    ((RlpList) RlpDecoder.decode(bytes.extractArray()).getValues().get(0))
+    ((RlpList) RlpDecoder.decode(bytes.toArray()).getValues().get(0))
         .getValues().stream()
             .map(rt -> (RlpString) rt)
             .map(RlpString::getBytes)
-            .map(BytesValue::wrap)
-            .map((BytesValue bytes1) -> NodeRecordInfo.fromRlpBytes(bytes1, nodeRecordFactory))
+            .map(Bytes::wrap)
+            .map((Bytes bytes1) -> NodeRecordInfo.fromRlpBytes(bytes1, nodeRecordFactory))
             .forEach(nodeBucket::put);
     return nodeBucket;
-  }
-
-  public static NodeBucket fromRlpBytes(Bytes bytes, NodeRecordFactory nodeRecordFactory) {
-    return fromRlpBytes(BytesValue.wrap(bytes.toArray()), nodeRecordFactory);
   }
 
   public synchronized boolean put(NodeRecordInfo nodeRecord) {
@@ -100,16 +93,16 @@ public class NodeBucket {
     nodeRecords.forEach(this::put);
   }
 
-  public synchronized BytesValue toRlpBytes() {
+  public synchronized Bytes toRlpBytes() {
     byte[] res =
         RlpEncoder.encode(
             new RlpList(
                 bucket.stream()
                     .map(NodeRecordInfo::toRlpBytes)
-                    .map(BytesValue::extractArray)
+                    .map(Bytes::toArray)
                     .map(RlpString::create)
                     .collect(Collectors.toList())));
-    return BytesValue.wrap(res);
+    return Bytes.wrap(res);
   }
 
   public int size() {

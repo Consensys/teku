@@ -20,10 +20,6 @@ import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
 
-// import tech.pegasys.artemis.util.bytes.Bytes1;
-// import tech.pegasys.artemis.util.bytes.Bytes;
-// import tech.pegasys.artemis.util.uint.UInt64;
-
 /**
  * PING checks whether the recipient is alive and informs it about the sender's ENR sequence number.
  */

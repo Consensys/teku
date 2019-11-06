@@ -13,16 +13,12 @@
 
 package org.ethereum.beacon.discovery;
 
-// import static org.junit.Assert.assertEquals;
-
 import java.math.BigInteger;
-import org.ethereum.beacon.discovery.type.BytesValue;
+import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.util.Utils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
-
-// import tech.pegasys.artemis.util.bytes.BytesValue;
 
 /**
  * Secondary tests not directly related to discovery but clarifying functions used somewhere in
@@ -35,10 +31,9 @@ public class SubTests {
    */
   @Test
   public void testPubKeyBadPrefix() {
-    BytesValue privKey =
-        BytesValue.fromHexString(
-            "0xade78b68f25611ea57532f86bf01da909cc463465ed9efce9395403ff7fc99b5");
-    ECKeyPair badKey = ECKeyPair.create(privKey.extractArray());
+    Bytes privKey =
+        Bytes.fromHexString("0xade78b68f25611ea57532f86bf01da909cc463465ed9efce9395403ff7fc99b5");
+    ECKeyPair badKey = ECKeyPair.create(privKey.toArray());
     byte[] pubKey = Utils.extractBytesFromUnsignedBigInt(badKey.getPublicKey());
     Assertions.assertEquals(64, pubKey.length);
   }
