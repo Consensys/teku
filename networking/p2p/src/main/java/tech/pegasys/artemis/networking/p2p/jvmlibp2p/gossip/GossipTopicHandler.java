@@ -51,14 +51,13 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
 
   @Override
   public final void accept(MessageApi message) {
-    Bytes bytes = Bytes.wrapByteBuf(message.getData());
+    Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", getTopic(), bytes.size());
       return;
-    } else {
-      LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
     }
+    LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
 
     Optional<T> data;
     try {
