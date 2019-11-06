@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -26,6 +27,7 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.ByteBuf;
+import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,7 @@ public class BlocksTopicHandlerTest {
 
   @BeforeEach
   public void setup() {
+    doReturn(CompletableFuture.completedFuture(null)).when(publisher).publish(any(), any());
     eventBus.register(blocksTopicHandler);
   }
 

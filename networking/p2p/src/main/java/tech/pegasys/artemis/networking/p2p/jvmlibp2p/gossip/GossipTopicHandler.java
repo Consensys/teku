@@ -51,20 +51,22 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
 
   @Override
   public final void accept(MessageApi message) {
-    Bytes bytes = Bytes.wrapByteBuf(message.getData());
+    Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", getTopic(), bytes.size());
       return;
-    } else {
-      LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
     }
+    LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
 
     Optional<T> data;
     try {
       data = processData(message, bytes);
     } catch (SSZException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
+      data = Optional.empty();
+    } catch (Throwable e) {
+      LOG.error("Encountered exception while processing message for topic {}", getTopic(), e);
       data = Optional.empty();
     }
 
@@ -87,6 +89,15 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
 
   private void gossip(Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", getTopic(), bytes.size());
-    publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), getTopic());
+    publisher
+        .publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), getTopic())
+        .whenComplete(
+            (res, err) -> {
+              if (err != null) {
+                LOG.debug("Failed to gossip message on {}", getTopic(), err);
+                return;
+              }
+              LOG.trace("Successfully gossiped message on {}", getTopic());
+            });
   }
 }
