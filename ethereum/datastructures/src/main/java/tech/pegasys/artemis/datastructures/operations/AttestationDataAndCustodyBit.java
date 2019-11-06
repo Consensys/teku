@@ -53,22 +53,6 @@ public class AttestationDataAndCustodyBit
     return fixedPartsList;
   }
 
-  public static AttestationDataAndCustodyBit fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new AttestationDataAndCustodyBit(
-                AttestationData.fromBytes(reader.readBytes()), reader.readBoolean()));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeBytes(data.toBytes());
-          writer.writeBoolean(custody_bit);
-        });
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(data, custody_bit);

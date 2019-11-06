@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +32,10 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class AttestationData implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 1;
+  public static final int SSZ_FIELD_COUNT = 3;
+
+  private final UnsignedLong slot;
+  private UnsignedLong index;
 
   // LMD GHOST vote
   private Bytes32 beacon_block_root;
@@ -44,7 +48,14 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
   private Crosslink crosslink;
 
   public AttestationData(
-      Bytes32 beacon_block_root, Checkpoint source, Checkpoint target, Crosslink crosslink) {
+      UnsignedLong slot,
+      UnsignedLong index,
+      Bytes32 beacon_block_root,
+      Checkpoint source,
+      Checkpoint target,
+      Crosslink crosslink) {
+    this.slot = slot;
+    this.index = index;
     this.beacon_block_root = beacon_block_root;
     this.source = source;
     this.target = target;
@@ -52,6 +63,8 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
   }
 
   public AttestationData(AttestationData attestationData) {
+    this.slot = attestationData.getSlot();
+    this.index = attestationData.getIndex();
     this.beacon_block_root = attestationData.getBeacon_block_root();
     this.source = new Checkpoint(attestationData.getSource());
     this.target = new Checkpoint(attestationData.getTarget());
@@ -69,61 +82,52 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root))));
+    fixedPartsList.addAll(
+        List.of(
+            SSZ.encodeUInt64(slot.longValue()),
+            SSZ.encodeUInt64(index.longValue()),
+            SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root))));
     fixedPartsList.addAll(source.get_fixed_parts());
     fixedPartsList.addAll(target.get_fixed_parts());
     fixedPartsList.addAll(crosslink.get_fixed_parts());
     return fixedPartsList;
   }
 
-  public static AttestationData fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new AttestationData(
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                Checkpoint.fromBytes(reader.readBytes()),
-                Checkpoint.fromBytes(reader.readBytes()),
-                Crosslink.fromBytes(reader.readBytes())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytes(beacon_block_root);
-          writer.writeBytes(source.toBytes());
-          writer.writeBytes(target.toBytes());
-          writer.writeBytes(crosslink.toBytes());
-        });
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final AttestationData that = (AttestationData) o;
+    return Objects.equals(slot, that.slot)
+        && Objects.equals(index, that.index)
+        && Objects.equals(beacon_block_root, that.beacon_block_root)
+        && Objects.equals(source, that.source)
+        && Objects.equals(target, that.target)
+        && Objects.equals(crosslink, that.crosslink);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(beacon_block_root, source, target, crosslink);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof AttestationData)) {
-      return false;
-    }
-
-    AttestationData other = (AttestationData) obj;
-    return Objects.equals(this.getBeacon_block_root(), other.getBeacon_block_root())
-        && Objects.equals(this.getSource(), other.getSource())
-        && Objects.equals(this.getTarget(), other.getTarget())
-        && Objects.equals(this.getCrosslink(), other.getCrosslink());
+    return Objects.hash(slot, index, beacon_block_root, source, target, crosslink);
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+  public UnsignedLong getSlot() {
+    return slot;
+  }
+
+  public UnsignedLong getIndex() {
+    return index;
+  }
+
+  public void setIndex(final UnsignedLong index) {
+    this.index = index;
+  }
+
   public Bytes32 getBeacon_block_root() {
     return beacon_block_root;
   }

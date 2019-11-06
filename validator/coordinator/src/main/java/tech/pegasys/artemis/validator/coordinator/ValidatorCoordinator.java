@@ -190,6 +190,7 @@ public class ValidatorCoordinator {
 
       List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters =
           AttestationUtil.getAttesterInformation(headState, committeeAssignments);
+      // TODO: 0.9.0 We need to set the index on this data somewhere
       AttestationData genericAttestationData =
           AttestationUtil.getGenericAttestationData(headState, headBlock);
 

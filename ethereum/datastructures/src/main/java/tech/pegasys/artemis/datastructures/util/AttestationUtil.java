@@ -119,7 +119,8 @@ public class AttestationUtil {
     Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
 
     // Set attestation data
-    return new AttestationData(beacon_block_root, source, target, new Crosslink());
+    return new AttestationData(
+        slot, UnsignedLong.ZERO, beacon_block_root, source, target, new Crosslink());
   }
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {

@@ -624,6 +624,8 @@ public class MapObjectUtil {
   private static AttestationData getAttestationData(Map map) {
 
     return new AttestationData(
+        UnsignedLong.valueOf(map.get("slot").toString()),
+        UnsignedLong.valueOf(map.get("index").toString()),
         Bytes32.fromHexString(map.get("beacon_block_root").toString()),
         getCheckpoint((Map) map.get("source")),
         getCheckpoint((Map) map.get("target")),
