@@ -19,10 +19,16 @@ defaultTasks 'build','checkLicenses'
 
 def buildAliases = [
   'dev': [
+    'compileJava',
+    'compileTestJava',
+    'compileJmhJava',
+    'compileIntegrationTestJava',
+    'compileReferenceTestJava',
     'spotlessApply',
     'build',
     'checkLicenses',
-    'javadoc'],
+    // TODO - Fix javadoc task
+    /*'javadoc'*/],
   'mash': [
     'clean',
     'spotlessApply',
