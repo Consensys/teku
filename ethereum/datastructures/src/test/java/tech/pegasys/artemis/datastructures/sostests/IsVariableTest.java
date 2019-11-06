@@ -28,12 +28,9 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -139,18 +136,6 @@ public class IsVariableTest {
   void isCheckpointVariableTest() {
     assertEquals(
         false, SimpleOffsetSerializer.classReflectionInfo.get(Checkpoint.class).isVariable());
-  }
-
-  @Test
-  void isCompactCommitteVariableTest() {
-    assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(CompactCommittee.class).isVariable());
-  }
-
-  @Test
-  void isCrosslinkVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(Crosslink.class).isVariable());
   }
 
   @Test

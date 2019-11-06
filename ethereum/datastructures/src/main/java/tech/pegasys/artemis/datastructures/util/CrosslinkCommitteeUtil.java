@@ -16,13 +16,15 @@ package tech.pegasys.artemis.datastructures.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
+import static tech.pegasys.artemis.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
+import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -34,7 +36,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class CrosslinkCommitteeUtil {
 
@@ -49,7 +50,7 @@ public class CrosslinkCommitteeUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
   public static Integer compute_shuffled_index(int index, int index_count, Bytes32 seed) {
-    checkArgument(index < index_count, "CrosslinkCommitteeUtil.get_shuffled_index1");
+    checkArgument(index < index_count, "CrosslinkCommitteeUtil.compute_shuffled_index1");
 
     int indexRet = index;
     byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
@@ -88,6 +89,32 @@ public class CrosslinkCommitteeUtil {
   }
 
   /**
+   * @param state BeaconState
+   * @param indices ValidatorIndices
+   * @param seed A hash used for randomness
+   * @return the proposer index
+   */
+  public static Integer compute_proposer_index(
+      BeaconState state, List<Integer> indices, Bytes32 seed) {
+    checkArgument(indices.size() > 0, "CrosslinkCommitteeUtil.compute_proposer_index");
+    long MAX_RANDOM_BYTE = (long) Math.pow(2.0d, 8.0d) - 1;
+    int i = 0;
+    while (true) {
+      int index = compute_shuffled_index(i % indices.size(), indices.size(), seed);
+      int candidate_index = indices.get(index);
+      Bytes digest = Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)));
+      byte random_byte = digest.get(i % 32);
+      UnsignedLong effective_balance =
+          state.getValidators().get(candidate_index).getEffective_balance();
+
+      long minRandomBalance = effective_balance.longValue() * MAX_RANDOM_BYTE;
+      long maxRandomBalance = MAX_EFFECTIVE_BALANCE * random_byte;
+      if (minRandomBalance >= maxRandomBalance) return candidate_index;
+      i++;
+    }
+  }
+
+  /**
    * Computes indices of a new committee based upon the seed parameter
    *
    * @param indices
@@ -112,31 +139,34 @@ public class CrosslinkCommitteeUtil {
    * Return the crosslink committee at ``epoch`` for ``shard``.
    *
    * @param state
-   * @param epoch
-   * @param shard
+   * @param slot
+   * @param index
    * @return
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_crosslink_committee</a>
    */
-  public static List<Integer> get_crosslink_committee(
-      BeaconState state, UnsignedLong epoch, UnsignedLong shard) {
+  public static List<Integer> get_beacon_committee(
+      BeaconState state, UnsignedLong slot, UnsignedLong index) {
+    /*
     if (state instanceof BeaconStateWithCache
         && ((BeaconStateWithCache) state).getCrossLinkCommittee(epoch, shard) != null) {
       BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
       return stateWithCash.getCrossLinkCommittee(epoch, shard);
     } else {
-      int index =
-          shard
-              .plus(UnsignedLong.valueOf(SHARD_COUNT).minus(get_start_shard(state, epoch)))
-              .mod(UnsignedLong.valueOf(SHARD_COUNT))
-              .intValue();
-      List<Integer> committee =
-          compute_committee(
-              get_active_validator_indices(state, epoch),
-              get_seed(state, epoch),
-              index,
-              get_committee_count(state, epoch).intValue());
+    */
+    UnsignedLong epoch = compute_epoch_at_slot(slot);
+    UnsignedLong committees_per_slot = get_committee_count_at_slot(state, slot);
+    return compute_committee(
+        get_active_validator_indices(state, slot),
+        get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),
+        toIntExact(
+            slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+                .times(committees_per_slot)
+                .plus(index)
+                .longValue()),
+        toIntExact(committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).longValue()));
 
+    /*
       // Client specific optimization
       if (state instanceof BeaconStateWithCache) {
         ((BeaconStateWithCache) state).setCrossLinkCommittee(committee, epoch, shard);
@@ -144,49 +174,7 @@ public class CrosslinkCommitteeUtil {
 
       return committee;
     }
-  }
-
-  /**
-   * Returns the index of a start shard for the provided epoch
-   *
-   * @param state
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_start_shard</a>
-   */
-  public static UnsignedLong get_start_shard(BeaconState state, UnsignedLong epoch) {
-    if (state instanceof BeaconStateWithCache
-        && ((BeaconStateWithCache) state).getStartShard(epoch) != null) {
-      BeaconStateWithCache stateWithCash = (BeaconStateWithCache) state;
-      return stateWithCash.getStartShard(epoch);
-    } else {
-      checkArgument(
-          epoch.compareTo(get_current_epoch(state).plus(UnsignedLong.ONE)) <= 0,
-          "CrosslinkCommitteeUtil.get_start_shard");
-      UnsignedLong check_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
-      UnsignedLong shard =
-          state
-              .getStart_shard()
-              .plus(get_shard_delta(state, get_current_epoch(state)))
-              .mod(UnsignedLong.valueOf(SHARD_COUNT));
-
-      while (check_epoch.compareTo(epoch) > 0) {
-        check_epoch = check_epoch.minus(UnsignedLong.ONE);
-        shard =
-            shard
-                .plus(UnsignedLong.valueOf(SHARD_COUNT))
-                .minus(get_shard_delta(state, check_epoch))
-                .mod(UnsignedLong.valueOf(SHARD_COUNT));
-      }
-
-      // Client specific optimization
-      if (state instanceof BeaconStateWithCache) {
-        ((BeaconStateWithCache) state).setStartShard(epoch, shard);
-      }
-
-      return shard;
-    }
+      */
   }
 
   /**
@@ -200,7 +188,8 @@ public class CrosslinkCommitteeUtil {
    */
   public static UnsignedLong get_shard_delta(BeaconState state, UnsignedLong epoch) {
     return min(
-        get_committee_count(state, epoch),
-        UnsignedLong.valueOf(SHARD_COUNT - Math.floorDiv(SHARD_COUNT, SLOTS_PER_EPOCH)));
+        get_committee_count_at_slot(state, epoch),
+        UnsignedLong.valueOf(
+            MAX_COMMITTEES_PER_SLOT - Math.floorDiv(MAX_COMMITTEES_PER_SLOT, SLOTS_PER_EPOCH)));
   }
 }

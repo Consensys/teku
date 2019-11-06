@@ -17,7 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
@@ -125,7 +125,7 @@ public class ForkChoiceUtil {
     // Execute the LMD-GHOST fork choice
     Bytes32 head = store.getJustifiedCheckpoint().getRoot();
     UnsignedLong justified_slot =
-        compute_start_slot_of_epoch(store.getJustifiedCheckpoint().getEpoch());
+        compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch());
 
     while (true) {
       final Bytes32 head_in_filter = head;
@@ -214,7 +214,7 @@ public class ForkChoiceUtil {
     checkArgument(
         block
                 .getSlot()
-                .compareTo(compute_start_slot_of_epoch(store.getFinalizedCheckpoint().getEpoch()))
+                .compareTo(compute_start_slot_at_epoch(store.getFinalizedCheckpoint().getEpoch()))
             > 0,
         "on_block: Check that block is later than the finalized epoch slot");
 
@@ -271,7 +271,7 @@ public class ForkChoiceUtil {
                 base_state
                     .getGenesis_time()
                     .plus(
-                        compute_start_slot_of_epoch(target.getEpoch())
+                        compute_start_slot_at_epoch(target.getEpoch())
                             .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0,
         "on_attestation: Attestations cannot be from the future epochs");
@@ -279,7 +279,7 @@ public class ForkChoiceUtil {
     // Store target checkpoint state if not yet seen
     if (!store.containsCheckpointState(target)) {
       stateTransition.process_slots(
-          base_state, compute_start_slot_of_epoch(target.getEpoch()), false);
+          base_state, compute_start_slot_at_epoch(target.getEpoch()), false);
       store.putCheckpointState(target, base_state);
     }
     BeaconState target_state = store.getCheckpointState(target);

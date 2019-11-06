@@ -138,12 +138,12 @@ public class StateTransition {
   private static void process_epoch(BeaconStateWithCache state) throws EpochProcessingException {
     // Note: the lines with @ label here will be inserted here in a future phase
     process_justification_and_finalization(state);
-    process_crosslinks(state);
     process_rewards_and_penalties(state);
     process_registry_updates(state);
     // @process_reveal_deadlines
     // @process_challenge_deadlines
     process_slashings(state);
+    // @update_period_committee
     process_final_updates(state);
     // @after_process_final_updates
   }

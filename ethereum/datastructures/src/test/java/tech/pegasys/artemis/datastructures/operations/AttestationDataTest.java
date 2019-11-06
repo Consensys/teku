@@ -24,7 +24,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 
 class AttestationDataTest {
   private int seed = 100;

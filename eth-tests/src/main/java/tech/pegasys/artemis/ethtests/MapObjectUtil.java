@@ -37,13 +37,10 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -79,8 +76,6 @@ public class MapObjectUtil {
     else if (classtype.equals(BeaconStateWithCache.class))
       return getBeaconStateWithCache((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
-    else if (classtype.equals(CompactCommittee.class)) return getCompactCommittee((Map) object);
-    else if (classtype.equals(Crosslink.class)) return getCrossLink((Map) object);
     else if (classtype.equals(Deposit.class)) return getDeposit((Map) object);
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
@@ -226,27 +221,6 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static CompactCommittee getCompactCommittee(Map map) {
-    SSZList<BLSPublicKey> pubkeys =
-        new SSZList<>(
-            ((List<String>) map.get("pubkeys"))
-                .stream()
-                    .map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e)))
-                    .collect(Collectors.toList()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE,
-            BLSPublicKey.class);
-    SSZList<UnsignedLong> compact_validators =
-        new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("compact_validators"))
-                .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
-                    .collect(Collectors.toList()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE,
-            UnsignedLong.class);
-    return new CompactCommittee(pubkeys, compact_validators);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
   private static BeaconState getBeaconState(Map map) {
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
@@ -334,16 +308,6 @@ public class MapObjectUtil {
                 .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             PendingAttestation.class);
-    SSZVector<Crosslink> previous_crosslinks =
-        new SSZVector<>(
-            ((List<Map>) map.get("previous_crosslinks"))
-                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
-            Crosslink.class);
-    SSZVector<Crosslink> current_crosslinks =
-        new SSZVector<>(
-            ((List<Map>) map.get("current_crosslinks"))
-                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
-            Crosslink.class);
     Bitvector justification_bits =
         Bitvector.fromBytes(
             Bytes.fromHexString(map.get("justification_bits").toString()),
@@ -374,8 +338,6 @@ public class MapObjectUtil {
         slashings,
         previous_epoch_attestations,
         current_epoch_attestations,
-        previous_crosslinks,
-        current_crosslinks,
         justification_bits,
         previous_justified_checkpoint,
         current_justified_checkpoint,
@@ -650,8 +612,7 @@ public class MapObjectUtil {
     return new AttestationData(
         Bytes32.fromHexString(map.get("beacon_block_root").toString()),
         getCheckpoint((Map) map.get("source")),
-        getCheckpoint((Map) map.get("target")),
-        getCrossLink((Map) map.get("crosslink")));
+        getCheckpoint((Map) map.get("target")));
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -659,17 +620,6 @@ public class MapObjectUtil {
     return new Checkpoint(
         UnsignedLong.valueOf(map.get("epoch").toString()),
         Bytes32.fromHexString(map.get("root").toString()));
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static Crosslink getCrossLink(Map map) {
-
-    return new Crosslink(
-        UnsignedLong.valueOf(map.get("shard").toString()),
-        Bytes32.fromHexString(map.get("parent_root").toString()),
-        UnsignedLong.valueOf(map.get("start_epoch").toString()),
-        UnsignedLong.valueOf(map.get("end_epoch").toString()),
-        Bytes32.fromHexString(map.get("data_root").toString()));
   }
 
   @SuppressWarnings({"rawtypes"})

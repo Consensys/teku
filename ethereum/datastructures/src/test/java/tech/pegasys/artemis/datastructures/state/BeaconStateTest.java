@@ -55,7 +55,7 @@ class BeaconStateTest {
     BeaconStateUtil.activate_validator(state, validator_index, false);
     activation_epoch = state.getValidator_registry().get(validator_index).getActivation_epoch();
     assertThat(activation_epoch)
-        .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + ACTIVATION_EXIT_DELAY));
+        .isEqualTo(UnsignedLong.valueOf(GENESIS_EPOCH + 1 + MAX_SEED_LOOKAHEAD));
   }
 
   @Test
@@ -140,9 +140,9 @@ class BeaconStateTest {
     assertThat(get_current_epoch(state).compareTo(UnsignedLong.valueOf(LATEST_RANDAO_MIXES_LENGTH)))
         .isEqualTo(0);
     List<Bytes32> latest_randao_mixes = state.getRandao_mixes();
-    latest_randao_mixes.set(ACTIVATION_EXIT_DELAY + 1, Bytes32.fromHexString("0x029a"));
+    latest_randao_mixes.set(MAX_SEED_LOOKAHEAD + 1, Bytes32.fromHexString("0x029a"));
 
-    UnsignedLong epoch = UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY + MIN_SEED_LOOKAHEAD + 1);
+    UnsignedLong epoch = UnsignedLong.valueOf(MAX_SEED_LOOKAHEAD + MIN_SEED_LOOKAHEAD + 1);
     Bytes32 randao_mix =
         get_randao_mix(state, epoch.minus(UnsignedLong.valueOf(MIN_SEED_LOOKAHEAD)));
     assertThat(randao_mix).isEqualTo(Bytes32.fromHexString("0x029a"));
@@ -316,8 +316,8 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
-            Constants.SHARD_COUNT,
-            Constants.SHARD_COUNT);
+            Constants.MAX_COMMITTEES_PER_SLOT,
+            Constants.MAX_COMMITTEES_PER_SLOT);
     assertEquals(
         vectorLengths,
         SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).getVectorLengths());
