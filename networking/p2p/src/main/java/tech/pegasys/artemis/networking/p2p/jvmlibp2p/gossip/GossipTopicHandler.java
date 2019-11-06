@@ -66,6 +66,9 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
     } catch (SSZException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
       data = Optional.empty();
+    } catch (Throwable e) {
+      LOG.error("Encountered exception while processing message for topic {}", getTopic(), e);
+      data = Optional.empty();
     }
 
     // Post and re-gossip data on successful processing
@@ -87,6 +90,15 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
 
   private void gossip(Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", getTopic(), bytes.size());
-    publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), getTopic());
+    publisher
+        .publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), getTopic())
+        .whenComplete(
+            (res, err) -> {
+              if (err != null) {
+                LOG.debug("Failed to gossip message on {}", getTopic(), err);
+                return;
+              }
+              LOG.trace("Successfully gossiped message on {}", getTopic());
+            });
   }
 }
