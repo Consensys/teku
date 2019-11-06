@@ -205,10 +205,6 @@ workflows:
     jobs:
       - assemble
       - spotless
-      - referenceTests:
-          requires:
-            - assemble
-            - spotless
       - unitTests:
           requires:
             - assemble
@@ -231,7 +227,6 @@ workflows:
           requires:
             - unitTests
             - integrationTests
-            - referenceTests
             - docker
       - publishDocker:
           filters:
@@ -242,5 +237,4 @@ workflows:
           requires:
             - unitTests
             - integrationTests
-            - referenceTests
             - docker
