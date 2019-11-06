@@ -28,7 +28,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -115,12 +114,6 @@ public class IsVariableTest {
   void isProposerSlashingVariableTest() {
     assertEquals(
         false, SimpleOffsetSerializer.classReflectionInfo.get(ProposerSlashing.class).isVariable());
-  }
-
-  @Test
-  void isTransferVariableTest() {
-    assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(Transfer.class).isVariable());
   }
 
   @Test

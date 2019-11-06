@@ -26,27 +26,20 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domai
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
-import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
-import static tech.pegasys.artemis.util.config.Constants.BLS_WITHDRAWAL_PREFIX;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_RANDAO;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_TRANSFER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EPOCHS_PER_CROSSLINK;
-import static tech.pegasys.artemis.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 import static tech.pegasys.artemis.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -55,10 +48,8 @@ import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -73,7 +64,6 @@ import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -215,17 +205,12 @@ public final class BlockProcessorUtil {
                           .minus(state.getEth1_deposit_index())
                           .longValue())),
           "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
-      Set<Transfer> transfersSet = new HashSet<>(body.getTransfers());
-      checkArgument(
-          body.getTransfers().size() == transfersSet.size(),
-          "process_operations: Verify that there are no duplicate transfers");
 
       process_proposer_slashings(state, body.getProposer_slashings());
       process_attester_slashings(state, body.getAttester_slashings());
       process_attestations(state, body.getAttestations());
       process_deposits(state, body.getDeposits());
       process_voluntary_exits(state, body.getVoluntary_exits());
-      process_transfers(state, body.getTransfers());
 
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());
@@ -531,110 +516,6 @@ public final class BlockProcessorUtil {
 
         // - Run initiate_validator_exit(state, exit.validator_index)
         initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
-      }
-    } catch (IllegalArgumentException e) {
-      STDOUT.log(Level.WARN, e.getMessage());
-      throw new BlockProcessingException(e);
-    }
-  }
-
-  /**
-   * Processes transfers
-   *
-   * @param state
-   * @param transfers
-   * @throws BlockProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#transfers</a>
-   */
-  public static void process_transfers(BeaconState state, List<Transfer> transfers)
-      throws BlockProcessingException {
-    try {
-
-      for (Transfer transfer : transfers) {
-        checkArgument(
-            state
-                    .getBalances()
-                    .get(transfer.getSender().intValue())
-                    .compareTo(
-                        max(
-                            max(transfer.getAmount().plus(transfer.getFee()), transfer.getAmount()),
-                            transfer.getFee()))
-                >= 0,
-            "process_transfers: Verify the balance the covers amount and fee (with overflow protection)");
-
-        checkArgument(
-            state.getSlot().equals(transfer.getSlot()),
-            "process_tranfers: A transfer is valid in only one slot");
-
-        checkArgument(
-            state
-                    .getValidators()
-                    .get(transfer.getSender().intValue())
-                    .getActivation_eligibility_epoch()
-                    .equals(FAR_FUTURE_EPOCH)
-                || get_current_epoch(state)
-                        .compareTo(
-                            state
-                                .getValidators()
-                                .get(transfer.getSender().intValue())
-                                .getWithdrawable_epoch())
-                    >= 0
-                || state
-                        .getBalances()
-                        .get(transfer.getSender().intValue())
-                        .compareTo(
-                            transfer
-                                .getAmount()
-                                .plus(transfer.getFee())
-                                .plus(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)))
-                    >= 0,
-            "process_tranfers: Sender must satisfy one of the conditions");
-
-        checkArgument(
-            state
-                .getValidators()
-                .get(transfer.getSender().intValue())
-                .getWithdrawal_credentials()
-                .equals(
-                    Bytes.wrap(
-                        BLS_WITHDRAWAL_PREFIX,
-                        Hash.sha2_256(transfer.getPubkey().toBytes().slice(1)))),
-            "process_tranfers: Verify that the pubkey is valid");
-
-        checkArgument(
-            bls_verify(
-                transfer.getPubkey(),
-                transfer.signing_root("signature"),
-                transfer.getSignature(),
-                get_domain(state, DOMAIN_TRANSFER)),
-            "process_tranfers: Verify that the signature is valid");
-
-        // Process transfers
-        decrease_balance(
-            state, transfer.getSender().intValue(), transfer.getAmount().plus(transfer.getFee()));
-        increase_balance(state, transfer.getRecipient().intValue(), transfer.getAmount());
-        increase_balance(state, get_beacon_proposer_index(state), transfer.getFee());
-
-        checkArgument(
-            !(UnsignedLong.ZERO.compareTo(state.getBalances().get(transfer.getSender().intValue()))
-                    < 0
-                && state
-                        .getBalances()
-                        .get(transfer.getSender().intValue())
-                        .compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT))
-                    < 0),
-            "process_tranfers: Verify balances are not dust 1");
-        checkArgument(
-            !(UnsignedLong.ZERO.compareTo(
-                        state.getBalances().get(transfer.getRecipient().intValue()))
-                    < 0
-                && state
-                        .getBalances()
-                        .get(transfer.getSender().intValue())
-                        .compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT))
-                    < 0),
-            "process_tranfers: Verify balances are not dust 2");
       }
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());

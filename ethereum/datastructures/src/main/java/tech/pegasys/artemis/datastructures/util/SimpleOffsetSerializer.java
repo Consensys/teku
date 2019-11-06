@@ -44,7 +44,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -91,7 +90,6 @@ public class SimpleOffsetSerializer {
         IndexedAttestation.class, new ReflectionInformation(IndexedAttestation.class));
     classReflectionInfo.put(
         ProposerSlashing.class, new ReflectionInformation(ProposerSlashing.class));
-    classReflectionInfo.put(Transfer.class, new ReflectionInformation(Transfer.class));
     classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
     classReflectionInfo.put(BeaconState.class, new ReflectionInformation(BeaconState.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));

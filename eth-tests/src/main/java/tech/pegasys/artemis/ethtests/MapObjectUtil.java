@@ -37,7 +37,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -95,7 +94,6 @@ public class MapObjectUtil {
     else if (classtype.equals(SecretKey.class)) return getSecretKey(object.toString());
     else if (classtype.equals(Signature.class)) return getSignature(object.toString());
     else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
-    else if (classtype.equals(Transfer.class)) return getTransfer((Map) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
     else if (classtype.equals(Integer[].class)) return getIntegerArray((List) object);
@@ -483,13 +481,6 @@ public class MapObjectUtil {
                 .stream().map(e -> getVoluntaryExit(e)).collect(Collectors.toList()),
             Constants.MAX_VOLUNTARY_EXITS,
             VoluntaryExit.class);
-    SSZList<Transfer> transfers =
-        new SSZList<>(
-            new ArrayList<Transfer>(
-                ((List<Map>) map.get("transfers"))
-                    .stream().map(e -> getTransfer(e)).collect(Collectors.toList())),
-            Constants.MAX_TRANSFERS,
-            Transfer.class);
 
     return new BeaconBlockBody(
         randao_reveal,
@@ -499,22 +490,7 @@ public class MapObjectUtil {
         attester_slashings,
         attestations,
         deposits,
-        voluntary_exits,
-        transfers);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static Transfer getTransfer(Map map) {
-    UnsignedLong sender = UnsignedLong.valueOf(map.get("sender").toString());
-    UnsignedLong recipient = UnsignedLong.valueOf(map.get("recipient").toString());
-    UnsignedLong amount = UnsignedLong.valueOf(map.get("amount").toString());
-    UnsignedLong fee = UnsignedLong.valueOf(map.get("fee").toString());
-    UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
-    BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
-    BLSSignature signature =
-        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
-
-    return new Transfer(sender, recipient, amount, fee, slot, pubkey, signature);
+        voluntary_exits);
   }
 
   @SuppressWarnings({"rawtypes"})

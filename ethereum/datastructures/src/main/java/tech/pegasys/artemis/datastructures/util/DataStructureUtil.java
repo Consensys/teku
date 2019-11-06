@@ -36,7 +36,6 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -212,9 +211,7 @@ public final class DataStructureUtil {
             VoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
             DataStructureUtil::randomVoluntaryExit,
-            seed++),
-        randomSSZList(
-            Transfer.class, Constants.MAX_TRANSFERS, DataStructureUtil::randomTransfer, seed++));
+            seed++));
   }
 
   public static ProposerSlashing randomProposerSlashing(int seed) {
@@ -298,17 +295,6 @@ public final class DataStructureUtil {
   public static VoluntaryExit randomVoluntaryExit(int seed) {
     return new VoluntaryExit(
         randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random(seed++));
-  }
-
-  public static Transfer randomTransfer(int seed) {
-    return new Transfer(
-        randomUnsignedLong(seed),
-        randomUnsignedLong(seed + 1),
-        randomUnsignedLong(seed + 2),
-        randomUnsignedLong(seed + 3),
-        randomUnsignedLong(seed + 4),
-        BLSPublicKey.random(seed + 5),
-        BLSSignature.random(seed + 6));
   }
 
   public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {

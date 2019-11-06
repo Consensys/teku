@@ -32,7 +32,6 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Crosslink;
@@ -208,25 +207,6 @@ class FixedPartSSZSOSTest {
 
     // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
     // assertEquals(sszVoluntaryExitBytes, sosVoluntaryExitBytes);
-  }
-
-  @Test
-  void testTransferSOS() {
-    UnsignedLong sender = randomUnsignedLong(100);
-    UnsignedLong recipient = randomUnsignedLong(101);
-    UnsignedLong amount = randomUnsignedLong(100);
-    UnsignedLong fee = randomUnsignedLong(99);
-    UnsignedLong slot = UnsignedLong.valueOf(27);
-    BLSPublicKey pubkey = BLSPublicKey.random(100);
-    BLSSignature signature = BLSSignature.random(100);
-
-    Transfer transfer = new Transfer(sender, recipient, amount, fee, slot, pubkey, signature);
-
-    Bytes sszTransferBytes = transfer.toBytes();
-    Bytes sosTransferBytes = SimpleOffsetSerializer.serialize(transfer);
-
-    // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
-    // assertEquals(sszTransferBytes, sosTransferBytes);
   }
 
   @Test

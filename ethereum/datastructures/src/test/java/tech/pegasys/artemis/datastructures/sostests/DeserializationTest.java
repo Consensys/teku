@@ -34,7 +34,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -159,15 +158,6 @@ public class DeserializationTest {
         proposerSlashing,
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(proposerSlashing), ProposerSlashing.class));
-  }
-
-  @Test
-  void TransferTest() {
-    Transfer transfer = DataStructureUtil.randomTransfer(100);
-    assertEquals(
-        transfer,
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(transfer), Transfer.class));
   }
 
   @Test
