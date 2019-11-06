@@ -52,14 +52,18 @@ public class BeaconChainUtil {
       final List<BLSKeyPair> validatorKeys, final ChainStorageClient chainStorageClient) {
     this.validatorKeys = validatorKeys;
     this.storageClient = chainStorageClient;
-    StartupUtil.setupInitialState(storageClient, 0, null, validatorKeys);
+    initializeStorage(chainStorageClient);
   }
 
   public static BeaconChainUtil create(
       final int validatorCount, final ChainStorageClient storageClient) {
     final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(validatorCount);
     return new BeaconChainUtil(validatorKeys, storageClient);
+  }
+
+  public void initializeStorage(final ChainStorageClient chainStorageClient) {
+    StartupUtil.setupInitialState(chainStorageClient, 0, null, validatorKeys);
   }
 
   public BeaconBlock createBlockAtSlot(final UnsignedLong slot)

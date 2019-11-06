@@ -323,6 +323,9 @@ subprojects {
   }
 
   dependencies {
+    implementation 'org.apache.logging.log4j:log4j-core'
+    runtime 'org.apache.logging.log4j:log4j-slf4j-impl'
+    
     testImplementation sourceSets.testSupport.output
     integrationTestImplementation sourceSets.testSupport.output
 
