@@ -164,6 +164,8 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, beacon_block_root),
             source.hash_tree_root(),
             target.hash_tree_root(),
