@@ -25,19 +25,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class GossipMessageHandlerIntegrationTest {
 
   private final NetworkFactory networkFactory = new NetworkFactory();
-  private final List<BLSKeyPair> validatorKeys =
-      new MockStartValidatorKeyPairFactory().generateKeyPairs(12);
 
   @AfterEach
   public void tearDown() {
@@ -50,7 +46,7 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
     final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1, storageClient1);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(validatorKeys, storageClient1);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(12, storageClient1);
 
     // Setup network 2
     final EventBus eventBus2 = spy(new EventBus());
