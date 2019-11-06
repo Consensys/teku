@@ -19,7 +19,6 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.Unpooled;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -59,23 +58,37 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
     }
     LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
 
-    Optional<T> data;
+    T data;
     try {
-      data = processData(message, bytes);
+      data = deserializeData(bytes);
+      if (!validateData(data)) {
+        LOG.trace("Received invalid message for topic: {}", getTopic());
+        return;
+      }
     } catch (SSZException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-      data = Optional.empty();
+      return;
     } catch (Throwable e) {
       LOG.error("Encountered exception while processing message for topic {}", getTopic(), e);
-      data = Optional.empty();
+      return;
     }
 
     // Post and re-gossip data on successful processing
-    data.ifPresent((__) -> gossip(bytes));
-    data.ifPresent(eventBus::post);
+    gossip(bytes);
+    eventBus.post(data);
   }
 
-  protected abstract Optional<T> processData(MessageApi message, Bytes bytes) throws SSZException;
+  private T deserializeData(Bytes bytes) throws SSZException {
+    final T deserialized = deserialize(bytes);
+    if (deserialized == null) {
+      throw new SSZException("Unable to deserialize message for topic " + getTopic());
+    }
+    return deserialized;
+  }
+
+  protected abstract T deserialize(Bytes bytes) throws SSZException;
+
+  protected abstract boolean validateData(T dataObject);
 
   @VisibleForTesting
   public final void gossip(final T data) {

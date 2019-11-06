@@ -27,10 +27,10 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.ByteBuf;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -71,7 +71,7 @@ public class GossipTopicHandlerTest {
 
   @Test
   public void accept_unsuccessfulProcessing() {
-    topicHandler.setShouldSuccessfullyProcessData(false);
+    topicHandler.setShouldValidate(false);
 
     final Bytes data = Bytes.fromHexString("0x1234");
     final MockSimpleOffsetSerializable mockObject = new MockSimpleOffsetSerializable(data);
@@ -227,7 +227,7 @@ public class GossipTopicHandlerTest {
   private static class MockTopicHandler extends GossipTopicHandler<MockSimpleOffsetSerializable>
       implements Consumer<MessageApi> {
 
-    private boolean shouldSuccessfullyProcessData = true;
+    private boolean shouldValidate = true;
 
     public MockTopicHandler(final PubsubPublisherApi publisher, final EventBus eventBus) {
       super(publisher, eventBus);
@@ -239,16 +239,17 @@ public class GossipTopicHandlerTest {
     }
 
     @Override
-    protected Optional<MockSimpleOffsetSerializable> processData(
-        final MessageApi message, final Bytes bytes) {
-      if (!shouldSuccessfullyProcessData) {
-        return Optional.empty();
-      }
-      return Optional.of(new MockSimpleOffsetSerializable(bytes));
+    protected MockSimpleOffsetSerializable deserialize(final Bytes bytes) throws SSZException {
+      return new MockSimpleOffsetSerializable(bytes);
     }
 
-    public void setShouldSuccessfullyProcessData(final boolean shouldSuccessfullyProcessData) {
-      this.shouldSuccessfullyProcessData = shouldSuccessfullyProcessData;
+    @Override
+    protected boolean validateData(final MockSimpleOffsetSerializable dataObject) {
+      return shouldValidate;
+    }
+
+    public void setShouldValidate(final boolean shouldValidate) {
+      this.shouldValidate = shouldValidate;
     }
   }
 }
