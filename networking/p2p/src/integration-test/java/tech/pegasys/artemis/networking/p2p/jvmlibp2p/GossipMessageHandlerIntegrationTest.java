@@ -14,13 +14,14 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import java.util.List;
+import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -78,15 +79,17 @@ public class GossipMessageHandlerIntegrationTest {
     eventBus1.post(newBlock);
 
     // Listen for new block event to arrive on networks 2 and 3
-    final ArgumentCaptor<BeaconBlock> blockCaptor = ArgumentCaptor.forClass(BeaconBlock.class);
+    final Collection<BeaconBlock> propagatedBlocks = new ConcurrentLinkedQueue<>();
     Waiter.waitFor(
         () -> {
-          verify(eventBus2, atLeast(1)).post(blockCaptor.capture());
-          verify(eventBus3, atLeast(1)).post(blockCaptor.capture());
+          final ArgumentCaptor<BeaconBlock> blockCaptor =
+              ArgumentCaptor.forClass(BeaconBlock.class);
+          verify(eventBus2, atLeastOnce()).post(blockCaptor.capture());
+          verify(eventBus3, atLeastOnce()).post(blockCaptor.capture());
+          propagatedBlocks.addAll(blockCaptor.getAllValues());
         });
 
     // Verify the expected block was gossiped across the network
-    final List<BeaconBlock> propagatedBlocks = blockCaptor.getAllValues();
     assertThat(propagatedBlocks.size()).isEqualTo(2);
     for (BeaconBlock propagatedBlock : propagatedBlocks) {
       assertThat(propagatedBlock).isEqualTo(newBlock);
