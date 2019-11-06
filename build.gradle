@@ -69,8 +69,6 @@ allprojects {
 
   dependencies {
     errorprone("com.google.errorprone:error_prone_core")
-    implementation 'org.apache.logging.log4j:log4j-core'
-    runtime 'org.apache.logging.log4j:log4j-slf4j-impl'
   }
 
   buildScan {
@@ -306,6 +304,9 @@ subprojects {
   }
 
   dependencies {
+    implementation 'org.apache.logging.log4j:log4j-core'
+    runtime 'org.apache.logging.log4j:log4j-slf4j-impl'
+    
     testImplementation sourceSets.testSupport.output
     integrationTestImplementation sourceSets.testSupport.output
 
