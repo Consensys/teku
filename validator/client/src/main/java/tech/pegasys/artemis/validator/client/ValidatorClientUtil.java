@@ -44,12 +44,12 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 public class ValidatorClientUtil {
 
   /**
-   * Return the committee assignment in the ``epoch`` for ``validator_index`` and
-   * ``registry_change``. ``assignment`` returned is a tuple of the following form: *
-   * ``assignment[0]`` is the list of validators in the committee * ``assignment[1]`` is the shard
-   * to which the committee is assigned * ``assignment[2]`` is the slot at which the committee is
-   * assigned * ``assignment[3]`` is a bool signalling if the validator is expected to propose a
-   * beacon block at the assigned slot.
+   * Return the committee assignment in the ``epoch`` for ``validator_index``.
+   * ``assignment`` returned is a tuple of the following form:
+   * ``assignment[0]`` is the list of validators in the committee
+   * ``assignment[1]`` is the index to which the committee is assigned
+   * ``assignment[2]`` is the slot at which the committee is assigned
+   * Return None if no assignment.
    *
    * @param state the BeaconState.
    * @param epoch either on or between previous or current epoch.
