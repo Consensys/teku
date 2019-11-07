@@ -47,7 +47,6 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -92,8 +91,6 @@ public class SimpleOffsetSerializer {
     classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
     classReflectionInfo.put(BeaconState.class, new ReflectionInformation(BeaconState.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
-    classReflectionInfo.put(
-        CompactCommittee.class, new ReflectionInformation(CompactCommittee.class));
     classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
     classReflectionInfo.put(
         HistoricalBatch.class, new ReflectionInformation(HistoricalBatch.class));

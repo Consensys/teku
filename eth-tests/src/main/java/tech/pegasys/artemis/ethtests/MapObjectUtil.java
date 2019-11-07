@@ -41,7 +41,6 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -77,7 +76,6 @@ public class MapObjectUtil {
     else if (classtype.equals(BeaconStateWithCache.class))
       return getBeaconStateWithCache((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
-    else if (classtype.equals(CompactCommittee.class)) return getCompactCommittee((Map) object);
     else if (classtype.equals(Deposit.class)) return getDeposit((Map) object);
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
@@ -219,27 +217,6 @@ public class MapObjectUtil {
             Bytes32.class);
 
     return new HistoricalBatch(block_roots, state_roots);
-  }
-
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private static CompactCommittee getCompactCommittee(Map map) {
-    SSZList<BLSPublicKey> pubkeys =
-        new SSZList<>(
-            ((List<String>) map.get("pubkeys"))
-                .stream()
-                    .map(e -> BLSPublicKey.fromBytes(Bytes.fromHexString(e)))
-                    .collect(Collectors.toList()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE,
-            BLSPublicKey.class);
-    SSZList<UnsignedLong> compact_validators =
-        new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("compact_validators"))
-                .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
-                    .collect(Collectors.toList()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE,
-            UnsignedLong.class);
-    return new CompactCommittee(pubkeys, compact_validators);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
