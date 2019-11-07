@@ -396,10 +396,6 @@ public final class DataStructureUtil {
             PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation, seed++),
         randomSSZList(
             PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation, seed++),
-        randomSSZVector(
-            new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink, seed++),
-        randomSSZVector(
-            new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink, seed++),
         randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH, seed++),
         randomCheckpoint(seed++),
         randomCheckpoint(seed++),

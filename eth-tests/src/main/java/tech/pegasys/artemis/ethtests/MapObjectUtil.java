@@ -332,16 +332,6 @@ public class MapObjectUtil {
                 .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             PendingAttestation.class);
-    SSZVector<Crosslink> previous_crosslinks =
-        new SSZVector<>(
-            ((List<Map>) map.get("previous_crosslinks"))
-                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
-            Crosslink.class);
-    SSZVector<Crosslink> current_crosslinks =
-        new SSZVector<>(
-            ((List<Map>) map.get("current_crosslinks"))
-                .stream().map(e -> getCrossLink(e)).collect(Collectors.toList()),
-            Crosslink.class);
     Bitvector justification_bits =
         Bitvector.fromBytes(
             Bytes.fromHexString(map.get("justification_bits").toString()),
@@ -372,8 +362,6 @@ public class MapObjectUtil {
         slashings,
         previous_epoch_attestations,
         current_epoch_attestations,
-        previous_crosslinks,
-        current_crosslinks,
         justification_bits,
         previous_justified_checkpoint,
         current_justified_checkpoint,

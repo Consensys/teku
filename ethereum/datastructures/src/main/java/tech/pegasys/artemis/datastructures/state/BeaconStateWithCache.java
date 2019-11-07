@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -69,10 +68,6 @@ public final class BeaconStateWithCache extends BeaconState {
       SSZList<PendingAttestation> previous_epoch_attestations,
       SSZList<PendingAttestation> current_epoch_attestations,
 
-      // Crosslinks
-      SSZVector<Crosslink> previous_crosslinks,
-      SSZVector<Crosslink> current_crosslinks,
-
       // Finality
       Bitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
@@ -98,8 +93,6 @@ public final class BeaconStateWithCache extends BeaconState {
         slashings,
         previous_epoch_attestations,
         current_epoch_attestations,
-        previous_crosslinks,
-        current_crosslinks,
         justification_bits,
         previous_justified_checkpoint,
         current_justified_checkpoint,
@@ -151,18 +144,6 @@ public final class BeaconStateWithCache extends BeaconState {
             new SSZList<>(
                 PendingAttestation.class, state.getCurrent_epoch_attestations().getMaxSize()));
 
-    // Crosslinks
-    SSZVector<Crosslink> newCurrentCrosslinks =
-        new SSZVector<>(state.getCurrent_crosslinks().getSize(), new Crosslink());
-    IntStream.range(0, newCurrentCrosslinks.getSize())
-        .forEach(i -> newCurrentCrosslinks.set(i, state.getCurrent_crosslinks().get(i).copy()));
-    SSZVector<Crosslink> newPreviousCrosslinks =
-        new SSZVector<>(state.getPrevious_crosslinks().getSize(), new Crosslink());
-    IntStream.range(0, newPreviousCrosslinks.getSize())
-        .forEach(i -> newPreviousCrosslinks.set(i, state.getPrevious_crosslinks().get(i).copy()));
-    this.current_crosslinks = newCurrentCrosslinks;
-    this.previous_crosslinks = newPreviousCrosslinks;
-
     // Finality
     this.justification_bits = state.getJustification_bits().copy();
     this.previous_justified_checkpoint = new Checkpoint(state.getPrevious_justified_checkpoint());
@@ -202,8 +183,6 @@ public final class BeaconStateWithCache extends BeaconState {
         state.getSlashings(),
         state.getPrevious_epoch_attestations(),
         state.getCurrent_epoch_attestations(),
-        state.getPrevious_crosslinks(),
-        state.getCurrent_crosslinks(),
         state.getJustification_bits(),
         state.getPrevious_justified_checkpoint(),
         state.getCurrent_justified_checkpoint(),

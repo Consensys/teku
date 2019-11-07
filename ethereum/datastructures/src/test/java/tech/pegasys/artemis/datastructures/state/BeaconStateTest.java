@@ -315,9 +315,7 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
-            Constants.EPOCHS_PER_SLASHINGS_VECTOR,
-            Constants.SHARD_COUNT,
-            Constants.SHARD_COUNT);
+            Constants.EPOCHS_PER_SLASHINGS_VECTOR);
     assertEquals(
         vectorLengths,
         SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).getVectorLengths());

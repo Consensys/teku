@@ -39,7 +39,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 19;
+  public static final int SSZ_FIELD_COUNT = 17;
 
   // Versioning
   protected UnsignedLong genesis_time;
@@ -76,10 +76,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
       previous_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
   protected SSZList<PendingAttestation>
       current_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
-
-  // Crosslinks
-  protected SSZVector<Crosslink> previous_crosslinks; // Vector of length SHARD_COUNT
-  protected SSZVector<Crosslink> current_crosslinks; // Vector of length SHARD_COUNT
 
   // Finality
   protected Bitvector justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
@@ -121,10 +117,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
       SSZList<PendingAttestation> previous_epoch_attestations,
       SSZList<PendingAttestation> current_epoch_attestations,
 
-      // Crosslinks
-      SSZVector<Crosslink> previous_crosslinks,
-      SSZVector<Crosslink> current_crosslinks,
-
       // Finality
       Bitvector justification_bits,
       Checkpoint previous_justified_checkpoint,
@@ -164,8 +156,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.current_epoch_attestations = current_epoch_attestations;
 
     // Crosslinks
-    this.previous_crosslinks = previous_crosslinks;
-    this.current_crosslinks = current_crosslinks;
 
     // Finality
     this.justification_bits = justification_bits;
@@ -220,10 +210,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         new SSZList<>(
             PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH);
 
-    // Crosslinks
-    this.previous_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
-    this.current_crosslinks = new SSZVector<>(Constants.SHARD_COUNT, new Crosslink());
-
     // Finality
     this.justification_bits = new Bitvector(Constants.JUSTIFICATION_BITS_LENGTH);
     this.previous_justified_checkpoint = new Checkpoint();
@@ -271,22 +257,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
                             .collect(Collectors.toList()))),
             Bytes.EMPTY,
             Bytes.EMPTY,
-            SSZ.encode(
-                writer ->
-                    writer.writeFixedBytesVector(
-                        previous_crosslinks.stream()
-                            .map(
-                                previousCrosslink ->
-                                    SimpleOffsetSerializer.serialize(previousCrosslink))
-                            .collect(Collectors.toList()))),
-            SSZ.encode(
-                writer ->
-                    writer.writeFixedBytesVector(
-                        current_crosslinks.stream()
-                            .map(
-                                currentCrosslink ->
-                                    SimpleOffsetSerializer.serialize(currentCrosslink))
-                            .collect(Collectors.toList()))),
             justification_bits.serialize(),
             SimpleOffsetSerializer.serialize(previous_justified_checkpoint),
             SimpleOffsetSerializer.serialize(current_justified_checkpoint),
@@ -362,10 +332,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         previous_epoch_attestations,
         current_epoch_attestations,
 
-        // Crosslinks
-        current_crosslinks,
-        previous_crosslinks,
-
         // Finality
         justification_bits,
         previous_justified_checkpoint,
@@ -409,8 +375,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
         && Objects.equals(
             this.getCurrent_epoch_attestations(), other.getCurrent_epoch_attestations())
-        && Objects.equals(this.getPrevious_crosslinks(), other.getPrevious_crosslinks())
-        && Objects.equals(this.getCurrent_crosslinks(), other.getCurrent_crosslinks())
         && Objects.equals(this.getJustification_bits(), other.getJustification_bits())
         && Objects.equals(
             this.getPrevious_justified_checkpoint(), other.getPrevious_justified_checkpoint())
@@ -582,23 +546,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.current_epoch_attestations = current_epoch_attestations;
   }
 
-  // Crosslinks
-  public SSZVector<Crosslink> getPrevious_crosslinks() {
-    return previous_crosslinks;
-  }
-
-  public void setPrevious_crosslinks(SSZVector<Crosslink> previous_crosslinks) {
-    this.previous_crosslinks = previous_crosslinks;
-  }
-
-  public SSZVector<Crosslink> getCurrent_crosslinks() {
-    return current_crosslinks;
-  }
-
-  public void setCurrent_crosslinks(SSZVector<Crosslink> current_crosslinks) {
-    this.current_crosslinks = current_crosslinks;
-  }
-
   // Finality
   public Bitvector getJustification_bits() {
     return justification_bits;
@@ -688,18 +635,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
                 SSZTypes.LIST_OF_COMPOSITE,
                 Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
                 current_epoch_attestations),
-
-            // Crosslinks
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_COMPOSITE,
-                previous_crosslinks.stream()
-                    .map(item -> item.hash_tree_root())
-                    .collect(Collectors.toList())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_COMPOSITE,
-                current_crosslinks.stream()
-                    .map(item -> item.hash_tree_root())
-                    .collect(Collectors.toList())),
 
             // Finality
             HashTreeUtil.hash_tree_root_bitvector(justification_bits),
