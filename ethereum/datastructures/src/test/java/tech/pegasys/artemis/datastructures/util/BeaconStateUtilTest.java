@@ -133,8 +133,7 @@ class BeaconStateUtilTest {
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
     BeaconState state = createBeaconState();
-    Committee committee =
-        new Committee(UnsignedLong.ONE, Arrays.asList(0, 1, 2));
+    Committee committee = new Committee(UnsignedLong.ONE, Arrays.asList(0, 1, 2));
 
     // Calculate Expected Results
     UnsignedLong expectedBalance = UnsignedLong.ZERO;
@@ -147,8 +146,7 @@ class BeaconStateUtilTest {
       }
     }
 
-    UnsignedLong totalBalance =
-        BeaconStateUtil.get_total_balance(state, committee.getCommittee());
+    UnsignedLong totalBalance = BeaconStateUtil.get_total_balance(state, committee.getCommittee());
     assertEquals(expectedBalance, totalBalance);
   }
 
