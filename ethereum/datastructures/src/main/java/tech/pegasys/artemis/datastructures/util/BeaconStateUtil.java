@@ -15,7 +15,7 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.compute_shuffled_index;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.compute_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
@@ -47,7 +47,6 @@ import static tech.pegasys.artemis.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.Collections;
@@ -97,6 +96,9 @@ public class BeaconStateUtil {
     state.setGenesis_time(genesis_time);
     state.setEth1_data(eth1_data);
     state.setLatest_block_header(beaconBlockHeader);
+    for (int i = 0; i < state.getRandao_mixes().size(); i++) {
+      state.getRandao_mixes().set(i, eth1_block_hash);
+    }
 
     // Process deposits
     DepositUtil.calcDepositProofs(deposits);
@@ -251,7 +253,7 @@ public class BeaconStateUtil {
     UnsignedLong randaoIndex =
         epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1));
     Bytes32 mix = get_randao_mix(state, randaoIndex);
-    final Bytes epochBytes = int_to_bytes(epoch.longValue(), 8);
+    Bytes epochBytes = int_to_bytes(epoch.longValue(), 8);
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
   }
 
@@ -495,11 +497,12 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_committee_count_at_slot(BeaconState state, UnsignedLong slot) {
     UnsignedLong epoch = compute_epoch_at_slot(slot);
+    List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
     return UnsignedLong.valueOf(
         Math.max(
             MAX_COMMITTEES_PER_SLOT,
             Math.floorDiv(
-                Math.floorDiv(get_active_validator_indices(state, epoch).size(), SLOTS_PER_EPOCH),
+                Math.floorDiv(active_validator_indices.size(), SLOTS_PER_EPOCH),
                 TARGET_COMMITTEE_SIZE)));
   }
 
@@ -625,41 +628,8 @@ public class BeaconStateUtil {
             Bytes.concatenate(
                 get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
                 int_to_bytes(state.getSlot().longValue(), 8)));
-    final List<Integer> indices = get_active_validator_indices(state, epoch);
+    List<Integer> indices = get_active_validator_indices(state, epoch);
     return compute_proposer_index(state, indices, seed);
-  }
-
-  /**
-   * Return from ``indices`` a random index sampled by effective balance.
-   *
-   * @param state
-   * @param indices
-   * @param seed
-   * @return
-   */
-  public static int compute_proposer_index(BeaconState state, List<Integer> indices, Bytes32 seed) {
-    checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
-    UnsignedLong MAX_RANDOM_BYTE = UnsignedLong.valueOf(255); // Math.pow(2, 8) - 1;
-    int i = 0;
-    while (true) {
-      final int candidate_index =
-          indices.get(compute_shuffled_index(i % indices.size(), indices.size(), seed));
-      final int random_byte =
-          UnsignedBytes.toInt(
-              Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)))
-                  .get(i % 32));
-      final UnsignedLong effective_balance =
-          state.getValidators().get(candidate_index).getEffective_balance();
-      if (effective_balance
-              .times(MAX_RANDOM_BYTE)
-              .compareTo(
-                  UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)
-                      .times(UnsignedLong.valueOf(random_byte)))
-          >= 0) {
-        return candidate_index;
-      }
-      i++;
-    }
   }
 
   /**
@@ -826,7 +796,7 @@ public class BeaconStateUtil {
    * @return The value represented as the requested number of bytes.
    */
   public static Bytes int_to_bytes(long value, int numBytes) {
-    final int longBytes = Long.SIZE / 8;
+    int longBytes = Long.SIZE / 8;
     Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);
     if (numBytes <= longBytes) {
       return valueBytes.slice(0, numBytes);

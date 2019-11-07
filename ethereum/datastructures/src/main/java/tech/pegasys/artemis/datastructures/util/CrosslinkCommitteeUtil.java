@@ -22,9 +22,11 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
+import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
+import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -86,6 +88,39 @@ public class CrosslinkCommitteeUtil {
   }
 
   /**
+   * Return from ``indices`` a random index sampled by effective balance.
+   *
+   * @param state
+   * @param indices
+   * @param seed
+   * @return
+   */
+  public static int compute_proposer_index(BeaconState state, List<Integer> indices, Bytes32 seed) {
+    checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
+    UnsignedLong MAX_RANDOM_BYTE = UnsignedLong.valueOf(255); // Math.pow(2, 8) - 1;
+    int i = 0;
+    while (true) {
+      int candidate_index =
+          indices.get(compute_shuffled_index(i % indices.size(), indices.size(), seed));
+      int random_byte =
+          UnsignedBytes.toInt(
+              Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)))
+                  .get(i % 32));
+      UnsignedLong effective_balance =
+          state.getValidators().get(candidate_index).getEffective_balance();
+      if (effective_balance
+              .times(MAX_RANDOM_BYTE)
+              .compareTo(
+                  UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)
+                      .times(UnsignedLong.valueOf(random_byte)))
+          >= 0) {
+        return candidate_index;
+      }
+      i++;
+    }
+  }
+
+  /**
    * Computes indices of a new committee based upon the seed parameter
    *
    * @param indices
@@ -118,12 +153,12 @@ public class CrosslinkCommitteeUtil {
       BeaconState state, UnsignedLong slot, UnsignedLong index) {
     UnsignedLong epoch = compute_epoch_at_slot(slot);
     UnsignedLong committees_per_slot = get_committee_count_at_slot(state, slot);
-    final int committeeIndex =
+    int committeeIndex =
         slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .times(committees_per_slot)
             .plus(index)
             .intValue();
-    final int count = committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
+    int count = committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
     return compute_committee(
         get_active_validator_indices(state, epoch),
         get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),

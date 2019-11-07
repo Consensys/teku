@@ -194,10 +194,10 @@ public class AttestationUtil {
   }
 
   /**
-   * Return the sorted attesting indices corresponding to ``attestation_data`` and ``bits``.
+   * Return the sorted attesting indices corresponding to ``data`` and ``bits``.
    *
    * @param state
-   * @param attestation_data
+   * @param data
    * @param bits
    * @return
    * @throws IllegalArgumentException
@@ -205,9 +205,8 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconState state, AttestationData attestation_data, Bitlist bits) {
-    List<Integer> committee =
-        get_beacon_committee(state, attestation_data.getSlot(), attestation_data.getIndex());
+      BeaconState state, AttestationData data, Bitlist bits) {
+    List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
 
     Set<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
