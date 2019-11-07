@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.artemis.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
@@ -167,6 +169,7 @@ public class DepositUtil {
 
   public static DepositWithIndex convertDepositEventToOperationDeposit(
       tech.pegasys.artemis.pow.event.Deposit event) {
+    checkArgument(event.getAmount().compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT)) >= 0, "Deposit amount too low");
     DepositData data =
         new DepositData(
             event.getPubkey(),
