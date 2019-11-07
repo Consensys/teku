@@ -154,11 +154,13 @@ public class CrosslinkCommitteeUtil {
     UnsignedLong epoch = compute_epoch_at_slot(slot);
     UnsignedLong committees_per_slot = get_committee_count_at_slot(state, slot);
     int committeeIndex =
-        slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-            .times(committees_per_slot)
-            .plus(index)
-            .intValue();
-    int count = committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
+        toIntExact(
+            slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+                .times(committees_per_slot)
+                .plus(index)
+                .longValue());
+    int count =
+        toIntExact(committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).longValue());
     return compute_committee(
         get_active_validator_indices(state, epoch),
         get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),

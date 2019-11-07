@@ -142,6 +142,7 @@ public class StateTransition {
     // @process_reveal_deadlines
     // @process_challenge_deadlines
     process_slashings(state);
+    // @update_period_committee
     process_final_updates(state);
     // @after_process_final_updates
   }

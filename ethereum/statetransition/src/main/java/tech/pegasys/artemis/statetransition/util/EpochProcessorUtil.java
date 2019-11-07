@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
@@ -42,7 +43,6 @@ import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.INACTIVITY_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 import static tech.pegasys.artemis.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -372,13 +372,7 @@ public final class EpochProcessorUtil {
                     index,
                     rewards
                         .get(index)
-                        .plus(
-                            max_attester_reward
-                                .times(
-                                    UnsignedLong.valueOf(
-                                            SLOTS_PER_EPOCH + MIN_ATTESTATION_INCLUSION_DELAY)
-                                        .minus(attestation.getInclusion_delay()))
-                                .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))));
+                        .plus(max_attester_reward.dividedBy(attestation.getInclusion_delay())));
               });
     }
 
@@ -601,9 +595,9 @@ public final class EpochProcessorUtil {
     state.getSlashings().set(index, UnsignedLong.ZERO);
 
     // Set randao mix
-    final UnsignedLong randaoIndex =
-        next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR));
-    state.getRandao_mixes().set(randaoIndex.intValue(), get_randao_mix(state, current_epoch));
+    final int randaoIndex =
+        toIntExact(next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).longValue());
+    state.getRandao_mixes().set(randaoIndex, get_randao_mix(state, current_epoch));
 
     // Set historical root accumulator
     if (next_epoch

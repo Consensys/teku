@@ -206,7 +206,7 @@ public final class BlockProcessorUtil {
       process_attestations(state, body.getAttestations());
       process_deposits(state, body.getDeposits());
       process_voluntary_exits(state, body.getVoluntary_exits());
-
+      // @process_shard_receipt_proofs
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
@@ -238,9 +238,11 @@ public final class BlockProcessorUtil {
                 .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
         checkArgument(
-            compute_epoch_at_slot(proposer_slashing.getHeader_1().getSlot())
-                .equals(compute_epoch_at_slot(proposer_slashing.getHeader_2().getSlot())),
-            "process_proposer_slashings: Verify that the epoch is the same");
+            proposer_slashing
+                .getHeader_1()
+                .getSlot()
+                .equals(proposer_slashing.getHeader_2().getSlot()),
+            "process_proposer_slashings: Verify that the slots match");
 
         checkArgument(
             !Objects.equals(
@@ -355,22 +357,21 @@ public final class BlockProcessorUtil {
         AttestationData data = attestation.getData();
         checkArgument(
             data.getIndex().compareTo(get_committee_count_at_slot(state, data.getSlot())) < 0,
-            "process_attestations: Crosslink shard value too high");
+            "process_attestations: CommitteeIndex too high");
         checkArgument(
             data.getTarget().getEpoch().equals(get_previous_epoch(state))
                 || data.getTarget().getEpoch().equals(get_current_epoch(state)),
             "process_attestations: Attestation not from current or previous epoch");
 
-        UnsignedLong attestation_slot = data.getSlot();
         checkArgument(
-            attestation_slot
+            data.getSlot()
                     .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
                     .compareTo(state.getSlot())
                 <= 0,
             "process_attestations: Attestation submitted too quickly");
 
         checkArgument(
-            state.getSlot().compareTo(attestation_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
+            state.getSlot().compareTo(data.getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
                 <= 0,
             "process_attestations: Attestation submitted too far in history");
 
@@ -385,7 +386,7 @@ public final class BlockProcessorUtil {
             new PendingAttestation(
                 attestation.getAggregation_bits(),
                 data,
-                state.getSlot().minus(attestation_slot),
+                state.getSlot().minus(data.getSlot()),
                 UnsignedLong.valueOf(get_beacon_proposer_index(state)));
 
         if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
