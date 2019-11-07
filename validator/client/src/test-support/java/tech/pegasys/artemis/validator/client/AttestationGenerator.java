@@ -60,7 +60,7 @@ public class AttestationGenerator {
     return createAttestation(block, state, false);
   }
 
-  public Attestation createAttestation(
+  private Attestation createAttestation(
       final BeaconBlock block, final BeaconState state, final boolean withValidSignature) {
     final UnsignedLong epoch = compute_epoch_of_slot(state.getSlot());
     HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>> committeeAssignments =
