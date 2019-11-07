@@ -40,7 +40,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 16;
+  public static final int SSZ_FIELD_COUNT = 14;
 
   // Versioning
   protected UnsignedLong genesis_time;
