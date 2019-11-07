@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
@@ -172,7 +172,7 @@ public class ValidatorCoordinator {
               Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
                   ValidatorClientUtil.get_committee_assignment(
                       headState,
-                      compute_epoch_of_slot(headState.getSlot()),
+                      compute_epoch_at_slot(headState.getSlot()),
                       validatorInformation.getValidatorIndex());
               committeeAssignment.ifPresent(
                   assignment -> {
@@ -252,7 +252,7 @@ public class ValidatorCoordinator {
   // abstract away the gRPC details
   public BLSSignature get_epoch_signature(BeaconState state, BLSPublicKey proposer) {
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slot);
+    UnsignedLong epoch = BeaconStateUtil.compute_epoch_at_slot(slot);
 
     Bytes32 messageHash =
         HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
@@ -276,7 +276,7 @@ public class ValidatorCoordinator {
         get_domain(
             state,
             Constants.DOMAIN_BEACON_PROPOSER,
-            BeaconStateUtil.compute_epoch_of_slot(block.getSlot()));
+            BeaconStateUtil.compute_epoch_at_slot(block.getSlot()));
 
     Bytes32 blockRoot = block.signing_root("signature");
 

@@ -15,7 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -115,7 +115,7 @@ public class BeaconChainUtil {
     final Bytes32 stateRoot = postState.hash_tree_root();
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
     UnsignedLong slot = postState.getSlot();
-    beaconBlockBody.setEth1_data(get_eth1_data_stub(postState, compute_epoch_of_slot(slot)));
+    beaconBlockBody.setEth1_data(get_eth1_data_stub(postState, compute_epoch_at_slot(slot)));
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(slot, parentBlockRoot, stateRoot, beaconBlockBody, BLSSignature.empty());

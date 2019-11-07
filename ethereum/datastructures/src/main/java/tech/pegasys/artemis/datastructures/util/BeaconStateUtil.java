@@ -342,7 +342,7 @@ public class BeaconStateUtil {
    * @see <a>
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
-  public static UnsignedLong compute_epoch_of_slot(UnsignedLong slot) {
+  public static UnsignedLong compute_epoch_at_slot(UnsignedLong slot) {
     return slot.dividedBy(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
   }
 
@@ -371,7 +371,7 @@ public class BeaconStateUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_current_epoch</a>
    */
   public static UnsignedLong get_current_epoch(BeaconState state) {
-    return compute_epoch_of_slot(state.getSlot());
+    return compute_epoch_at_slot(state.getSlot());
   }
 
   /**

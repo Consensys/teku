@@ -301,7 +301,7 @@ public class ChainStorageClient implements ChainStorage {
             .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
             .compareTo(UnsignedLong.ZERO)
         == 0) {
-      UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slotEvent.getSlot());
+      UnsignedLong epoch = BeaconStateUtil.compute_epoch_at_slot(slotEvent.getSlot());
       if (epoch.compareTo(UnsignedLong.ONE) > 0) {
         cleanAttestationsUntilEpoch(epoch.minus(UnsignedLong.ONE));
       }

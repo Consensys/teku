@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 
 import com.google.common.eventbus.EventBus;
@@ -164,7 +164,7 @@ public class Database {
               Checkpoint checkpoint =
                   checkpoint_references.get(
                       compute_start_slot_of_epoch(
-                          compute_epoch_of_slot(UnsignedLong.valueOf(currentSlot))));
+                          compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot))));
 
               blocks_memory.put(root, blocks.get(root));
               block_states_memory.put(root, block_states.get(root));

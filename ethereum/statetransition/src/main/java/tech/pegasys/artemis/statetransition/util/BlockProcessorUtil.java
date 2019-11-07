@@ -19,7 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attes
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slashable_attestation_data;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -243,8 +243,8 @@ public final class BlockProcessorUtil {
                 .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
         checkArgument(
-            compute_epoch_of_slot(proposer_slashing.getHeader_1().getSlot())
-                .equals(compute_epoch_of_slot(proposer_slashing.getHeader_2().getSlot())),
+            compute_epoch_at_slot(proposer_slashing.getHeader_1().getSlot())
+                .equals(compute_epoch_at_slot(proposer_slashing.getHeader_2().getSlot())),
             "process_proposer_slashings: Verify that the epoch is the same");
 
         checkArgument(
@@ -265,7 +265,7 @@ public final class BlockProcessorUtil {
                 get_domain(
                     state,
                     DOMAIN_BEACON_PROPOSER,
-                    compute_epoch_of_slot(proposer_slashing.getHeader_1().getSlot()))),
+                    compute_epoch_at_slot(proposer_slashing.getHeader_1().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 1");
 
         checkArgument(
@@ -276,7 +276,7 @@ public final class BlockProcessorUtil {
                 get_domain(
                     state,
                     DOMAIN_BEACON_PROPOSER,
-                    compute_epoch_of_slot(proposer_slashing.getHeader_2().getSlot()))),
+                    compute_epoch_at_slot(proposer_slashing.getHeader_2().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 2");
 
         slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
