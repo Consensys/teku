@@ -23,7 +23,7 @@ public class Constants {
 
   // Non-configurable constants
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
-  public static int BASE_REWARDS_PER_EPOCH = 5;
+  public static int BASE_REWARDS_PER_EPOCH = 4;
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static int SECONDS_PER_DAY = 86400;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
@@ -51,7 +51,7 @@ public class Constants {
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
-  public static int SECONDS_PER_SLOT = 6;
+  public static int SECONDS_PER_SLOT = 12;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
