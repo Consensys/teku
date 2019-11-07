@@ -63,7 +63,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
   protected SSZList<UnsignedLong> balances; // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
   protected SSZVector<Bytes32> randao_mixes; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
-  protected SSZVector<Bytes32> active_index_roots; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
   protected SSZVector<UnsignedLong> slashings; // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
@@ -101,9 +100,8 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
       SSZList<Validator> validators,
       SSZList<UnsignedLong> balances,
 
-      // Shuffling
+      // Randomness
       SSZVector<Bytes32> randao_mixes,
-      SSZVector<Bytes32> active_index_roots,
 
       // Slashings
       SSZVector<UnsignedLong> slashings,
@@ -137,9 +135,8 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.validators = validators;
     this.balances = balances;
 
-    // Shuffling
+    // Randomness
     this.randao_mixes = randao_mixes;
-    this.active_index_roots = active_index_roots;
 
     // Slashings
     this.slashings = slashings;
@@ -183,10 +180,8 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.validators = new SSZList<>(Validator.class, Constants.VALIDATOR_REGISTRY_LIMIT);
     this.balances = new SSZList<>(UnsignedLong.class, Constants.VALIDATOR_REGISTRY_LIMIT);
 
-    // Shuffling
+    // Randomness
     this.randao_mixes =
-        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
-    this.active_index_roots =
         new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
 
     // Slashings
@@ -236,7 +231,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             Bytes.EMPTY,
             Bytes.EMPTY,
             SSZ.encode(writer -> writer.writeFixedBytesVector(randao_mixes)),
-            SSZ.encode(writer -> writer.writeFixedBytesVector(active_index_roots)),
             SSZ.encode(
                 writer ->
                     writer.writeFixedBytesVector(
@@ -268,7 +262,7 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             balances.stream()
                 .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
                 .collect(Collectors.joining())));
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     variablePartsList.add(
         SimpleOffsetSerializer.serializeVariableCompositeList(previous_epoch_attestations));
     variablePartsList.add(
@@ -306,9 +300,8 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         validators,
         balances,
 
-        // Shuffling
+        // Randomness
         randao_mixes,
-        active_index_roots,
 
         // Slashings
         slashings,
@@ -352,7 +345,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         && Objects.equals(this.getValidators(), other.getValidators())
         && Objects.equals(this.getBalances(), other.getBalances())
         && Objects.equals(this.getRandao_mixes(), other.getRandao_mixes())
-        && Objects.equals(this.getActive_index_roots(), other.getActive_index_roots())
         && Objects.equals(this.getSlashings(), other.getSlashings())
         && Objects.equals(
             this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
@@ -476,14 +468,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.randao_mixes = randao_mixes;
   }
 
-  public SSZVector<Bytes32> getActive_index_roots() {
-    return active_index_roots;
-  }
-
-  public void setActive_index_roots(SSZVector<Bytes32> active_index_roots) {
-    this.active_index_roots = active_index_roots;
-  }
-
   // Slashings
   public SSZVector<UnsignedLong> getSlashings() {
     return slashings;
@@ -583,9 +567,8 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
                     .map(item -> SSZ.encodeUInt64(item.longValue()))
                     .collect(Collectors.toList())),
 
-            // Shuffling
+            // Randomness
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, randao_mixes),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, active_index_roots),
 
             // Slashings
             HashTreeUtil.hash_tree_root_vector_unsigned_long(slashings),
@@ -623,7 +606,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         .add("validators", validators)
         .add("balances", balances)
         .add("randao_mixes", randao_mixes)
-        .add("active_index_roots", active_index_roots)
         .add("slashings", slashings)
         .add("previous_epoch_attestations", previous_epoch_attestations)
         .add("current_epoch_attestations", current_epoch_attestations)

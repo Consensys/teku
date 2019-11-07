@@ -247,30 +247,6 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_seed</a>
    */
-  // TODO: 0.9.0 Remove this old version.
-  public static Bytes32 get_seed(BeaconState state, UnsignedLong epoch)
-      throws IllegalArgumentException {
-    UnsignedLong randaoIndex =
-        epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1));
-    Bytes32 randao_mix = get_randao_mix(state, randaoIndex);
-    Bytes32 active_index_root =
-        state
-            .getActive_index_roots()
-            .get(epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue());
-    Bytes32 epochBytes = int_to_bytes32(epoch.longValue());
-    return Hash.sha2_256(Bytes.wrap(randao_mix, active_index_root, epochBytes));
-  }
-
-  /**
-   * Generate a seed for the given ``epoch``.
-   *
-   * @param state - The BeaconState under consideration.
-   * @param epoch - The epoch to generate a seed for.
-   * @return A generated seed for the given epoch.
-   * @throws IllegalArgumentException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_seed</a>
-   */
   public static Bytes32 get_seed(BeaconState state, UnsignedLong epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
     UnsignedLong randaoIndex =

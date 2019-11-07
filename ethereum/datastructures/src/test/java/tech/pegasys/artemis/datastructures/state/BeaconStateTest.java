@@ -313,7 +313,6 @@ class BeaconStateTest {
             Constants.SLOTS_PER_HISTORICAL_ROOT,
             Constants.SLOTS_PER_HISTORICAL_ROOT,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
-            Constants.EPOCHS_PER_HISTORICAL_VECTOR,
             Constants.EPOCHS_PER_SLASHINGS_VECTOR);
     assertEquals(
         vectorLengths,

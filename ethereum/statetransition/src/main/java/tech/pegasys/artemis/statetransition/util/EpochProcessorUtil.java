@@ -29,10 +29,8 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
-import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
-import static tech.pegasys.artemis.util.config.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.BASE_REWARDS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.BASE_REWARD_FACTOR;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
@@ -62,7 +60,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -74,7 +71,6 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public final class EpochProcessorUtil {
 
@@ -599,22 +595,6 @@ public final class EpochProcessorUtil {
                 UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)));
       }
     }
-
-    // Set active index root
-    UnsignedLong index_epoch = next_epoch.plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY));
-    int index_root_position =
-        index_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
-    List<Integer> indices_list = get_active_validator_indices(state, index_epoch);
-    // TODO check the validity of this hash tree root
-    state
-        .getActive_index_roots()
-        .set(
-            index_root_position,
-            HashTreeUtil.hash_tree_root_list_ul(
-                Constants.VALIDATOR_REGISTRY_LIMIT,
-                indices_list.stream()
-                    .map(elem -> SSZ.encodeUInt64(elem.intValue()))
-                    .collect(Collectors.toList())));
 
     // Reset slashings
     int index = next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
