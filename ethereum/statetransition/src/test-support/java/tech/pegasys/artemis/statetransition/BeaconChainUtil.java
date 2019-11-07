@@ -34,12 +34,12 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -57,13 +57,17 @@ public class BeaconChainUtil {
 
   public static BeaconChainUtil create(
       final int validatorCount, final ChainStorageClient storageClient) {
-    final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(validatorCount);
+    final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorCount);
     return new BeaconChainUtil(validatorKeys, storageClient);
   }
 
-  public void initializeStorage(final ChainStorageClient chainStorageClient) {
+  public static void initializeStorage(
+      final ChainStorageClient chainStorageClient, final List<BLSKeyPair> validatorKeys) {
     StartupUtil.setupInitialState(chainStorageClient, 0, null, validatorKeys);
+  }
+
+  public void initializeStorage(final ChainStorageClient chainStorageClient) {
+    initializeStorage(chainStorageClient, validatorKeys);
   }
 
   public BeaconBlock createBlockAtSlot(final UnsignedLong slot)
