@@ -499,11 +499,11 @@ public class BeaconStateUtil {
     UnsignedLong epoch = compute_epoch_at_slot(slot);
     List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
     return UnsignedLong.valueOf(
-        Math.max(
+        Math.max(1, Math.min(
             MAX_COMMITTEES_PER_SLOT,
             Math.floorDiv(
                 Math.floorDiv(active_validator_indices.size(), SLOTS_PER_EPOCH),
-                TARGET_COMMITTEE_SIZE)));
+                TARGET_COMMITTEE_SIZE))));
   }
 
   /**
