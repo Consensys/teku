@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -104,7 +103,6 @@ public class AttestationTopicHandlerTest {
     verify(publisher, never()).publish(any(), any());
   }
 
-  @Disabled("Gossiped attestations do not yet undergo any validation")
   @Test
   public void accept_invalidAttestation_badData() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
