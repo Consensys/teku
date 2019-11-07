@@ -73,6 +73,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.validator.client.CommitteeAssignment;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
@@ -165,24 +166,28 @@ public class ValidatorCoordinator {
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
+
+      // At the start of each epoch, update committee assignments, and put them in the committee assignments mapping
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
           || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
+
         validators.forEach(
             (pubKey, validatorInformation) -> {
-              Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
+
+              Optional<CommitteeAssignment> committeeAssignment =
                   ValidatorClientUtil.get_committee_assignment(
                       headState,
                       compute_epoch_at_slot(headState.getSlot()),
                       validatorInformation.getValidatorIndex());
+
               committeeAssignment.ifPresent(
                   assignment -> {
-                    UnsignedLong slot = assignment.getRight();
                     List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
-                        committeeAssignments.computeIfAbsent(slot, k -> new ArrayList<>());
+                        committeeAssignments.computeIfAbsent(assignment.getSlot(), k -> new ArrayList<>());
                     assignmentsInSlot.add(
                         new MutableTriple<>(
-                            assignment.getLeft(),
-                            assignment.getMiddle(),
+                            assignment.getCommittee(),
+                            assignment.getCommitteeIndex(),
                             validatorInformation.getValidatorIndex()));
                   });
             });

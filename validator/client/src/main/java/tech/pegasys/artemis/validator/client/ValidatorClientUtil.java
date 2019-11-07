@@ -54,9 +54,9 @@ public class ValidatorClientUtil {
    * @param state the BeaconState.
    * @param epoch either on or between previous or current epoch.
    * @param validator_index the validator that is calling this function.
-   * @return Optional.of(CommitteeAssignmentTuple) or Optional.empty.
+   * @return Optional.of(CommitteeAssignment).
    */
-  public static Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>>
+  public static Optional<CommitteeAssignment>
       get_committee_assignment(BeaconState state, UnsignedLong epoch, int validator_index) {
     UnsignedLong next_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
     checkArgument(
@@ -74,7 +74,7 @@ public class ValidatorClientUtil {
           index = index.plus(UnsignedLong.ONE)) {
         final List<Integer> committee = get_beacon_committee(state, slot, index);
         if (committee.contains(validator_index)) {
-          return Optional.of(new ImmutableTriple<>(committee, index, slot));
+          return Optional.of(new CommitteeAssignment(committee, index, slot));
         }
       }
     }
