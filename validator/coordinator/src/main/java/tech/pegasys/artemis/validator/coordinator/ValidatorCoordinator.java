@@ -48,7 +48,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
@@ -73,6 +73,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.validator.client.CommitteeAssignment;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
@@ -165,30 +166,35 @@ public class ValidatorCoordinator {
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
+
+      // At the start of each epoch, update committee assignments, and put them in the committee
+      // assignments mapping
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
           || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
+
         validators.forEach(
             (pubKey, validatorInformation) -> {
-              Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> committeeAssignment =
+              Optional<CommitteeAssignment> committeeAssignment =
                   ValidatorClientUtil.get_committee_assignment(
                       headState,
                       compute_epoch_at_slot(headState.getSlot()),
                       validatorInformation.getValidatorIndex());
+
               committeeAssignment.ifPresent(
                   assignment -> {
-                    UnsignedLong slot = assignment.getRight();
                     List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
-                        committeeAssignments.computeIfAbsent(slot, k -> new ArrayList<>());
+                        committeeAssignments.computeIfAbsent(
+                            assignment.getSlot(), k -> new ArrayList<>());
                     assignmentsInSlot.add(
                         new MutableTriple<>(
-                            assignment.getLeft(),
-                            assignment.getMiddle(),
+                            assignment.getCommittee(),
+                            assignment.getCommitteeIndex(),
                             validatorInformation.getValidatorIndex()));
                   });
             });
       }
 
-      List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters =
+      List<Triple<BLSPublicKey, Integer, Committee>> attesters =
           AttestationUtil.getAttesterInformation(headState, committeeAssignments);
       // TODO: 0.9.0 We need to set the index on this data somewhere
       AttestationData genericAttestationData =
@@ -222,9 +228,10 @@ public class ValidatorCoordinator {
       BeaconState state,
       BLSPublicKey attester,
       int indexIntoCommittee,
-      CrosslinkCommittee committee,
+      Committee committee,
       AttestationData genericAttestationData) {
     int commmitteSize = committee.getCommitteeSize();
+    genericAttestationData.setIndex(committee.getIndex());
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
     Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
