@@ -69,7 +69,7 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
       LOG.trace("Received malformed gossip message on {}", getTopic());
       return;
     } catch (Throwable e) {
-      LOG.error("Encountered exception while processing message for topic {}", getTopic(), e);
+      LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
       return;
     }
 
