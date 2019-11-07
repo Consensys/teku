@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -42,7 +43,7 @@ public class GossipTopicHandlerTest {
 
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final EventBus eventBus = spy(new EventBus());
-  private final MockTopicHandler topicHandler = new MockTopicHandler(publisher, eventBus);
+  private final MockTopicHandler topicHandler = spy(new MockTopicHandler(publisher, eventBus));
 
   ArgumentCaptor<ByteBuf> byteBufCaptor = ArgumentCaptor.forClass(ByteBuf.class);
   ArgumentCaptor<Topic> topicCaptor = ArgumentCaptor.forClass(Topic.class);
@@ -53,7 +54,7 @@ public class GossipTopicHandlerTest {
   }
 
   @Test
-  public void accept_successfulProcessing() {
+  public void accept_validMessage() {
     final Bytes data = Bytes.fromHexString("0x1234");
     final MockSimpleOffsetSerializable mockObject = new MockSimpleOffsetSerializable(data);
     final Bytes serialized = SimpleOffsetSerializer.serialize(mockObject);
@@ -70,7 +71,7 @@ public class GossipTopicHandlerTest {
   }
 
   @Test
-  public void accept_unsuccessfulProcessing() {
+  public void accept_invalidMessage() {
     topicHandler.setShouldValidate(false);
 
     final Bytes data = Bytes.fromHexString("0x1234");
@@ -78,6 +79,51 @@ public class GossipTopicHandlerTest {
     final Bytes serialized = SimpleOffsetSerializer.serialize(mockObject);
 
     final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+
+    topicHandler.accept(mockMessage);
+
+    verify(eventBus, never()).post(mockObject);
+    verify(publisher, never()).publish(any(), any());
+  }
+
+  @Test
+  public void accept_malformedData_deserializesToNull() {
+    final Bytes data = Bytes.fromHexString("0x1234");
+    final MockSimpleOffsetSerializable mockObject = new MockSimpleOffsetSerializable(data);
+    final Bytes serialized = SimpleOffsetSerializer.serialize(mockObject);
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+    doReturn(null).when(topicHandler).deserialize(any());
+
+    topicHandler.accept(mockMessage);
+
+    verify(eventBus, never()).post(mockObject);
+    verify(publisher, never()).publish(any(), any());
+  }
+
+  @Test
+  public void accept_malformedData_exceptionalDeserialization() {
+    final Bytes data = Bytes.fromHexString("0x1234");
+    final MockSimpleOffsetSerializable mockObject = new MockSimpleOffsetSerializable(data);
+    final Bytes serialized = SimpleOffsetSerializer.serialize(mockObject);
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+    doThrow(new SSZException("whoops")).when(topicHandler).deserialize(any());
+
+    topicHandler.accept(mockMessage);
+
+    verify(eventBus, never()).post(mockObject);
+    verify(publisher, never()).publish(any(), any());
+  }
+
+  @Test
+  public void accept_unableToValidate() {
+    final Bytes data = Bytes.fromHexString("0x1234");
+    final MockSimpleOffsetSerializable mockObject = new MockSimpleOffsetSerializable(data);
+    final Bytes serialized = SimpleOffsetSerializer.serialize(mockObject);
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+    doThrow(new RuntimeException("whoops")).when(topicHandler).validateData(any());
 
     topicHandler.accept(mockMessage);
 
