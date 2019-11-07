@@ -44,7 +44,7 @@ import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyB
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -68,7 +68,7 @@ public class AttestationUtil {
     return true;
   }
 
-  public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
+  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
       BeaconState headState,
       HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
           committeeAssignments) {
@@ -76,15 +76,15 @@ public class AttestationUtil {
     UnsignedLong slot = headState.getSlot();
     List<Triple<List<Integer>, UnsignedLong, Integer>> committeeAssignmentsForSlot =
         committeeAssignments.get(slot);
-    List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters = new ArrayList<>();
+    List<Triple<BLSPublicKey, Integer, Committee>> attesters = new ArrayList<>();
     if (committeeAssignmentsForSlot != null) {
       for (int i = 0; i < committeeAssignmentsForSlot.size(); i++) {
         int validatorIndex = committeeAssignmentsForSlot.get(i).getRight();
         List<Integer> committee = committeeAssignmentsForSlot.get(i).getLeft();
-        UnsignedLong shard = committeeAssignmentsForSlot.get(i).getMiddle();
+        UnsignedLong index = committeeAssignmentsForSlot.get(i).getMiddle();
         int indexIntoCommittee = committee.indexOf(validatorIndex);
 
-        CrosslinkCommittee crosslinkCommittee = new CrosslinkCommittee(shard, committee);
+        Committee crosslinkCommittee = new Committee(index, committee);
         attesters.add(
             new MutableTriple<>(
                 headState.getValidators().get(validatorIndex).getPubkey(),
@@ -120,7 +120,7 @@ public class AttestationUtil {
   }
 
   public static AttestationData completeAttestationCrosslinkData(
-      BeaconState state, AttestationData attestation_data, CrosslinkCommittee committee) {
+      BeaconState state, AttestationData attestation_data, Committee committee) {
     return attestation_data;
   }
 

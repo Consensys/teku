@@ -17,12 +17,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CrosslinkCommittee {
+public class Committee {
 
   private UnsignedLong index;
   private List<Integer> committee;
 
-  public CrosslinkCommittee(UnsignedLong index, List<Integer> committee) {
+  public Committee(UnsignedLong index, List<Integer> committee) {
     this.index = index;
     this.committee = committee;
   }

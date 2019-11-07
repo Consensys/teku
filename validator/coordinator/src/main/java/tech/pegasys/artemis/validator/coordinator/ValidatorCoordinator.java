@@ -48,7 +48,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
@@ -194,7 +194,7 @@ public class ValidatorCoordinator {
             });
       }
 
-      List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters =
+      List<Triple<BLSPublicKey, Integer, Committee>> attesters =
           AttestationUtil.getAttesterInformation(headState, committeeAssignments);
       // TODO: 0.9.0 We need to set the index on this data somewhere
       AttestationData genericAttestationData =
@@ -228,7 +228,7 @@ public class ValidatorCoordinator {
       BeaconState state,
       BLSPublicKey attester,
       int indexIntoCommittee,
-      CrosslinkCommittee committee,
+      Committee committee,
       AttestationData genericAttestationData) {
     int commmitteSize = committee.getCommitteeSize();
     genericAttestationData.setIndex(committee.getIndex());
