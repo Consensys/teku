@@ -56,7 +56,6 @@ public final class BeaconStateWithCache extends BeaconState {
       SSZList<UnsignedLong> balances,
 
       // Shuffling
-      UnsignedLong start_shard,
       SSZVector<Bytes32> randao_mixes,
       SSZVector<Bytes32> active_index_roots,
 
@@ -85,7 +84,6 @@ public final class BeaconStateWithCache extends BeaconState {
         eth1_deposit_index,
         validators,
         balances,
-        start_shard,
         randao_mixes,
         active_index_roots,
         slashings,
@@ -122,7 +120,6 @@ public final class BeaconStateWithCache extends BeaconState {
     this.balances = new SSZList<>(state.getBalances());
 
     // Shuffling
-    this.start_shard = state.getStart_shard();
     this.randao_mixes = new SSZVector<>(state.getRandao_mixes());
     this.active_index_roots = new SSZVector<>(state.getActive_index_roots());
 
@@ -173,7 +170,6 @@ public final class BeaconStateWithCache extends BeaconState {
         state.getEth1_deposit_index(),
         state.getValidators(),
         state.getBalances(),
-        state.getStart_shard(),
         state.getRandao_mixes(),
         state.getActive_index_roots(),
         state.getSlashings(),

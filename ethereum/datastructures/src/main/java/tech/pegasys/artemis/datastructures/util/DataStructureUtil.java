@@ -361,7 +361,6 @@ public final class DataStructureUtil {
         // Can't use the actual maxSize cause it is too big
         randomSSZList(Validator.class, 1000, DataStructureUtil::randomValidator, seed++),
         randomSSZList(UnsignedLong.class, 1000, DataStructureUtil::randomUnsignedLong, seed++),
-        randomUnsignedLong(seed++),
         randomSSZVector(
             Bytes32.ZERO,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,

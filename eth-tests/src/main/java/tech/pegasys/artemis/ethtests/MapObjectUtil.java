@@ -292,7 +292,6 @@ public class MapObjectUtil {
                         .collect(Collectors.toList())),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             UnsignedLong.class);
-    UnsignedLong start_shard = UnsignedLong.valueOf(map.get("start_shard").toString());
     SSZVector<Bytes32> randao_mixes =
         new SSZVector<>(
             new ArrayList<>(
@@ -347,7 +346,6 @@ public class MapObjectUtil {
         eth1_deposit_index,
         validators,
         balances,
-        start_shard,
         randao_mixes,
         active_index_roots,
         slashings,

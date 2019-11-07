@@ -17,17 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -49,17 +44,14 @@ import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyB
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class AttestationUtil {
 
@@ -298,50 +290,6 @@ public class AttestationUtil {
       return false;
     }
     return true;
-  }
-
-  /**
-   * Return the compact committee root at ``epoch``.
-   *
-   * @param state
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_compact_committees_root</a>
-   */
-  public static Bytes32 get_compact_committees_root(BeaconState state, UnsignedLong epoch) {
-    List<CompactCommittee> committees = new ArrayList<>();
-    for (int i = 0; i < SHARD_COUNT; i++) {
-      CompactCommittee newCommittee = new CompactCommittee();
-      committees.add(newCommittee);
-    }
-    int start_shard = get_start_shard(state, epoch).intValue();
-    int committee_count = get_committee_count(state, epoch).intValue();
-    for (int committee_number = 0; committee_number < committee_count; committee_number++) {
-      int shard = (start_shard + committee_number) % SHARD_COUNT;
-      List<Integer> crosslink_committee =
-          get_crosslink_committee(state, epoch, UnsignedLong.valueOf(shard));
-      for (Integer index : crosslink_committee) {
-        Validator validator = state.getValidators().get(index);
-        committees.get(shard).getPubkeys().add(validator.getPubkey());
-        UnsignedLong compact_balance =
-            validator
-                .getEffective_balance()
-                .dividedBy(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT));
-        UnsignedLong index16leftShift = BitwiseOps.leftShift(UnsignedLong.valueOf(index), 16);
-        UnsignedLong slashed15leftShift = UnsignedLong.ZERO;
-        if (validator.isSlashed()) {
-          slashed15leftShift = BitwiseOps.leftShift(UnsignedLong.ONE, 15);
-        }
-        UnsignedLong compact_validator =
-            index16leftShift.plus(slashed15leftShift).plus(compact_balance);
-        committees.get(shard).getCompact_validators().add(compact_validator);
-      }
-    }
-
-    return HashTreeUtil.hash_tree_root(
-        HashTreeUtil.SSZTypes.VECTOR_OF_COMPOSITE,
-        committees.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList()));
   }
 
   public static <T> List<T> intersection(List<T> list1, List<T> list2) {

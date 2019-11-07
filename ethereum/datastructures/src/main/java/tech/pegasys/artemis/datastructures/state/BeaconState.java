@@ -62,8 +62,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
   protected SSZList<Validator> validators; // List Bounded by VALIDATOR_REGISTRY_LIMIT
   protected SSZList<UnsignedLong> balances; // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
-  // Shuffling
-  protected UnsignedLong start_shard;
   protected SSZVector<Bytes32> randao_mixes; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
   protected SSZVector<Bytes32> active_index_roots; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
@@ -104,7 +102,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
       SSZList<UnsignedLong> balances,
 
       // Shuffling
-      UnsignedLong start_shard,
       SSZVector<Bytes32> randao_mixes,
       SSZVector<Bytes32> active_index_roots,
 
@@ -141,7 +138,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.balances = balances;
 
     // Shuffling
-    this.start_shard = start_shard;
     this.randao_mixes = randao_mixes;
     this.active_index_roots = active_index_roots;
 
@@ -188,7 +184,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.balances = new SSZList<>(UnsignedLong.class, Constants.VALIDATOR_REGISTRY_LIMIT);
 
     // Shuffling
-    this.start_shard = UnsignedLong.ZERO;
     this.randao_mixes =
         new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
     this.active_index_roots =
@@ -240,7 +235,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             SSZ.encodeUInt64(eth1_deposit_index.longValue()),
             Bytes.EMPTY,
             Bytes.EMPTY,
-            SSZ.encodeUInt64(start_shard.longValue()),
             SSZ.encode(writer -> writer.writeFixedBytesVector(randao_mixes)),
             SSZ.encode(writer -> writer.writeFixedBytesVector(active_index_roots)),
             SSZ.encode(
@@ -274,7 +268,7 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             balances.stream()
                 .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
                 .collect(Collectors.joining())));
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
     variablePartsList.add(
         SimpleOffsetSerializer.serializeVariableCompositeList(previous_epoch_attestations));
     variablePartsList.add(
@@ -313,7 +307,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         balances,
 
         // Shuffling
-        start_shard,
         randao_mixes,
         active_index_roots,
 
@@ -358,7 +351,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         && Objects.equals(this.getEth1_deposit_index(), other.getEth1_deposit_index())
         && Objects.equals(this.getValidators(), other.getValidators())
         && Objects.equals(this.getBalances(), other.getBalances())
-        && Objects.equals(this.getStart_shard(), other.getStart_shard())
         && Objects.equals(this.getRandao_mixes(), other.getRandao_mixes())
         && Objects.equals(this.getActive_index_roots(), other.getActive_index_roots())
         && Objects.equals(this.getSlashings(), other.getSlashings())
@@ -474,15 +466,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
 
   public void setBalances(SSZList<UnsignedLong> balances) {
     this.balances = balances;
-  }
-
-  // Shuffling
-  public UnsignedLong getStart_shard() {
-    return start_shard;
-  }
-
-  public void setStart_shard(UnsignedLong start_shard) {
-    this.start_shard = start_shard;
   }
 
   public SSZVector<Bytes32> getRandao_mixes() {
@@ -601,7 +584,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
                     .collect(Collectors.toList())),
 
             // Shuffling
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_shard.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, randao_mixes),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, active_index_roots),
 
@@ -640,7 +622,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         .add("eth1_deposit_index", eth1_deposit_index)
         .add("validators", validators)
         .add("balances", balances)
-        .add("start_shard", start_shard)
         .add("randao_mixes", randao_mixes)
         .add("active_index_roots", active_index_roots)
         .add("slashings", slashings)

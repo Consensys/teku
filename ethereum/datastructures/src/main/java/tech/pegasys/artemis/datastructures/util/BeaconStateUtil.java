@@ -15,8 +15,7 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.compute_shuffled_index;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
@@ -24,6 +23,7 @@ import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
@@ -48,6 +48,7 @@ import static tech.pegasys.artemis.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.Collections;
@@ -675,32 +676,44 @@ public class BeaconStateUtil {
    */
   public static int get_beacon_proposer_index(BeaconState state) {
     UnsignedLong epoch = get_current_epoch(state);
-    UnsignedLong committees_per_slot =
-        get_committee_count(state, epoch).dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-    UnsignedLong offset =
-        committees_per_slot.times(state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)));
-    UnsignedLong shard =
-        get_start_shard(state, epoch).plus(offset).mod(UnsignedLong.valueOf(SHARD_COUNT));
+    Bytes32 seed =
+        Hash.sha2_256(
+            Bytes.concatenate(
+                get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
+                int_to_bytes(state.getSlot().longValue(), 8)));
+    final List<Integer> indices = get_active_validator_indices(state, epoch);
+    return compute_proposer_index(state, indices, seed);
+  }
 
-    List<Integer> first_committee = get_crosslink_committee(state, epoch, shard);
-    long MAX_RANDOM_BYTE = (long) Math.pow(2.0d, 8.0d) - 1;
-    Bytes seed = get_seed(state, epoch);
+  /**
+   * Return from ``indices`` a random index sampled by effective balance.
+   *
+   * @param state
+   * @param indices
+   * @param seed
+   * @return
+   */
+  public static int compute_proposer_index(BeaconState state, List<Integer> indices, Bytes32 seed) {
+    checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
+    UnsignedLong MAX_RANDOM_BYTE = UnsignedLong.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
     while (true) {
-      int index =
-          epoch
-              .plus(UnsignedLong.valueOf(i))
-              .mod(UnsignedLong.valueOf(first_committee.size()))
-              .intValue();
-      int candidate_index = first_committee.get(index);
-      Bytes digest = Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)));
-      byte random_byte = digest.get(i % 32);
-      UnsignedLong effective_balance =
+      final int candidate_index =
+          indices.get(compute_shuffled_index(i % indices.size(), indices.size(), seed));
+      final int random_byte =
+          UnsignedBytes.toInt(
+              Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)))
+                  .get(i % 32));
+      final UnsignedLong effective_balance =
           state.getValidators().get(candidate_index).getEffective_balance();
-
-      long minRandomBalance = effective_balance.longValue() * MAX_RANDOM_BYTE;
-      long maxRandomBalance = MAX_EFFECTIVE_BALANCE * random_byte;
-      if (minRandomBalance >= maxRandomBalance) return candidate_index;
+      if (effective_balance
+              .times(MAX_RANDOM_BYTE)
+              .compareTo(
+                  UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)
+                      .times(UnsignedLong.valueOf(random_byte)))
+          >= 0) {
+        return candidate_index;
+      }
       i++;
     }
   }

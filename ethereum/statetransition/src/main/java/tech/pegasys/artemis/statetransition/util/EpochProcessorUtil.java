@@ -28,7 +28,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_valid
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_shard_delta;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
@@ -48,7 +47,6 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 import static tech.pegasys.artemis.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -635,13 +633,6 @@ public final class EpochProcessorUtil {
           new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
       state.getHistorical_roots().add(historical_batch.hash_tree_root());
     }
-
-    // Update start shard
-    state.setStart_shard(
-        state
-            .getStart_shard()
-            .plus(get_shard_delta(state, current_epoch))
-            .mod(UnsignedLong.valueOf(SHARD_COUNT)));
 
     // Rotate current/previous epoch attestations
     state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
