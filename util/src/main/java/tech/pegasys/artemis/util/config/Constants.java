@@ -82,7 +82,6 @@ public class Constants {
   public static int MAX_ATTESTATIONS;
   public static int MAX_DEPOSITS;
   public static int MAX_VOLUNTARY_EXITS = 16;
-  public static int MAX_TRANSFERS = 0;
 
   // Signature domains
   public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
@@ -176,7 +175,6 @@ public class Constants {
       MAX_ATTESTATIONS = 128;
       MAX_DEPOSITS = 16;
       MAX_VOLUNTARY_EXITS = 16;
-      MAX_TRANSFERS = 0;
 
     } else {
 
@@ -235,7 +233,6 @@ public class Constants {
       MAX_ATTESTATIONS = 128;
       MAX_DEPOSITS = 16;
       MAX_VOLUNTARY_EXITS = 16;
-      MAX_TRANSFERS = 0;
     }
   }
 }
