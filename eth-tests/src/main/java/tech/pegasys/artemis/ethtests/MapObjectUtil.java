@@ -628,8 +628,7 @@ public class MapObjectUtil {
         UnsignedLong.valueOf(map.get("index").toString()),
         Bytes32.fromHexString(map.get("beacon_block_root").toString()),
         getCheckpoint((Map) map.get("source")),
-        getCheckpoint((Map) map.get("target")),
-        getCrossLink((Map) map.get("crosslink")));
+        getCheckpoint((Map) map.get("target")));
   }
 
   @SuppressWarnings({"rawtypes"})

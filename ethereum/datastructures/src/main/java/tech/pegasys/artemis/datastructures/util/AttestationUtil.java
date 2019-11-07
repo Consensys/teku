@@ -20,11 +20,11 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -49,7 +50,6 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -59,7 +59,6 @@ import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
-import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class AttestationUtil {
@@ -118,8 +117,7 @@ public class AttestationUtil {
     Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
 
     // Set attestation data
-    return new AttestationData(
-        slot, UnsignedLong.ZERO, beacon_block_root, source, target, new Crosslink());
+    return new AttestationData(slot, UnsignedLong.ZERO, beacon_block_root, source, target);
   }
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
@@ -131,19 +129,6 @@ public class AttestationUtil {
 
   public static AttestationData completeAttestationCrosslinkData(
       BeaconState state, AttestationData attestation_data, CrosslinkCommittee committee) {
-    Crosslink crosslink = attestation_data.getCrosslink();
-    UnsignedLong shard = committee.getShard();
-    crosslink.setShard(shard);
-    Crosslink parent_crosslink = state.getCurrent_crosslinks().get(shard.intValue());
-    crosslink.setStart_epoch(parent_crosslink.getEnd_epoch());
-    UnsignedLong end_epoch =
-        min(
-            attestation_data.getTarget().getEpoch(),
-            parent_crosslink
-                .getEnd_epoch()
-                .plus(UnsignedLong.valueOf(Constants.MAX_EPOCHS_PER_CROSSLINK)));
-    crosslink.setEnd_epoch(end_epoch);
-    crosslink.setParent_root(state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root());
     return attestation_data;
   }
 
@@ -230,12 +215,9 @@ public class AttestationUtil {
   public static List<Integer> get_attesting_indices(
       BeaconState state, AttestationData attestation_data, Bitlist bits) {
     List<Integer> committee =
-        get_crosslink_committee(
-            state,
-            attestation_data.getTarget().getEpoch(),
-            attestation_data.getCrosslink().getShard());
+        get_beacon_committee(state, attestation_data.getSlot(), attestation_data.getIndex());
 
-    HashSet<Integer> attesting_indices = new HashSet<>();
+    Set<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);
       int bitfieldBit = bits.getBit(i);
@@ -308,7 +290,8 @@ public class AttestationUtil {
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes domain =
-        get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget().getEpoch());
+        get_domain(
+            state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain)) {
       STDOUT.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");

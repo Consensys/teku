@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -44,22 +43,17 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
   private Checkpoint source;
   private Checkpoint target;
 
-  // Crosslink vote
-  private Crosslink crosslink;
-
   public AttestationData(
       UnsignedLong slot,
       UnsignedLong index,
       Bytes32 beacon_block_root,
       Checkpoint source,
-      Checkpoint target,
-      Crosslink crosslink) {
+      Checkpoint target) {
     this.slot = slot;
     this.index = index;
     this.beacon_block_root = beacon_block_root;
     this.source = source;
     this.target = target;
-    this.crosslink = crosslink;
   }
 
   public AttestationData(AttestationData attestationData) {
@@ -68,15 +62,11 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
     this.beacon_block_root = attestationData.getBeacon_block_root();
     this.source = new Checkpoint(attestationData.getSource());
     this.target = new Checkpoint(attestationData.getTarget());
-    this.crosslink = new Crosslink(attestationData.getCrosslink());
   }
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT
-        + source.getSSZFieldCount()
-        + target.getSSZFieldCount()
-        + crosslink.getSSZFieldCount();
+    return SSZ_FIELD_COUNT + source.getSSZFieldCount() + target.getSSZFieldCount();
   }
 
   @Override
@@ -89,7 +79,6 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
             SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root))));
     fixedPartsList.addAll(source.get_fixed_parts());
     fixedPartsList.addAll(target.get_fixed_parts());
-    fixedPartsList.addAll(crosslink.get_fixed_parts());
     return fixedPartsList;
   }
 
@@ -106,13 +95,12 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
         && Objects.equals(index, that.index)
         && Objects.equals(beacon_block_root, that.beacon_block_root)
         && Objects.equals(source, that.source)
-        && Objects.equals(target, that.target)
-        && Objects.equals(crosslink, that.crosslink);
+        && Objects.equals(target, that.target);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, index, beacon_block_root, source, target, crosslink);
+    return Objects.hash(slot, index, beacon_block_root, source, target);
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -152,14 +140,6 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
     this.target = target;
   }
 
-  public Crosslink getCrosslink() {
-    return crosslink;
-  }
-
-  public void setCrosslink(Crosslink crosslink) {
-    this.crosslink = crosslink;
-  }
-
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
@@ -168,7 +148,6 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, beacon_block_root),
             source.hash_tree_root(),
-            target.hash_tree_root(),
-            crosslink.hash_tree_root()));
+            target.hash_tree_root()));
   }
 }

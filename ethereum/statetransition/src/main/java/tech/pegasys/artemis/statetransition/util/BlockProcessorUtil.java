@@ -20,15 +20,15 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slasha
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
@@ -38,12 +38,9 @@ import static tech.pegasys.artemis.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.util.config.Constants.MAX_EPOCHS_PER_CROSSLINK;
 import static tech.pegasys.artemis.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -65,7 +62,6 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -358,7 +354,7 @@ public final class BlockProcessorUtil {
       for (Attestation attestation : attestations) {
         AttestationData data = attestation.getData();
         checkArgument(
-            data.getCrosslink().getShard().longValue() < SHARD_COUNT,
+            data.getIndex().compareTo(get_committee_count_at_slot(state, data.getSlot())) < 0,
             "process_attestations: Crosslink shard value too high");
         checkArgument(
             data.getTarget().getEpoch().equals(get_previous_epoch(state))
@@ -378,9 +374,7 @@ public final class BlockProcessorUtil {
                 <= 0,
             "process_attestations: Attestation submitted too far in history");
 
-        List<Integer> committee =
-            get_crosslink_committee(
-                state, data.getTarget().getEpoch(), data.getCrosslink().getShard());
+        List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
         checkArgument(
             attestation.getAggregation_bits().getByteArray().length
                     == attestation.getCustody_bitfield().getByteArray().length
@@ -394,44 +388,19 @@ public final class BlockProcessorUtil {
                 state.getSlot().minus(attestation_slot),
                 UnsignedLong.valueOf(get_beacon_proposer_index(state)));
 
-        Crosslink parent_crosslink;
         if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
           checkArgument(
               data.getSource().equals(state.getCurrent_justified_checkpoint()),
               "process_attestations: Attestation source error 1");
-          parent_crosslink =
-              state.getCurrent_crosslinks().get(data.getCrosslink().getShard().intValue());
           state.getCurrent_epoch_attestations().add(pendingAttestation);
         } else {
           checkArgument(
               data.getSource().equals(state.getPrevious_justified_checkpoint()),
               "process_attestations: Attestation source error 2");
-          parent_crosslink =
-              state.getPrevious_crosslinks().get(data.getCrosslink().getShard().intValue());
           state.getPrevious_epoch_attestations().add(pendingAttestation);
         }
 
-        // Check crosslink against expected parent crosslink
-        checkArgument(
-            data.getCrosslink().getParent_root().equals(parent_crosslink.hash_tree_root()),
-            "process_attestations: Check crosslink data 1");
-        checkArgument(
-            data.getCrosslink().getStart_epoch().equals(parent_crosslink.getEnd_epoch()),
-            "process_attestations: Check crosslink data 2");
-        checkArgument(
-            data.getCrosslink()
-                .getEnd_epoch()
-                .equals(
-                    min(
-                        data.getTarget().getEpoch(),
-                        parent_crosslink
-                            .getEnd_epoch()
-                            .plus(UnsignedLong.valueOf(MAX_EPOCHS_PER_CROSSLINK)))),
-            "process_attestations: Check crosslink data 3");
-        checkArgument(
-            data.getCrosslink().getData_root().equals(ZERO_HASH),
-            "process_attestations: Check crosslink data 4");
-
+        // Check signature
         checkArgument(
             is_valid_indexed_attestation(state, get_indexed_attestation(state, attestation)),
             "process_attestations: Check signature");

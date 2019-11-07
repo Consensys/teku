@@ -30,6 +30,7 @@ public class Constants {
   public static String ENDIANNESS = "little";
 
   // Misc
+  public static int MAX_COMMITTEES_PER_SLOT;
   public static int SHARD_COUNT;
   public static int TARGET_COMMITTEE_SIZE;
   public static int MAX_VALIDATORS_PER_COMMITTEE;
@@ -86,14 +87,10 @@ public class Constants {
 
   // Signature domains
   public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
-  public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x01000000"));
-  public static Bytes4 DOMAIN_ATTESTATION = new Bytes4(Bytes.fromHexString("0x02000000"));
+  public static Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
+  public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
   public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
   public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
-  public static Bytes4 DOMAIN_TRANSFER = new Bytes4(Bytes.fromHexString("0x05000000"));
-  public static Bytes4 DOMAIN_CUSTODY_BIT_CHALLENGE = new Bytes4(Bytes.fromHexString("0x06000000"));
-  public static Bytes4 DOMAIN_SHARD_PROPOSER = new Bytes4(Bytes.fromHexString("0x08000000"));
-  public static Bytes4 DOMAIN_SHARD_ATTESTER = new Bytes4(Bytes.fromHexString("0x08100000"));
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
@@ -128,6 +125,7 @@ public class Constants {
       // Mainnet settings
 
       // Misc
+      MAX_COMMITTEES_PER_SLOT = 64;
       SHARD_COUNT = 1024;
       TARGET_COMMITTEE_SIZE = 128;
       MAX_VALIDATORS_PER_COMMITTEE = 4096;
@@ -187,6 +185,7 @@ public class Constants {
       // Minimal settings
 
       // Misc
+      MAX_COMMITTEES_PER_SLOT = 4;
       SHARD_COUNT = 8;
       TARGET_COMMITTEE_SIZE = 4;
       MAX_VALIDATORS_PER_COMMITTEE = 4096;

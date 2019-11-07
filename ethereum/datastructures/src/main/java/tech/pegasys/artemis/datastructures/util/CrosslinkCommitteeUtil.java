@@ -16,12 +16,15 @@ package tech.pegasys.artemis.datastructures.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -106,6 +109,31 @@ public class CrosslinkCommitteeUtil {
         .map(i -> indices.get(compute_shuffled_index(i, indices.size(), seed)))
         .boxed()
         .collect(Collectors.toList());
+  }
+
+  /**
+   * Return the beacon committee at ``slot`` for ``index``.
+   *
+   * @param state
+   * @param slot
+   * @param index
+   * @return
+   */
+  public static List<Integer> get_beacon_committee(
+      BeaconState state, UnsignedLong slot, UnsignedLong index) {
+    UnsignedLong epoch = compute_epoch_at_slot(slot);
+    UnsignedLong committees_per_slot = get_committee_count_at_slot(state, slot);
+    final int committeeIndex =
+        slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+            .times(committees_per_slot)
+            .plus(index)
+            .intValue();
+    final int count = committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
+    return compute_committee(
+        get_active_validator_indices(state, epoch),
+        get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),
+        committeeIndex,
+        count);
   }
 
   /**

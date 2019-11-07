@@ -141,8 +141,7 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed++),
         randomBytes32(seed++),
         randomCheckpoint(seed++),
-        randomCheckpoint(seed++),
-        randomCrosslink(seed++));
+        randomCheckpoint(seed++));
   }
 
   public static Attestation randomAttestation(int seed) {

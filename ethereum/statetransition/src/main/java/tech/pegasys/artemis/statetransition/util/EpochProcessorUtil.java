@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
@@ -30,9 +29,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_valid
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_shard_delta;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
@@ -62,28 +59,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.TreeSet;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -190,76 +181,6 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * Returns the crosslink that has the data root with most balance voting for it, and the list of
-   * Validators that voted for that crosslink
-   *
-   * @param state
-   * @param epoch
-   * @param shard
-   * @return
-   * @throws IllegalArgumentException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
-   */
-  private static ImmutablePair<Crosslink, List<Integer>>
-      get_winning_crosslink_and_attesting_indices(
-          BeaconState state, UnsignedLong epoch, UnsignedLong shard)
-          throws IllegalArgumentException {
-    Supplier<Stream<PendingAttestation>> attestations =
-        () ->
-            get_matching_source_attestations(state, epoch).stream()
-                .filter(
-                    attestation -> attestation.getData().getCrosslink().getShard().equals(shard));
-
-    Supplier<Stream<Pair<Crosslink, UnsignedLong>>> crosslink_attesting_balances =
-        () ->
-            attestations
-                .get()
-                .map(attestation -> attestation.getData().getCrosslink())
-                .filter(
-                    crosslink -> {
-                      Bytes32 hash =
-                          state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root();
-                      return hash.equals(crosslink.getParent_root())
-                          || hash.equals(crosslink.hash_tree_root());
-                    })
-                .map(
-                    c ->
-                        new ImmutablePair<>(
-                            c,
-                            get_attesting_balance(
-                                state,
-                                attestations
-                                    .get()
-                                    .filter(a -> a.getData().getCrosslink().equals(c))
-                                    .collect(Collectors.toList()))));
-
-    Optional<Pair<Crosslink, UnsignedLong>> winning_crosslink_balance =
-        crosslink_attesting_balances.get().max(Comparator.comparing(Pair::getRight));
-
-    Crosslink winning_crosslink;
-    if (winning_crosslink_balance.isPresent()) {
-      winning_crosslink =
-          crosslink_attesting_balances
-              .get()
-              .filter(cab -> winning_crosslink_balance.get().getRight().equals(cab.getRight()))
-              .max(Comparator.comparing(cab -> cab.getLeft().getData_root().toHexString()))
-              .get()
-              .getLeft();
-    } else {
-      winning_crosslink = new Crosslink();
-    }
-
-    List<PendingAttestation> winning_attestations =
-        attestations
-            .get()
-            .filter(a -> a.getData().getCrosslink().equals(winning_crosslink))
-            .collect(Collectors.toList());
-    return new ImmutablePair<>(
-        winning_crosslink, get_unslashed_attesting_indices(state, winning_attestations));
-  }
-
-  /**
    * Processes justification and finalization
    *
    * @param state
@@ -344,52 +265,6 @@ public final class EpochProcessorUtil {
         state.setFinalized_checkpoint(old_current_justified_checkpoint);
       }
 
-    } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
-      throw new EpochProcessingException(e);
-    }
-  }
-
-  /**
-   * Processes crosslink information
-   *
-   * @param state
-   * @throws EpochProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#crosslinks</a>
-   */
-  public static void process_crosslinks(BeaconState state) throws EpochProcessingException {
-    try {
-      SSZVector<Crosslink> newCurrentCrosslinks =
-          new SSZVector<>(state.getCurrent_crosslinks().getSize(), new Crosslink());
-      IntStream.range(0, newCurrentCrosslinks.getSize())
-          .forEach(i -> newCurrentCrosslinks.set(i, state.getCurrent_crosslinks().get(i).copy()));
-      state.setPrevious_crosslinks(newCurrentCrosslinks);
-
-      List<UnsignedLong> epochs = new ArrayList<>();
-      epochs.add(get_previous_epoch(state));
-      epochs.add(get_current_epoch(state));
-
-      for (UnsignedLong epoch : epochs) {
-        for (int offset = 0; offset < get_committee_count(state, epoch).intValue(); offset++) {
-          UnsignedLong shard =
-              get_start_shard(state, epoch)
-                  .plus(UnsignedLong.valueOf(offset))
-                  .mod(UnsignedLong.valueOf(SHARD_COUNT));
-          List<Integer> crosslink_committee = get_crosslink_committee(state, epoch, shard);
-          Pair<Crosslink, List<Integer>> winning_crosslink_and_attesting_indices =
-              get_winning_crosslink_and_attesting_indices(state, epoch, shard);
-          Crosslink winning_crosslink = winning_crosslink_and_attesting_indices.getLeft();
-          List<Integer> attesting_indices = winning_crosslink_and_attesting_indices.getRight();
-          if (UnsignedLong.valueOf(3L)
-                  .times(get_total_balance(state, attesting_indices))
-                  .compareTo(
-                      UnsignedLong.valueOf(2L).times(get_total_balance(state, crosslink_committee)))
-              >= 0) {
-            state.getCurrent_crosslinks().set(shard.intValue(), winning_crosslink);
-          }
-        }
-      }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, e.getMessage());
       throw new EpochProcessingException(e);
@@ -546,55 +421,6 @@ public final class EpochProcessorUtil {
   }
 
   /**
-   * Returns rewards and penalties specific to each validator resulting from voting/not-voting on
-   * the correct crosslink
-   *
-   * @param state
-   * @return
-   * @throws IllegalArgumentException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
-   */
-  private static ImmutablePair<List<UnsignedLong>, List<UnsignedLong>> get_crosslink_deltas(
-      BeaconState state) throws IllegalArgumentException {
-    int list_size = state.getValidators().size();
-    List<UnsignedLong> rewards = Arrays.asList(new UnsignedLong[list_size]);
-    List<UnsignedLong> penalties = Arrays.asList(new UnsignedLong[list_size]);
-    for (int i = 0; i < list_size; i++) {
-      rewards.set(i, UnsignedLong.ZERO);
-      penalties.set(i, UnsignedLong.ZERO);
-    }
-
-    UnsignedLong epoch = get_previous_epoch(state);
-
-    for (int offset = 0; offset < get_committee_count(state, epoch).intValue(); offset++) {
-      UnsignedLong shard =
-          get_start_shard(state, epoch)
-              .plus(UnsignedLong.valueOf(offset))
-              .mod(UnsignedLong.valueOf(SHARD_COUNT));
-      List<Integer> crosslink_committee = get_crosslink_committee(state, epoch, shard);
-      Pair<Crosslink, List<Integer>> winning_crosslink_and_attesting_indices =
-          get_winning_crosslink_and_attesting_indices(state, epoch, shard);
-      List<Integer> attesting_indices = winning_crosslink_and_attesting_indices.getRight();
-      UnsignedLong attesting_balance = get_total_balance(state, attesting_indices);
-      UnsignedLong committee_balance = get_total_balance(state, crosslink_committee);
-      for (int index : crosslink_committee) {
-        UnsignedLong base_reward = get_base_reward(state, index);
-        if (attesting_indices.contains(index)) {
-          rewards.set(
-              index,
-              rewards
-                  .get(index)
-                  .plus(base_reward.times(attesting_balance).dividedBy(committee_balance)));
-        } else {
-          penalties.set(index, penalties.get(index).plus(base_reward));
-        }
-      }
-    }
-    return new ImmutablePair<>(rewards, penalties);
-  }
-
-  /**
    * Processes rewards and penalties
    *
    * @param state
@@ -611,15 +437,12 @@ public final class EpochProcessorUtil {
 
       Pair<List<UnsignedLong>, List<UnsignedLong>> attestation_deltas =
           get_attestation_deltas(state);
-      List<UnsignedLong> rewards1 = attestation_deltas.getLeft();
-      List<UnsignedLong> penalties1 = attestation_deltas.getRight();
-      Pair<List<UnsignedLong>, List<UnsignedLong>> crosslink_deltas = get_crosslink_deltas(state);
-      List<UnsignedLong> rewards2 = crosslink_deltas.getLeft();
-      List<UnsignedLong> penalties2 = crosslink_deltas.getRight();
+      List<UnsignedLong> rewards = attestation_deltas.getLeft();
+      List<UnsignedLong> penalties = attestation_deltas.getRight();
 
       for (int i = 0; i < state.getValidators().size(); i++) {
-        increase_balance(state, i, rewards1.get(i).plus(rewards2.get(i)));
-        decrease_balance(state, i, penalties1.get(i).plus(penalties2.get(i)));
+        increase_balance(state, i, rewards.get(i));
+        decrease_balance(state, i, penalties.get(i));
       }
     } catch (IllegalArgumentException e) {
       LOG.log(Level.WARN, e.getMessage());

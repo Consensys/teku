@@ -15,7 +15,7 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
@@ -232,7 +232,8 @@ public class ValidatorCoordinator {
         AttestationUtil.completeAttestationCrosslinkData(
             state, new AttestationData(genericAttestationData), committee);
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
-    Bytes domain = get_domain(state, DOMAIN_ATTESTATION, attestationData.getTarget().getEpoch());
+    Bytes domain =
+        get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
 
     BLSSignature signature = getSignature(attestationMessage, domain, attester);
     this.eventBus.post(
