@@ -167,13 +167,13 @@ public class ValidatorCoordinator {
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
 
-      // At the start of each epoch, update committee assignments, and put them in the committee assignments mapping
+      // At the start of each epoch, update committee assignments, and put them in the committee
+      // assignments mapping
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
           || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
 
         validators.forEach(
             (pubKey, validatorInformation) -> {
-
               Optional<CommitteeAssignment> committeeAssignment =
                   ValidatorClientUtil.get_committee_assignment(
                       headState,
@@ -183,7 +183,8 @@ public class ValidatorCoordinator {
               committeeAssignment.ifPresent(
                   assignment -> {
                     List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
-                        committeeAssignments.computeIfAbsent(assignment.getSlot(), k -> new ArrayList<>());
+                        committeeAssignments.computeIfAbsent(
+                            assignment.getSlot(), k -> new ArrayList<>());
                     assignmentsInSlot.add(
                         new MutableTriple<>(
                             assignment.getCommittee(),

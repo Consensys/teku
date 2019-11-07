@@ -169,7 +169,9 @@ public class DepositUtil {
 
   public static DepositWithIndex convertDepositEventToOperationDeposit(
       tech.pegasys.artemis.pow.event.Deposit event) {
-    checkArgument(event.getAmount().compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT)) >= 0, "Deposit amount too low");
+    checkArgument(
+        event.getAmount().compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT)) >= 0,
+        "Deposit amount too low");
     DepositData data =
         new DepositData(
             event.getPubkey(),

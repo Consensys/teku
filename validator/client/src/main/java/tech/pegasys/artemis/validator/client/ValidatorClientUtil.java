@@ -25,8 +25,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.crypto.Credentials;
@@ -44,20 +42,18 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 public class ValidatorClientUtil {
 
   /**
-   * Return the committee assignment in the ``epoch`` for ``validator_index``.
-   * ``assignment`` returned is a tuple of the following form:
-   * ``assignment[0]`` is the list of validators in the committee
-   * ``assignment[1]`` is the index to which the committee is assigned
-   * ``assignment[2]`` is the slot at which the committee is assigned
-   * Return None if no assignment.
+   * Return the committee assignment in the ``epoch`` for ``validator_index``. ``assignment``
+   * returned is a tuple of the following form: ``assignment[0]`` is the list of validators in the
+   * committee ``assignment[1]`` is the index to which the committee is assigned ``assignment[2]``
+   * is the slot at which the committee is assigned Return None if no assignment.
    *
    * @param state the BeaconState.
    * @param epoch either on or between previous or current epoch.
    * @param validator_index the validator that is calling this function.
    * @return Optional.of(CommitteeAssignment).
    */
-  public static Optional<CommitteeAssignment>
-      get_committee_assignment(BeaconState state, UnsignedLong epoch, int validator_index) {
+  public static Optional<CommitteeAssignment> get_committee_assignment(
+      BeaconState state, UnsignedLong epoch, int validator_index) {
     UnsignedLong next_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
     checkArgument(
         epoch.compareTo(next_epoch) <= 0, "get_committe_assignment: Epoch number too high");
