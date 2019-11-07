@@ -19,4 +19,8 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
   runtime 'org.apache.logging.log4j:log4j-core'
+
+  testSupportImplementation project(':storage')
+  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportImplementation project(path: ':validator:client')
 }

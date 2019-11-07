@@ -26,6 +26,7 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.ByteBuf;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,13 +39,16 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
+import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.validator.client.AttestationGenerator;
 
 public class AttestationTopicHandlerTest {
 
+  private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final EventBus eventBus = spy(new EventBus());
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, storageClient);
 
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(publisher, eventBus, storageClient);
@@ -54,6 +58,7 @@ public class AttestationTopicHandlerTest {
 
   @BeforeEach
   public void setup() {
+    BeaconChainUtil.initializeStorage(storageClient, validatorKeys);
     doReturn(CompletableFuture.completedFuture(null)).when(publisher).publish(any(), any());
     eventBus.register(topicHandler);
   }
@@ -73,7 +78,8 @@ public class AttestationTopicHandlerTest {
 
   @Test
   public void accept_validAttestation() {
-    final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final Attestation attestation = attestationGenerator.validAttestation(storageClient);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
@@ -83,6 +89,19 @@ public class AttestationTopicHandlerTest {
     assertThat(byteBufCaptor.getValue().array()).isEqualTo(serialized.toArray());
     assertThat(topicCaptor.getAllValues().size()).isEqualTo(1);
     assertThat(topicCaptor.getValue()).isEqualTo(topicHandler.getTopic());
+  }
+
+  @Test
+  public void accept_invalidAttestationSignature() {
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final Attestation attestation =
+        attestationGenerator.attestationWithInvalidSignature(storageClient);
+    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+    topicHandler.accept(mockMessage);
+
+    verify(publisher, never()).publish(any(), any());
   }
 
   @Disabled("Gossiped attestations do not yet undergo any validation")
