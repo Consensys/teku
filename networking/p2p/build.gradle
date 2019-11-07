@@ -34,6 +34,7 @@ dependencies {
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation project(path: ':validator:client', configuration: 'testSupportArtifacts')
 
   integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
