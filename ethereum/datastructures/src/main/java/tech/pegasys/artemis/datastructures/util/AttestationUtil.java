@@ -28,7 +28,6 @@ import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -316,27 +315,6 @@ public class AttestationUtil {
       return false;
     }
     return true;
-  }
-
-  /**
-   * Return the slot corresponding to the attestation ``data``.
-   *
-   * @param state
-   * @param data
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attestation_data_slot</a>
-   */
-  public static UnsignedLong get_attestation_data_slot(BeaconState state, AttestationData data) {
-    UnsignedLong committee_count = get_committee_count(state, data.getTarget().getEpoch());
-    UnsignedLong offset =
-        data.getCrosslink()
-            .getShard()
-            .plus(UnsignedLong.valueOf(SHARD_COUNT))
-            .minus(get_start_shard(state, data.getTarget().getEpoch()))
-            .mod(UnsignedLong.valueOf(SHARD_COUNT));
-    return compute_start_slot_of_epoch(data.getTarget().getEpoch())
-        .plus(offset.dividedBy(committee_count.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))));
   }
 
   /**

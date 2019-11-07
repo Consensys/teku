@@ -15,7 +15,6 @@ package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
@@ -252,9 +251,7 @@ public class ChainStorageClient implements ChainStorage {
         new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
     while (unprocessedAttestationsQueue.peek() != null
-        && get_attestation_data_slot(state, unprocessedAttestationsQueue.peek().getData())
-                .compareTo(slot)
-            <= 0
+        && unprocessedAttestationsQueue.peek().getData().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
 
       Attestation attestation = unprocessedAttestationsQueue.remove();

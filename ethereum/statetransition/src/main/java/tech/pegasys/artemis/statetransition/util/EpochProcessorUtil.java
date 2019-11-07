@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_compact_committees_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.all;
@@ -149,9 +148,7 @@ public final class EpochProcessorUtil {
             a ->
                 a.getData()
                     .getBeacon_block_root()
-                    .equals(
-                        get_block_root_at_slot(
-                            state, get_attestation_data_slot(state, a.getData()))))
+                    .equals(get_block_root_at_slot(state, a.getData().getSlot())))
         .collect(Collectors.toList());
   }
 

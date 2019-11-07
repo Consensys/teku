@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slashable_attestation_data;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
@@ -366,7 +365,7 @@ public final class BlockProcessorUtil {
                 || data.getTarget().getEpoch().equals(get_current_epoch(state)),
             "process_attestations: Attestation not from current or previous epoch");
 
-        UnsignedLong attestation_slot = get_attestation_data_slot(state, data);
+        UnsignedLong attestation_slot = data.getSlot();
         checkArgument(
             attestation_slot
                     .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
@@ -286,7 +285,7 @@ public class ForkChoiceUtil {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
-    UnsignedLong attestation_slot = get_attestation_data_slot(target_state, attestation.getData());
+    UnsignedLong attestation_slot = attestation.getData().getSlot();
     checkArgument(
         unixTimeStamp.compareTo(
                 attestation_slot
