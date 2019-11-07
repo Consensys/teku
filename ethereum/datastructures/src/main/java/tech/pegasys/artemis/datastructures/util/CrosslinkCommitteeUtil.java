@@ -99,13 +99,14 @@ public class CrosslinkCommitteeUtil {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
     UnsignedLong MAX_RANDOM_BYTE = UnsignedLong.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
+    Bytes32 hash = null;
     while (true) {
       int candidate_index =
           indices.get(compute_shuffled_index(i % indices.size(), indices.size(), seed));
-      int random_byte =
-          UnsignedBytes.toInt(
-              Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)))
-                  .get(i % 32));
+      if (i % 32 == 0) {
+        hash = Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)));
+      }
+      int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
       UnsignedLong effective_balance =
           state.getValidators().get(candidate_index).getEffective_balance();
       if (effective_balance
