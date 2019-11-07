@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 17;
+  public static final int SSZ_FIELD_COUNT = 16;
 
   // Versioning
   protected UnsignedLong genesis_time;
@@ -65,8 +66,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
   protected UnsignedLong start_shard;
   protected SSZVector<Bytes32> randao_mixes; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
   protected SSZVector<Bytes32> active_index_roots; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
-  protected SSZVector<Bytes32>
-      compact_committees_roots; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
   protected SSZVector<UnsignedLong> slashings; // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
@@ -108,7 +107,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
       UnsignedLong start_shard,
       SSZVector<Bytes32> randao_mixes,
       SSZVector<Bytes32> active_index_roots,
-      SSZVector<Bytes32> compact_committees_roots,
 
       // Slashings
       SSZVector<UnsignedLong> slashings,
@@ -146,7 +144,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.start_shard = start_shard;
     this.randao_mixes = randao_mixes;
     this.active_index_roots = active_index_roots;
-    this.compact_committees_roots = compact_committees_roots;
 
     // Slashings
     this.slashings = slashings;
@@ -195,8 +192,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.randao_mixes =
         new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
     this.active_index_roots =
-        new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
-    this.compact_committees_roots =
         new SSZVector<>(Constants.EPOCHS_PER_HISTORICAL_VECTOR, Constants.ZERO_HASH);
 
     // Slashings
@@ -248,7 +243,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             SSZ.encodeUInt64(start_shard.longValue()),
             SSZ.encode(writer -> writer.writeFixedBytesVector(randao_mixes)),
             SSZ.encode(writer -> writer.writeFixedBytesVector(active_index_roots)),
-            SSZ.encode(writer -> writer.writeFixedBytesVector(compact_committees_roots)),
             SSZ.encode(
                 writer ->
                     writer.writeFixedBytesVector(
@@ -280,8 +274,7 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             balances.stream()
                 .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
                 .collect(Collectors.joining())));
-    variablePartsList.addAll(
-        List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
     variablePartsList.add(
         SimpleOffsetSerializer.serializeVariableCompositeList(previous_epoch_attestations));
     variablePartsList.add(
@@ -323,7 +316,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         start_shard,
         randao_mixes,
         active_index_roots,
-        compact_committees_roots,
 
         // Slashings
         slashings,
@@ -369,7 +361,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
         && Objects.equals(this.getStart_shard(), other.getStart_shard())
         && Objects.equals(this.getRandao_mixes(), other.getRandao_mixes())
         && Objects.equals(this.getActive_index_roots(), other.getActive_index_roots())
-        && Objects.equals(this.getCompact_committees_roots(), other.getCompact_committees_roots())
         && Objects.equals(this.getSlashings(), other.getSlashings())
         && Objects.equals(
             this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
@@ -510,14 +501,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.active_index_roots = active_index_roots;
   }
 
-  public SSZVector<Bytes32> getCompact_committees_roots() {
-    return compact_committees_roots;
-  }
-
-  public void setCompact_committees_roots(SSZVector<Bytes32> compact_committees_roots) {
-    this.compact_committees_roots = compact_committees_roots;
-  }
-
   // Slashings
   public SSZVector<UnsignedLong> getSlashings() {
     return slashings;
@@ -621,7 +604,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(start_shard.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, randao_mixes),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, active_index_roots),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, compact_committees_roots),
 
             // Slashings
             HashTreeUtil.hash_tree_root_vector_unsigned_long(slashings),
@@ -641,5 +623,33 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
             previous_justified_checkpoint.hash_tree_root(),
             current_justified_checkpoint.hash_tree_root(),
             finalized_checkpoint.hash_tree_root()));
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("genesis_time", genesis_time)
+        .add("slot", slot)
+        .add("fork", fork)
+        .add("latest_block_header", latest_block_header)
+        .add("block_roots", block_roots)
+        .add("state_roots", state_roots)
+        .add("historical_roots", historical_roots)
+        .add("eth1_data", eth1_data)
+        .add("eth1_data_votes", eth1_data_votes)
+        .add("eth1_deposit_index", eth1_deposit_index)
+        .add("validators", validators)
+        .add("balances", balances)
+        .add("start_shard", start_shard)
+        .add("randao_mixes", randao_mixes)
+        .add("active_index_roots", active_index_roots)
+        .add("slashings", slashings)
+        .add("previous_epoch_attestations", previous_epoch_attestations)
+        .add("current_epoch_attestations", current_epoch_attestations)
+        .add("justification_bits", justification_bits)
+        .add("previous_justified_checkpoint", previous_justified_checkpoint)
+        .add("current_justified_checkpoint", current_justified_checkpoint)
+        .add("finalized_checkpoint", finalized_checkpoint)
+        .toString();
   }
 }

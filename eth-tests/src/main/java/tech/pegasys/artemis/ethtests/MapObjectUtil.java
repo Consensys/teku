@@ -305,12 +305,6 @@ public class MapObjectUtil {
                 ((List<String>) map.get("active_index_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
-    SSZVector<Bytes32> compact_committees_roots =
-        new SSZVector<>(
-            new ArrayList<>(
-                ((List<String>) map.get("compact_committees_roots"))
-                    .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
-            Bytes32.class);
     SSZVector<UnsignedLong> slashings =
         new SSZVector<>(
             new ArrayList<>((List<Object>) map.get("slashings"))
@@ -356,7 +350,6 @@ public class MapObjectUtil {
         start_shard,
         randao_mixes,
         active_index_roots,
-        compact_committees_roots,
         slashings,
         previous_epoch_attestations,
         current_epoch_attestations,

@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_compact_committees_root;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
 import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
@@ -60,7 +59,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -136,21 +134,6 @@ public class BeaconStateUtil {
               }
             });
 
-    // Populate active_index_roots and compact_committees_roots
-    List<Integer> indices_list =
-        get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH));
-    Bytes32 active_index_root =
-        HashTreeUtil.hash_tree_root_list_ul(
-            Constants.VALIDATOR_REGISTRY_LIMIT,
-            indices_list.stream().map(elem -> SSZ.encodeUInt64(elem)).collect(Collectors.toList()));
-    Bytes32 committee_root =
-        get_compact_committees_root(state, UnsignedLong.valueOf(GENESIS_EPOCH));
-    IntStream.range(0, EPOCHS_PER_HISTORICAL_VECTOR)
-        .forEach(
-            index -> {
-              state.getActive_index_roots().set(index, active_index_root);
-              state.getCompact_committees_roots().set(index, committee_root);
-            });
     return state;
   }
 

@@ -59,7 +59,6 @@ public final class BeaconStateWithCache extends BeaconState {
       UnsignedLong start_shard,
       SSZVector<Bytes32> randao_mixes,
       SSZVector<Bytes32> active_index_roots,
-      SSZVector<Bytes32> compact_committees_roots,
 
       // Slashings
       SSZVector<UnsignedLong> slashings,
@@ -89,7 +88,6 @@ public final class BeaconStateWithCache extends BeaconState {
         start_shard,
         randao_mixes,
         active_index_roots,
-        compact_committees_roots,
         slashings,
         previous_epoch_attestations,
         current_epoch_attestations,
@@ -127,7 +125,6 @@ public final class BeaconStateWithCache extends BeaconState {
     this.start_shard = state.getStart_shard();
     this.randao_mixes = new SSZVector<>(state.getRandao_mixes());
     this.active_index_roots = new SSZVector<>(state.getActive_index_roots());
-    this.compact_committees_roots = new SSZVector<>(state.getCompact_committees_roots());
 
     // Slashings
     this.slashings = new SSZVector<>(state.getSlashings());
@@ -179,7 +176,6 @@ public final class BeaconStateWithCache extends BeaconState {
         state.getStart_shard(),
         state.getRandao_mixes(),
         state.getActive_index_roots(),
-        state.getCompact_committees_roots(),
         state.getSlashings(),
         state.getPrevious_epoch_attestations(),
         state.getCurrent_epoch_attestations(),

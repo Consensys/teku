@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attesting_indices;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_compact_committees_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root;
@@ -619,19 +618,14 @@ public final class EpochProcessorUtil {
                     .map(elem -> SSZ.encodeUInt64(elem.intValue()))
                     .collect(Collectors.toList())));
 
-    // Set committees root
-    int committee_root_position =
-        next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
-    state
-        .getCompact_committees_roots()
-        .set(committee_root_position, get_compact_committees_root(state, next_epoch));
-
     // Reset slashings
     int index = next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
     state.getSlashings().set(index, UnsignedLong.ZERO);
 
     // Set randao mix
-    state.getRandao_mixes().set(committee_root_position, get_randao_mix(state, current_epoch));
+    final UnsignedLong randaoIndex =
+        next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR));
+    state.getRandao_mixes().set(randaoIndex.intValue(), get_randao_mix(state, current_epoch));
 
     // Set historical root accumulator
     if (next_epoch

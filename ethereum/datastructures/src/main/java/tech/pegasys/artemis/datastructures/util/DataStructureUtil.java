@@ -373,11 +373,6 @@ public final class DataStructureUtil {
             DataStructureUtil::randomBytes32,
             seed++),
         randomSSZVector(
-            Bytes32.ZERO,
-            Constants.EPOCHS_PER_HISTORICAL_VECTOR,
-            DataStructureUtil::randomBytes32,
-            seed++),
-        randomSSZVector(
             UnsignedLong.ZERO,
             Constants.EPOCHS_PER_SLASHINGS_VECTOR,
             DataStructureUtil::randomUnsignedLong,
