@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_b
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
-import static tech.pegasys.artemis.util.config.Constants.ACTIVATION_EXIT_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
@@ -32,6 +31,7 @@ import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.artemis.util.config.Constants.MAX_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.artemis.util.config.Constants.MIN_PER_EPOCH_CHURN_LIMIT;
@@ -377,16 +377,6 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong compute_start_slot_of_epoch(UnsignedLong epoch) {
     return epoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-  }
-
-  /**
-   * An entry or exit triggered in the ``epoch`` given by the input takes effect at the epoch given
-   * by the output.
-   *
-   * @param epoch
-   */
-  public static UnsignedLong get_entry_exit_effect_epoch(UnsignedLong epoch) {
-    return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY));
   }
 
   /**
@@ -791,7 +781,7 @@ public class BeaconStateUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_activation_exit_epoch</a>
    */
   public static UnsignedLong compute_activation_exit_epoch(UnsignedLong epoch) {
-    return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(ACTIVATION_EXIT_DELAY));
+    return epoch.plus(UnsignedLong.ONE).plus(UnsignedLong.valueOf(MAX_SEED_LOOKAHEAD));
   }
 
   public static boolean all(Bitvector bitvector, int start, int end) {
