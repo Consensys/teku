@@ -34,12 +34,9 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -47,7 +44,6 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class DeserializationTest {
@@ -162,15 +158,6 @@ public class DeserializationTest {
   }
 
   @Test
-  void TransferTest() {
-    Transfer transfer = DataStructureUtil.randomTransfer(100);
-    assertEquals(
-        transfer,
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(transfer), Transfer.class));
-  }
-
-  @Test
   void VoluntaryExitTest() {
     VoluntaryExit voluntaryExit = DataStructureUtil.randomVoluntaryExit(100);
     assertEquals(
@@ -194,31 +181,6 @@ public class DeserializationTest {
     Checkpoint newCheckpoint =
         SimpleOffsetSerializer.deserialize(checkpointSerialized, Checkpoint.class);
     assertEquals(checkpoint, newCheckpoint);
-  }
-
-  @Test
-  void CompactCommitteTest() {
-    CompactCommittee compactCommittee = new CompactCommittee();
-    compactCommittee.getPubkeys().add(BLSPublicKey.random(100));
-    compactCommittee.getPubkeys().add(BLSPublicKey.random(101));
-    compactCommittee.getPubkeys().add(BLSPublicKey.random(102));
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(100));
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(101));
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(102));
-    compactCommittee.getCompact_validators().add(DataStructureUtil.randomUnsignedLong(103));
-    CompactCommittee newCompactCommittee =
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(compactCommittee), CompactCommittee.class);
-    assertEquals(compactCommittee, newCompactCommittee);
-  }
-
-  @Test
-  void CrosslinkTest() {
-    Crosslink crosslink = DataStructureUtil.randomCrosslink(100);
-    assertEquals(
-        crosslink,
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(crosslink), Crosslink.class));
   }
 
   @Test

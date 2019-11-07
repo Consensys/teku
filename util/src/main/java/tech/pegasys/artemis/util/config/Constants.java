@@ -23,14 +23,14 @@ public class Constants {
 
   // Non-configurable constants
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
-  public static int BASE_REWARDS_PER_EPOCH = 5;
+  public static int BASE_REWARDS_PER_EPOCH = 4;
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static int SECONDS_PER_DAY = 86400;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
   public static String ENDIANNESS = "little";
 
   // Misc
-  public static int SHARD_COUNT;
+  public static int MAX_COMMITTEES_PER_SLOT;
   public static int TARGET_COMMITTEE_SIZE;
   public static int MAX_VALIDATORS_PER_COMMITTEE;
   public static int MIN_PER_EPOCH_CHURN_LIMIT;
@@ -51,16 +51,15 @@ public class Constants {
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
-  public static int SECONDS_PER_SLOT = 6;
+  public static int SECONDS_PER_SLOT = 12;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
-  public static int ACTIVATION_EXIT_DELAY;
+  public static int MAX_SEED_LOOKAHEAD;
   public static int SLOTS_PER_ETH1_VOTING_PERIOD;
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
   public static int PERSISTENT_COMMITTEE_PERIOD;
-  public static int MAX_EPOCHS_PER_CROSSLINK;
   public static int MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 
   // State list lengths
@@ -82,18 +81,13 @@ public class Constants {
   public static int MAX_ATTESTATIONS;
   public static int MAX_DEPOSITS;
   public static int MAX_VOLUNTARY_EXITS = 16;
-  public static int MAX_TRANSFERS = 0;
 
   // Signature domains
   public static Bytes4 DOMAIN_BEACON_PROPOSER = new Bytes4(Bytes.fromHexString("0x00000000"));
-  public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x01000000"));
-  public static Bytes4 DOMAIN_ATTESTATION = new Bytes4(Bytes.fromHexString("0x02000000"));
+  public static Bytes4 DOMAIN_BEACON_ATTESTER = new Bytes4(Bytes.fromHexString("0x01000000"));
+  public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
   public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
   public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
-  public static Bytes4 DOMAIN_TRANSFER = new Bytes4(Bytes.fromHexString("0x05000000"));
-  public static Bytes4 DOMAIN_CUSTODY_BIT_CHALLENGE = new Bytes4(Bytes.fromHexString("0x06000000"));
-  public static Bytes4 DOMAIN_SHARD_PROPOSER = new Bytes4(Bytes.fromHexString("0x08000000"));
-  public static Bytes4 DOMAIN_SHARD_ATTESTER = new Bytes4(Bytes.fromHexString("0x08100000"));
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
@@ -128,14 +122,14 @@ public class Constants {
       // Mainnet settings
 
       // Misc
-      SHARD_COUNT = 1024;
+      MAX_COMMITTEES_PER_SLOT = 64;
       TARGET_COMMITTEE_SIZE = 128;
-      MAX_VALIDATORS_PER_COMMITTEE = 4096;
+      MAX_VALIDATORS_PER_COMMITTEE = 2048;
       MIN_PER_EPOCH_CHURN_LIMIT = 4;
       CHURN_LIMIT_QUOTIENT = 65536;
       SHUFFLE_ROUND_COUNT = 90;
       MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 65536;
-      MIN_GENESIS_TIME = UnsignedLong.valueOf(1567222226);
+      MIN_GENESIS_TIME = UnsignedLong.valueOf(1578009600);
 
       // Gwei values
       MIN_DEPOSIT_AMOUNT = 1000000000L;
@@ -150,14 +144,13 @@ public class Constants {
 
       // Time parameters
       MIN_ATTESTATION_INCLUSION_DELAY = 1;
-      SLOTS_PER_EPOCH = 64;
+      SLOTS_PER_EPOCH = 32;
       MIN_SEED_LOOKAHEAD = 1;
-      ACTIVATION_EXIT_DELAY = 4;
+      MAX_SEED_LOOKAHEAD = 4;
       SLOTS_PER_ETH1_VOTING_PERIOD = 1024;
       SLOTS_PER_HISTORICAL_ROOT = 8192;
       MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
       PERSISTENT_COMMITTEE_PERIOD = 2048;
-      MAX_EPOCHS_PER_CROSSLINK = 64;
       MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
       EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 16384;
 
@@ -180,16 +173,15 @@ public class Constants {
       MAX_ATTESTATIONS = 128;
       MAX_DEPOSITS = 16;
       MAX_VOLUNTARY_EXITS = 16;
-      MAX_TRANSFERS = 0;
 
     } else {
 
       // Minimal settings
 
       // Misc
-      SHARD_COUNT = 8;
+      MAX_COMMITTEES_PER_SLOT = 4;
       TARGET_COMMITTEE_SIZE = 4;
-      MAX_VALIDATORS_PER_COMMITTEE = 4096;
+      MAX_VALIDATORS_PER_COMMITTEE = 2048;
       MIN_PER_EPOCH_CHURN_LIMIT = 4;
       CHURN_LIMIT_QUOTIENT = 65536;
       SHUFFLE_ROUND_COUNT = 10;
@@ -211,12 +203,11 @@ public class Constants {
       MIN_ATTESTATION_INCLUSION_DELAY = 1;
       SLOTS_PER_EPOCH = 8;
       MIN_SEED_LOOKAHEAD = 1;
-      ACTIVATION_EXIT_DELAY = 4;
+      MAX_SEED_LOOKAHEAD = 4;
       SLOTS_PER_ETH1_VOTING_PERIOD = 16;
       SLOTS_PER_HISTORICAL_ROOT = 64;
       MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
       PERSISTENT_COMMITTEE_PERIOD = 2048;
-      MAX_EPOCHS_PER_CROSSLINK = 4;
       MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
       EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 4096;
 
@@ -239,7 +230,6 @@ public class Constants {
       MAX_ATTESTATIONS = 128;
       MAX_DEPOSITS = 16;
       MAX_VOLUNTARY_EXITS = 16;
-      MAX_TRANSFERS = 0;
     }
   }
 }

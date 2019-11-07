@@ -14,13 +14,11 @@
 package tech.pegasys.artemis.validator.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
@@ -64,24 +62,19 @@ public class ValidatorClientUtil {
     checkArgument(
         epoch.compareTo(next_epoch) <= 0, "get_committe_assignment: Epoch number too high");
 
-    int committees_per_slot =
-        get_committee_count(state, epoch)
-            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-            .intValue();
-    UnsignedLong start_slot = compute_start_slot_of_epoch(epoch);
+    UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
 
     for (UnsignedLong slot = start_slot;
         slot.compareTo(start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
         slot = slot.plus(UnsignedLong.ONE)) {
 
-      int offset = committees_per_slot * slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
-      int slot_start_shard = (get_start_shard(state, epoch).intValue() + offset) % SHARD_COUNT;
-
-      for (int i = 0; i < committees_per_slot; i++) {
-        UnsignedLong shard = UnsignedLong.valueOf((slot_start_shard + i) % SHARD_COUNT);
-        List<Integer> committee = get_crosslink_committee(state, epoch, shard);
+      final UnsignedLong committeeCountAtSlot = get_committee_count_at_slot(state, slot);
+      for (UnsignedLong index = UnsignedLong.ZERO;
+          index.compareTo(committeeCountAtSlot) < 0;
+          index = index.plus(UnsignedLong.ONE)) {
+        final List<Integer> committee = get_beacon_committee(state, slot, index);
         if (committee.contains(validator_index)) {
-          return Optional.of(new ImmutableTriple<>(committee, shard, slot));
+          return Optional.of(new ImmutableTriple<>(committee, index, slot));
         }
       }
     }
