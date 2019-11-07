@@ -17,14 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.int_to_bytes;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -132,20 +129,5 @@ public class CrosslinkCommitteeUtil {
         get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),
         committeeIndex,
         count);
-  }
-
-  /**
-   * Return the number of shards to increment ``state.latest_start_shard`` during ``epoch``.
-   *
-   * @param state
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_shard_delta</a>
-   */
-  public static UnsignedLong get_shard_delta(BeaconState state, UnsignedLong epoch) {
-    return min(
-        get_committee_count(state, epoch),
-        UnsignedLong.valueOf(SHARD_COUNT - Math.floorDiv(SHARD_COUNT, SLOTS_PER_EPOCH)));
   }
 }

@@ -56,7 +56,9 @@ public class ChainStorageClient implements ChainStorage {
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
   private final int QUEUE_MAX_SIZE =
-      Constants.MAX_VALIDATORS_PER_COMMITTEE * Constants.SHARD_COUNT * Constants.SLOTS_PER_EPOCH;
+      Constants.MAX_VALIDATORS_PER_COMMITTEE
+          * Constants.MAX_COMMITTEES_PER_SLOT
+          * Constants.SLOTS_PER_EPOCH;
   private final Queue<Attestation> unprocessedAttestationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getTarget().getEpoch()));

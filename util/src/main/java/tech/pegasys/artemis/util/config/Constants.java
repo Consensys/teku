@@ -31,7 +31,6 @@ public class Constants {
 
   // Misc
   public static int MAX_COMMITTEES_PER_SLOT;
-  public static int SHARD_COUNT;
   public static int TARGET_COMMITTEE_SIZE;
   public static int MAX_VALIDATORS_PER_COMMITTEE;
   public static int MIN_PER_EPOCH_CHURN_LIMIT;
@@ -126,7 +125,6 @@ public class Constants {
 
       // Misc
       MAX_COMMITTEES_PER_SLOT = 64;
-      SHARD_COUNT = 1024;
       TARGET_COMMITTEE_SIZE = 128;
       MAX_VALIDATORS_PER_COMMITTEE = 4096;
       MIN_PER_EPOCH_CHURN_LIMIT = 4;
@@ -186,7 +184,6 @@ public class Constants {
 
       // Misc
       MAX_COMMITTEES_PER_SLOT = 4;
-      SHARD_COUNT = 8;
       TARGET_COMMITTEE_SIZE = 4;
       MAX_VALIDATORS_PER_COMMITTEE = 4096;
       MIN_PER_EPOCH_CHURN_LIMIT = 4;

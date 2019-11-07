@@ -40,7 +40,6 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_SLASHING_PENALTY_QU
 import static tech.pegasys.artemis.util.config.Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_DAY;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -495,27 +494,6 @@ public class BeaconStateUtil {
   public static Bytes32 get_block_root(BeaconState state, UnsignedLong epoch)
       throws IllegalArgumentException {
     return get_block_root_at_slot(state, compute_start_slot_of_epoch(epoch));
-  }
-
-  /**
-   * Return the number of committees at ``epoch``.
-   *
-   * @param state
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_committee_count</a>
-   */
-  public static UnsignedLong get_committee_count(BeaconState state, UnsignedLong epoch) {
-    List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
-    return max(
-            UnsignedLong.ONE,
-            min(
-                UnsignedLong.valueOf(Math.floorDiv(SHARD_COUNT, SLOTS_PER_EPOCH)),
-                UnsignedLong.valueOf(active_validator_indices.size())
-                    .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-                    .dividedBy(UnsignedLong.valueOf(TARGET_COMMITTEE_SIZE))))
-        .times(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
 
   /**
