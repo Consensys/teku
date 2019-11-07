@@ -129,7 +129,7 @@ public class Constants {
       CHURN_LIMIT_QUOTIENT = 65536;
       SHUFFLE_ROUND_COUNT = 90;
       MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 65536;
-      MIN_GENESIS_TIME = UnsignedLong.valueOf(1567222226);
+      MIN_GENESIS_TIME = UnsignedLong.valueOf(1578009600);
 
       // Gwei values
       MIN_DEPOSIT_AMOUNT = 1000000000L;
@@ -144,7 +144,7 @@ public class Constants {
 
       // Time parameters
       MIN_ATTESTATION_INCLUSION_DELAY = 1;
-      SLOTS_PER_EPOCH = 64;
+      SLOTS_PER_EPOCH = 32;
       MIN_SEED_LOOKAHEAD = 1;
       MAX_SEED_LOOKAHEAD = 4;
       SLOTS_PER_ETH1_VOTING_PERIOD = 1024;
