@@ -42,7 +42,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -79,7 +78,6 @@ public class MapObjectUtil {
       return getBeaconStateWithCache((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
     else if (classtype.equals(CompactCommittee.class)) return getCompactCommittee((Map) object);
-    else if (classtype.equals(Crosslink.class)) return getCrossLink((Map) object);
     else if (classtype.equals(Deposit.class)) return getDeposit((Map) object);
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
@@ -624,17 +622,6 @@ public class MapObjectUtil {
     return new Checkpoint(
         UnsignedLong.valueOf(map.get("epoch").toString()),
         Bytes32.fromHexString(map.get("root").toString()));
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static Crosslink getCrossLink(Map map) {
-
-    return new Crosslink(
-        UnsignedLong.valueOf(map.get("shard").toString()),
-        Bytes32.fromHexString(map.get("parent_root").toString()),
-        UnsignedLong.valueOf(map.get("start_epoch").toString()),
-        UnsignedLong.valueOf(map.get("end_epoch").toString()),
-        Bytes32.fromHexString(map.get("data_root").toString()));
   }
 
   @SuppressWarnings({"rawtypes"})

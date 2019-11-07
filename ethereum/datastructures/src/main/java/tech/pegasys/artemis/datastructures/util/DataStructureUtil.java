@@ -39,7 +39,6 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -120,15 +119,6 @@ public final class DataStructureUtil {
 
   public static Eth1Data randomEth1Data(int seed) {
     return new Eth1Data(randomBytes32(seed), randomUnsignedLong(seed++), randomBytes32(seed++));
-  }
-
-  public static Crosslink randomCrosslink(int seed) {
-    return new Crosslink(
-        randomUnsignedLong(seed),
-        randomBytes32(seed++),
-        randomUnsignedLong(seed++),
-        randomUnsignedLong(seed++),
-        randomBytes32(seed++));
   }
 
   public static Checkpoint randomCheckpoint(int seed) {

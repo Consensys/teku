@@ -38,7 +38,6 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -200,15 +199,6 @@ public class DeserializationTest {
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(compactCommittee), CompactCommittee.class);
     assertEquals(compactCommittee, newCompactCommittee);
-  }
-
-  @Test
-  void CrosslinkTest() {
-    Crosslink crosslink = DataStructureUtil.randomCrosslink(100);
-    assertEquals(
-        crosslink,
-        SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(crosslink), Crosslink.class));
   }
 
   @Test

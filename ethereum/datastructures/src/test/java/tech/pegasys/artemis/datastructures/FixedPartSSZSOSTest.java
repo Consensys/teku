@@ -33,7 +33,6 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -60,22 +59,6 @@ class FixedPartSSZSOSTest {
     Bytes sosSignatureBytes = SimpleOffsetSerializer.serialize(signature);
 
     assertEquals(sszSignatureBytes, sosSignatureBytes);
-  }
-
-  @Test
-  void testCrosslinkSOS() {
-    UnsignedLong shard = randomUnsignedLong(100);
-    Bytes32 parent_root = Bytes32.random(new Random(100));
-    UnsignedLong start_epoch = randomUnsignedLong(100);
-    UnsignedLong end_epoch = randomUnsignedLong(100);
-    Bytes32 data_root = Bytes32.random(new Random(101));
-
-    Crosslink crosslink = new Crosslink(shard, parent_root, start_epoch, end_epoch, data_root);
-
-    Bytes sszCrosslinkBytes = crosslink.toBytes();
-    Bytes sosCrosslinkBytes = SimpleOffsetSerializer.serialize(crosslink);
-
-    assertEquals(sszCrosslinkBytes, sosCrosslinkBytes);
   }
 
   @Test
