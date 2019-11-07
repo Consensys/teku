@@ -15,7 +15,7 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -100,7 +100,7 @@ public class AttestationUtil {
     // Get variables necessary that can be shared among Attestations of all validators
     UnsignedLong slot = state.getSlot();
     Bytes32 beacon_block_root = block.signing_root("signature");
-    UnsignedLong start_slot = compute_start_slot_of_epoch(get_current_epoch(state));
+    UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0
             ? block.signing_root("signature")

@@ -375,7 +375,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
-  public static UnsignedLong compute_start_slot_of_epoch(UnsignedLong epoch) {
+  public static UnsignedLong compute_start_slot_at_epoch(UnsignedLong epoch) {
     return epoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
 
@@ -483,7 +483,7 @@ public class BeaconStateUtil {
    */
   public static Bytes32 get_block_root(BeaconState state, UnsignedLong epoch)
       throws IllegalArgumentException {
-    return get_block_root_at_slot(state, compute_start_slot_of_epoch(epoch));
+    return get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch));
   }
 
   /**

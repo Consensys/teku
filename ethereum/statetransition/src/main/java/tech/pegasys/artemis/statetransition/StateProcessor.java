@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
@@ -198,7 +198,7 @@ public class StateProcessor {
           chainStorageClient
               .getStore()
               .startTransaction(
-                  compute_start_slot_of_epoch(attestation.getData().getTarget().getEpoch()));
+                  compute_start_slot_at_epoch(attestation.getData().getTarget().getEpoch()));
       on_attestation(transaction, attestation, stateTransition);
       transaction.commit();
       eventBus.post(new StoreDiskUpdateEvent(transaction));

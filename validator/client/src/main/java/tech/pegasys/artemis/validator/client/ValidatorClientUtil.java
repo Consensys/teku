@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.validator.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -62,7 +62,7 @@ public class ValidatorClientUtil {
     checkArgument(
         epoch.compareTo(next_epoch) <= 0, "get_committe_assignment: Epoch number too high");
 
-    UnsignedLong start_slot = compute_start_slot_of_epoch(epoch);
+    UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
 
     for (UnsignedLong slot = start_slot;
         slot.compareTo(start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
