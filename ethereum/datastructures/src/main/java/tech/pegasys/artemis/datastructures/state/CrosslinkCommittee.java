@@ -19,17 +19,17 @@ import java.util.List;
 
 public class CrosslinkCommittee {
 
-  private UnsignedLong shard;
+  private UnsignedLong index;
   private List<Integer> committee;
 
-  public CrosslinkCommittee(UnsignedLong shard, List<Integer> committee) {
-    this.shard = shard;
+  public CrosslinkCommittee(UnsignedLong index, List<Integer> committee) {
+    this.index = index;
     this.committee = committee;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getShard() {
-    return shard;
+  public UnsignedLong getIndex() {
+    return index;
   }
 
   public List<Integer> getCommittee() {
