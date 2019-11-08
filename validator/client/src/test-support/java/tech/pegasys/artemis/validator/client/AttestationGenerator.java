@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.validator.client;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
@@ -30,7 +30,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -62,19 +62,19 @@ public class AttestationGenerator {
 
   private Attestation createAttestation(
       final BeaconBlock block, final BeaconState state, final boolean withValidSignature) {
-    final UnsignedLong epoch = compute_epoch_of_slot(state.getSlot());
+    final UnsignedLong epoch = compute_epoch_at_slot(state.getSlot());
     HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>> committeeAssignments =
         new HashMap<>();
     int validatorIndex;
     for (validatorIndex = 0; validatorIndex < validatorKeys.size(); validatorIndex++) {
-      final Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>> maybeAssignment =
+      final Optional<CommitteeAssignment> maybeAssignment =
           ValidatorClientUtil.get_committee_assignment(state, epoch, validatorIndex);
       if (maybeAssignment.isPresent()) {
-        UnsignedLong slot = maybeAssignment.get().getRight();
+        UnsignedLong slot = maybeAssignment.get().getSlot();
         final Triple<List<Integer>, UnsignedLong, Integer> committeeAssignment =
             new MutableTriple<>(
-                maybeAssignment.get().getLeft(), // List of validator indices in this committee
-                maybeAssignment.get().getMiddle(), // Assigned shard
+                maybeAssignment.get().getCommittee(), // List of validator indices in this committee
+                maybeAssignment.get().getCommitteeIndex(), // Assigned shard
                 validatorIndex // The index of the current validator
                 );
         committeeAssignments.put(slot, List.of(committeeAssignment));
@@ -86,7 +86,7 @@ public class AttestationGenerator {
     }
 
     final UnsignedLong slot = committeeAssignments.keySet().iterator().next();
-    Triple<BLSPublicKey, Integer, CrosslinkCommittee> attesterInfo =
+    Triple<BLSPublicKey, Integer, Committee> attesterInfo =
         AttestationUtil.getAttesterInformation(state, committeeAssignments, slot).get(0);
     AttestationData genericAttestationData =
         AttestationUtil.getGenericAttestationData(state, block);
@@ -105,7 +105,7 @@ public class AttestationGenerator {
       BeaconState state,
       BLSKeyPair attesterKeyPair,
       int indexIntoCommittee,
-      CrosslinkCommittee committee,
+      Committee committee,
       AttestationData genericAttestationData) {
     int commmitteSize = committee.getCommitteeSize();
     Bitlist aggregationBitfield =
@@ -115,7 +115,8 @@ public class AttestationGenerator {
         AttestationUtil.completeAttestationCrosslinkData(
             state, new AttestationData(genericAttestationData), committee);
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
-    Bytes domain = get_domain(state, DOMAIN_ATTESTATION, attestationData.getTarget().getEpoch());
+    Bytes domain =
+        get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
 
     BLSSignature signature = BLSSignature.sign(attesterKeyPair, attestationMessage, domain);
     return new Attestation(aggregationBitfield, attestationData, custodyBits, signature);

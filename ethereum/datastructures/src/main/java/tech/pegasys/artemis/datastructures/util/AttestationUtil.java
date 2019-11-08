@@ -76,7 +76,7 @@ public class AttestationUtil {
     return getAttesterInformation(headState, committeeAssignments, slot);
   }
 
-  public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
+  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
       BeaconState state,
       HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
           committeeAssignments,
