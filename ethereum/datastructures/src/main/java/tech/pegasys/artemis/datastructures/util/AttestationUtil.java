@@ -72,8 +72,15 @@ public class AttestationUtil {
       BeaconState headState,
       HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
           committeeAssignments) {
-
     UnsignedLong slot = headState.getSlot();
+    return getAttesterInformation(headState, committeeAssignments, slot);
+  }
+
+  public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
+      BeaconState state,
+      HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
+          committeeAssignments,
+      final UnsignedLong slot) {
     List<Triple<List<Integer>, UnsignedLong, Integer>> committeeAssignmentsForSlot =
         committeeAssignments.get(slot);
     List<Triple<BLSPublicKey, Integer, Committee>> attesters = new ArrayList<>();
@@ -87,7 +94,7 @@ public class AttestationUtil {
         Committee crosslinkCommittee = new Committee(index, committee);
         attesters.add(
             new MutableTriple<>(
-                headState.getValidators().get(validatorIndex).getPubkey(),
+                state.getValidators().get(validatorIndex).getPubkey(),
                 indexIntoCommittee,
                 crosslinkCommittee));
       }

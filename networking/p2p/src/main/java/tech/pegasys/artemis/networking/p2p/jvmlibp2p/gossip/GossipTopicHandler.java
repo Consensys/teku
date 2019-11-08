@@ -19,7 +19,6 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.Unpooled;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -51,29 +50,45 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
 
   @Override
   public final void accept(MessageApi message) {
-    Bytes bytes = Bytes.wrapByteBuf(message.getData());
+    Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", getTopic(), bytes.size());
       return;
-    } else {
-      LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
     }
+    LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
 
-    Optional<T> data;
+    T data;
     try {
-      data = processData(message, bytes);
+      data = deserializeData(bytes);
+      if (!validateData(data)) {
+        LOG.trace("Received invalid message for topic: {}", getTopic());
+        return;
+      }
     } catch (SSZException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-      data = Optional.empty();
+      return;
+    } catch (Throwable e) {
+      LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
+      return;
     }
 
     // Post and re-gossip data on successful processing
-    data.ifPresent((__) -> gossip(bytes));
-    data.ifPresent(eventBus::post);
+    gossip(bytes);
+    eventBus.post(data);
   }
 
-  protected abstract Optional<T> processData(MessageApi message, Bytes bytes) throws SSZException;
+  private T deserializeData(Bytes bytes) throws SSZException {
+    final T deserialized = deserialize(bytes);
+    if (deserialized == null) {
+      throw new SSZException("Unable to deserialize message for topic " + getTopic());
+    }
+    return deserialized;
+  }
+
+  protected abstract T deserialize(Bytes bytes) throws SSZException;
+
+  protected abstract boolean validateData(T dataObject);
 
   @VisibleForTesting
   public final void gossip(final T data) {
@@ -87,6 +102,15 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
 
   private void gossip(Bytes bytes) {
     LOG.trace("Gossiping {}: {} bytes", getTopic(), bytes.size());
-    publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), getTopic());
+    publisher
+        .publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), getTopic())
+        .whenComplete(
+            (res, err) -> {
+              if (err != null) {
+                LOG.debug("Failed to gossip message on {}", getTopic(), err);
+                return;
+              }
+              LOG.trace("Successfully gossiped message on {}", getTopic());
+            });
   }
 }

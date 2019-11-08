@@ -19,10 +19,8 @@ import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -63,13 +61,12 @@ public class BlocksTopicHandler extends GossipTopicHandler<BeaconBlock> {
   }
 
   @Override
-  protected Optional<BeaconBlock> processData(MessageApi message, Bytes bytes) throws SSZException {
-    BeaconBlock block = SimpleOffsetSerializer.deserialize(bytes, BeaconBlock.class);
-    if (block == null) {
-      LOG.trace("Failed to deserialize gossiped block message from: {}", message.getFrom());
-      return Optional.empty();
-    }
+  protected BeaconBlock deserialize(final Bytes bytes) throws SSZException {
+    return SimpleOffsetSerializer.deserialize(bytes, BeaconBlock.class);
+  }
 
+  @Override
+  protected boolean validateData(final BeaconBlock block) {
     final BeaconState preState =
         chainStorageClient.getStore().getBlockState(block.getParent_root());
     if (preState == null) {
@@ -78,15 +75,15 @@ public class BlocksTopicHandler extends GossipTopicHandler<BeaconBlock> {
           "Dropping block message at slot {} with unknown parent state {}",
           block.getSlot(),
           block.getParent_root());
-      return Optional.empty();
+      return false;
     }
 
     if (!isBlockSignatureValid(block, preState)) {
       LOG.trace("Dropping gossiped block with invalid signature: {}", block);
-      return Optional.empty();
+      return false;
     }
 
-    return Optional.of(block);
+    return true;
   }
 
   private boolean isBlockSignatureValid(final BeaconBlock block, final BeaconState preState) {
