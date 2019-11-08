@@ -89,7 +89,7 @@ public class AttestationGenerator {
     Triple<BLSPublicKey, Integer, Committee> attesterInfo =
         AttestationUtil.getAttesterInformation(state, committeeAssignments, slot).get(0);
     AttestationData genericAttestationData =
-        AttestationUtil.getGenericAttestationData(state, block);
+        AttestationUtil.getGenericAttestationData(state, block, slot);
 
     final BLSKeyPair validatorKeyPair =
         withValidSignature ? validatorKeys.get(validatorIndex) : randomKeyPair;
