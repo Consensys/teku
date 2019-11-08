@@ -19,7 +19,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.interfaces.IRecordAdapter;
@@ -43,20 +42,10 @@ public class Deposit extends AbstractEvent<DepositContract.DepositEventEventResp
 
   public Deposit(DepositContract.DepositEventEventResponse response) {
     super(response);
-
-    ArrayUtils.reverse(response.index);
     this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).toLong());
-
-    ArrayUtils.reverse(response.pubkey);
     this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
-
-    ArrayUtils.reverse(response.withdrawal_credentials);
     this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
-
-    ArrayUtils.reverse(response.signature);
     this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
-
-    ArrayUtils.reverse(response.amount);
     this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).toLong());
   }
 

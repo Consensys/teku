@@ -108,6 +108,7 @@ public class ValidatorClientUtil {
       String address,
       Web3j web3j,
       DefaultGasProvider gasProvider,
+      Bytes depositRoot,
       BLSSignature sig)
       throws Exception {
     Credentials credentials =
@@ -116,9 +117,10 @@ public class ValidatorClientUtil {
 
     contract
         .deposit(
-            validator.getBlsKeys().getPublicKey().toBytesCompressed().reverse().toArray(),
-            validator.getWithdrawal_credentials().reverse().toArray(),
-            sig.toBytes().reverse().toArray(),
+            validator.getBlsKeys().getPublicKey().toBytesCompressed().toArray(),
+            validator.getWithdrawal_credentials().toArray(),
+            sig.toBytes().toArray(),
+            depositRoot.toArray(),
             new BigInteger(amount + "000000000"))
         .send();
   }
