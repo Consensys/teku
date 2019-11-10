@@ -322,6 +322,7 @@ subprojects {
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    testRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
 
     integrationTestImplementation 'org.assertj:assertj-core'
     integrationTestImplementation 'org.apache.tuweni:tuweni-junit'
@@ -329,6 +330,7 @@ subprojects {
     integrationTestImplementation 'org.junit.jupiter:junit-jupiter-params'
 
     integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    integrationTestCompile project(path: ':logging', configuration: 'testSupportArtifacts')
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
