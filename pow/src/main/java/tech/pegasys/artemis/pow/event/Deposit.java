@@ -42,11 +42,11 @@ public class Deposit extends AbstractEvent<DepositContract.DepositEventEventResp
 
   public Deposit(DepositContract.DepositEventEventResponse response) {
     super(response);
-    this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).toLong());
+    this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).reverse().toLong());
     this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
     this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
     this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
-    this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).toLong());
+    this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).reverse().toLong());
   }
 
   public UnsignedLong getMerkle_tree_index() {

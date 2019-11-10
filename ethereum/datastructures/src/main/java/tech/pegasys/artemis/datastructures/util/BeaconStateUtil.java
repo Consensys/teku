@@ -175,6 +175,7 @@ public class BeaconStateUtil {
               deposit.getData().getSignature(),
               compute_domain(DOMAIN_DEPOSIT));
       if (!proof_is_valid) {
+        STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
         return;
       }
 
