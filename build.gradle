@@ -330,7 +330,7 @@ subprojects {
     integrationTestImplementation 'org.junit.jupiter:junit-jupiter-params'
 
     integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    integrationTestCompile project(path: ':logging', configuration: 'testSupportArtifacts')
+    integrationTestRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
