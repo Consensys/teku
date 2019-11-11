@@ -73,14 +73,6 @@ public class AttestationUtil {
       HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
           committeeAssignments) {
     UnsignedLong slot = headState.getSlot();
-    return getAttesterInformation(headState, committeeAssignments, slot);
-  }
-
-  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
-      BeaconState state,
-      HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
-          committeeAssignments,
-      final UnsignedLong slot) {
     List<Triple<List<Integer>, UnsignedLong, Integer>> committeeAssignmentsForSlot =
         committeeAssignments.get(slot);
     List<Triple<BLSPublicKey, Integer, Committee>> attesters = new ArrayList<>();
@@ -94,7 +86,7 @@ public class AttestationUtil {
         Committee crosslinkCommittee = new Committee(index, committee);
         attesters.add(
             new MutableTriple<>(
-                state.getValidators().get(validatorIndex).getPubkey(),
+                headState.getValidators().get(validatorIndex).getPubkey(),
                 indexIntoCommittee,
                 crosslinkCommittee));
       }
@@ -105,12 +97,6 @@ public class AttestationUtil {
   // Get attestation data that does not include attester specific shard or crosslink information
   public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
     UnsignedLong slot = state.getSlot();
-    return getGenericAttestationData(state, block, slot);
-  }
-
-  // Get attestation data that does not include attester specific shard or crosslink information
-  public static AttestationData getGenericAttestationData(
-      BeaconState state, BeaconBlock block, UnsignedLong slot) {
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.signing_root("signature");
     UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
