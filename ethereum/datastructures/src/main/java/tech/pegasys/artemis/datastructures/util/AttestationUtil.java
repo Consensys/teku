@@ -101,7 +101,7 @@ public class AttestationUtil {
     Bytes32 beacon_block_root = block.signing_root("signature");
     UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
     Bytes32 epoch_boundary_block_root =
-        start_slot.compareTo(slot) <= 0
+        start_slot.compareTo(slot) == 0
             ? block.signing_root("signature")
             : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
