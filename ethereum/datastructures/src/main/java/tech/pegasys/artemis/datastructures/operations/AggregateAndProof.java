@@ -13,92 +13,66 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.hashtree.SigningRoot;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AggregateAndProof
-    implements Merkleizable, SigningRoot, SimpleOffsetSerializable, SSZContainer {
+public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  public static final int SSZ_FIELD_COUNT = 1;
 
-  private Bitlist aggregation_bits; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private AttestationData data;
-  private Bitlist custody_bitfield; // Bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private BLSSignature signature;
+  private UnsignedLong index;
+  private BLSSignature selection_proof;
+  private Attestation aggregate;
 
   public AggregateAndProof(
-      Bitlist aggregation_bits,
-      AttestationData data,
-      Bitlist custody_bitfield,
-      BLSSignature signature) {
-    this.aggregation_bits = aggregation_bits;
-    this.data = data;
-    this.custody_bitfield = custody_bitfield;
-    this.signature = signature;
+      UnsignedLong index, BLSSignature selection_proof, Attestation aggregate) {
+    this.index = index;
+    this.selection_proof = selection_proof;
+    this.aggregate = aggregate;
   }
 
   public AggregateAndProof() {
-    this.aggregation_bits =
-        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    this.custody_bitfield =
-        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    this.index = UnsignedLong.ZERO;
+    this.selection_proof = BLSSignature.empty();
+    this.aggregate = new Attestation();
   }
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + data.getSSZFieldCount() + signature.getSSZFieldCount();
+    return SSZ_FIELD_COUNT + selection_proof.getSSZFieldCount() + aggregate.getSSZFieldCount();
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
+    fixedPartsList.add(SSZ.encodeUInt64(index.longValue()));
+    fixedPartsList.addAll(selection_proof.get_fixed_parts());
     fixedPartsList.addAll(List.of(Bytes.EMPTY));
-    fixedPartsList.addAll(data.get_fixed_parts());
-    fixedPartsList.addAll(List.of(Bytes.EMPTY));
-    fixedPartsList.addAll(signature.get_fixed_parts());
     return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
-    // once we shift from Bitlist to a real bitlist type.
-    // Bitlist serialized_aggregation_bits =
-    // Bitlist.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
-    // variablePartsList.addAll(List.of(serialized_aggregation_bits));
-    variablePartsList.addAll(List.of(aggregation_bits.serialize()));
-    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
-    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
-    // once we shift from Bitlist to a real bitlist type.
-    // Bitlist serialized_custody_bitfield =
-    // Bitlist.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(custody_bitfield);
-    // variablePartsList.addAll(List.of(serialized_custody_bitfield));
-    variablePartsList.addAll(List.of(custody_bitfield.serialize()));
-    variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(List.of(Bytes.EMPTY));
+    variablePartsList.addAll(Collections.nCopies(selection_proof.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(List.of(SimpleOffsetSerializer.serialize(aggregate)));
     return variablePartsList;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bits, data, custody_bitfield, signature);
+    return Objects.hash(index, selection_proof, aggregate);
   }
 
   @Override
@@ -116,62 +90,33 @@ public class AggregateAndProof
     }
 
     AggregateAndProof other = (AggregateAndProof) obj;
-    return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
-        && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getCustody_bitfield(), other.getCustody_bitfield())
-        && Objects.equals(this.getAggregate_signature(), other.getAggregate_signature());
+    return Objects.equals(this.index, other.index)
+        && Objects.equals(this.selection_proof, other.selection_proof)
+        && Objects.equals(this.aggregate, other.aggregate);
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public Bitlist getAggregation_bits() {
-    return aggregation_bits;
+  public UnsignedLong getIndex() {
+    return index;
   }
 
-  public void setAggregation_bits(Bitlist aggregation_bits) {
-    this.aggregation_bits = aggregation_bits;
+  public void setIndex(UnsignedLong index) {
+    this.index = index;
   }
 
-  public AttestationData getData() {
-    return data;
+  public BLSSignature getSelection_proof() {
+    return selection_proof;
   }
 
-  public void setData(AttestationData data) {
-    this.data = data;
+  public void setSelection_proof(BLSSignature selection_proof) {
+    this.selection_proof = selection_proof;
   }
 
-  public Bitlist getCustody_bitfield() {
-    return custody_bitfield;
+  public Attestation getAggregate() {
+    return aggregate;
   }
 
-  public void setCustody_bitfield(Bitlist custody_bitfield) {
-    this.custody_bitfield = custody_bitfield;
-  }
-
-  public BLSSignature getAggregate_signature() {
-    return signature;
-  }
-
-  public void setAggregate_signature(BLSSignature aggregate_signature) {
-    this.signature = aggregate_signature;
-  }
-
-  @Override
-  public Bytes32 signing_root(String truncation_param) {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits),
-            data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root_bitlist(custody_bitfield)));
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits),
-            data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root_bitlist(custody_bitfield),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_BASIC, SimpleOffsetSerializer.serialize(signature))));
+  public void setAggregate(Attestation aggregate) {
+    this.aggregate = aggregate;
   }
 }

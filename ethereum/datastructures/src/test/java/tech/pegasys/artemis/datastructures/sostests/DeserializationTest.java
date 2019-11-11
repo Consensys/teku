@@ -26,6 +26,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
@@ -227,5 +228,14 @@ public class DeserializationTest {
         validator,
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(validator), Validator.class));
+  }
+
+  @Test
+  void AggregateAndProofTest() {
+    AggregateAndProof aggregateAndProof = DataStructureUtil.randomAggregateAndProof(100);
+    assertEquals(
+        aggregateAndProof,
+        SimpleOffsetSerializer.deserialize(
+            SimpleOffsetSerializer.serialize(aggregateAndProof), AggregateAndProof.class));
   }
 }

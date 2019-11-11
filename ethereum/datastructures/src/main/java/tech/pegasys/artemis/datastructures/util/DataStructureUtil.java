@@ -28,6 +28,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -140,6 +141,11 @@ public final class DataStructureUtil {
         randomAttestationData(seed++),
         randomBitlist(seed++),
         BLSSignature.random(seed++));
+  }
+
+  public static AggregateAndProof randomAggregateAndProof(int seed) {
+    return new AggregateAndProof(
+        randomUnsignedLong(seed), BLSSignature.random(seed), randomAttestation(seed));
   }
 
   public static PendingAttestation randomPendingAttestation(int seed) {
