@@ -3,15 +3,14 @@ import net.ltgt.gradle.errorprone.CheckSeverity
 import java.text.SimpleDateFormat
 
 plugins {
-  id 'com.diffplug.gradle.spotless' version '3.18.0'
+  id 'com.diffplug.gradle.spotless' version '3.25.0'
   id 'com.jfrog.bintray' version '1.8.4'
-  id 'com.github.ben-manes.versions' version '0.20.0'
+  id 'com.github.ben-manes.versions' version '0.27.0'
   id 'com.github.hierynomus.license' version '0.15.0'
   id 'io.spring.dependency-management' version '1.0.6.RELEASE'
   id 'net.ltgt.errorprone' version '1.1.1' apply false
   id 'net.researchgate.release' version '2.7.0'
-  id 'com.gradle.build-scan' version '2.1'
-  id 'me.champeau.gradle.jmh' version '0.4.8' apply false
+  id 'me.champeau.gradle.jmh' version '0.5.0' apply false
   id 'de.undercouch.download' version '4.0.0'
 }
 
@@ -54,7 +53,7 @@ allprojects {
 
   version = rootProject.version
 
-  jacoco { toolVersion = '0.8.2' }
+  jacoco { toolVersion = '0.8.5' }
 
   sourceCompatibility = '11'
   targetCompatibility = '11'
@@ -75,11 +74,6 @@ allprojects {
 
   dependencies {
     errorprone("com.google.errorprone:error_prone_core")
-  }
-
-  buildScan {
-    termsOfServiceUrl = "https://gradle.com/terms-of-service"
-    termsOfServiceAgree = "yes"
   }
 
   apply plugin: 'com.diffplug.gradle.spotless'
@@ -130,8 +124,12 @@ allprojects {
       check('WildcardImport', CheckSeverity.WARN)
 
       // This check is broken in Java 12.  See https://github.com/google/error-prone/issues/1257
-      if (JavaVersion.current().java12Compatible) {
+      if (JavaVersion.current() == JavaVersion.VERSION_12) {
         check('Finally', CheckSeverity.OFF)
+      }
+      // This check is broken after Java 12.  See https://github.com/google/error-prone/issues/1352
+      if (JavaVersion.current() > JavaVersion.VERSION_12) {
+        check('TypeParameterUnusedInFormals', CheckSeverity.OFF)
       }
     }
     options.encoding = 'UTF-8'
