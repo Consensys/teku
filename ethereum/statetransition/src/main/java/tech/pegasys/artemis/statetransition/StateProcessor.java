@@ -121,7 +121,7 @@ public class StateProcessor {
 
     // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
     if (isGenesisReasonable(
-        eth1_timestamp, deposits, config.getDepositMode().equals("simulation"))) {
+        eth1_timestamp, deposits, config.getDepositMode().equals(Constants.DEPOSIT_SIM))) {
       if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
         BeaconStateWithCache candidate_state =
             initialize_beacon_state_from_eth1(

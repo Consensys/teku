@@ -11,6 +11,12 @@
 
 > Note: Disregard these steps if you just want to run the simulation.
 
+Install web3j.  On MacOS this can be done with `brew`:
+```shell script
+brew tap web3j/web3j
+brew install web3j
+```
+
 Ensure you have Python3 installed before proceeding
 
 `python --version`
@@ -24,7 +30,7 @@ source ~/vyper-venv/bin/activate
 
 Install this specific version as it is needed to compile the deposit_contract contract
 
-`pip install vyper==0.1.0b9`
+`pip install vyper==0.1.0b12`
 
 Generate the ABI
 
