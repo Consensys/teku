@@ -26,18 +26,15 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_PROPOSER_SLASHINGS;
-import static tech.pegasys.artemis.util.config.Constants.MAX_TRANSFERS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VOLUNTARY_EXITS;
 
 import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -55,7 +52,6 @@ class BeaconBlockBodyTest {
   private SSZList<Deposit> deposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private SSZList<VoluntaryExit> voluntaryExits =
       new SSZList<>(VoluntaryExit.class, MAX_VOLUNTARY_EXITS);
-  private SSZList<Transfer> transfers = new SSZList<>(Transfer.class, MAX_TRANSFERS);
 
   {
     proposerSlashings.add(randomProposerSlashing(seed++));
@@ -80,8 +76,7 @@ class BeaconBlockBodyTest {
           attesterSlashings,
           attestations,
           deposits,
-          voluntaryExits,
-          transfers);
+          voluntaryExits);
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
@@ -101,8 +96,7 @@ class BeaconBlockBodyTest {
             attesterSlashings,
             attestations,
             deposits,
-            voluntaryExits,
-            transfers);
+            voluntaryExits);
 
     assertEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -123,8 +117,7 @@ class BeaconBlockBodyTest {
             attesterSlashings,
             attestations,
             deposits,
-            voluntaryExits,
-            transfers);
+            voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -145,8 +138,7 @@ class BeaconBlockBodyTest {
             otherAttesterSlashings,
             attestations,
             deposits,
-            voluntaryExits,
-            transfers);
+            voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -167,8 +159,7 @@ class BeaconBlockBodyTest {
             attesterSlashings,
             reverseAttestations,
             deposits,
-            voluntaryExits,
-            transfers);
+            voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -188,8 +179,7 @@ class BeaconBlockBodyTest {
             attesterSlashings,
             attestations,
             reverseDeposits,
-            voluntaryExits,
-            transfers);
+            voluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }
@@ -210,32 +200,7 @@ class BeaconBlockBodyTest {
             attesterSlashings,
             attestations,
             deposits,
-            reverseVoluntaryExits,
-            transfers);
-
-    assertNotEquals(beaconBlockBody, testBeaconBlockBody);
-  }
-
-  @Disabled
-  // TODO This is disabled because MAX_TRANSFERS is 0, meaning the list is always empty.
-  // This is expected for now and should be reevaluated in future Phases.
-  @Test
-  void equalsReturnsFalseWhenTransfersAreDifferent() {
-    // Create copy of exits and reverse to ensure it is different.
-    SSZList<Transfer> reverseTransfers = new SSZList<>(transfers, MAX_TRANSFERS, Transfer.class);
-    Collections.reverse(reverseTransfers);
-
-    BeaconBlockBody testBeaconBlockBody =
-        new BeaconBlockBody(
-            blsSignature,
-            eth1Data,
-            graffiti,
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits,
-            reverseTransfers);
+            reverseVoluntaryExits);
 
     assertNotEquals(beaconBlockBody, testBeaconBlockBody);
   }

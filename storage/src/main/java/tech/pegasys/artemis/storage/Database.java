@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -156,15 +156,15 @@ public class Database {
     Map<Checkpoint, BeaconState> checkpoint_states_memory = new ConcurrentHashMap<>();
 
     LongStream.range(
-            compute_start_slot_of_epoch(finalized_checkpoint_memory.getEpoch()).longValue(),
+            compute_start_slot_at_epoch(finalized_checkpoint_memory.getEpoch()).longValue(),
             slot.longValue() + 1)
         .forEach(
             currentSlot -> {
               Bytes32 root = block_root_references.get(UnsignedLong.valueOf(currentSlot));
               Checkpoint checkpoint =
                   checkpoint_references.get(
-                      compute_start_slot_of_epoch(
-                          compute_epoch_of_slot(UnsignedLong.valueOf(currentSlot))));
+                      compute_start_slot_at_epoch(
+                          compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot))));
 
               blocks_memory.put(root, blocks.get(root));
               block_states_memory.put(root, block_states.get(root));
@@ -215,7 +215,7 @@ public class Database {
           .forEach(
               checkpoint ->
                   new_checkpoint_references.put(
-                      compute_start_slot_of_epoch(checkpoint.getEpoch()), checkpoint));
+                      compute_start_slot_at_epoch(checkpoint.getEpoch()), checkpoint));
 
       block_root_references.putAll(new_block_root_references);
       checkpoint_references.putAll(new_checkpoint_references);

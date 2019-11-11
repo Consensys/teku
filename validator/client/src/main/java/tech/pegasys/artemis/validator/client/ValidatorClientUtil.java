@@ -14,21 +14,17 @@
 package tech.pegasys.artemis.validator.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.crypto.Credentials;
@@ -46,42 +42,35 @@ import tech.pegasys.artemis.util.mikuli.PublicKey;
 public class ValidatorClientUtil {
 
   /**
-   * Return the committee assignment in the ``epoch`` for ``validator_index`` and
-   * ``registry_change``. ``assignment`` returned is a tuple of the following form: *
-   * ``assignment[0]`` is the list of validators in the committee * ``assignment[1]`` is the shard
-   * to which the committee is assigned * ``assignment[2]`` is the slot at which the committee is
-   * assigned * ``assignment[3]`` is a bool signalling if the validator is expected to propose a
-   * beacon block at the assigned slot.
+   * Return the committee assignment in the ``epoch`` for ``validator_index``. ``assignment``
+   * returned is a tuple of the following form: ``assignment[0]`` is the list of validators in the
+   * committee ``assignment[1]`` is the index to which the committee is assigned ``assignment[2]``
+   * is the slot at which the committee is assigned Return None if no assignment.
    *
    * @param state the BeaconState.
    * @param epoch either on or between previous or current epoch.
    * @param validator_index the validator that is calling this function.
-   * @return Optional.of(CommitteeAssignmentTuple) or Optional.empty.
+   * @return Optional.of(CommitteeAssignment).
    */
-  public static Optional<Triple<List<Integer>, UnsignedLong, UnsignedLong>>
-      get_committee_assignment(BeaconState state, UnsignedLong epoch, int validator_index) {
+  public static Optional<CommitteeAssignment> get_committee_assignment(
+      BeaconState state, UnsignedLong epoch, int validator_index) {
     UnsignedLong next_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
     checkArgument(
         epoch.compareTo(next_epoch) <= 0, "get_committe_assignment: Epoch number too high");
 
-    int committees_per_slot =
-        get_committee_count(state, epoch)
-            .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-            .intValue();
-    UnsignedLong start_slot = compute_start_slot_of_epoch(epoch);
+    UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
 
     for (UnsignedLong slot = start_slot;
         slot.compareTo(start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
         slot = slot.plus(UnsignedLong.ONE)) {
 
-      int offset = committees_per_slot * slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).intValue();
-      int slot_start_shard = (get_start_shard(state, epoch).intValue() + offset) % SHARD_COUNT;
-
-      for (int i = 0; i < committees_per_slot; i++) {
-        UnsignedLong shard = UnsignedLong.valueOf((slot_start_shard + i) % SHARD_COUNT);
-        List<Integer> committee = get_crosslink_committee(state, epoch, shard);
+      final UnsignedLong committeeCountAtSlot = get_committee_count_at_slot(state, slot);
+      for (UnsignedLong index = UnsignedLong.ZERO;
+          index.compareTo(committeeCountAtSlot) < 0;
+          index = index.plus(UnsignedLong.ONE)) {
+        final List<Integer> committee = get_beacon_committee(state, slot, index);
         if (committee.contains(validator_index)) {
-          return Optional.of(new ImmutableTriple<>(committee, shard, slot));
+          return Optional.of(new CommitteeAssignment(committee, index, slot));
         }
       }
     }
@@ -119,6 +108,7 @@ public class ValidatorClientUtil {
       String address,
       Web3j web3j,
       DefaultGasProvider gasProvider,
+      Bytes depositRoot,
       BLSSignature sig)
       throws Exception {
     Credentials credentials =
@@ -127,9 +117,10 @@ public class ValidatorClientUtil {
 
     contract
         .deposit(
-            validator.getBlsKeys().getPublicKey().toBytesCompressed().reverse().toArray(),
-            validator.getWithdrawal_credentials().reverse().toArray(),
-            sig.toBytes().reverse().toArray(),
+            validator.getBlsKeys().getPublicKey().toBytesCompressed().toArray(),
+            validator.getWithdrawal_credentials().toArray(),
+            sig.toBytes().toArray(),
+            depositRoot.toArray(),
             new BigInteger(amount + "000000000"))
         .send();
   }

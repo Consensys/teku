@@ -27,8 +27,8 @@ import org.json.simple.parser.JSONParser;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class GanacheController {
+  private static final ALogger LOG = new ALogger();
 
-  final String keysPath = System.getProperty("user.dir") + "/pow/src/main/resources/keys.json";
   final String ganachePath = System.getProperty("user.dir") + "/ganache-cli";
   private static final String DEFAULT_HOST_NAME = "http://127.0.0.1";
   private static final String DEFAULT_PORT = "8545";
@@ -44,7 +44,7 @@ public class GanacheController {
   private String provider;
   private int waitIterations;
 
-  private static final ALogger LOG = new ALogger();
+  private volatile File keyFile;
 
   public GanacheController(int accountSize, int balance) {
     this(DEFAULT_HOST_NAME, DEFAULT_PORT, accountSize, balance);
@@ -54,6 +54,11 @@ public class GanacheController {
     provider = hostName + ":" + port;
     cleanUp();
     waitIterations = (accountSize / 200 > 20) ? accountSize / 200 : 20;
+    try {
+      keyFile = File.createTempFile("keys", ".json");
+    } catch (final IOException e) {
+      LOG.log(Level.FATAL, "Failed to create key file: " + e.getMessage());
+    }
 
     // starts a child process of ganache-cli and generates a keys.json file
     ProcessBuilder pb =
@@ -65,7 +70,7 @@ public class GanacheController {
             BALANCE_PARAM,
             "" + balance,
             KEY_PATH_PARAM,
-            keysPath);
+            keyFile.getAbsolutePath());
     pb.directory(new File(ganachePath));
 
     // cleans up process and deletes keys.json
@@ -77,7 +82,7 @@ public class GanacheController {
             @Override
             public void run() {
               process.destroy();
-              new File(keysPath).delete();
+              keyFile.delete();
             }
           };
     } catch (IOException e) {
@@ -98,7 +103,9 @@ public class GanacheController {
   // https://youtrack.jetbrains.com/issue/IDEA-75946
   // removes any remaining files and cleanup orphaned processes
   public void cleanUp() {
-    new File(keysPath).delete();
+    if (keyFile != null) {
+      keyFile.delete();
+    }
     ProcessBuilder pb = new ProcessBuilder("killall", "-9", "node", "cli.js");
     try {
       pb.start();
@@ -117,17 +124,16 @@ public class GanacheController {
   public void initKeys() {
     accounts = new ArrayList<>();
     JSONObject accountsJSON = null;
-    File keyFile = new File(keysPath);
     try {
       int waitInterval = 0;
       while (waitInterval < waitIterations) {
-        if (keyFile.exists()) break;
+        if (keyFile.exists() && keyFile.length() > 0) break;
         Thread.sleep(500);
         waitInterval++;
       }
       JSONParser parser = new JSONParser();
       accountsJSON =
-          (JSONObject) ((JSONObject) parser.parse(new FileReader(keysPath))).get("private_keys");
+          (JSONObject) ((JSONObject) parser.parse(new FileReader(keyFile))).get("private_keys");
     } catch (Exception e) {
       if (!keyFile.exists())
         LOG.log(

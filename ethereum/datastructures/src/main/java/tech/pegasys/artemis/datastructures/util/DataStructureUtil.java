@@ -36,11 +36,9 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -123,25 +121,17 @@ public final class DataStructureUtil {
     return new Eth1Data(randomBytes32(seed), randomUnsignedLong(seed++), randomBytes32(seed++));
   }
 
-  public static Crosslink randomCrosslink(int seed) {
-    return new Crosslink(
-        randomUnsignedLong(seed),
-        randomBytes32(seed++),
-        randomUnsignedLong(seed++),
-        randomUnsignedLong(seed++),
-        randomBytes32(seed++));
-  }
-
   public static Checkpoint randomCheckpoint(int seed) {
     return new Checkpoint(randomUnsignedLong(seed), randomBytes32(seed++));
   }
 
   public static AttestationData randomAttestationData(int seed) {
     return new AttestationData(
-        randomBytes32(seed),
+        randomUnsignedLong(seed),
+        randomUnsignedLong(seed++),
+        randomBytes32(seed++),
         randomCheckpoint(seed++),
-        randomCheckpoint(seed++),
-        randomCrosslink(seed++));
+        randomCheckpoint(seed++));
   }
 
   public static Attestation randomAttestation(int seed) {
@@ -212,9 +202,7 @@ public final class DataStructureUtil {
             VoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
             DataStructureUtil::randomVoluntaryExit,
-            seed++),
-        randomSSZList(
-            Transfer.class, Constants.MAX_TRANSFERS, DataStructureUtil::randomTransfer, seed++));
+            seed++));
   }
 
   public static ProposerSlashing randomProposerSlashing(int seed) {
@@ -300,17 +288,6 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random(seed++));
   }
 
-  public static Transfer randomTransfer(int seed) {
-    return new Transfer(
-        randomUnsignedLong(seed),
-        randomUnsignedLong(seed + 1),
-        randomUnsignedLong(seed + 2),
-        randomUnsignedLong(seed + 3),
-        randomUnsignedLong(seed + 4),
-        BLSPublicKey.random(seed + 5),
-        BLSSignature.random(seed + 6));
-  }
-
   public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
@@ -384,17 +361,6 @@ public final class DataStructureUtil {
         // Can't use the actual maxSize cause it is too big
         randomSSZList(Validator.class, 1000, DataStructureUtil::randomValidator, seed++),
         randomSSZList(UnsignedLong.class, 1000, DataStructureUtil::randomUnsignedLong, seed++),
-        randomUnsignedLong(seed++),
-        randomSSZVector(
-            Bytes32.ZERO,
-            Constants.EPOCHS_PER_HISTORICAL_VECTOR,
-            DataStructureUtil::randomBytes32,
-            seed++),
-        randomSSZVector(
-            Bytes32.ZERO,
-            Constants.EPOCHS_PER_HISTORICAL_VECTOR,
-            DataStructureUtil::randomBytes32,
-            seed++),
         randomSSZVector(
             Bytes32.ZERO,
             Constants.EPOCHS_PER_HISTORICAL_VECTOR,
@@ -409,10 +375,6 @@ public final class DataStructureUtil {
             PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation, seed++),
         randomSSZList(
             PendingAttestation.class, 1000, DataStructureUtil::randomPendingAttestation, seed++),
-        randomSSZVector(
-            new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink, seed++),
-        randomSSZVector(
-            new Crosslink(), Constants.SHARD_COUNT, DataStructureUtil::randomCrosslink, seed++),
         randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH, seed++),
         randomCheckpoint(seed++),
         randomCheckpoint(seed++),
