@@ -30,9 +30,9 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
 
-  private UnsignedLong index;
-  private BLSSignature selection_proof;
-  private Attestation aggregate;
+  private final UnsignedLong index;
+  private final BLSSignature selection_proof;
+  private final Attestation aggregate;
 
   public AggregateAndProof(
       UnsignedLong index, BLSSignature selection_proof, Attestation aggregate) {
@@ -100,23 +100,11 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
     return index;
   }
 
-  public void setIndex(UnsignedLong index) {
-    this.index = index;
-  }
-
   public BLSSignature getSelection_proof() {
     return selection_proof;
   }
 
-  public void setSelection_proof(BLSSignature selection_proof) {
-    this.selection_proof = selection_proof;
-  }
-
   public Attestation getAggregate() {
     return aggregate;
-  }
-
-  public void setAggregate(Attestation aggregate) {
-    this.aggregate = aggregate;
   }
 }
