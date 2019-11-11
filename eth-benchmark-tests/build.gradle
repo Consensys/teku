@@ -22,4 +22,5 @@ dependencies {
 jmh {
   include = '.*'
   resultFormat = 'CSV'
+  duplicateClassesStrategy = 'warn'
 }
