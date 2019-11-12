@@ -76,7 +76,7 @@ public class AttestationTopicHandlerTest {
   }
 
   @Test
-  public void accept_validAttestation() {
+  public void accept_validAttestation() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final Attestation attestation = attestationGenerator.validAttestation(storageClient);
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
@@ -91,7 +91,7 @@ public class AttestationTopicHandlerTest {
   }
 
   @Test
-  public void accept_invalidAttestationSignature() {
+  public void accept_invalidAttestationSignature() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final Attestation attestation =
         attestationGenerator.attestationWithInvalidSignature(storageClient);

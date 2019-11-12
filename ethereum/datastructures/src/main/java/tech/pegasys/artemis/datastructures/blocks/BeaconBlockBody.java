@@ -25,7 +25,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
@@ -40,7 +39,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 7;
+  public static final int SSZ_FIELD_COUNT = 6;
 
   private BLSSignature randao_reveal;
   private Eth1Data eth1_data;
@@ -50,7 +49,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
   private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
   private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
   private SSZList<VoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
-  private SSZList<Transfer> transfers; // List bounded by MAX_TRANSFERS
 
   public BeaconBlockBody(
       BLSSignature randao_reveal,
@@ -60,8 +58,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
       SSZList<AttesterSlashing> attester_slashings,
       SSZList<Attestation> attestations,
       SSZList<Deposit> deposits,
-      SSZList<VoluntaryExit> voluntary_exits,
-      SSZList<Transfer> transfers) {
+      SSZList<VoluntaryExit> voluntary_exits) {
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
     this.graffiti = graffiti;
@@ -70,7 +67,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     this.attestations = attestations;
     this.deposits = deposits;
     this.voluntary_exits = voluntary_exits;
-    this.transfers = transfers;
   }
 
   public BeaconBlockBody() {
@@ -84,7 +80,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     this.attestations = new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
     this.deposits = new SSZList<>(Deposit.class, Constants.MAX_DEPOSITS);
     this.voluntary_exits = new SSZList<>(VoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
-    this.transfers = new SSZList<>(Transfer.class, Constants.MAX_TRANSFERS);
   }
 
   @Override
@@ -98,7 +93,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     fixedPartsList.addAll(randao_reveal.get_fixed_parts());
     fixedPartsList.addAll(eth1_data.get_fixed_parts());
     fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytes(graffiti))));
-    fixedPartsList.addAll(Collections.nCopies(6, Bytes.EMPTY));
+    fixedPartsList.addAll(Collections.nCopies(5, Bytes.EMPTY));
     return fixedPartsList;
   }
 
@@ -114,8 +109,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
             SimpleOffsetSerializer.serializeVariableCompositeList(attester_slashings),
             SimpleOffsetSerializer.serializeVariableCompositeList(attestations),
             SimpleOffsetSerializer.serializeFixedCompositeList(deposits),
-            SimpleOffsetSerializer.serializeFixedCompositeList(voluntary_exits),
-            SimpleOffsetSerializer.serializeFixedCompositeList(transfers)));
+            SimpleOffsetSerializer.serializeFixedCompositeList(voluntary_exits)));
     return variablePartsList;
   }
 
@@ -129,8 +123,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
         attester_slashings,
         attestations,
         deposits,
-        voluntary_exits,
-        transfers);
+        voluntary_exits);
   }
 
   @Override
@@ -155,8 +148,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
         && Objects.equals(this.getAttester_slashings(), other.getAttester_slashings())
         && Objects.equals(this.getAttestations(), other.getAttestations())
         && Objects.equals(this.getDeposits(), other.getDeposits())
-        && Objects.equals(this.getVoluntary_exits(), other.getVoluntary_exits())
-        && Objects.equals(this.getTransfers(), other.getTransfers());
+        && Objects.equals(this.getVoluntary_exits(), other.getVoluntary_exits());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
@@ -224,14 +216,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     this.voluntary_exits = voluntary_exits;
   }
 
-  public SSZList<Transfer> getTransfers() {
-    return transfers;
-  }
-
-  public void setTransfers(SSZList<Transfer> transfers) {
-    this.transfers = transfers;
-  }
-
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
@@ -247,8 +231,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_DEPOSITS, deposits),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_VOLUNTARY_EXITS, voluntary_exits),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_TRANSFERS, transfers)));
+                SSZTypes.LIST_OF_COMPOSITE, Constants.MAX_VOLUNTARY_EXITS, voluntary_exits)));
   }
 }

@@ -15,20 +15,14 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_of_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_crosslink_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_start_shard;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
-import static tech.pegasys.artemis.util.config.Constants.DOMAIN_ATTESTATION;
-import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
-import static tech.pegasys.artemis.util.config.Constants.SHARD_COUNT;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -36,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -49,19 +44,14 @@ import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyB
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bitwise.BitwiseOps;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class AttestationUtil {
 
@@ -78,7 +68,7 @@ public class AttestationUtil {
     return true;
   }
 
-  public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
+  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
       BeaconState headState,
       HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
           committeeAssignments) {
@@ -86,22 +76,22 @@ public class AttestationUtil {
     return getAttesterInformation(headState, committeeAssignments, slot);
   }
 
-  public static List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> getAttesterInformation(
+  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
       BeaconState state,
       HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
           committeeAssignments,
       final UnsignedLong slot) {
     List<Triple<List<Integer>, UnsignedLong, Integer>> committeeAssignmentsForSlot =
         committeeAssignments.get(slot);
-    List<Triple<BLSPublicKey, Integer, CrosslinkCommittee>> attesters = new ArrayList<>();
+    List<Triple<BLSPublicKey, Integer, Committee>> attesters = new ArrayList<>();
     if (committeeAssignmentsForSlot != null) {
       for (int i = 0; i < committeeAssignmentsForSlot.size(); i++) {
         int validatorIndex = committeeAssignmentsForSlot.get(i).getRight();
         List<Integer> committee = committeeAssignmentsForSlot.get(i).getLeft();
-        UnsignedLong shard = committeeAssignmentsForSlot.get(i).getMiddle();
+        UnsignedLong index = committeeAssignmentsForSlot.get(i).getMiddle();
         int indexIntoCommittee = committee.indexOf(validatorIndex);
 
-        CrosslinkCommittee crosslinkCommittee = new CrosslinkCommittee(shard, committee);
+        Committee crosslinkCommittee = new Committee(index, committee);
         attesters.add(
             new MutableTriple<>(
                 state.getValidators().get(validatorIndex).getPubkey(),
@@ -114,10 +104,10 @@ public class AttestationUtil {
 
   // Get attestation data that does not include attester specific shard or crosslink information
   public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
-    // Get variables necessary that can be shared among Attestations of all validators
     UnsignedLong slot = state.getSlot();
+    // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.signing_root("signature");
-    UnsignedLong start_slot = compute_start_slot_of_epoch(get_current_epoch(state));
+    UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0
             ? block.signing_root("signature")
@@ -126,7 +116,7 @@ public class AttestationUtil {
     Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
 
     // Set attestation data
-    return new AttestationData(beacon_block_root, source, target, new Crosslink());
+    return new AttestationData(slot, UnsignedLong.ZERO, beacon_block_root, source, target);
   }
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
@@ -137,20 +127,8 @@ public class AttestationUtil {
   }
 
   public static AttestationData completeAttestationCrosslinkData(
-      BeaconState state, AttestationData attestation_data, CrosslinkCommittee committee) {
-    Crosslink crosslink = attestation_data.getCrosslink();
-    UnsignedLong shard = committee.getShard();
-    crosslink.setShard(shard);
-    Crosslink parent_crosslink = state.getCurrent_crosslinks().get(shard.intValue());
-    crosslink.setStart_epoch(parent_crosslink.getEnd_epoch());
-    UnsignedLong end_epoch =
-        min(
-            attestation_data.getTarget().getEpoch(),
-            parent_crosslink
-                .getEnd_epoch()
-                .plus(UnsignedLong.valueOf(Constants.MAX_EPOCHS_PER_CROSSLINK)));
-    crosslink.setEnd_epoch(end_epoch);
-    crosslink.setParent_root(state.getCurrent_crosslinks().get(shard.intValue()).hash_tree_root());
+      BeaconState state, AttestationData attestation_data, Committee committee) {
+    attestation_data.setIndex(committee.getIndex());
     return attestation_data;
   }
 
@@ -224,10 +202,10 @@ public class AttestationUtil {
   }
 
   /**
-   * Return the sorted attesting indices corresponding to ``attestation_data`` and ``bits``.
+   * Return the sorted attesting indices corresponding to ``data`` and ``bits``.
    *
    * @param state
-   * @param attestation_data
+   * @param data
    * @param bits
    * @return
    * @throws IllegalArgumentException
@@ -235,14 +213,10 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconState state, AttestationData attestation_data, Bitlist bits) {
-    List<Integer> committee =
-        get_crosslink_committee(
-            state,
-            attestation_data.getTarget().getEpoch(),
-            attestation_data.getCrosslink().getShard());
+      BeaconState state, AttestationData data, Bitlist bits) {
+    List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
 
-    HashSet<Integer> attesting_indices = new HashSet<>();
+    Set<Integer> attesting_indices = new HashSet<>();
     for (int i = 0; i < committee.size(); i++) {
       int index = committee.get(i);
       int bitfieldBit = bits.getBit(i);
@@ -315,78 +289,14 @@ public class AttestationUtil {
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes domain =
-        get_domain(state, DOMAIN_ATTESTATION, indexed_attestation.getData().getTarget().getEpoch());
+        get_domain(
+            state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain)) {
       STDOUT.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
-  }
-
-  /**
-   * Return the slot corresponding to the attestation ``data``.
-   *
-   * @param state
-   * @param data
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attestation_data_slot</a>
-   */
-  public static UnsignedLong get_attestation_data_slot(BeaconState state, AttestationData data) {
-    UnsignedLong committee_count = get_committee_count(state, data.getTarget().getEpoch());
-    UnsignedLong offset =
-        data.getCrosslink()
-            .getShard()
-            .plus(UnsignedLong.valueOf(SHARD_COUNT))
-            .minus(get_start_shard(state, data.getTarget().getEpoch()))
-            .mod(UnsignedLong.valueOf(SHARD_COUNT));
-    return compute_start_slot_of_epoch(data.getTarget().getEpoch())
-        .plus(offset.dividedBy(committee_count.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH))));
-  }
-
-  /**
-   * Return the compact committee root at ``epoch``.
-   *
-   * @param state
-   * @param epoch
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_compact_committees_root</a>
-   */
-  public static Bytes32 get_compact_committees_root(BeaconState state, UnsignedLong epoch) {
-    List<CompactCommittee> committees = new ArrayList<>();
-    for (int i = 0; i < SHARD_COUNT; i++) {
-      CompactCommittee newCommittee = new CompactCommittee();
-      committees.add(newCommittee);
-    }
-    int start_shard = get_start_shard(state, epoch).intValue();
-    int committee_count = get_committee_count(state, epoch).intValue();
-    for (int committee_number = 0; committee_number < committee_count; committee_number++) {
-      int shard = (start_shard + committee_number) % SHARD_COUNT;
-      List<Integer> crosslink_committee =
-          get_crosslink_committee(state, epoch, UnsignedLong.valueOf(shard));
-      for (Integer index : crosslink_committee) {
-        Validator validator = state.getValidators().get(index);
-        committees.get(shard).getPubkeys().add(validator.getPubkey());
-        UnsignedLong compact_balance =
-            validator
-                .getEffective_balance()
-                .dividedBy(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT));
-        UnsignedLong index16leftShift = BitwiseOps.leftShift(UnsignedLong.valueOf(index), 16);
-        UnsignedLong slashed15leftShift = UnsignedLong.ZERO;
-        if (validator.isSlashed()) {
-          slashed15leftShift = BitwiseOps.leftShift(UnsignedLong.ONE, 15);
-        }
-        UnsignedLong compact_validator =
-            index16leftShift.plus(slashed15leftShift).plus(compact_balance);
-        committees.get(shard).getCompact_validators().add(compact_validator);
-      }
-    }
-
-    return HashTreeUtil.hash_tree_root(
-        HashTreeUtil.SSZTypes.VECTOR_OF_COMPOSITE,
-        committees.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList()));
   }
 
   public static <T> List<T> intersection(List<T> list1, List<T> list2) {
