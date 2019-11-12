@@ -20,6 +20,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
@@ -154,5 +155,11 @@ public class IsVariableTest {
   void isValidatorVariableTest() {
     assertEquals(
         false, SimpleOffsetSerializer.classReflectionInfo.get(Validator.class).isVariable());
+  }
+
+  @Test
+  void isAggregateAndProofVariableTest() {
+    assertEquals(
+        true, SimpleOffsetSerializer.classReflectionInfo.get(AggregateAndProof.class).isVariable());
   }
 }
