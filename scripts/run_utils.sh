@@ -11,7 +11,6 @@ create_config() {
 
   # Set the port number to the node number plus 19000
   local PORT=$((19000 + $NODE))
-  local RPC_PORT=$((19500 + $NODE))
 
 
   local IS_BOOTNODE=false
@@ -47,7 +46,6 @@ create_config() {
     sed "s/bootnodes\ =.*/bootnodes\ =\ \"$BOOTNODES\"/"              |# Update the bootnodes
     sed "s/privateKey\ =.*/privateKey\ =\ \"$PRIVATE_KEY\"/"          |# Update the private key
     sed "s/port\ =.*/port\ =\ $PORT/"                                 |# Update the port field to the value set above
-    sed "s/portNumber\ =.*/portNumber\ =\ $RPC_PORT/"                 |# Update the REST API port field to the value set above
     sed "s/genesisTime\ =.*/genesisTime\ =\ $GENESIS_TIME/"           |# Update the genesis time
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
