@@ -120,6 +120,7 @@ public class AttestationUtil {
 
   public static AttestationData completeAttestationCrosslinkData(
       BeaconState state, AttestationData attestation_data, Committee committee) {
+    attestation_data.setIndex(committee.getIndex());
     return attestation_data;
   }
 
