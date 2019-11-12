@@ -189,10 +189,10 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v0.8.3'
+def refTestVersion = 'v0.9.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
-def refTestExpandDir = 'eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/'
+def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
 
 task downloadRefTests(type: Download) {
   src([
@@ -204,22 +204,35 @@ task downloadRefTests(type: Download) {
   overwrite false
 }
 
-task expandRefTestsGeneral(type: Copy, dependsOn: downloadRefTests) {
+task cleanRefTestsGeneral(type: Delete) {
+  delete "${refTestExpandDir}/tests/general"
+}
+
+task expandRefTestsGeneral(type: Copy, dependsOn: [cleanRefTestsGeneral, downloadRefTests]) {
   from tarTree("${refTestDownloadDir}/general.tar.gz")
   into refTestExpandDir
 }
 
-task expandRefTestsMainnet(type: Copy, dependsOn: downloadRefTests) {
+task cleanRefTestsMainnet(type: Delete) {
+  delete "${refTestExpandDir}/tests/mainnet"
+}
+
+task expandRefTestsMainnet(type: Copy, dependsOn: [cleanRefTestsMainnet, downloadRefTests]) {
   from tarTree("${refTestDownloadDir}/mainnet.tar.gz")
   into refTestExpandDir
 }
 
-task expandRefTestsMinimal(type: Copy, dependsOn: downloadRefTests) {
+task cleanRefTestsMinimal(type: Delete) {
+  delete "${refTestExpandDir}/tests/minimal"
+}
+
+task expandRefTestsMinimal(type: Copy, dependsOn: [cleanRefTestsMinimal, downloadRefTests]) {
   from tarTree("${refTestDownloadDir}/minimal.tar.gz")
   into refTestExpandDir
 }
 
 task expandRefTests(dependsOn: [expandRefTestsGeneral, expandRefTestsMainnet, expandRefTestsMinimal])
+task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, cleanRefTestsMinimal])
 
 task deploy() {}
 

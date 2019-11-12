@@ -58,7 +58,7 @@ final class ArtemisConfigurationTest {
   @Test
   void invalidMainnetArtemisConfig() {
     Constants.setConstants("mainnet");
-    ArtemisConfiguration config = ArtemisConfiguration.fromString("deposit.numValidators=63");
+    ArtemisConfiguration config = ArtemisConfiguration.fromString("deposit.numValidators=31");
     assertThrows(IllegalArgumentException.class, () -> config.validateConfig());
   }
 }

@@ -37,7 +37,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.CrosslinkCommittee;
+import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -133,8 +133,7 @@ class BeaconStateUtilTest {
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
     BeaconState state = createBeaconState();
-    CrosslinkCommittee crosslinkCommittee =
-        new CrosslinkCommittee(UnsignedLong.ONE, Arrays.asList(0, 1, 2));
+    Committee committee = new Committee(UnsignedLong.ONE, Arrays.asList(0, 1, 2));
 
     // Calculate Expected Results
     UnsignedLong expectedBalance = UnsignedLong.ZERO;
@@ -147,8 +146,7 @@ class BeaconStateUtilTest {
       }
     }
 
-    UnsignedLong totalBalance =
-        BeaconStateUtil.get_total_balance(state, crosslinkCommittee.getCommittee());
+    UnsignedLong totalBalance = BeaconStateUtil.get_total_balance(state, committee.getCommittee());
     assertEquals(expectedBalance, totalBalance);
   }
 

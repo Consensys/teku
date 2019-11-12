@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -95,7 +95,7 @@ public final class StartupUtil {
       SSZList<Attestation> attestations) {
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
+    beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_at_slot(slot)));
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(
