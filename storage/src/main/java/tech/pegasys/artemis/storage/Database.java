@@ -25,7 +25,6 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -150,10 +149,10 @@ public class Database {
     Checkpoint finalized_checkpoint_memory = new Checkpoint(finalizedCheckpoint.get());
     Checkpoint justified_checkpoint_memory = new Checkpoint(justifiedCheckpoint.get());
     UnsignedLong time_memory = time.get();
-    Map<UnsignedLong, Checkpoint> latest_messages_memory = new ConcurrentHashMap<>(latest_messages);
-    Map<Bytes32, BeaconBlock> blocks_memory = new ConcurrentHashMap<>();
-    Map<Bytes32, BeaconState> block_states_memory = new ConcurrentHashMap<>();
-    Map<Checkpoint, BeaconState> checkpoint_states_memory = new ConcurrentHashMap<>();
+    Map<UnsignedLong, Checkpoint> latest_messages_memory = latest_messages;
+    Map<Bytes32, BeaconBlock> blocks_memory = new HashMap<>();
+    Map<Bytes32, BeaconState> block_states_memory = new HashMap<>();
+    Map<Checkpoint, BeaconState> checkpoint_states_memory = new HashMap<>();
 
     LongStream.range(
             compute_start_slot_at_epoch(finalized_checkpoint_memory.getEpoch()).longValue(),

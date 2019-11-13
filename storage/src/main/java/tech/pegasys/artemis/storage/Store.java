@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -44,36 +46,45 @@ public class Store implements ReadOnlyStore {
   private Map<UnsignedLong, Checkpoint> latest_messages;
 
   public Store(
-      UnsignedLong time,
-      Checkpoint justified_checkpoint,
-      Checkpoint finalized_checkpoint,
-      Map<Bytes32, BeaconBlock> blocks,
-      Map<Bytes32, BeaconState> block_states,
-      Map<Checkpoint, BeaconState> checkpoint_states) {
+      final UnsignedLong time,
+      final Checkpoint justified_checkpoint,
+      final Checkpoint finalized_checkpoint,
+      final Map<Bytes32, BeaconBlock> blocks,
+      final Map<Bytes32, BeaconState> block_states,
+      final Map<Checkpoint, BeaconState> checkpoint_states,
+      final Map<UnsignedLong, Checkpoint> latest_messages) {
     this.time = time;
     this.justified_checkpoint = justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
-    this.blocks = blocks;
-    this.block_states = block_states;
-    this.checkpoint_states = checkpoint_states;
-    this.latest_messages = new ConcurrentHashMap<>();
+    this.blocks = new ConcurrentHashMap<>(blocks);
+    this.block_states = new ConcurrentHashMap<>(block_states);
+    this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
+    this.latest_messages = new ConcurrentHashMap<>(latest_messages);
   }
 
-  public Store(
-      UnsignedLong time,
-      Checkpoint justified_checkpoint,
-      Checkpoint finalized_checkpoint,
-      Map<Bytes32, BeaconBlock> blocks,
-      Map<Bytes32, BeaconState> block_states,
-      Map<Checkpoint, BeaconState> checkpoint_states,
-      Map<UnsignedLong, Checkpoint> latest_messages) {
-    this.time = time;
-    this.justified_checkpoint = justified_checkpoint;
-    this.finalized_checkpoint = finalized_checkpoint;
-    this.blocks = blocks;
-    this.block_states = block_states;
-    this.checkpoint_states = checkpoint_states;
-    this.latest_messages = latest_messages;
+  public static Store forGenesis(final BeaconState genesisState) {
+    BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
+    Bytes32 root = genesisBlock.signing_root("signature");
+
+    Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
+    Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
+    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+    Map<Bytes32, BeaconState> block_states = new HashMap<>();
+    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
+    Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
+
+    blocks.put(root, genesisBlock);
+    block_states.put(root, genesisState);
+    checkpoint_states.put(justified_checkpoint, genesisState);
+
+    return new Store(
+        genesisState.getGenesis_time(),
+        justified_checkpoint,
+        finalized_checkpoint,
+        blocks,
+        block_states,
+        checkpoint_states,
+        latest_messages);
   }
 
   public Transaction startTransaction() {
