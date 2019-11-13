@@ -13,8 +13,12 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
@@ -22,7 +26,11 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
+<<<<<<< HEAD
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+=======
+import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
+>>>>>>> 246a7844... Implement slot_signature and is_aggregator methods
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
 import com.google.common.eventbus.EventBus;
@@ -49,6 +57,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -492,10 +501,32 @@ public class ValidatorCoordinator {
 
   public Eth1Data get_eth1_data(UnsignedLong distance) {
     UnsignedLong cacheSize =
-        UnsignedLong.valueOf(
-            eth1DataCache.entrySet().stream()
-                .filter(item -> item.getValue().getDeposit_root() != null)
-                .count());
+            UnsignedLong.valueOf(
+                    eth1DataCache.entrySet().stream()
+                            .filter(item -> item.getValue().getDeposit_root() != null)
+                            .count());
     return eth1DataCache.get(cacheSize.minus(distance).minus(UnsignedLong.ONE));
+  }
+
+  public BLSSignature slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
+    Bytes domain = get_domain(state, DOMAIN_BEACON_ATTESTER, compute_epoch_at_slot(slot));
+    Bytes32 slot_hash =
+        HashTreeUtil.hash_tree_root(
+            HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue()));
+    return getSignature(slot_hash, domain, signer);
+  }
+
+  public boolean is_aggregator(
+      BeaconState state,
+      UnsignedLong slot,
+      UnsignedLong committeeIndex,
+      BLSSignature slot_signature) {
+    List<Integer> committee = get_beacon_committee(state, slot, committeeIndex);
+    UnsignedLong modulo =
+        max(
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(committee.size()).dividedBy(TARGET_AGGREGATORS_PER_COMMITTEE));
+    return (bytes_to_int(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo.longValue())
+        == 0;
   }
 }
