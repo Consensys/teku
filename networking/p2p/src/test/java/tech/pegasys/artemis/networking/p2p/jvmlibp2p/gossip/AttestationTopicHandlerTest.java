@@ -22,6 +22,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -38,6 +39,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.validator.client.AttestationGenerator;
@@ -50,7 +52,7 @@ public class AttestationTopicHandlerTest {
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
 
   private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(publisher, eventBus, storageClient);
+      new AttestationTopicHandler(publisher, eventBus, storageClient, 10);
 
   ArgumentCaptor<ByteBuf> byteBufCaptor = ArgumentCaptor.forClass(ByteBuf.class);
   ArgumentCaptor<Topic> topicCaptor = ArgumentCaptor.forClass(Topic.class);
@@ -65,6 +67,8 @@ public class AttestationTopicHandlerTest {
   @Test
   public void onNewAttestation() {
     final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    attestation.setData(
+        attestation.getData().withIndex(UnsignedLong.valueOf(topicHandler.getCommitteeIndex())));
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
     eventBus.post(attestation);
     // Handler should publish broadcast attestations
@@ -73,6 +77,18 @@ public class AttestationTopicHandlerTest {
     assertThat(byteBufCaptor.getValue().array()).isEqualTo(serialized.toArray());
     assertThat(topicCaptor.getAllValues().size()).isEqualTo(1);
     assertThat(topicCaptor.getValue()).isEqualTo(topicHandler.getTopic());
+  }
+
+  @Test
+  public void onNewAttestationOnDifferentSubnet() {
+    final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    attestation.setData(
+        attestation
+            .getData()
+            .withIndex(UnsignedLong.valueOf(topicHandler.getCommitteeIndex() + 1)));
+    eventBus.post(attestation);
+
+    verify(publisher, never()).publish(any(), any());
   }
 
   @Test
@@ -106,6 +122,21 @@ public class AttestationTopicHandlerTest {
   @Test
   public void accept_invalidAttestation_badData() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+    topicHandler.accept(mockMessage);
+
+    verify(publisher, never()).publish(any(), any());
+  }
+
+  @Test
+  public void accept_invalidAttestation_badState() throws Exception {
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final Attestation attestation = attestationGenerator.validAttestation(storageClient);
+    Store.Transaction transaction = storageClient.getStore().startTransaction();
+    transaction.putBlockState(attestation.getData().getBeacon_block_root(), null);
+    transaction.commit();
+    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
     topicHandler.accept(mockMessage);
