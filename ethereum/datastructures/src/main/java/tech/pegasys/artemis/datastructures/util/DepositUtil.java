@@ -178,7 +178,7 @@ public class DepositUtil {
             event.getWithdrawal_credentials(),
             event.getAmount(),
             event.getSignature());
-    return new DepositWithIndex(data, event.getMerkle_tree_index());
+    return new DepositWithIndex(data, event.getMerkle_tree_index(), event.getResponse().log);
   }
 
   // deprecated, being used until a new validators_test_data.json can be generated

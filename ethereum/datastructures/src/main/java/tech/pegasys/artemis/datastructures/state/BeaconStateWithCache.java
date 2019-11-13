@@ -14,9 +14,7 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -26,9 +24,6 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public final class BeaconStateWithCache extends BeaconState {
-
-  protected Map<UnsignedLong, UnsignedLong> startShards = new HashMap<>();
-  protected Map<String, List<Integer>> crosslinkCommittees = new HashMap<>();
 
   public BeaconStateWithCache() {
     super();
@@ -140,10 +135,6 @@ public final class BeaconStateWithCache extends BeaconState {
     this.previous_justified_checkpoint = new Checkpoint(state.getPrevious_justified_checkpoint());
     this.current_justified_checkpoint = new Checkpoint(state.getCurrent_justified_checkpoint());
     this.finalized_checkpoint = new Checkpoint(state.getFinalized_checkpoint());
-
-    // Client Specific For Caching Purposes
-    this.crosslinkCommittees = state.getCrossLinkCommittees();
-    this.startShards = state.getStartShards();
   }
 
   /**
@@ -186,43 +177,5 @@ public final class BeaconStateWithCache extends BeaconState {
 
   public static BeaconStateWithCache deepCopy(BeaconStateWithCache state) {
     return new BeaconStateWithCache(state);
-  }
-
-  public Map<String, List<Integer>> getCrossLinkCommittees() {
-    return this.crosslinkCommittees;
-  }
-
-  public List<Integer> getCrossLinkCommittee(UnsignedLong epoch, UnsignedLong shard) {
-    String key = epoch.toString() + "_" + shard.toString();
-    if (crosslinkCommittees.containsKey(key)) {
-      return crosslinkCommittees.get(key);
-    }
-    return null;
-  }
-
-  public void setCrossLinkCommittee(
-      List<Integer> crosslinkCommittees, UnsignedLong epoch, UnsignedLong shard) {
-    this.crosslinkCommittees.put(epoch.toString() + "_" + shard.toString(), crosslinkCommittees);
-  }
-
-  public Map<UnsignedLong, UnsignedLong> getStartShards() {
-    return this.startShards;
-  }
-
-  public UnsignedLong getStartShard(UnsignedLong epoch) {
-    if (startShards.containsKey(epoch)) {
-      return startShards.get(epoch);
-    }
-    return null;
-  }
-
-  public void setStartShard(UnsignedLong epoch, UnsignedLong shard) {
-    this.startShards.put(epoch, shard);
-  }
-
-  public void invalidateCache() {
-    // TODO: clean this cache after finalization
-    this.startShards = new HashMap<>();
-    this.crosslinkCommittees = new HashMap<>();
   }
 }
