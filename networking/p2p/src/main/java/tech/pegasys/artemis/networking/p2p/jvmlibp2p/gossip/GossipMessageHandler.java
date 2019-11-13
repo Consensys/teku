@@ -69,7 +69,7 @@ public class GossipMessageHandler {
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient) {
     return List.of(
-        new AttestationTopicHandler(publisher, eventBus, chainStorageClient),
+        new AggregateTopicHandler(publisher, eventBus, chainStorageClient),
         new BlocksTopicHandler(publisher, eventBus, chainStorageClient));
   }
 }

@@ -24,52 +24,57 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
+public class AggregateTopicHandler extends GossipTopicHandler<AggregateAndProof> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private Topic ATTESTATIONS_TOPIC;
+  private static final Topic TOPIC = new Topic("/eth2/beacon_aggregate_and_proof/ssz");
   private final ChainStorageClient chainStorageClient;
 
-  protected AttestationTopicHandler(
+  protected AggregateTopicHandler(
       final PubsubPublisherApi publisher,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient,
-      final int committeeIndex) {
+      final ChainStorageClient chainStorageClient) {
     super(publisher, eventBus);
-    this.ATTESTATIONS_TOPIC = new Topic("/eth2/index" + committeeIndex + "_beacon_attestation/ssz");
     this.chainStorageClient = chainStorageClient;
   }
 
   @Override
   public Topic getTopic() {
-    return ATTESTATIONS_TOPIC;
+    return TOPIC;
   }
 
   @Subscribe
-  public void onNewAttestation(final Attestation attestation) {
-    gossip(attestation);
+  public void onNewAggregate(final AggregateAndProof aggregateAndProof) {
+    gossip(aggregateAndProof);
   }
 
   @Override
-  protected Attestation deserialize(final Bytes bytes) throws SSZException {
-    return SimpleOffsetSerializer.deserialize(bytes, Attestation.class);
+  protected AggregateAndProof deserialize(final Bytes bytes) throws SSZException {
+    return SimpleOffsetSerializer.deserialize(bytes, AggregateAndProof.class);
   }
 
   @Override
-  protected boolean validateData(final Attestation attestation) {
+  protected boolean validateData(final AggregateAndProof aggregateAndProof) {
+    // TODO: implement the is_aggregator validation logic
+    //  (needs to have is_aggregator and slot_signature logic implemented)
     final BeaconState state =
-        chainStorageClient.getStore().getBlockState(attestation.getData().getBeacon_block_root());
-    final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
+        chainStorageClient
+            .getStore()
+            .getBlockState(aggregateAndProof.getAggregate().getData().getBeacon_block_root());
+    final IndexedAttestation indexedAttestation =
+        get_indexed_attestation(state, aggregateAndProof.getAggregate());
     final boolean validAttestation = is_valid_indexed_attestation(state, indexedAttestation);
     if (!validAttestation) {
       LOG.trace(
-          "Received invalid attestation ({}) on {}", attestation.hash_tree_root(), getTopic());
+          "Received invalid aggregate ({}) on {}",
+          aggregateAndProof.getAggregate().hash_tree_root(),
+          getTopic());
       return false;
     }
 
