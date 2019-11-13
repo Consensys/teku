@@ -17,10 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.ByteBuf;
@@ -33,8 +35,10 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -69,5 +73,19 @@ public class AggregateTopicHandlerTest {
     assertThat(byteBufCaptor.getValue().array()).isEqualTo(serialized.toArray());
     assertThat(topicCaptor.getAllValues().size()).isEqualTo(1);
     assertThat(topicCaptor.getValue()).isEqualTo(topicHandler.getTopic());
+  }
+
+  @Test
+  public void accept_invalidAttestation_badState() throws Exception {
+    final AggregateAndProof aggregate = DataStructureUtil.randomAggregateAndProof(1);
+    Store.Transaction transaction = storageClient.getStore().startTransaction();
+    transaction.putBlockState(aggregate.getAggregate().getData().getBeacon_block_root(), null);
+    transaction.commit();
+    final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+    topicHandler.accept(mockMessage);
+
+    verify(publisher, never()).publish(any(), any());
   }
 }
