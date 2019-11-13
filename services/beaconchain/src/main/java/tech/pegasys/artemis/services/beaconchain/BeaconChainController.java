@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
@@ -71,6 +72,7 @@ public class BeaconChainController {
   private SettableGauge currentEpochGauge;
   private StateProcessor stateProcessor;
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
+  private BeaconRestApi beaconRestAPI;
   private boolean testMode;
 
   public BeaconChainController(
@@ -89,6 +91,7 @@ public class BeaconChainController {
     initValidatorCoordinator();
     initStateProcessor();
     initP2PNetwork();
+    initRestAPI();
   }
 
   @SuppressWarnings("rawtypes")
@@ -180,6 +183,12 @@ public class BeaconChainController {
     }
   }
 
+  public void initRestAPI() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
+    beaconRestAPI =
+        new BeaconRestApi(chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
+  }
+
   public void start() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting p2pNetwork");
     networkExecutor.execute(networkTask);
@@ -187,6 +196,8 @@ public class BeaconChainController {
     this.eventBus.post(new NodeStartEvent());
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting timer");
     this.timer.start();
+    STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting BeaconRestAPI");
+    this.beaconRestAPI.start();
   }
 
   public void stop() {
@@ -203,6 +214,7 @@ public class BeaconChainController {
       networkExecutor.shutdownNow();
     }
     this.timer.stop();
+    this.beaconRestAPI.stop();
     this.eventBus.unregister(this);
   }
 
@@ -228,10 +240,10 @@ public class BeaconChainController {
             >= 0) {
           this.eventBus.post(new SlotEvent(nodeSlot));
           this.currentSlotGauge.set(nodeSlot.longValue());
-          this.currentEpochGauge.set(compute_epoch_of_slot(nodeSlot).longValue());
+          this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
           STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
           STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
-          Thread.sleep(SECONDS_PER_SLOT * 1000 / 2);
+          Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
           Bytes32 headBlockRoot = this.stateProcessor.processHead(nodeSlot);
           // Logging
           STDOUT.log(

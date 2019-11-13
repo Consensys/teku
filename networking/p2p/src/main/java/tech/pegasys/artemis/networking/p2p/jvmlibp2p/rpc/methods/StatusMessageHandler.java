@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, StatusMessage> {
@@ -29,13 +30,13 @@ public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, 
   }
 
   @Override
-  public StatusMessage onIncomingMessage(final Peer peer, final StatusMessage message) {
-    if (peer.isInitiator()) {
-      throw new IllegalStateException("Responder peer shouldn't initiate Status message");
-    } else {
-      LOG.log(Level.DEBUG, "Peer " + peer.getRemoteId() + " sent status.");
-      peer.updateStatus(message);
-      return statusMessageFactory.createStatusMessage();
-    }
+  public void onIncomingMessage(
+      final Peer peer,
+      final StatusMessage message,
+      final ResponseCallback<StatusMessage> callback) {
+    LOG.log(Level.DEBUG, "Peer " + peer.getPeerId() + " sent status.");
+    peer.updateStatus(message);
+    callback.respond(statusMessageFactory.createStatusMessage());
+    callback.completeSuccessfully();
   }
 }

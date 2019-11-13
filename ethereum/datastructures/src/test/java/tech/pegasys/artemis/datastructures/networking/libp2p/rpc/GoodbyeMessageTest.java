@@ -22,10 +22,21 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class GoodbyeMessageTest {
+
+  private static final Bytes EXPECTED_SSZ = Bytes.fromHexString("0x0100000000000000");
+  private static final GoodbyeMessage MESSAGE = new GoodbyeMessage(UnsignedLong.ONE);
+
   @Test
-  public void shouldSerializeToSSZ() {
-    final Bytes result = SimpleOffsetSerializer.serialize(new GoodbyeMessage(UnsignedLong.ONE));
-    assertThat(result).isEqualTo(Bytes.fromHexString("0x0100000000000000"));
+  public void shouldSerializeToSsz() {
+    final Bytes result = SimpleOffsetSerializer.serialize(MESSAGE);
+    assertThat(result).isEqualTo(EXPECTED_SSZ);
+  }
+
+  @Test
+  public void shouldDeserializeFromSsz() {
+    final GoodbyeMessage result =
+        SimpleOffsetSerializer.deserialize(EXPECTED_SSZ, GoodbyeMessage.class);
+    assertThat(result).isEqualToComparingFieldByField(MESSAGE);
   }
 
   @Test

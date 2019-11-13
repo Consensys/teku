@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -56,11 +55,8 @@ public final class BeaconStateWithCache extends BeaconState {
       SSZList<Validator> validators,
       SSZList<UnsignedLong> balances,
 
-      // Shuffling
-      UnsignedLong start_shard,
+      // Randomness
       SSZVector<Bytes32> randao_mixes,
-      SSZVector<Bytes32> active_index_roots,
-      SSZVector<Bytes32> compact_committees_roots,
 
       // Slashings
       SSZVector<UnsignedLong> slashings,
@@ -68,10 +64,6 @@ public final class BeaconStateWithCache extends BeaconState {
       // Attestations
       SSZList<PendingAttestation> previous_epoch_attestations,
       SSZList<PendingAttestation> current_epoch_attestations,
-
-      // Crosslinks
-      SSZVector<Crosslink> previous_crosslinks,
-      SSZVector<Crosslink> current_crosslinks,
 
       // Finality
       Bitvector justification_bits,
@@ -91,15 +83,10 @@ public final class BeaconStateWithCache extends BeaconState {
         eth1_deposit_index,
         validators,
         balances,
-        start_shard,
         randao_mixes,
-        active_index_roots,
-        compact_committees_roots,
         slashings,
         previous_epoch_attestations,
         current_epoch_attestations,
-        previous_crosslinks,
-        current_crosslinks,
         justification_bits,
         previous_justified_checkpoint,
         current_justified_checkpoint,
@@ -127,14 +114,11 @@ public final class BeaconStateWithCache extends BeaconState {
     this.validators =
         copyList(
             state.getValidators(),
-            new SSZList<>(state.getValidators().getClass(), state.getValidators().getMaxSize()));
+            new SSZList<>(Validator.class, state.getValidators().getMaxSize()));
     this.balances = new SSZList<>(state.getBalances());
 
-    // Shuffling
-    this.start_shard = state.getStart_shard();
+    // Randomness
     this.randao_mixes = new SSZVector<>(state.getRandao_mixes());
-    this.active_index_roots = new SSZVector<>(state.getActive_index_roots());
-    this.compact_committees_roots = new SSZVector<>(state.getCompact_committees_roots());
 
     // Slashings
     this.slashings = new SSZVector<>(state.getSlashings());
@@ -144,26 +128,12 @@ public final class BeaconStateWithCache extends BeaconState {
         copyList(
             state.getPrevious_epoch_attestations(),
             new SSZList<>(
-                state.getPrevious_epoch_attestations().getClass(),
-                state.getPrevious_epoch_attestations().getMaxSize()));
+                PendingAttestation.class, state.getPrevious_epoch_attestations().getMaxSize()));
     this.current_epoch_attestations =
         copyList(
             state.getCurrent_epoch_attestations(),
             new SSZList<>(
-                state.getCurrent_epoch_attestations().getClass(),
-                state.getCurrent_epoch_attestations().getMaxSize()));
-
-    // Crosslinks
-    SSZVector<Crosslink> newCurrentCrosslinks =
-        new SSZVector<>(state.getCurrent_crosslinks().getSize(), new Crosslink());
-    IntStream.range(0, newCurrentCrosslinks.getSize())
-        .forEach(i -> newCurrentCrosslinks.set(i, state.getCurrent_crosslinks().get(i).copy()));
-    SSZVector<Crosslink> newPreviousCrosslinks =
-        new SSZVector<>(state.getPrevious_crosslinks().getSize(), new Crosslink());
-    IntStream.range(0, newPreviousCrosslinks.getSize())
-        .forEach(i -> newPreviousCrosslinks.set(i, state.getPrevious_crosslinks().get(i).copy()));
-    this.current_crosslinks = newCurrentCrosslinks;
-    this.previous_crosslinks = newPreviousCrosslinks;
+                PendingAttestation.class, state.getCurrent_epoch_attestations().getMaxSize()));
 
     // Finality
     this.justification_bits = state.getJustification_bits().copy();
@@ -197,15 +167,10 @@ public final class BeaconStateWithCache extends BeaconState {
         state.getEth1_deposit_index(),
         state.getValidators(),
         state.getBalances(),
-        state.getStart_shard(),
         state.getRandao_mixes(),
-        state.getActive_index_roots(),
-        state.getCompact_committees_roots(),
         state.getSlashings(),
         state.getPrevious_epoch_attestations(),
         state.getCurrent_epoch_attestations(),
-        state.getPrevious_crosslinks(),
-        state.getCurrent_crosslinks(),
         state.getJustification_bits(),
         state.getPrevious_justified_checkpoint(),
         state.getCurrent_justified_checkpoint(),

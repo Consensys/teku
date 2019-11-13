@@ -34,9 +34,13 @@ public class MockStartValidatorKeyPairFactory {
           "52435875175126190479447740508185965837690552500527637822603658699938581184513");
 
   public List<BLSKeyPair> generateKeyPairs(final int startIndex, final int endIndex) {
-    return IntStream.rangeClosed(startIndex, endIndex)
+    return IntStream.range(startIndex, endIndex)
         .mapToObj(this::createKeyPairForValidator)
         .collect(Collectors.toList());
+  }
+
+  public List<BLSKeyPair> generateKeyPairs(final int count) {
+    return generateKeyPairs(0, count);
   }
 
   private BLSKeyPair createKeyPairForValidator(final int validatorIndex) {

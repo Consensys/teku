@@ -1,7 +1,3 @@
-plugins {
-  id "org.web3j" version "4.1.1"
-}
-
 //exec {
 //  workingDir '../ganache-cli'
 //  commandLine 'npm', 'install'

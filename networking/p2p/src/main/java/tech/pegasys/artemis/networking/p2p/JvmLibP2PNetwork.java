@@ -31,6 +31,7 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,7 +70,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
         Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
     Gossip gossip = new Gossip();
-    GossipMessageHandler.init(gossip, privKey, eventBus);
+    GossipMessageHandler.create(gossip, privKey, eventBus, chainStorageClient).start();
     peerManager = new PeerManager(scheduler, chainStorageClient, metricsSystem);
     advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
 
@@ -130,12 +131,8 @@ public class JvmLibP2PNetwork implements P2PNetwork {
         .thenRun(() -> config.getPeers().forEach(this::connect));
   }
 
-  public PeerId getPeerId() {
-    return PeerId.fromPubKey(privKey.publicKey());
-  }
-
   public String getPeerAddress() {
-    return advertisedAddr + "/p2p/" + getPeerId().toBase58();
+    return advertisedAddr + "/p2p/" + getPeerIdString();
   }
 
   public PeerManager getPeerManager() {
@@ -152,5 +149,17 @@ public class JvmLibP2PNetwork implements P2PNetwork {
     STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
     host.stop();
     scheduler.shutdownNow();
+  }
+
+  public PeerId getPeerId() {
+    return PeerId.fromPubKey(privKey.publicKey());
+  }
+
+  public String getPeerIdString() {
+    return getPeerId().toBase58();
+  }
+
+  public List<String> getPeerIds() {
+    return getPeerManager().getPeerIds();
   }
 }

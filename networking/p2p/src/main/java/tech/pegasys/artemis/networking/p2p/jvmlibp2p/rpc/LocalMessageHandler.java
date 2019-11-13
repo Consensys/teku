@@ -14,7 +14,8 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public interface LocalMessageHandler<I, O> {
-  O onIncomingMessage(Peer peer, I message);
+public interface LocalMessageHandler<I, O extends SimpleOffsetSerializable> {
+  void onIncomingMessage(Peer peer, I message, ResponseCallback<O> callback);
 }

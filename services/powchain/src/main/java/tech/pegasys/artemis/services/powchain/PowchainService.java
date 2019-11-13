@@ -17,7 +17,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
-import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonArray;
@@ -91,7 +90,7 @@ public class PowchainService implements ServiceInterface {
           new MockStartValidatorKeyPairFactory();
       MockStartDepositGenerator mockStartDepositGenerator = new MockStartDepositGenerator();
       List<BLSKeyPair> blsKeyPairList =
-          mockStartValidatorKeyPairFactory.generateKeyPairs(0, controller.getAccounts().size() - 1);
+          mockStartValidatorKeyPairFactory.generateKeyPairs(0, controller.getAccounts().size());
       List<DepositData> depositDataList = mockStartDepositGenerator.createDeposits(blsKeyPairList);
       int i = 0;
       for (SECP256K1.KeyPair keyPair : controller.getAccounts()) {
@@ -108,10 +107,11 @@ public class PowchainService implements ServiceInterface {
         try {
           ValidatorClientUtil.registerValidatorEth1(
               validator,
-              MAX_EFFECTIVE_BALANCE,
+              depositData.getAmount().longValue(),
               listener.getContract().getContractAddress(),
               web3j,
               gasProvider,
+              depositData.hash_tree_root(),
               sig);
         } catch (Exception e) {
           LOG.log(

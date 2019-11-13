@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomA
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class AttestationDataAndCustodyBitTest {
 
@@ -70,9 +71,11 @@ class AttestationDataAndCustodyBitTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszAttestationDataAndCustodyBitBytes = attestationDataAndCustodyBit.toBytes();
+    Bytes sszAttestationDataAndCustodyBitBytes =
+        SimpleOffsetSerializer.serialize(attestationDataAndCustodyBit);
     assertEquals(
         attestationDataAndCustodyBit,
-        AttestationDataAndCustodyBit.fromBytes(sszAttestationDataAndCustodyBitBytes));
+        SimpleOffsetSerializer.deserialize(
+            sszAttestationDataAndCustodyBitBytes, AttestationDataAndCustodyBit.class));
   }
 }

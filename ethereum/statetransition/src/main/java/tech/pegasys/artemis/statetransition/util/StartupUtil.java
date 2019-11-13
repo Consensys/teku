@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_of_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -95,14 +95,14 @@ public final class StartupUtil {
       SSZList<Attestation> attestations) {
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
     UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_of_slot(slot)));
+    beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_at_slot(slot)));
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     return new BeaconBlock(
         slot, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
   }
 
-  private static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
+  public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
     UnsignedLong epochs_per_period =
         UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
             .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
@@ -113,16 +113,14 @@ public final class StartupUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
-  public static BeaconStateWithCache createMockedStartInitialBeaconState(
-      final long genesisTime, final int validatorCount) {
-    final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount - 1);
+  private static BeaconStateWithCache createMockedStartInitialBeaconState(
+      final long genesisTime, List<BLSKeyPair> validatorKeys) {
     STDOUT.log(
         Level.INFO,
         "Starting with mocked start interoperability mode with genesis time "
             + genesisTime
             + " and "
-            + validatorCount
+            + validatorKeys.size()
             + " validators",
         Color.GREEN);
     final List<DepositData> initialDepositData =
@@ -163,6 +161,16 @@ public final class StartupUtil {
       final long genesisTime,
       final String startState,
       final int numValidators) {
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
+    setupInitialState(chainStorageClient, genesisTime, startState, validatorKeys);
+  }
+
+  public static void setupInitialState(
+      final ChainStorageClient chainStorageClient,
+      final long genesisTime,
+      final String startState,
+      final List<BLSKeyPair> validatorKeyPairs) {
     chainStorageClient.setGenesisTime(UnsignedLong.valueOf(genesisTime));
     BeaconStateWithCache initialState;
     if (startState != null) {
@@ -173,7 +181,8 @@ public final class StartupUtil {
         throw new IllegalStateException("Failed to load initial state", e);
       }
     } else {
-      initialState = StartupUtil.createMockedStartInitialBeaconState(genesisTime, numValidators);
+      initialState =
+          StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs);
     }
 
     chainStorageClient.setStore(StartupUtil.get_genesis_store(initialState));

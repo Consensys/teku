@@ -125,6 +125,9 @@ public class ArtemisConfiguration {
     // Database
     builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
 
+    // Beacon Rest API
+    builder.addInteger("beaconrestapi.portNumber", 5051, "Port number of Beacon Rest API", null);
+
     builder.validateConfiguration(
         config -> {
           return null;
@@ -345,5 +348,9 @@ public class ArtemisConfiguration {
     if (getNumValidators() < Constants.SLOTS_PER_EPOCH) {
       throw new IllegalArgumentException("Invalid config.toml");
     }
+  }
+
+  public int getBeaconRestAPIPortNumber() {
+    return config.getInteger("beaconrestapi.portNumber");
   }
 }

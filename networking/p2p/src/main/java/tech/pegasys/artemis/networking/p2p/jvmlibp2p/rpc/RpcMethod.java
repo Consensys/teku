@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import java.util.Objects;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageResponse;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
@@ -31,20 +31,19 @@ public class RpcMethod<I extends SimpleOffsetSerializable, O extends SimpleOffse
   public static final RpcMethod<GoodbyeMessage, GoodbyeMessage> GOODBYE =
       new RpcMethod<>(
           "/eth2/beacon_chain/req/goodbye/1", SSZ, GoodbyeMessage.class, GoodbyeMessage.class);
-  public static final RpcMethod<BeaconBlocksMessageRequest, BeaconBlocksMessageResponse>
-      BEACON_BLOCKS =
-          new RpcMethod<>(
-              "/eth2/beacon_chain/req/beacon_blocks/1",
-              SSZ,
-              BeaconBlocksMessageRequest.class,
-              BeaconBlocksMessageResponse.class);
+  public static final RpcMethod<BeaconBlocksMessageRequest, BeaconBlock> BEACON_BLOCKS =
+      new RpcMethod<>(
+          "/eth2/beacon_chain/req/beacon_blocks/1",
+          SSZ,
+          BeaconBlocksMessageRequest.class,
+          BeaconBlock.class);
 
   private final String methodMultistreamId;
   private final RpcEncoding encoding;
   private final Class<I> requestType;
   private final Class<O> responseType;
 
-  RpcMethod(
+  public RpcMethod(
       final String methodMultistreamId,
       final RpcEncoding encoding,
       final Class<I> requestType,

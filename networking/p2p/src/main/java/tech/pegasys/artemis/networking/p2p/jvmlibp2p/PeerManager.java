@@ -19,11 +19,13 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
@@ -115,15 +117,15 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
   }
 
   private void onConnectedPeer(Peer peer) {
-    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getRemoteId(), peer) == null;
+    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getPeerId(), peer) == null;
     if (wasAdded) {
-      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getRemoteId());
+      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getPeerId());
     }
   }
 
   private void onDisconnectedPeer(Peer peer) {
-    if (connectedPeerMap.remove(peer.getRemoteId()) != null) {
-      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getRemoteId());
+    if (connectedPeerMap.remove(peer.getPeerId()) != null) {
+      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getPeerId());
     }
   }
 
@@ -133,5 +135,9 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
 
   public int getAvailablePeerCount() {
     return (int) connectedPeerMap.values().stream().filter(Peer::hasStatus).count();
+  }
+
+  public List<String> getPeerIds() {
+    return connectedPeerMap.keySet().stream().map(PeerId::toBase58).collect(Collectors.toList());
   }
 }

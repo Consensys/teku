@@ -15,7 +15,6 @@ package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_attestation_data_slot;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
@@ -57,7 +56,9 @@ public class ChainStorageClient implements ChainStorage {
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
   private final int QUEUE_MAX_SIZE =
-      Constants.MAX_VALIDATORS_PER_COMMITTEE * Constants.SHARD_COUNT * Constants.SLOTS_PER_EPOCH;
+      Constants.MAX_VALIDATORS_PER_COMMITTEE
+          * Constants.MAX_COMMITTEES_PER_SLOT
+          * Constants.SLOTS_PER_EPOCH;
   private final Queue<Attestation> unprocessedAttestationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getTarget().getEpoch()));
@@ -252,9 +253,7 @@ public class ChainStorageClient implements ChainStorage {
         new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
     while (unprocessedAttestationsQueue.peek() != null
-        && get_attestation_data_slot(state, unprocessedAttestationsQueue.peek().getData())
-                .compareTo(slot)
-            <= 0
+        && unprocessedAttestationsQueue.peek().getData().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
 
       Attestation attestation = unprocessedAttestationsQueue.remove();
@@ -301,7 +300,7 @@ public class ChainStorageClient implements ChainStorage {
             .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
             .compareTo(UnsignedLong.ZERO)
         == 0) {
-      UnsignedLong epoch = BeaconStateUtil.compute_epoch_of_slot(slotEvent.getSlot());
+      UnsignedLong epoch = BeaconStateUtil.compute_epoch_at_slot(slotEvent.getSlot());
       if (epoch.compareTo(UnsignedLong.ONE) > 0) {
         cleanAttestationsUntilEpoch(epoch.minus(UnsignedLong.ONE));
       }

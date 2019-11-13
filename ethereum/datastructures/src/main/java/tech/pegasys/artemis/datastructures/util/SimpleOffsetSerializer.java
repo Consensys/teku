@@ -33,7 +33,10 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
@@ -42,12 +45,9 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.Transfer;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.CompactCommittee;
-import tech.pegasys.artemis.datastructures.state.Crosslink;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -89,13 +89,9 @@ public class SimpleOffsetSerializer {
         IndexedAttestation.class, new ReflectionInformation(IndexedAttestation.class));
     classReflectionInfo.put(
         ProposerSlashing.class, new ReflectionInformation(ProposerSlashing.class));
-    classReflectionInfo.put(Transfer.class, new ReflectionInformation(Transfer.class));
     classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
     classReflectionInfo.put(BeaconState.class, new ReflectionInformation(BeaconState.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
-    classReflectionInfo.put(
-        CompactCommittee.class, new ReflectionInformation(CompactCommittee.class));
-    classReflectionInfo.put(Crosslink.class, new ReflectionInformation(Crosslink.class));
     classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
     classReflectionInfo.put(
         HistoricalBatch.class, new ReflectionInformation(HistoricalBatch.class));
@@ -103,6 +99,12 @@ public class SimpleOffsetSerializer {
         PendingAttestation.class, new ReflectionInformation(PendingAttestation.class));
     classReflectionInfo.put(Validator.class, new ReflectionInformation(Validator.class));
     classReflectionInfo.put(StatusMessage.class, new ReflectionInformation(StatusMessage.class));
+    classReflectionInfo.put(GoodbyeMessage.class, new ReflectionInformation(GoodbyeMessage.class));
+    classReflectionInfo.put(
+        BeaconBlocksByRootRequestMessage.class,
+        new ReflectionInformation(BeaconBlocksByRootRequestMessage.class));
+    classReflectionInfo.put(
+        AggregateAndProof.class, new ReflectionInformation(AggregateAndProof.class));
   }
 
   static {
@@ -179,8 +181,7 @@ public class SimpleOffsetSerializer {
         Bytes.concatenate(variable_parts.toArray(new Bytes[0])));
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
-  public static <T> T deserialize(Bytes bytes, Class classInfo) {
+  public static <T> T deserialize(Bytes bytes, Class<T> classInfo) {
     MutableInt bytePointer = new MutableInt(0);
     if (!isPrimitive(classInfo)) {
       return SSZ.decode(
@@ -191,9 +192,8 @@ public class SimpleOffsetSerializer {
     }
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeContainerErrorWrapper(
-      Class classInfo, SSZReader reader, MutableInt bytePointer, int bytesEndByte) {
+      Class<T> classInfo, SSZReader reader, MutableInt bytePointer, int bytesEndByte) {
     try {
       return deserializeContainer(classInfo, reader, bytePointer, bytesEndByte);
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
@@ -206,9 +206,8 @@ public class SimpleOffsetSerializer {
     return null;
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeContainer(
-      Class classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
+      Class<T> classInfo, SSZReader reader, MutableInt bytesPointer, int bytesEndByte)
       throws InstantiationException, IllegalAccessException, InvocationTargetException {
     int currentObjectStartByte = bytesPointer.intValue();
     ReflectionInformation reflectionInformation = classReflectionInfo.get(classInfo);
@@ -240,9 +239,8 @@ public class SimpleOffsetSerializer {
     return (T) constructor.newInstance(params);
   }
 
-  @SuppressWarnings("TypeParameterUnusedInFormals")
   private static <T> T deserializeFixedContainer(
-      Class classInfo, SSZReader reader, MutableInt bytePointer)
+      Class<T> classInfo, SSZReader reader, MutableInt bytePointer)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
     // bytesEndByte is only necessary for variable size containers
     return deserializeContainer(classInfo, reader, bytePointer, 0);
