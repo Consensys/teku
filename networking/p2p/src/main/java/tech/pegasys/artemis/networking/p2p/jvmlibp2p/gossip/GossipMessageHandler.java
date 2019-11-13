@@ -89,7 +89,8 @@ public class GossipMessageHandler {
   }
 
   @Subscribe
-  synchronized public void registerAttestationTopicHandlers(CommitteeAssignmentEvent assignmentEvent) {
+  public synchronized void registerAttestationTopicHandlers(
+      CommitteeAssignmentEvent assignmentEvent) {
     List<Integer> committeeIndices = assignmentEvent.getCommitteeIndices();
     for (int committeeIndex : committeeIndices) {
       if (!attestationTopicHandlers.containsKey(committeeIndex)) {
@@ -104,7 +105,8 @@ public class GossipMessageHandler {
   }
 
   @Subscribe
-  synchronized public void unregisterAttestationTopicHandlers(CommitteeDismissalEvent dismissalEvent) {
+  public synchronized void unregisterAttestationTopicHandlers(
+      CommitteeDismissalEvent dismissalEvent) {
     List<Integer> committeeIndices = dismissalEvent.getCommitteeIndices();
     for (int committeeIndex : committeeIndices) {
       if (attestationTopicHandlers.containsKey(committeeIndex)) {
