@@ -87,7 +87,6 @@ public class AttestationTopicHandlerTest {
             .getData()
             .withIndex(UnsignedLong.valueOf(topicHandler.getCommitteeIndex() + 1)));
     eventBus.post(attestation);
-    // Handler should publish broadcast attestations
 
     verify(publisher, never()).publish(any(), any());
   }

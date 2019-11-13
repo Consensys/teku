@@ -38,7 +38,6 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -67,7 +66,7 @@ public class AggregateTopicHandlerTest {
     final AggregateAndProof aggregate = DataStructureUtil.randomAggregateAndProof(1);
     final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
     eventBus.post(aggregate);
-    // Handler should publish broadcast attestations
+    // Handler should publish broadcast aggregate
 
     verify(publisher).publish(byteBufCaptor.capture(), topicCaptor.capture());
     assertThat(byteBufCaptor.getValue().array()).isEqualTo(serialized.toArray());
@@ -78,9 +77,6 @@ public class AggregateTopicHandlerTest {
   @Test
   public void accept_invalidAttestation_badState() throws Exception {
     final AggregateAndProof aggregate = DataStructureUtil.randomAggregateAndProof(1);
-    Store.Transaction transaction = storageClient.getStore().startTransaction();
-    transaction.putBlockState(aggregate.getAggregate().getData().getBeacon_block_root(), null);
-    transaction.commit();
     final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
 
     final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
