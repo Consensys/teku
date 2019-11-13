@@ -71,6 +71,14 @@ public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
   protected boolean validateData(final Attestation attestation) {
     final BeaconState state =
         chainStorageClient.getStore().getBlockState(attestation.getData().getBeacon_block_root());
+    if (state == null) {
+      LOG.trace(
+          "Attestation BeaconState was not found in Store. Attestation: ({}), block_root: ({}) on {}",
+          attestation.hash_tree_root(),
+          attestation.getData().getBeacon_block_root(),
+          getTopic());
+      return false;
+    }
     final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
     final boolean validAttestation = is_valid_indexed_attestation(state, indexedAttestation);
     if (!validAttestation) {

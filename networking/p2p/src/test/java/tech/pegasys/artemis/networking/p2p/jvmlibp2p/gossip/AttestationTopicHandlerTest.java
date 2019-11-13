@@ -39,6 +39,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.validator.client.AttestationGenerator;
@@ -122,6 +123,21 @@ public class AttestationTopicHandlerTest {
   @Test
   public void accept_invalidAttestation_badData() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+    topicHandler.accept(mockMessage);
+
+    verify(publisher, never()).publish(any(), any());
+  }
+
+  @Test
+  public void accept_invalidAttestation_badState() throws Exception {
+    final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final Attestation attestation = attestationGenerator.validAttestation(storageClient);
+    Store.Transaction transaction = storageClient.getStore().startTransaction();
+    transaction.putBlockState(attestation.getData().getBeacon_block_root(), null);
+    transaction.commit();
+    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
     topicHandler.accept(mockMessage);

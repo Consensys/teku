@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -61,20 +62,21 @@ public class AggregateTopicHandler extends GossipTopicHandler<AggregateAndProof>
 
   @Override
   protected boolean validateData(final AggregateAndProof aggregateAndProof) {
-    // TODO: implement the is_aggregator validation logic
-    //  (needs to have is_aggregator and slot_signature logic implemented)
+    final Attestation attestation = aggregateAndProof.getAggregate();
     final BeaconState state =
-        chainStorageClient
-            .getStore()
-            .getBlockState(aggregateAndProof.getAggregate().getData().getBeacon_block_root());
-    final IndexedAttestation indexedAttestation =
-        get_indexed_attestation(state, aggregateAndProof.getAggregate());
+        chainStorageClient.getStore().getBlockState(attestation.getData().getBeacon_block_root());
+    if (state == null) {
+      LOG.trace(
+          "Aggregate attestation BeaconState was not found in Store. Attestation: ({}), block_root: ({}) on {}",
+          attestation.hash_tree_root(),
+          attestation.getData().getBeacon_block_root(),
+          getTopic());
+      return false;
+    }
+    final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
     final boolean validAttestation = is_valid_indexed_attestation(state, indexedAttestation);
     if (!validAttestation) {
-      LOG.trace(
-          "Received invalid aggregate ({}) on {}",
-          aggregateAndProof.getAggregate().hash_tree_root(),
-          getTopic());
+      LOG.trace("Received invalid aggregate ({}) on {}", attestation.hash_tree_root(), getTopic());
       return false;
     }
 
