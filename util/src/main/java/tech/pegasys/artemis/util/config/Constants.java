@@ -114,6 +114,8 @@ public class Constants {
   public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
 
+  public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
+
   static {
     setConstants("minimal");
   }
