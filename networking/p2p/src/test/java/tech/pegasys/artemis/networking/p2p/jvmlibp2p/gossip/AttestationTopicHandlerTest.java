@@ -79,6 +79,19 @@ public class AttestationTopicHandlerTest {
   }
 
   @Test
+  public void onNewAttestationOnDifferentSubnet() {
+    final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    attestation.setData(
+        attestation
+            .getData()
+            .withIndex(UnsignedLong.valueOf(topicHandler.getCommitteeIndex() + 1)));
+    eventBus.post(attestation);
+    // Handler should publish broadcast attestations
+
+    verify(publisher, never()).publish(any(), any());
+  }
+
+  @Test
   public void accept_validAttestation() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final Attestation attestation = attestationGenerator.validAttestation(storageClient);
