@@ -39,6 +39,10 @@ public final class BeaconBlocksByRootRequestMessage
     this.blockRoots.addAll(blockRoots);
   }
 
+  public SSZList<Bytes32> getBlockRoots() {
+    return blockRoots;
+  }
+
   @Override
   public int getSSZFieldCount() {
     return 1;

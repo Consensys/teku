@@ -49,7 +49,7 @@ public class ErrorConditionsIntegrationTest {
         network1.getPeerManager().getAvailablePeer(network2.getPeerId()).orElseThrow();
 
     final CompletableFuture<StatusMessage> response =
-        peer.send(RpcMethod.STATUS, new InvalidStatusMessage());
+        peer.requestSingle(RpcMethod.STATUS, new InvalidStatusMessage());
 
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)

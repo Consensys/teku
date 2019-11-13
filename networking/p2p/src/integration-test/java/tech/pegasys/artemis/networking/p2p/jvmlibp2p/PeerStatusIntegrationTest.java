@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.network.p2p.jvmlibp2p.ChainStorageClientFactory.createInitedStorageClient;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -122,11 +123,5 @@ public class PeerStatusIntegrationTest {
         network2Store.getFinalizedCheckpoint().getEpoch(),
         storageClient.getBestBlockRoot(),
         storageClient.getBestSlot());
-  }
-
-  private ChainStorageClient createInitedStorageClient(final EventBus eventBus2) {
-    final ChainStorageClient chainStorageClient = new ChainStorageClient(eventBus2);
-    StartupUtil.setupInitialState(chainStorageClient, 0, null, 0);
-    return chainStorageClient;
   }
 }

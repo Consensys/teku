@@ -46,11 +46,8 @@ public class GoodbyeIntegrationTest {
 
   @Test
   public void shouldCloseConnectionAfterGoodbyeReceived() throws Exception {
-    final GoodbyeMessage response =
-        waitFor(
-            peer1.send(
-                RpcMethod.GOODBYE, new GoodbyeMessage(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN)));
-    assertThat(response).isNull();
+    waitFor(
+        peer1.send(RpcMethod.GOODBYE, new GoodbyeMessage(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN)));
     waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     waitFor(() -> assertThat(peer2.isConnected()).isFalse());
     assertThat(network1.getPeerManager().getAvailablePeerCount()).isZero();

@@ -15,29 +15,46 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
-public class BeaconBlocksMessageHandler
-    implements LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlock> {
-  private final ALogger LOG = new ALogger(BeaconBlocksMessageHandler.class.getName());
+public class BeaconBlocksByRootMessageHandler
+    implements LocalMessageHandler<BeaconBlocksByRootRequestMessage, BeaconBlock> {
+  private final ALogger LOG = new ALogger(BeaconBlocksByRootMessageHandler.class.getName());
+
+  private final ChainStorageClient storageClient;
+
+  public BeaconBlocksByRootMessageHandler(final ChainStorageClient storageClient) {
+    this.storageClient = storageClient;
+  }
 
   @Override
   public void onIncomingMessage(
       final Peer peer,
-      final BeaconBlocksMessageRequest message,
+      final BeaconBlocksByRootRequestMessage message,
       final ResponseCallback<BeaconBlock> callback) {
     LOG.log(
         Level.DEBUG,
         "Peer "
             + peer.getPeerId()
-            + " requested BeaconBlocks starting from "
-            + message.getStartSlot()
-            + ".");
-    // TODO Stub
+            + " requested BeaconBlocks with roots: "
+            + message.getBlockRoots());
+    if (storageClient.getStore() != null) {
+      message
+          .getBlockRoots()
+          .forEach(
+              blockRoot -> {
+                final BeaconBlock block = storageClient.getStore().getBlock(blockRoot);
+                if (block != null) {
+                  callback.respond(block);
+                }
+              });
+    }
+
     callback.completeSuccessfully();
   }
 }

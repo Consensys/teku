@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseStream;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
@@ -63,7 +64,7 @@ public class Peer {
   }
 
   public CompletableFuture<StatusData> sendStatus() {
-    return send(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
+    return requestSingle(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
         .thenApply(
             remoteStatus -> {
               updateStatus(remoteStatus);
@@ -72,7 +73,26 @@ public class Peer {
   }
 
   public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
-      CompletableFuture<O> send(final RpcMethod<I, O> method, I request) {
+      CompletableFuture<Void> requestStream(
+          final RpcMethod<I, O> method,
+          I request,
+          final ResponseStream.ResponseListener<O> listener) {
+    return invoke(method, request)
+        .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
+  }
+
+  public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+      CompletableFuture<O> requestSingle(final RpcMethod<I, O> method, I request) {
+    return invoke(method, request).thenCompose(ResponseStream::expectSingleResponse);
+  }
+
+  public <I extends SimpleOffsetSerializable> CompletableFuture<Void> send(
+      final RpcMethod<I, ?> method, I request) {
+    return invoke(method, request).thenCompose(ResponseStream::expectNoResponse);
+  }
+
+  private <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+      CompletableFuture<ResponseStream<O>> invoke(final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, connection, request);
   }
 
