@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 
@@ -25,55 +24,50 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
+public class AggregateTopicHandler extends GossipTopicHandler<AggregateAndProof> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Topic attestationsTopic;
+  private static final Topic TOPIC = new Topic("/eth2/beacon_aggregate_and_proof/ssz");
   private final ChainStorageClient chainStorageClient;
 
-  private final int committeeIndex;
-
-  protected AttestationTopicHandler(
+  protected AggregateTopicHandler(
       final PubsubPublisherApi publisher,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient,
-      final int committeeIndex) {
+      final ChainStorageClient chainStorageClient) {
     super(publisher, eventBus);
-    this.committeeIndex = committeeIndex;
-    this.attestationsTopic = new Topic("/eth2/index" + committeeIndex + "_beacon_attestation/ssz");
     this.chainStorageClient = chainStorageClient;
   }
 
   @Override
   public Topic getTopic() {
-    return attestationsTopic;
+    return TOPIC;
   }
 
   @Subscribe
-  public void onNewAttestation(final Attestation attestation) {
-    if (toIntExact(attestation.getData().getIndex().longValue()) == committeeIndex) {
-      gossip(attestation);
-    }
+  public void onNewAggregate(final AggregateAndProof aggregateAndProof) {
+    gossip(aggregateAndProof);
   }
 
   @Override
-  protected Attestation deserialize(final Bytes bytes) throws SSZException {
-    return SimpleOffsetSerializer.deserialize(bytes, Attestation.class);
+  protected AggregateAndProof deserialize(final Bytes bytes) throws SSZException {
+    return SimpleOffsetSerializer.deserialize(bytes, AggregateAndProof.class);
   }
 
   @Override
-  protected boolean validateData(final Attestation attestation) {
+  protected boolean validateData(final AggregateAndProof aggregateAndProof) {
+    final Attestation attestation = aggregateAndProof.getAggregate();
     final BeaconState state =
         chainStorageClient.getStore().getBlockState(attestation.getData().getBeacon_block_root());
     if (state == null) {
       LOG.trace(
-          "Attestation BeaconState was not found in Store. Attestation: ({}), block_root: ({}) on {}",
+          "Aggregate attestation BeaconState was not found in Store. Attestation: ({}), block_root: ({}) on {}",
           attestation.hash_tree_root(),
           attestation.getData().getBeacon_block_root(),
           getTopic());
@@ -82,15 +76,10 @@ public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
     final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
     final boolean validAttestation = is_valid_indexed_attestation(state, indexedAttestation);
     if (!validAttestation) {
-      LOG.trace(
-          "Received invalid attestation ({}) on {}", attestation.hash_tree_root(), getTopic());
+      LOG.trace("Received invalid aggregate ({}) on {}", attestation.hash_tree_root(), getTopic());
       return false;
     }
 
     return true;
-  }
-
-  public int getCommitteeIndex() {
-    return committeeIndex;
   }
 }
