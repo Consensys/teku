@@ -307,7 +307,7 @@ class BeaconStateUtilTest {
     int listSize = 1000;
     boolean[] done = new boolean[listSize]; // Initialised to false
     for (int i = 0; i < listSize; i++) {
-      int idx = CrosslinkCommitteeUtil.compute_shuffled_index(i, listSize, seed);
+      int idx = CommitteeUtil.compute_shuffled_index(i, listSize, seed);
       assertFalse(done[idx]);
       done[idx] = true;
     }
@@ -319,7 +319,7 @@ class BeaconStateUtilTest {
     int listSize = 100;
     int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
     for (int i = 0; i < listSize; i++) {
-      int idx = CrosslinkCommitteeUtil.compute_shuffled_index(i, listSize, seed);
+      int idx = CommitteeUtil.compute_shuffled_index(i, listSize, seed);
       assertEquals(shuffling[i], idx);
     }
   }
