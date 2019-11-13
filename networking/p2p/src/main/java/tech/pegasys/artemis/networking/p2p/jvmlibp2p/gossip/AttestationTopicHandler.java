@@ -36,6 +36,7 @@ public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
   private static final Logger LOG = LogManager.getLogger();
   private final Topic attestationsTopic;
   private final ChainStorageClient chainStorageClient;
+
   private final int committeeIndex;
 
   protected AttestationTopicHandler(
@@ -79,5 +80,9 @@ public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
     }
 
     return true;
+  }
+
+  public int getCommitteeIndex() {
+    return committeeIndex;
   }
 }

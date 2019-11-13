@@ -22,6 +22,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -65,6 +66,8 @@ public class AttestationTopicHandlerTest {
   @Test
   public void onNewAttestation() {
     final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    attestation.setData(
+        attestation.getData().withIndex(UnsignedLong.valueOf(topicHandler.getCommitteeIndex())));
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
     eventBus.post(attestation);
     // Handler should publish broadcast attestations
