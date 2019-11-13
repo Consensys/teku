@@ -14,12 +14,18 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
+import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.pubsub.gossip.Gossip;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GossipMessageHandler {
@@ -27,16 +33,25 @@ public class GossipMessageHandler {
   private final Gossip gossip;
   private EventBus eventBus;
   private final List<GossipTopicHandler<?>> topicHandlers;
+  private final PubsubPublisherApi publisher;
+  private final ChainStorageClient chainStorageClient;
 
   private final AtomicBoolean started = new AtomicBoolean(false);
+  private final Map<Integer, AttestationTopicHandler> attestationTopicHandlers = new HashMap<>();
+  private final Map<Integer, PubsubSubscription> subscriptions = new HashMap<>();
 
   GossipMessageHandler(
+      final ChainStorageClient chainStorageClient,
+      final PubsubPublisherApi publisher,
       final Gossip gossip,
       final EventBus eventBus,
       final List<GossipTopicHandler<?>> topicHandlers) {
+    this.chainStorageClient = chainStorageClient;
+    this.publisher = publisher;
     this.gossip = gossip;
     this.eventBus = eventBus;
     this.topicHandlers = topicHandlers;
+    this.eventBus.register(this);
   }
 
   public void start() {
@@ -57,7 +72,7 @@ public class GossipMessageHandler {
     final PubsubPublisherApi publisher = createPublisher(gossip, privateKey);
     final List<GossipTopicHandler<?>> topicHandlers =
         createDefaultTopicHandlers(publisher, eventBus, chainStorageClient);
-    return new GossipMessageHandler(gossip, eventBus, topicHandlers);
+    return new GossipMessageHandler(chainStorageClient, publisher, gossip, eventBus, topicHandlers);
   }
 
   static PubsubPublisherApi createPublisher(final Gossip gossip, final PrivKey privateKey) {
@@ -71,5 +86,33 @@ public class GossipMessageHandler {
     return List.of(
         new AggregateTopicHandler(publisher, eventBus, chainStorageClient),
         new BlocksTopicHandler(publisher, eventBus, chainStorageClient));
+  }
+
+  @Subscribe
+  public void registerAttestationTopicHandlers(CommitteeAssignmentEvent assignmentEvent) {
+    List<Integer> committeeIndices = assignmentEvent.getCommitteeIndices();
+    for (int i : committeeIndices) {
+      if (!attestationTopicHandlers.containsKey(i)) {
+        AttestationTopicHandler topicHandler =
+            new AttestationTopicHandler(publisher, eventBus, chainStorageClient, i);
+        attestationTopicHandlers.put(i, topicHandler);
+        PubsubSubscription subscription = gossip.subscribe(topicHandler, topicHandler.getTopic());
+        subscriptions.put(i, subscription);
+        eventBus.register(topicHandler);
+      }
+    }
+  }
+
+  @Subscribe
+  public void unregisterAttestationTopicHandlers(CommitteeDismissalEvent dismissalEvent) {
+    List<Integer> committeeIndices = dismissalEvent.getCommitteeIndices();
+    for (int i : committeeIndices) {
+      if (attestationTopicHandlers.containsKey(i)) {
+        AttestationTopicHandler topicHandler = attestationTopicHandlers.remove(i);
+        PubsubSubscription subscription = subscriptions.remove(i);
+        subscription.unsubscribe();
+        eventBus.unregister(topicHandler);
+      }
+    }
   }
 }
