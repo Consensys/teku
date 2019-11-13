@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip;
 
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 
@@ -33,8 +34,9 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private Topic ATTESTATIONS_TOPIC;
+  private final Topic attestationsTopic;
   private final ChainStorageClient chainStorageClient;
+  private final int committeeIndex;
 
   protected AttestationTopicHandler(
       final PubsubPublisherApi publisher,
@@ -42,18 +44,21 @@ public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
       final ChainStorageClient chainStorageClient,
       final int committeeIndex) {
     super(publisher, eventBus);
-    this.ATTESTATIONS_TOPIC = new Topic("/eth2/index" + committeeIndex + "_beacon_attestation/ssz");
+    this.committeeIndex = committeeIndex;
+    this.attestationsTopic = new Topic("/eth2/index" + committeeIndex + "_beacon_attestation/ssz");
     this.chainStorageClient = chainStorageClient;
   }
 
   @Override
   public Topic getTopic() {
-    return ATTESTATIONS_TOPIC;
+    return attestationsTopic;
   }
 
   @Subscribe
   public void onNewAttestation(final Attestation attestation) {
-    gossip(attestation);
+    if (toIntExact(attestation.getData().getIndex().longValue()) == committeeIndex) {
+      gossip(attestation);
+    }
   }
 
   @Override

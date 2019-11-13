@@ -89,27 +89,27 @@ public class GossipMessageHandler {
   }
 
   @Subscribe
-  public void registerAttestationTopicHandlers(CommitteeAssignmentEvent assignmentEvent) {
+  synchronized public void registerAttestationTopicHandlers(CommitteeAssignmentEvent assignmentEvent) {
     List<Integer> committeeIndices = assignmentEvent.getCommitteeIndices();
-    for (int i : committeeIndices) {
-      if (!attestationTopicHandlers.containsKey(i)) {
+    for (int committeeIndex : committeeIndices) {
+      if (!attestationTopicHandlers.containsKey(committeeIndex)) {
         AttestationTopicHandler topicHandler =
-            new AttestationTopicHandler(publisher, eventBus, chainStorageClient, i);
-        attestationTopicHandlers.put(i, topicHandler);
+            new AttestationTopicHandler(publisher, eventBus, chainStorageClient, committeeIndex);
+        attestationTopicHandlers.put(committeeIndex, topicHandler);
         PubsubSubscription subscription = gossip.subscribe(topicHandler, topicHandler.getTopic());
-        subscriptions.put(i, subscription);
+        subscriptions.put(committeeIndex, subscription);
         eventBus.register(topicHandler);
       }
     }
   }
 
   @Subscribe
-  public void unregisterAttestationTopicHandlers(CommitteeDismissalEvent dismissalEvent) {
+  synchronized public void unregisterAttestationTopicHandlers(CommitteeDismissalEvent dismissalEvent) {
     List<Integer> committeeIndices = dismissalEvent.getCommitteeIndices();
-    for (int i : committeeIndices) {
-      if (attestationTopicHandlers.containsKey(i)) {
-        AttestationTopicHandler topicHandler = attestationTopicHandlers.remove(i);
-        PubsubSubscription subscription = subscriptions.remove(i);
+    for (int committeeIndex : committeeIndices) {
+      if (attestationTopicHandlers.containsKey(committeeIndex)) {
+        AttestationTopicHandler topicHandler = attestationTopicHandlers.remove(committeeIndex);
+        PubsubSubscription subscription = subscriptions.remove(committeeIndex);
         subscription.unsubscribe();
         eventBus.unregister(topicHandler);
       }
