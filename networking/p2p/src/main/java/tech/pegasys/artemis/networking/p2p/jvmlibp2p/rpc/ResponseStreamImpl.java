@@ -28,7 +28,6 @@ public class ResponseStreamImpl<O extends SimpleOffsetSerializable> implements R
   @Override
   public CompletableFuture<O> expectSingleResponse() {
     final AtomicReference<O> firstResponse = new AtomicReference<>();
-    // TODO: Should we throw an error if multiple responses were received?
     expectMultipleResponses(
         response -> {
           if (!firstResponse.compareAndSet(null, response)) {
@@ -67,12 +66,10 @@ public class ResponseStreamImpl<O extends SimpleOffsetSerializable> implements R
   }
 
   public void completeSuccessfully() {
-    System.out.println("Completed successfully: " + completionFuture.isCompletedExceptionally());
     completionFuture.complete(null);
   }
 
   public void completeWithError(final Throwable error) {
-    System.out.println("Got error");
     completionFuture.completeExceptionally(error);
   }
 }
