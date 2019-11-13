@@ -36,7 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
-public class CrosslinkCommitteeUtil {
+public class CommitteeUtil {
 
   /**
    * Return the shuffled validator index corresponding to ``seed`` (and ``index_count``).
@@ -49,7 +49,7 @@ public class CrosslinkCommitteeUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
   public static Integer compute_shuffled_index(int index, int index_count, Bytes32 seed) {
-    checkArgument(index < index_count, "CrosslinkCommitteeUtil.get_shuffled_index1");
+    checkArgument(index < index_count, "CommitteeUtil.get_shuffled_index1");
 
     int indexRet = index;
     byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};

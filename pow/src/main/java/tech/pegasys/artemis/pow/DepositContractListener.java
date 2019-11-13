@@ -25,7 +25,7 @@ import tech.pegasys.artemis.pow.event.Deposit;
 
 public class DepositContractListener {
 
-  private final Disposable subscription;
+  private final Disposable subscriptionNewDeposit;
   private DepositContract contract;
 
   public DepositContractListener(EventBus eventBus, DepositContract contract) {
@@ -41,7 +41,7 @@ public class DepositContractListener {
 
     // Subscribe to the event of a validator being registered in the
     // DepositContract
-    subscription =
+    subscriptionNewDeposit =
         contract
             .depositEventEventFlowable(depositEventFilter)
             .subscribe(
@@ -56,6 +56,6 @@ public class DepositContractListener {
   }
 
   public void stop() {
-    subscription.dispose();
+    subscriptionNewDeposit.dispose();
   }
 }

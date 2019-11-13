@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.reference.phase0.shuffling;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.compute_shuffled_index;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.compute_shuffled_index;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;

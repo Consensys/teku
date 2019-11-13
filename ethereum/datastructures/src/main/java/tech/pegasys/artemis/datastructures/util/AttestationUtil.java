@@ -19,7 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
@@ -91,18 +91,18 @@ public class AttestationUtil {
         UnsignedLong index = committeeAssignmentsForSlot.get(i).getMiddle();
         int indexIntoCommittee = committee.indexOf(validatorIndex);
 
-        Committee crosslinkCommittee = new Committee(index, committee);
+        Committee beaconCommittee = new Committee(index, committee);
         attesters.add(
             new MutableTriple<>(
                 state.getValidators().get(validatorIndex).getPubkey(),
                 indexIntoCommittee,
-                crosslinkCommittee));
+                beaconCommittee));
       }
     }
     return attesters;
   }
 
-  // Get attestation data that does not include attester specific shard or crosslink information
+  // Get attestation data that does not include attester specific committee index information
   public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
     UnsignedLong slot = state.getSlot();
     // Get variables necessary that can be shared among Attestations of all validators
