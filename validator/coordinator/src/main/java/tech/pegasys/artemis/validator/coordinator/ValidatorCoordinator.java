@@ -233,7 +233,9 @@ public class ValidatorCoordinator {
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
     Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
-    AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
+    AttestationData attestationData =
+        AttestationUtil.completeAttestationCrosslinkData(
+            state, new AttestationData(genericAttestationData), committee);
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());

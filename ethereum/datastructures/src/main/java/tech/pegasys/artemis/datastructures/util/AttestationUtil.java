@@ -126,6 +126,12 @@ public class AttestationUtil {
     return aggregationBits;
   }
 
+  public static AttestationData completeAttestationCrosslinkData(
+      BeaconState state, AttestationData attestation_data, Committee committee) {
+    attestation_data.setIndex(committee.getIndex());
+    return attestation_data;
+  }
+
   public static Bytes32 getAttestationMessageToSign(AttestationData attestationData) {
     AttestationDataAndCustodyBit attestation_data_and_custody_bit =
         new AttestationDataAndCustodyBit(attestationData, false);

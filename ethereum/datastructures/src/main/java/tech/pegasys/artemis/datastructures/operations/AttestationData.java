@@ -34,14 +34,14 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
   public static final int SSZ_FIELD_COUNT = 3;
 
   private final UnsignedLong slot;
-  private final UnsignedLong index;
+  private UnsignedLong index;
 
   // LMD GHOST vote
-  private final Bytes32 beacon_block_root;
+  private Bytes32 beacon_block_root;
 
   // FFG vote
-  private final Checkpoint source;
-  private final Checkpoint target;
+  private Checkpoint source;
+  private Checkpoint target;
 
   public AttestationData(
       UnsignedLong slot,
@@ -112,20 +112,32 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
     return index;
   }
 
+  public void setIndex(final UnsignedLong index) {
+    this.index = index;
+  }
+
   public Bytes32 getBeacon_block_root() {
     return beacon_block_root;
+  }
+
+  public void setBeacon_block_root(Bytes32 beacon_block_root) {
+    this.beacon_block_root = beacon_block_root;
   }
 
   public Checkpoint getSource() {
     return source;
   }
 
+  public void setSource(Checkpoint source) {
+    this.source = source;
+  }
+
   public Checkpoint getTarget() {
     return target;
   }
 
-  public AttestationData withIndex(final UnsignedLong index) {
-    return new AttestationData(slot, index, beacon_block_root, source, target);
+  public void setTarget(Checkpoint target) {
+    this.target = target;
   }
 
   @Override
