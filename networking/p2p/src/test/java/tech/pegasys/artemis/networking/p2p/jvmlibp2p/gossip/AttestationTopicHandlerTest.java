@@ -50,7 +50,7 @@ public class AttestationTopicHandlerTest {
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
 
   private final AttestationTopicHandler topicHandler =
-      new AttestationTopicHandler(publisher, eventBus, storageClient);
+      new AttestationTopicHandler(publisher, eventBus, storageClient, 10);
 
   ArgumentCaptor<ByteBuf> byteBufCaptor = ArgumentCaptor.forClass(ByteBuf.class);
   ArgumentCaptor<Topic> topicCaptor = ArgumentCaptor.forClass(Topic.class);
