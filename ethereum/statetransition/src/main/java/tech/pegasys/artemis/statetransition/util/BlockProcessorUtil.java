@@ -28,7 +28,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randa
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_validator;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashable_validator;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;

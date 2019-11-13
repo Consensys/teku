@@ -33,22 +33,12 @@ class EpochProcessingUtilTest {
   }
 
   @Test
-  void updateCrosslinksTests() {
-    // todo
-  }
-
-  @Test
   void justificationAndFinalizationTests() {
     // todo
   }
 
   @Test
   void attestionInclusionTests() {
-    // todo
-  }
-
-  @Test
-  void crosslinkRewardsTests() {
     // todo
   }
 
