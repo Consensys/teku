@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksMessageRequest;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
@@ -35,14 +35,15 @@ public class RpcMethods {
       PeerLookup peerLookup,
       LocalMessageHandler<StatusMessage, StatusMessage> helloHandler,
       LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> goodbyeHandler,
-      LocalMessageHandler<BeaconBlocksMessageRequest, BeaconBlock> beaconBlocksHandler) {
+      LocalMessageHandler<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksHandler) {
 
     this.methods =
         createMethodMap(
             new RpcMessageHandler<>(RpcMethod.STATUS, peerLookup, helloHandler),
             new RpcMessageHandler<>(RpcMethod.GOODBYE, peerLookup, goodbyeHandler)
                 .setCloseNotification(),
-            new RpcMessageHandler<>(RpcMethod.BEACON_BLOCKS, peerLookup, beaconBlocksHandler));
+            new RpcMessageHandler<>(
+                RpcMethod.BEACON_BLOCKS_BY_ROOT, peerLookup, beaconBlocksHandler));
   }
 
   private Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> createMethodMap(
@@ -54,7 +55,7 @@ public class RpcMethods {
   }
 
   public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
-      CompletableFuture<O> invoke(
+      CompletableFuture<ResponseStream<O>> invoke(
           final RpcMethod<I, O> method, final Connection connection, final I request) {
     return getHandler(method).invokeRemote(connection, request);
   }

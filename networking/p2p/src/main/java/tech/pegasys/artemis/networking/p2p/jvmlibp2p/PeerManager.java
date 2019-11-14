@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksMessageHandler;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksByRootMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageHandler;
@@ -61,7 +61,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
             this,
             new StatusMessageHandler(statusMessageFactory),
             new GoodbyeMessageHandler(metricsSystem),
-            new BeaconBlocksMessageHandler());
+            new BeaconBlocksByRootMessageHandler(chainStorageClient));
   }
 
   @Override
