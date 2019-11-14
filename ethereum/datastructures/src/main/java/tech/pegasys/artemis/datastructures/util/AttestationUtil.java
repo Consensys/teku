@@ -57,68 +57,6 @@ public class AttestationUtil {
 
   private static final ALogger STDOUT = new ALogger("stdout");
 
-  /**
-   * Returns true if the attestation is verified
-   *
-   * @param state
-   * @param attestation
-   * @return boolean
-   */
-  public static boolean verifyAttestation(BeaconState state, Attestation attestation) {
-    return true;
-  }
-
-  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
-      BeaconState headState,
-      HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
-          committeeAssignments) {
-    UnsignedLong slot = headState.getSlot();
-    return getAttesterInformation(headState, committeeAssignments, slot);
-  }
-
-  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
-      BeaconState state,
-      HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
-          committeeAssignments,
-      final UnsignedLong slot) {
-    List<Triple<List<Integer>, UnsignedLong, Integer>> committeeAssignmentsForSlot =
-        committeeAssignments.get(slot);
-    List<Triple<BLSPublicKey, Integer, Committee>> attesters = new ArrayList<>();
-    if (committeeAssignmentsForSlot != null) {
-      for (int i = 0; i < committeeAssignmentsForSlot.size(); i++) {
-        int validatorIndex = committeeAssignmentsForSlot.get(i).getRight();
-        List<Integer> committee = committeeAssignmentsForSlot.get(i).getLeft();
-        UnsignedLong index = committeeAssignmentsForSlot.get(i).getMiddle();
-        int indexIntoCommittee = committee.indexOf(validatorIndex);
-
-        Committee beaconCommittee = new Committee(index, committee);
-        attesters.add(
-            new MutableTriple<>(
-                state.getValidators().get(validatorIndex).getPubkey(),
-                indexIntoCommittee,
-                beaconCommittee));
-      }
-    }
-    return attesters;
-  }
-
-  // Get attestation data that does not include attester specific committee index information
-  public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
-    UnsignedLong slot = state.getSlot();
-    // Get variables necessary that can be shared among Attestations of all validators
-    Bytes32 beacon_block_root = block.signing_root("signature");
-    UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
-    Bytes32 epoch_boundary_block_root =
-        start_slot.compareTo(slot) == 0
-            ? block.signing_root("signature")
-            : get_block_root_at_slot(state, start_slot);
-    Checkpoint source = state.getCurrent_justified_checkpoint();
-    Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
-
-    // Set attestation data
-    return new AttestationData(slot, UnsignedLong.ZERO, beacon_block_root, source, target);
-  }
-
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
     Bitlist aggregationBits = new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);

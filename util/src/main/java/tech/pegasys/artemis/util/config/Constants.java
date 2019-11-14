@@ -90,7 +90,7 @@ public class Constants {
   public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
 
   // Honest Validator
-  public static UnsignedLong TARGET_AGGREGATORS_PER_COMMITTEE = UnsignedLong.valueOf(16);
+  public static UnsignedLong TARGET_AGGREGATORS_PER_COMMITTEE = UnsignedLong.valueOf(1);
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";

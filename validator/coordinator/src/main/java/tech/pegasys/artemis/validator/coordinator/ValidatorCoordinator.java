@@ -15,10 +15,10 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
@@ -26,11 +26,8 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-<<<<<<< HEAD
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
-=======
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
->>>>>>> 246a7844... Implement slot_signature and is_aggregator methods
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
 import com.google.common.eventbus.EventBus;
@@ -51,7 +48,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
@@ -103,12 +99,14 @@ public class ValidatorCoordinator {
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private StateTransition stateTransition;
-  //  private BeaconState headState;
   private BeaconBlock validatorBlock;
   private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private ChainStorageClient chainStorageClient;
-  private HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
-      committeeAssignments = new HashMap<>();
+
+  //  maps slots to Lists of attestation assignments
+  //  (which contain information for our validators to produce attestations)
+  private HashMap<UnsignedLong, List<AttestationAssignment>> attestationAssignments = new HashMap<>();
+
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
   private HashMap<UnsignedLong, Eth1DataWithIndexAndDeposits> eth1DataCache = new HashMap<>();
 
@@ -193,6 +191,10 @@ public class ValidatorCoordinator {
       if (headState.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
           || headState.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT))) {
 
+        // For each validator, using the spec defined get_committee_assignment,
+        // get each validators committee assignment.
+        // i.e. learn to which committee they belong in this epoch, and when that
+        // committee is going to attest
         validators.forEach(
             (pubKey, validatorInformation) -> {
               Optional<CommitteeAssignment> committeeAssignment =
@@ -201,24 +203,34 @@ public class ValidatorCoordinator {
                       compute_epoch_at_slot(headState.getSlot()),
                       validatorInformation.getValidatorIndex());
 
+              // If it exists, use the committee assignment information to update our attestationAssignments
+              // map, which maps slots to Lists of attestation assignments.
               committeeAssignment.ifPresent(
                   assignment -> {
-                    List<Triple<List<Integer>, UnsignedLong, Integer>> assignmentsInSlot =
-                        committeeAssignments.computeIfAbsent(
-                            assignment.getSlot(), k -> new ArrayList<>());
-                    assignmentsInSlot.add(
-                        new MutableTriple<>(
+                    UnsignedLong slot = assignment.getSlot();
+                    UnsignedLong committeeIndex = assignment.getCommitteeIndex();
+                    BLSSignature slot_signature = slot_signature(headState, slot, pubKey);
+
+                    List<AttestationAssignment> attestationAssignmentsInSlot =
+                        attestationAssignments.computeIfAbsent(
+                            slot, k -> new ArrayList<>());
+
+                    attestationAssignmentsInSlot.add(
+                        new AttestationAssignment(
                             assignment.getCommittee(),
-                            assignment.getCommitteeIndex(),
-                            validatorInformation.getValidatorIndex()));
+                            committeeIndex,
+                            validatorInformation.getValidatorIndex(),
+                            is_aggregator(headState, slot, committeeIndex, slot_signature)));
                   });
             });
       }
 
+      UnsignedLong slot = get_committee_count_at_slot(headState, headState.getSlot());
+      System.out.println("Committee count at slot: " + slot);
       List<Triple<BLSPublicKey, Integer, Committee>> attesters =
-          AttestationUtil.getAttesterInformation(headState, committeeAssignments);
+          ValidatorCoordinatorUtil.getAttesterInformation(headState, attestationAssignments);
       AttestationData genericAttestationData =
-          AttestationUtil.getGenericAttestationData(headState, headBlock);
+          ValidatorCoordinatorUtil.getGenericAttestationData(headState, headBlock);
 
       CompletableFuture.runAsync(
           () ->
