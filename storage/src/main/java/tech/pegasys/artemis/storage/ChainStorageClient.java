@@ -23,9 +23,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,14 +49,15 @@ import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
-  private Store store;
-  protected EventBus eventBus;
+  protected final EventBus eventBus;
   protected final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlistMap =
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, UnsignedLong> processedAttestationsToEpoch =
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
+  private final Map<UnsignedLong, Bytes32> slotToCanonicalBlockRoot = new ConcurrentHashMap<>();
+
   private final int QUEUE_MAX_SIZE =
       Constants.MAX_VALIDATORS_PER_COMMITTEE
           * Constants.MAX_COMMITTEES_PER_SLOT
@@ -61,6 +65,8 @@ public class ChainStorageClient implements ChainStorage {
   private final Queue<Attestation> unprocessedAttestationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getTarget().getEpoch()));
+
+  private Store store;
   private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
@@ -166,6 +172,7 @@ public class ChainStorageClient implements ChainStorage {
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
     this.bestBlockRoot = root;
     this.bestSlot = slot;
+    updateCanonicalBlockIndex(root, slot);
   }
 
   /**
@@ -187,12 +194,19 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   /**
-   * Retrives the slot of the block chosen by fork choice to build and attest on
+   * Retrieves the slot of the block chosen by fork choice to build and attest on
    *
    * @return
    */
   public UnsignedLong getBestSlot() {
     return this.bestSlot;
+  }
+
+  public Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
+    if (store == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(slotToCanonicalBlockRoot.get(slot)).map(store::getBlock);
   }
 
   /**
@@ -304,5 +318,34 @@ public class ChainStorageClient implements ChainStorage {
         cleanAttestationsUntilEpoch(epoch.minus(UnsignedLong.ONE));
       }
     }
+  }
+
+  private void updateCanonicalBlockIndex(final Bytes32 bestBlockRoot, final UnsignedLong slot) {
+
+    final List<UnsignedLong> removedIndices = new ArrayList<>();
+    final Map<UnsignedLong, Bytes32> updatedIndices = new HashMap<>();
+
+    UnsignedLong currentSlot = slot;
+    Bytes32 currentRoot = bestBlockRoot;
+    while (slotToCanonicalBlockRoot.get(currentSlot) != currentRoot) {
+      updatedIndices.put(currentSlot, currentRoot);
+      if (currentSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) <= 0) {
+        // We've reached the genesis slot, nothing left to index
+        break;
+      }
+      currentSlot = currentSlot.minus(UnsignedLong.ONE);
+      currentRoot = store.getBlock(currentRoot).getParent_root();
+    }
+
+    // Remove any slots that should no longer be indexed
+    currentSlot = slot.plus(UnsignedLong.ONE);
+    while (slotToCanonicalBlockRoot.containsKey(currentSlot)) {
+      removedIndices.add(currentSlot);
+      currentSlot = currentSlot.plus(UnsignedLong.ONE);
+    }
+    Collections.reverse(removedIndices);
+
+    removedIndices.forEach(slotToCanonicalBlockRoot::remove);
+    slotToCanonicalBlockRoot.putAll(updatedIndices);
   }
 }
