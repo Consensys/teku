@@ -181,7 +181,7 @@ public class RpcMessageHandler<
 
     @Override
     public CompletableFuture<ResponseStream<TResponse>> invoke(TRequest request) {
-      ByteBuf reqByteBuf = ctx.alloc().buffer();
+      final ByteBuf reqByteBuf = ctx.alloc().buffer();
       final Bytes encoded = rpcCodec.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       responseStream = new ResponseStreamImpl<>();
@@ -207,7 +207,7 @@ public class RpcMessageHandler<
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
       LOG.error("Unhandled error while processes req/response", cause);
-      IllegalArgumentException exception = new IllegalArgumentException("Channel exception", cause);
+      final IllegalStateException exception = new IllegalStateException("Channel exception", cause);
       activeFuture.completeExceptionally(exception);
       responseStream.completeWithError(exception);
       ctx.channel().close();
@@ -216,8 +216,10 @@ public class RpcMessageHandler<
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
       LOG.info("Handler removed");
-      IllegalArgumentException exception = new IllegalArgumentException("Stream closed.");
+      final IllegalStateException exception = new IllegalStateException("Stream closed.");
+      // This is an error if we haven't already sent the request...
       activeFuture.completeExceptionally(exception);
+      // But it just means the end of stream if we have.
       responseStream.completeSuccessfully();
       ctx.channel().close();
     }
