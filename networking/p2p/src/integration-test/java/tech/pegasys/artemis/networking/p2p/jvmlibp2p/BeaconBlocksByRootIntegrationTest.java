@@ -29,11 +29,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 
@@ -120,11 +118,7 @@ public class BeaconBlocksByRootIntegrationTest {
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException {
     final List<BeaconBlock> blocks = new ArrayList<>();
-    waitFor(
-        peer1.requestStream(
-            RpcMethod.BEACON_BLOCKS_BY_ROOT,
-            new BeaconBlocksByRootRequestMessage(blockRoots),
-            blocks::add));
+    waitFor(peer1.requestBlocksByRoot(blockRoots, blocks::add));
     return blocks;
   }
 }

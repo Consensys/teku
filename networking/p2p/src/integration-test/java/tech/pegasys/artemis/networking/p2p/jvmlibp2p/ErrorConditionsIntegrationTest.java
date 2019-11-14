@@ -27,6 +27,7 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseStream;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.Waiter;
@@ -49,7 +50,8 @@ public class ErrorConditionsIntegrationTest {
         network1.getPeerManager().getAvailablePeer(network2.getPeerId()).orElseThrow();
 
     final CompletableFuture<StatusMessage> response =
-        peer.requestSingle(RpcMethod.STATUS, new InvalidStatusMessage());
+        peer.invoke(RpcMethod.STATUS, new InvalidStatusMessage())
+            .thenCompose(ResponseStream::expectSingleResponse);
 
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)

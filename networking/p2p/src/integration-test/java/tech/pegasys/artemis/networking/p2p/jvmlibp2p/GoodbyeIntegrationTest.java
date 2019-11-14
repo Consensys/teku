@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 
 public class GoodbyeIntegrationTest {
   private final NetworkFactory networkFactory = new NetworkFactory();
@@ -46,8 +45,7 @@ public class GoodbyeIntegrationTest {
 
   @Test
   public void shouldCloseConnectionAfterGoodbyeReceived() throws Exception {
-    waitFor(
-        peer1.send(RpcMethod.GOODBYE, new GoodbyeMessage(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN)));
+    waitFor(peer1.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN));
     waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     waitFor(() -> assertThat(peer2.isConnected()).isFalse());
     assertThat(network1.getPeerManager().getAvailablePeerCount()).isZero();

@@ -17,11 +17,16 @@ import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseStream;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
@@ -64,7 +69,8 @@ public class Peer {
   }
 
   public CompletableFuture<StatusData> sendStatus() {
-    return requestSingle(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
+    return invoke(RpcMethod.STATUS, statusMessageFactory.createStatusMessage())
+        .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
             remoteStatus -> {
               updateStatus(remoteStatus);
@@ -72,7 +78,20 @@ public class Peer {
             });
   }
 
-  public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+  public CompletableFuture<Void> sendGoodbye(final UnsignedLong reason) {
+    return invoke(RpcMethod.GOODBYE, new GoodbyeMessage(reason))
+        .thenCompose(ResponseStream::expectNoResponse);
+  }
+
+  public CompletableFuture<Void> requestBlocksByRoot(
+      final List<Bytes32> blockRoots, final ResponseListener<BeaconBlock> listener) {
+    return requestStream(
+        RpcMethod.BEACON_BLOCKS_BY_ROOT,
+        new BeaconBlocksByRootRequestMessage(blockRoots),
+        listener);
+  }
+
+  private <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
       CompletableFuture<Void> requestStream(
           final RpcMethod<I, O> method,
           I request,
@@ -81,17 +100,7 @@ public class Peer {
         .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
   }
 
-  public <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
-      CompletableFuture<O> requestSingle(final RpcMethod<I, O> method, I request) {
-    return invoke(method, request).thenCompose(ResponseStream::expectSingleResponse);
-  }
-
-  public <I extends SimpleOffsetSerializable> CompletableFuture<Void> send(
-      final RpcMethod<I, ?> method, I request) {
-    return invoke(method, request).thenCompose(ResponseStream::expectNoResponse);
-  }
-
-  private <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
+  <I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable>
       CompletableFuture<ResponseStream<O>> invoke(final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, connection, request);
   }
