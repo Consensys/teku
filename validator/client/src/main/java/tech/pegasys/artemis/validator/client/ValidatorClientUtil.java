@@ -18,7 +18,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;

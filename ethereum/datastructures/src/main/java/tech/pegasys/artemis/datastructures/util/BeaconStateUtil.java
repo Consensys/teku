@@ -15,7 +15,7 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.artemis.datastructures.util.CrosslinkCommitteeUtil.compute_proposer_index;
+import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.compute_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;

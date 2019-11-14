@@ -145,8 +145,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.previous_epoch_attestations = previous_epoch_attestations;
     this.current_epoch_attestations = current_epoch_attestations;
 
-    // Crosslinks
-
     // Finality
     this.justification_bits = justification_bits;
     this.previous_justified_checkpoint = previous_justified_checkpoint;
