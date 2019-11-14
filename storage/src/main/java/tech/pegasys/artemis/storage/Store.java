@@ -62,7 +62,7 @@ public class Store implements ReadOnlyStore {
     this.latest_messages = new ConcurrentHashMap<>(latest_messages);
   }
 
-  public static Store forGenesis(final BeaconState genesisState) {
+  public static Store get_genesis_store(final BeaconState genesisState) {
     BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
     Bytes32 root = genesisBlock.signing_root("signature");
 

@@ -161,7 +161,7 @@ public final class StartupUtil {
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs);
     }
 
-    final Store store = Store.forGenesis(initialState);
+    final Store store = Store.get_genesis_store(initialState);
     chainStorageClient.setStore(store);
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
