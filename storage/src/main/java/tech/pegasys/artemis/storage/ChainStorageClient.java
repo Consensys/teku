@@ -13,29 +13,15 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
@@ -43,18 +29,7 @@ public class ChainStorageClient implements ChainStorage {
   static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
   private Store store;
   protected EventBus eventBus;
-  protected final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlistMap =
-      new ConcurrentHashMap<>();
-  protected final ConcurrentHashMap<Bytes32, UnsignedLong> processedAttestationsToEpoch =
-      new ConcurrentHashMap<>();
-  private final int QUEUE_MAX_SIZE =
-      Constants.MAX_VALIDATORS_PER_COMMITTEE
-          * Constants.MAX_COMMITTEES_PER_SLOT
-          * Constants.SLOTS_PER_EPOCH;
-  private final Queue<AggregateAndProof> aggregateAttesationsQueue =
-      new PriorityBlockingQueue<>(
-          QUEUE_MAX_SIZE,
-          Comparator.comparing(a -> a.getAggregate().getData().getTarget().getEpoch()));
+
   private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
@@ -82,30 +57,6 @@ public class ChainStorageClient implements ChainStorage {
 
   public Store getStore() {
     return store;
-  }
-
-  // PROCESSED ATTESTATION STORAGE:
-
-  public void addProcessedAttestation(Attestation attestation) {
-
-    Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
-    ChainStorage.get(attestationDataHash, this.processedAttestationsBitlistMap)
-        .ifPresentOrElse(
-            oldBitlist -> {
-              for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-                if (attestation.getAggregation_bits().getBit(i) == 1) oldBitlist.setBit(i);
-              }
-            },
-            () -> {
-              ChainStorage.add(
-                  attestationDataHash,
-                  attestation.getAggregation_bits().copy(),
-                  this.processedAttestationsBitlistMap);
-              ChainStorage.add(
-                  attestationDataHash,
-                  attestation.getData().getTarget().getEpoch(),
-                  processedAttestationsToEpoch);
-            });
   }
 
   // NETWORKING RELATED INFORMATION METHODS:
@@ -186,76 +137,5 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.GREEN);
-  }
-
-  // VALIDATOR COORDINATOR METHODS:
-
-  /**
-   * Returns the list of attestations that both have slot number less than or equal to slot, and not
-   * included in any processed block. Removes the attestations from the slot sorted queue in the
-   * process.
-   *
-   * @param state
-   * @param slot
-   * @return
-   */
-  public SSZList<Attestation> getUnprocessedAttestationsUntilSlot(
-      BeaconState state, UnsignedLong slot) {
-    SSZList<Attestation> attestations =
-        new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
-    int numAttestations = 0;
-    while (aggregateAttesationsQueue.peek() != null
-        && aggregateAttesationsQueue.peek().getAggregate().getData().getSlot().compareTo(slot) <= 0
-        && numAttestations < Constants.MAX_ATTESTATIONS) {
-
-      AggregateAndProof aggregate = aggregateAttesationsQueue.remove();
-      Bytes32 attestationHashTreeRoot = aggregate.getAggregate().getData().hash_tree_root();
-      aggregateAttestationsMap.remove(attestationHashTreeRoot);
-      // Check if attestation has already been processed in successful block
-      if (ChainStorage.get(attestationHashTreeRoot, this.processedAttestationsBitlistMap)
-          .isPresent()) {
-        Bitlist bitlist =
-            ChainStorage.get(
-                    aggregate.getData().hash_tree_root(), this.processedAttestationsBitlistMap)
-                .get();
-        List<Integer> oldAttesters = getAttesterIndicesIntoCommittee(bitlist);
-        List<Integer> newAttesters =
-            getAttesterIndicesIntoCommittee(aggregate.getAggregation_bits());
-        if (oldAttesters.containsAll(newAttesters)) {
-          continue;
-        }
-      }
-      attestations.add(aggregate);
-      numAttestations++;
-    }
-    return attestations;
-  }
-
-  // Memory Cleaning
-
-  public void cleanAttestationsUntilEpoch(UnsignedLong epoch) {
-    Iterator<Bytes32> it = processedAttestationsBitlistMap.keySet().iterator();
-    while (it.hasNext()) {
-      Bytes32 key = it.next();
-      UnsignedLong currentEpoch = processedAttestationsToEpoch.get(key);
-      if (currentEpoch.compareTo(epoch) < 0) {
-        it.remove();
-        processedAttestationsToEpoch.remove(key);
-      }
-    }
-  }
-
-  @Subscribe
-  public void onNewSlot(SlotEvent slotEvent) {
-    if (slotEvent
-            .getSlot()
-            .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
-            .compareTo(UnsignedLong.ZERO)
-        == 0) {
-      UnsignedLong epoch = BeaconStateUtil.compute_epoch_at_slot(slotEvent.getSlot());
-      if (epoch.compareTo(UnsignedLong.ONE) > 0) {
-        cleanAttestationsUntilEpoch(epoch.minus(UnsignedLong.ONE));
-      }
-    }
   }
 }

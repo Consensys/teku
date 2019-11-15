@@ -63,6 +63,7 @@ public class StateProcessor {
   private List<DepositWithIndex> deposits;
   private BeaconStateWithCache initialState;
   private AttestationAggregator attestationAggregator;
+  private BlockAttestationsPool blockAttestationsPool;
 
   private boolean genesisReady = false;
 
@@ -70,9 +71,11 @@ public class StateProcessor {
       EventBus eventBus,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
+      BlockAttestationsPool blockAttestationsPool,
       MetricsSystem metricsSystem,
       ArtemisConfiguration config) {
     this.attestationAggregator = attestationAggregator;
+    this.blockAttestationsPool = blockAttestationsPool;
     this.eventBus = eventBus;
     this.config = config;
     this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
@@ -174,7 +177,7 @@ public class StateProcessor {
           .getAttestations()
           .forEach(
               attestation -> {
-                this.chainStorageClient.addProcessedAttestation(attestation);
+                blockAttestationsPool.addAttestationProcessedInBlock(attestation);
                 numberOfAttestersInAttestations.add(
                     IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
                         .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
@@ -207,6 +210,7 @@ public class StateProcessor {
       eventBus.post(new StoreDiskUpdateEvent(transaction));
 
       attestationAggregator.processAttestation(attestation);
+      blockAttestationsPool.addUnprocessedAttestationToQueue(attestation);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }

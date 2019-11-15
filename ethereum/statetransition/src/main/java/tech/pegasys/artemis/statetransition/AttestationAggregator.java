@@ -15,7 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttesterSingle;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -82,7 +82,7 @@ public class AttestationAggregator {
         // and the new Attestation represents a new attester, add the signature of the
         // new attestation to the old aggregate attestation.
         if (aggregateAttestation.isPresent()
-            && representsNewAttester(aggregateAttestation.get(), newAttestation)) {
+            && representsNewAttesterSingle(aggregateAttestation.get(), newAttestation)) {
 
           aggregateAttestation(aggregateAttestation.get(), newAttestation);
 

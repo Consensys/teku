@@ -42,6 +42,7 @@ import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.AggregationEvent;
 import tech.pegasys.artemis.statetransition.events.AttestationEvent;
@@ -76,6 +77,7 @@ public class BeaconChainController {
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
   private BeaconRestApi beaconRestAPI;
   private AttestationAggregator attestationAggregator;
+  private BlockAttestationsPool blockAttestationsPool;
   private boolean testMode;
 
   public BeaconChainController(
@@ -92,6 +94,7 @@ public class BeaconChainController {
     initStorage();
     initMetrics();
     initAttestationAggregator();
+    initBlockAttestationsPool();
     initValidatorCoordinator();
     initStateProcessor();
     initP2PNetwork();
@@ -153,14 +156,20 @@ public class BeaconChainController {
 
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
-    new ValidatorCoordinator(eventBus, chainStorageClient, attestationAggregator, config);
+    new ValidatorCoordinator(
+        eventBus, chainStorageClient, attestationAggregator, blockAttestationsPool, config);
   }
 
   public void initStateProcessor() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
     this.stateProcessor =
         new StateProcessor(
-            eventBus, chainStorageClient, attestationAggregator, metricsSystem, config);
+            eventBus,
+            chainStorageClient,
+            attestationAggregator,
+            blockAttestationsPool,
+            metricsSystem,
+            config);
   }
 
   public void initP2PNetwork() {
@@ -187,6 +196,11 @@ public class BeaconChainController {
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
+  }
+
+  public void initBlockAttestationsPool() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initBlockAttestationsPool()");
+    blockAttestationsPool = new BlockAttestationsPool();
   }
 
   public void initAttestationAggregator() {

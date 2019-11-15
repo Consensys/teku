@@ -74,6 +74,7 @@ import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.AggregationEvent;
@@ -102,10 +103,10 @@ public class ValidatorCoordinator {
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private StateTransition stateTransition;
-  private BeaconBlock validatorBlock;
   private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private ChainStorageClient chainStorageClient;
   private AttestationAggregator attestationAggregator;
+  private BlockAttestationsPool blockAttestationsPool;
 
   //  maps slots to Lists of attestation informations
   //  (which contain information for our validators to produce attestations)
@@ -118,12 +119,14 @@ public class ValidatorCoordinator {
       EventBus eventBus,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
+      BlockAttestationsPool blockAttestationsPool,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition(false);
     this.validators = initializeValidators(config, chainStorageClient);
     this.attestationAggregator = attestationAggregator;
+    this.blockAttestationsPool = blockAttestationsPool;
     this.eventBus.register(this);
   }
   /*
@@ -173,10 +176,21 @@ public class ValidatorCoordinator {
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
-    if (validatorBlock != null) {
-      STDOUT.log(Level.DEBUG, "Local validator produced a new block");
-      this.eventBus.post(validatorBlock);
-      validatorBlock = null;
+    BeaconState headState =
+        chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
+    BeaconBlock headBlock =
+        chainStorageClient.getStore().getBlock(chainStorageClient.getBestBlockRoot());
+
+    // Copy state so that state transition during block creation
+    // does not manipulate headState in storage
+    if (!isGenesis(headState)) {
+      createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock);
+    }
+
+    // At the start of each epoch or at genesis, update attestation assignments
+    // for all validators
+    if (isGenesisOrEpochStart(headState)) {
+      updateAttestationAssignments(headState);
     }
 
     // Get attester information to prepare AttestationAggregator for new slot's aggregation
@@ -202,12 +216,6 @@ public class ValidatorCoordinator {
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
 
-      // At the start of each epoch or at genesis, update attestation assignments
-      // for all validators
-      if (isGenesisOrEpochStart(headState)) {
-        updateAttestationAssignments(headState);
-      }
-
       attestationAggregator.activateAggregation();
 
       // Get attester information in order to produce attestations
@@ -216,10 +224,6 @@ public class ValidatorCoordinator {
 
       asyncProduceAttestations(
           attesterInformations, headState, getGenericAttestationData(headState, headBlock));
-
-      // Copy state so that state transition during block creation
-      // does not manipulate headState in storage
-      createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock);
 
       // Save headState to check for slashings
       //      this.headState = headState;
@@ -318,7 +322,7 @@ public class ValidatorCoordinator {
           state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
 
       current_attestations =
-          this.chainStorageClient.getUnprocessedAttestationsUntilSlot(state, attestation_slot);
+          blockAttestationsPool.getAggregatedAttestationsForBlockAtSlot(attestation_slot);
     }
 
     BeaconBlock newBlock =
@@ -366,7 +370,8 @@ public class ValidatorCoordinator {
         newBlock.setState_root(stateRoot);
         BLSSignature blockSignature = getBlockSignature(newState, newBlock, proposer);
         newBlock.setSignature(blockSignature);
-        validatorBlock = newBlock;
+        this.eventBus.post(newBlock);
+        STDOUT.log(Level.DEBUG, "Local validator produced a new block");
 
         if (validators.get(proposer).isNaughty()) {
           BeaconStateWithCache naughtyState = BeaconStateWithCache.deepCopy(state);
@@ -495,10 +500,10 @@ public class ValidatorCoordinator {
 
   public Eth1Data get_eth1_data(UnsignedLong distance) {
     UnsignedLong cacheSize =
-            UnsignedLong.valueOf(
-                    eth1DataCache.entrySet().stream()
-                            .filter(item -> item.getValue().getDeposit_root() != null)
-                            .count());
+        UnsignedLong.valueOf(
+            eth1DataCache.entrySet().stream()
+                .filter(item -> item.getValue().getDeposit_root() != null)
+                .count());
     return eth1DataCache.get(cacheSize.minus(distance).minus(UnsignedLong.ONE));
   }
 
@@ -526,7 +531,11 @@ public class ValidatorCoordinator {
 
   private static boolean isGenesisOrEpochStart(BeaconState state) {
     return state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
-        || state.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT));
+        || isGenesis(state);
+  }
+
+  private static boolean isGenesis(BeaconState state) {
+    return state.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT));
   }
 
   private void updateAttestationAssignments(BeaconState state) {
