@@ -25,13 +25,15 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
@@ -56,7 +58,8 @@ public class ChainStorageClient implements ChainStorage {
       new ConcurrentHashMap<>();
   private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
       new ConcurrentHashMap<>();
-  private final Map<UnsignedLong, Bytes32> slotToCanonicalBlockRoot = new ConcurrentHashMap<>();
+  private final NavigableMap<UnsignedLong, Bytes32> slotToCanonicalBlockRoot =
+      new ConcurrentSkipListMap<>();
 
   private final int QUEUE_MAX_SIZE =
       Constants.MAX_VALIDATORS_PER_COMMITTEE
@@ -324,7 +327,7 @@ public class ChainStorageClient implements ChainStorage {
   private void updateCanonicalBlockIndex(final Bytes32 bestBlockRoot, final UnsignedLong slot) {
 
     final List<UnsignedLong> removedIndices = new ArrayList<>();
-    final Map<UnsignedLong, Bytes32> updatedIndices = new HashMap<>();
+    final NavigableMap<UnsignedLong, Bytes32> updatedIndices = new TreeMap<>();
 
     UnsignedLong currentSlot = slot;
     Bytes32 currentRoot = bestBlockRoot;
@@ -334,19 +337,38 @@ public class ChainStorageClient implements ChainStorage {
         // We've reached the genesis slot, nothing left to index
         break;
       }
-      currentSlot = currentSlot.minus(UnsignedLong.ONE);
+      UnsignedLong previousSlot = currentSlot;
       currentRoot = store.getBlock(currentRoot).getParent_root();
+      BeaconBlock currentBlock = store.getBlock(currentRoot);
+      currentSlot = currentBlock.getSlot();
+
+      UnsignedLong skippedSlot = previousSlot.minus(UnsignedLong.ONE);
+      while (skippedSlot.compareTo(currentSlot) > 0) {
+        // Make sure any skipped slots are cleared
+        updatedIndices.put(skippedSlot, null);
+        skippedSlot = skippedSlot.minus(UnsignedLong.ONE);
+      }
     }
 
     // Remove any slots that should no longer be indexed
-    currentSlot = slot.plus(UnsignedLong.ONE);
-    while (slotToCanonicalBlockRoot.containsKey(currentSlot)) {
-      removedIndices.add(currentSlot);
-      currentSlot = currentSlot.plus(UnsignedLong.ONE);
-    }
+    Set<UnsignedLong> removed =
+        slotToCanonicalBlockRoot.tailMap(slot.plus(UnsignedLong.ONE)).keySet();
+    removedIndices.addAll(removed);
+    // Sort and reverse removed indices so that as we remove keys, the index remains consistent
+    Collections.sort(removedIndices);
     Collections.reverse(removedIndices);
 
     removedIndices.forEach(slotToCanonicalBlockRoot::remove);
-    slotToCanonicalBlockRoot.putAll(updatedIndices);
+    // Update indices in descending order so that index remains consistent as we update
+    updatedIndices
+        .descendingMap()
+        .forEach(
+            (updatedSlot, updatedRoot) -> {
+              if (updatedRoot == null) {
+                slotToCanonicalBlockRoot.remove(updatedSlot);
+              } else {
+                slotToCanonicalBlockRoot.put(updatedSlot, updatedRoot);
+              }
+            });
   }
 }

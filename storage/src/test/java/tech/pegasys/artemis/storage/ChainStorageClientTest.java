@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.util.config.Constants;
@@ -104,7 +105,7 @@ public class ChainStorageClientTest {
 
   @Test
   public void updateBestBlock_toDifferentForkOfGreaterHeight() {
-    testUpdateBestBlockToFork(3L, 4L);
+    testUpdateBestBlockToFork(3L, 5L);
   }
 
   @Test
@@ -112,7 +113,66 @@ public class ChainStorageClientTest {
     testUpdateBestBlockToFork(1L, 1L);
   }
 
+  @Test
+  public void updateBestBlock_toDifferentForkOfGreaterHeightWith_skippedBlocks() {
+    testUpdateBestBlockToFork(9L, 15L, 2L);
+  }
+
+  @Test
+  public void updateBestBlock_toDifferentForkOfSameHeightWith_skippedBlocks() {
+    testUpdateBestBlockToFork(9L, 9L, 2L);
+  }
+
+  @Test
+  public void updateBestBlock_toDifferentForkOfLesserHeightWith_skippedBlocks() {
+    testUpdateBestBlockToFork(15L, 9L, 2L);
+  }
+
+  @Test
+  public void
+      updateBestBlock_toDifferentForkOfGreaterHeightWith_skippedBlocks_newChainFewerSkips() {
+    testUpdateBestBlockToFork(9L, 15L, 2L, 1L);
+  }
+
+  @Test
+  public void updateBestBlock_toDifferentForkOfGreaterHeightWith_skippedBlocks_newChainMoreSkips() {
+    testUpdateBestBlockToFork(9L, 15L, 1L, 2L);
+  }
+
+  @Test
+  public void updateBestBlock_toDifferentForkOfLesserHeightWith_skippedBlocks_newChainFewerSkips() {
+    testUpdateBestBlockToFork(15L, 9L, 2L, 1L);
+  }
+
+  @Test
+  public void updateBestBlock_toDifferentForkOfLesserHeightWith_skippedBlocks_newChainMoreSkips() {
+    testUpdateBestBlockToFork(15L, 9L, 1L, 2L);
+  }
+
+  @Test
+  public void updateBestBlock_toDifferentForkOfSameHeightWith_skippedBlocks_newChainFewerSkips() {
+    testUpdateBestBlockToFork(9L, 9L, 2L, 1L);
+  }
+
+  @Test
+  public void updateBestBlock_toDifferentForkOfSameHeightWith_skippedBlocks_newChainMoreSkips() {
+    testUpdateBestBlockToFork(9L, 9L, 1L, 2L);
+  }
+
   private void testUpdateBestBlockToFork(final long origChainLength, final long newChainLength) {
+    testUpdateBestBlockToFork(origChainLength, newChainLength, 0, 0);
+  }
+
+  private void testUpdateBestBlockToFork(
+      final long origChainLength, final long newChainLength, final long skippedSlots) {
+    testUpdateBestBlockToFork(origChainLength, newChainLength, skippedSlots, skippedSlots);
+  }
+
+  private void testUpdateBestBlockToFork(
+      final long origChainLength,
+      final long newChainLength,
+      final long origChainSkippedSlots,
+      final long newChainSkippedSlots) {
     // Setup genesis block
     setup.initForGenesis();
     final BeaconBlock genesisBlock = setup.genesisBlock().orElseThrow();
@@ -121,44 +181,59 @@ public class ChainStorageClientTest {
 
     // Add a new chain of blocks
     final List<BeaconBlock> oldChain =
-        setup.createChain(chainStartSlot, chainStartSlot + origChainLength);
-    assertThat(oldChain.size()).isEqualTo(origChainLength);
+        setup.createChain(chainStartSlot, chainStartSlot + origChainLength, origChainSkippedSlots);
+    assertThat(oldChain.size())
+        .isEqualTo(calculateBlocksInChain(origChainLength, origChainSkippedSlots));
     final BeaconBlock oldHead = oldChain.get(oldChain.size() - 1);
     // Update client so that blocks are indexed
     client.updateBestBlock(oldHead.signing_root("signature"), oldHead.getSlot());
 
     // Add another chain of blocks
     final List<BeaconBlock> newChain =
-        setup.createChain(chainStartSlot, chainStartSlot + newChainLength);
-    assertThat(newChain.size()).isEqualTo(newChainLength);
+        setup.createChain(chainStartSlot, chainStartSlot + newChainLength, newChainSkippedSlots);
+    assertThat(newChain.size())
+        .isEqualTo(calculateBlocksInChain(newChainLength, newChainSkippedSlots));
     final BeaconBlock newHead = newChain.get(newChain.size() - 1);
     // Update client so that blocks are indexed
     client.updateBestBlock(newHead.signing_root("signature"), newHead.getSlot());
 
     // Verify that all canonical blocks are indexed
-    UnsignedLong currentSlot = genesisBlock.getSlot();
     assertThat(client.getBlockBySlot(genesisBlock.getSlot())).contains(genesisBlock);
+    final UnsignedLong newSlotDelta = UnsignedLong.valueOf(newChainSkippedSlots + 1);
+    UnsignedLong currentSlot = UnsignedLong.valueOf(chainStartSlot);
     for (BeaconBlock newBlock : newChain) {
       // Sanity check that slots are sequential
-      currentSlot = currentSlot.plus(UnsignedLong.ONE);
       assertThat(newBlock.getSlot()).isEqualTo(currentSlot);
       // Check that this block is indexed by slot
       assertThat(client.getBlockBySlot(newBlock.getSlot())).contains(newBlock);
+      currentSlot = currentSlot.plus(newSlotDelta);
     }
 
     // Verify that old blocks are no longer indexed
-    currentSlot = genesisBlock.getSlot();
+    currentSlot = UnsignedLong.valueOf(chainStartSlot);
+    final UnsignedLong origSlotDelta = UnsignedLong.valueOf(origChainSkippedSlots + 1);
     for (BeaconBlock oldBlock : oldChain) {
       // Sanity check that slots are sequential
-      currentSlot = currentSlot.plus(UnsignedLong.ONE);
       assertThat(oldBlock.getSlot()).isEqualTo(currentSlot);
+
       // Check that old block is no longer indexed
-      if (currentSlot.compareTo(newHead.getSlot()) > 0) {
-        assertThat(client.getBlockBySlot(oldBlock.getSlot())).isEmpty();
-      } else {
+      final UnsignedLong indexToCheck = UnsignedLong.valueOf(currentSlot.longValue());
+      boolean shouldHaveBlockIndexedAtSlot =
+          newChain.stream()
+              .map(BeaconBlock::getSlot)
+              .anyMatch(s -> Objects.equals(s, indexToCheck));
+      if (shouldHaveBlockIndexedAtSlot) {
         assertThat(client.getBlockBySlot(oldBlock.getSlot()))
             .hasValueSatisfying(s -> assertThat(s).isNotEqualTo(oldBlock));
+      } else {
+        assertThat(client.getBlockBySlot(oldBlock.getSlot())).isEmpty();
       }
+      currentSlot = currentSlot.plus(origSlotDelta);
     }
+  }
+
+  private long calculateBlocksInChain(final long chainLength, final long skippedBlocks) {
+    // First block is always created
+    return (chainLength - 1) / (skippedBlocks + 1) + 1;
   }
 }

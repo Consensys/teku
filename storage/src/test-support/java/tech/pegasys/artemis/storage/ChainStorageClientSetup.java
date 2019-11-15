@@ -50,18 +50,25 @@ public class ChainStorageClientSetup {
         .findFirst();
   }
 
+  public List<BeaconBlock> createChain(final long fromSlot, final long toSlot) {
+    return createChain(fromSlot, toSlot, 0);
+  }
+
   /**
    * Creates blocks in a chain from {@code fromSlot} (inclusive) to {@code toSlot} (exclusive), and
    * add the blocks to the {@link Store}.
    *
    * @param fromSlot The slot at which the new chain begins.
    * @param toSlot The slot at which the new chain stops.
+   * @param skippedSlots The number of slots to skip between blocks
    * @return The list of created blocks which form a chain in ascending order.
    */
-  public List<BeaconBlock> createChain(final long fromSlot, final long toSlot) {
+  public List<BeaconBlock> createChain(
+      final long fromSlot, final long toSlot, final long skippedSlots) {
     final List<BeaconBlock> newChain = new ArrayList<>();
     Optional<BeaconBlock> previousBlock = Optional.empty();
-    for (long i = fromSlot; i < toSlot; i++) {
+    final long delta = 1 + skippedSlots;
+    for (long i = fromSlot; i < toSlot; i += delta) {
       UnsignedLong slot = UnsignedLong.valueOf(i);
       BeaconBlock newBlock = addBlockAtSlot(slot, previousBlock);
       newChain.add(newBlock);
