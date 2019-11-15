@@ -334,36 +334,25 @@ public class ChainStorageClient implements ChainStorage {
         // We've reached the genesis slot, nothing left to index
         break;
       }
-      UnsignedLong previousSlot = currentSlot;
       currentRoot = store.getBlock(currentRoot).getParent_root();
       BeaconBlock currentBlock = store.getBlock(currentRoot);
       currentSlot = currentBlock.getSlot();
-
-      UnsignedLong skippedSlot = previousSlot.minus(UnsignedLong.ONE);
-      while (skippedSlot.compareTo(currentSlot) > 0) {
-        // Make sure any skipped slots are cleared
-        updatedIndices.put(skippedSlot, null);
-        skippedSlot = skippedSlot.minus(UnsignedLong.ONE);
-      }
     }
 
-    // Remove any slots that should no longer be indexed
+    if (updatedIndices.isEmpty()) {
+      // Nothing to do
+      return;
+    }
+
+    final UnsignedLong oldestUpdatedSlot = updatedIndices.firstKey();
+    // Remove indexes for any slots that have been updated
     slotToCanonicalBlockRoot
-        .tailMap(slot, false)
+        .tailMap(oldestUpdatedSlot, true)
         .navigableKeySet()
         .descendingIterator()
         .forEachRemaining(slotToCanonicalBlockRoot::remove);
 
-    // Update indices in descending order so that index remains consistent as we update
-    updatedIndices
-        .descendingMap()
-        .forEach(
-            (updatedSlot, updatedRoot) -> {
-              if (updatedRoot == null) {
-                slotToCanonicalBlockRoot.remove(updatedSlot);
-              } else {
-                slotToCanonicalBlockRoot.put(updatedSlot, updatedRoot);
-              }
-            });
+    // Add new indexes
+    slotToCanonicalBlockRoot.putAll(updatedIndices);
   }
 }
