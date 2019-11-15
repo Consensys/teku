@@ -41,8 +41,10 @@ import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.StateProcessor;
-import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.AggregationEvent;
+import tech.pegasys.artemis.statetransition.events.AttestationEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -73,6 +75,7 @@ public class BeaconChainController {
   private StateProcessor stateProcessor;
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
   private BeaconRestApi beaconRestAPI;
+  private AttestationAggregator attestationAggregator;
   private boolean testMode;
 
   public BeaconChainController(
@@ -88,6 +91,7 @@ public class BeaconChainController {
     initTimer();
     initStorage();
     initMetrics();
+    initAttestationAggregator();
     initValidatorCoordinator();
     initStateProcessor();
     initP2PNetwork();
@@ -149,12 +153,14 @@ public class BeaconChainController {
 
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
-    new ValidatorCoordinator(eventBus, chainStorageClient, config);
+    new ValidatorCoordinator(eventBus, chainStorageClient, attestationAggregator, config);
   }
 
   public void initStateProcessor() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
-    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient, metricsSystem, config);
+    this.stateProcessor =
+        new StateProcessor(
+            eventBus, chainStorageClient, attestationAggregator, metricsSystem, config);
   }
 
   public void initP2PNetwork() {
@@ -181,6 +187,11 @@ public class BeaconChainController {
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
+  }
+
+  public void initAttestationAggregator() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initAttestationAggregator()");
+    attestationAggregator = new AttestationAggregator();
   }
 
   public void initRestAPI() {
@@ -260,8 +271,10 @@ public class BeaconChainController {
                   + "                       "
                   + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
 
-          this.eventBus.post(new ValidatorAssignmentEvent(headBlockRoot));
+          this.eventBus.post(new AttestationEvent(headBlockRoot));
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
+          Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
+          this.eventBus.post(new AggregationEvent());
         }
       }
     } catch (InterruptedException e) {

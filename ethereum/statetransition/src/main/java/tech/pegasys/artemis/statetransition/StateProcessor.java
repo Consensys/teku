@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -61,15 +62,17 @@ public class StateProcessor {
   private static final ALogger STDOUT = new ALogger("stdout");
   private List<DepositWithIndex> deposits;
   private BeaconStateWithCache initialState;
+  private AttestationAggregator attestationAggregator;
 
   private boolean genesisReady = false;
 
   public StateProcessor(
       EventBus eventBus,
       ChainStorageClient chainStorageClient,
+      AttestationAggregator attestationAggregator,
       MetricsSystem metricsSystem,
       ArtemisConfiguration config) {
-
+    this.attestationAggregator = attestationAggregator;
     this.eventBus = eventBus;
     this.config = config;
     this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
@@ -203,10 +206,17 @@ public class StateProcessor {
       transaction.commit();
       eventBus.post(new StoreDiskUpdateEvent(transaction));
 
-      chainStorageClient.addUnprocessedAttestation(attestation);
+      attestationAggregator.processAttestation(attestation);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onAggregate(AggregateAndProof aggregateAndProof) {
+    Attestation aggregate = aggregateAndProof.getAggregate();
+    onAttestation(aggregate);
   }
 
   private void setSimulationGenesisTime(BeaconState state) {

@@ -13,17 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
-import org.apache.tuweni.bytes.Bytes32;
+public class AggregationEvent {
 
-public class ValidatorAssignmentEvent {
-
-  Bytes32 headBlockRoot;
-
-  public ValidatorAssignmentEvent(Bytes32 headBlockRoot) {
-    this.headBlockRoot = headBlockRoot;
-  }
-
-  public Bytes32 getHeadBlockRoot() {
-    return this.headBlockRoot;
-  }
+  public AggregationEvent() {}
 }

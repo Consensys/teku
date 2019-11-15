@@ -13,25 +13,21 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -39,8 +35,6 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSAggregate;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
@@ -53,15 +47,14 @@ public class ChainStorageClient implements ChainStorage {
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, UnsignedLong> processedAttestationsToEpoch =
       new ConcurrentHashMap<>();
-  private final ConcurrentHashMap<Bytes32, Attestation> unprocessedAttestationsMap =
-      new ConcurrentHashMap<>();
   private final int QUEUE_MAX_SIZE =
       Constants.MAX_VALIDATORS_PER_COMMITTEE
           * Constants.MAX_COMMITTEES_PER_SLOT
           * Constants.SLOTS_PER_EPOCH;
-  private final Queue<Attestation> unprocessedAttestationsQueue =
+  private final Queue<AggregateAndProof> aggregateAttesationsQueue =
       new PriorityBlockingQueue<>(
-          QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getTarget().getEpoch()));
+          QUEUE_MAX_SIZE,
+          Comparator.comparing(a -> a.getAggregate().getData().getTarget().getEpoch()));
   private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
@@ -93,11 +86,6 @@ public class ChainStorageClient implements ChainStorage {
 
   // PROCESSED ATTESTATION STORAGE:
 
-  /**
-   * Add processed block to storage
-   *
-   * @param attestation
-   */
   public void addProcessedAttestation(Attestation attestation) {
 
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
@@ -118,42 +106,6 @@ public class ChainStorageClient implements ChainStorage {
                   attestation.getData().getTarget().getEpoch(),
                   processedAttestationsToEpoch);
             });
-  }
-
-  public void addUnprocessedAttestation(Attestation newAttestation) {
-    // Make sure the new attestation only represents a single attester
-    if (isSingleAttester(newAttestation)) {
-
-      Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
-      Optional<Attestation> aggregateAttestation =
-          ChainStorage.get(attestationDataHashTreeRoot, unprocessedAttestationsMap);
-
-      if (aggregateAttestation.isPresent()
-          && representsNewAttester(aggregateAttestation.get(), newAttestation)) {
-
-        Attestation oldAggregateAttestation = aggregateAttestation.get();
-
-        // Set the bit of the new attester in the aggregate attestation
-        oldAggregateAttestation
-            .getAggregation_bits()
-            .setBit(getAttesterIndexIntoCommittee(newAttestation));
-
-        // Aggregate signatures
-        List<BLSSignature> signaturesToAggregate = new ArrayList<>();
-        signaturesToAggregate.add(oldAggregateAttestation.getAggregate_signature());
-        signaturesToAggregate.add(newAttestation.getAggregate_signature());
-        oldAggregateAttestation.setAggregate_signature(
-            BLSAggregate.bls_aggregate_signatures(signaturesToAggregate));
-      }
-      // If the attestation message hasn't been seen before:
-      // - add it to the unprocessed attestation queue to put in a block later
-      // - add it to the unprocessed attestation map to aggregate further when
-      // another attestation with the same message is received
-      else if (aggregateAttestation.isEmpty()) {
-        ChainStorage.add(newAttestation, unprocessedAttestationsQueue);
-        ChainStorage.add(attestationDataHashTreeRoot, newAttestation, unprocessedAttestationsMap);
-      }
-    }
   }
 
   // NETWORKING RELATED INFORMATION METHODS:
@@ -252,28 +204,28 @@ public class ChainStorageClient implements ChainStorage {
     SSZList<Attestation> attestations =
         new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
-    while (unprocessedAttestationsQueue.peek() != null
-        && unprocessedAttestationsQueue.peek().getData().getSlot().compareTo(slot) <= 0
+    while (aggregateAttesationsQueue.peek() != null
+        && aggregateAttesationsQueue.peek().getAggregate().getData().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
 
-      Attestation attestation = unprocessedAttestationsQueue.remove();
-      Bytes32 attestationHashTreeRoot = attestation.getData().hash_tree_root();
-      unprocessedAttestationsMap.remove(attestationHashTreeRoot);
+      AggregateAndProof aggregate = aggregateAttesationsQueue.remove();
+      Bytes32 attestationHashTreeRoot = aggregate.getAggregate().getData().hash_tree_root();
+      aggregateAttestationsMap.remove(attestationHashTreeRoot);
       // Check if attestation has already been processed in successful block
       if (ChainStorage.get(attestationHashTreeRoot, this.processedAttestationsBitlistMap)
           .isPresent()) {
         Bitlist bitlist =
             ChainStorage.get(
-                    attestation.getData().hash_tree_root(), this.processedAttestationsBitlistMap)
+                    aggregate.getData().hash_tree_root(), this.processedAttestationsBitlistMap)
                 .get();
         List<Integer> oldAttesters = getAttesterIndicesIntoCommittee(bitlist);
         List<Integer> newAttesters =
-            getAttesterIndicesIntoCommittee(attestation.getAggregation_bits());
+            getAttesterIndicesIntoCommittee(aggregate.getAggregation_bits());
         if (oldAttesters.containsAll(newAttesters)) {
           continue;
         }
       }
-      attestations.add(attestation);
+      attestations.add(aggregate);
       numAttestations++;
     }
     return attestations;
