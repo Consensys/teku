@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -331,7 +332,7 @@ public class ChainStorageClient implements ChainStorage {
 
     UnsignedLong currentSlot = slot;
     Bytes32 currentRoot = bestBlockRoot;
-    while (slotToCanonicalBlockRoot.get(currentSlot) != currentRoot) {
+    while (!Objects.equals(slotToCanonicalBlockRoot.get(currentSlot), currentRoot)) {
       updatedIndices.put(currentSlot, currentRoot);
       if (currentSlot.compareTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT)) <= 0) {
         // We've reached the genesis slot, nothing left to index
