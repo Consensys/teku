@@ -31,6 +31,7 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
 public class Store implements ReadOnlyStore {
@@ -74,8 +75,8 @@ public class Store implements ReadOnlyStore {
     Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
     blocks.put(root, genesisBlock);
-    block_states.put(root, genesisState);
-    checkpoint_states.put(justified_checkpoint, genesisState);
+    block_states.put(root, BeaconStateWithCache.deepCopy(genesisState));
+    checkpoint_states.put(justified_checkpoint, BeaconStateWithCache.deepCopy(genesisState));
 
     return new Store(
         genesisState.getGenesis_time(),
