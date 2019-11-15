@@ -286,9 +286,9 @@ public class BeaconChainController {
                   + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
 
           this.eventBus.post(new AttestationEvent(headBlockRoot));
-          nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
           this.eventBus.post(new AggregationEvent());
+          nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
         }
       }
     } catch (InterruptedException e) {

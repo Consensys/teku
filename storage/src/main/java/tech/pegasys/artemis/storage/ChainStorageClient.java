@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.util.alogger.ALogger;
@@ -26,7 +27,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
   private static final ALogger STDOUT = new ALogger("stdout");
-  static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
   private Store store;
   protected EventBus eventBus;
 
@@ -99,28 +99,6 @@ public class ChainStorageClient implements ChainStorage {
     return this.bestSlot;
   }
 
-  /**
-   * Retrives the most recent finalized block root
-   *
-   * @return
-   */
-  public Bytes32 getFinalizedBlockRoot() {
-    return this.store.getFinalizedCheckpoint().getRoot();
-  }
-
-  /**
-   * Retrives the epoch of the most recent finalized block root
-   *
-   * @return
-   */
-  public UnsignedLong getFinalizedEpoch() {
-    return this.store.getFinalizedCheckpoint().getEpoch();
-  }
-
-  // SUBSCRIPTION METHODS:
-  // Place items on queue's for processing, and HashMap
-  // for network related quick retrieval
-
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
     STDOUT.log(
@@ -137,5 +115,15 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.GREEN);
+  }
+
+  @Subscribe
+  public void onNewAggregateAndProof(AggregateAndProof attestation) {
+    STDOUT.log(
+        Level.INFO,
+        "New AggregateAndProof with block root:  "
+            + attestation.getAggregate().getData().getBeacon_block_root()
+            + " detected.",
+        ALogger.Color.BLUE);
   }
 }

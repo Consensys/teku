@@ -176,6 +176,7 @@ public class ValidatorCoordinator {
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
+    UnsignedLong slot = slotEvent.getSlot();
     BeaconState headState =
         chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
     BeaconBlock headBlock =
@@ -183,23 +184,9 @@ public class ValidatorCoordinator {
 
     // Copy state so that state transition during block creation
     // does not manipulate headState in storage
-    if (!isGenesis(headState)) {
+    if (!isGenesis(slot)) {
       createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock);
     }
-
-    // At the start of each epoch or at genesis, update attestation assignments
-    // for all validators
-    if (isGenesisOrEpochStart(headState)) {
-      updateAttestationAssignments(headState);
-    }
-
-    // Get attester information to prepare AttestationAggregator for new slot's aggregation
-    List<AttesterInformation> attesterInformations =
-        attestationAssignments.get(slotEvent.getSlot());
-
-    // Reset the attestation validator and pass attester information necessary
-    // for validator to know which committees and validators to aggregate for
-    attestationAggregator.updateAggregatorInformations(attesterInformations);
   }
 
   @Subscribe
@@ -215,12 +202,21 @@ public class ValidatorCoordinator {
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
+      UnsignedLong slot = headState.getSlot();
 
+      // At the start of each epoch or at genesis, update attestation assignments
+      // for all validators
+      if (isGenesisOrEpochStart(slot)) {
+        updateAttestationAssignments(headState);
+      }
+
+      // Get attester information to prepare AttestationAggregator for new slot's aggregation
+      List<AttesterInformation> attesterInformations = attestationAssignments.get(slot);
+
+      // Reset the attestation validator and pass attester information necessary
+      // for validator to know which committees and validators to aggregate for
+      attestationAggregator.updateAggregatorInformations(attesterInformations);
       attestationAggregator.activateAggregation();
-
-      // Get attester information in order to produce attestations
-      List<AttesterInformation> attesterInformations =
-          attestationAssignments.get(headState.getSlot());
 
       asyncProduceAttestations(
           attesterInformations, headState, getGenericAttestationData(headState, headBlock));
@@ -529,13 +525,13 @@ public class ValidatorCoordinator {
         == 0;
   }
 
-  private static boolean isGenesisOrEpochStart(BeaconState state) {
-    return state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
-        || isGenesis(state);
+  private static boolean isGenesisOrEpochStart(UnsignedLong slot) {
+    return slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO)
+        || isGenesis(slot);
   }
 
-  private static boolean isGenesis(BeaconState state) {
-    return state.getSlot().equals(UnsignedLong.valueOf(GENESIS_SLOT));
+  private static boolean isGenesis(UnsignedLong slot) {
+    return slot.equals(UnsignedLong.valueOf(GENESIS_SLOT));
   }
 
   private void updateAttestationAssignments(BeaconState state) {
