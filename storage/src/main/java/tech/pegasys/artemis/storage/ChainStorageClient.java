@@ -66,13 +66,14 @@ public class ChainStorageClient implements ChainStorage {
       new PriorityBlockingQueue<>(
           QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getTarget().getEpoch()));
 
-  private Store store;
-  private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
-  private UnsignedLong bestSlot =
+  private volatile Store store;
+  private volatile Bytes32 bestBlockRoot =
+      Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
+  private volatile UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
 
   // Time
-  private UnsignedLong genesisTime;
+  private volatile UnsignedLong genesisTime;
 
   public ChainStorageClient(EventBus eventBus) {
     this.eventBus = eventBus;
@@ -169,7 +170,7 @@ public class ChainStorageClient implements ChainStorage {
    * @param root
    * @param slot
    */
-  public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+  public synchronized void updateBestBlock(Bytes32 root, UnsignedLong slot) {
     this.bestBlockRoot = root;
     this.bestSlot = slot;
     updateCanonicalBlockIndex(root, slot);
