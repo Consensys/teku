@@ -23,7 +23,6 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -31,7 +30,6 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -326,8 +324,6 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   private void updateCanonicalBlockIndex(final Bytes32 bestBlockRoot, final UnsignedLong slot) {
-
-    final List<UnsignedLong> removedIndices = new ArrayList<>();
     final NavigableMap<UnsignedLong, Bytes32> updatedIndices = new TreeMap<>();
 
     UnsignedLong currentSlot = slot;
@@ -352,14 +348,12 @@ public class ChainStorageClient implements ChainStorage {
     }
 
     // Remove any slots that should no longer be indexed
-    Set<UnsignedLong> removed =
-        slotToCanonicalBlockRoot.tailMap(slot.plus(UnsignedLong.ONE)).keySet();
-    removedIndices.addAll(removed);
-    // Sort and reverse removed indices so that as we remove keys, the index remains consistent
-    Collections.sort(removedIndices);
-    Collections.reverse(removedIndices);
+    slotToCanonicalBlockRoot
+        .tailMap(slot, false)
+        .navigableKeySet()
+        .descendingIterator()
+        .forEachRemaining(slotToCanonicalBlockRoot::remove);
 
-    removedIndices.forEach(slotToCanonicalBlockRoot::remove);
     // Update indices in descending order so that index remains consistent as we update
     updatedIndices
         .descendingMap()
