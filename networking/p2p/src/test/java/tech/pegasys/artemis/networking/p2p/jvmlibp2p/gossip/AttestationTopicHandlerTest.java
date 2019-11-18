@@ -30,6 +30,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -49,7 +50,7 @@ public class AttestationTopicHandlerTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final EventBus eventBus = spy(new EventBus());
-  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final ChainStorageClient storageClient = spy(new ChainStorageClient(eventBus));
 
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(publisher, eventBus, storageClient, 10);
@@ -130,13 +131,16 @@ public class AttestationTopicHandlerTest {
   }
 
   @Test
-  public void accept_invalidAttestation_badState() throws Exception {
+  public void accept_invalidAttestation_missingState() throws Exception {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final Attestation attestation = attestationGenerator.validAttestation(storageClient);
-    Store.Transaction transaction = storageClient.getStore().startTransaction();
-    transaction.putBlockState(attestation.getData().getBeacon_block_root(), null);
-    transaction.commit();
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
+
+    // Set up state to be missing
+    final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
+    Store mockStore = spy(storageClient.getStore());
+    doReturn(mockStore).when(storageClient).getStore();
+    doReturn(null).when(mockStore).getBlockState(blockRoot);
 
     final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
     topicHandler.accept(mockMessage);
