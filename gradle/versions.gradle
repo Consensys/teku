@@ -45,10 +45,12 @@ dependencyManagement {
     dependency "io.prometheus:simpleclient_hotspot:0.6.0"
     dependency "io.prometheus:simpleclient_vertx:0.6.0"
 
-    dependency 'io.vertx:vertx-codegen:3.8.0'
-    dependency 'io.vertx:vertx-core:3.8.0'
-    dependency 'io.vertx:vertx-unit:3.8.0'
-    dependency 'io.vertx:vertx-web:3.8.0'
+    dependencySet(group: 'io.vertx', version: '3.8.1') {
+      entry 'vertx-codegen'
+      entry 'vertx-core'
+      entry 'vertx-unit'
+      entry 'vertx-web'
+    }
     dependency 'io.projectreactor:reactor-core:3.3.0.RELEASE'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
