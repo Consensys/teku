@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 
@@ -47,7 +48,6 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
@@ -58,7 +58,6 @@ public class StateProcessor {
   private final StateTransition stateTransition;
   private ChainStorageClient chainStorageClient;
   private ArtemisConfiguration config;
-  private static final ALogger STDOUT = new ALogger("stdout");
   private List<DepositWithIndex> deposits;
   private BeaconStateWithCache initialState;
 

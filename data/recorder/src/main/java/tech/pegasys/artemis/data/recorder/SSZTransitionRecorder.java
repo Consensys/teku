@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.data.recorder;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -22,12 +23,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SSZTransitionRecorder {
 
-  private static final ALogger STDOUT = new ALogger("stdout");
   private final Path outputDirectory;
 
   public SSZTransitionRecorder(final Path outputDirectory) {

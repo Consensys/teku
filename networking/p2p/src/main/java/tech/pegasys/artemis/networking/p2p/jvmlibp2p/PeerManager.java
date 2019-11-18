@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.PeerId;
@@ -37,11 +39,9 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageH
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class PeerManager implements ConnectionHandler, PeerLookup {
-  private static final ALogger STDOUT = new ALogger("stdout");
   private static final Logger LOG = LogManager.getLogger();
 
   private final ScheduledExecutorService scheduler;

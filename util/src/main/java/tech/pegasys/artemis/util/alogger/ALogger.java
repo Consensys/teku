@@ -19,6 +19,8 @@ import org.apache.logging.log4j.Logger;
 
 public class ALogger {
 
+  public static final ALogger STDOUT = new ALogger("stdout");
+
   public enum Color {
     RED,
     BLUE,
@@ -31,7 +33,7 @@ public class ALogger {
 
   private final Logger logger;
 
-  public ALogger(String className) {
+  protected ALogger(String className) {
     this.logger = LogManager.getLogger(className);
   }
 

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -50,8 +51,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class Database {
-
-  private static final ALogger STDOUT = new ALogger("stdout");
 
   // Locks
   private final ReadWriteLock lock = new ReentrantReadWriteLock();

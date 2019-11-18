@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -21,13 +23,11 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class RandomValidatorKeyProvider implements ValidatorKeyProvider {
 
-  private static final ALogger STDOUT = new ALogger("stdout");
   private int startIndex = 0;
 
   @Override

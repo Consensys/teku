@@ -13,15 +13,14 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import java.util.Objects;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class BeaconChainService implements ServiceInterface {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
   private BeaconChainController controller;
 
   public BeaconChainService() {}

@@ -13,14 +13,14 @@
 
 package tech.pegasys.artemis.services.chainstorage;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.storage.ChainStorageServer;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class ChainStorageService implements ServiceInterface {
-  private static final ALogger STDOUT = new ALogger("stdout");
 
   @Override
   public void init(ServiceConfig config) {

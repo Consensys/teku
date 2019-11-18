@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -25,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -34,7 +34,6 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
-  private static final ALogger STDOUT = new ALogger("stdout");
   private static final int KEY_LENGTH = 48;
 
   @SuppressWarnings("unchecked")

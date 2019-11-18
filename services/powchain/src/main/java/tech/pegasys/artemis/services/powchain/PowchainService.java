@@ -15,6 +15,7 @@ package tech.pegasys.artemis.services.powchain;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
 
@@ -43,7 +44,6 @@ import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
@@ -51,7 +51,6 @@ import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 public class PowchainService implements ServiceInterface {
-  private static final ALogger STDOUT = new ALogger("stdout");
   private static final Logger LOG = LogManager.getLogger();
   public static final String EVENTS = "events";
   public static final String USER_DIR = "user.dir";

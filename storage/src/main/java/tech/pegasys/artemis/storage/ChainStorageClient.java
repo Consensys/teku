@@ -17,6 +17,7 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttest
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -45,7 +46,6 @@ import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
-  private static final ALogger STDOUT = new ALogger("stdout");
   private Store store;
   protected EventBus eventBus;
   protected final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlistMap =
