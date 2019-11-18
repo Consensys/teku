@@ -22,12 +22,10 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.config.Configuration;
 import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
 import org.apache.tuweni.config.SchemaBuilder;
-import org.apache.tuweni.crypto.SECP256K1;
 
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
@@ -42,8 +40,6 @@ public class ArtemisConfiguration {
                 "represents what network to use",
                 PropertyValidator.anyOf("mock", "jvmlibp2p"));
 
-    builder.addString("node.identity", null, "Identity of the peer", null);
-    builder.addString("node.timer", "QuartzTimer", "Timer used for slots", null);
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
     builder.addInteger(
@@ -53,7 +49,6 @@ public class ArtemisConfiguration {
         PropertyValidator.inRange(0, 65535));
     builder.addString("node.discovery", "", "static or discv5", null);
     builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
-    builder.addBoolean("node.isBootnode", true, "Makes this node a bootnode", null);
     builder.addInteger(
         "node.naughtinessPercentage",
         0,
@@ -176,17 +171,10 @@ public class ArtemisConfiguration {
     }
   }
 
-  /** @return the identity of the node, the hexadecimal representation of its secret key */
   public int getNaughtinessPercentage() {
     return config.getInteger("node.naughtinessPercentage");
   }
 
-  /** @return the identity of the node, the hexadecimal representation of its secret key */
-  public String getIdentity() {
-    return config.getString("node.identity");
-  }
-
-  /** @return the identity of the node, the hexadecimal representation of its secret key */
   public String getTimer() {
     return config.getString("node.timer");
   }
@@ -198,10 +186,6 @@ public class ArtemisConfiguration {
 
   public String getDiscovery() {
     return config.getString("node.discovery");
-  }
-
-  public boolean isBootnode() {
-    return config.getBoolean("node.isBootnode");
   }
 
   public String getBootnodes() {
@@ -312,12 +296,6 @@ public class ArtemisConfiguration {
   /** @return Artemis specific constants */
   public List<String> getStaticPeers() {
     return config.getListOfString("node.peers");
-  }
-
-  /** @return the identity key pair of the node */
-  public SECP256K1.KeyPair getKeyPair() {
-    return SECP256K1.KeyPair.fromSecretKey(
-        SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(getIdentity())));
   }
 
   /** @return the identifier of the network (mainnet, testnet, sidechain) */
