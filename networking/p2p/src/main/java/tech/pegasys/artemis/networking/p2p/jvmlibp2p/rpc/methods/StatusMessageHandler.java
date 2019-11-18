@@ -13,16 +13,15 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, StatusMessage> {
-
-  private final ALogger LOG = new ALogger(StatusMessageHandler.class.getName());
+  private static final Logger LOG = LogManager.getLogger();
   private final StatusMessageFactory statusMessageFactory;
 
   public StatusMessageHandler(final StatusMessageFactory statusMessageFactory) {
@@ -34,7 +33,7 @@ public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, 
       final Peer peer,
       final StatusMessage message,
       final ResponseCallback<StatusMessage> callback) {
-    LOG.log(Level.DEBUG, "Peer " + peer.getPeerId() + " sent status.");
+    LOG.trace("Peer {} sent status.", peer.getPeerId());
     peer.updateStatus(message);
     callback.respond(statusMessageFactory.createStatusMessage());
     callback.completeSuccessfully();

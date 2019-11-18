@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -36,7 +38,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconNode {
-  private static final ALogger LOG = new ALogger("stdout");
+
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
@@ -55,7 +57,7 @@ public class BeaconNode {
     System.setProperty("logPath", config.getLogPath());
     System.setProperty("rollingFile", config.getLogFile());
 
-    this.eventBus = new AsyncEventBus(threadPool, new EventBusExceptionHandler(LOG));
+    this.eventBus = new AsyncEventBus(threadPool, new EventBusExceptionHandler(STDOUT));
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     this.serviceConfig =
@@ -88,9 +90,9 @@ public class BeaconNode {
       serviceController.startAll();
 
     } catch (java.util.concurrent.CompletionException e) {
-      LOG.log(Level.FATAL, e.toString());
+      STDOUT.log(Level.FATAL, e.toString());
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.FATAL, e.getMessage());
+      STDOUT.log(Level.FATAL, e.getMessage());
     }
   }
 

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.eventbus.EventBus;
@@ -57,8 +58,6 @@ import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainController {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
   private Runnable networkTask;
   private final ArtemisConfiguration config;

@@ -13,15 +13,15 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class ServiceController {
-  private static final ALogger STDOUT = new ALogger("stdout");
   private ServiceInterface beaconChainService;
   private ServiceInterface powchainService;
   private ServiceInterface chainStorageService;

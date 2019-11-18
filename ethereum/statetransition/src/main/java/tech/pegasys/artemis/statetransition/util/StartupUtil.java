@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
@@ -54,8 +55,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class StartupUtil {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
   public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 

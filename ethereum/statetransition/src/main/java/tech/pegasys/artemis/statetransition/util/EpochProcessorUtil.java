@@ -59,7 +59,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -69,12 +68,9 @@ import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class EpochProcessorUtil {
-
-  private static final ALogger LOG = new ALogger(EpochProcessorUtil.class.getName());
 
   // State Transition Helper Functions
 
@@ -259,7 +255,6 @@ public final class EpochProcessorUtil {
       }
 
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
       throw new EpochProcessingException(e);
     }
   }
@@ -432,7 +427,6 @@ public final class EpochProcessorUtil {
         decrease_balance(state, i, penalties.get(i));
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
       throw new EpochProcessingException(e);
     }
   }
@@ -510,7 +504,6 @@ public final class EpochProcessorUtil {
         }
       }
     } catch (IllegalArgumentException e) {
-      LOG.log(Level.WARN, e.getMessage());
       throw new EpochProcessingException(e);
     }
   }

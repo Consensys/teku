@@ -24,6 +24,7 @@ import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_registry_updates;
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_rewards_and_penalties;
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -45,9 +46,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class StateTransition {
 
-  private static final ALogger STDOUT = new ALogger("stdout");
-
-  private boolean printEnabled = false;
+  private boolean printEnabled;
   private final Optional<EpochMetrics> epochMetrics;
 
   public StateTransition(boolean printEnabled) {

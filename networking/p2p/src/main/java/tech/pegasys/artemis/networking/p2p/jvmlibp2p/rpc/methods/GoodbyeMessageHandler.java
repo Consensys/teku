@@ -14,7 +14,8 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -23,11 +24,10 @@ import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.LocalMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> {
 
-  private final ALogger LOG = new ALogger(GoodbyeMessageHandler.class.getName());
+  private static final Logger LOG = LogManager.getLogger();
   private final LabelledMetric<Counter> goodbyeCounter;
 
   public GoodbyeMessageHandler(final MetricsSystem metricsSystem) {
@@ -44,7 +44,7 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
       final Peer peer,
       final GoodbyeMessage message,
       final ResponseCallback<GoodbyeMessage> callback) {
-    LOG.log(Level.DEBUG, "Peer " + peer.getPeerId() + " said goodbye.");
+    LOG.trace("Peer {} said goodbye.", peer.getPeerId());
     goodbyeCounter.labels(labelForReason(message.getReason())).inc();
     callback.completeSuccessfully();
   }

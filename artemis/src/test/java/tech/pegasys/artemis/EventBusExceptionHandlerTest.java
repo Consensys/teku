@@ -57,7 +57,7 @@ class EventBusExceptionHandlerTest {
   void setupBus() {
 
     final var recordingLogger =
-        new ALogger() {
+        new ALogger("stdout") {
           @Override
           public void log(final Level level, final String message) {
             logLevelFuture.complete(level);
