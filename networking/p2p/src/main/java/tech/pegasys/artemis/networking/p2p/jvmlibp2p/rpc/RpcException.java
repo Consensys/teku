@@ -22,6 +22,8 @@ public class RpcException extends Exception {
   public static final RpcException INCORRECT_LENGTH_ERRROR =
       new RpcException(
           INVALID_REQUEST_CODE, "Specified message length did not match actual length");
+  public static final RpcException CHUNK_TOO_LONG_ERROR =
+      new RpcException(INVALID_REQUEST_CODE, "Chunk exceeds maximum allowed length");
   public static final RpcException SERVER_ERROR =
       new RpcException(SERVER_ERROR_CODE, "Unexpected error");
 

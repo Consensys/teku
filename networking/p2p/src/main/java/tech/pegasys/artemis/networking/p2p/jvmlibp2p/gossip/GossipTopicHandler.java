@@ -33,6 +33,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
     implements Consumer<MessageApi> {
   private static final Logger LOG = LogManager.getLogger();
+  static final int GOSSIP_MAX_SIZE = 1048576;
   private static final int MAX_SENT_MESSAGES = 2048;
 
   private final PubsubPublisherApi publisher;
@@ -51,6 +52,13 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
   @Override
   public final void accept(MessageApi message) {
     Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
+    if (bytes.size() > GOSSIP_MAX_SIZE) {
+      LOG.trace(
+          "Rejecting gossip message of length {} which exceeds maximum size of {}",
+          bytes.size(),
+          GOSSIP_MAX_SIZE);
+      return;
+    }
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", getTopic(), bytes.size());

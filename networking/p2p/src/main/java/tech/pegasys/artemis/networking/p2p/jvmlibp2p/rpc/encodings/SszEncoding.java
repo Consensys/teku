@@ -30,6 +30,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SszEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
+  private static final int MAX_CHUNK_SIZE = 1048576;
 
   @Override
   public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
@@ -65,6 +66,10 @@ public class SszEncoding implements RpcEncoding {
         expectedLength = in.readRawVarint32();
       } catch (final InvalidProtocolBufferException e) {
         throw RpcException.MALFORMED_REQUEST_ERROR;
+      }
+
+      if (expectedLength > MAX_CHUNK_SIZE) {
+        throw RpcException.CHUNK_TOO_LONG_ERROR;
       }
 
       final Bytes payload;
