@@ -26,7 +26,6 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 class SszEncodingTest {
 
   private final SszEncoding encoding = new SszEncoding();
-  private static final Bytes MAXIMUM_LENGTH = Bytes.fromHexString("0x808040");
   private static final Bytes EXCEEDS_MAXIMUM_LENGTH = Bytes.fromHexString("0x818040");
 
   @Test
