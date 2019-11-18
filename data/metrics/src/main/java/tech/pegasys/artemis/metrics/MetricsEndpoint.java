@@ -22,13 +22,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.hyperledger.besu.metrics.StandardMetricCategory;
+import org.hyperledger.besu.metrics.prometheus.MetricsConfiguration;
+import org.hyperledger.besu.metrics.prometheus.MetricsService;
+import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.pantheon.metrics.MetricCategory;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
-import tech.pegasys.pantheon.metrics.StandardMetricCategory;
-import tech.pegasys.pantheon.metrics.prometheus.MetricsConfiguration;
-import tech.pegasys.pantheon.metrics.prometheus.MetricsService;
-import tech.pegasys.pantheon.metrics.prometheus.PrometheusMetricsSystem;
 
 public class MetricsEndpoint {
 

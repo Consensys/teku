@@ -16,8 +16,8 @@ package tech.pegasys.artemis.service.serviceutils;
 import com.google.common.eventbus.EventBus;
 import io.vertx.core.Vertx;
 import java.util.Objects;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class ServiceConfig {
   Vertx vertx;

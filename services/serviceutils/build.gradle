@@ -9,5 +9,5 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
-  implementation 'tech.pegasys.pantheon.internal:metrics-core'
+  implementation 'org.hyperledger.besu:plugin-api'
 }
