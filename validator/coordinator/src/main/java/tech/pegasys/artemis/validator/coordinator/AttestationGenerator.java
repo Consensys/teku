@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.client;
+package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -19,11 +19,8 @@ import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.MutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -39,8 +36,9 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.validator.client.CommitteeAssignment;
+import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
@@ -70,44 +68,43 @@ public class AttestationGenerator {
       final BeaconBlock block, final BeaconState state, final boolean withValidSignature)
       throws EpochProcessingException, SlotProcessingException {
     final UnsignedLong epoch = compute_epoch_at_slot(state.getSlot());
-    HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>> committeeAssignments =
-        new HashMap<>();
+    Optional<CommitteeAssignment> committeeAssignment = Optional.empty();
+    Optional<UnsignedLong> slot = Optional.empty();
     int validatorIndex;
     for (validatorIndex = 0; validatorIndex < validatorKeys.size(); validatorIndex++) {
       final Optional<CommitteeAssignment> maybeAssignment =
           ValidatorClientUtil.get_committee_assignment(state, epoch, validatorIndex);
       if (maybeAssignment.isPresent()) {
-        UnsignedLong slot = maybeAssignment.get().getSlot();
-        final Triple<List<Integer>, UnsignedLong, Integer> committeeAssignment =
-            new MutableTriple<>(
-                maybeAssignment.get().getCommittee(), // List of validator indices in this committee
-                maybeAssignment.get().getCommitteeIndex(), // Assigned shard
-                validatorIndex // The index of the current validator
-                );
-        committeeAssignments.put(slot, List.of(committeeAssignment));
+        slot = Optional.of(maybeAssignment.get().getSlot());
+        committeeAssignment =
+            Optional.of(
+                new CommitteeAssignment(
+                    maybeAssignment
+                        .get()
+                        .getCommittee(), // List of validator indices in this committee
+                    maybeAssignment.get().getCommitteeIndex(), // Assigned shard
+                    UnsignedLong.valueOf(validatorIndex) // The index of the current validator
+                    ));
         break;
       }
     }
-    if (committeeAssignments.isEmpty()) {
+    if (committeeAssignment.isEmpty()) {
       throw new IllegalStateException("Unable to find committee assignment among validators");
     }
 
-    final UnsignedLong slot = committeeAssignments.keySet().iterator().next();
-    final BeaconState postState = processStateToSlot(state, slot);
+    final BeaconState postState = processStateToSlot(state, slot.get());
 
-    Triple<BLSPublicKey, Integer, Committee> attesterInfo =
-        AttestationUtil.getAttesterInformation(postState, committeeAssignments).get(0);
+    List<Integer> committeeIndices = committeeAssignment.get().getCommittee();
+    UnsignedLong committeeIndex = committeeAssignment.get().getCommitteeIndex();
+    Committee committee = new Committee(committeeIndex, committeeIndices);
+    int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
     AttestationData genericAttestationData =
-        AttestationUtil.getGenericAttestationData(postState, block);
+        ValidatorCoordinatorUtil.getGenericAttestationData(postState, block);
 
     final BLSKeyPair validatorKeyPair =
         withValidSignature ? validatorKeys.get(validatorIndex) : randomKeyPair;
     return createAttestation(
-        state,
-        validatorKeyPair,
-        attesterInfo.getMiddle(),
-        attesterInfo.getRight(),
-        genericAttestationData);
+        state, validatorKeyPair, indexIntoCommittee, committee, genericAttestationData);
   }
 
   private BeaconStateWithCache processStateToSlot(BeaconState preState, UnsignedLong slot)

@@ -7,6 +7,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:adapter')
   implementation project(':data:metrics')
+  implementation project(':validator:coordinator')
   implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   compile "com.google.protobuf:protobuf-java"
@@ -34,7 +35,6 @@ dependencies {
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':validator:client', configuration: 'testSupportArtifacts')
 
   integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')

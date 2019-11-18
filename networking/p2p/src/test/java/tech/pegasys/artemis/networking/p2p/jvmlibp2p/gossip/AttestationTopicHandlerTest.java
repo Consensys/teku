@@ -42,7 +42,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.validator.client.AttestationGenerator;
+import tech.pegasys.artemis.validator.coordinator.AttestationGenerator;
 
 public class AttestationTopicHandlerTest {
 
