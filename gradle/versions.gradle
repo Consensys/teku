@@ -16,7 +16,7 @@ dependencyManagement {
     dependency 'com.google.protobuf:protobuf-java:3.10.0'
     dependency 'com.google.protobuf:protoc:3.9.2'
 
-    dependency 'com.googlecode.json-simple:json-simple:1.1.1'
+    dependency 'com.googlecode.json-simple:json-simple:1.1'
 
     dependency 'com.squareup.okhttp3:okhttp:3.12.0'
 
