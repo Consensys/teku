@@ -19,15 +19,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class GanacheController {
-  private static final ALogger LOG = new ALogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   final String ganachePath = System.getProperty("user.dir") + "/ganache-cli";
   private static final String DEFAULT_HOST_NAME = "http://127.0.0.1";
@@ -53,11 +53,11 @@ public class GanacheController {
   public GanacheController(String hostName, String port, int accountSize, int balance) {
     provider = hostName + ":" + port;
     cleanUp();
-    waitIterations = (accountSize / 200 > 20) ? accountSize / 200 : 20;
+    waitIterations = Math.max(accountSize / 200, 20);
     try {
       keyFile = File.createTempFile("keys", ".json");
     } catch (final IOException e) {
-      LOG.log(Level.FATAL, "Failed to create key file: " + e.getMessage());
+      LOG.fatal("Failed to create key file", e);
     }
 
     // starts a child process of ganache-cli and generates a keys.json file
@@ -86,12 +86,11 @@ public class GanacheController {
             }
           };
     } catch (IOException e) {
-      LOG.log(
-          Level.FATAL,
+      LOG.fatal(
           "GanacheController.constructor: IOException thrown when attempting \""
               + pb.command()
-              + "\" to start ganache-cli instance\n"
-              + e);
+              + "\" to start ganache-cli instance",
+          e);
     }
     // calls the cleanup thread after a shutdown signal is detected
     Runtime.getRuntime().addShutdownHook(ganacheThread);
@@ -110,12 +109,11 @@ public class GanacheController {
     try {
       pb.start();
     } catch (IOException e) {
-      LOG.log(
-          Level.WARN,
+      LOG.warn(
           "GanacheController.cleanUp: IOException thrown when attempting \""
               + pb.command()
-              + "\" cleanup of hung ganache-cli instance\n"
-              + e);
+              + "\" cleanup of hung ganache-cli instance",
+          e);
     }
   }
 
@@ -136,14 +134,10 @@ public class GanacheController {
           (JSONObject) ((JSONObject) parser.parse(new FileReader(keyFile))).get("private_keys");
     } catch (Exception e) {
       if (!keyFile.exists())
-        LOG.log(
-            Level.FATAL,
-            "GanacheController.initkeys: Timedout when waiting for keys.json filet\n" + e);
+        LOG.fatal("GanacheController.initkeys: Timedout when waiting for keys.json filet", e);
       else
-        LOG.log(
-            Level.FATAL,
-            "GanacheController.initkeys: Exception thrown when reading/parsing keys.json file\n"
-                + e);
+        LOG.fatal(
+            "GanacheController.initkeys: Exception thrown when reading/parsing keys.json file", e);
     }
     Set<String> keys = accountsJSON.keySet();
     // SECP256K1.SecretKey.fromBytes(Bytes32.fromHexString(accountsJSON.get(key).toString())))

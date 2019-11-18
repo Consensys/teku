@@ -14,7 +14,8 @@
 package tech.pegasys.artemis.pow;
 
 import com.google.common.eventbus.EventBus;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
@@ -22,13 +23,12 @@ import org.web3j.tx.ClientTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.util.alogger.ALogger;
 
 public class DepositContractListenerFactory {
+  private static final Logger LOG = LogManager.getLogger();
 
   public static DepositContractListener simulationDeployDepositContract(
       EventBus eventBus, GanacheController controller) {
-    ALogger LOG = new ALogger();
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
     Credentials credentials =
         Credentials.create(controller.getAccounts().get(0).secretKey().bytes().toHexString());
@@ -36,10 +36,9 @@ public class DepositContractListenerFactory {
     try {
       contract = DepositContract.deploy(web3j, credentials, new DefaultGasProvider()).send();
     } catch (Exception e) {
-      LOG.log(
-          Level.FATAL,
-          "DepositContractListenerFactory.simulationDeployDepositContract: DepositContract failed to deploy in the simulation environment\n"
-              + e);
+      LOG.fatal(
+          "DepositContractListenerFactory.simulationDeployDepositContract: DepositContract failed to deploy in the simulation environment",
+          e);
     }
     return new DepositContractListener(eventBus, contract);
   }

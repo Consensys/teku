@@ -18,17 +18,17 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorClient {
-  private static final ALogger LOG = new ALogger(ValidatorClient.class.getName());
+  private static final Logger LOG = LogManager.getLogger();
   private BLSKeyPair keypair;
   private Server server;
 
@@ -37,7 +37,7 @@ public class ValidatorClient {
     try {
       start(port);
     } catch (IOException e) {
-      LOG.log(Level.WARN, "Error starting VC on port " + port);
+      LOG.warn("Error starting VC on port {}", port);
     }
   }
 
@@ -46,12 +46,10 @@ public class ValidatorClient {
     server =
         ServerBuilder.forPort(port).addService(new MessageSignerService(keypair)).build().start();
 
-    LOG.log(
-        Level.DEBUG,
-        "ValidatorClient started. Listening on "
-            + port
-            + " representing public key: "
-            + keypair.getPublicKey());
+    LOG.debug(
+        "ValidatorClient started. Listening on {} representing public key: {}",
+        port,
+        keypair.getPublicKey());
 
     Runtime.getRuntime()
         .addShutdownHook(

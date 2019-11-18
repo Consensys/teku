@@ -19,7 +19,6 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.provider.Arguments;
@@ -39,7 +39,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
@@ -48,7 +47,7 @@ import tech.pegasys.artemis.util.mikuli.Signature;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
-  private static final ALogger LOG = new ALogger(TestSuite.class.getName());
+  private static final Logger LOG = LogManager.getLogger();
   private static final Path pathToTests =
       Paths.get(
           System.getProperty("user.dir").toString(),
@@ -66,11 +65,11 @@ public abstract class TestSuite {
     while (result.isEmpty() && path.getNameCount() > 0) {
       try (Stream<Path> walk = Files.walk(path)) {
         result =
-            walk.map(x -> x.toString())
+            walk.map(Path::toString)
                 .filter(currentPath -> currentPath.contains("config.yaml"))
                 .collect(Collectors.joining());
       } catch (IOException e) {
-        LOG.log(Level.WARN, e.toString());
+        LOG.warn("Failed to read config from " + path, e);
       }
       if (result.isEmpty()) path = path.getParent();
     }
@@ -103,10 +102,8 @@ public abstract class TestSuite {
     try {
       url = new URL(FILE + path);
       in = url.openConnection().getInputStream();
-    } catch (MalformedURLException e) {
-      LOG.log(Level.WARN, e.toString());
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      LOG.warn("Failed to load " + path, e);
     }
     return in;
   }
@@ -126,7 +123,7 @@ public abstract class TestSuite {
       }
 
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      LOG.warn("Failed to parse YAML", e);
     }
     return object;
   }
@@ -139,7 +136,7 @@ public abstract class TestSuite {
       in.read(targetArray);
       return Bytes.wrap(targetArray);
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      LOG.warn("Failed to load SSZ from " + path, e);
     }
     return null;
   }
@@ -186,7 +183,7 @@ public abstract class TestSuite {
               })
           .map(objects -> Arguments.of(objects.toArray()));
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      LOG.warn("Failed to load tests from " + path, e);
     }
     return null;
   }

@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -40,6 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.json.simple.JSONObject;
@@ -51,13 +52,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 class MockStartBeaconStateGeneratorTest {
-  private static final ALogger LOG = new ALogger(MockStartBeaconStateGeneratorTest.class.getName());
+  private static final Logger LOG = LogManager.getLogger();
 
   @Test
   public void shouldCreateInitialBeaconChainState() {
@@ -278,10 +278,8 @@ class MockStartBeaconStateGeneratorTest {
     try {
       url = new URL(file);
       in = url.openConnection().getInputStream();
-    } catch (MalformedURLException e) {
-      LOG.log(Level.WARN, e.toString());
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      LOG.warn("Failed to load " + file, e);
     }
     return in;
   }
