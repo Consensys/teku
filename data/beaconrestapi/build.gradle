@@ -1,5 +1,5 @@
 dependencies {
-    compile 'io.javalin:javalin:3.5.0'
+    compile 'io.javalin:javalin'
     implementation project(':util')
     implementation project(':data')
     implementation project(':data:adapter')

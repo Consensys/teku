@@ -1,11 +1,9 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.8'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.10.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.1'
 
-    dependency 'com.github.docker-java:docker-java:3.0.14'
-
-    dependency 'com.google.auto.service:auto-service:1.0-rc4'
+    dependency 'com.google.auto.service:auto-service:1.0-rc6'
 
     dependency 'com.google.errorprone:javac:9+181-r4173-1'
     dependency 'com.google.errorprone:error_prone_check_api:2.3.3'
@@ -13,12 +11,14 @@ dependencyManagement {
     dependency 'com.google.errorprone:error_prone_annotation:2.3.3'
     dependency 'com.google.errorprone:error_prone_test_helpers:2.3.3'
 
-    dependency 'com.google.guava:guava:27.0.1-jre'
-    dependency 'com.google.code.gson:gson:2.8.5'
-    dependency 'com.google.protobuf:protobuf-java:3.9.2'
+    dependency 'com.google.guava:guava:28.1-jre'
+    dependency 'com.google.code.gson:gson:2.8.6'
+    dependency 'com.google.protobuf:protobuf-java:3.10.0'
     dependency 'com.google.protobuf:protoc:3.9.2'
 
-    dependency 'com.squareup.okhttp3:okhttp:3.12.0'
+    dependency 'com.googlecode.json-simple:json-simple:1.1'
+
+    dependency 'com.squareup.okhttp3:okhttp:4.2.2'
 
     dependency 'commons-cli:commons-cli:1.4'
 
@@ -26,15 +26,16 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.0.4'
 
-    dependency 'io.grpc:protoc-gen-grpc-java:1.21.0'
-    dependency 'io.grpc:grpc-netty-shaded:1.21.0'
-    dependency 'io.grpc:grpc-protobuf:1.21.0'
-    dependency 'io.grpc:grpc-stub:1.21.0'
+    dependency 'io.grpc:protoc-gen-grpc-java:1.25.0'
+    dependency 'io.grpc:grpc-netty-shaded:1.25.0'
+    dependency 'io.grpc:grpc-protobuf:1.25.0'
+    dependency 'io.grpc:grpc-stub:1.25.0'
 
-    dependency 'io.grpc:grpc-core:1.21.0'
-    dependency 'io.grpc:grpc-netty:1.21.0'
-    dependency 'io.protostuff:protostuff-core:1.6.0'
-    dependency 'io.protostuff:protostuff-runtime:1.6.0'
+    dependency 'io.grpc:grpc-core:1.25.0'
+    dependency 'io.grpc:grpc-netty:1.25.0'
+    dependency 'io.javalin:javalin:3.6.0'
+    dependency 'io.protostuff:protostuff-core:1.6.2'
+    dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.1.0-RELEASE'
 
@@ -44,20 +45,17 @@ dependencyManagement {
     dependency "io.prometheus:simpleclient_hotspot:0.6.0"
     dependency "io.prometheus:simpleclient_vertx:0.6.0"
 
-    dependency 'io.vertx:vertx-codegen:3.8.0'
-    dependency 'io.vertx:vertx-core:3.8.0'
-    dependency 'io.vertx:vertx-unit:3.8.0'
-    dependency 'io.vertx:vertx-web:3.8.0'
-    dependency 'io.projectreactor:reactor-core:3.2.5.RELEASE'
+    dependencySet(group: 'io.vertx', version: '3.8.1') {
+      entry 'vertx-codegen'
+      entry 'vertx-core'
+      entry 'vertx-unit'
+      entry 'vertx-web'
+    }
+    dependency 'io.projectreactor:reactor-core:3.3.0.RELEASE'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.logl', version : '0.3.1') {
-      entry 'logl-log4j2'
-      entry 'logl-logl'
-    }
-
-    dependencySet(group: 'org.apache.tuweni', version: '0.9.0-20190709195335') {
+    dependencySet(group: 'org.apache.tuweni', version: '0.9.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
       entry 'tuweni-crypto' 
@@ -71,38 +69,42 @@ dependencyManagement {
     }
 
     dependency 'org.apache.commons:commons-text:1.6'
-    dependency 'org.apache.commons:commons-lang3:3.6'
-    
-    dependency 'org.apache.logging.log4j:log4j-api:2.11.1'
-    dependency 'org.apache.logging.log4j:log4j-core:2.11.1'
-    dependency 'org.apache.logging.log4j:log4j-slf4j-impl:2.11.1'
+    dependency 'org.apache.commons:commons-lang3:3.9'
 
-    dependency 'org.assertj:assertj-core:3.11.1'
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.12.1') {
+      entry 'log4j-api'
+      entry 'log4j-core'
+      entry 'log4j-slf4j-impl'
+    }
+
+    dependency 'org.assertj:assertj-core:3.14.0'
 
     dependency 'org.awaitility:awaitility:3.1.3'
 
-    dependency 'org.bouncycastle:bcprov-jdk15on:1.60'
+    dependency 'org.bouncycastle:bcprov-jdk15on:1.64'
 
     dependency 'org.java-websocket:Java-WebSocket:1.3.8'
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.3.2') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.5.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:2.28.2'
+    dependency 'org.mockito:mockito-core:3.1.0'
     
     dependency 'org.openjdk.jmh:jmh-core:1.21'
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
-    dependency 'org.quartz-scheduler:quartz:2.3.1'
+    dependency 'org.quartz-scheduler:quartz:2.3.2'
     dependency 'org.rocksdb:rocksdbjni:5.15.10'
 
-    dependency 'org.web3j:core:4.5.5'
-    dependency 'org.web3j:abi:4.5.5'
-    dependency 'org.web3j:crypto:4.5.5'
+    dependencySet(group: "org.web3j", version: "4.5.6") {
+      entry 'core'
+      entry 'abi'
+      entry 'crypto'
+    }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.7.2'
+    dependency 'org.xerial.snappy:snappy-java:1.1.7.3'
 
     dependency 'tech.pegasys.pantheon.internal:metrics-core:1.2.1'
   }

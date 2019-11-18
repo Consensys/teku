@@ -65,8 +65,7 @@ final class RpcCodecTest {
   public void shouldDecodeStatusMessageRequest() throws Exception {
     final StatusMessage actualMessage =
         codec.decodeRequest(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
-    assertThat(actualMessage)
-        .isEqualToComparingFieldByFieldRecursively(RECORDED_STATUS_MESSAGE_DATA);
+    assertThat(actualMessage).usingRecursiveComparison().isEqualTo(RECORDED_STATUS_MESSAGE_DATA);
   }
 
   @Test
