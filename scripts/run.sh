@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # **** Usage **** #
 
@@ -19,6 +19,7 @@ DIR=$(dirname $0)
 
 # Create the arrays to hold the input files that were specified 
 INPUTS=()
+NODES=4
 
 # Source the functions from the utilities script
 source $DIR/run_utils.sh
