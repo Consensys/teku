@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.metrics;
 
 import java.util.Optional;
-import tech.pegasys.pantheon.metrics.MetricCategory;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public enum ArtemisMetricCategory implements MetricCategory {
   BEACONCHAIN("beaconchain"),

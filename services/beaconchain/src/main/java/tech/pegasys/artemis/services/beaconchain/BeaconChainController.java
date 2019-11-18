@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -55,7 +56,6 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.util.time.TimerFactory;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class BeaconChainController {
   private static final ALogger STDOUT = new ALogger("stdout");

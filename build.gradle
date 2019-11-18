@@ -59,17 +59,10 @@ allprojects {
   targetCompatibility = '11'
 
   repositories {
-    if ("$System.env.JENKINS_URL" == 'https://jenkins.pegasys.tech/') {
-      jcenter()
-      mavenCentral()
-      maven { url  "https://consensys.bintray.com/pegasys-repo" }
-      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
-    } else {
-      jcenter()
-      mavenCentral()
-      maven { url  "https://consensys.bintray.com/pegasys-repo" }
-      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
-    }
+    jcenter()
+    mavenCentral()
+    maven { url "https://hyperledger-org.bintray.com/besu-repo/" }
+    maven { url "https://dl.bintray.com/tuweni/tuweni/" }
   }
 
   dependencies {
