@@ -16,7 +16,6 @@ package tech.pegasys.artemis.service.serviceutils;
 import com.google.common.eventbus.EventBus;
 import io.vertx.core.Vertx;
 import java.util.Objects;
-import org.apache.tuweni.crypto.SECP256K1;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -25,7 +24,6 @@ public class ServiceConfig {
   EventBus eventBus;
   MetricsSystem metricsSystem;
   ArtemisConfiguration config;
-  SECP256K1.KeyPair keyPair;
 
   public ServiceConfig(
       EventBus eventBus, Vertx vertx, MetricsSystem metricsSystem, ArtemisConfiguration config) {
@@ -33,7 +31,6 @@ public class ServiceConfig {
     this.vertx = vertx;
     this.metricsSystem = metricsSystem;
     this.config = config;
-    this.keyPair = config.getKeyPair();
   }
 
   public EventBus getEventBus() {
@@ -56,10 +53,6 @@ public class ServiceConfig {
     this.config = config;
   }
 
-  public SECP256K1.KeyPair getKeyPair() {
-    return this.keyPair;
-  }
-
   public MetricsSystem getMetricsSystem() {
     return metricsSystem;
   }
@@ -72,12 +65,11 @@ public class ServiceConfig {
     }
     ServiceConfig serviceConfig = (ServiceConfig) o;
     return Objects.equals(eventBus, serviceConfig.eventBus)
-        && Objects.equals(config, serviceConfig.config)
-        && Objects.equals(keyPair, serviceConfig.keyPair);
+        && Objects.equals(config, serviceConfig.config);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(eventBus, config, keyPair);
+    return Objects.hash(eventBus, config);
   }
 }
