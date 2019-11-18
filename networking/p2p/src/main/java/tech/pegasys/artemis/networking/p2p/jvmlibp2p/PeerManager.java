@@ -27,6 +27,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
@@ -40,7 +42,7 @@ import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class PeerManager implements ConnectionHandler, PeerLookup {
   private static final ALogger STDOUT = new ALogger("stdout");
-  private final ALogger LOG = new ALogger(PeerManager.class.getName());
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ScheduledExecutorService scheduler;
   private static final long RECONNECT_TIMEOUT = 5000;
@@ -96,8 +98,7 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
                 conn.closeFuture()
                     .thenAccept(
                         ignore -> {
-                          LOG.log(
-                              Level.DEBUG, "Connection to " + peer + " closed. Will retry shortly");
+                          LOG.debug("Connection to {} closed. Will retry shortly", peer);
                           scheduler.schedule(
                               () -> connect(peer, network),
                               RECONNECT_TIMEOUT,

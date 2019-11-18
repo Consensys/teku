@@ -380,7 +380,7 @@ public class ValidatorCoordinator {
           this.eventBus.post(newestBlock);
         }
       } catch (InterruptedException | ExecutionException | StateTransitionException e) {
-        STDOUT.log(Level.WARN, "Error during block creation" + e.toString());
+        STDOUT.log(Level.WARN, "Error during block creation " + e.toString());
       }
     }
   }

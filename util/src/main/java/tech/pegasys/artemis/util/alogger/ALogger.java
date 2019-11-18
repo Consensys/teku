@@ -31,10 +31,6 @@ public class ALogger {
 
   private final Logger logger;
 
-  public ALogger() {
-    this.logger = LogManager.getLogger();
-  }
-
   public ALogger(String className) {
     this.logger = LogManager.getLogger(className);
   }

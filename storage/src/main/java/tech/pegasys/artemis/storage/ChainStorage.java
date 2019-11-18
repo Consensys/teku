@@ -17,14 +17,12 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.logging.log4j.Level;
-import tech.pegasys.artemis.util.alogger.ALogger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /** ChainStorage Interface class */
 public interface ChainStorage {
-
-  ALogger LOG = new ALogger(ChainStorage.class.getName());
-
+  Logger LOG = LogManager.getLogger();
   /**
    * Instantiate the ChainStorage
    *
@@ -50,7 +48,7 @@ public interface ChainStorage {
     try {
       items.add(item);
     } catch (IllegalStateException e) {
-      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage());
+      LOG.debug("{}: {}", items.getClass().toString(), e.getMessage());
     }
   }
 
@@ -65,7 +63,7 @@ public interface ChainStorage {
     try {
       items.put(key, value);
     } catch (IllegalStateException e) {
-      LOG.log(Level.DEBUG, items.getClass().toString() + ": " + e.getMessage(), true);
+      LOG.debug("{}: {}", items.getClass().toString(), e.getMessage());
     }
   }
 
@@ -85,7 +83,7 @@ public interface ChainStorage {
     } catch (NullPointerException e) {
       if (!key.toString()
           .equalsIgnoreCase("0x0000000000000000000000000000000000000000000000000000000000000000")) {
-        LOG.log(Level.DEBUG, items.getClass().toString() + ": " + key.toString() + " not found.");
+        LOG.debug("{}: {} not found", items.getClass().toString(), key.toString());
       }
     }
     return result;
@@ -104,7 +102,7 @@ public interface ChainStorage {
     } catch (NullPointerException e) {
       if (!key.toString()
           .equalsIgnoreCase("0x0000000000000000000000000000000000000000000000000000000000000000")) {
-        LOG.log(Level.DEBUG, items.getClass().toString() + ": " + key.toString() + " not found.");
+        LOG.debug("{}: {} not found", items.getClass().toString(), key.toString());
         return false;
       }
     }

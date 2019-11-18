@@ -46,7 +46,6 @@ import tech.pegasys.artemis.util.config.Constants;
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
   private static final ALogger STDOUT = new ALogger("stdout");
-  static final ALogger LOG = new ALogger(ChainStorageClient.class.getName());
   private Store store;
   protected EventBus eventBus;
   protected final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlistMap =
