@@ -15,7 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
-import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
@@ -24,9 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -41,7 +39,6 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
@@ -58,8 +55,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class StartupUtil {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
   public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
@@ -136,26 +131,6 @@ public final class StartupUtil {
             Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconState.class));
   }
 
-  public static Store get_genesis_store(BeaconStateWithCache genesis_state) {
-    BeaconBlock genesis_block = new BeaconBlock(genesis_state.hash_tree_root());
-    Bytes32 root = genesis_block.signing_root("signature");
-    Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
-    Map<Bytes32, BeaconState> block_states = new HashMap<>();
-    Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
-    blocks.put(root, genesis_block);
-    block_states.put(root, new BeaconStateWithCache(genesis_state));
-    checkpoint_states.put(justified_checkpoint, new BeaconStateWithCache(genesis_state));
-    return new Store(
-        genesis_state.getGenesis_time(),
-        justified_checkpoint,
-        finalized_checkpoint,
-        blocks,
-        block_states,
-        checkpoint_states);
-  }
-
   public static void setupInitialState(
       final ChainStorageClient chainStorageClient,
       final long genesisTime,
@@ -185,8 +160,8 @@ public final class StartupUtil {
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs);
     }
 
-    chainStorageClient.setStore(StartupUtil.get_genesis_store(initialState));
-    Store store = chainStorageClient.getStore();
+    final Store store = Store.get_genesis_store(initialState);
+    chainStorageClient.setStore(store);
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());

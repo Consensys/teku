@@ -15,6 +15,7 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.eventbus.EventBus;
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -53,13 +55,9 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.Timer;
-import tech.pegasys.artemis.util.time.TimerFactory;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class BeaconChainController {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
   private Runnable networkTask;
   private final ArtemisConfiguration config;
@@ -99,12 +97,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initTimer()");
     int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
-      this.timer =
-          new TimerFactory()
-              .create(
-                  config.getTimer(),
-                  new Object[] {this.eventBus, 0, timerPeriodInMiliseconds},
-                  new Class[] {EventBus.class, Integer.class, Integer.class});
+      this.timer = new Timer(this.eventBus, 0, timerPeriodInMiliseconds);
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }

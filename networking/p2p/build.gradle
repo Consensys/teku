@@ -23,13 +23,11 @@ dependencies {
 
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
-  implementation 'org.logl:logl-logl'
-  implementation 'org.logl:logl-log4j2'
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'de.undercouch:bson4jackson'
   implementation 'org.xerial.snappy:snappy-java'
-  implementation 'tech.pegasys.pantheon.internal:metrics-core'
+  implementation 'org.hyperledger.besu:plugin-api'
 
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
@@ -41,5 +39,6 @@ dependencies {
   integrationTestImplementation 'org.mockito:mockito-core'
 
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
   testSupportCompile 'org.assertj:assertj-core'
 }

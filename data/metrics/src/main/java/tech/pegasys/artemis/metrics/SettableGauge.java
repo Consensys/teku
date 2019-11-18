@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.metrics;
 
 import com.google.common.util.concurrent.AtomicDouble;
-import tech.pegasys.pantheon.metrics.MetricCategory;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public class SettableGauge {
 

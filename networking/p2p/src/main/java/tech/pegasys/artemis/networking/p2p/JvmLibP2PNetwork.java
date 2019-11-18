@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import identify.pb.IdentifyOuterClass;
@@ -36,18 +38,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.logging.log4j.Level;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerManager;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip.GossipMessageHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class JvmLibP2PNetwork implements P2PNetwork {
-  private static final ALogger STDOUT = new ALogger("stdout");
-
   private final PrivKey privKey;
   private final Config config;
 
