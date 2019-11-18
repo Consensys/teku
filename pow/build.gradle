@@ -13,7 +13,7 @@ dependencies {
   
   implementation 'com.google.code.gson:gson'
   implementation 'com.google.guava:guava'
-  compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1'
+  compile 'com.googlecode.json-simple:json-simple'
 
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
