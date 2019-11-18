@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -50,7 +51,6 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {

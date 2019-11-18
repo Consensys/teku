@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
@@ -39,7 +40,6 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageH
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
 
 public class PeerManager implements ConnectionHandler, PeerLookup {
   private static final Logger LOG = LogManager.getLogger();
