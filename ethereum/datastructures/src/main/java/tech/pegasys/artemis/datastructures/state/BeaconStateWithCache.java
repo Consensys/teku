@@ -88,53 +88,57 @@ public final class BeaconStateWithCache extends BeaconState {
         finalized_checkpoint);
   }
 
-  public BeaconStateWithCache(BeaconStateWithCache state) {
-    // Versioning
-    this.genesis_time = state.getGenesis_time();
-    this.slot = state.getSlot();
-    this.fork = new Fork(state.getFork());
-
-    // History
-    this.latest_block_header = new BeaconBlockHeader(state.getLatest_block_header());
-    this.block_roots = new SSZVector<>(state.getBlock_roots());
-    this.state_roots = new SSZVector<>(state.getState_roots());
-    this.historical_roots = new SSZList<>(state.getHistorical_roots());
-
-    // Eth1
-    this.eth1_data = new Eth1Data(state.getEth1_data());
-    this.eth1_data_votes = new SSZList<>(state.getEth1_data_votes());
-    this.eth1_deposit_index = state.getEth1_deposit_index();
-
-    // Registry
-    this.validators =
+  public static BeaconStateWithCache deepCopy(BeaconState state) {
+    final SSZList<Validator> validators =
         copyList(
             state.getValidators(),
             new SSZList<>(Validator.class, state.getValidators().getMaxSize()));
-    this.balances = new SSZList<>(state.getBalances());
-
-    // Randomness
-    this.randao_mixes = new SSZVector<>(state.getRandao_mixes());
-
-    // Slashings
-    this.slashings = new SSZVector<>(state.getSlashings());
-
-    // Attestations
-    this.previous_epoch_attestations =
+    final SSZList<PendingAttestation> previous_epoch_attestations =
         copyList(
             state.getPrevious_epoch_attestations(),
             new SSZList<>(
                 PendingAttestation.class, state.getPrevious_epoch_attestations().getMaxSize()));
-    this.current_epoch_attestations =
+    final SSZList<PendingAttestation> current_epoch_attestations =
         copyList(
             state.getCurrent_epoch_attestations(),
             new SSZList<>(
                 PendingAttestation.class, state.getCurrent_epoch_attestations().getMaxSize()));
 
-    // Finality
-    this.justification_bits = state.getJustification_bits().copy();
-    this.previous_justified_checkpoint = new Checkpoint(state.getPrevious_justified_checkpoint());
-    this.current_justified_checkpoint = new Checkpoint(state.getCurrent_justified_checkpoint());
-    this.finalized_checkpoint = new Checkpoint(state.getFinalized_checkpoint());
+    return new BeaconStateWithCache(
+        state.getGenesis_time(),
+        state.getSlot(),
+        new Fork(state.getFork()),
+
+        // History
+        new BeaconBlockHeader(state.getLatest_block_header()),
+        new SSZVector<>(state.getBlock_roots()),
+        new SSZVector<>(state.getState_roots()),
+        new SSZList<>(state.getHistorical_roots()),
+
+        // Eth1
+        new Eth1Data(state.getEth1_data()),
+        new SSZList<>(state.getEth1_data_votes()),
+        state.getEth1_deposit_index(),
+
+        // Registry
+        validators,
+        new SSZList<>(state.getBalances()),
+
+        // Randomness
+        new SSZVector<>(state.getRandao_mixes()),
+
+        // Slashings
+        new SSZVector<>(state.getSlashings()),
+
+        // Attestations
+        previous_epoch_attestations,
+        current_epoch_attestations,
+
+        // Finality
+        state.getJustification_bits().copy(),
+        new Checkpoint(state.getPrevious_justified_checkpoint()),
+        new Checkpoint(state.getCurrent_justified_checkpoint()),
+        new Checkpoint(state.getFinalized_checkpoint()));
   }
 
   /**
@@ -168,14 +172,11 @@ public final class BeaconStateWithCache extends BeaconState {
         state.getFinalized_checkpoint());
   }
 
-  private <S extends Copyable<S>, T extends List<S>> T copyList(T sourceList, T destinationList) {
+  private static <S extends Copyable<S>, T extends List<S>> T copyList(
+      T sourceList, T destinationList) {
     for (S sourceItem : sourceList) {
       destinationList.add(sourceItem.copy());
     }
     return destinationList;
-  }
-
-  public static BeaconStateWithCache deepCopy(BeaconStateWithCache state) {
-    return new BeaconStateWithCache(state);
   }
 }
