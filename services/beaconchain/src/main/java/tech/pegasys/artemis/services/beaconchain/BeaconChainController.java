@@ -54,7 +54,6 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.Timer;
-import tech.pegasys.artemis.util.time.TimerFactory;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 import tech.pegasys.pantheon.metrics.MetricsSystem;
 
@@ -98,12 +97,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initTimer()");
     int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
-      this.timer =
-          new TimerFactory()
-              .create(
-                  config.getTimer(),
-                  new Object[] {this.eventBus, 0, timerPeriodInMiliseconds},
-                  new Class[] {EventBus.class, Integer.class, Integer.class});
+      this.timer = new Timer(this.eventBus, 0, timerPeriodInMiliseconds);
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }

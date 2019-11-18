@@ -3,15 +3,15 @@ import net.ltgt.gradle.errorprone.CheckSeverity
 import java.text.SimpleDateFormat
 
 plugins {
-  id 'com.diffplug.gradle.spotless' version '3.25.0'
+  id 'com.diffplug.gradle.spotless' version '3.26.0'
   id 'com.jfrog.bintray' version '1.8.4'
   id 'com.github.ben-manes.versions' version '0.27.0'
   id 'com.github.hierynomus.license' version '0.15.0'
-  id 'io.spring.dependency-management' version '1.0.6.RELEASE'
+  id 'io.spring.dependency-management' version '1.0.8.RELEASE'
   id 'net.ltgt.errorprone' version '1.1.1' apply false
-  id 'net.researchgate.release' version '2.7.0'
+  id 'net.researchgate.release' version '2.8.1'
   id 'me.champeau.gradle.jmh' version '0.5.0' apply false
-  id 'de.undercouch.download' version '4.0.0'
+  id 'de.undercouch.download' version '4.0.1'
 }
 
 defaultTasks 'build','checkLicenses'
@@ -63,12 +63,10 @@ allprojects {
       jcenter()
       mavenCentral()
       maven { url  "https://consensys.bintray.com/pegasys-repo" }
-      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
     } else {
       jcenter()
       mavenCentral()
       maven { url  "https://consensys.bintray.com/pegasys-repo" }
-      maven { url  "https://dl.bintray.com/tuweni/tuweni/" }
     }
   }
 

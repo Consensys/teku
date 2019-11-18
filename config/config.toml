@@ -3,13 +3,10 @@
 # "mock": use MockP2PNetwork
 # "jvmlibp2p" : use JvmLibP2PNetwork
 networkMode = "mock"
-identity = "0x00"
-timer="QuartzTimer"
 networkInterface = "0.0.0.0"
 port = 9000
 discovery = "static"
 bootnodes = ""
-isBootnode = true
 advertisedPort = 9000
 naughtinessPercentage = 0
 constants = "minimal"
