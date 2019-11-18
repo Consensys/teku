@@ -50,6 +50,7 @@ class StoreTest {
           INITIAL_FINALIZED_CHECKPOINT,
           new HashMap<>(),
           new HashMap<>(),
+          new HashMap<>(),
           new HashMap<>());
 
   @Test
