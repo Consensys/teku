@@ -234,17 +234,20 @@ public class AttestationUtil {
     return list;
   }
 
-  public static boolean representsNewAttesterAggregate(
-      Bitlist oldBitlist, Attestation newAttesation) {
+  // Set bits of the newAttestation on the oldBitlist
+  // return true if any new bit was set
+  public static boolean setBitsForNewAttestation(Bitlist oldBitlist, Attestation newAttesation) {
     Bitlist newBitlist = newAttesation.getAggregation_bits();
     if (oldBitlist.getCurrentSize() != newBitlist.getCurrentSize())
       throw new UnsupportedOperationException("Attestation bitlist size's don't match");
+    boolean representsNewAttester = false;
     for (int i = 0; i < oldBitlist.getCurrentSize(); i++) {
       if (newBitlist.getBit(i) == 1 && oldBitlist.getBit(i) == 0) {
-        return true;
+        oldBitlist.setBit(i);
+        representsNewAttester = true;
       }
     }
-    return false;
+    return representsNewAttester;
   }
 
   public static boolean representsNewAttesterSingle(

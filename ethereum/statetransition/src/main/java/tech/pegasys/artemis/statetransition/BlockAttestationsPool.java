@@ -15,7 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttesterAggregate;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.setBitsForNewAttestation;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.storage.ChainStorage;
@@ -49,61 +50,45 @@ public class BlockAttestationsPool {
       new PriorityBlockingQueue<>(QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getSlot()));
 
   public void addUnprocessedAttestationToQueue(Attestation newAttestation) {
-    if (!isSingleAttester(newAttestation)) {
-
-      Bytes32 attestationDataHash = newAttestation.getData().hash_tree_root();
-      ChainStorage.get(attestationDataHash, this.unprocessedAttestationsBitlist)
-          .ifPresentOrElse(
-              oldBitlist -> {
-                if (representsNewAttesterAggregate(oldBitlist, newAttestation)) {
-
-                  for (int i = 0; i < newAttestation.getAggregation_bits().getCurrentSize(); i++) {
-                    if (newAttestation.getAggregation_bits().getBit(i) == 1) oldBitlist.setBit(i);
-                  }
-
-                  ChainStorage.add(newAttestation, aggregateAttesationsQueue);
-
-                  ChainStorage.add(
-                      attestationDataHash,
-                      newAttestation.getData().getTarget().getEpoch(),
-                      dataRootToSlot);
-                }
-              },
-              () -> {
-                ChainStorage.add(newAttestation, aggregateAttesationsQueue);
-
-                ChainStorage.add(
-                    attestationDataHash,
-                    newAttestation.getAggregation_bits().copy(),
-                    this.unprocessedAttestationsBitlist);
-
-                ChainStorage.add(
-                    attestationDataHash,
-                    newAttestation.getData().getTarget().getEpoch(),
-                    dataRootToSlot);
-              });
+    if (isSingleAttester(newAttestation)) {
+      // We only care about aggregated attestations
+      return;
     }
+
+    Bytes32 attestationDataHash = newAttestation.getData().hash_tree_root();
+    AtomicBoolean oldBitlistPresent = new AtomicBoolean(true);
+    final Bitlist oldBitlist =
+        unprocessedAttestationsBitlist.computeIfAbsent(
+            attestationDataHash,
+            (key) -> {
+              oldBitlistPresent.set(false);
+              return newAttestation.getAggregation_bits().copy();
+            });
+
+    if (oldBitlistPresent.get()) {
+      if (!setBitsForNewAttestation(oldBitlist, newAttestation)) {
+        return;
+      }
+    }
+
+    ChainStorage.add(newAttestation, aggregateAttesationsQueue);
+
+    ChainStorage.add(attestationDataHash, newAttestation.getData().getSlot(), dataRootToSlot);
   }
 
   public void addAttestationProcessedInBlock(Attestation attestation) {
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
-    ChainStorage.get(attestationDataHash, this.processedAttestationsBitlist)
-        .ifPresentOrElse(
-            oldBitlist -> {
-              for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-                if (attestation.getAggregation_bits().getBit(i) == 1) oldBitlist.setBit(i);
-              }
-            },
-            () -> {
+    final Bitlist bitlist =
+        processedAttestationsBitlist.computeIfAbsent(
+            attestationDataHash -> {
               ChainStorage.add(
-                  attestationDataHash,
-                  attestation.getAggregation_bits().copy(),
-                  this.processedAttestationsBitlist);
-              ChainStorage.add(
-                  attestationDataHash,
-                  attestation.getData().getTarget().getEpoch(),
-                  dataRootToSlot);
+                  attestationDataHash, attestation.getData().getSlot(), dataRootToSlot);
+              return attestation.getAggregation_bits().copy();
             });
+
+    for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
+      if (attestation.getAggregation_bits().getBit(i) == 1) bitlist.setBit(i);
+    }
   }
 
   public SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {

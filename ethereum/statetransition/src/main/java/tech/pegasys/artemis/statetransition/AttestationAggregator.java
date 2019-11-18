@@ -21,7 +21,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,18 +28,18 @@ import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.util.bls.BLSAggregate;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class AttestationAggregator {
 
-  private ConcurrentHashMap<Bytes32, Attestation> dataHashToAggregate = new ConcurrentHashMap<>();
-  private Map<UnsignedLong, AggregatorInformation> committeeIndexToAggregatorInformation =
+  private final ConcurrentHashMap<Bytes32, Attestation> dataHashToAggregate =
       new ConcurrentHashMap<>();
-  private Map<UnsignedLong, List<Attestation>> committeeIndexToAggregatesList =
+  private final Map<UnsignedLong, AggregatorInformation> committeeIndexToAggregatorInformation =
       new ConcurrentHashMap<>();
-  private AtomicBoolean aggregationActive = new AtomicBoolean(false);
+  private final Map<UnsignedLong, List<Attestation>> committeeIndexToAggregatesList =
+      new ConcurrentHashMap<>();
+  private final AtomicBoolean aggregationActive = new AtomicBoolean(false);
 
   public void activateAggregation() {
     aggregationActive.set(true);
@@ -66,52 +65,59 @@ public class AttestationAggregator {
   }
 
   public void processAttestation(Attestation newAttestation) {
-    if (aggregationActive.get()) {
+    if (!aggregationActive.get()) {
       // Make sure the new attestation only represents a single attester and that
       // one of our validators is the validator for attestation's committee index
-      if (isSingleAttester(newAttestation)
-          && committeeIndexToAggregatorInformation
-              .keySet()
-              .contains(newAttestation.getData().getIndex())) {
+      return;
+    }
 
-        Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
-        Optional<Attestation> aggregateAttestation =
-            ChainStorage.get(attestationDataHashTreeRoot, dataHashToAggregate);
+    if (!(isSingleAttester(newAttestation)
+        && committeeIndexToAggregatorInformation
+            .keySet()
+            .contains(newAttestation.getData().getIndex()))) {
+      return;
+    }
 
-        // If there exists an old aggregate attestation with the same Attestation Data,
-        // and the new Attestation represents a new attester, add the signature of the
-        // new attestation to the old aggregate attestation.
-        if (aggregateAttestation.isPresent()
-            && representsNewAttesterSingle(aggregateAttestation.get(), newAttestation)) {
+    Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
+    AtomicBoolean isNewAggregate = new AtomicBoolean(false);
+    Attestation aggregateAttestation =
+        dataHashToAggregate.computeIfAbsent(
+            attestationDataHashTreeRoot,
+            (key) -> {
+              isNewAggregate.set(true);
+              return newAttestation;
+            });
 
-          aggregateAttestation(aggregateAttestation.get(), newAttestation);
+    // If there exists an old aggregate attestation with the same Attestation Data,
+    // and the new Attestation represents a new attester, add the signature of the
+    // new attestation to the old aggregate attestation.
+    if (!isNewAggregate.get()
+        && representsNewAttesterSingle(aggregateAttestation, newAttestation)) {
 
-        }
+      // Set the bit of the new attester in the aggregate attestation
+      aggregateAttestation
+              .getAggregation_bits()
+              .setBit(getAttesterIndexIntoCommittee(newAttestation));
 
-        // If the attestation message hasn't been seen before:
-        // - add it to the aggregate attestation map to aggregate further when
-        // another attestation with the same message is received
-        // - add it to the list of aggregate attestations for that commiteeeIndex
-        // to broadcast
-        else if (aggregateAttestation.isEmpty()) {
-          ChainStorage.add(attestationDataHashTreeRoot, newAttestation, dataHashToAggregate);
-          UnsignedLong committeeIndex = newAttestation.getData().getIndex();
-          committeeIndexToAggregatesList.computeIfAbsent(committeeIndex, k -> new ArrayList<>());
-          List<Attestation> aggregatesList = committeeIndexToAggregatesList.get(committeeIndex);
-          aggregatesList.add(newAttestation);
-        }
-      }
+      aggregateSignatures(aggregateAttestation, newAttestation);
+    }
+
+    // If the attestation message hasn't been seen before:
+    // - add it to the aggregate attestation map to aggregate further when
+    // another attestation with the same message is received
+    // - add it to the list of aggregate attestations for that commiteeeIndex
+    // to broadcast
+    else if (isNewAggregate.get()) {
+      UnsignedLong committeeIndex = newAttestation.getData().getIndex();
+      committeeIndexToAggregatesList.computeIfAbsent(committeeIndex, k -> new ArrayList<>());
+      List<Attestation> aggregatesList = committeeIndexToAggregatesList.get(committeeIndex);
+      aggregatesList.add(newAttestation);
     }
   }
 
-  private void aggregateAttestation(
+  private synchronized void aggregateSignatures(
       Attestation oldAggregateAttestation, Attestation newAttestation) {
-    // Set the bit of the new attester in the aggregate attestation
-    oldAggregateAttestation
-        .getAggregation_bits()
-        .setBit(getAttesterIndexIntoCommittee(newAttestation));
 
-    // Aggregate signatures
     List<BLSSignature> signaturesToAggregate = new ArrayList<>();
     signaturesToAggregate.add(oldAggregateAttestation.getAggregate_signature());
     signaturesToAggregate.add(newAttestation.getAggregate_signature());
@@ -120,12 +126,12 @@ public class AttestationAggregator {
   }
 
   public void reset() {
-    dataHashToAggregate = new ConcurrentHashMap<>();
-    committeeIndexToAggregatorInformation = new ConcurrentHashMap<>();
-    committeeIndexToAggregatesList = new ConcurrentHashMap<>();
+    dataHashToAggregate.clear();
+    committeeIndexToAggregatorInformation.clear();
+    committeeIndexToAggregatesList.clear();
   }
 
-  public List<AggregateAndProof> getAggregateAndProofs() {
+  public synchronized List<AggregateAndProof> getAggregateAndProofs() {
     List<AggregateAndProof> aggregateAndProofs = new ArrayList<>();
     for (UnsignedLong commiteeIndex : committeeIndexToAggregatorInformation.keySet()) {
       AggregatorInformation aggregatorInformation =
