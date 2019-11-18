@@ -53,11 +53,6 @@ dependencyManagement {
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.logl', version : '0.3.1') {
-      entry 'logl-log4j2'
-      entry 'logl-logl'
-    }
-
     dependencySet(group: 'org.apache.tuweni', version: '0.9.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
@@ -94,7 +89,7 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:2.28.2'
+    dependency 'org.mockito:mockito-core:3.1.0'
     
     dependency 'org.openjdk.jmh:jmh-core:1.21'
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
