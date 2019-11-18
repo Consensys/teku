@@ -59,15 +59,9 @@ allprojects {
   targetCompatibility = '11'
 
   repositories {
-    if ("$System.env.JENKINS_URL" == 'https://jenkins.pegasys.tech/') {
-      jcenter()
-      mavenCentral()
-      maven { url  "https://consensys.bintray.com/pegasys-repo" }
-    } else {
-      jcenter()
-      mavenCentral()
-      maven { url  "https://consensys.bintray.com/pegasys-repo" }
-    }
+    jcenter()
+    mavenCentral()
+    maven { url "https://hyperledger-org.bintray.com/besu-repo/" }
   }
 
   dependencies {

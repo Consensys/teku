@@ -11,11 +11,10 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.google.guava:guava'
-    implementation 'io.prometheus:simpleclient'
-    implementation 'io.prometheus:simpleclient_vertx'
     implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.commons:commons-lang3'
-    implementation 'tech.pegasys.pantheon.internal:metrics-core'
+    implementation 'org.hyperledger.besu.internal:metrics-core'
+    implementation 'org.hyperledger.besu:plugin-api'
     runtime 'org.apache.logging.log4j:log4j-core'
 
     test {
