@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Create the configuration file for a specific node
 create_config() {

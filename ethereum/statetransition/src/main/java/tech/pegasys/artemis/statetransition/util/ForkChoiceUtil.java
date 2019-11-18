@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
@@ -27,7 +26,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,26 +42,6 @@ import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
 
 public class ForkChoiceUtil {
-
-  public static Store get_genesis_store(BeaconStateWithCache genesis_state) {
-    BeaconBlock genesis_block = new BeaconBlock(genesis_state.hash_tree_root());
-    Bytes32 root = genesis_block.signing_root("signature");
-    Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    ConcurrentHashMap<Bytes32, BeaconBlock> blocks = new ConcurrentHashMap<>();
-    ConcurrentHashMap<Bytes32, BeaconState> block_states = new ConcurrentHashMap<>();
-    ConcurrentHashMap<Checkpoint, BeaconState> checkpoint_states = new ConcurrentHashMap<>();
-    blocks.put(root, genesis_block);
-    block_states.put(root, new BeaconStateWithCache(genesis_state));
-    checkpoint_states.put(justified_checkpoint, new BeaconStateWithCache(genesis_state));
-    return new Store(
-        genesis_state.getGenesis_time(),
-        justified_checkpoint,
-        finalized_checkpoint,
-        blocks,
-        block_states,
-        checkpoint_states);
-  }
 
   /**
    * Get the ancestor of ``block`` with slot number ``slot``.
