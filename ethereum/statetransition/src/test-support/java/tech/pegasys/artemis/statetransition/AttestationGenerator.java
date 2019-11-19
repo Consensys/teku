@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.validator.coordinator;
+package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -30,15 +30,13 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
-import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.validator.client.CommitteeAssignment;
-import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
@@ -73,7 +71,7 @@ public class AttestationGenerator {
     int validatorIndex;
     for (validatorIndex = 0; validatorIndex < validatorKeys.size(); validatorIndex++) {
       final Optional<CommitteeAssignment> maybeAssignment =
-          ValidatorClientUtil.get_committee_assignment(state, epoch, validatorIndex);
+          CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex);
       if (maybeAssignment.isPresent()) {
         slot = Optional.of(maybeAssignment.get().getSlot());
         committeeAssignment =
@@ -99,7 +97,7 @@ public class AttestationGenerator {
     Committee committee = new Committee(committeeIndex, committeeIndices);
     int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
     AttestationData genericAttestationData =
-        ValidatorCoordinatorUtil.getGenericAttestationData(postState, block);
+        AttestationUtil.getGenericAttestationData(postState, block);
 
     final BLSKeyPair validatorKeyPair =
         withValidSignature ? validatorKeys.get(validatorIndex) : randomKeyPair;

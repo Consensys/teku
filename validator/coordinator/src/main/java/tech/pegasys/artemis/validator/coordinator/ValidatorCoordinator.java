@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGenericAttestationData;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -27,7 +28,6 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMM
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
-import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.getGenericAttestationData;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
 import com.google.common.eventbus.EventBus;
@@ -75,10 +75,12 @@ import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
+import tech.pegasys.artemis.statetransition.CommitteeAssignment;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -94,8 +96,6 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.artemis.validator.client.CommitteeAssignment;
-import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
@@ -543,7 +543,7 @@ public class ValidatorCoordinator {
     validators.forEach(
         (pubKey, validatorInformation) -> {
           Optional<CommitteeAssignment> committeeAssignment =
-              ValidatorClientUtil.get_committee_assignment(
+              CommitteeAssignmentUtil.get_committee_assignment(
                   state,
                   compute_epoch_at_slot(state.getSlot()),
                   validatorInformation.getValidatorIndex());
