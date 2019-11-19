@@ -183,7 +183,7 @@ public class ChainStorageClientTest {
   }
 
   private void testUpdateBestBlockToFork(final long origChainLength, final long newChainLength) {
-    testUpdateBestBlockToFork(origChainLength, newChainLength, 0, 0, -1L);
+    testUpdateBestBlockToFork(origChainLength, newChainLength, 0, 0, 0L);
   }
 
   private void testUpdateBestBlockToFork(
@@ -192,12 +192,12 @@ public class ChainStorageClientTest {
       final long origChainSkippedSlots,
       final long newChainSkippedSlots) {
     testUpdateBestBlockToFork(
-        origChainLength, newChainLength, origChainSkippedSlots, newChainSkippedSlots, -1L);
+        origChainLength, newChainLength, origChainSkippedSlots, newChainSkippedSlots, 0L);
   }
 
   private void testUpdateBestBlockToFork(
       final long origChainLength, final long newChainLength, final long skippedSlots) {
-    testUpdateBestBlockToFork(origChainLength, newChainLength, skippedSlots, skippedSlots, -1L);
+    testUpdateBestBlockToFork(origChainLength, newChainLength, skippedSlots, skippedSlots, 0L);
   }
 
   private void testUpdateBestBlockToFork(
