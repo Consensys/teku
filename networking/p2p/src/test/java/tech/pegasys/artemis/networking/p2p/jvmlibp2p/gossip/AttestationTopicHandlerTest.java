@@ -138,8 +138,8 @@ public class AttestationTopicHandlerTest {
 
     // Set up state to be missing
     final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
-    Store mockStore = spy(storageClient.getStore());
-    doReturn(mockStore).when(storageClient).getStore();
+    Store mockStore = mock(Store.class);
+    storageClient.setStore(mockStore);
     doReturn(null).when(mockStore).getBlockState(blockRoot);
 
     final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
