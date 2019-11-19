@@ -46,8 +46,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
-  private Store store;
-  protected EventBus eventBus;
+  protected final EventBus eventBus;
   protected final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlistMap =
       new ConcurrentHashMap<>();
   protected final ConcurrentHashMap<Bytes32, UnsignedLong> processedAttestationsToEpoch =
@@ -61,12 +60,14 @@ public class ChainStorageClient implements ChainStorage {
   private final Queue<Attestation> unprocessedAttestationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getTarget().getEpoch()));
-  private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
-  private UnsignedLong bestSlot =
-      UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
 
+  private volatile Store store;
+  private volatile Bytes32 bestBlockRoot =
+      Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
+  private volatile UnsignedLong bestSlot =
+      UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
   // Time
-  private UnsignedLong genesisTime;
+  private volatile UnsignedLong genesisTime;
 
   public ChainStorageClient(EventBus eventBus) {
     this.eventBus = eventBus;
