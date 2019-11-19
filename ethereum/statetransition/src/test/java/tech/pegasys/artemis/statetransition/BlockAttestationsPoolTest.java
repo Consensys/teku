@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static org.mockito.Mockito.spy;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.mockito.Mockito.spy;
 
 class BlockAttestationsPoolTest {
 
@@ -28,38 +28,29 @@ class BlockAttestationsPoolTest {
   }
 
   @Test
-  void unprocessedAggregate_SingleAttester_ShouldBeIgnored() throws Exception {
-  }
+  void unprocessedAggregate_SingleAttester_ShouldBeIgnored() throws Exception {}
 
   @Test
-  void unprocessedAggregate_NewData_BitlistAdded() throws Exception {
-  }
+  void unprocessedAggregate_NewData_BitlistAdded() throws Exception {}
 
   @Test
-  void unprocessedAggregate_OldData_DifferentBitlist_BitlistUpdated() throws Exception {
-  }
+  void unprocessedAggregate_OldData_DifferentBitlist_BitlistUpdated() throws Exception {}
 
   @Test
-  void unprocessedAggregate_OldData_SameBitlist_ShouldBeIgnored() throws Exception {
-  }
+  void unprocessedAggregate_OldData_SameBitlist_ShouldBeIgnored() throws Exception {}
 
   @Test
-  void unprocessedAggregate_OldData_DifferentBitlist_AddedToQueue() throws Exception {
-  }
+  void unprocessedAggregate_OldData_DifferentBitlist_AddedToQueue() throws Exception {}
 
   @Test
-  void unprocessedAggregate_NewData_AddedToQueue() throws Exception {
-  }
+  void unprocessedAggregate_NewData_AddedToQueue() throws Exception {}
 
   @Test
-  void processedAggregate_NewData_SetBits() throws Exception {
-  }
+  void processedAggregate_NewData_SetBits() throws Exception {}
 
   @Test
-  void processedAggregate_OldData_DifferentBitlist_SetBits() throws Exception {
-  }
+  void processedAggregate_OldData_DifferentBitlist_SetBits() throws Exception {}
 
   @Test
-  void getAggregatedAttestations_DoesNotReturnAttestationWithNoNewBits() throws Exception {
-  }
+  void getAggregatedAttestations_DoesNotReturnAttestationWithNoNewBits() throws Exception {}
 }

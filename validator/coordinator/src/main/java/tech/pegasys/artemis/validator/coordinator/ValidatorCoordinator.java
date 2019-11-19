@@ -216,7 +216,6 @@ public class ValidatorCoordinator {
       // Reset the attestation validator and pass attester information necessary
       // for validator to know which committees and validators to aggregate for
       attestationAggregator.updateAggregatorInformations(attesterInformations);
-      attestationAggregator.activateAggregation();
 
       asyncProduceAttestations(
           attesterInformations, headState, getGenericAttestationData(headState, headBlock));
@@ -230,7 +229,6 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onAggregationEvent(BroadcastAggregatesEvent event) {
-    attestationAggregator.deactivateAggregation();
     List<AggregateAndProof> aggregateAndProofs = attestationAggregator.getAggregateAndProofs();
     for (AggregateAndProof aggregateAndProof : aggregateAndProofs) {
       this.eventBus.post(aggregateAndProof);
@@ -254,8 +252,10 @@ public class ValidatorCoordinator {
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
 
     BLSSignature signature = getSignature(attestationMessage, domain, attester);
-    this.eventBus.post(
-        new Attestation(aggregationBitfield, attestationData, custodyBits, signature));
+    Attestation attestation =
+        new Attestation(aggregationBitfield, attestationData, custodyBits, signature);
+    attestationAggregator.addOwnValidatorAttestation(new Attestation(attestation));
+    this.eventBus.post(attestation);
   }
 
   /**

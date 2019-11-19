@@ -250,7 +250,7 @@ public class AttestationUtil {
     return representsNewAttester;
   }
 
-  public static boolean representsNewAttesterSingle(
+  public static boolean representsNewAttester(
       Attestation oldAttestation, Attestation newAttestation) {
     int newAttesterIndex = getAttesterIndexIntoCommittee(newAttestation);
     return oldAttestation.getAggregation_bits().getBit(newAttesterIndex) == 0;

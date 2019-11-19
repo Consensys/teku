@@ -15,7 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttesterSingle;
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -39,15 +39,6 @@ public class AttestationAggregator {
       new ConcurrentHashMap<>();
   private final Map<UnsignedLong, List<Attestation>> committeeIndexToAggregatesList =
       new ConcurrentHashMap<>();
-  private final AtomicBoolean aggregationActive = new AtomicBoolean(false);
-
-  public void activateAggregation() {
-    aggregationActive.set(true);
-  }
-
-  public void deactivateAggregation() {
-    aggregationActive.set(false);
-  }
 
   public void updateAggregatorInformations(List<AttesterInformation> attesterInformations) {
 
@@ -64,20 +55,7 @@ public class AttestationAggregator {
                     }));
   }
 
-  public void processAttestation(Attestation newAttestation) {
-    if (!aggregationActive.get()) {
-      // Make sure the new attestation only represents a single attester and that
-      // one of our validators is the validator for attestation's committee index
-      return;
-    }
-
-    if (!(isSingleAttester(newAttestation)
-        && committeeIndexToAggregatorInformation
-            .keySet()
-            .contains(newAttestation.getData().getIndex()))) {
-      return;
-    }
-
+  public void addOwnValidatorAttestation(Attestation newAttestation) {
     Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
     AtomicBoolean isNewAggregate = new AtomicBoolean(false);
     Attestation aggregateAttestation =
@@ -91,8 +69,7 @@ public class AttestationAggregator {
     // If there exists an old aggregate attestation with the same Attestation Data,
     // and the new Attestation represents a new attester, add the signature of the
     // new attestation to the old aggregate attestation.
-    if (!isNewAggregate.get()
-        && representsNewAttesterSingle(aggregateAttestation, newAttestation)) {
+    if (!isNewAggregate.get() && representsNewAttester(aggregateAttestation, newAttestation)) {
 
       // Set the bit of the new attester in the aggregate attestation
       aggregateAttestation
@@ -113,6 +90,24 @@ public class AttestationAggregator {
       List<Attestation> aggregatesList = committeeIndexToAggregatesList.get(committeeIndex);
       aggregatesList.add(newAttestation);
     }
+  }
+
+  public void processAttestation(Attestation newAttestation) {
+    if (isSingleAttester(newAttestation)) {
+      return;
+    }
+
+    Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
+    dataHashToAggregate.computeIfPresent(
+        attestationDataHashTreeRoot,
+        (root, attestation) -> {
+          if (representsNewAttester(attestation, newAttestation)) {
+            attestation.getAggregation_bits().setBit(getAttesterIndexIntoCommittee(newAttestation));
+
+            aggregateSignatures(attestation, newAttestation);
+          }
+          return attestation;
+        });
   }
 
   private synchronized void aggregateSignatures(
