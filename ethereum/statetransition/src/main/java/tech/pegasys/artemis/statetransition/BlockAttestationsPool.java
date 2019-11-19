@@ -41,13 +41,13 @@ public class BlockAttestationsPool {
   private final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlist =
       new ConcurrentHashMap<>();
 
-  private final int QUEUE_MAX_SIZE =
+  private final int QUEUE_INITIAL_CAPACITY =
       Constants.MAX_VALIDATORS_PER_COMMITTEE
           * Constants.MAX_COMMITTEES_PER_SLOT
           * Constants.SLOTS_PER_EPOCH;
 
   private final Queue<Attestation> aggregateAttesationsQueue =
-      new PriorityBlockingQueue<>(QUEUE_MAX_SIZE, Comparator.comparing(a -> a.getData().getSlot()));
+      new PriorityBlockingQueue<>(QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
 
   public void addUnprocessedAttestationToQueue(Attestation newAttestation) {
     if (isSingleAttester(newAttestation)) {
@@ -79,8 +79,7 @@ public class BlockAttestationsPool {
   public void addAttestationProcessedInBlock(Attestation attestation) {
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     final Bitlist bitlist =
-        processedAttestationsBitlist.computeIfAbsent(
-            attestationDataHash -> {
+        processedAttestationsBitlist.computeIfAbsent(attestationDataHash, (key) -> {
               ChainStorage.add(
                   attestationDataHash, attestation.getData().getSlot(), dataRootToSlot);
               return attestation.getAggregation_bits().copy();
