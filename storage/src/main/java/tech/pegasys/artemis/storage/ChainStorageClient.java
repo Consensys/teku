@@ -305,4 +305,13 @@ public class ChainStorageClient implements ChainStorage {
       }
     }
   }
+
+  public Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
+    return Optional.empty();
+  }
+
+  public boolean isCanonical(final BeaconBlock block) {
+    return false;
+    //    return slotToCanonicalBlockRoot.get(block.getSlot()).equals(block.hash_tree_root());
+  }
 }

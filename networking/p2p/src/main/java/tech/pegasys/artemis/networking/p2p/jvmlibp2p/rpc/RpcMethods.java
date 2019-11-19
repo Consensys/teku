@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -35,7 +36,9 @@ public class RpcMethods {
       PeerLookup peerLookup,
       LocalMessageHandler<StatusMessage, StatusMessage> helloHandler,
       LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> goodbyeHandler,
-      LocalMessageHandler<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksHandler) {
+      LocalMessageHandler<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksByRootHandler,
+      LocalMessageHandler<BeaconBlocksByRangeRequestMessage, BeaconBlock>
+          beaconBlocksByRangeHandler) {
 
     this.methods =
         createMethodMap(
@@ -43,7 +46,9 @@ public class RpcMethods {
             new RpcMessageHandler<>(RpcMethod.GOODBYE, peerLookup, goodbyeHandler)
                 .setCloseNotification(),
             new RpcMessageHandler<>(
-                RpcMethod.BEACON_BLOCKS_BY_ROOT, peerLookup, beaconBlocksHandler));
+                RpcMethod.BEACON_BLOCKS_BY_ROOT, peerLookup, beaconBlocksByRootHandler),
+            new RpcMessageHandler<>(
+                RpcMethod.BEACON_BLOCKS_BY_RANGE, peerLookup, beaconBlocksByRangeHandler));
   }
 
   private Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> createMethodMap(
