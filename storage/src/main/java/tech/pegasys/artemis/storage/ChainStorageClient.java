@@ -336,6 +336,16 @@ public class ChainStorageClient implements ChainStorage {
       }
       currentRoot = store.getBlock(currentRoot).getParent_root();
       BeaconBlock currentBlock = store.getBlock(currentRoot);
+      if (currentBlock == null) {
+        // The store is not guaranteed to make all blocks available
+        // Prune any unavailable indices
+        slotToCanonicalBlockRoot
+            .headMap(currentSlot, false)
+            .navigableKeySet()
+            .iterator()
+            .forEachRemaining(slotToCanonicalBlockRoot::remove);
+        break;
+      }
       currentSlot = currentBlock.getSlot();
     }
 

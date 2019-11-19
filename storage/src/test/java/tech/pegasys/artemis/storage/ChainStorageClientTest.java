@@ -56,6 +56,24 @@ public class ChainStorageClientTest {
   }
 
   @Test
+  public void getBlockBySlot_forPrunedBlock() {
+    // Setup and index chain
+    setup.initForGenesis();
+    final List<BeaconBlock> chain =
+        setup.createChain(Constants.GENESIS_SLOT + 1, Constants.GENESIS_SLOT + 5);
+    final BeaconBlock chainHead = chain.get(chain.size() - 1);
+    client.updateBestBlock(chainHead.signing_root("signature"), chainHead.getSlot());
+
+    setup
+        .getClient()
+        .getStore()
+        .cleanStoreUntilSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT + 3));
+
+    UnsignedLong lookupSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT + 2);
+    assertThat(client.getBlockBySlot(lookupSlot)).isEmpty();
+  }
+
+  @Test
   public void getBlockBySlot_futureSlot() {
     // Setup and index chain
     setup.initForGenesis();
@@ -159,13 +177,13 @@ public class ChainStorageClientTest {
     testUpdateBestBlockToFork(9L, 9L, 1L, 2L);
   }
 
-  private void testUpdateBestBlockToFork(final long origChainLength, final long newChainLength) {
-    testUpdateBestBlockToFork(origChainLength, newChainLength, 0, 0);
+  @Test
+  public void updateBestBlock_whenBlocksHaveBeenPruned() {
+    testUpdateBestBlockToFork(10L, 11L, 0, 0, 5L);
   }
 
-  private void testUpdateBestBlockToFork(
-      final long origChainLength, final long newChainLength, final long skippedSlots) {
-    testUpdateBestBlockToFork(origChainLength, newChainLength, skippedSlots, skippedSlots);
+  private void testUpdateBestBlockToFork(final long origChainLength, final long newChainLength) {
+    testUpdateBestBlockToFork(origChainLength, newChainLength, 0, 0, -1L);
   }
 
   private void testUpdateBestBlockToFork(
@@ -173,6 +191,22 @@ public class ChainStorageClientTest {
       final long newChainLength,
       final long origChainSkippedSlots,
       final long newChainSkippedSlots) {
+    testUpdateBestBlockToFork(
+        origChainLength, newChainLength, origChainSkippedSlots, newChainSkippedSlots, -1L);
+  }
+
+  private void testUpdateBestBlockToFork(
+      final long origChainLength, final long newChainLength, final long skippedSlots) {
+    testUpdateBestBlockToFork(origChainLength, newChainLength, skippedSlots, skippedSlots, -1L);
+  }
+
+  private void testUpdateBestBlockToFork(
+      final long origChainLength,
+      final long newChainLength,
+      final long origChainSkippedSlots,
+      final long newChainSkippedSlots,
+      final long pruneUpToSlot) {
+    final UnsignedLong oldestAvailableSlot = UnsignedLong.valueOf(pruneUpToSlot);
     // Setup genesis block
     setup.initForGenesis();
     final BeaconBlock genesisBlock = setup.genesisBlock().orElseThrow();
@@ -194,18 +228,35 @@ public class ChainStorageClientTest {
     assertThat(newChain.size())
         .isEqualTo(calculateBlocksInChain(newChainLength, newChainSkippedSlots));
     final BeaconBlock newHead = newChain.get(newChain.size() - 1);
+
+    // Prune blocks if requested
+    if (pruneUpToSlot >= Constants.GENESIS_SLOT) {
+      final Store store = setup.getClient().getStore();
+      store.cleanStoreUntilSlot(UnsignedLong.valueOf(pruneUpToSlot));
+    }
+
     // Update client so that blocks are indexed
     client.updateBestBlock(newHead.signing_root("signature"), newHead.getSlot());
 
-    // Verify that all canonical blocks are indexed
-    assertThat(client.getBlockBySlot(genesisBlock.getSlot())).contains(genesisBlock);
+    // Verify that all non-pruned canonical blocks are indexed
+    // Check genesis
+    if (genesisBlock.getSlot().compareTo(oldestAvailableSlot) < 0) {
+      assertThat(client.getBlockBySlot(genesisBlock.getSlot())).isEmpty();
+    } else {
+      assertThat(client.getBlockBySlot(genesisBlock.getSlot())).contains(genesisBlock);
+    }
+    // Check rest of chain
     final UnsignedLong newSlotDelta = UnsignedLong.valueOf(newChainSkippedSlots + 1);
     UnsignedLong currentSlot = UnsignedLong.valueOf(chainStartSlot);
     for (BeaconBlock newBlock : newChain) {
       // Sanity check that slots are sequential
       assertThat(newBlock.getSlot()).isEqualTo(currentSlot);
-      // Check that this block is indexed by slot
-      assertThat(client.getBlockBySlot(newBlock.getSlot())).contains(newBlock);
+      // Check that this block is indexed by slot, if possible
+      if (newBlock.getSlot().compareTo(oldestAvailableSlot) < 0) {
+        assertThat(client.getBlockBySlot(newBlock.getSlot())).isEmpty();
+      } else {
+        assertThat(client.getBlockBySlot(newBlock.getSlot())).contains(newBlock);
+      }
       currentSlot = currentSlot.plus(newSlotDelta);
     }
 
@@ -221,6 +272,7 @@ public class ChainStorageClientTest {
       boolean shouldHaveBlockIndexedAtSlot =
           newChain.stream()
               .map(BeaconBlock::getSlot)
+              .filter(slot -> slot.compareTo(oldestAvailableSlot) >= 0)
               .anyMatch(s -> Objects.equals(s, indexToCheck));
       if (shouldHaveBlockIndexedAtSlot) {
         assertThat(client.getBlockBySlot(oldBlock.getSlot()))
