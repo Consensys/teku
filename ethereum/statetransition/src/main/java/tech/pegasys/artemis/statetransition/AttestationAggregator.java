@@ -96,8 +96,8 @@ public class AttestationAggregator {
 
       // Set the bit of the new attester in the aggregate attestation
       aggregateAttestation
-              .getAggregation_bits()
-              .setBit(getAttesterIndexIntoCommittee(newAttestation));
+          .getAggregation_bits()
+          .setBit(getAttesterIndexIntoCommittee(newAttestation));
 
       aggregateSignatures(aggregateAttestation, newAttestation);
     }
