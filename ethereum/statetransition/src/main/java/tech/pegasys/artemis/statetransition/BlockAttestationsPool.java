@@ -33,7 +33,11 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockAttestationsPool {
 
-  private final ConcurrentHashMap<Bytes32, UnsignedLong> dataRootToSlot = new ConcurrentHashMap<>();
+  // TODO: memory clean up code brought over from ChainStorageClient,
+  // requires to be updated to new data structures to make it work.
+  // Memory Cleaning
+  //  private final ConcurrentHashMap<Bytes32, UnsignedLong> dataRootToSlot = new
+  // ConcurrentHashMap<>();
 
   private final ConcurrentHashMap<Bytes32, Bitlist> unprocessedAttestationsBitlist =
       new ConcurrentHashMap<>();
@@ -47,7 +51,8 @@ public class BlockAttestationsPool {
           * Constants.SLOTS_PER_EPOCH;
 
   private final Queue<Attestation> aggregateAttesationsQueue =
-      new PriorityBlockingQueue<>(QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
+      new PriorityBlockingQueue<>(
+          QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
 
   public void addUnprocessedAttestationToQueue(Attestation newAttestation) {
     if (isSingleAttester(newAttestation)) {
@@ -73,15 +78,18 @@ public class BlockAttestationsPool {
 
     ChainStorage.add(newAttestation, aggregateAttesationsQueue);
 
-    ChainStorage.add(attestationDataHash, newAttestation.getData().getSlot(), dataRootToSlot);
+    //    ChainStorage.add(attestationDataHash, newAttestation.getData().getSlot(), dataRootToSlot);
   }
 
   public void addAttestationProcessedInBlock(Attestation attestation) {
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     final Bitlist bitlist =
-        processedAttestationsBitlist.computeIfAbsent(attestationDataHash, (key) -> {
-              ChainStorage.add(
-                  attestationDataHash, attestation.getData().getSlot(), dataRootToSlot);
+        processedAttestationsBitlist.computeIfAbsent(
+            attestationDataHash,
+            (key) -> {
+              //              ChainStorage.add(
+              //                  attestationDataHash, attestation.getData().getSlot(),
+              // dataRootToSlot);
               return attestation.getAggregation_bits().copy();
             });
 
