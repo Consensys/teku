@@ -54,7 +54,7 @@ public class BlockAttestationsPool {
       new PriorityBlockingQueue<>(
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
 
-  public void addUnprocessedAttestationToQueue(Attestation newAttestation) {
+  public void addUnprocessedAggregateAttestationToQueue(Attestation newAttestation) {
     if (isSingleAttester(newAttestation)) {
       // We only care about aggregated attestations
       return;
@@ -81,7 +81,7 @@ public class BlockAttestationsPool {
     //    ChainStorage.add(attestationDataHash, newAttestation.getData().getSlot(), dataRootToSlot);
   }
 
-  public void addAttestationProcessedInBlock(Attestation attestation) {
+  public void addAggregateAttestationProcessedInBlock(Attestation attestation) {
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     final Bitlist bitlist =
         processedAttestationsBitlist.computeIfAbsent(

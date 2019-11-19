@@ -19,6 +19,8 @@ dependencies {
   implementation 'tech.pegasys.pantheon.internal:metrics-core'
   runtime 'org.apache.logging.log4j:log4j-core'
 
+  testImplementation 'org.mockito:mockito-core'
+
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
   test {

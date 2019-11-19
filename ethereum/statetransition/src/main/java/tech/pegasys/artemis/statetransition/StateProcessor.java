@@ -177,7 +177,7 @@ public class StateProcessor {
           .getAttestations()
           .forEach(
               attestation -> {
-                blockAttestationsPool.addAttestationProcessedInBlock(attestation);
+                blockAttestationsPool.addAggregateAttestationProcessedInBlock(attestation);
                 numberOfAttestersInAttestations.add(
                     IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
                         .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
@@ -210,7 +210,7 @@ public class StateProcessor {
       eventBus.post(new StoreDiskUpdateEvent(transaction));
 
       attestationAggregator.processAttestation(attestation);
-      blockAttestationsPool.addUnprocessedAttestationToQueue(attestation);
+      blockAttestationsPool.addUnprocessedAggregateAttestationToQueue(attestation);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
