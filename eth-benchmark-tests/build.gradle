@@ -6,6 +6,7 @@ dependencies {
   implementation project(':util')
   implementation project(':eth-tests')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
   implementation 'org.apache.tuweni:tuweni-bytes'
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
