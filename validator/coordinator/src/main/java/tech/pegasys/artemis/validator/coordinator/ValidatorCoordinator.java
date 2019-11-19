@@ -77,8 +77,8 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.events.AggregationEvent;
-import tech.pegasys.artemis.statetransition.events.AttestationEvent;
+import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
+import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -197,7 +197,7 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onAttestationEvent(AttestationEvent event) throws IllegalArgumentException {
+  public void onAttestationEvent(BroadcastAttestationEvent event) throws IllegalArgumentException {
     try {
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
@@ -229,7 +229,7 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onAggregationEvent(AggregationEvent event) {
+  public void onAggregationEvent(BroadcastAggregatesEvent event) {
     attestationAggregator.deactivateAggregation();
     List<AggregateAndProof> aggregateAndProofs = attestationAggregator.getAggregateAndProofs();
     for (AggregateAndProof aggregateAndProof : aggregateAndProofs) {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
-public class AggregationEvent {
+public class BroadcastAggregatesEvent {
 
-  public AggregationEvent() {}
+  public BroadcastAggregatesEvent() {}
 }

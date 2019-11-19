@@ -15,11 +15,11 @@ package tech.pegasys.artemis.statetransition.events;
 
 import org.apache.tuweni.bytes.Bytes32;
 
-public class AttestationEvent {
+public class BroadcastAttestationEvent {
 
   Bytes32 headBlockRoot;
 
-  public AttestationEvent(Bytes32 headBlockRoot) {
+  public BroadcastAttestationEvent(Bytes32 headBlockRoot) {
     this.headBlockRoot = headBlockRoot;
   }
 

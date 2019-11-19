@@ -44,8 +44,8 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
-import tech.pegasys.artemis.statetransition.events.AggregationEvent;
-import tech.pegasys.artemis.statetransition.events.AttestationEvent;
+import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
+import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -285,9 +285,9 @@ public class BeaconChainController {
                   + "                       "
                   + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
 
-          this.eventBus.post(new AttestationEvent(headBlockRoot));
+          this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot));
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-          this.eventBus.post(new AggregationEvent());
+          this.eventBus.post(new BroadcastAggregatesEvent());
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
         }
       }
