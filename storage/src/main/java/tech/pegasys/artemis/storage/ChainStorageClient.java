@@ -336,7 +336,14 @@ public class ChainStorageClient implements ChainStorage {
         && bestSlot.minus(slotsPerHistoricalRoot).compareTo(slot) >= 0;
   }
 
-  public boolean isIncludedInBestState(final BeaconBlock block) {
+  public boolean isIncludedInBestState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return false;
+    }
+    final BeaconBlock block = store.getBlock(blockRoot);
+    if (block == null) {
+      return false;
+    }
     return getBlockRootBySlot(block.getSlot())
         .map(actualRoot -> actualRoot.equals(block.hash_tree_root()))
         .orElse(false);

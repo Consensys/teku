@@ -19,6 +19,7 @@ class ChainStorageClientTest {
   private static final Bytes32 BEST_BLOCK_ROOT = Bytes32.fromHexString("0x8462485245");
   private static final BeaconBlock BLOCK1 = DataStructureUtil.randomBeaconBlock(0, 1);
   private static final BeaconBlock BLOCK2 = DataStructureUtil.randomBeaconBlock(0, 2);
+  private static final Bytes32 BLOCK1_ROOT = BLOCK1.hash_tree_root();
   private final EventBus eventBus = mock(EventBus.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
@@ -100,13 +101,13 @@ class ChainStorageClientTest {
 
   @Test
   public void isIncludedInBestState_falseWhenNoStoreSet() {
-    assertThat(storageClient.isIncludedInBestState(BLOCK1)).isFalse();
+    assertThat(storageClient.isIncludedInBestState(BLOCK1_ROOT)).isFalse();
   }
 
   @Test
   public void isIncludedInBestState_falseWhenBestBlockNotSet() {
     storageClient.setStore(store);
-    assertThat(storageClient.isIncludedInBestState(BLOCK1)).isFalse();
+    assertThat(storageClient.isIncludedInBestState(BLOCK1_ROOT)).isFalse();
   }
 
   @Test
@@ -117,8 +118,9 @@ class ChainStorageClientTest {
     // bestState has no historical block roots so definitely nothing canonical at the block's slot
     final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
+    when(store.getBlock(BLOCK1_ROOT)).thenReturn(BLOCK1);
 
-    assertThat(storageClient.isIncludedInBestState(BLOCK1)).isFalse();
+    assertThat(storageClient.isIncludedInBestState(BLOCK1_ROOT)).isFalse();
   }
 
   @Test
@@ -130,7 +132,7 @@ class ChainStorageClientTest {
     bestState.getBlock_roots().set(BLOCK1.getSlot().intValue(), BLOCK2.hash_tree_root());
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
 
-    assertThat(storageClient.isIncludedInBestState(BLOCK1)).isFalse();
+    assertThat(storageClient.isIncludedInBestState(BLOCK1_ROOT)).isFalse();
   }
 
   @Test
@@ -141,7 +143,8 @@ class ChainStorageClientTest {
     final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
     bestState.getBlock_roots().set(BLOCK1.getSlot().intValue(), BLOCK1.hash_tree_root());
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
+    when(store.getBlock(BLOCK1_ROOT)).thenReturn(BLOCK1);
 
-    assertThat(storageClient.isIncludedInBestState(BLOCK1)).isTrue();
+    assertThat(storageClient.isIncludedInBestState(BLOCK1_ROOT)).isTrue();
   }
 }
