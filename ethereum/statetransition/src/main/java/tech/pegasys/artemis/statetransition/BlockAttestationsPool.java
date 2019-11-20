@@ -92,8 +92,7 @@ public class BlockAttestationsPool {
               //              ChainStorage.add(
               //                  attestationDataHash, attestation.getData().getSlot(),
               // dataRootToSlot);
-              return new Bitlist(
-                  attestation.getAggregation_bits().getCurrentSize(), MAX_VALIDATORS_PER_COMMITTEE);
+              return attestation.getAggregation_bits().copy();
             });
 
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
