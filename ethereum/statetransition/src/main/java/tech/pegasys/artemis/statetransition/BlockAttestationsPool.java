@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.setBitsForNewAttestation;
+import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
@@ -39,18 +40,16 @@ public class BlockAttestationsPool {
   //  private final ConcurrentHashMap<Bytes32, UnsignedLong> dataRootToSlot = new
   // ConcurrentHashMap<>();
 
-  private final ConcurrentHashMap<Bytes32, Bitlist> unprocessedAttestationsBitlist =
+  final ConcurrentHashMap<Bytes32, Bitlist> unprocessedAttestationsBitlist =
       new ConcurrentHashMap<>();
 
-  private final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlist =
+  final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlist =
       new ConcurrentHashMap<>();
 
   private final int QUEUE_INITIAL_CAPACITY =
-      Constants.MAX_VALIDATORS_PER_COMMITTEE
-          * Constants.MAX_COMMITTEES_PER_SLOT
-          * Constants.SLOTS_PER_EPOCH;
+      MAX_VALIDATORS_PER_COMMITTEE * Constants.MAX_COMMITTEES_PER_SLOT * Constants.SLOTS_PER_EPOCH;
 
-  private final Queue<Attestation> aggregateAttesationsQueue =
+  final Queue<Attestation> aggregateAttesationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
 
@@ -76,7 +75,7 @@ public class BlockAttestationsPool {
       }
     }
 
-    ChainStorage.add(newAttestation, aggregateAttesationsQueue);
+    aggregateAttesationsQueue.add(newAttestation);
 
     //    ChainStorage.add(attestationDataHash, newAttestation.getData().getSlot(), dataRootToSlot);
   }
@@ -90,7 +89,8 @@ public class BlockAttestationsPool {
               //              ChainStorage.add(
               //                  attestationDataHash, attestation.getData().getSlot(),
               // dataRootToSlot);
-              return attestation.getAggregation_bits().copy();
+              return new Bitlist(
+                  attestation.getAggregation_bits().getCurrentSize(), MAX_VALIDATORS_PER_COMMITTEE);
             });
 
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {

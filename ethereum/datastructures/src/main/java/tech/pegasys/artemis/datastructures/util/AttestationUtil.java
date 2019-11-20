@@ -252,6 +252,7 @@ public class AttestationUtil {
         representsNewAttester = true;
       }
     }
+    System.out.println(representsNewAttester);
     return representsNewAttester;
   }
 

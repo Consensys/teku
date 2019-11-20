@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMM
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -30,6 +31,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -44,6 +46,26 @@ public class AttestationGenerator {
 
   public AttestationGenerator(final List<BLSKeyPair> validatorKeys) {
     this.validatorKeys = validatorKeys;
+  }
+
+  public static Attestation aggregateAttestation(int numAttesters) {
+    Attestation attestation = DataStructureUtil.randomAttestation(1);
+    withNewAttesterBits(attestation, numAttesters);
+    return attestation;
+  }
+
+  public static Attestation withNewAttesterBits(Attestation attestation, int numNewAttesters) {
+    Bitlist newBitlist = new Bitlist(attestation.getAggregation_bits());
+    int numBitsSet = 0;
+    while (numBitsSet < numNewAttesters) {
+      int i = new Random().nextInt(attestation.getAggregation_bits().getCurrentSize());
+      if (newBitlist.getBit(i) != 1) {
+        newBitlist.setBit(i);
+        numBitsSet++;
+      }
+    }
+    attestation.setAggregation_bits(newBitlist);
+    return attestation;
   }
 
   public Attestation validAttestation(final ChainStorageClient storageClient)

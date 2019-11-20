@@ -54,9 +54,9 @@ public class Attestation
   }
 
   public Attestation(Attestation attestation) {
-    this.aggregation_bits = new Bitlist(attestation.getAggregation_bits());
+    this.aggregation_bits = attestation.getAggregation_bits().copy();
     this.data = new AttestationData(attestation.getData());
-    this.custody_bitfield = new Bitlist(attestation.getCustody_bitfield());
+    this.custody_bitfield = attestation.getCustody_bitfield().copy();
     this.signature = BLSSignature.fromBytes(attestation.getAggregate_signature().toBytes());
   }
 
