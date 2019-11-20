@@ -98,7 +98,6 @@ public class BeaconBlocksByRangeIntegrationTest {
     transaction.putBlockState(block2Root, bestState);
     transaction.commit();
 
-
     final List<BeaconBlock> response = requestBlocks(block2Root);
     assertThat(response).containsExactly(block1, block2);
   }
