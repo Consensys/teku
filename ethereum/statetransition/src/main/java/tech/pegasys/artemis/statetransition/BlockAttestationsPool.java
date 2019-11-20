@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleA
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.setBitsForNewAttestation;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.List;
@@ -40,15 +41,17 @@ public class BlockAttestationsPool {
   //  private final ConcurrentHashMap<Bytes32, UnsignedLong> dataRootToSlot = new
   // ConcurrentHashMap<>();
 
+  @VisibleForTesting
   final ConcurrentHashMap<Bytes32, Bitlist> unprocessedAttestationsBitlist =
       new ConcurrentHashMap<>();
 
+  @VisibleForTesting
   final ConcurrentHashMap<Bytes32, Bitlist> processedAttestationsBitlist =
       new ConcurrentHashMap<>();
 
-  private final int QUEUE_INITIAL_CAPACITY =
-      MAX_VALIDATORS_PER_COMMITTEE * Constants.MAX_COMMITTEES_PER_SLOT * Constants.SLOTS_PER_EPOCH;
+  private final int QUEUE_INITIAL_CAPACITY = 1024;
 
+  @VisibleForTesting
   final Queue<Attestation> aggregateAttesationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
