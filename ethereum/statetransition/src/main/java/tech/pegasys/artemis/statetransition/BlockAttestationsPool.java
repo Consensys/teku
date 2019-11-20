@@ -56,10 +56,6 @@ public class BlockAttestationsPool {
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
 
   public void addUnprocessedAggregateAttestationToQueue(Attestation newAttestation) {
-    if (isSingleAttester(newAttestation)) {
-      // We only care about aggregated attestations
-      return;
-    }
 
     Bytes32 attestationDataHash = newAttestation.getData().hash_tree_root();
     AtomicBoolean oldBitlistPresent = new AtomicBoolean(true);

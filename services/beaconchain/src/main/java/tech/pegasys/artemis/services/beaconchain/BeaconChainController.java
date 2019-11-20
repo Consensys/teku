@@ -166,8 +166,6 @@ public class BeaconChainController {
         new StateProcessor(
             eventBus,
             chainStorageClient,
-            attestationAggregator,
-            blockAttestationsPool,
             metricsSystem,
             config);
   }

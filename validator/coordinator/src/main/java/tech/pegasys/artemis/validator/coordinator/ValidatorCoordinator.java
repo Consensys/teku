@@ -80,6 +80,9 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
+import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -187,6 +190,23 @@ public class ValidatorCoordinator {
     if (!isGenesis(slot)) {
       createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock);
     }
+  }
+
+  @Subscribe
+  public void onProcessedAttestationEvent(ProcessedAttestationEvent event) {
+    blockAttestationsPool.addUnprocessedAggregateAttestationToQueue(event.getAttestation());
+  }
+
+  @Subscribe
+  public void onProcessedAggregateEvent(ProcessedAggregateEvent event) {
+    attestationAggregator.processAttestation(event.getAttestation());
+  }
+
+  @Subscribe
+  public void onProcessedBlockEvent(ProcessedBlockEvent event) {
+    event.getAttestationList().forEach(attestation ->
+      blockAttestationsPool.addAggregateAttestationProcessedInBlock(attestation)
+    );
   }
 
   @Subscribe

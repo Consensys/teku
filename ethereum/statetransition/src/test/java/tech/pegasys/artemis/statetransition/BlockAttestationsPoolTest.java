@@ -41,7 +41,6 @@ class BlockAttestationsPoolTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final ChainStorageClient storageClient =
       spy(new ChainStorageClient(mock(EventBus.class)));
-  private final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
   private BlockAttestationsPool pool;
 
   @BeforeEach
@@ -51,17 +50,8 @@ class BlockAttestationsPoolTest {
   }
 
   @Test
-  void unprocessedAggregate_SingleAttester_ShouldBeIgnored() throws Exception {
-    final Attestation attestation = attestationGenerator.validAttestation(storageClient);
-    pool.addUnprocessedAggregateAttestationToQueue(attestation);
-    assertFalse(pool.aggregateAttesationsQueue.contains(attestation));
-    assertFalse(
-        pool.unprocessedAttestationsBitlist.containsValue(attestation.getAggregation_bits()));
-  }
-
-  @Test
   @SuppressWarnings("UnusedVariable")
-  void unprocessedAggregate_NewData() throws Exception {
+  void unprocessedAggregate_NewData() {
     Attestation attestation = AttestationGenerator.aggregateAttestation(10);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
     assertTrue(pool.aggregateAttesationsQueue.contains(attestation));
@@ -70,7 +60,7 @@ class BlockAttestationsPoolTest {
   }
 
   @Test
-  void unprocessedAggregate_OldData_DifferentBitlist_BitlistUpdated() throws Exception {
+  void unprocessedAggregate_OldData_DifferentBitlist_BitlistUpdated() {
     Attestation attestation = AttestationGenerator.aggregateAttestation(10);
     Attestation newAttestation = withNewAttesterBits(new Attestation(attestation), 1);
 
@@ -88,7 +78,7 @@ class BlockAttestationsPoolTest {
   }
 
   @Test
-  void unprocessedAggregate_OldData_SameBitlist_ShouldBeIgnored() throws Exception {
+  void unprocessedAggregate_OldData_SameBitlist_ShouldBeIgnored() {
     Attestation attestation = AttestationGenerator.aggregateAttestation(10);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
     Attestation newAttestation = new Attestation(attestation);
@@ -110,7 +100,7 @@ class BlockAttestationsPoolTest {
   }
 
   @Test
-  void processedAggregate_OldData_DifferentBitlist_SetBits() throws Exception {
+  void processedAggregate_OldData_DifferentBitlist_SetBits() {
     Attestation attestation = AttestationGenerator.aggregateAttestation(10);
     pool.addAggregateAttestationProcessedInBlock(attestation);
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
@@ -136,8 +126,7 @@ class BlockAttestationsPoolTest {
   }
 
   @Test
-  void getAggregatedAttestations_DoesNotReturnAttestationsMoreThanMaxAttestations()
-      throws Exception {
+  void getAggregatedAttestations_DoesNotReturnAttestationsMoreThanMaxAttestations() {
     for (int i = 0; i < MAX_ATTESTATIONS + 1; i++) {
       Attestation attestation = DataStructureUtil.randomAttestation(i);
       attestation.setData(new AttestationData(UnsignedLong.valueOf(i), attestation.getData()));
@@ -150,8 +139,7 @@ class BlockAttestationsPoolTest {
   }
 
   @Test
-  void getAggregatedAttestations_DoesNotReturnAttestationsWithSlotsLessThanGivenSlot()
-      throws Exception {
+  void getAggregatedAttestations_DoesNotReturnAttestationsWithSlotsHigherThanGivenSlot() {
     int SLOT = 10;
     for (int i = 0; i < SLOT; i++) {
       Attestation attestation = DataStructureUtil.randomAttestation(i);
@@ -163,9 +151,7 @@ class BlockAttestationsPoolTest {
     pool.getAggregatedAttestationsForBlockAtSlot(CUTOFF_SLOT)
         .forEach(
             attestation -> {
-              if (attestation.getData().getSlot().compareTo(CUTOFF_SLOT) > 0) {
-                fail();
-              }
+              assertTrue(attestation.getData().getSlot().compareTo(CUTOFF_SLOT) <= 0);
             });
   }
 }
