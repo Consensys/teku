@@ -79,7 +79,9 @@ class BlockAttestationsPoolTest {
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
     Bitlist bitlist = pool.unprocessedAttestationsBitlist.get(attestationDataHash);
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      final int expected = attestation.getAggregation_bits().getBit(i) | newAttestation.getAggregation_bits().getBit(i);
+      final int expected =
+          attestation.getAggregation_bits().getBit(i)
+              | newAttestation.getAggregation_bits().getBit(i);
       assertEquals(bitlist.getBit(i), expected);
     }
     assert (pool.aggregateAttesationsQueue.size() == 2);
@@ -117,7 +119,9 @@ class BlockAttestationsPoolTest {
     pool.addAggregateAttestationProcessedInBlock(newAttestation);
     Bitlist bitlist = pool.processedAttestationsBitlist.get(attestationDataHash);
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
-      final int expected = attestation.getAggregation_bits().getBit(i) | newAttestation.getAggregation_bits().getBit(i);
+      final int expected =
+          attestation.getAggregation_bits().getBit(i)
+              | newAttestation.getAggregation_bits().getBit(i);
       assertEquals(bitlist.getBit(i), expected);
     }
   }

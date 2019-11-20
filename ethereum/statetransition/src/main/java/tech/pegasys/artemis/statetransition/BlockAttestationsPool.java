@@ -16,7 +16,6 @@ package tech.pegasys.artemis.statetransition;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.setBitsForNewAttestation;
-import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
