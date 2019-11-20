@@ -15,11 +15,15 @@ package org.ethereum.beacon.discovery.schema;
 
 import com.google.common.base.Objects;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
@@ -164,13 +168,18 @@ public class NodeRecord {
     values.add(RlpString.create(getSeq().toBigInteger()));
     values.add(RlpString.create("id"));
     values.add(RlpString.create(getIdentityScheme().stringName()));
-    for (Map.Entry<String, Object> keyPair : fields.entrySet()) {
-      if (keyPair.getValue() == null) {
+    ArrayList<String> fieldKeySet = new ArrayList<>(fields.keySet());
+    Collections.sort(fieldKeySet);
+    for (String key : fieldKeySet) {
+      Object value = fields.get(key);
+      if (value == null) {
         continue;
       }
-      values.add(RlpString.create(keyPair.getKey()));
-      values.add(enrSchemeInterpreter.encode(keyPair.getKey(), keyPair.getValue()));
+      values.add(RlpString.create(key));
+      RlpString encodedString = enrSchemeInterpreter.encode(key, value);
+      values.add(encodedString);
     }
+
     byte[] bytes = RlpEncoder.encode(new RlpList(values));
     assert bytes.length <= 300;
     return Bytes.wrap(bytes);

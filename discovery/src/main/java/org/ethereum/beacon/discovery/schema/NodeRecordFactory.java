@@ -96,10 +96,12 @@ public class NodeRecordFactory {
               "No ethereum record interpreter found for identity scheme %s", nodeIdentity));
     }
 
+    byte[] seqNoBytes = ((RlpString) values.get(1)).getBytes();
+
     return NodeRecord.fromRawFields(
         enrSchemeInterpreter,
         UInt64.fromBytes( // BigEndian
-            Bytes.wrap(((RlpString) values.get(1)).getBytes())),
+            Bytes.wrap(Bytes.wrap(new byte[8-seqNoBytes.length]),Bytes.wrap(seqNoBytes))),
         Bytes.wrap(((RlpString) values.get(0)).getBytes()),
         values.subList(4, values.size()));
   }
