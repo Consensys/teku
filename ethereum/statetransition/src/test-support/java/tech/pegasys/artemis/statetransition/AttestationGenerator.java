@@ -19,9 +19,10 @@ import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -56,14 +57,18 @@ public class AttestationGenerator {
 
   public static Attestation withNewAttesterBits(Attestation attestation, int numNewAttesters) {
     Bitlist newBitlist = new Bitlist(attestation.getAggregation_bits());
-    int numBitsSet = 0;
-    while (numBitsSet < numNewAttesters) {
-      int i = new Random().nextInt(attestation.getAggregation_bits().getCurrentSize());
-      if (newBitlist.getBit(i) != 1) {
-        newBitlist.setBit(i);
-        numBitsSet++;
+    List<Integer> unsetBits = new ArrayList<>();
+    for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
+      if (newBitlist.getBit(i) == 0) {
+        unsetBits.add(i);
       }
     }
+
+    Collections.shuffle(unsetBits);
+    for (int i = 0; i < numNewAttesters; i++) {
+      newBitlist.setBit(unsetBits.get(i));
+    }
+
     attestation.setAggregation_bits(newBitlist);
     return attestation;
   }
