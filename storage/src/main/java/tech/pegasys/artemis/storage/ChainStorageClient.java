@@ -311,6 +311,19 @@ public class ChainStorageClient implements ChainStorage {
     return getBlockRootBySlot(slot).map(blockRoot -> store.getBlock(blockRoot));
   }
 
+  public boolean isIncludedInBestState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return false;
+    }
+    final BeaconBlock block = store.getBlock(blockRoot);
+    if (block == null) {
+      return false;
+    }
+    return getBlockRootBySlot(block.getSlot())
+        .map(actualRoot -> actualRoot.equals(block.hash_tree_root()))
+        .orElse(false);
+  }
+
   private Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
     if (store == null || Bytes32.ZERO.equals(bestBlockRoot)) {
       return Optional.empty();
@@ -334,18 +347,5 @@ public class ChainStorageClient implements ChainStorage {
       final UnsignedLong slot, final UnsignedLong slotsPerHistoricalRoot) {
     return bestSlot.compareTo(slotsPerHistoricalRoot) >= 0
         && bestSlot.minus(slotsPerHistoricalRoot).compareTo(slot) >= 0;
-  }
-
-  public boolean isIncludedInBestState(final Bytes32 blockRoot) {
-    if (store == null) {
-      return false;
-    }
-    final BeaconBlock block = store.getBlock(blockRoot);
-    if (block == null) {
-      return false;
-    }
-    return getBlockRootBySlot(block.getSlot())
-        .map(actualRoot -> actualRoot.equals(block.hash_tree_root()))
-        .orElse(false);
   }
 }
