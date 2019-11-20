@@ -16,35 +16,24 @@ package tech.pegasys.artemis.statetransition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.withNewAttesterBits;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 class BlockAttestationsPoolTest {
 
-  private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final ChainStorageClient storageClient =
-      spy(new ChainStorageClient(mock(EventBus.class)));
   private BlockAttestationsPool pool;
 
   @BeforeEach
   void setup() {
-    BeaconChainUtil.initializeStorage(storageClient, validatorKeys);
     pool = new BlockAttestationsPool();
   }
 

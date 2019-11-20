@@ -194,12 +194,12 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onProcessedAttestationEvent(ProcessedAttestationEvent event) {
-    blockAttestationsPool.addUnprocessedAggregateAttestationToQueue(event.getAttestation());
+    attestationAggregator.processAttestation(event.getAttestation());
   }
 
   @Subscribe
   public void onProcessedAggregateEvent(ProcessedAggregateEvent event) {
-    attestationAggregator.processAttestation(event.getAttestation());
+    blockAttestationsPool.addUnprocessedAggregateAttestationToQueue(event.getAttestation());
   }
 
   @Subscribe

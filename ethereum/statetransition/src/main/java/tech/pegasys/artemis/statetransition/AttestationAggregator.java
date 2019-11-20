@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
 import com.google.common.primitives.UnsignedLong;
@@ -57,19 +56,19 @@ public class AttestationAggregator {
 
   public void addOwnValidatorAttestation(Attestation newAttestation) {
     Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
-    AtomicBoolean isNewAggregate = new AtomicBoolean(false);
+    AtomicBoolean isNewData = new AtomicBoolean(false);
     Attestation aggregateAttestation =
         dataHashToAggregate.computeIfAbsent(
             attestationDataHashTreeRoot,
             (key) -> {
-              isNewAggregate.set(true);
+              isNewData.set(true);
               return newAttestation;
             });
 
     // If there exists an old aggregate attestation with the same Attestation Data,
     // and the new Attestation represents a new attester, add the signature of the
     // new attestation to the old aggregate attestation.
-    if (!isNewAggregate.get() && representsNewAttester(aggregateAttestation, newAttestation)) {
+    if (!isNewData.get() && representsNewAttester(aggregateAttestation, newAttestation)) {
 
       // Set the bit of the new attester in the aggregate attestation
       aggregateAttestation
@@ -84,7 +83,7 @@ public class AttestationAggregator {
     // another attestation with the same message is received
     // - add it to the list of aggregate attestations for that commiteeeIndex
     // to broadcast
-    else if (isNewAggregate.get()) {
+    else if (isNewData.get()) {
       UnsignedLong committeeIndex = newAttestation.getData().getIndex();
       committeeIndexToAggregatesList.computeIfAbsent(committeeIndex, k -> new ArrayList<>());
       List<Attestation> aggregatesList = committeeIndexToAggregatesList.get(committeeIndex);
@@ -93,9 +92,6 @@ public class AttestationAggregator {
   }
 
   public void processAttestation(Attestation newAttestation) {
-    if (isSingleAttester(newAttestation)) {
-      return;
-    }
 
     Bytes32 attestationDataHashTreeRoot = newAttestation.getData().hash_tree_root();
     dataHashToAggregate.computeIfPresent(
