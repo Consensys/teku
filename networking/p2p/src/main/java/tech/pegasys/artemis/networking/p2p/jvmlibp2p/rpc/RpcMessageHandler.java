@@ -215,7 +215,6 @@ public class RpcMessageHandler<
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
-      LOG.info("Handler removed");
       final IllegalStateException exception = new IllegalStateException("Stream closed.");
       // This is an error if we haven't already sent the request...
       activeFuture.completeExceptionally(exception);
