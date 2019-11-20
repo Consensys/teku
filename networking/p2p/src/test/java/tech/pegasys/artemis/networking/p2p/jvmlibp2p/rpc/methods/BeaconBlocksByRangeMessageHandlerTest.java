@@ -89,7 +89,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final Bytes32 headBlockRoot = headBlock.hash_tree_root();
     when(storageClient.getStore()).thenReturn(store);
     when(store.getBlock(headBlockRoot)).thenReturn(headBlock);
-    when(storageClient.isIncludedInBestState(headBlock)).thenReturn(false);
+    when(storageClient.isIncludedInBestState(headBlockRoot)).thenReturn(false);
 
     handler.onIncomingMessage(
         peer,
@@ -280,8 +280,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   private void withCanonicalHeadBlock(final BeaconBlock headBlock, final UnsignedLong bestSlot) {
     when(storageClient.getStore()).thenReturn(store);
-    when(store.getBlock(headBlock.hash_tree_root())).thenReturn(headBlock);
-    when(storageClient.isIncludedInBestState(headBlock)).thenReturn(true);
+    when(storageClient.isIncludedInBestState(headBlock.hash_tree_root())).thenReturn(true);
     when(storageClient.getBestSlot()).thenReturn(bestSlot);
   }
 
