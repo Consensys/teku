@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.MessageApi;
@@ -84,6 +85,19 @@ public class GossipTopicHandlerTest {
 
     verify(eventBus, never()).post(mockObject);
     verify(publisher, never()).publish(any(), any());
+  }
+
+  @Test
+  public void accept_malformedData_exceedsMaximumLength() {
+    final Bytes serialized = Bytes.wrap(new byte[GossipTopicHandler.GOSSIP_MAX_SIZE + 1]);
+
+    final MessageApi mockMessage = new MockMessageApi(serialized, topicHandler.getTopic());
+
+    topicHandler.accept(mockMessage);
+
+    verify(topicHandler, never()).deserialize(any());
+    verifyZeroInteractions(publisher);
+    verifyZeroInteractions(eventBus);
   }
 
   @Test
