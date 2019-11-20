@@ -162,12 +162,7 @@ public class BeaconChainController {
 
   public void initStateProcessor() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
-    this.stateProcessor =
-        new StateProcessor(
-            eventBus,
-            chainStorageClient,
-            metricsSystem,
-            config);
+    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient, metricsSystem, config);
   }
 
   public void initP2PNetwork() {

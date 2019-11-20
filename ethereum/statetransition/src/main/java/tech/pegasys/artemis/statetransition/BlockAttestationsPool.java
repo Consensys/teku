@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndicesIntoCommittee;
-import static tech.pegasys.artemis.datastructures.util.AttestationUtil.isSingleAttester;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.setBitsForNewAttestation;
 
 import com.google.common.annotations.VisibleForTesting;

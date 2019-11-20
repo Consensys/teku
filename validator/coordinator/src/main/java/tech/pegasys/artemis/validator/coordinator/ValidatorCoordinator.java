@@ -204,9 +204,11 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onProcessedBlockEvent(ProcessedBlockEvent event) {
-    event.getAttestationList().forEach(attestation ->
-      blockAttestationsPool.addAggregateAttestationProcessedInBlock(attestation)
-    );
+    event
+        .getAttestationList()
+        .forEach(
+            attestation ->
+                blockAttestationsPool.addAggregateAttestationProcessedInBlock(attestation));
   }
 
   @Subscribe
