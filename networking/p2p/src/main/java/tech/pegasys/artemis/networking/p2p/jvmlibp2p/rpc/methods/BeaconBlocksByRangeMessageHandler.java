@@ -66,7 +66,7 @@ public class BeaconBlocksByRangeMessageHandler
       return;
     }
     final BeaconBlock headBlock = store.getBlock(message.getHeadBlockRoot());
-    if (headBlock == null || !storageClient.isCanonical(headBlock)) {
+    if (headBlock == null || !storageClient.isIncludedInBestState(headBlock)) {
       return;
     }
     final UnsignedLong bestSlot = storageClient.getBestSlot();

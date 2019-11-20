@@ -79,7 +79,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
         new BeaconBlocksByRangeRequestMessage(headBlockRoot, UnsignedLong.ZERO, ONE, ONE),
         listener);
 
-    verify(storageClient, never()).isCanonical(null);
+    verify(storageClient, never()).isIncludedInBestState(null);
     verifyNoBlocksReturned();
   }
 
@@ -89,7 +89,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final Bytes32 headBlockRoot = headBlock.hash_tree_root();
     when(storageClient.getStore()).thenReturn(store);
     when(store.getBlock(headBlockRoot)).thenReturn(headBlock);
-    when(storageClient.isCanonical(headBlock)).thenReturn(false);
+    when(storageClient.isIncludedInBestState(headBlock)).thenReturn(false);
 
     handler.onIncomingMessage(
         peer,
@@ -281,7 +281,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private void withCanonicalHeadBlock(final BeaconBlock headBlock, final UnsignedLong bestSlot) {
     when(storageClient.getStore()).thenReturn(store);
     when(store.getBlock(headBlock.hash_tree_root())).thenReturn(headBlock);
-    when(storageClient.isCanonical(headBlock)).thenReturn(true);
+    when(storageClient.isIncludedInBestState(headBlock)).thenReturn(true);
     when(storageClient.getBestSlot()).thenReturn(bestSlot);
   }
 

@@ -308,11 +308,37 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   public Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
-    return Optional.empty();
+    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlock(blockRoot));
   }
 
-  public boolean isCanonical(final BeaconBlock block) {
-    return false;
-    //    return slotToCanonicalBlockRoot.get(block.getSlot()).equals(block.hash_tree_root());
+  private Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
+    if (store == null || Bytes32.ZERO.equals(bestBlockRoot)) {
+      return Optional.empty();
+    }
+    final UnsignedLong slotsPerHistoricalRoot =
+        UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+
+    if (isSlotStillAvailable(slot, slotsPerHistoricalRoot)) {
+      return Optional.empty();
+    }
+    final BeaconState bestState = store.getBlockState(bestBlockRoot);
+    if (bestState == null) {
+      return Optional.empty();
+    }
+
+    int historicalIndex = slot.mod(slotsPerHistoricalRoot).intValue();
+    return Optional.ofNullable(bestState.getBlock_roots().get(historicalIndex));
+  }
+
+  private boolean isSlotStillAvailable(
+      final UnsignedLong slot, final UnsignedLong slotsPerHistoricalRoot) {
+    return bestSlot.compareTo(slotsPerHistoricalRoot) >= 0
+        && bestSlot.minus(slotsPerHistoricalRoot).compareTo(slot) >= 0;
+  }
+
+  public boolean isIncludedInBestState(final BeaconBlock block) {
+    return getBlockRootBySlot(block.getSlot())
+        .map(actualRoot -> actualRoot.equals(block.hash_tree_root()))
+        .orElse(false);
   }
 }

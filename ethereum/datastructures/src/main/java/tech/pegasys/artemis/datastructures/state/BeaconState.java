@@ -49,9 +49,9 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
 
   // History
   protected BeaconBlockHeader latest_block_header;
-  protected SSZVector<Bytes32> block_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  protected SSZVector<Bytes32> state_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  protected SSZList<Bytes32> historical_roots; // Bounded by HISTORICAL_ROOTS_LIMIT
+  protected final SSZVector<Bytes32> block_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  protected final SSZVector<Bytes32> state_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  protected final SSZList<Bytes32> historical_roots; // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
   protected Eth1Data eth1_data;
@@ -396,24 +396,12 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     return block_roots;
   }
 
-  public void setBlock_roots(SSZVector<Bytes32> block_roots) {
-    this.block_roots = block_roots;
-  }
-
   public SSZVector<Bytes32> getState_roots() {
     return state_roots;
   }
 
-  public void setState_roots(SSZVector<Bytes32> state_roots) {
-    this.state_roots = state_roots;
-  }
-
   public SSZList<Bytes32> getHistorical_roots() {
     return historical_roots;
-  }
-
-  public void setHistorical_roots(SSZList<Bytes32> historical_roots) {
-    this.historical_roots = historical_roots;
   }
 
   // Eth1
