@@ -11,19 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.datastructures.validator;
 
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-public class ValidatorAssignmentEvent {
+public class AggregatorInformation {
 
-  Bytes32 headBlockRoot;
+  private final BLSSignature selection_proof;
+  private final int validatorIndex;
 
-  public ValidatorAssignmentEvent(Bytes32 headBlockRoot) {
-    this.headBlockRoot = headBlockRoot;
+  public AggregatorInformation(BLSSignature selection_proof, int validatorIndex) {
+    this.selection_proof = selection_proof;
+    this.validatorIndex = validatorIndex;
   }
 
-  public Bytes32 getHeadBlockRoot() {
-    return this.headBlockRoot;
+  public BLSSignature getSelection_proof() {
+    return selection_proof;
+  }
+
+  public int getValidatorIndex() {
+    return validatorIndex;
   }
 }
