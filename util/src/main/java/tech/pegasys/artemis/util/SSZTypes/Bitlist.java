@@ -30,7 +30,10 @@ public class Bitlist {
   }
 
   public Bitlist(Bitlist bitlist) {
-    this.byteArray = bitlist.getByteArray();
+    this.byteArray = new byte[bitlist.getByteArray().length];
+    for (int i = 0; i < bitlist.getByteArray().length; i++) {
+      this.byteArray[i] = bitlist.getByteArray()[i];
+    }
     this.maxSize = bitlist.getMaxSize();
   }
 

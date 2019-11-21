@@ -19,6 +19,9 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
   runtime 'org.apache.logging.log4j:log4j-core'
 
+  testImplementation 'org.mockito:mockito-core'
+
+  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
   test {
