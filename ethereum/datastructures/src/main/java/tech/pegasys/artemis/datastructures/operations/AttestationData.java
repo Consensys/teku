@@ -56,6 +56,14 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
     this.target = target;
   }
 
+  public AttestationData(UnsignedLong slot, AttestationData data) {
+    this.slot = slot;
+    this.index = data.getIndex();
+    this.beacon_block_root = data.getBeacon_block_root();
+    this.source = data.getSource();
+    this.target = data.getTarget();
+  }
+
   public AttestationData(AttestationData attestationData) {
     this.slot = attestationData.getSlot();
     this.index = attestationData.getIndex();

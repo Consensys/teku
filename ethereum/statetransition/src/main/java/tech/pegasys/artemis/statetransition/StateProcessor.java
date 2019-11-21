@@ -37,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -44,6 +45,9 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
+import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
+import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -68,7 +72,6 @@ public class StateProcessor {
       ChainStorageClient chainStorageClient,
       MetricsSystem metricsSystem,
       ArtemisConfiguration config) {
-
     this.eventBus = eventBus;
     this.config = config;
     this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
@@ -170,12 +173,13 @@ public class StateProcessor {
           .getAttestations()
           .forEach(
               attestation -> {
-                this.chainStorageClient.addProcessedAttestation(attestation);
                 numberOfAttestersInAttestations.add(
                     IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
                         .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
                         .count());
               });
+
+      this.eventBus.post(new ProcessedBlockEvent(block.getBody().getAttestations()));
 
       STDOUT.log(
           Level.DEBUG, "Number of attestations: " + block.getBody().getAttestations().size());
@@ -189,8 +193,6 @@ public class StateProcessor {
     }
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
   private void onAttestation(Attestation attestation) {
     try {
       final Store.Transaction transaction =
@@ -202,10 +204,24 @@ public class StateProcessor {
       transaction.commit();
       eventBus.post(new StoreDiskUpdateEvent(transaction));
 
-      chainStorageClient.addUnprocessedAttestation(attestation);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onGossipedAttestation(Attestation attestation) {
+    onAttestation(attestation);
+    this.eventBus.post(new ProcessedAttestationEvent(attestation));
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onAggregateAndProof(AggregateAndProof aggregateAndProof) {
+    Attestation aggregate = aggregateAndProof.getAggregate();
+    onAttestation(aggregate);
+    this.eventBus.post(new ProcessedAggregateEvent(aggregate));
   }
 
   private void setSimulationGenesisTime(BeaconState state) {

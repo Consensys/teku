@@ -43,8 +43,11 @@ import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
+import tech.pegasys.artemis.statetransition.AttestationAggregator;
+import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
-import tech.pegasys.artemis.statetransition.events.ValidatorAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
+import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -71,6 +74,8 @@ public class BeaconChainController {
   private StateProcessor stateProcessor;
   private UnsignedLong nodeSlot = UnsignedLong.ZERO;
   private BeaconRestApi beaconRestAPI;
+  private AttestationAggregator attestationAggregator;
+  private BlockAttestationsPool blockAttestationsPool;
   private boolean testMode;
 
   public BeaconChainController(
@@ -86,6 +91,8 @@ public class BeaconChainController {
     initTimer();
     initStorage();
     initMetrics();
+    initAttestationAggregator();
+    initBlockAttestationsPool();
     initValidatorCoordinator();
     initStateProcessor();
     initP2PNetwork();
@@ -142,7 +149,8 @@ public class BeaconChainController {
 
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
-    new ValidatorCoordinator(eventBus, chainStorageClient, config);
+    new ValidatorCoordinator(
+        eventBus, chainStorageClient, attestationAggregator, blockAttestationsPool, config);
   }
 
   public void initStateProcessor() {
@@ -174,6 +182,16 @@ public class BeaconChainController {
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
+  }
+
+  public void initBlockAttestationsPool() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initBlockAttestationsPool()");
+    blockAttestationsPool = new BlockAttestationsPool();
+  }
+
+  public void initAttestationAggregator() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initAttestationAggregator()");
+    attestationAggregator = new AttestationAggregator();
   }
 
   public void initRestAPI() {
@@ -253,7 +271,9 @@ public class BeaconChainController {
                   + "                       "
                   + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
 
-          this.eventBus.post(new ValidatorAssignmentEvent(headBlockRoot));
+          this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot));
+          Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
+          this.eventBus.post(new BroadcastAggregatesEvent());
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
         }
       }
