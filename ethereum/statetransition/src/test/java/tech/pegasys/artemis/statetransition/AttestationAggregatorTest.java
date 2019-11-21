@@ -14,8 +14,10 @@
 package tech.pegasys.artemis.statetransition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.diffSlotAttestationData;
+import static tech.pegasys.artemis.statetransition.AttestationGenerator.getSingleAttesterIndex;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -83,10 +85,12 @@ class AttestationAggregatorTest {
         new AggregatorInformation(BLSSignature.random(), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = AttestationGenerator.withNewSingleAttesterBit(attestation);
+    int newAttesterIndex = getSingleAttesterIndex(newAttestation);
     BLSSignature sig2 = BLSSignature.random();
     newAttestation.setAggregate_signature(sig2);
     aggregator.addOwnValidatorAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
+    assertTrue(aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregation_bits().getBit(newAttesterIndex) == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
         BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));
@@ -139,10 +143,12 @@ class AttestationAggregatorTest {
         new AggregatorInformation(BLSSignature.random(), validatorIndex));
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = AttestationGenerator.withNewSingleAttesterBit(attestation);
+    int newAttesterIndex = getSingleAttesterIndex(newAttestation);
     BLSSignature sig2 = BLSSignature.random();
     newAttestation.setAggregate_signature(sig2);
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
+    assertTrue(aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregation_bits().getBit(newAttesterIndex) == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
         BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));

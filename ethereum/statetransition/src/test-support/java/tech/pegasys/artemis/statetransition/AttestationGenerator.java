@@ -50,6 +50,13 @@ public class AttestationGenerator {
     this.validatorKeys = validatorKeys;
   }
 
+  public static int getSingleAttesterIndex(Attestation attestation) {
+    for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {
+     if (attestation.getAggregation_bits().getBit(i) == 1) return i;
+    }
+    return -1;
+  }
+
   public static AttestationData diffSlotAttestationData(UnsignedLong slot, AttestationData data) {
     return new AttestationData(
         slot,
