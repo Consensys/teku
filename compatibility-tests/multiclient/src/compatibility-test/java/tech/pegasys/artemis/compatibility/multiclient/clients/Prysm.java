@@ -73,7 +73,7 @@ public class Prysm extends GenericContainer<Prysm> implements BeaconChainNode {
       rawBytes = rawBytes.slice(1, 33);
     }
     // And it doesn't accept a 0x prefix so we can't just use toHexString().
-    Files.writeString(privKeyFile.toPath(), rawBytes.appendHexTo(new StringBuffer()));
+    Files.writeString(privKeyFile.toPath(), rawBytes.appendHexTo(new StringBuilder()));
     return privKeyFile;
   }
 
