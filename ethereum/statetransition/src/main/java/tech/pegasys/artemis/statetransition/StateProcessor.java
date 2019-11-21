@@ -211,7 +211,7 @@ public class StateProcessor {
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBroadcastAttestation(Attestation attestation) {
+  private void onGossipedAttestation(Attestation attestation) {
     onAttestation(attestation);
     this.eventBus.post(new ProcessedAttestationEvent(attestation));
   }
