@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import tech.pegasys.artemis.compatibility.multiclient.clients.BeaconChainNode;
 import tech.pegasys.artemis.compatibility.multiclient.clients.Prysm;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
@@ -35,7 +34,7 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer.StatusData;
 @Testcontainers
 class StatusMessageCompatibilityTest {
 
-  @Container private static final BeaconChainNode PRYSM_NODE = new Prysm();
+  @Container private static final Prysm PRYSM_NODE = new Prysm();
 
   private final NetworkFactory networkFactory = new NetworkFactory();
   private JvmLibP2PNetwork artemis;
