@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.artemis.statetransition.AttestationGenerator.diffSlotAttestationData;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -23,7 +24,6 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSAggregate;
@@ -103,7 +103,7 @@ class AttestationAggregatorTest {
     aggregator.addOwnValidatorAttestation(attestation);
     Attestation newAttestation = new Attestation(attestation);
     newAttestation.setData(
-        new AttestationData(
+        diffSlotAttestationData(
             attestation.getData().getSlot().plus(UnsignedLong.ONE), attestation.getData()));
     newAttestation.setAggregate_signature(BLSSignature.random());
     aggregator.processAttestation(newAttestation);

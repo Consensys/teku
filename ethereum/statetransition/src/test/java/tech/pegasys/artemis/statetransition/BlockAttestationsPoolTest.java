@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static tech.pegasys.artemis.statetransition.AttestationGenerator.diffSlotAttestationData;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.withNewAttesterBits;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 
@@ -24,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
@@ -117,7 +117,7 @@ class BlockAttestationsPoolTest {
   void getAggregatedAttestations_DoesNotReturnAttestationsMoreThanMaxAttestations() {
     for (int i = 0; i < MAX_ATTESTATIONS + 1; i++) {
       Attestation attestation = DataStructureUtil.randomAttestation(i);
-      attestation.setData(new AttestationData(UnsignedLong.valueOf(i), attestation.getData()));
+      attestation.setData(diffSlotAttestationData(UnsignedLong.valueOf(i), attestation.getData()));
       pool.addUnprocessedAggregateAttestationToQueue(attestation);
     }
 
@@ -131,7 +131,7 @@ class BlockAttestationsPoolTest {
     int SLOT = 10;
     for (int i = 0; i < SLOT; i++) {
       Attestation attestation = DataStructureUtil.randomAttestation(i);
-      attestation.setData(new AttestationData(UnsignedLong.valueOf(i), attestation.getData()));
+      attestation.setData(diffSlotAttestationData(UnsignedLong.valueOf(i), attestation.getData()));
       pool.addUnprocessedAggregateAttestationToQueue(attestation);
     }
 

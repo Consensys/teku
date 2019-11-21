@@ -30,6 +30,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -47,6 +48,15 @@ public class AttestationGenerator {
 
   public AttestationGenerator(final List<BLSKeyPair> validatorKeys) {
     this.validatorKeys = validatorKeys;
+  }
+
+  public static AttestationData diffSlotAttestationData(UnsignedLong slot, AttestationData data) {
+    return new AttestationData(
+        slot,
+        data.getIndex(),
+        data.getBeacon_block_root(),
+        new Checkpoint(data.getSource()),
+        new Checkpoint(data.getTarget()));
   }
 
   public static Attestation aggregateAttestation(int numAttesters) {
