@@ -61,7 +61,6 @@ class AttestationAggregatorTest {
   @Test
   void addOwnValidatorAttestation_oldData_noNewAttester() throws Exception {
     Attestation attestation = attestationGenerator.validAttestation(storageClient);
-    BLSSignature sig = attestation.getAggregate_signature();
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
@@ -72,7 +71,7 @@ class AttestationAggregatorTest {
     aggregator.addOwnValidatorAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
     assertEquals(
-        sig, aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature());
+        attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
   }
 
   @Test
@@ -99,7 +98,6 @@ class AttestationAggregatorTest {
   @Test
   void processAttestation_newData_noOwnValidatorAttestationExists() throws Exception {
     Attestation attestation = attestationGenerator.validAttestation(storageClient);
-    BLSSignature sig = attestation.getAggregate_signature();
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
@@ -113,13 +111,12 @@ class AttestationAggregatorTest {
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
     assertEquals(
-        sig, aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature());
+        attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
   }
 
   @Test
   void processAttestation_oldData_noNewAttester() throws Exception {
     Attestation attestation = attestationGenerator.validAttestation(storageClient);
-    BLSSignature sig = attestation.getAggregate_signature();
     int validatorIndex = new Random().nextInt(1000);
     aggregator.committeeIndexToAggregatorInformation.put(
         attestation.getData().getIndex(),
@@ -130,7 +127,7 @@ class AttestationAggregatorTest {
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
     assertEquals(
-        sig, aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature());
+        attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
   }
 
   @Test
