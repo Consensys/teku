@@ -50,7 +50,7 @@ class BlockAttestationsPoolTest {
   @Test
   void unprocessedAggregate_OldData_DifferentBitlist_BitlistUpdated() {
     Attestation attestation = AttestationGenerator.aggregateAttestation(10);
-    Attestation newAttestation = withNewAttesterBits(new Attestation(attestation), 1);
+    Attestation newAttestation = withNewAttesterBits(attestation, 1);
 
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
     pool.addUnprocessedAggregateAttestationToQueue(newAttestation);
@@ -93,7 +93,7 @@ class BlockAttestationsPoolTest {
     pool.addAggregateAttestationProcessedInBlock(attestation);
     Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
 
-    Attestation newAttestation = withNewAttesterBits(new Attestation(attestation), 1);
+    Attestation newAttestation = withNewAttesterBits(attestation, 1);
     pool.addAggregateAttestationProcessedInBlock(newAttestation);
     Bitlist bitlist = pool.processedAttestationsBitlist.get(attestationDataHash);
     for (int i = 0; i < attestation.getAggregation_bits().getCurrentSize(); i++) {

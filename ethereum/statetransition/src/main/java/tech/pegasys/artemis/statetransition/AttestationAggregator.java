@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttesterIndexIntoCommittee;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,11 @@ public class AttestationAggregator {
 
   private final ConcurrentHashMap<Bytes32, Attestation> dataHashToAggregate =
       new ConcurrentHashMap<>();
-  private final Map<UnsignedLong, AggregatorInformation> committeeIndexToAggregatorInformation =
+
+  @VisibleForTesting
+  final Map<UnsignedLong, AggregatorInformation> committeeIndexToAggregatorInformation =
       new ConcurrentHashMap<>();
+
   private final Map<UnsignedLong, List<Attestation>> committeeIndexToAggregatesList =
       new ConcurrentHashMap<>();
 
