@@ -40,7 +40,7 @@ public class AttestationAggregator {
   final Map<UnsignedLong, AggregatorInformation> committeeIndexToAggregatorInformation =
       new ConcurrentHashMap<>();
 
-  private final Map<UnsignedLong, List<Attestation>> committeeIndexToAggregatesList =
+  private final Map<UnsignedLong, Attestation> committeeIndexToAggregate =
       new ConcurrentHashMap<>();
 
   public void updateAggregatorInformations(List<AttesterInformation> attesterInformations) {
@@ -89,9 +89,7 @@ public class AttestationAggregator {
     // to broadcast
     else if (isNewData.get()) {
       UnsignedLong committeeIndex = newAttestation.getData().getIndex();
-      committeeIndexToAggregatesList.computeIfAbsent(committeeIndex, k -> new ArrayList<>());
-      List<Attestation> aggregatesList = committeeIndexToAggregatesList.get(committeeIndex);
-      aggregatesList.add(newAttestation);
+      committeeIndexToAggregate.put(committeeIndex, newAttestation);
     }
   }
 
@@ -123,7 +121,7 @@ public class AttestationAggregator {
   public void reset() {
     dataHashToAggregate.clear();
     committeeIndexToAggregatorInformation.clear();
-    committeeIndexToAggregatesList.clear();
+    committeeIndexToAggregate.clear();
   }
 
   public synchronized List<AggregateAndProof> getAggregateAndProofs() {
@@ -131,13 +129,12 @@ public class AttestationAggregator {
     for (UnsignedLong commiteeIndex : committeeIndexToAggregatorInformation.keySet()) {
       AggregatorInformation aggregatorInformation =
           committeeIndexToAggregatorInformation.get(commiteeIndex);
-      for (Attestation aggregate : committeeIndexToAggregatesList.get(commiteeIndex)) {
-        aggregateAndProofs.add(
+      Attestation aggregate = committeeIndexToAggregate.get(commiteeIndex);
+      aggregateAndProofs.add(
             new AggregateAndProof(
                 UnsignedLong.valueOf(aggregatorInformation.getValidatorIndex()),
                 aggregatorInformation.getSelection_proof(),
                 aggregate));
-      }
     }
     return aggregateAndProofs;
   }
