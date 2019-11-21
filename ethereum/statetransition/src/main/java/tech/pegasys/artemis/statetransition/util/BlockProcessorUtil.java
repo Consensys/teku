@@ -31,6 +31,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_val
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashable_validator;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_RANDAO;
@@ -64,15 +65,12 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class BlockProcessorUtil {
-
-  private static final ALogger STDOUT = new ALogger("stdout");
 
   /**
    * Processes block header

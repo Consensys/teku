@@ -2,7 +2,7 @@
 // TODO Determine if net.ltgt.apt is even necessary.
 
 plugins {
-  id 'net.ltgt.apt' version '0.19'
+  id 'net.ltgt.apt' version '0.21'
 }
 
 // we use this config to get the path of the JDK 9 javac jar, to
@@ -26,11 +26,5 @@ dependencies {
 }
 
 test {
-  if (JavaVersion.current().isJava8()) {
-    enabled = false
-    logger.info("Disabling {} because errorprone tests always fail in Java {}",
-      project.name, JavaVersion.current().majorVersion)
-  }
-
   testLogging { showStandardStreams = true }
 }

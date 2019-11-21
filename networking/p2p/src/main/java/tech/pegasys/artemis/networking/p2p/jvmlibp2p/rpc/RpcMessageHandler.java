@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PAbstractChannel;
 import io.libp2p.core.multistream.Mode;
@@ -31,14 +33,12 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler.Controller;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RpcMessageHandler<
         TRequest extends SimpleOffsetSerializable, TResponse extends SimpleOffsetSerializable>
     implements ProtocolBinding<Controller<TRequest, ResponseStream<TResponse>>> {
   private static final Logger LOG = LogManager.getLogger();
-  private static final ALogger STDOUT = new ALogger("stdout");
 
   private final RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;

@@ -34,8 +34,6 @@ ext.acceptedLicenses = [
     'CC0 1.0 Universal License',
     'Common Development and Distribution License 1.0',
     'Unicode/ICU License',
-    'No license found',// for temporary use with Picocli jar
-    'TODO to be fixed' // use it for temporary states when a license needs investigation.
 ]*.toLowerCase()
 
 /**
@@ -59,7 +57,6 @@ downloadLicenses {
   ext.cddl = license('Common Development and Distribution License 1.0', 'http://opensource.org/licenses/CDDL-1.0')
   ext.cddl1_1 = license('Common Development and Distribution License 1.0', 'http://oss.oracle.com/licenses/CDDL-1.1')
   ext.epl2_0 = license('Eclipse Public License - v 2.0', 'https://www.eclipse.org/legal/epl-2.0/')
-  ext.todoToBeFixed = license('TODO to be fixed', 'TODO to be fixed')
   aliases = [
       (apache)    : [
           'Apache Software License - Version 2.0',
@@ -139,6 +136,9 @@ downloadLicenses {
       (group('artemis.ethereum'))   : apache,
       (group('artemis.services'))   : apache,
       (group('artemis.consensus'))  : apache,
+      (group('artemis.data'))       : apache,
+      (group('artemis.validator'))  : apache,
+      (group('artemis.networking')) : apache,
 
       // https://checkerframework.org/manual/#license
       // The more permissive MIT License applies to code that you might want
@@ -158,7 +158,8 @@ downloadLicenses {
       'com.github.jnr:jnr-posix:3.0.33': epl2_0,
       'com.github.jnr:jnr-posix:3.0.47': epl2_0,
       //JMH-Core is licensed under GPLv2 with the Classpath Exception, which allows us to link it and license the derived work under our license. 
-      'org.openjdk.jmh:jmh-core:1.21': apache
+      'org.openjdk.jmh:jmh-core:1.21': apache,
+      (group('io.libp2p')): apache,
   ]
 }
 

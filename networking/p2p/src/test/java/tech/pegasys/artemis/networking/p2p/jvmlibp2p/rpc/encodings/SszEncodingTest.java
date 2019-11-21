@@ -26,6 +26,8 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 class SszEncodingTest {
 
   private final SszEncoding encoding = new SszEncoding();
+  private static final Bytes LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH =
+      Bytes.fromHexString("0x818040");
 
   @Test
   public void shouldReturnErrorWhenMessageLengthIsInvalid() {
@@ -61,6 +63,15 @@ class SszEncodingTest {
                 encoding.decodeMessage(
                     Bytes.concatenate(correctMessage, Bytes.of(1, 2, 3, 4)), StatusMessage.class))
         .isEqualTo(RpcException.INCORRECT_LENGTH_ERRROR);
+  }
+
+  @Test
+  public void shouldRejectMessagesThatAreTooLong() {
+    // We should reject the message based on the length prefix and skip reading the data entirely.
+    assertThatThrownBy(
+            () ->
+                encoding.decodeMessage(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH, StatusMessage.class))
+        .isEqualTo(RpcException.CHUNK_TOO_LONG_ERROR);
   }
 
   private Bytes createValidStatusMessage() {

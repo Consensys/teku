@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.metrics;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.pantheon.metrics.MetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class EpochMetrics {
 

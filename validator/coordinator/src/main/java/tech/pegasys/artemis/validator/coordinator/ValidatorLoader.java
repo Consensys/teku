@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -27,7 +28,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -35,7 +35,6 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.client.ValidatorClient;
 
 class ValidatorLoader {
-  private static final ALogger STDOUT = new ALogger("stdout");
 
   static Map<BLSPublicKey, ValidatorInfo> initializeValidators(
       ArtemisConfiguration config, ChainStorageClient chainStorageClient) {

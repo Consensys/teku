@@ -15,19 +15,21 @@ package tech.pegasys.artemis.services.powchain;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
 
 import com.google.common.eventbus.EventBus;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
@@ -42,7 +44,6 @@ import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
@@ -50,11 +51,10 @@ import tech.pegasys.artemis.validator.client.Validator;
 import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 public class PowchainService implements ServiceInterface {
-  private static final ALogger STDOUT = new ALogger("stdout");
+  private static final Logger LOG = LogManager.getLogger();
   public static final String EVENTS = "events";
   public static final String USER_DIR = "user.dir";
   private EventBus eventBus;
-  private static final ALogger LOG = new ALogger();
 
   private GanacheController controller;
   private DepositContractListener listener;
@@ -114,12 +114,8 @@ public class PowchainService implements ServiceInterface {
               depositData.hash_tree_root(),
               sig);
         } catch (Exception e) {
-          LOG.log(
-              Level.WARN,
-              "Failed to register Validator with SECP256k1 public key: "
-                  + keyPair.publicKey()
-                  + " : "
-                  + e);
+          LOG.warn(
+              "Failed to register Validator with SECP256k1 public key: " + keyPair.publicKey(), e);
         }
         i++;
       }
@@ -139,10 +135,8 @@ public class PowchainService implements ServiceInterface {
                     });
               }
             });
-      } catch (FileNotFoundException e) {
-        LOG.log(Level.ERROR, e.getMessage());
       } catch (IOException e) {
-        LOG.log(Level.ERROR, e.getMessage());
+        LOG.error("Failed to process deposit events", e);
       }
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
       listener =

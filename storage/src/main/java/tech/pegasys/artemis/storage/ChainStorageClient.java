@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -26,7 +28,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
-  private static final ALogger STDOUT = new ALogger("stdout");
+
   private Store store;
   protected EventBus eventBus;
 
@@ -34,8 +36,14 @@ public class ChainStorageClient implements ChainStorage {
   private UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
 
+
+  private volatile Store store;
+  private volatile Bytes32 bestBlockRoot =
+      Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
+  private volatile UnsignedLong bestSlot =
+      UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
   // Time
-  private UnsignedLong genesisTime;
+  private volatile UnsignedLong genesisTime;
 
   public ChainStorageClient(EventBus eventBus) {
     this.eventBus = eventBus;

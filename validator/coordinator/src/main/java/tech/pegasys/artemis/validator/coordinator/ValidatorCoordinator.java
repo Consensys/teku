@@ -17,8 +17,11 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGeneri
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
@@ -92,7 +95,6 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -102,7 +104,6 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
-  private static final ALogger STDOUT = new ALogger("stdout");
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private StateTransition stateTransition;
@@ -406,7 +407,7 @@ public class ValidatorCoordinator {
           this.eventBus.post(newestBlock);
         }
       } catch (InterruptedException | ExecutionException | StateTransitionException e) {
-        STDOUT.log(Level.WARN, "Error during block creation" + e.toString());
+        STDOUT.log(Level.WARN, "Error during block creation " + e.toString());
       }
     }
   }
