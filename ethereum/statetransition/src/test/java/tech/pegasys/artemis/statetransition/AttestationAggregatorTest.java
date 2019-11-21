@@ -70,8 +70,7 @@ class AttestationAggregatorTest {
     newAttestation.setAggregate_signature(BLSSignature.random());
     aggregator.addOwnValidatorAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
-    assertEquals(
-        attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
+    assertEquals(attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
   }
 
   @Test
@@ -89,7 +88,14 @@ class AttestationAggregatorTest {
     newAttestation.setAggregate_signature(sig2);
     aggregator.addOwnValidatorAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
-    assertTrue(aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregation_bits().getBit(newAttesterIndex) == 1);
+    assertTrue(
+        aggregator
+                .getAggregateAndProofs()
+                .get(0)
+                .getAggregate()
+                .getAggregation_bits()
+                .getBit(newAttesterIndex)
+            == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
         BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));
@@ -110,8 +116,7 @@ class AttestationAggregatorTest {
     newAttestation.setAggregate_signature(BLSSignature.random());
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
-    assertEquals(
-        attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
+    assertEquals(attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
   }
 
   @Test
@@ -126,8 +131,7 @@ class AttestationAggregatorTest {
     newAttestation.setAggregate_signature(BLSSignature.random());
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
-    assertEquals(
-        attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
+    assertEquals(attestation, aggregator.getAggregateAndProofs().get(0).getAggregate());
   }
 
   @Test
@@ -145,7 +149,14 @@ class AttestationAggregatorTest {
     newAttestation.setAggregate_signature(sig2);
     aggregator.processAttestation(newAttestation);
     assertEquals(aggregator.getAggregateAndProofs().size(), 1);
-    assertTrue(aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregation_bits().getBit(newAttesterIndex) == 1);
+    assertTrue(
+        aggregator
+                .getAggregateAndProofs()
+                .get(0)
+                .getAggregate()
+                .getAggregation_bits()
+                .getBit(newAttesterIndex)
+            == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
         BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));

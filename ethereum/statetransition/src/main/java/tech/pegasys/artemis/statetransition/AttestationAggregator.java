@@ -105,10 +105,10 @@ public class AttestationAggregator {
   private synchronized void aggregateAttestations(
       Attestation oldAggregateAttestation, Attestation newAttestation) {
 
-        // Set the bit of the new attester in the aggregate attestation
-        oldAggregateAttestation
-          .getAggregation_bits()
-            .setBit(getAttesterIndexIntoCommittee(newAttestation));
+    // Set the bit of the new attester in the aggregate attestation
+    oldAggregateAttestation
+        .getAggregation_bits()
+        .setBit(getAttesterIndexIntoCommittee(newAttestation));
 
     List<BLSSignature> signaturesToAggregate = new ArrayList<>();
     signaturesToAggregate.add(oldAggregateAttestation.getAggregate_signature());
@@ -130,10 +130,10 @@ public class AttestationAggregator {
           committeeIndexToAggregatorInformation.get(commiteeIndex);
       Attestation aggregate = committeeIndexToAggregate.get(commiteeIndex);
       aggregateAndProofs.add(
-            new AggregateAndProof(
-                UnsignedLong.valueOf(aggregatorInformation.getValidatorIndex()),
-                aggregatorInformation.getSelection_proof(),
-                aggregate));
+          new AggregateAndProof(
+              UnsignedLong.valueOf(aggregatorInformation.getValidatorIndex()),
+              aggregatorInformation.getSelection_proof(),
+              aggregate));
     }
     return aggregateAndProofs;
   }
