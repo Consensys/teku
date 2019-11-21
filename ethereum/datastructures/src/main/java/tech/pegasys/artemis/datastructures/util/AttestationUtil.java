@@ -28,13 +28,10 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMM
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.MutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -45,7 +42,6 @@ import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyB
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -54,68 +50,6 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
 public class AttestationUtil {
-
-  /**
-   * Returns true if the attestation is verified
-   *
-   * @param state
-   * @param attestation
-   * @return boolean
-   */
-  public static boolean verifyAttestation(BeaconState state, Attestation attestation) {
-    return true;
-  }
-
-  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
-      BeaconState headState,
-      HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
-          committeeAssignments) {
-    UnsignedLong slot = headState.getSlot();
-    return getAttesterInformation(headState, committeeAssignments, slot);
-  }
-
-  public static List<Triple<BLSPublicKey, Integer, Committee>> getAttesterInformation(
-      BeaconState state,
-      HashMap<UnsignedLong, List<Triple<List<Integer>, UnsignedLong, Integer>>>
-          committeeAssignments,
-      final UnsignedLong slot) {
-    List<Triple<List<Integer>, UnsignedLong, Integer>> committeeAssignmentsForSlot =
-        committeeAssignments.get(slot);
-    List<Triple<BLSPublicKey, Integer, Committee>> attesters = new ArrayList<>();
-    if (committeeAssignmentsForSlot != null) {
-      for (int i = 0; i < committeeAssignmentsForSlot.size(); i++) {
-        int validatorIndex = committeeAssignmentsForSlot.get(i).getRight();
-        List<Integer> committee = committeeAssignmentsForSlot.get(i).getLeft();
-        UnsignedLong index = committeeAssignmentsForSlot.get(i).getMiddle();
-        int indexIntoCommittee = committee.indexOf(validatorIndex);
-
-        Committee beaconCommittee = new Committee(index, committee);
-        attesters.add(
-            new MutableTriple<>(
-                state.getValidators().get(validatorIndex).getPubkey(),
-                indexIntoCommittee,
-                beaconCommittee));
-      }
-    }
-    return attesters;
-  }
-
-  // Get attestation data that does not include attester specific committee index information
-  public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
-    UnsignedLong slot = state.getSlot();
-    // Get variables necessary that can be shared among Attestations of all validators
-    Bytes32 beacon_block_root = block.signing_root("signature");
-    UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
-    Bytes32 epoch_boundary_block_root =
-        start_slot.compareTo(slot) == 0
-            ? block.signing_root("signature")
-            : get_block_root_at_slot(state, start_slot);
-    Checkpoint source = state.getCurrent_justified_checkpoint();
-    Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
-
-    // Set attestation data
-    return new AttestationData(slot, UnsignedLong.ZERO, beacon_block_root, source, target);
-  }
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
@@ -303,6 +237,22 @@ public class AttestationUtil {
     return list;
   }
 
+  // Set bits of the newAttestation on the oldBitlist
+  // return true if any new bit was set
+  public static boolean setBitsForNewAttestation(Bitlist oldBitlist, Attestation newAttesation) {
+    Bitlist newBitlist = newAttesation.getAggregation_bits();
+    if (oldBitlist.getCurrentSize() != newBitlist.getCurrentSize())
+      throw new UnsupportedOperationException("Attestation bitlist size's don't match");
+    boolean representsNewAttester = false;
+    for (int i = 0; i < oldBitlist.getCurrentSize(); i++) {
+      if (newBitlist.getBit(i) == 1 && oldBitlist.getBit(i) == 0) {
+        oldBitlist.setBit(i);
+        representsNewAttester = true;
+      }
+    }
+    return representsNewAttester;
+  }
+
   public static boolean representsNewAttester(
       Attestation oldAttestation, Attestation newAttestation) {
     int newAttesterIndex = getAttesterIndexIntoCommittee(newAttestation);
@@ -346,5 +296,22 @@ public class AttestationUtil {
     } else {
       return false;
     }
+  }
+
+  // Get attestation data that does not include attester specific shard or crosslink information
+  public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
+    UnsignedLong slot = state.getSlot();
+    // Get variables necessary that can be shared among Attestations of all validators
+    Bytes32 beacon_block_root = block.signing_root("signature");
+    UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
+    Bytes32 epoch_boundary_block_root =
+        start_slot.compareTo(slot) == 0
+            ? block.signing_root("signature")
+            : get_block_root_at_slot(state, start_slot);
+    Checkpoint source = state.getCurrent_justified_checkpoint();
+    Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);
+
+    // Set attestation data
+    return new AttestationData(slot, UnsignedLong.ZERO, beacon_block_root, source, target);
   }
 }
