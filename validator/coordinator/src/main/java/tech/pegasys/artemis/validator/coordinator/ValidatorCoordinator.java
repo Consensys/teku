@@ -17,11 +17,9 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGeneri
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;

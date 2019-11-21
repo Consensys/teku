@@ -29,13 +29,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
 
-  private Store store;
   protected EventBus eventBus;
-
-  private Bytes32 bestBlockRoot = Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
-  private UnsignedLong bestSlot =
-      UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
-
 
   private volatile Store store;
   private volatile Bytes32 bestBlockRoot =
