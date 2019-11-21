@@ -73,13 +73,7 @@ public class AttestationAggregator {
     // and the new Attestation represents a new attester, add the signature of the
     // new attestation to the old aggregate attestation.
     if (!isNewData.get() && representsNewAttester(aggregateAttestation, newAttestation)) {
-
-      // Set the bit of the new attester in the aggregate attestation
-      aggregateAttestation
-          .getAggregation_bits()
-          .setBit(getAttesterIndexIntoCommittee(newAttestation));
-
-      aggregateSignatures(aggregateAttestation, newAttestation);
+      aggregateAttestations(aggregateAttestation, newAttestation);
     }
 
     // If the attestation message hasn't been seen before:
@@ -102,14 +96,19 @@ public class AttestationAggregator {
           if (representsNewAttester(attestation, newAttestation)) {
             attestation.getAggregation_bits().setBit(getAttesterIndexIntoCommittee(newAttestation));
 
-            aggregateSignatures(attestation, newAttestation);
+            aggregateAttestations(attestation, newAttestation);
           }
           return attestation;
         });
   }
 
-  private synchronized void aggregateSignatures(
+  private synchronized void aggregateAttestations(
       Attestation oldAggregateAttestation, Attestation newAttestation) {
+
+        // Set the bit of the new attester in the aggregate attestation
+        oldAggregateAttestation
+          .getAggregation_bits()
+            .setBit(getAttesterIndexIntoCommittee(newAttestation));
 
     List<BLSSignature> signaturesToAggregate = new ArrayList<>();
     signaturesToAggregate.add(oldAggregateAttestation.getAggregate_signature());
