@@ -171,10 +171,4 @@ public class ChainStorageClient implements ChainStorage {
 
     return Optional.of(BeaconStateUtil.get_block_root_at_slot(bestState, slot));
   }
-
-  private boolean isSlotStillAvailable(
-      final UnsignedLong slot, final UnsignedLong slotsPerHistoricalRoot) {
-    UnsignedLong slotPlusHistoricalRoot = slot.plus(slotsPerHistoricalRoot);
-    return slot.compareTo(bestSlot) < 0 && bestSlot.compareTo(slotPlusHistoricalRoot) <= 0;
-  }
 }
