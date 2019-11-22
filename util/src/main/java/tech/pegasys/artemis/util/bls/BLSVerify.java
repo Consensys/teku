@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.util.bls;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 

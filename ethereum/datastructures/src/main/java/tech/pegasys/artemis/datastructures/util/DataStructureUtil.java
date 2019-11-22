@@ -137,10 +137,7 @@ public final class DataStructureUtil {
 
   public static Attestation randomAttestation(int seed) {
     return new Attestation(
-        randomBitlist(seed),
-        randomAttestationData(seed++),
-        randomBitlist(seed++),
-        BLSSignature.random(seed++));
+        randomBitlist(seed), randomAttestationData(seed++), BLSSignature.random(seed++));
   }
 
   public static AggregateAndProof randomAggregateAndProof(int seed) {

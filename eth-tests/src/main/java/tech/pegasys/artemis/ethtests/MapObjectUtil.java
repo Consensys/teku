@@ -542,9 +542,6 @@ public class MapObjectUtil {
             Bytes.fromHexString(map.get("aggregation_bits").toString()),
             Constants.MAX_VALIDATORS_PER_COMMITTEE),
         getAttestationData((Map) map.get("data")),
-        Bitlist.fromBytes(
-            Bytes.fromHexString(map.get("custody_bits").toString()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE),
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString())));
   }
 
