@@ -132,7 +132,9 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   public Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlock(blockRoot));
+    return getBlockRootBySlot(slot)
+        .map(blockRoot -> store.getBlock(blockRoot))
+        .filter(block -> block.getSlot().equals(slot));
   }
 
   public boolean isIncludedInBestState(final Bytes32 blockRoot) {
