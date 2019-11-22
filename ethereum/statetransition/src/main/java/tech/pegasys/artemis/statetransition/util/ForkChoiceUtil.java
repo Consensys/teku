@@ -197,12 +197,17 @@ public class ForkChoiceUtil {
     UnsignedLong current_slot = get_current_slot(store);
 
     // Not a new epoch, return
-    if (!((current_slot.compareTo(previous_slot) > 0) && (compute_slots_since_epoch_start(current_slot).equals(UnsignedLong.ZERO)))) {
+    if (!((current_slot.compareTo(previous_slot) > 0)
+        && (compute_slots_since_epoch_start(current_slot).equals(UnsignedLong.ZERO)))) {
       return;
     }
 
     // Update store.justified_checkpoint if a better checkpoint is known
-    if (store.getBestJustifiedCheckpoint().getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
+    if (store
+            .getBestJustifiedCheckpoint()
+            .getEpoch()
+            .compareTo(store.getJustifiedCheckpoint().getEpoch())
+        > 0) {
       store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
     }
   }
