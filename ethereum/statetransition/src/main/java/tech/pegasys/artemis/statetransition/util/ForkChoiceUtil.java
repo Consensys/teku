@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.artemis.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
@@ -44,7 +45,10 @@ import tech.pegasys.artemis.storage.Store;
 public class ForkChoiceUtil {
 
   public static UnsignedLong get_current_slot(Store store) {
-    return store.getTime().minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    return store
+        .getTime()
+        .minus(store.getGenesisTime())
+        .dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
   public static UnsignedLong compute_slots_since_epoch_start(UnsignedLong slot) {
@@ -142,6 +146,38 @@ public class ForkChoiceUtil {
               .max(Comparator.comparing(Bytes::toHexString))
               .get();
     }
+  }
+
+  /*
+  To address the bouncing attack, only update conflicting justified
+  checkpoints in the fork choice if in the early slots of the epoch.
+  Otherwise, delay incorporation of new justified checkpoint until next epoch boundary.
+  See https://ethresear.ch/t/prevention-of-bouncing-attack-on-ffg/6114 for more detailed analysis and discussion.
+  */
+  public static boolean should_update_justified_checkpoint(
+      Store store, Checkpoint new_justified_checkpoint) {
+    if (compute_slots_since_epoch_start(get_current_slot(store))
+            .compareTo(UnsignedLong.valueOf(SAFE_SLOTS_TO_UPDATE_JUSTIFIED))
+        < 0) {
+      return true;
+    }
+
+    BeaconBlock new_justified_block = store.getBlock(new_justified_checkpoint.getRoot());
+    if (new_justified_block
+            .getSlot()
+            .compareTo(compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch()))
+        <= 0) {
+      return false;
+    }
+    if (!get_ancestor(
+            store,
+            new_justified_checkpoint.getRoot(),
+            store.getBlock(store.getJustifiedCheckpoint().getRoot()).getSlot())
+        .equals(store.getJustifiedCheckpoint().getRoot())) {
+      return false;
+    }
+
+    return true;
   }
 
   // Fork Choice Event Handlers
