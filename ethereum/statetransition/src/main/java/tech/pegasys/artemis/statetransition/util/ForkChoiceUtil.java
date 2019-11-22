@@ -42,6 +42,10 @@ import tech.pegasys.artemis.storage.Store;
 
 public class ForkChoiceUtil {
 
+  public static UnsignedLong get_current_slot(Store store) {
+    return store.getTime().minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+  }
+
   /**
    * Get the ancestor of ``block`` with slot number ``slot``.
    *
