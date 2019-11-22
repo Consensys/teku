@@ -18,13 +18,16 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
@@ -148,26 +151,32 @@ public class ChainStorageClient implements ChainStorage {
 
   private Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
     if (store == null || Bytes32.ZERO.equals(bestBlockRoot)) {
+      LOG.trace("No block root at slot {} because store or best block root is not set", slot);
       return Optional.empty();
+    }
+    if (bestSlot.equals(slot)) {
+      LOG.trace("Block root at slot {} is the current best slot root", slot);
+      return Optional.of(bestBlockRoot);
     }
     final UnsignedLong slotsPerHistoricalRoot =
         UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
 
-    if (isSlotStillAvailable(slot, slotsPerHistoricalRoot)) {
+    if (!isSlotStillAvailable(slot, slotsPerHistoricalRoot)) {
+      LOG.trace("No block root at slot {} because slot is not within historical root", slot);
       return Optional.empty();
     }
     final BeaconState bestState = store.getBlockState(bestBlockRoot);
     if (bestState == null) {
+      LOG.trace("No block root at slot {} because best state is not available", slot);
       return Optional.empty();
     }
 
-    int historicalIndex = slot.mod(slotsPerHistoricalRoot).intValue();
-    return Optional.ofNullable(bestState.getBlock_roots().get(historicalIndex));
+    return Optional.of(BeaconStateUtil.get_block_root_at_slot(bestState, slot));
   }
 
   private boolean isSlotStillAvailable(
       final UnsignedLong slot, final UnsignedLong slotsPerHistoricalRoot) {
-    return bestSlot.compareTo(slotsPerHistoricalRoot) >= 0
-        && bestSlot.minus(slotsPerHistoricalRoot).compareTo(slot) >= 0;
+    UnsignedLong slotPlusHistoricalRoot = slot.plus(slotsPerHistoricalRoot);
+    return slot.compareTo(bestSlot) < 0 && bestSlot.compareTo(slotPlusHistoricalRoot) <= 0;
   }
 }

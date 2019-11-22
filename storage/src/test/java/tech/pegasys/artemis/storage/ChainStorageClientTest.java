@@ -55,11 +55,26 @@ class ChainStorageClientTest {
   }
 
   @Test
-  public void getBlockBySlot_returnGenesisBlock() {
+  public void getBlockBySlot_returnGenesisBlockWhenItIsTheBestState() {
     storageClient.setStore(store);
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, UnsignedLong.ZERO);
 
     final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    // At the start of the chain, the slot number is the index into historical roots
+    bestState.getBlock_roots().set(0, BEST_BLOCK_ROOT);
+    when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
+    when(store.getBlock(BEST_BLOCK_ROOT)).thenReturn(BLOCK1);
+
+    assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).contains(BLOCK1);
+  }
+
+  @Test
+  public void getBlockBySlot_returnGenesisBlockWhenItIsNotTheBestState() {
+    storageClient.setStore(store);
+    final UnsignedLong bestSlot = UnsignedLong.ONE;
+    storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
+
+    final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     final BeaconBlock genesisBlock = BLOCK1;
     final Bytes32 genesisBlockHash = genesisBlock.hash_tree_root();
     // At the start of the chain, the slot number is the index into historical roots
@@ -74,10 +89,11 @@ class ChainStorageClientTest {
   public void getBlockBySlot_returnEmptyWhenSlotBeforeHistoricalRootWindow() {
     storageClient.setStore(store);
     // First slot where the block roots start overwriting themselves and dropping history
-    final UnsignedLong bestSlot = UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    final UnsignedLong bestSlot =
+        UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT).plus(UnsignedLong.ONE);
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     final BeaconBlock bestBlock = BLOCK1;
     final Bytes32 bestBlockHash = bestBlock.hash_tree_root();
     // Overwrite the genesis hash.
@@ -94,14 +110,17 @@ class ChainStorageClientTest {
     storageClient.setStore(store);
     // We've wrapped around a lot of times and are 5 slots into the next "loop"
     final int historicalIndex = 5;
-    final UnsignedLong bestSlot =
+    final UnsignedLong reqeustedSlot =
         UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)
             .times(UnsignedLong.valueOf(900000000))
             .plus(UnsignedLong.valueOf(historicalIndex));
+    // Avoid the simple case where the requested slot is the best slot so we have to go to the
+    // historic blocks
+    final UnsignedLong bestSlot = reqeustedSlot.plus(UnsignedLong.ONE);
 
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     final BeaconBlock bestBlock = BLOCK1;
     final Bytes32 bestBlockHash = bestBlock.hash_tree_root();
     // Overwrite the genesis hash.
@@ -109,7 +128,7 @@ class ChainStorageClientTest {
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(bestBlockHash)).thenReturn(bestBlock);
 
-    assertThat(storageClient.getBlockBySlot(bestSlot)).contains(bestBlock);
+    assertThat(storageClient.getBlockBySlot(reqeustedSlot)).contains(bestBlock);
   }
 
   @Test
@@ -126,10 +145,11 @@ class ChainStorageClientTest {
   @Test
   public void isIncludedInBestState_falseWhenNoBlockAtSlot() {
     storageClient.setStore(store);
-    storageClient.updateBestBlock(BEST_BLOCK_ROOT, UnsignedLong.ONE);
+    final UnsignedLong bestSlot = UnsignedLong.ONE;
+    storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     // bestState has no historical block roots so definitely nothing canonical at the block's slot
-    final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(BLOCK1_ROOT)).thenReturn(BLOCK1);
 
@@ -151,9 +171,10 @@ class ChainStorageClientTest {
   @Test
   public void isIncludedInBestState_trueWhenBlockAtSlotDoesMatch() {
     storageClient.setStore(store);
-    storageClient.updateBestBlock(BEST_BLOCK_ROOT, UnsignedLong.ONE);
+    final UnsignedLong bestSlot = UnsignedLong.ONE;
+    storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     bestState.getBlock_roots().set(BLOCK1.getSlot().intValue(), BLOCK1.hash_tree_root());
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(BLOCK1_ROOT)).thenReturn(BLOCK1);
