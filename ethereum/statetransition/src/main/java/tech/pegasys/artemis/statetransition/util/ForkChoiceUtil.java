@@ -201,8 +201,8 @@ public class ForkChoiceUtil {
     UnsignedLong current_slot = get_current_slot(store);
 
     // Not a new epoch, return
-    if (!((current_slot.compareTo(previous_slot) > 0)
-        && (compute_slots_since_epoch_start(current_slot).equals(UnsignedLong.ZERO)))) {
+    if (!(current_slot.compareTo(previous_slot) > 0
+        && compute_slots_since_epoch_start(current_slot).equals(UnsignedLong.ZERO))) {
       return;
     }
 
@@ -317,7 +317,7 @@ public class ForkChoiceUtil {
     UnsignedLong previous_epoch =
         current_epoch.compareTo(UnsignedLong.valueOf(GENESIS_EPOCH)) > 0
             ? current_epoch.minus(UnsignedLong.ONE)
-            : GENESIS_EPOCH;
+            : UnsignedLong.valueOf(GENESIS_EPOCH);
 
     List<UnsignedLong> epochs = List.of(current_epoch, previous_epoch);
     checkArgument(
