@@ -29,7 +29,6 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -80,18 +79,6 @@ public class DeserializationTest {
     Bytes eth1DataSerialized = SimpleOffsetSerializer.serialize(eth1Data);
     Eth1Data newEth1Data = SimpleOffsetSerializer.deserialize(eth1DataSerialized, Eth1Data.class);
     assertEquals(eth1Data, newEth1Data);
-  }
-
-  @Test
-  void AttestationDataAndCustodyBitTest() {
-    AttestationDataAndCustodyBit attestationDataAndCustodyBit =
-        new AttestationDataAndCustodyBit(DataStructureUtil.randomAttestationData(100), true);
-    Bytes attestationDataAndCustodyBitSerialized =
-        SimpleOffsetSerializer.serialize(attestationDataAndCustodyBit);
-    AttestationDataAndCustodyBit newObject =
-        SimpleOffsetSerializer.deserialize(
-            attestationDataAndCustodyBitSerialized, AttestationDataAndCustodyBit.class);
-    assertEquals(attestationDataAndCustodyBit, newObject);
   }
 
   @Test

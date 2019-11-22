@@ -38,7 +38,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -59,9 +58,7 @@ public class AttestationUtil {
   }
 
   public static Bytes32 getAttestationMessageToSign(AttestationData attestationData) {
-    AttestationDataAndCustodyBit attestation_data_and_custody_bit =
-        new AttestationDataAndCustodyBit(attestationData, false);
-    return attestation_data_and_custody_bit.hash_tree_root();
+    return attestationData.hash_tree_root();
   }
 
   /**
@@ -208,10 +205,8 @@ public class AttestationUtil {
                 .collect(Collectors.toList())));
 
     List<Bytes32> message_hashes = new ArrayList<>();
-    message_hashes.add(
-        new AttestationDataAndCustodyBit(indexed_attestation.getData(), false).hash_tree_root());
-    message_hashes.add(
-        new AttestationDataAndCustodyBit(indexed_attestation.getData(), true).hash_tree_root());
+    message_hashes.add(indexed_attestation.getData().hash_tree_root());
+    message_hashes.add(indexed_attestation.getData().hash_tree_root());
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes domain =

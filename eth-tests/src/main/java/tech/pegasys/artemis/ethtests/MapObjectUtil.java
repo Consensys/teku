@@ -31,7 +31,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -65,8 +64,6 @@ public class MapObjectUtil {
     if (classtype.equals(Attestation.class)) return MapObjectUtil.getAttestation((Map) object);
     else if (classtype.equals(AttestationData.class)) return getAttestationData((Map) object);
     else if (classtype.equals(AttesterSlashing.class)) return getAttesterSlashing((Map) object);
-    else if (classtype.equals(AttestationDataAndCustodyBit.class))
-      return getAttestationDataAndCustodyBit((Map) object);
     else if (classtype.equals(BeaconBlock.class)) return getBeaconBlock((Map) object);
     else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
@@ -544,14 +541,6 @@ public class MapObjectUtil {
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
     return new IndexedAttestation(custody_bit_0_indices, custody_bit_1_indices, data, signature);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static AttestationDataAndCustodyBit getAttestationDataAndCustodyBit(Map map) {
-
-    return new AttestationDataAndCustodyBit(
-        getAttestationData((Map) map.get("data")),
-        Boolean.getBoolean(map.get("custody_bit").toString()));
   }
 
   @SuppressWarnings({"rawtypes"})
