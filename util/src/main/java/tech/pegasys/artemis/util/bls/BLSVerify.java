@@ -37,29 +37,4 @@ public class BLSVerify {
       return false;
     }
   }
-
-  /**
-   * *
-   *
-   * <p>The bls_verify_multiple() function as defined in the Eth2 specification
-   *
-   * @param pubkeys a list of compressed public keys
-   * @param messageHashes a list of the same number of messages
-   * @param aggregateSignature the single signature over these public keys and messages
-   * @param domain the domain parameter defined by the spec
-   * @return true if the signature is valid over these parameters, false if not
-   */
-  public static boolean bls_verify_multiple(
-      List<BLSPublicKey> pubkeys,
-      List<Bytes32> messageHashes,
-      BLSSignature aggregateSignature,
-      Bytes domain) {
-    try {
-      List<Bytes> messageHashesAsBytes =
-          messageHashes.stream().map(x -> Bytes.wrap(x)).collect(Collectors.toList());
-      return aggregateSignature.checkSignature(pubkeys, messageHashesAsBytes, domain);
-    } catch (RuntimeException e) {
-      return false;
-    }
-  }
 }
