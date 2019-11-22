@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
@@ -293,6 +294,10 @@ public class ForkChoiceUtil {
   }
 
   /**
+   *     Run ``on_attestation`` upon receiving a new ``attestation`` from either within a block or directly on the wire.
+   *
+   *     An ``attestation`` that is asserted as invalid may be valid at a later time,
+   *     consider scheduling it for later processing in such case.
    * @param store
    * @param attestation
    * @param stateTransition
@@ -305,14 +310,24 @@ public class ForkChoiceUtil {
 
     Checkpoint target = attestation.getData().getTarget();
 
+    UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store, true));
+
+    // Use GENESIS_EPOCH for previous when genesis to avoid underflow
+    UnsignedLong previous_epoch = current_epoch.compareTo(UnsignedLong.valueOf(GENESIS_EPOCH)) > 0 ? current_epoch.minus(UnsignedLong.ONE) : GENESIS_EPOCH;
+
+    List<UnsignedLong> epochs = List.of(current_epoch, previous_epoch);
+    checkArgument(epochs.contains(target.getEpoch()), "on_attestation: Attestations must be from the current or previous epoch");
+
     checkArgument(
         store.containsBlock(target.getRoot()),
         "on_attestation: Cannot calculate the current shuffling if have not seen the target");
 
+    checkArgument(store.getBlockRoots().contains(target.getRoot()), "on_attestation: Attestations target must be for a known block. If a target block is unknown, delay consideration until the block is found");
+
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
     BeaconStateWithCache base_state =
-        BeaconStateWithCache.deepCopy((BeaconStateWithCache) store.getBlockState(target.getRoot()));
+        BeaconStateWithCache.deepCopy(store.getBlockState(target.getRoot()));
     UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     checkArgument(
         unixTimeStamp.compareTo(
@@ -323,6 +338,10 @@ public class ForkChoiceUtil {
                             .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0,
         "on_attestation: Attestations cannot be from the future epochs");
+
+    checkArgument(store.getBlockRoots().contains(attestation.getData().getBeacon_block_root()), "on_attestation: Attestations must be for a known block. If block is unknown, delay consideration until the block is found");
+
+    checkArgument(store.getBlock(attestation.getData().getBeacon_block_root()).getSlot().compareTo(attestation.getData().getSlot()) <= 0, "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
 
     // Store target checkpoint state if not yet seen
     if (!store.containsCheckpointState(target)) {
