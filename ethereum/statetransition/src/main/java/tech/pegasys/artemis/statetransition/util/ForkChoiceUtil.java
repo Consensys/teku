@@ -189,7 +189,22 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
   public static void on_tick(Store.Transaction store, UnsignedLong time) {
+    UnsignedLong previous_slot = get_current_slot(store);
+
+    // Update store time
     store.setTime(time);
+
+    UnsignedLong current_slot = get_current_slot(store);
+
+    // Not a new epoch, return
+    if (!((current_slot.compareTo(previous_slot) > 0) && (compute_slots_since_epoch_start(current_slot).equals(UnsignedLong.ZERO)))) {
+      return;
+    }
+
+    // Update store.justified_checkpoint if a better checkpoint is known
+    if (store.getBestJustifiedCheckpoint().getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
+      store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
+    }
   }
 
   /**
