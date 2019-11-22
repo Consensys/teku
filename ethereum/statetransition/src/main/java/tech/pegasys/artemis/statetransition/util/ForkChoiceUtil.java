@@ -155,7 +155,7 @@ public class ForkChoiceUtil {
   See https://ethresear.ch/t/prevention-of-bouncing-attack-on-ffg/6114 for more detailed analysis and discussion.
   */
   public static boolean should_update_justified_checkpoint(
-      Store store, Checkpoint new_justified_checkpoint) {
+      Store.Transaction store, Checkpoint new_justified_checkpoint) {
     if (compute_slots_since_epoch_start(get_current_slot(store))
             .compareTo(UnsignedLong.valueOf(SAFE_SLOTS_TO_UPDATE_JUSTIFIED))
         < 0) {
