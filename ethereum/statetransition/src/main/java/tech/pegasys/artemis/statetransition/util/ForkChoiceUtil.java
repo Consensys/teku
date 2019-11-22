@@ -44,11 +44,15 @@ import tech.pegasys.artemis.storage.Store;
 
 public class ForkChoiceUtil {
 
-  public static UnsignedLong get_current_slot(Store.Transaction store) {
-    return store
-        .getTime()
+  public static UnsignedLong get_current_slot(Store.Transaction store, boolean useUnixTime) {
+    UnsignedLong time = useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
+    return time
         .minus(store.getGenesisTime())
         .dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+  }
+
+  public static UnsignedLong get_current_slot(Store.Transaction store) {
+    return get_current_slot(store, false);
   }
 
   public static UnsignedLong compute_slots_since_epoch_start(UnsignedLong slot) {
@@ -156,7 +160,7 @@ public class ForkChoiceUtil {
   */
   public static boolean should_update_justified_checkpoint(
       Store.Transaction store, Checkpoint new_justified_checkpoint) {
-    if (compute_slots_since_epoch_start(get_current_slot(store))
+    if (compute_slots_since_epoch_start(get_current_slot(store, true))
             .compareTo(UnsignedLong.valueOf(SAFE_SLOTS_TO_UPDATE_JUSTIFIED))
         < 0) {
       return true;
