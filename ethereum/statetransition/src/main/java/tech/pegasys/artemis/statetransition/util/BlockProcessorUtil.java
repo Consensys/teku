@@ -312,10 +312,8 @@ public final class BlockProcessorUtil {
             "process_attester_slashings: Is valid indexed attestation 2");
         boolean slashed_any = false;
 
-        List<UnsignedLong> attesting_indices_1 = attestation_1.getCustody_bit_0_indices();
-        attesting_indices_1.addAll(attestation_1.getCustody_bit_1_indices());
-        List<UnsignedLong> attesting_indices_2 = attestation_2.getCustody_bit_0_indices();
-        attesting_indices_2.addAll(attestation_1.getCustody_bit_1_indices());
+        List<UnsignedLong> attesting_indices_1 = attestation_1.getAttesting_indices();
+        List<UnsignedLong> attesting_indices_2 = attestation_2.getAttesting_indices();
 
         // retainAll is being used to get the intersection of these two lists
         List<UnsignedLong> sorted_intersection_of_indices = attesting_indices_1;

@@ -520,17 +520,9 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static IndexedAttestation getIndexedAttestation(Map map) {
-    SSZList<UnsignedLong> custody_bit_0_indices =
+    SSZList<UnsignedLong> attesting_indices =
         new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("custody_bit_0_indices"))
-                .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
-                    .collect(Collectors.toList()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE,
-            UnsignedLong.class);
-    SSZList<UnsignedLong> custody_bit_1_indices =
-        new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("custody_bit_1_indices"))
+            new ArrayList<>((List<Object>) map.get("attesting_indices"))
                 .stream()
                     .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
                     .collect(Collectors.toList()),
@@ -540,7 +532,7 @@ public class MapObjectUtil {
     BLSSignature signature =
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
-    return new IndexedAttestation(custody_bit_0_indices, custody_bit_1_indices, data, signature);
+    return new IndexedAttestation(attesting_indices, data, signature);
   }
 
   @SuppressWarnings({"rawtypes"})

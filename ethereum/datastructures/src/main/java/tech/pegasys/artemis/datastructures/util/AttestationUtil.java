@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
@@ -92,29 +91,10 @@ public class AttestationUtil {
       BeaconState state, Attestation attestation) {
     List<Integer> attesting_indices =
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
-    List<Integer> custody_bit_1_indices =
-        get_attesting_indices(state, attestation.getData(), attestation.getCustody_bitfield());
 
-    checkArgument(
-        attesting_indices.containsAll(custody_bit_1_indices),
-        "get_indexed_attestation: custody_bit_1_indices is not a subset of attesting_indices");
-
-    List<Integer> custody_bit_0_indices = new ArrayList<>();
-    for (int i = 0; i < attesting_indices.size(); i++) {
-      Integer attesting_index = attesting_indices.get(i);
-      if (!custody_bit_1_indices.contains(attesting_index))
-        custody_bit_0_indices.add(attesting_index);
-    }
     return new IndexedAttestation(
         new SSZList<>(
-            custody_bit_0_indices.stream()
-                .sorted()
-                .map(UnsignedLong::valueOf)
-                .collect(Collectors.toList()),
-            MAX_VALIDATORS_PER_COMMITTEE,
-            UnsignedLong.class),
-        new SSZList<>(
-            custody_bit_1_indices.stream()
+            attesting_indices.stream()
                 .sorted()
                 .map(UnsignedLong::valueOf)
                 .collect(Collectors.toList()),
@@ -158,78 +138,42 @@ public class AttestationUtil {
    */
   public static Boolean is_valid_indexed_attestation(
       BeaconState state, IndexedAttestation indexed_attestation) {
-    List<UnsignedLong> bit_0_indices = indexed_attestation.getCustody_bit_0_indices();
-    List<UnsignedLong> bit_1_indices = indexed_attestation.getCustody_bit_1_indices();
+    List<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
-    if (!(bit_1_indices.size() == 0)) {
-      STDOUT.log(
-          Level.WARN,
-          "AttestationUtil.is_valid_indexed_attestation: Verify no index has custody bit equal to 1 [to be removed in phase 1]");
-      return false;
-    }
-    if (!((bit_0_indices.size() + bit_1_indices.size()) <= MAX_VALIDATORS_PER_COMMITTEE)) {
+    if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
       STDOUT.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
-    if (!(intersection(bit_0_indices, bit_1_indices).size() == 0)) {
-      STDOUT.log(
-          Level.WARN,
-          "AttestationUtil.is_valid_indexed_attestation: Verify index sets are disjoint");
-      return false;
-    }
-    List<UnsignedLong> bit_0_indices_sorted = new ArrayList<>(bit_0_indices);
+
+    List<UnsignedLong> bit_0_indices_sorted = new ArrayList<>(attesting_indices);
     Collections.sort(bit_0_indices_sorted);
-    List<UnsignedLong> bit_1_indices_sorted = new ArrayList<>(bit_1_indices);
-    Collections.sort(bit_1_indices_sorted);
-    if (!(bit_0_indices.equals(bit_0_indices_sorted)
-        && bit_1_indices.equals(bit_1_indices_sorted))) {
+    if (!attesting_indices.equals(bit_0_indices_sorted)) {
       STDOUT.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
     List<Validator> validators = state.getValidators();
-    List<BLSPublicKey> pubkeys = new ArrayList<>();
-    pubkeys.add(
+    BLSPublicKey pubkey =
         bls_aggregate_pubkeys(
-            bit_0_indices.stream()
+            attesting_indices.stream()
                 .map(i -> toIntExact(i.longValue()))
                 .map(i -> validators.get(i).getPubkey())
-                .collect(Collectors.toList())));
-    pubkeys.add(
-        bls_aggregate_pubkeys(
-            bit_1_indices.stream()
-                .map(i -> toIntExact(i.longValue()))
-                .map(i -> validators.get(i).getPubkey())
-                .collect(Collectors.toList())));
+                .collect(Collectors.toList()));
 
-    List<Bytes32> message_hashes = new ArrayList<>();
-    message_hashes.add(indexed_attestation.getData().hash_tree_root());
-    message_hashes.add(indexed_attestation.getData().hash_tree_root());
+    Bytes32 message_hash = indexed_attestation.getData().hash_tree_root();
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes domain =
         get_domain(
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
-    if (!BLSVerify.bls_verify_multiple(pubkeys, message_hashes, signature, domain)) {
+    if (!BLSVerify.bls_verify(pubkey, message_hash, signature, domain)) {
       STDOUT.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;
-  }
-
-  public static <T> List<T> intersection(List<T> list1, List<T> list2) {
-    List<T> list = new ArrayList<T>();
-
-    for (T t : list1) {
-      if (list2.contains(t)) {
-        list.add(t);
-      }
-    }
-
-    return list;
   }
 
   // Set bits of the newAttestation on the oldBitlist

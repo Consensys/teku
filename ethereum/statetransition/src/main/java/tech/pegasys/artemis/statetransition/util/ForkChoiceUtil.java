@@ -23,7 +23,6 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -279,10 +278,7 @@ public class ForkChoiceUtil {
         "on_attestation: Attestation is not valid");
 
     // Update latest messages
-    List<UnsignedLong> all_indices = new ArrayList<>();
-    all_indices.addAll(indexed_attestation.getCustody_bit_0_indices());
-    all_indices.addAll(indexed_attestation.getCustody_bit_1_indices());
-    for (UnsignedLong i : all_indices) {
+    for (UnsignedLong i : indexed_attestation.getAttesting_indices()) {
       if (!store.containsLatestMessage(i)
           || target.getEpoch().compareTo(store.getLatestMessage(i).getEpoch()) > 0) {
         store.putLatestMessage(
