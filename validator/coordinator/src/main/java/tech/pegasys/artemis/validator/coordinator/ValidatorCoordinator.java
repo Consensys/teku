@@ -24,7 +24,6 @@ import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
@@ -264,15 +263,13 @@ public class ValidatorCoordinator {
     int commmitteSize = committee.getCommitteeSize();
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
-    Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
 
     BLSSignature signature = getSignature(attestationMessage, domain, attester);
-    Attestation attestation =
-        new Attestation(aggregationBitfield, attestationData, custodyBits, signature);
+    Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
     attestationAggregator.addOwnValidatorAttestation(new Attestation(attestation));
     this.eventBus.post(attestation);
   }
