@@ -271,7 +271,10 @@ public class ForkChoiceUtil {
             .getEpoch()
             .compareTo(store.getJustifiedCheckpoint().getEpoch())
         > 0) {
-      store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+      store.setBestJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+      if (should_update_justified_checkpoint(store, state.getCurrent_justified_checkpoint())) {
+        store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+      }
     }
 
     // Update finalized checkpoint
