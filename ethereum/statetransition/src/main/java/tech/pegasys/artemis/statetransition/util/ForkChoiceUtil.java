@@ -46,10 +46,9 @@ import tech.pegasys.artemis.storage.Store;
 public class ForkChoiceUtil {
 
   public static UnsignedLong get_current_slot(Store.Transaction store, boolean useUnixTime) {
-    UnsignedLong time = useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
-    return time
-        .minus(store.getGenesisTime())
-        .dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    UnsignedLong time =
+        useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
+    return time.minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
   public static UnsignedLong get_current_slot(Store.Transaction store) {
@@ -294,10 +293,12 @@ public class ForkChoiceUtil {
   }
 
   /**
-   *     Run ``on_attestation`` upon receiving a new ``attestation`` from either within a block or directly on the wire.
+   * Run ``on_attestation`` upon receiving a new ``attestation`` from either within a block or
+   * directly on the wire.
    *
-   *     An ``attestation`` that is asserted as invalid may be valid at a later time,
-   *     consider scheduling it for later processing in such case.
+   * <p>An ``attestation`` that is asserted as invalid may be valid at a later time, consider
+   * scheduling it for later processing in such case.
+   *
    * @param store
    * @param attestation
    * @param stateTransition
@@ -313,16 +314,23 @@ public class ForkChoiceUtil {
     UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store, true));
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
-    UnsignedLong previous_epoch = current_epoch.compareTo(UnsignedLong.valueOf(GENESIS_EPOCH)) > 0 ? current_epoch.minus(UnsignedLong.ONE) : GENESIS_EPOCH;
+    UnsignedLong previous_epoch =
+        current_epoch.compareTo(UnsignedLong.valueOf(GENESIS_EPOCH)) > 0
+            ? current_epoch.minus(UnsignedLong.ONE)
+            : GENESIS_EPOCH;
 
     List<UnsignedLong> epochs = List.of(current_epoch, previous_epoch);
-    checkArgument(epochs.contains(target.getEpoch()), "on_attestation: Attestations must be from the current or previous epoch");
+    checkArgument(
+        epochs.contains(target.getEpoch()),
+        "on_attestation: Attestations must be from the current or previous epoch");
 
     checkArgument(
         store.containsBlock(target.getRoot()),
         "on_attestation: Cannot calculate the current shuffling if have not seen the target");
 
-    checkArgument(store.getBlockRoots().contains(target.getRoot()), "on_attestation: Attestations target must be for a known block. If a target block is unknown, delay consideration until the block is found");
+    checkArgument(
+        store.getBlockRoots().contains(target.getRoot()),
+        "on_attestation: Attestations target must be for a known block. If a target block is unknown, delay consideration until the block is found");
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
@@ -339,9 +347,17 @@ public class ForkChoiceUtil {
             >= 0,
         "on_attestation: Attestations cannot be from the future epochs");
 
-    checkArgument(store.getBlockRoots().contains(attestation.getData().getBeacon_block_root()), "on_attestation: Attestations must be for a known block. If block is unknown, delay consideration until the block is found");
+    checkArgument(
+        store.getBlockRoots().contains(attestation.getData().getBeacon_block_root()),
+        "on_attestation: Attestations must be for a known block. If block is unknown, delay consideration until the block is found");
 
-    checkArgument(store.getBlock(attestation.getData().getBeacon_block_root()).getSlot().compareTo(attestation.getData().getSlot()) <= 0, "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
+    checkArgument(
+        store
+                .getBlock(attestation.getData().getBeacon_block_root())
+                .getSlot()
+                .compareTo(attestation.getData().getSlot())
+            <= 0,
+        "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
 
     // Store target checkpoint state if not yet seen
     if (!store.containsCheckpointState(target)) {
