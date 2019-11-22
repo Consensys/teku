@@ -87,7 +87,8 @@ public class WhoAreYouPacket extends AbstractPacket {
     RlpList payload =
         (RlpList) RlpDecoder.decode(getBytes().slice(32).toArray()).getValues().get(0);
     blank.authTag = Bytes.wrap(((RlpString) payload.getValues().get(0)).getBytes());
-    blank.idNonce = Bytes.wrap(((RlpString) payload.getValues().get(1)).getBytes());
+    byte[] idbytes = ((RlpString) payload.getValues().get(1)).getBytes();
+    blank.idNonce = Bytes.concatenate(Bytes.wrap(new byte[32-idbytes.length]),Bytes.wrap(idbytes));
     blank.enrSeq =
         UInt64.fromBytes(Bytes.wrap(((RlpString) payload.getValues().get(2)).getBytes()));
     this.decoded = blank;
@@ -112,9 +113,9 @@ public class WhoAreYouPacket extends AbstractPacket {
   }
 
   private static class WhoAreYouDecoded {
-    private Bytes magic;
+    private Bytes magic; // Bytes32
     private Bytes authTag;
-    private Bytes idNonce;
+    private Bytes idNonce; // Bytes32
     private UInt64 enrSeq;
   }
 }

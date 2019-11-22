@@ -78,9 +78,10 @@ public class DiscoveryManagerImpl implements DiscoveryManager {
     AuthTagRepository authTagRepo = new AuthTagRepository();
     this.scheduler = serverScheduler;
     this.nodeRecordFactory = nodeRecordFactory;
+    Bytes homeNodeBytes = ((Bytes) homeNode.get(NodeRecord.FIELD_IP_V4));
     this.discoveryServer =
         new DiscoveryServerImpl(
-            ((Bytes) homeNode.get(NodeRecord.FIELD_IP_V4)),
+            Bytes.concatenate(Bytes.wrap(new byte[4-homeNodeBytes.size()]),homeNodeBytes),
             (int) homeNode.get(NodeRecord.FIELD_UDP_V4));
     this.discoveryClient = new DiscoveryClientImpl(outgoingMessages, clientScheduler);
     NodeIdToSession nodeIdToSession =

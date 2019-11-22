@@ -77,7 +77,7 @@ public class RandomPacket extends AbstractPacket {
   }
 
   private static class RandomPacketDecoded {
-    private Bytes tag;
+    private Bytes tag; // Bytes32
     private Bytes authTag;
   }
 }

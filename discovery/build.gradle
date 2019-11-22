@@ -5,6 +5,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
   implementation 'com.google.guava:guava'
   implementation 'org.javatuples:javatuples:1.2'

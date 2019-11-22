@@ -46,14 +46,14 @@ public class NodeSession {
   private static final int CLEANUP_DELAY_SECONDS = 60;
   private final NodeRecord nodeRecord;
   private final NodeRecord homeNodeRecord;
-  private final Bytes homeNodeId;
+  private final Bytes homeNodeId; //Bytes32
   private final AuthTagRepository authTagRepo;
   private final NodeTable nodeTable;
   private final NodeBucketStorage nodeBucketStorage;
   private final Consumer<Packet> outgoing;
   private final Random rnd;
   private SessionStatus status = SessionStatus.INITIAL;
-  private Bytes idNonce;
+  private Bytes idNonce; //Bytes32
   private Bytes initiatorKey;
   private Bytes recipientKey;
   private Map<Bytes, RequestInfo> requestIdStatuses = new ConcurrentHashMap<>();
