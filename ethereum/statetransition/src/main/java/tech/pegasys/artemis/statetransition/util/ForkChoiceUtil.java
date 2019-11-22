@@ -44,7 +44,7 @@ import tech.pegasys.artemis.storage.Store;
 
 public class ForkChoiceUtil {
 
-  public static UnsignedLong get_current_slot(Store store) {
+  public static UnsignedLong get_current_slot(Store.Transaction store) {
     return store
         .getTime()
         .minus(store.getGenesisTime())
