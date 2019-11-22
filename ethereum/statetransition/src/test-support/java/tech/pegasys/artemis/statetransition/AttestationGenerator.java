@@ -16,7 +16,6 @@ package tech.pegasys.artemis.statetransition;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -188,13 +187,12 @@ public class AttestationGenerator {
     int commmitteSize = committee.getCommitteeSize();
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
-    Bitlist custodyBits = new Bitlist(commmitteSize, MAX_VALIDATORS_PER_COMMITTEE);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
 
     BLSSignature signature = BLSSignature.sign(attesterKeyPair, attestationMessage, domain);
-    return new Attestation(aggregationBitfield, attestationData, custodyBits, signature);
+    return new Attestation(aggregationBitfield, attestationData, signature);
   }
 }

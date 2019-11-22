@@ -137,10 +137,7 @@ public final class DataStructureUtil {
 
   public static Attestation randomAttestation(int seed) {
     return new Attestation(
-        randomBitlist(seed),
-        randomAttestationData(seed++),
-        randomBitlist(seed++),
-        BLSSignature.random(seed++));
+        randomBitlist(seed), randomAttestationData(seed++), BLSSignature.random(seed++));
   }
 
   public static AggregateAndProof randomAggregateAndProof(int seed) {
@@ -217,21 +214,13 @@ public final class DataStructureUtil {
   }
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
-    SSZList<UnsignedLong> custody_0_bit_indices =
+    SSZList<UnsignedLong> attesting_indices =
         new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    SSZList<UnsignedLong> custody_1_bit_indices =
-        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    custody_0_bit_indices.add(randomUnsignedLong(seed));
-    custody_0_bit_indices.add(randomUnsignedLong(seed++));
-    custody_0_bit_indices.add(randomUnsignedLong(seed++));
-    custody_1_bit_indices.add(randomUnsignedLong(seed++));
-    custody_1_bit_indices.add(randomUnsignedLong(seed++));
-    custody_1_bit_indices.add(randomUnsignedLong(seed++));
+    attesting_indices.add(randomUnsignedLong(seed));
+    attesting_indices.add(randomUnsignedLong(seed++));
+    attesting_indices.add(randomUnsignedLong(seed++));
     return new IndexedAttestation(
-        custody_0_bit_indices,
-        custody_1_bit_indices,
-        randomAttestationData(seed++),
-        BLSSignature.random(seed++));
+        attesting_indices, randomAttestationData(seed++), BLSSignature.random(seed++));
   }
 
   public static DepositData randomDepositData(int seed) {
