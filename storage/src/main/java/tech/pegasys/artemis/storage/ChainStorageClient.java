@@ -27,7 +27,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
@@ -158,16 +157,15 @@ public class ChainStorageClient implements ChainStorage {
       LOG.trace("Block root at slot {} is the current best slot root", slot);
       return Optional.of(bestBlockRoot);
     }
-    final UnsignedLong slotsPerHistoricalRoot =
-        UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT);
 
-    if (!isSlotStillAvailable(slot, slotsPerHistoricalRoot)) {
-      LOG.trace("No block root at slot {} because slot is not within historical root", slot);
-      return Optional.empty();
-    }
     final BeaconState bestState = store.getBlockState(bestBlockRoot);
     if (bestState == null) {
       LOG.trace("No block root at slot {} because best state is not available", slot);
+      return Optional.empty();
+    }
+
+    if (!BeaconStateUtil.isBlockRootAvailableFromState(bestState, slot)) {
+      LOG.trace("No block root at slot {} because slot is not within historical root", slot);
       return Optional.empty();
     }
 
