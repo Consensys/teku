@@ -70,7 +70,7 @@ public class Prysm extends GenericContainer<Prysm> implements BeaconChainNode {
     // number is always interpreted as positive.
     Bytes rawBytes = Bytes.wrap(privKey.raw());
     if (rawBytes.size() == 33) {
-      rawBytes = rawBytes.slice(1, 33);
+      rawBytes = rawBytes.slice(1, 32);
     }
     // And it doesn't accept a 0x prefix so we can't just use toHexString().
     Files.writeString(privKeyFile.toPath(), rawBytes.appendHexTo(new StringBuilder()));
