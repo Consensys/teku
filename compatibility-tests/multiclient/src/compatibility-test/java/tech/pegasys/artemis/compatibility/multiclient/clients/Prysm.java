@@ -24,6 +24,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Duration;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -31,6 +33,7 @@ import org.testcontainers.utility.MountableFile;
 
 public class Prysm extends GenericContainer<Prysm> implements BeaconChainNode {
 
+  private static final Logger LOG = LogManager.getLogger();
   private static final String PRIVKEY_TARGET_PATH = "/tmp/privkey.tmp";
   private final File privKeyFile;
   private final PeerId peerId;
@@ -51,11 +54,14 @@ public class Prysm extends GenericContainer<Prysm> implements BeaconChainNode {
           "--no-discovery",
           "--minimal-config",
           "--p2p-priv-key",
-          PRIVKEY_TARGET_PATH);
+          PRIVKEY_TARGET_PATH,
+          "--verbosity",
+          "INFO");
       withStartupTimeout(Duration.of(2, MINUTES));
       waitingFor(Wait.forLogMessage(".*Node started p2p server.*", 1));
       withCopyFileToContainer(
           MountableFile.forHostPath(privKeyFile.getAbsolutePath()), PRIVKEY_TARGET_PATH);
+      withLogConsumer(outputFrame -> LOG.debug(outputFrame.getUtf8String().trim()));
     } catch (final IOException e) {
       throw new RuntimeException(e);
     }
