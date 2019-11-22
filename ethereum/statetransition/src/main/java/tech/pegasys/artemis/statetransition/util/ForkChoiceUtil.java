@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
@@ -44,6 +45,10 @@ public class ForkChoiceUtil {
 
   public static UnsignedLong get_current_slot(Store store) {
     return store.getTime().minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+  }
+
+  public static UnsignedLong compute_slots_since_epoch_start(UnsignedLong slot) {
+    return slot.minus(compute_start_slot_at_epoch(compute_epoch_at_slot(slot)));
   }
 
   /**
