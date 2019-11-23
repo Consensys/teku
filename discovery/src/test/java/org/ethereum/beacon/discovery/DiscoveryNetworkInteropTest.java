@@ -221,11 +221,11 @@ public class DiscoveryNetworkInteropTest {
       rnd.nextBytes(privKey1);
       ECKeyPair keyPair1 = ECKeyPair.create(privKey1);
 
-      org.apache.milagro.amcl.SECP256K1.ECP ecp =
-          ECP.fromBytes(keyPair1.getPublicKey().toByteArray());
+//      org.apache.milagro.amcl.SECP256K1.ECP ecp =
+//          ECP.fromBytes(keyPair1.getPublicKey().toByteArray());
 
-      byte[] pubbytes = new byte[33];
-      ecp.toBytes(pubbytes, true);
+//      byte[] pubbytes = new byte[33];
+//      ecp.toBytes(pubbytes, true);
 
       Bytes localAddressBytes = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
       Bytes localIp1 =
@@ -237,7 +237,7 @@ public class DiscoveryNetworkInteropTest {
               Bytes.EMPTY,
               Pair.with(EnrField.ID, IdentitySchema.V4),
               Pair.with(EnrField.IP_V4, localIp1),
-              Pair.with(EnrFieldV4.PKEY_SECP256K1, Bytes.wrap(pubbytes)),
+              Pair.with(EnrFieldV4.PKEY_SECP256K1, Functions.derivePublicKeyFromPrivate(Bytes.wrap(privKey1))),
               //
               // Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey()))),
               Pair.with(EnrField.TCP_V4, port),

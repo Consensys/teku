@@ -141,19 +141,19 @@ public class Functions {
 
   /** Maps public key to point on {@link #SECP256K1_CURVE} */
   public static ECPoint publicKeyToPoint(Bytes pkey) {
-    //    byte[] destPubPointBytes;
-    //    if (pkey.size() == 64) { // uncompressed
-    //      destPubPointBytes = new byte[pkey.size() + 1];
-    //      destPubPointBytes[0] = 0x04; // default prefix
-    //      System.arraycopy(pkey.toArray(), 0, destPubPointBytes, 1, pkey.size());
-    //    } else {
-    //      destPubPointBytes = pkey.toArray();
-    //    }
-    ////    return SECP256K1_CURVE.getCurve().decodePoint(destPubPointBytes);
+        byte[] destPubPointBytes;
+        if (pkey.size() == 64) { // uncompressed
+          destPubPointBytes = new byte[pkey.size() + 1];
+          destPubPointBytes[0] = 0x04; // default prefix
+          System.arraycopy(pkey.toArray(), 0, destPubPointBytes, 1, pkey.size());
+        } else {
+          destPubPointBytes = pkey.toArray();
+        }
+       return SECP256K1_CURVE.getCurve().decodePoint(destPubPointBytes);
     //    ECP ecp = ECP.fromBytes(pkey.toArray());
     //    byte[] decodePointBytes = new byte[33];
     //    ecp.toBytes(decodePointBytes, true);
-    return SECP256K1_CURVE.getCurve().decodePoint(pkey.toArray());
+//    return SECP256K1_CURVE.getCurve().decodePoint(pkey.toArray());
   }
 
   /** Derives public key in SECP256K1, compressed */
