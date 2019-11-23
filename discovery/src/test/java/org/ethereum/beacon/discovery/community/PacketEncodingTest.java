@@ -41,7 +41,7 @@ public class PacketEncodingTest {
   @Test
   public void encodeWhoAreYouTest() {
     WhoAreYouPacket whoAreYouPacket =
-        WhoAreYouPacket.create(
+        WhoAreYouPacket.createFromMagic(
             Bytes.fromHexString(
                 "0x0101010101010101010101010101010101010101010101010101010101010101"),
             Bytes.fromHexString("0x020202020202020202020202"),

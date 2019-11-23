@@ -41,9 +41,15 @@ public class WhoAreYouPacket extends AbstractPacket {
     super(bytes);
   }
 
-  public static WhoAreYouPacket create(
+  /** Create a packet by converting {@code destNodeId} to a magic value */
+  public static WhoAreYouPacket createFromNodeId(
       Bytes destNodeId, Bytes authTag, Bytes idNonce, UInt64 enrSeq) {
     Bytes magic = getStartMagic(destNodeId);
+    return createFromMagic(magic, authTag, idNonce, enrSeq);
+  }
+
+  public static WhoAreYouPacket createFromMagic(
+      Bytes magic, Bytes authTag, Bytes idNonce, UInt64 enrSeq) {
     byte[] rlpListEncoded =
         RlpEncoder.encode(
             new RlpList(

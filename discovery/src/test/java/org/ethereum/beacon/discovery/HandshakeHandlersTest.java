@@ -150,7 +150,8 @@ public class HandshakeHandlersTest {
     authTagRepository1.put(authTag, nodeSessionAt1For2);
     envelopeAt1From2.put(
         Field.PACKET_WHOAREYOU,
-        WhoAreYouPacket.create(nodePair1.getValue1().getNodeId(), authTag, idNonce, UInt64.ZERO));
+        WhoAreYouPacket.createFromNodeId(
+            nodePair1.getValue1().getNodeId(), authTag, idNonce, UInt64.ZERO));
     envelopeAt1From2.put(Field.SESSION, nodeSessionAt1For2);
     CompletableFuture<Void> future = new CompletableFuture<>();
     nodeSessionAt1For2.createNextRequest(TaskType.FINDNODE, new TaskOptions(true), future);
