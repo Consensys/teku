@@ -21,6 +21,7 @@ import org.ethereum.beacon.discovery.format.SerializerFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
+/** Serializer for {@link NodeRecordInfo}, {@link NodeIndex} and {@link NodeBucket} */
 public class NodeSerializerFactory implements SerializerFactory {
   private final Map<Class, Function<Bytes, Object>> deserializerMap = new HashMap<>();
   private final Map<Class, Function<Object, Bytes>> serializerMap = new HashMap<>();

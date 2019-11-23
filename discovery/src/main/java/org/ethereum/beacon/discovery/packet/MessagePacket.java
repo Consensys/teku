@@ -38,6 +38,12 @@ public class MessagePacket extends AbstractPacket {
     super(bytes);
   }
 
+  public static MessagePacket create(Bytes tag, Bytes authTag, Bytes messageCipherText) {
+    byte[] authTagBytesRlp = RlpEncoder.encode(RlpString.create(authTag.toArray()));
+    Bytes authTagEncoded = Bytes.wrap(authTagBytesRlp);
+    return new MessagePacket(Bytes.concatenate(tag, authTagEncoded, messageCipherText));
+  }
+
   public static MessagePacket create(
       Bytes homeNodeId,
       Bytes destNodeId,
@@ -45,10 +51,8 @@ public class MessagePacket extends AbstractPacket {
       Bytes initiatorKey,
       DiscoveryMessage message) {
     Bytes tag = Packet.createTag(homeNodeId, destNodeId);
-    byte[] authTagBytesRlp = RlpEncoder.encode(RlpString.create(authTag.toArray()));
-    Bytes authTagEncoded = Bytes.wrap(authTagBytesRlp);
     Bytes encryptedData = Functions.aesgcm_encrypt(initiatorKey, authTag, message.getBytes(), tag);
-    return new MessagePacket(Bytes.concatenate(tag, authTagEncoded, encryptedData));
+    return create(tag, authTag, encryptedData);
   }
 
   public void verify(Bytes expectedAuthTag) {}
@@ -78,7 +82,7 @@ public class MessagePacket extends AbstractPacket {
     }
   }
 
-  public void decode(Bytes initiatorKey) {
+  public void decode(Bytes readKey) {
     if (decoded != null) {
       return;
     }
@@ -90,7 +94,7 @@ public class MessagePacket extends AbstractPacket {
                 .getBytes());
     blank.message =
         new DiscoveryV5Message(
-            Functions.aesgcm_decrypt(initiatorKey, blank.authTag, getBytes().slice(45), blank.tag));
+            Functions.aesgcm_decrypt(readKey, blank.authTag, getBytes().slice(45), blank.tag));
     this.decoded = blank;
   }
 

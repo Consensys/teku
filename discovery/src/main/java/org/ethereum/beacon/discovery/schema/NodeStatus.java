@@ -16,10 +16,11 @@ package org.ethereum.beacon.discovery.schema;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Status of {@link org.ethereum.beacon.discovery.schema.NodeRecord} */
 public enum NodeStatus {
-  ACTIVE(0x01),
-  SLEEP(0x02),
-  DEAD(0x03);
+  ACTIVE(0x01), // Alive
+  SLEEP(0x02), // Didn't answer last time(s)
+  DEAD(0x03); // Didnt' answer for a long time
 
   private static final Map<Integer, NodeStatus> codeMap = new HashMap<>();
 

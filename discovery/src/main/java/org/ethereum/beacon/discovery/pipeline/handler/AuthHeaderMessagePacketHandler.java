@@ -25,6 +25,7 @@ import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 import org.ethereum.beacon.discovery.pipeline.Pipeline;
 import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.EnrFieldV4;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.util.Functions;
@@ -75,10 +76,12 @@ public class AuthHeaderMessagePacketHandler implements EnvelopeHandler {
               session.getStaticNodeKey(),
               ephemeralPubKey,
               session.getIdNonce());
-      session.setInitiatorKey(keys.getInitiatorKey());
-      session.setRecipientKey(keys.getRecipientKey());
-      packet.decodeMessage(keys.getInitiatorKey(), keys.getAuthResponseKey(), nodeRecordFactory);
-      packet.verify(session.getIdNonce());
+      // Swap keys because we are not initiator, other side is
+      session.setInitiatorKey(keys.getRecipientKey());
+      session.setRecipientKey(keys.getInitiatorKey());
+      packet.decodeMessage(session.getRecipientKey(), keys.getAuthResponseKey(), nodeRecordFactory);
+      packet.verify(
+          session.getIdNonce(), (Bytes) session.getNodeRecord().get(EnrFieldV4.PKEY_SECP256K1));
       envelope.put(Field.MESSAGE, packet.getMessage());
     } catch (AssertionError ex) {
       logger.info(

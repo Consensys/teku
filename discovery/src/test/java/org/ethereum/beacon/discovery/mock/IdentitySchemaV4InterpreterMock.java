@@ -13,12 +13,18 @@
 
 package org.ethereum.beacon.discovery.mock;
 
-import org.ethereum.beacon.discovery.schema.EnrSchemeV4Interpreter;
+import org.apache.tuweni.bytes.MutableBytes;
+import org.ethereum.beacon.discovery.schema.IdentitySchemaV4Interpreter;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 
-public class EnrSchemeV4InterpreterMock extends EnrSchemeV4Interpreter {
+public class IdentitySchemaV4InterpreterMock extends IdentitySchemaV4Interpreter {
   @Override
   public void verify(NodeRecord nodeRecord) {
-    // Don't verify ECDSA
+    // Don't verify signature
+  }
+
+  @Override
+  public void sign(NodeRecord nodeRecord, Object signOptions) {
+    nodeRecord.setSignature(MutableBytes.create(96));
   }
 }

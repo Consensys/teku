@@ -31,6 +31,7 @@ import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
  * received.
  */
 public class RecursiveLookupTasks {
+  private static final int DEFAULT_DISTANCE = 100;
   private final Scheduler scheduler;
   private final DiscoveryManager discoveryManager;
   private final Set<Bytes> currentTasks = Sets.newConcurrentHashSet();
@@ -55,7 +56,7 @@ public class RecursiveLookupTasks {
     scheduler.execute(
         () -> {
           CompletableFuture<Void> retry =
-              discoveryManager.executeTask(nodeRecordInfo.getNode(), TaskType.FINDNODE);
+              discoveryManager.findNodes(nodeRecordInfo.getNode(), DEFAULT_DISTANCE);
           taskTimeouts.put(
               nodeRecordInfo.getNode().getNodeId(),
               () ->

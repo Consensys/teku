@@ -18,55 +18,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.stream.IntStream;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.TestUtil;
 import org.ethereum.beacon.discovery.database.Database;
-import org.ethereum.beacon.discovery.schema.EnrScheme;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
 import org.ethereum.beacon.discovery.util.Functions;
-import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
 
 public class NodeBucketTest {
   private final Random rnd = new Random();
 
-  private NodeRecordInfo generateUniqueRecord() {
-    try {
-      byte[] pkey = new byte[33];
-      rnd.nextBytes(pkey);
-      NodeRecord nodeRecord =
-          TestUtil.NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
-              EnrScheme.V4,
-              UInt64.valueOf(1),
-              Bytes.EMPTY,
-              new ArrayList<Pair<String, Object>>() {
-                {
-                  add(
-                      Pair.with(
-                          NodeRecord.FIELD_IP_V4,
-                          Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
-                  add(Pair.with(NodeRecord.FIELD_UDP_V4, 30303));
-                  add(Pair.with(NodeRecord.FIELD_PKEY_SECP256K1, Bytes.wrap(pkey)));
-                }
-              });
-      return new NodeRecordInfo(nodeRecord, (long) rnd.nextInt(1000), NodeStatus.ACTIVE, 0);
-    } catch (UnknownHostException e) {
-      throw new RuntimeException(e);
-    }
+  private NodeRecordInfo generateUniqueRecord(int portInc) {
+    NodeRecord nodeRecord = TestUtil.generateUnverifiedNode(30303 + portInc).getValue1();
+    return new NodeRecordInfo(nodeRecord, 0L, NodeStatus.ACTIVE, 0);
   }
 
   @Test
   public void testBucket() {
     NodeBucket nodeBucket = new NodeBucket();
-    IntStream.range(0, 20).forEach(value -> nodeBucket.put(generateUniqueRecord()));
+    IntStream.range(0, 20).forEach(value -> nodeBucket.put(generateUniqueRecord(value)));
     assertEquals(NodeBucket.K, nodeBucket.size());
     assertEquals(NodeBucket.K, nodeBucket.getNodeRecords().size());
 
@@ -77,11 +50,11 @@ public class NodeBucketTest {
       lastRetrySaved = nodeRecordInfo.getLastRetry();
     }
     NodeRecordInfo willNotInsertNode =
-        new NodeRecordInfo(generateUniqueRecord().getNode(), -2L, NodeStatus.ACTIVE, 0);
+        new NodeRecordInfo(generateUniqueRecord(25).getNode(), -2L, NodeStatus.ACTIVE, 0);
     nodeBucket.put(willNotInsertNode);
     assertFalse(nodeBucket.contains(willNotInsertNode));
     NodeRecordInfo willInsertNode =
-        new NodeRecordInfo(generateUniqueRecord().getNode(), 1001L, NodeStatus.ACTIVE, 0);
+        new NodeRecordInfo(generateUniqueRecord(26).getNode(), 1001L, NodeStatus.ACTIVE, 0);
     NodeRecordInfo top =
         nodeBucket.getNodeRecords().get(NodeBucket.K - 1); // latest retry should be kept
     NodeRecordInfo bottom = nodeBucket.getNodeRecords().get(0);
@@ -92,43 +65,46 @@ public class NodeBucketTest {
     NodeRecordInfo willInsertNode2 =
         new NodeRecordInfo(willInsertNode.getNode(), 1002L, NodeStatus.ACTIVE, 0);
     nodeBucket.put(willInsertNode2); // replaces willInsertNode with better last retry
-    assertEquals(willInsertNode2, nodeBucket.getNodeRecords().get(NodeBucket.K - 1));
+    assertTrue(nodeBucket.getNodeRecords().contains(willInsertNode2));
     NodeRecordInfo willNotInsertNode3 =
         new NodeRecordInfo(willInsertNode.getNode(), 999L, NodeStatus.ACTIVE, 0);
     nodeBucket.put(willNotInsertNode3); // does not replace willInsertNode with worse last retry
-    assertEquals(willInsertNode2, nodeBucket.getNodeRecords().get(NodeBucket.K - 1)); // still 2nd
-    assertEquals(top, nodeBucket.getNodeRecords().get(NodeBucket.K - 2));
+    assertTrue(nodeBucket.getNodeRecords().contains(willInsertNode2));
+    assertTrue(nodeBucket.getNodeRecords().contains(top));
 
     NodeRecordInfo willInsertNodeDead =
         new NodeRecordInfo(willInsertNode.getNode(), 1001L, NodeStatus.DEAD, 0);
     nodeBucket.put(willInsertNodeDead); // removes willInsertNode
     assertEquals(NodeBucket.K - 1, nodeBucket.size());
-    assertFalse(nodeBucket.contains(willInsertNode));
+    assertFalse(nodeBucket.contains(willInsertNode2));
   }
 
   @Test
   public void testStorage() {
-    NodeRecordInfo initial = generateUniqueRecord();
+    NodeRecordInfo initial = generateUniqueRecord(0);
     Database database = Database.inMemoryDB();
     NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
     NodeBucketStorage nodeBucketStorage =
         nodeTableStorageFactory.createBucketStorage(database, TEST_SERIALIZER, initial.getNode());
 
+    int j = 1;
     for (int i = 0; i < 20; ) {
-      NodeRecordInfo nodeRecordInfo = generateUniqueRecord();
+      NodeRecordInfo nodeRecordInfo = generateUniqueRecord(j);
       if (Functions.logDistance(initial.getNode().getNodeId(), nodeRecordInfo.getNode().getNodeId())
           == 255) {
         nodeBucketStorage.put(nodeRecordInfo);
         ++i;
       }
+      ++j;
     }
     for (int i = 0; i < 3; ) {
-      NodeRecordInfo nodeRecordInfo = generateUniqueRecord();
+      NodeRecordInfo nodeRecordInfo = generateUniqueRecord(j);
       if (Functions.logDistance(initial.getNode().getNodeId(), nodeRecordInfo.getNode().getNodeId())
           == 254) {
         nodeBucketStorage.put(nodeRecordInfo);
         ++i;
       }
+      ++j;
     }
     assertEquals(16, nodeBucketStorage.get(255).get().size());
     assertEquals(3, nodeBucketStorage.get(254).get().size());

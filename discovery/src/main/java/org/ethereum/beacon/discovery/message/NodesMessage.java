@@ -19,9 +19,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
+import org.web3j.rlp.RlpType;
 
 /**
  * NODES is the response to a FINDNODE or TOPICQUERY message. Multiple NODES messages may be sent as
@@ -47,6 +49,18 @@ public class NodesMessage implements V5Message {
     this.total = total;
     this.nodeRecordsSupplier = nodeRecordsSupplier;
     this.nodeRecordsSize = nodeRecordsSize;
+  }
+
+  public static NodesMessage fromRlp(List<RlpType> rlpList, NodeRecordFactory nodeRecordFactory) {
+    RlpList nodeRecords = (RlpList) rlpList.get(2);
+    return new NodesMessage(
+        Bytes.wrap(((RlpString) rlpList.get(0)).getBytes()),
+        ((RlpString) rlpList.get(1)).asPositiveBigInteger().intValueExact(),
+        () ->
+            nodeRecords.getValues().stream()
+                .map(rl -> nodeRecordFactory.fromRlpList((RlpList) rl))
+                .collect(Collectors.toList()),
+        nodeRecords.getValues().size());
   }
 
   @Override
@@ -80,7 +94,7 @@ public class NodesMessage implements V5Message {
                     RlpString.create(total),
                     new RlpList(
                         getNodeRecords().stream()
-                            .map(n -> RlpString.create(n.serialize().toArray()))
+                            .map(NodeRecord::asRlp)
                             .collect(Collectors.toList()))))));
   }
 

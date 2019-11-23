@@ -28,32 +28,36 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.packet.Packet;
+import org.ethereum.beacon.discovery.pipeline.info.RequestInfo;
+import org.ethereum.beacon.discovery.pipeline.info.RequestInfoFactory;
 import org.ethereum.beacon.discovery.scheduler.ExpirationScheduler;
 import org.ethereum.beacon.discovery.storage.AuthTagRepository;
 import org.ethereum.beacon.discovery.storage.NodeBucket;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
-import org.ethereum.beacon.discovery.task.TaskStatus;
+import org.ethereum.beacon.discovery.task.TaskOptions;
 import org.ethereum.beacon.discovery.task.TaskType;
+import org.ethereum.beacon.discovery.util.Functions;
 
 /**
- * Stores session status and all keys for discovery session between us (homeNode) and the other node
+ * Stores session status and all keys for discovery message exchange between us, `homeNode` and the
+ * other `node`
  */
 public class NodeSession {
   public static final int NONCE_SIZE = 12;
   public static final int REQUEST_ID_SIZE = 8;
   private static final Logger logger = LogManager.getLogger(NodeSession.class);
   private static final int CLEANUP_DELAY_SECONDS = 60;
-  private final NodeRecord nodeRecord;
   private final NodeRecord homeNodeRecord;
-  private final Bytes homeNodeId; //Bytes32
+  private final Bytes homeNodeId;
   private final AuthTagRepository authTagRepo;
   private final NodeTable nodeTable;
   private final NodeBucketStorage nodeBucketStorage;
   private final Consumer<Packet> outgoing;
   private final Random rnd;
+  private NodeRecord nodeRecord;
   private SessionStatus status = SessionStatus.INITIAL;
-  private Bytes idNonce; //Bytes32
+  private Bytes idNonce;
   private Bytes initiatorKey;
   private Bytes recipientKey;
   private Map<Bytes, RequestInfo> requestIdStatuses = new ConcurrentHashMap<>();
@@ -86,6 +90,15 @@ public class NodeSession {
     return nodeRecord;
   }
 
+  public synchronized void updateNodeRecord(NodeRecord nodeRecord) {
+    logger.trace(
+        () ->
+            String.format(
+                "NodeRecord updated from %s to %s in session %s",
+                this.nodeRecord, nodeRecord, this));
+    this.nodeRecord = nodeRecord;
+  }
+
   private void completeConnectFuture() {
     if (completableFuture != null) {
       completableFuture.complete(null);
@@ -93,7 +106,7 @@ public class NodeSession {
     }
   }
 
-  public synchronized void sendOutgoing(Packet packet) {
+  public void sendOutgoing(Packet packet) {
     logger.trace(() -> String.format("Sending outgoing packet %s in session %s", packet, this));
     outgoing.accept(packet);
   }
@@ -110,16 +123,25 @@ public class NodeSession {
    * saved state in all circumstances. The easiest to implement is a random number.
    *
    * @param taskType Type of task, clarifies starting and reply message types
-   * @param future Future to be fired when task is succcessfully completed or exceptionally break
+   * @param taskOptions Task options
+   * @param future Future to be fired when task is successfully completed or exceptionally break
    *     when its failed
    * @return info bundle.
    */
   public synchronized RequestInfo createNextRequest(
-      TaskType taskType, CompletableFuture<Void> future) {
+      TaskType taskType, TaskOptions taskOptions, CompletableFuture<Void> future) {
     byte[] requestId = new byte[REQUEST_ID_SIZE];
     rnd.nextBytes(requestId);
     Bytes wrappedId = Bytes.wrap(requestId);
-    RequestInfo requestInfo = new GeneralRequestInfo(taskType, AWAIT, wrappedId, future);
+    if (taskOptions.isLivenessUpdate()) {
+      future.whenComplete(
+          (aVoid, throwable) -> {
+            if (throwable == null) {
+              updateLiveness();
+            }
+          });
+    }
+    RequestInfo requestInfo = RequestInfoFactory.create(taskType, wrappedId, taskOptions, future);
     requestIdStatuses.put(wrappedId, requestInfo);
     requestExpirationScheduler.put(
         wrappedId,
@@ -137,6 +159,7 @@ public class NodeSession {
     return requestInfo;
   }
 
+  /** Updates request info. Thread-safe. */
   public synchronized void updateRequestInfo(Bytes requestId, RequestInfo newRequestInfo) {
     RequestInfo oldRequestInfo = requestIdStatuses.remove(requestId);
     if (oldRequestInfo == null) {
@@ -177,16 +200,19 @@ public class NodeSession {
         });
   }
 
+  /** Generates random nonce of {@link #NONCE_SIZE} size */
   public synchronized Bytes generateNonce() {
     byte[] nonce = new byte[NONCE_SIZE];
     rnd.nextBytes(nonce);
     return Bytes.wrap(nonce);
   }
 
+  /** If true indicates that handshake is complete */
   public synchronized boolean isAuthenticated() {
     return SessionStatus.AUTHENTICATED.equals(status);
   }
 
+  /** Resets stored authTags for this session making them obsolete */
   public void cleanup() {
     authTagRepo.expire(this);
   }
@@ -203,6 +229,7 @@ public class NodeSession {
     return homeNodeId;
   }
 
+  /** @return initiator key, also known as write key */
   public Bytes getInitiatorKey() {
     return initiatorKey;
   }
@@ -211,6 +238,7 @@ public class NodeSession {
     this.initiatorKey = initiatorKey;
   }
 
+  /** @return recipient key, also known as read key */
   public Bytes getRecipientKey() {
     return recipientKey;
   }
@@ -225,6 +253,14 @@ public class NodeSession {
     assert taskType.equals(requestInfo.getTaskType());
   }
 
+  /** Updates nodeRecord {@link NodeStatus} to ACTIVE of the node associated with this session */
+  public synchronized void updateLiveness() {
+    NodeRecordInfo nodeRecordInfo =
+        new NodeRecordInfo(getNodeRecord(), Functions.getTime(), NodeStatus.ACTIVE, 0);
+    nodeTable.save(nodeRecordInfo);
+    nodeBucketStorage.put(nodeRecordInfo);
+  }
+
   private synchronized RequestInfo clearRequestId(Bytes requestId) {
     RequestInfo requestInfo = requestIdStatuses.remove(requestId);
     requestExpirationScheduler.cancel(requestId);
@@ -236,6 +272,10 @@ public class NodeSession {
     return requestId == null ? Optional.empty() : Optional.of(requestInfo);
   }
 
+  /**
+   * Returns any queued {@link RequestInfo} which was not started because session is not
+   * authenticated
+   */
   public synchronized Optional<RequestInfo> getFirstAwaitRequestInfo() {
     return requestIdStatuses.values().stream()
         .filter(requestInfo -> AWAIT.equals(requestInfo.getTaskStatus()))
@@ -299,62 +339,5 @@ public class NodeSession {
     WHOAREYOU_SENT, // other side is initiator, we've sent whoareyou in response
     RANDOM_PACKET_SENT, // our node is initiator, we've sent random packet
     AUTHENTICATED
-  }
-
-  public interface RequestInfo {
-    TaskType getTaskType();
-
-    TaskStatus getTaskStatus();
-
-    Bytes getRequestId();
-
-    CompletableFuture<Void> getFuture();
-  }
-
-  public static class GeneralRequestInfo implements RequestInfo {
-    private final TaskType taskType;
-    private final TaskStatus taskStatus;
-    private final Bytes requestId;
-    private final CompletableFuture<Void> future;
-
-    public GeneralRequestInfo(
-        TaskType taskType, TaskStatus taskStatus, Bytes requestId, CompletableFuture<Void> future) {
-      this.taskType = taskType;
-      this.taskStatus = taskStatus;
-      this.requestId = requestId;
-      this.future = future;
-    }
-
-    @Override
-    public TaskType getTaskType() {
-      return taskType;
-    }
-
-    @Override
-    public TaskStatus getTaskStatus() {
-      return taskStatus;
-    }
-
-    @Override
-    public Bytes getRequestId() {
-      return requestId;
-    }
-
-    @Override
-    public CompletableFuture<Void> getFuture() {
-      return future;
-    }
-
-    @Override
-    public String toString() {
-      return "GeneralRequestInfo{"
-          + "taskType="
-          + taskType
-          + ", taskStatus="
-          + taskStatus
-          + ", requestId="
-          + requestId
-          + '}';
-    }
   }
 }

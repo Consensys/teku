@@ -21,6 +21,7 @@ import org.ethereum.beacon.discovery.database.Database;
 import org.ethereum.beacon.discovery.format.SerializerFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 
+/** Creates {@link NodeTableStorage} */
 public interface NodeTableStorageFactory {
   /**
    * Creates storage for nodes table

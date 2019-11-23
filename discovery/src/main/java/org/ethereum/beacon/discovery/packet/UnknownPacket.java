@@ -18,6 +18,7 @@ import org.ethereum.beacon.discovery.type.Hashes;
 
 /** Default packet form until its goal is known */
 public class UnknownPacket extends AbstractPacket {
+  private static final int MAX_SIZE = 1280;
 
   public UnknownPacket(Bytes bytes) {
     super(bytes);
@@ -54,6 +55,12 @@ public class UnknownPacket extends AbstractPacket {
     assert !isWhoAreYouPacket(destNodeId);
     Bytes xorTag = getBytes().slice(0, 32);
     return Hashes.sha256(destNodeId).xor(xorTag);
+  }
+
+  public void verify() {
+    if (getBytes().size() > MAX_SIZE) {
+      throw new RuntimeException(String.format("Packets should not exceed %s bytes", MAX_SIZE));
+    }
   }
 
   @Override

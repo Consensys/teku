@@ -54,6 +54,7 @@ import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.task.TaskMessageFactory;
+import org.ethereum.beacon.discovery.task.TaskOptions;
 import org.ethereum.beacon.discovery.task.TaskType;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
@@ -64,10 +65,10 @@ public class HandshakeHandlersTest {
   @Test
   public void authHandlerWithMessageRoundTripTest() throws Exception {
     // Node1
-    Pair<Bytes, NodeRecord> nodePair1 = TestUtil.generateNode(30303);
+    Pair<Bytes, NodeRecord> nodePair1 = TestUtil.generateUnverifiedNode(30303);
     NodeRecord nodeRecord1 = nodePair1.getValue1();
     // Node2
-    Pair<Bytes, NodeRecord> nodePair2 = TestUtil.generateNode(30304);
+    Pair<Bytes, NodeRecord> nodePair2 = TestUtil.generateUnverifiedNode(30304);
     NodeRecord nodeRecord2 = nodePair2.getValue1();
     Random rnd = new Random();
     NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
@@ -152,7 +153,7 @@ public class HandshakeHandlersTest {
         WhoAreYouPacket.create(nodePair1.getValue1().getNodeId(), authTag, idNonce, UInt64.ZERO));
     envelopeAt1From2.put(Field.SESSION, nodeSessionAt1For2);
     CompletableFuture<Void> future = new CompletableFuture<>();
-    nodeSessionAt1For2.createNextRequest(TaskType.FINDNODE, future);
+    nodeSessionAt1For2.createNextRequest(TaskType.FINDNODE, new TaskOptions(true), future);
     whoAreYouPacketHandlerNode1.handle(envelopeAt1From2);
     assert outgoing1PacketsSemaphore.tryAcquire(1, 1, TimeUnit.SECONDS);
     outgoing1PacketsSemaphore.release();
@@ -177,7 +178,7 @@ public class HandshakeHandlersTest {
             pingAuthTag,
             nodeSessionAt2For1,
             nodeSessionAt2For1
-                .createNextRequest(TaskType.PING, new CompletableFuture<>())
+                .createNextRequest(TaskType.PING, new TaskOptions(true), new CompletableFuture<>())
                 .getRequestId());
     envelopeAt1From2WithMessage.put(PACKET_MESSAGE, pingPacketFrom2To1);
     envelopeAt1From2WithMessage.put(SESSION, nodeSessionAt1For2);
@@ -195,7 +196,7 @@ public class HandshakeHandlersTest {
     Packet pongPacketFrom1To2 = outgoing1Packets[1];
     MessagePacket pongMessagePacketFrom1To2 = (MessagePacket) pongPacketFrom1To2;
     envelopeAt2From1WithMessage.put(PACKET_MESSAGE, pongMessagePacketFrom1To2);
-    envelopeAt2From1WithMessage.put(SESSION, nodeSessionAt1For2);
+    envelopeAt2From1WithMessage.put(SESSION, nodeSessionAt2For1);
     messagePacketHandler2.handle(envelopeAt2From1WithMessage);
     assertNull(envelopeAt2From1WithMessage.get(BAD_PACKET));
     assertNotNull(envelopeAt2From1WithMessage.get(MESSAGE));

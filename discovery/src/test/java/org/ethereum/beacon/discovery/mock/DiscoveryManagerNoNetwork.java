@@ -48,6 +48,7 @@ import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.storage.AuthTagRepository;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
+import org.ethereum.beacon.discovery.task.TaskOptions;
 import org.ethereum.beacon.discovery.task.TaskType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -119,14 +120,26 @@ public class DiscoveryManagerNoNetwork implements DiscoveryManager {
   @Override
   public void stop() {}
 
-  public CompletableFuture<Void> executeTask(NodeRecord nodeRecord, TaskType taskType) {
+  private CompletableFuture<Void> executeTaskImpl(
+      NodeRecord nodeRecord, TaskType taskType, TaskOptions taskOptions) {
     Envelope envelope = new Envelope();
     envelope.put(Field.NODE, nodeRecord);
     CompletableFuture<Void> future = new CompletableFuture<>();
     envelope.put(Field.TASK, taskType);
     envelope.put(Field.FUTURE, future);
+    envelope.put(Field.TASK_OPTIONS, taskOptions);
     outgoingPipeline.push(envelope);
     return future;
+  }
+
+  @Override
+  public CompletableFuture<Void> findNodes(NodeRecord nodeRecord, int distance) {
+    return executeTaskImpl(nodeRecord, TaskType.FINDNODE, new TaskOptions(true, distance));
+  }
+
+  @Override
+  public CompletableFuture<Void> ping(NodeRecord nodeRecord) {
+    return executeTaskImpl(nodeRecord, TaskType.PING, new TaskOptions(true));
   }
 
   public Publisher<NetworkParcel> getOutgoingMessages() {

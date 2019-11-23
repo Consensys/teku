@@ -13,24 +13,33 @@
 
 package org.ethereum.beacon.discovery.schema;
 
-import org.apache.tuweni.bytes.Bytes;
-import org.web3j.rlp.RlpString;
+import java.util.HashMap;
+import java.util.Map;
 
-public interface EnrSchemeInterpreter {
-  /** Returns supported scheme */
-  EnrScheme getScheme();
+/** Discovery protocol versions */
+public enum Protocol {
+  V4("v4"),
+  V5("v5");
 
-  /** Verifies that `nodeRecord` is of scheme implementation */
-  default void verify(NodeRecord nodeRecord) {
-    if (!nodeRecord.getIdentityScheme().equals(getScheme())) {
-      throw new RuntimeException("Interpreter and node record schemes do not match!");
+  private static final Map<String, Protocol> nameMap = new HashMap<>();
+
+  static {
+    for (Protocol scheme : Protocol.values()) {
+      nameMap.put(scheme.name, scheme);
     }
   }
 
-  /** Delivers nodeId according to identity scheme scheme */
-  Bytes getNodeId(NodeRecord nodeRecord);
+  private String name;
 
-  Object decode(String key, RlpString rlpString);
+  private Protocol(String name) {
+    this.name = name;
+  }
 
-  RlpString encode(String key, Object object);
+  public static Protocol fromString(String name) {
+    return nameMap.get(name);
+  }
+
+  public String stringName() {
+    return name;
+  }
 }

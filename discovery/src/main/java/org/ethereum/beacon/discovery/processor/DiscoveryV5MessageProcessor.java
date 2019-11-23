@@ -24,10 +24,14 @@ import org.ethereum.beacon.discovery.message.handler.MessageHandler;
 import org.ethereum.beacon.discovery.message.handler.NodesHandler;
 import org.ethereum.beacon.discovery.message.handler.PingHandler;
 import org.ethereum.beacon.discovery.message.handler.PongHandler;
-import org.ethereum.beacon.discovery.schema.IdentityScheme;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeSession;
+import org.ethereum.beacon.discovery.schema.Protocol;
 
+/**
+ * {@link DiscoveryV5Message} v5 messages processor. Uses several handlers, one fo each type of v5
+ * message to handle appropriate message.
+ */
 public class DiscoveryV5MessageProcessor implements DiscoveryMessageProcessor<DiscoveryV5Message> {
   private static final Logger logger = LogManager.getLogger(DiscoveryV5MessageProcessor.class);
   private final Map<MessageCode, MessageHandler> messageHandlers = new HashMap<>();
@@ -42,8 +46,8 @@ public class DiscoveryV5MessageProcessor implements DiscoveryMessageProcessor<Di
   }
 
   @Override
-  public IdentityScheme getSupportedIdentity() {
-    return IdentityScheme.V5;
+  public Protocol getSupportedIdentity() {
+    return Protocol.V5;
   }
 
   @Override

@@ -14,11 +14,9 @@
 package org.ethereum.beacon.discovery.message;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.units.bigints.UInt64;
-import org.ethereum.beacon.discovery.schema.IdentityScheme;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.ethereum.beacon.discovery.schema.Protocol;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
@@ -42,8 +40,8 @@ public class DiscoveryV5Message implements DiscoveryMessage {
   }
 
   @Override
-  public IdentityScheme getIdentityScheme() {
-    return IdentityScheme.V5;
+  public Protocol getProtocol() {
+    return Protocol.V5;
   }
 
   public MessageCode getCode() {
@@ -69,35 +67,19 @@ public class DiscoveryV5Message implements DiscoveryMessage {
     switch (code) {
       case PING:
         {
-          return new PingMessage(
-              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
-              UInt64.fromBytes(Bytes.wrap(((RlpString) payload.get(1)).getBytes())));
+          return PingMessage.fromRlp(payload);
         }
       case PONG:
         {
-          return new PongMessage(
-              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
-              UInt64.fromBytes(Bytes.wrap(((RlpString) payload.get(1)).getBytes())),
-              Bytes.wrap(((RlpString) payload.get(2)).getBytes()),
-              ((RlpString) payload.get(3)).asPositiveBigInteger().intValueExact());
+          return PongMessage.fromRlp(payload);
         }
       case FINDNODE:
         {
-          return new FindNodeMessage(
-              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
-              ((RlpString) payload.get(1)).asPositiveBigInteger().intValueExact());
+          return FindNodeMessage.fromRlp(payload);
         }
       case NODES:
         {
-          RlpList nodeRecords = (RlpList) payload.get(2);
-          return new NodesMessage(
-              Bytes.wrap(((RlpString) payload.get(0)).getBytes()),
-              ((RlpString) payload.get(1)).asPositiveBigInteger().intValueExact(),
-              () ->
-                  nodeRecords.getValues().stream()
-                      .map(rs -> nodeRecordFactory.fromBytes(((RlpString) rs).getBytes()))
-                      .collect(Collectors.toList()),
-              nodeRecords.getValues().size());
+          return NodesMessage.fromRlp(payload, nodeRecordFactory);
         }
       default:
         {

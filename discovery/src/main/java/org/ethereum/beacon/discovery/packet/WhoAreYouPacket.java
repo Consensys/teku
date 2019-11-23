@@ -16,6 +16,7 @@ package org.ethereum.beacon.discovery.packet;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.util.Functions;
+import org.ethereum.beacon.discovery.util.Utils;
 import org.web3j.rlp.RlpDecoder;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
@@ -87,10 +88,10 @@ public class WhoAreYouPacket extends AbstractPacket {
     RlpList payload =
         (RlpList) RlpDecoder.decode(getBytes().slice(32).toArray()).getValues().get(0);
     blank.authTag = Bytes.wrap(((RlpString) payload.getValues().get(0)).getBytes());
-    byte[] idbytes = ((RlpString) payload.getValues().get(1)).getBytes();
-    blank.idNonce = Bytes.concatenate(Bytes.wrap(new byte[32-idbytes.length]),Bytes.wrap(idbytes));
+    blank.idNonce = Bytes.wrap(((RlpString) payload.getValues().get(1)).getBytes());
     blank.enrSeq =
-        UInt64.fromBytes(Bytes.wrap(((RlpString) payload.getValues().get(2)).getBytes()));
+        UInt64.fromBytes(
+            Utils.leftPad(Bytes.wrap(((RlpString) payload.getValues().get(2)).getBytes()), 8));
     this.decoded = blank;
   }
 

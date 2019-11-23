@@ -49,7 +49,7 @@ public class MessagePacketHandler implements EnvelopeHandler {
     NodeSession session = (NodeSession) envelope.get(Field.SESSION);
 
     try {
-      packet.decode(session.getInitiatorKey());
+      packet.decode(session.getRecipientKey());
       envelope.put(Field.MESSAGE, packet.getMessage());
     } catch (AssertionError ex) {
       logger.error(

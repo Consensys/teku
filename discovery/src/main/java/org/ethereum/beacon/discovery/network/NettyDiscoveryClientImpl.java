@@ -13,91 +13,44 @@
 
 package org.ethereum.beacon.discovery.network;
 
-import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.ethereum.beacon.discovery.scheduler.Scheduler;
-import org.ethereum.beacon.discovery.schema.EnrScheme;
+import org.ethereum.beacon.discovery.schema.EnrField;
+import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 
-/** Discovery UDP client */
-public class DiscoveryClientImpl implements DiscoveryClient {
-  private static final int RECREATION_TIMEOUT = 5000;
+/** Netty discovery UDP client */
+public class NettyDiscoveryClientImpl implements DiscoveryClient {
   private static final int STOPPING_TIMEOUT = 10000;
-  private static final Logger logger = LogManager.getLogger(DiscoveryClientImpl.class);
-  private AtomicBoolean listen = new AtomicBoolean(true);
-  private CountDownLatch starting = new CountDownLatch(1);
-  private Channel channel;
+  private static final Logger logger = LogManager.getLogger(NettyDiscoveryClientImpl.class);
+  private AtomicBoolean listen = new AtomicBoolean(false);
+  private NioDatagramChannel channel;
 
   /**
    * Constructs UDP client using
    *
    * @param outgoingStream Stream of outgoing packets, client will forward them to the channel
-   * @param scheduler Scheduler to run client loop on
+   * @param channel Nio channel
    */
-  public DiscoveryClientImpl(Publisher<NetworkParcel> outgoingStream, Scheduler scheduler) {
+  public NettyDiscoveryClientImpl(
+      Publisher<NetworkParcel> outgoingStream, NioDatagramChannel channel) {
+    this.channel = channel;
     Flux.from(outgoingStream)
         .subscribe(
             networkPacket ->
                 send(networkPacket.getPacket().getBytes(), networkPacket.getNodeRecord()));
-    logger.info("Starting UDP discovery client");
-    scheduler.execute(this::clientLoop);
-    try {
-      starting.await();
-      logger.info("UDP discovery client started");
-    } catch (InterruptedException e) {
-      throw new RuntimeException("Initialization of discovery client broke by interruption", e);
-    }
-  }
-
-  private void clientLoop() {
-    NioEventLoopGroup group = new NioEventLoopGroup(1);
-    try {
-      while (listen.get()) {
-        Bootstrap b = new Bootstrap();
-        b.group(group)
-            .channel(NioDatagramChannel.class)
-            .handler(
-                new ChannelInitializer<NioDatagramChannel>() {
-                  @Override
-                  protected void initChannel(NioDatagramChannel ch) throws Exception {
-                    starting.countDown();
-                  }
-                });
-
-        channel = b.bind(0).sync().channel();
-        channel.closeFuture().sync();
-
-        if (!listen.get()) {
-          logger.info("Shutting down discovery client");
-          break;
-        }
-        logger.error("Discovery client closed. Trying to restore after %s seconds delay");
-        Thread.sleep(RECREATION_TIMEOUT);
-      }
-    } catch (Exception e) {
-      logger.error("Can't start discovery client", e);
-    } finally {
-      try {
-        group.shutdownGracefully().sync();
-      } catch (Exception ex) {
-        logger.error("Failed to shutdown discovery client thread group", ex);
-      }
-    }
+    logger.info("UDP discovery client started");
+    listen.set(true);
   }
 
   @Override
@@ -119,7 +72,7 @@ public class DiscoveryClientImpl implements DiscoveryClient {
 
   @Override
   public void send(Bytes data, NodeRecord recipient) {
-    if (!(recipient.getIdentityScheme().equals(EnrScheme.V4))) {
+    if (!(recipient.getIdentityScheme().equals(IdentitySchema.V4))) {
       String error =
           String.format(
               "Accepts only V4 version of recipient's node records. Got %s instead", recipient);
@@ -130,8 +83,8 @@ public class DiscoveryClientImpl implements DiscoveryClient {
     try {
       address =
           new InetSocketAddress(
-              InetAddress.getByAddress(((Bytes) recipient.get(NodeRecord.FIELD_IP_V4)).toArray()),
-              (int) recipient.get(NodeRecord.FIELD_UDP_V4));
+              InetAddress.getByAddress(((Bytes) recipient.get(EnrField.IP_V4)).toArray()), // bytes4
+              (int) recipient.get(EnrField.UDP_V4));
     } catch (UnknownHostException e) {
       String error = String.format("Failed to resolve host for node record: %s", recipient);
       logger.error(error);

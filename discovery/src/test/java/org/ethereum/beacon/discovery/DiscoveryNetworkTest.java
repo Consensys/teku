@@ -34,7 +34,6 @@ import org.ethereum.beacon.discovery.storage.NodeBucket;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
-import org.ethereum.beacon.discovery.task.TaskType;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
@@ -42,18 +41,11 @@ import reactor.core.publisher.Flux;
 
 /** Same as {@link DiscoveryNoNetworkTest} but using real network */
 public class DiscoveryNetworkTest {
-
-  public static void main(String[] args) throws Exception {
-    DiscoveryNetworkTest dnt = new DiscoveryNetworkTest();
-    dnt.test();
-  }
-
   @Test
   public void test() throws Exception {
     // 1) start 2 nodes
-    Pair<Bytes, NodeRecord> nodePair1 = TestUtil.generateNode(30303);
-    Pair<Bytes, NodeRecord> nodePair2 = TestUtil.generateNode(30304);
-    Pair<Bytes, NodeRecord> nodePair3 = TestUtil.generateNode(40412);
+    Pair<Bytes, NodeRecord> nodePair1 = TestUtil.generateNode(30303, true);
+    Pair<Bytes, NodeRecord> nodePair2 = TestUtil.generateNode(30304, true);
     NodeRecord nodeRecord1 = nodePair1.getValue1();
     NodeRecord nodeRecord2 = nodePair2.getValue1();
     NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
@@ -93,7 +85,6 @@ public class DiscoveryNetworkTest {
             nodePair1.getValue0(),
             NODE_RECORD_FACTORY_NO_VERIFICATION,
             Schedulers.createDefault().newSingleThreadDaemon("server-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("client-1"),
             Schedulers.createDefault().newSingleThreadDaemon("tasks-1"));
     DiscoveryManagerImpl discoveryManager2 =
         new DiscoveryManagerImpl(
@@ -103,7 +94,6 @@ public class DiscoveryNetworkTest {
             nodePair2.getValue0(),
             NODE_RECORD_FACTORY_NO_VERIFICATION,
             Schedulers.createDefault().newSingleThreadDaemon("server-2"),
-            Schedulers.createDefault().newSingleThreadDaemon("client-2"),
             Schedulers.createDefault().newSingleThreadDaemon("tasks-2"));
 
     // 3) Expect standard 1 => 2 dialog
@@ -149,17 +139,17 @@ public class DiscoveryNetworkTest {
             });
 
     // 4) fire 1 to 2 dialog
-    discoveryManager1.start();
     discoveryManager2.start();
-    discoveryManager1.executeTask(nodeRecord2, TaskType.FINDNODE);
+    discoveryManager1.start();
+    discoveryManager1.findNodes(nodeRecord2, 0);
 
-    assert randomSent1to2.await(10, TimeUnit.SECONDS);
-    assert whoareyouSent2to1.await(10, TimeUnit.SECONDS);
+    assert randomSent1to2.await(1, TimeUnit.SECONDS);
+    assert whoareyouSent2to1.await(1, TimeUnit.SECONDS);
     int distance1To2 = Functions.logDistance(nodeRecord1.getNodeId(), nodeRecord2.getNodeId());
     assertFalse(nodeBucketStorage1.get(distance1To2).isPresent());
-    assert authPacketSent1to2.await(10, TimeUnit.SECONDS);
-    assert nodesSent2to1.await(10, TimeUnit.SECONDS);
-    Thread.sleep(500);
+    assert authPacketSent1to2.await(1, TimeUnit.SECONDS);
+    assert nodesSent2to1.await(1, TimeUnit.SECONDS);
+    Thread.sleep(50);
     // 1 sent findnodes to 2, received only (2) in answer, because 3 is not checked
     // 1 added 2 to its nodeBuckets, because its now checked, but not before
     NodeBucket bucketAt1With2 = nodeBucketStorage1.get(distance1To2).get();

@@ -22,7 +22,7 @@ import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 
-/** Handles raw Bytes incoming data in {@link Field#INCOMING} */
+/** Handles raw BytesValue incoming data in {@link Field#INCOMING} */
 public class IncomingDataPacker implements EnvelopeHandler {
   private static final Logger logger = LogManager.getLogger(IncomingDataPacker.class);
 
@@ -43,9 +43,21 @@ public class IncomingDataPacker implements EnvelopeHandler {
                 envelope.getId()));
 
     UnknownPacket unknownPacket = new UnknownPacket((Bytes) envelope.get(Field.INCOMING));
-    envelope.put(Field.PACKET_UNKNOWN, unknownPacket);
-    logger.trace(
-        () -> String.format("Incoming packet %s in envelope #%s", unknownPacket, envelope.getId()));
+    try {
+      unknownPacket.verify();
+      envelope.put(Field.PACKET_UNKNOWN, unknownPacket);
+      logger.trace(
+          () ->
+              String.format("Incoming packet %s in envelope #%s", unknownPacket, envelope.getId()));
+    } catch (Exception ex) {
+      envelope.put(Field.BAD_PACKET, unknownPacket);
+      envelope.put(Field.BAD_EXCEPTION, ex);
+      envelope.put(Field.BAD_MESSAGE, "Incoming packet verification not passed");
+      logger.trace(
+          () ->
+              String.format(
+                  "Bad incoming packet %s in envelope #%s", unknownPacket, envelope.getId()));
+    }
     envelope.remove(Field.INCOMING);
   }
 }

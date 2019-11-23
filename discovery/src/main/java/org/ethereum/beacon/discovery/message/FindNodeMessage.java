@@ -14,10 +14,12 @@
 package org.ethereum.beacon.discovery.message;
 
 import com.google.common.base.Objects;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.web3j.rlp.RlpEncoder;
 import org.web3j.rlp.RlpList;
 import org.web3j.rlp.RlpString;
+import org.web3j.rlp.RlpType;
 
 /**
  * FINDNODE queries for nodes at the given logarithmic distance from the recipient's node ID. The
@@ -34,6 +36,12 @@ public class FindNodeMessage implements V5Message {
   public FindNodeMessage(Bytes requestId, Integer distance) {
     this.requestId = requestId;
     this.distance = distance;
+  }
+
+  public static FindNodeMessage fromRlp(List<RlpType> rlpList) {
+    return new FindNodeMessage(
+        Bytes.wrap(((RlpString) rlpList.get(0)).getBytes()),
+        ((RlpString) rlpList.get(1)).asPositiveBigInteger().intValueExact());
   }
 
   @Override

@@ -15,13 +15,15 @@ package org.ethereum.beacon.discovery;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.network.DiscoveryClient;
-import org.ethereum.beacon.discovery.network.DiscoveryClientImpl;
-import org.ethereum.beacon.discovery.network.DiscoveryServer;
-import org.ethereum.beacon.discovery.network.DiscoveryServerImpl;
+import org.ethereum.beacon.discovery.network.NettyDiscoveryClientImpl;
+import org.ethereum.beacon.discovery.network.NettyDiscoveryServer;
+import org.ethereum.beacon.discovery.network.NettyDiscoveryServerImpl;
 import org.ethereum.beacon.discovery.network.NetworkParcel;
 import org.ethereum.beacon.discovery.pipeline.Envelope;
 import org.ethereum.beacon.discovery.pipeline.Field;
@@ -44,11 +46,13 @@ import org.ethereum.beacon.discovery.pipeline.handler.WhoAreYouAttempt;
 import org.ethereum.beacon.discovery.pipeline.handler.WhoAreYouPacketHandler;
 import org.ethereum.beacon.discovery.pipeline.handler.WhoAreYouSessionResolver;
 import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.storage.AuthTagRepository;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTable;
+import org.ethereum.beacon.discovery.task.TaskOptions;
 import org.ethereum.beacon.discovery.task.TaskType;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
@@ -59,12 +63,13 @@ public class DiscoveryManagerImpl implements DiscoveryManager {
   private static final Logger logger = LogManager.getLogger(DiscoveryManagerImpl.class);
   private final ReplayProcessor<NetworkParcel> outgoingMessages = ReplayProcessor.cacheLast();
   private final FluxSink<NetworkParcel> outgoingSink = outgoingMessages.sink();
-  private final DiscoveryServer discoveryServer;
+  private final NettyDiscoveryServer discoveryServer;
   private final Scheduler scheduler;
   private final Pipeline incomingPipeline = new PipelineImpl();
   private final Pipeline outgoingPipeline = new PipelineImpl();
   private final NodeRecordFactory nodeRecordFactory;
   private DiscoveryClient discoveryClient;
+  private CountDownLatch clientStarted = new CountDownLatch(1);
 
   public DiscoveryManagerImpl(
       NodeTable nodeTable,
@@ -73,17 +78,18 @@ public class DiscoveryManagerImpl implements DiscoveryManager {
       Bytes homeNodePrivateKey,
       NodeRecordFactory nodeRecordFactory,
       Scheduler serverScheduler,
-      Scheduler clientScheduler,
       Scheduler taskScheduler) {
     AuthTagRepository authTagRepo = new AuthTagRepository();
     this.scheduler = serverScheduler;
     this.nodeRecordFactory = nodeRecordFactory;
-    Bytes homeNodeBytes = ((Bytes) homeNode.get(NodeRecord.FIELD_IP_V4));
     this.discoveryServer =
-        new DiscoveryServerImpl(
-            Bytes.concatenate(Bytes.wrap(new byte[4-homeNodeBytes.size()]),homeNodeBytes),
-            (int) homeNode.get(NodeRecord.FIELD_UDP_V4));
-    this.discoveryClient = new DiscoveryClientImpl(outgoingMessages, clientScheduler);
+        new NettyDiscoveryServerImpl(
+            ((Bytes) homeNode.get(EnrField.IP_V4)), (int) homeNode.get(EnrField.UDP_V4));
+    discoveryServer.useDatagramChannel(
+        channel -> {
+          discoveryClient = new NettyDiscoveryClientImpl(outgoingMessages, channel);
+          clientStarted.countDown();
+        });
     NodeIdToSession nodeIdToSession =
         new NodeIdToSession(
             homeNode,
@@ -120,6 +126,11 @@ public class DiscoveryManagerImpl implements DiscoveryManager {
     outgoingPipeline.build();
     Flux.from(discoveryServer.getIncomingPackets()).subscribe(incomingPipeline::push);
     discoveryServer.start(scheduler);
+    try {
+      clientStarted.await(2, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException("Failed to start client", e);
+    }
   }
 
   @Override
@@ -127,14 +138,26 @@ public class DiscoveryManagerImpl implements DiscoveryManager {
     discoveryServer.stop();
   }
 
-  public CompletableFuture<Void> executeTask(NodeRecord nodeRecord, TaskType taskType) {
+  private CompletableFuture<Void> executeTaskImpl(
+      NodeRecord nodeRecord, TaskType taskType, TaskOptions taskOptions) {
     Envelope envelope = new Envelope();
     envelope.put(Field.NODE, nodeRecord);
     CompletableFuture<Void> future = new CompletableFuture<>();
     envelope.put(Field.TASK, taskType);
     envelope.put(Field.FUTURE, future);
+    envelope.put(Field.TASK_OPTIONS, taskOptions);
     outgoingPipeline.push(envelope);
     return future;
+  }
+
+  @Override
+  public CompletableFuture<Void> findNodes(NodeRecord nodeRecord, int distance) {
+    return executeTaskImpl(nodeRecord, TaskType.FINDNODE, new TaskOptions(true, distance));
+  }
+
+  @Override
+  public CompletableFuture<Void> ping(NodeRecord nodeRecord) {
+    return executeTaskImpl(nodeRecord, TaskType.PING, new TaskOptions(true));
   }
 
   @VisibleForTesting

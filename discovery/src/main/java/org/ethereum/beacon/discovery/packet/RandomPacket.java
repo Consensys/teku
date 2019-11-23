@@ -29,19 +29,30 @@ import org.web3j.rlp.RlpString;
  * random-data = at least 44 bytes of random data</code>
  */
 public class RandomPacket extends AbstractPacket {
+  public static final int MIN_RANDOM_BYTES = 44;
   private RandomPacketDecoded decoded = null;
 
   public RandomPacket(Bytes bytes) {
     super(bytes);
   }
 
-  public static RandomPacket create(Bytes homeNodeId, Bytes destNodeId, Bytes authTag, Random rnd) {
+  public static RandomPacket create(
+      Bytes homeNodeId, Bytes destNodeId, Bytes authTag, Bytes randomBytes) {
     Bytes tag = Packet.createTag(homeNodeId, destNodeId);
+    return create(tag, authTag, randomBytes);
+  }
+
+  public static RandomPacket create(Bytes tag, Bytes authTag, Bytes randomBytes) {
+    assert randomBytes.size() >= MIN_RANDOM_BYTES; // At least 44 bytes, spec defined
     byte[] authTagRlp = RlpEncoder.encode(RlpString.create(authTag.toArray()));
     Bytes authTagEncoded = Bytes.wrap(authTagRlp);
-    byte[] randomBytes = new byte[44];
-    rnd.nextBytes(randomBytes); // at least 44 bytes of random data
-    return new RandomPacket(Bytes.concatenate(tag, authTagEncoded, Bytes.wrap(randomBytes)));
+    return new RandomPacket(Bytes.concatenate(tag, authTagEncoded, randomBytes));
+  }
+
+  public static RandomPacket create(Bytes homeNodeId, Bytes destNodeId, Bytes authTag, Random rnd) {
+    byte[] randomBytes = new byte[MIN_RANDOM_BYTES];
+    rnd.nextBytes(randomBytes); // at least 44 bytes of random data, spec defined
+    return create(homeNodeId, destNodeId, authTag, Bytes.wrap(randomBytes));
   }
 
   public Bytes getHomeNodeId(Bytes destNodeId) {
@@ -77,7 +88,7 @@ public class RandomPacket extends AbstractPacket {
   }
 
   private static class RandomPacketDecoded {
-    private Bytes tag; // Bytes32
+    private Bytes tag;
     private Bytes authTag;
   }
 }

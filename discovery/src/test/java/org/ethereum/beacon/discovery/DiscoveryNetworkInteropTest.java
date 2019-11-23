@@ -16,13 +16,9 @@ package org.ethereum.beacon.discovery;
 import static org.ethereum.beacon.discovery.TestUtil.NODE_RECORD_FACTORY_NO_VERIFICATION;
 import static org.ethereum.beacon.discovery.TestUtil.SEED;
 import static org.ethereum.beacon.discovery.TestUtil.TEST_SERIALIZER;
-import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_IP_V4;
-import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_PKEY_SECP256K1;
-import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_TCP_V4;
-import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_UDP_V4;
+import static org.ethereum.beacon.discovery.util.Functions.PUBKEY_SIZE;
 import static org.ethereum.beacon.discovery.util.Utils.extractBytesFromUnsignedBigInt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.InetAddress;
@@ -39,17 +35,15 @@ import org.apache.milagro.amcl.SECP256K1.ECP;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.database.Database;
-import org.ethereum.beacon.discovery.network.DiscoveryClient;
-import org.ethereum.beacon.discovery.network.DiscoveryClientImpl;
-import org.ethereum.beacon.discovery.network.NetworkParcel;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
 import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.packet.RandomPacket;
 import org.ethereum.beacon.discovery.packet.UnknownPacket;
 import org.ethereum.beacon.discovery.packet.WhoAreYouPacket;
-import org.ethereum.beacon.discovery.scheduler.Scheduler;
 import org.ethereum.beacon.discovery.scheduler.Schedulers;
-import org.ethereum.beacon.discovery.schema.EnrScheme;
+import org.ethereum.beacon.discovery.schema.EnrField;
+import org.ethereum.beacon.discovery.schema.EnrFieldV4;
+import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
@@ -57,46 +51,38 @@ import org.ethereum.beacon.discovery.schema.NodeStatus;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
-import org.ethereum.beacon.discovery.task.TaskType;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
-import org.web3j.crypto.Hash;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.ReplayProcessor;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
 
-/**
- * Same as {@link DiscoveryNoNetworkTest} but using real network
- */
+/** Same as {@link DiscoveryNoNetworkTest} but using real network */
 public class DiscoveryNetworkInteropTest {
 
   public static void main(String[] args) throws Exception {
-//    DiscoveryNetworkInteropTest dnt = new DiscoveryNetworkInteropTest();
-//    dnt.test();
+    //    DiscoveryNetworkInteropTest dnt = new DiscoveryNetworkInteropTest();
+    //    dnt.test();
   }
-
 
   private Function<UInt64, NodeRecord> homeNodeSupplier =
       (oldSeq) -> {
         try {
           return NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
-              EnrScheme.V4,
               UInt64.valueOf(1),
               Bytes.EMPTY,
               new ArrayList<Pair<String, Object>>() {
                 {
+                  add(Pair.with(EnrField.ID, IdentitySchema.V4));
                   add(
                       Pair.with(
-                          NodeRecord.FIELD_IP_V4,
+                          EnrFieldV4.IP_V4,
                           Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
-                  add(Pair.with(NodeRecord.FIELD_UDP_V4, 30303));
+                  add(Pair.with(EnrFieldV4.UDP_V4, 30303));
                   add(
                       Pair.with(
-                          NodeRecord.FIELD_PKEY_SECP256K1,
+                          EnrFieldV4.PKEY_SECP256K1,
                           Bytes.fromHexString(
                               "0bfb48004b1698f05872cf18b1f278998ad8f7d4c135aa41f83744e7b850ab6b98")));
                 }
@@ -108,21 +94,22 @@ public class DiscoveryNetworkInteropTest {
 
   @Test
   public void testLighthouseInterop() throws Exception {
-//    final String remoteHostEnr = "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
-    final String remoteHostEnr = "-IS4QBKM9XJGAZDA3eqFuII55lEceslZhHcm8OIyfYQzw_MgVSyFEB4hVcs7tT1DhoF_1xXCo-eyRf4_1I2VlaGtaIUBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQJ2-TT2v3owdiYd2cGcxy0dk_y3vn5DX8KXuijG50EXIoN1ZHCCIy0";
-//    -IS4QOrJvO6_CDyN0dwE9R8NzUR9CK4v0t_Q6l8EKhMhGhCpKXLMQNYUXbMYN-j6kPjAczrQ1uAwWXAI8PjMGXsJxRMBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQJI4MROfzgMfjN1ANb-9fNXFT3xnjzK5NEfNLG4oiMPDoN1ZHCCIy0
+    //    final String remoteHostEnr =
+    // "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
+    final String remoteHostEnr =
+        "-IS4QBKM9XJGAZDA3eqFuII55lEceslZhHcm8OIyfYQzw_MgVSyFEB4hVcs7tT1DhoF_1xXCo-eyRf4_1I2VlaGtaIUBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQJ2-TT2v3owdiYd2cGcxy0dk_y3vn5DX8KXuijG50EXIoN1ZHCCIy0";
+    //
+    // -IS4QOrJvO6_CDyN0dwE9R8NzUR9CK4v0t_Q6l8EKhMhGhCpKXLMQNYUXbMYN-j6kPjAczrQ1uAwWXAI8PjMGXsJxRMBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQJI4MROfzgMfjN1ANb-9fNXFT3xnjzK5NEfNLG4oiMPDoN1ZHCCIy0
 
     // NODE_RECORD_FACTORY_NO_VERIFICATION.fromBase64(remoteHostEnr);
     NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
-//    NodeRecord remoteNodeRecord = NODE_RECORD_FACTORY_NO_VERIFICATION.fromBase64(remoteHostEnr);
+    //    NodeRecord remoteNodeRecord =
+    // NODE_RECORD_FACTORY_NO_VERIFICATION.fromBase64(remoteHostEnr);
     remoteNodeRecord.verify();
     Assertions.assertNotNull(remoteNodeRecord);
     System.out.println("remoteEnr:" + remoteNodeRecord.asBase64());
     System.out.println("remoteNodeId:" + remoteNodeRecord.getNodeId());
     System.out.println("remoteNodeRecord:" + remoteNodeRecord);
-
-//    DiscoveryClient dc = createDiscoveryClient();
-//    dc.send(Bytes.wrap("hello".getBytes()), remoteHostNodeRecord);
 
     Pair<NodeRecord, byte[]> localNodeInfo = createLocalNodeRecord(9002);
     NodeRecord localNodeRecord = localNodeInfo.getValue0();
@@ -142,7 +129,7 @@ public class DiscoveryNetworkInteropTest {
             () ->
                 new ArrayList<NodeRecord>() {
                   {
-//                    add(remoteNodeRecord);
+                    //                    add(remoteNodeRecord);
                   }
                 });
 
@@ -157,33 +144,32 @@ public class DiscoveryNetworkInteropTest {
             Bytes.wrap(localPrivKey),
             NODE_RECORD_FACTORY_NO_VERIFICATION,
             Schedulers.createDefault().newSingleThreadDaemon("server-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("client-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("tasks-1"));
+            Schedulers.createDefault().newSingleThreadDaemon("client-1"));
 
     CountDownLatch randomSent1to2 = new CountDownLatch(1);
     CountDownLatch whoareyouSent2to1 = new CountDownLatch(1);
     CountDownLatch authPacketSent1to2 = new CountDownLatch(1);
     CountDownLatch nodesSent2to1 = new CountDownLatch(1);
 
-//    Flux.from(discoveryManager0.getOutgoingMessages())
-//        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
-//        .subscribe(
-//            networkPacket -> {
-//              // 1 -> 2 random
-//              if (randomSent1to2.getCount() != 0) {
-//                RandomPacket randomPacket = networkPacket.getRandomPacket();
-//                System.out.println("1 => 2: " + randomPacket);
-//                randomSent1to2.countDown();
-//              } else if (authPacketSent1to2.getCount() != 0) {
-//                // 1 -> 2 auth packet with FINDNODES
-//                AuthHeaderMessagePacket authHeaderMessagePacket =
-//                    networkPacket.getAuthHeaderMessagePacket();
-//                System.out.println("1 => 2: " + authHeaderMessagePacket);
-//                authPacketSent1to2.countDown();
-//              } else {
-//                throw new RuntimeException("Not expected!");
-//              }
-//            });
+    //    Flux.from(discoveryManager0.getOutgoingMessages())
+    //        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
+    //        .subscribe(
+    //            networkPacket -> {
+    //              // 1 -> 2 random
+    //              if (randomSent1to2.getCount() != 0) {
+    //                RandomPacket randomPacket = networkPacket.getRandomPacket();
+    //                System.out.println("1 => 2: " + randomPacket);
+    //                randomSent1to2.countDown();
+    //              } else if (authPacketSent1to2.getCount() != 0) {
+    //                // 1 -> 2 auth packet with FINDNODES
+    //                AuthHeaderMessagePacket authHeaderMessagePacket =
+    //                    networkPacket.getAuthHeaderMessagePacket();
+    //                System.out.println("1 => 2: " + authHeaderMessagePacket);
+    //                authPacketSent1to2.countDown();
+    //              } else {
+    //                throw new RuntimeException("Not expected!");
+    //              }
+    //            });
 
     Flux.from(discoveryManager0.getOutgoingMessages())
         .map(p -> new UnknownPacket(p.getPacket().getBytes()))
@@ -217,13 +203,12 @@ public class DiscoveryNetworkInteropTest {
 
     discoveryManager0.start();
 
-    discoveryManager0.executeTask(remoteNodeRecord, TaskType.FINDNODE);
+    discoveryManager0.findNodes(remoteNodeRecord, 0);
 
     while (true) {
       Thread.sleep(10000);
-      discoveryManager0.executeTask(remoteNodeRecord, TaskType.PING);
+      discoveryManager0.ping(remoteNodeRecord);
     }
-
   }
 
   Random rnd = new Random(SEED);
@@ -236,29 +221,28 @@ public class DiscoveryNetworkInteropTest {
       rnd.nextBytes(privKey1);
       ECKeyPair keyPair1 = ECKeyPair.create(privKey1);
 
-      org.apache.milagro.amcl.SECP256K1.ECP ecp = ECP.fromBytes(keyPair1.getPublicKey().toByteArray());
+      org.apache.milagro.amcl.SECP256K1.ECP ecp =
+          ECP.fromBytes(keyPair1.getPublicKey().toByteArray());
 
       byte[] pubbytes = new byte[33];
       ecp.toBytes(pubbytes, true);
 
       Bytes localAddressBytes = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
-      Bytes localIp1 = Bytes
-          .concatenate(Bytes.wrap(new byte[4 - localAddressBytes.size()]), localAddressBytes);
+      Bytes localIp1 =
+          Bytes.concatenate(Bytes.wrap(new byte[4 - localAddressBytes.size()]), localAddressBytes);
       NodeRecord nodeRecord1 =
           NodeRecordFactory.DEFAULT.createFromValues(
-//          NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
-              EnrScheme.V4,
+              //          NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
               UInt64.ZERO,
               Bytes.EMPTY,
-              Pair.with(FIELD_IP_V4, localIp1),
-              Pair.with(
-                  FIELD_PKEY_SECP256K1,
-                  Bytes.wrap(pubbytes)),
-//                  Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey()))),
-              Pair.with(FIELD_TCP_V4, port),
-              Pair.with(FIELD_UDP_V4, port)
-          );
-      Bytes signature1 = Functions.sign(Bytes.wrap(privKey1), nodeRecord1.serialize(false));
+              Pair.with(EnrField.ID, IdentitySchema.V4),
+              Pair.with(EnrField.IP_V4, localIp1),
+              Pair.with(EnrFieldV4.PKEY_SECP256K1, Bytes.wrap(pubbytes)),
+              //
+              // Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey()))),
+              Pair.with(EnrField.TCP_V4, port),
+              Pair.with(EnrField.UDP_V4, port));
+      Bytes signature1 = Functions.sign(Bytes.wrap(privKey1), nodeRecord1.serializeNoSignature());
       nodeRecord1.setSignature(signature1);
       nodeRecord1.verify();
       return new Pair(nodeRecord1, privKey1);
@@ -272,7 +256,8 @@ public class DiscoveryNetworkInteropTest {
   @Test
   public void testLighthouseInterop1() throws Exception {
     // lighthout Base64 ENR:
-    final String remoteHostEnr = "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
+    final String remoteHostEnr =
+        "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
 
     // create a NodeRecord with their ENR base64 record
     // we actually use the default node factory in order to do actual verification
@@ -282,12 +267,6 @@ public class DiscoveryNetworkInteropTest {
     System.out.println("remoteHostNodeRecord:" + remoteHostNodeRecord);
 
     Assertions.assertNotNull(remoteHostNodeRecord);
-
-    // use a client to send messages to that enr record holder
-    // this doesn't seem to elicit any response by a remote discv5 Lighthouse host
-    DiscoveryClient dc = createDiscoveryClient();
-    dc.send(Bytes.wrap("hello".getBytes()), remoteHostNodeRecord);
-    // nop on assertions since there is no ack (not from UDP nor protocol)
 
     // the following is working through the note table based on distance
     NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
@@ -306,19 +285,19 @@ public class DiscoveryNetworkInteropTest {
     // node is adjusted to be close to localhostEnr
     NodeRecord closestNode =
         NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
-            EnrScheme.V4,
             UInt64.valueOf(1),
             Bytes.EMPTY,
             new ArrayList<Pair<String, Object>>() {
               {
+                add(Pair.with(EnrField.ID, IdentitySchema.V4));
                 add(
                     Pair.with(
-                        NodeRecord.FIELD_IP_V4,
+                        EnrFieldV4.IP_V4,
                         Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
-                add(Pair.with(NodeRecord.FIELD_UDP_V4, 9002));
+                add(Pair.with(EnrFieldV4.UDP_V4, 9002));
                 add(
                     Pair.with(
-                        NodeRecord.FIELD_PKEY_SECP256K1,
+                        EnrFieldV4.PKEY_SECP256K1,
                         Bytes.fromHexString(
                             "aafb48004b1698f05872cf18b1f278998ad8f7d4c135aa41f83744e7b850ab6b98")));
               }
@@ -330,25 +309,25 @@ public class DiscoveryNetworkInteropTest {
             .getNode(closestNode.getNodeId())
             .get()
             .getNode()
-            .get(NodeRecord.FIELD_PKEY_SECP256K1)
+            .get(EnrFieldV4.PKEY_SECP256K1)
             .toString()
             .toUpperCase(),
-        closestNode.get(NodeRecord.FIELD_PKEY_SECP256K1).toString().toUpperCase());
+        closestNode.get(EnrFieldV4.PKEY_SECP256K1).toString().toUpperCase());
     NodeRecord farNode =
         NODE_RECORD_FACTORY_NO_VERIFICATION.createFromValues(
-            EnrScheme.V4,
             UInt64.valueOf(1),
             Bytes.EMPTY,
             new ArrayList<Pair<String, Object>>() {
               {
+                add(Pair.with(EnrField.ID, IdentitySchema.V4));
                 add(
                     Pair.with(
-                        NodeRecord.FIELD_IP_V4,
+                        EnrFieldV4.IP_V4,
                         Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress())));
-                add(Pair.with(NodeRecord.FIELD_UDP_V4, 9003));
+                add(Pair.with(EnrFieldV4.UDP_V4, 9003));
                 add(
                     Pair.with(
-                        NodeRecord.FIELD_PKEY_SECP256K1,
+                        EnrFieldV4.PKEY_SECP256K1,
                         Bytes.fromHexString(
                             "bafb48004b1698f05872cf18b1f278998ad8f7d4c135aa41f83744e7b850ab6b98")));
               }
@@ -360,16 +339,16 @@ public class DiscoveryNetworkInteropTest {
     Set<Bytes> publicKeys = new HashSet<>();
     closestNodes.forEach(
         n -> {
-          Object key3 = n.getNode().get(NodeRecord.FIELD_PKEY_SECP256K1);
+          Object key3 = n.getNode().get(EnrFieldV4.PKEY_SECP256K1);
           publicKeys.add((Bytes) key3);
         });
-    assertTrue(publicKeys.contains(remoteHostNodeRecord.get(NodeRecord.FIELD_PKEY_SECP256K1)));
-    assertTrue(publicKeys.contains(closestNode.get(NodeRecord.FIELD_PKEY_SECP256K1)));
+    assertTrue(publicKeys.contains(remoteHostNodeRecord.get(EnrFieldV4.PKEY_SECP256K1)));
+    assertTrue(publicKeys.contains(closestNode.get(EnrFieldV4.PKEY_SECP256K1)));
     List<NodeRecordInfo> farNodes = nodeTableStorage.get().findClosestNodes(farNode.getNodeId(), 1);
     assertEquals(1, farNodes.size());
     assertEquals(
-        farNodes.get(0).getNode().get(NodeRecord.FIELD_PKEY_SECP256K1).toString().toUpperCase(),
-        farNode.get(NodeRecord.FIELD_PKEY_SECP256K1).toString().toUpperCase());
+        farNodes.get(0).getNode().get(EnrFieldV4.PKEY_SECP256K1).toString().toUpperCase(),
+        farNode.get(EnrFieldV4.PKEY_SECP256K1).toString().toUpperCase());
 
     Random rnd = new Random(SEED);
     // set local service node
@@ -379,16 +358,16 @@ public class DiscoveryNetworkInteropTest {
     Bytes localIp1 = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
     NodeRecord nodeRecord1 =
         NodeRecordFactory.DEFAULT.createFromValues(
-            EnrScheme.V4,
             UInt64.ZERO,
             Bytes.EMPTY,
-            Pair.with(FIELD_IP_V4, localIp1),
-            Pair.with(FIELD_TCP_V4, 9004),
-            Pair.with(FIELD_UDP_V4, 9004),
+            Pair.with(EnrField.ID, IdentitySchema.V4),
+            Pair.with(EnrField.IP_V4, localIp1),
+            Pair.with(EnrField.TCP_V4, 9004),
+            Pair.with(EnrField.UDP_V4, 9004),
             Pair.with(
-                FIELD_PKEY_SECP256K1,
-                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey()))));
-    Bytes signature1 = Functions.sign(Bytes.wrap(privKey1), nodeRecord1.serialize(false));
+                EnrFieldV4.PKEY_SECP256K1,
+                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey(), PUBKEY_SIZE))));
+    Bytes signature1 = Functions.sign(Bytes.wrap(privKey1), nodeRecord1.serializeNoSignature());
     nodeRecord1.setSignature(signature1);
     nodeRecord1.verify();
 
@@ -416,8 +395,7 @@ public class DiscoveryNetworkInteropTest {
             Bytes.wrap(privKey1),
             NODE_RECORD_FACTORY_NO_VERIFICATION,
             Schedulers.createDefault().newSingleThreadDaemon("server-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("client-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("tasks-1"));
+            Schedulers.createDefault().newSingleThreadDaemon("client-1"));
 
     Flux.from(discoveryManager1.getOutgoingMessages())
         .map(p -> new UnknownPacket(p.getPacket().getBytes()))
@@ -435,23 +413,14 @@ public class DiscoveryNetworkInteropTest {
 
     // 4) fire 1 to 2 dialog
     discoveryManager1.start();
-    CompletableFuture<Void> voidCompletableFuture = discoveryManager1
-        .executeTask(remoteHostNodeRecord, TaskType.FINDNODE);
+    CompletableFuture<Void> voidCompletableFuture =
+        discoveryManager1.findNodes(remoteHostNodeRecord, 0);
 
     voidCompletableFuture.get();
-
-  }
-
-  @NotNull
-  public static DiscoveryClient createDiscoveryClient() {
-    final ReplayProcessor<NetworkParcel> outgoingMessages = ReplayProcessor.cacheLast();
-    Scheduler scheduler = Schedulers.createDefault().newSingleThreadDaemon("client-1");
-    return new DiscoveryClientImpl(outgoingMessages, scheduler);
   }
 
   @Test
   public void testClient() throws Exception {
-    DiscoveryClient dc = createDiscoveryClient();
 
     Random rnd = new Random(SEED);
     byte[] privKey = new byte[32];
@@ -460,26 +429,23 @@ public class DiscoveryNetworkInteropTest {
     Bytes localIp = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
     NodeRecord nodeRecord0 =
         NodeRecordFactory.DEFAULT.createFromValues(
-            EnrScheme.V4,
             UInt64.ZERO,
             Bytes.EMPTY,
-            Pair.with(FIELD_IP_V4, localIp),
-            Pair.with(FIELD_TCP_V4, 9001),
-            Pair.with(FIELD_UDP_V4, 9001),
+            Pair.with(EnrField.ID, IdentitySchema.V4),
+            Pair.with(EnrField.IP_V4, localIp),
+            Pair.with(EnrField.TCP_V4, 9001),
+            Pair.with(EnrField.UDP_V4, 9001),
             Pair.with(
-                FIELD_PKEY_SECP256K1,
-                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair.getPublicKey()))));
-    Bytes signature0 = Functions.sign(Bytes.wrap(privKey), nodeRecord0.serialize(false));
+                EnrFieldV4.PKEY_SECP256K1,
+                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair.getPublicKey(), PUBKEY_SIZE))));
+    Bytes signature0 = Functions.sign(Bytes.wrap(privKey), nodeRecord0.serializeNoSignature());
     nodeRecord0.setSignature(signature0);
-//    nodeRecord0.verify();
-
-    dc.send(Bytes.wrap("hello".getBytes()), nodeRecord0);
-
+    //    nodeRecord0.verify();
 
   }
 
   public void testServer() throws Exception {
-//    DiscoveryServer ds = new DiscoveryServerImpl();
+    //    DiscoveryServer ds = new DiscoveryServerImpl();
   }
 
   @Test
@@ -493,16 +459,16 @@ public class DiscoveryNetworkInteropTest {
     Bytes localIp1 = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
     NodeRecord nodeRecord1 =
         NodeRecordFactory.DEFAULT.createFromValues(
-            EnrScheme.V4,
             UInt64.ZERO,
             Bytes.EMPTY,
-            Pair.with(FIELD_IP_V4, localIp1),
-            Pair.with(FIELD_TCP_V4, 9002),
-            Pair.with(FIELD_UDP_V4, 9002),
+            Pair.with(EnrField.ID, IdentitySchema.V4),
+            Pair.with(EnrField.IP_V4, localIp1),
+            Pair.with(EnrField.TCP_V4, 9002),
+            Pair.with(EnrField.UDP_V4, 9002),
             Pair.with(
-                FIELD_PKEY_SECP256K1,
-                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey()))));
-    Bytes signature1 = Functions.sign(Bytes.wrap(privKey1), nodeRecord1.serialize(false));
+                EnrFieldV4.PKEY_SECP256K1,
+                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey(), PUBKEY_SIZE))));
+    Bytes signature1 = Functions.sign(Bytes.wrap(privKey1), nodeRecord1.serializeNoSignature());
     nodeRecord1.setSignature(signature1);
     nodeRecord1.verify();
 
@@ -513,16 +479,16 @@ public class DiscoveryNetworkInteropTest {
     Bytes localIp = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
     NodeRecord nodeRecord0 =
         NodeRecordFactory.DEFAULT.createFromValues(
-            EnrScheme.V4,
             UInt64.ZERO,
             Bytes.EMPTY,
-            Pair.with(FIELD_IP_V4, localIp),
-            Pair.with(FIELD_TCP_V4, 9001),
-            Pair.with(FIELD_UDP_V4, 9001),
+            Pair.with(EnrField.ID, IdentitySchema.V4),
+            Pair.with(EnrField.IP_V4, localIp),
+            Pair.with(EnrField.TCP_V4, 9001),
+            Pair.with(EnrField.UDP_V4, 9001),
             Pair.with(
-                FIELD_PKEY_SECP256K1,
-                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair.getPublicKey()))));
-    Bytes signature0 = Functions.sign(Bytes.wrap(privKey), nodeRecord0.serialize(false));
+                EnrFieldV4.PKEY_SECP256K1,
+                Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair.getPublicKey(), PUBKEY_SIZE))));
+    Bytes signature0 = Functions.sign(Bytes.wrap(privKey), nodeRecord0.serializeNoSignature());
     nodeRecord0.setSignature(signature0);
     nodeRecord0.verify();
 
@@ -551,8 +517,7 @@ public class DiscoveryNetworkInteropTest {
             Bytes.wrap(privKey1),
             NODE_RECORD_FACTORY_NO_VERIFICATION,
             Schedulers.createDefault().newSingleThreadDaemon("server-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("client-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("tasks-1"));
+            Schedulers.createDefault().newSingleThreadDaemon("client-1"));
 
     // 3) Expect standard 1 => 2 dialog
     CountDownLatch randomSent1to2 = new CountDownLatch(1);
@@ -582,18 +547,18 @@ public class DiscoveryNetworkInteropTest {
 
     // 4) fire 1 to 2 dialog
     discoveryManager1.start();
-    discoveryManager1.executeTask(nodeRecord0, TaskType.FINDNODE);
+    discoveryManager1.findNodes(nodeRecord0, 0);
 
-//    assert randomSent1to2.await(10, TimeUnit.SECONDS);
-//    assert whoareyouSent2to1.await(10, TimeUnit.SECONDS);
-//    int distance1To2 = Functions.logDistance(nodeRecord1.getNodeId(), nodeRecord2.getNodeId());
-//    assertFalse(nodeBucketStorage1.get(distance1To2).isPresent());
-//    assert authPacketSent1to2.await(10, TimeUnit.SECONDS);
-//    assert nodesSent2to1.await(10, TimeUnit.SECONDS);
-//    Thread.sleep(500);
+    //    assert randomSent1to2.await(10, TimeUnit.SECONDS);
+    //    assert whoareyouSent2to1.await(10, TimeUnit.SECONDS);
+    //    int distance1To2 = Functions.logDistance(nodeRecord1.getNodeId(),
+    // nodeRecord2.getNodeId());
+    //    assertFalse(nodeBucketStorage1.get(distance1To2).isPresent());
+    //    assert authPacketSent1to2.await(10, TimeUnit.SECONDS);
+    //    assert nodesSent2to1.await(10, TimeUnit.SECONDS);
+    //    Thread.sleep(500);
     // 1 sent findnodes to 2, received only (2) in answer, because 3 is not checked
     // 1 added 2 to its nodeBuckets, because its now checked, but not before
-//    NodeBucket bucketAt1With2 = nodeBucketStorage1.get(distance1To2).get();
+    //    NodeBucket bucketAt1With2 = nodeBucketStorage1.get(distance1To2).get();
   }
-
 }

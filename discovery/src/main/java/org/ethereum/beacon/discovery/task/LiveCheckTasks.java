@@ -53,8 +53,7 @@ public class LiveCheckTasks {
 
     scheduler.execute(
         () -> {
-          CompletableFuture<Void> retry =
-              discoveryManager.executeTask(nodeRecordInfo.getNode(), TaskType.PING);
+          CompletableFuture<Void> retry = discoveryManager.ping(nodeRecordInfo.getNode());
           taskTimeouts.put(
               nodeRecordInfo.getNode().getNodeId(),
               () ->

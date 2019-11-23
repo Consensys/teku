@@ -13,8 +13,7 @@
 
 package org.ethereum.beacon.discovery.pipeline.handler;
 
-import static org.ethereum.beacon.discovery.schema.NodeRecord.FIELD_PKEY_SECP256K1;
-import static org.ethereum.beacon.discovery.util.Utils.extractBytesFromUnsignedBigInt;
+import static org.ethereum.beacon.discovery.util.Functions.PUBKEY_SIZE;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -30,11 +29,14 @@ import org.ethereum.beacon.discovery.pipeline.EnvelopeHandler;
 import org.ethereum.beacon.discovery.pipeline.Field;
 import org.ethereum.beacon.discovery.pipeline.HandlerUtil;
 import org.ethereum.beacon.discovery.pipeline.Pipeline;
+import org.ethereum.beacon.discovery.pipeline.info.RequestInfo;
 import org.ethereum.beacon.discovery.scheduler.Scheduler;
+import org.ethereum.beacon.discovery.schema.EnrFieldV4;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeSession;
 import org.ethereum.beacon.discovery.task.TaskMessageFactory;
 import org.ethereum.beacon.discovery.util.Functions;
+import org.ethereum.beacon.discovery.util.Utils;
 import org.web3j.crypto.ECKeyPair;
 
 /** Handles {@link WhoAreYouPacket} in {@link Field#PACKET_WHOAREYOU} field */
@@ -74,7 +76,7 @@ public class WhoAreYouPacketHandler implements EnvelopeHandler {
       if (packet.getEnrSeq().compareTo(session.getHomeNodeRecord().getSeq()) < 0) {
         respRecord = session.getHomeNodeRecord();
       }
-      Bytes remotePubKey = (Bytes) session.getNodeRecord().getKey(FIELD_PKEY_SECP256K1);
+      Bytes remotePubKey = (Bytes) session.getNodeRecord().getKey(EnrFieldV4.PKEY_SECP256K1);
       byte[] ephemeralKeyBytes = new byte[32];
       Functions.getRandom().nextBytes(ephemeralKeyBytes);
       ECKeyPair ephemeralKey = ECKeyPair.create(ephemeralKeyBytes);
@@ -89,7 +91,7 @@ public class WhoAreYouPacketHandler implements EnvelopeHandler {
       session.setInitiatorKey(hkdfKeys.getInitiatorKey());
       session.setRecipientKey(hkdfKeys.getRecipientKey());
       Bytes authResponseKey = hkdfKeys.getAuthResponseKey();
-      Optional<NodeSession.RequestInfo> requestInfoOpt = session.getFirstAwaitRequestInfo();
+      Optional<RequestInfo> requestInfoOpt = session.getFirstAwaitRequestInfo();
       final V5Message message =
           requestInfoOpt
               .map(requestInfo -> TaskMessageFactory.createMessageFromRequest(requestInfo, session))
@@ -102,7 +104,8 @@ public class WhoAreYouPacketHandler implements EnvelopeHandler {
                                   envelope.getId(), session)));
 
       Bytes ephemeralPubKey =
-          Bytes.wrap(extractBytesFromUnsignedBigInt(ephemeralKey.getPublicKey()));
+          Bytes.wrap(
+              Utils.extractBytesFromUnsignedBigInt(ephemeralKey.getPublicKey(), PUBKEY_SIZE));
       AuthHeaderMessagePacket response =
           AuthHeaderMessagePacket.create(
               session.getHomeNodeId(),

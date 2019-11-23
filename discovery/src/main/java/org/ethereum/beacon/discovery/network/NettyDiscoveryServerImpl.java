@@ -20,7 +20,11 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,18 +33,20 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.ReplayProcessor;
 
-public class DiscoveryServerImpl implements DiscoveryServer {
+public class NettyDiscoveryServerImpl implements NettyDiscoveryServer {
   private static final int RECREATION_TIMEOUT = 5000;
   private static final int STOPPING_TIMEOUT = 10000;
-  private static final Logger logger = LogManager.getLogger(DiscoveryServerImpl.class);
+  private static final Logger logger = LogManager.getLogger(NettyDiscoveryServerImpl.class);
   private final ReplayProcessor<Bytes> incomingPackets = ReplayProcessor.cacheLast();
   private final FluxSink<Bytes> incomingSink = incomingPackets.sink();
   private final Integer udpListenPort;
   private final String udpListenHost;
   private AtomicBoolean listen = new AtomicBoolean(true);
   private Channel channel;
+  private NioDatagramChannel datagramChannel;
+  private Set<Consumer<NioDatagramChannel>> datagramChannelUsageQueue = new HashSet<>();
 
-  public DiscoveryServerImpl(Bytes udpListenHost, Integer udpListenPort) {
+  public NettyDiscoveryServerImpl(Bytes udpListenHost, Integer udpListenPort) { // bytes4
     try {
       this.udpListenHost = InetAddress.getByAddress(udpListenHost.toArray()).getHostAddress();
     } catch (UnknownHostException e) {
@@ -69,6 +75,11 @@ public class DiscoveryServerImpl implements DiscoveryServer {
                     ch.pipeline()
                         .addLast(new DatagramToBytesValue())
                         .addLast(new IncomingMessageSink(incomingSink));
+                    synchronized (NettyDiscoveryServerImpl.class) {
+                      datagramChannel = ch;
+                      datagramChannelUsageQueue.forEach(
+                          nioDatagramChannelConsumer -> nioDatagramChannelConsumer.accept(ch));
+                    }
                   }
                 });
 
@@ -96,6 +107,25 @@ public class DiscoveryServerImpl implements DiscoveryServer {
   @Override
   public Publisher<Bytes> getIncomingPackets() {
     return incomingPackets;
+  }
+
+  /** Reuse Netty server channel with client, so you are able to send packets from the same port */
+  @Override
+  public synchronized CompletableFuture<Void> useDatagramChannel(
+      Consumer<NioDatagramChannel> consumer) {
+    CompletableFuture<Void> usage = new CompletableFuture<>();
+    if (datagramChannel != null) {
+      consumer.accept(datagramChannel);
+      usage.complete(null);
+    } else {
+      datagramChannelUsageQueue.add(
+          nioDatagramChannel -> {
+            consumer.accept(nioDatagramChannel);
+            usage.complete(null);
+          });
+    }
+
+    return usage;
   }
 
   @Override

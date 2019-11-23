@@ -15,16 +15,13 @@ package org.ethereum.beacon.discovery.schema;
 
 import com.google.common.base.Objects;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.javatuples.Pair;
@@ -34,61 +31,52 @@ import org.web3j.rlp.RlpString;
 import org.web3j.rlp.RlpType;
 
 /**
- * Ethereum Node Record
+ * Ethereum Node Record V4
  *
  * <p>Node record as described in <a href="https://eips.ethereum.org/EIPS/eip-778">EIP-778</a>
  */
 public class NodeRecord {
-  // Compressed secp256k1 public key, 33 bytes
-  public static String FIELD_PKEY_SECP256K1 = "secp256k1";
-  // IPv4 address
-  public static String FIELD_IP_V4 = "ip";
-  // TCP port, integer
-  public static String FIELD_TCP_V4 = "tcp";
-  // UDP port, integer
-  public static String FIELD_UDP_V4 = "udp";
-  // IPv6 address
-  public static String FIELD_IP_V6 = "ip6";
-  // IPv6-specific TCP port
-  public static String FIELD_TCP_V6 = "tcp6";
-  // IPv6-specific UDP port
-  public static String FIELD_UDP_V6 = "udp6";
+  /**
+   * The canonical encoding of a node record is an RLP list of [signature, seq, k, v, ...]. The
+   * maximum encoded size of a node record is 300 bytes. Implementations should reject records
+   * larger than this size.
+   */
+  public static final int MAX_ENCODED_SIZE = 300;
 
-  private UInt64 seq;
+  private static final EnrFieldInterpreter enrFieldInterpreter = EnrFieldInterpreterV4.DEFAULT;
+  private final UInt64 seq;
   // Signature
   private Bytes signature;
   // optional fields
   private Map<String, Object> fields = new HashMap<>();
+  private IdentitySchemaInterpreter identitySchemaInterpreter;
 
-  private EnrSchemeInterpreter enrSchemeInterpreter;
-
-  private NodeRecord(EnrSchemeInterpreter enrSchemeInterpreter, UInt64 seq, Bytes signature) {
+  private NodeRecord(
+      IdentitySchemaInterpreter identitySchemaInterpreter, UInt64 seq, Bytes signature) {
     this.seq = seq;
     this.signature = signature;
-    this.enrSchemeInterpreter = enrSchemeInterpreter;
+    this.identitySchemaInterpreter = identitySchemaInterpreter;
   }
 
-  private NodeRecord() {}
-
   public static NodeRecord fromValues(
-      EnrSchemeInterpreter enrSchemeInterpreter,
+      IdentitySchemaInterpreter identitySchemaInterpreter,
       UInt64 seq,
       Bytes signature,
       List<Pair<String, Object>> fieldKeyPairs) {
-    NodeRecord nodeRecord = new NodeRecord(enrSchemeInterpreter, seq, signature);
+    NodeRecord nodeRecord = new NodeRecord(identitySchemaInterpreter, seq, signature);
     fieldKeyPairs.forEach(objects -> nodeRecord.set(objects.getValue0(), objects.getValue1()));
     return nodeRecord;
   }
 
   public static NodeRecord fromRawFields(
-      EnrSchemeInterpreter enrSchemeInterpreter,
+      IdentitySchemaInterpreter identitySchemaInterpreter,
       UInt64 seq,
       Bytes signature,
       List<RlpType> rawFields) {
-    NodeRecord nodeRecord = new NodeRecord(enrSchemeInterpreter, seq, signature);
+    NodeRecord nodeRecord = new NodeRecord(identitySchemaInterpreter, seq, signature);
     for (int i = 0; i < rawFields.size(); i += 2) {
       String key = new String(((RlpString) rawFields.get(i)).getBytes());
-      nodeRecord.set(key, enrSchemeInterpreter.decode(key, (RlpString) rawFields.get(i + 1)));
+      nodeRecord.set(key, enrFieldInterpreter.decode(key, (RlpString) rawFields.get(i + 1)));
     }
     return nodeRecord;
   }
@@ -97,8 +85,8 @@ public class NodeRecord {
     return new String(Base64.getUrlEncoder().encode(serialize().toArray()));
   }
 
-  public EnrScheme getIdentityScheme() {
-    return enrSchemeInterpreter.getScheme();
+  public IdentitySchema getIdentityScheme() {
+    return identitySchemaInterpreter.getScheme();
   }
 
   public void set(String key, Object value) {
@@ -111,10 +99,6 @@ public class NodeRecord {
 
   public UInt64 getSeq() {
     return seq;
-  }
-
-  public void setSeq(UInt64 seq) {
-    this.seq = seq;
   }
 
   public Bytes getSignature() {
@@ -149,14 +133,22 @@ public class NodeRecord {
   }
 
   public void verify() {
-    enrSchemeInterpreter.verify(this);
+    identitySchemaInterpreter.verify(this);
   }
 
-  public Bytes serialize() {
-    return serialize(true);
+  public void sign(Object signOptions) {
+    identitySchemaInterpreter.sign(this, signOptions);
   }
 
-  public Bytes serialize(boolean withSignature) {
+  public RlpList asRlp() {
+    return asRlpImpl(true);
+  }
+
+  public RlpList asRlpNoSignature() {
+    return asRlpImpl(false);
+  }
+
+  private RlpList asRlpImpl(boolean withSignature) {
     assert getSeq() != null;
     // content   = [seq, k, v, ...]
     // signature = sign(content)
@@ -166,38 +158,46 @@ public class NodeRecord {
       values.add(RlpString.create(getSignature().toArray()));
     }
     values.add(RlpString.create(getSeq().toBigInteger()));
-    values.add(RlpString.create("id"));
-    values.add(RlpString.create(getIdentityScheme().stringName()));
-    ArrayList<String> fieldKeySet = new ArrayList<>(fields.keySet());
-    Collections.sort(fieldKeySet);
-    for (String key : fieldKeySet) {
-      Object value = fields.get(key);
-      if (value == null) {
+    List<String> keySortedList = fields.keySet().stream().sorted().collect(Collectors.toList());
+    for (String key : keySortedList) {
+      if (fields.get(key) == null) {
         continue;
       }
       values.add(RlpString.create(key));
-      RlpString encodedString = enrSchemeInterpreter.encode(key, value);
-      values.add(encodedString);
+      values.add(enrFieldInterpreter.encode(key, fields.get(key)));
     }
 
-    byte[] bytes = RlpEncoder.encode(new RlpList(values));
-    assert bytes.length <= 300;
+    return new RlpList(values);
+  }
+
+  public Bytes serialize() {
+    return serializeImpl(true);
+  }
+
+  public Bytes serializeNoSignature() {
+    return serializeImpl(false);
+  }
+
+  private Bytes serializeImpl(boolean withSignature) {
+    RlpType rlpRecord = withSignature ? asRlp() : asRlpNoSignature();
+    byte[] bytes = RlpEncoder.encode(rlpRecord);
+    assert bytes.length <= MAX_ENCODED_SIZE;
     return Bytes.wrap(bytes);
   }
 
   public Bytes getNodeId() {
-    return enrSchemeInterpreter.getNodeId(this);
+    return identitySchemaInterpreter.getNodeId(this);
   }
 
   @Override
   public String toString() {
     return "NodeRecordV4{"
         + "publicKey="
-        + fields.get(FIELD_PKEY_SECP256K1)
+        + fields.get(EnrFieldV4.PKEY_SECP256K1)
         + ", ipV4address="
-        + fields.get(FIELD_IP_V4)
+        + fields.get(EnrFieldV4.IP_V4)
         + ", udpPort="
-        + fields.get(FIELD_UDP_V4)
+        + fields.get(EnrFieldV4.UDP_V4)
         + '}';
   }
 }
