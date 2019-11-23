@@ -53,6 +53,7 @@ import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
 import reactor.core.publisher.Flux;
 
@@ -85,7 +86,7 @@ public class DiscoveryNetworkInteropTest {
         }
       };
 
-  //  @Test
+  @Test
   public void testLighthouseInterop() throws Exception {
     //    final String remoteHostEnr =
     // "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
@@ -198,8 +199,8 @@ public class DiscoveryNetworkInteropTest {
 
     discoveryManager0.findNodes(remoteNodeRecord, 0);
 
-    while (true) {
-      Thread.sleep(10000);
+    for (int i = 0; i < 5; i++) {
+      Thread.sleep(5000);
       discoveryManager0.ping(remoteNodeRecord);
     }
   }
@@ -237,8 +238,10 @@ public class DiscoveryNetworkInteropTest {
               // Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey()))),
               Pair.with(EnrField.TCP_V4, port),
               Pair.with(EnrField.UDP_V4, port));
-      Bytes signature1 = Functions.sign(Bytes.wrap(privKey1), nodeRecord1.serializeNoSignature());
-      nodeRecord1.setSignature(signature1);
+      //      Bytes signature1 = Functions.sign(Bytes.wrap(privKey1),
+      // nodeRecord1.serializeNoSignature());
+      //      nodeRecord1.setSignature(signature1);
+      nodeRecord1.sign(Bytes.wrap(privKey1));
       nodeRecord1.verify();
       return new Pair(nodeRecord1, privKey1);
     } catch (Exception e) {
