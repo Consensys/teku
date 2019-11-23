@@ -102,9 +102,9 @@ dependencyManagement {
     dependency 'org.quartz-scheduler:quartz:2.3.1'
     dependency 'org.rocksdb:rocksdbjni:5.15.10'
 
-    dependency 'org.web3j:core:4.1.1'
-    dependency 'org.web3j:abi:4.1.1'
-    dependency 'org.web3j:crypto:4.1.1'
+    dependency 'org.web3j:core:4.2.0'
+    dependency 'org.web3j:abi:4.2.0'
+    dependency 'org.web3j:crypto:4.2.0'
 
     dependency 'org.xerial.snappy:snappy-java:1.1.7.2'
 
