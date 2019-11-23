@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Function;
-import org.apache.milagro.amcl.SECP256K1.ECP;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.database.Database;
@@ -54,17 +53,11 @@ import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 import org.web3j.crypto.ECKeyPair;
 import reactor.core.publisher.Flux;
 
 /** Same as {@link DiscoveryNoNetworkTest} but using real network */
 public class DiscoveryNetworkInteropTest {
-
-  public static void main(String[] args) throws Exception {
-    //    DiscoveryNetworkInteropTest dnt = new DiscoveryNetworkInteropTest();
-    //    dnt.test();
-  }
 
   private Function<UInt64, NodeRecord> homeNodeSupplier =
       (oldSeq) -> {
@@ -92,7 +85,7 @@ public class DiscoveryNetworkInteropTest {
         }
       };
 
-  @Test
+  //  @Test
   public void testLighthouseInterop() throws Exception {
     //    final String remoteHostEnr =
     // "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
@@ -221,11 +214,11 @@ public class DiscoveryNetworkInteropTest {
       rnd.nextBytes(privKey1);
       ECKeyPair keyPair1 = ECKeyPair.create(privKey1);
 
-//      org.apache.milagro.amcl.SECP256K1.ECP ecp =
-//          ECP.fromBytes(keyPair1.getPublicKey().toByteArray());
+      //      org.apache.milagro.amcl.SECP256K1.ECP ecp =
+      //          ECP.fromBytes(keyPair1.getPublicKey().toByteArray());
 
-//      byte[] pubbytes = new byte[33];
-//      ecp.toBytes(pubbytes, true);
+      //      byte[] pubbytes = new byte[33];
+      //      ecp.toBytes(pubbytes, true);
 
       Bytes localAddressBytes = Bytes.wrap(InetAddress.getByName("127.0.0.1").getAddress());
       Bytes localIp1 =
@@ -237,7 +230,9 @@ public class DiscoveryNetworkInteropTest {
               Bytes.EMPTY,
               Pair.with(EnrField.ID, IdentitySchema.V4),
               Pair.with(EnrField.IP_V4, localIp1),
-              Pair.with(EnrFieldV4.PKEY_SECP256K1, Functions.derivePublicKeyFromPrivate(Bytes.wrap(privKey1))),
+              Pair.with(
+                  EnrFieldV4.PKEY_SECP256K1,
+                  Functions.derivePublicKeyFromPrivate(Bytes.wrap(privKey1))),
               //
               // Bytes.wrap(extractBytesFromUnsignedBigInt(keyPair1.getPublicKey()))),
               Pair.with(EnrField.TCP_V4, port),
@@ -253,7 +248,7 @@ public class DiscoveryNetworkInteropTest {
     return null;
   }
 
-  @Test
+  //  @Test
   public void testLighthouseInterop1() throws Exception {
     // lighthout Base64 ENR:
     final String remoteHostEnr =
@@ -419,7 +414,7 @@ public class DiscoveryNetworkInteropTest {
     voidCompletableFuture.get();
   }
 
-  @Test
+  //  @Test
   public void testClient() throws Exception {
 
     Random rnd = new Random(SEED);
@@ -448,7 +443,7 @@ public class DiscoveryNetworkInteropTest {
     //    DiscoveryServer ds = new DiscoveryServerImpl();
   }
 
-  @Test
+  //  @Test
   public void testLocalInterconnect() throws Exception {
     Random rnd = new Random(SEED);
 
