@@ -91,7 +91,7 @@ public class DiscoveryNetworkInteropTest {
     //    final String remoteHostEnr =
     // "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
     final String remoteHostEnr =
-        "-IS4QBKM9XJGAZDA3eqFuII55lEceslZhHcm8OIyfYQzw_MgVSyFEB4hVcs7tT1DhoF_1xXCo-eyRf4_1I2VlaGtaIUBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQJ2-TT2v3owdiYd2cGcxy0dk_y3vn5DX8KXuijG50EXIoN1ZHCCIy0";
+        "-IS4QM5MNwCeleR3p5I1JUvw9JY4xdarw0NYdthidFLjQkR8OmMZe69EaN3brdfSsUsOXoKsaovFr8U71Nw1y_80OfABgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIy0";
     //
     // -IS4QOrJvO6_CDyN0dwE9R8NzUR9CK4v0t_Q6l8EKhMhGhCpKXLMQNYUXbMYN-j6kPjAczrQ1uAwWXAI8PjMGXsJxRMBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQJI4MROfzgMfjN1ANb-9fNXFT3xnjzK5NEfNLG4oiMPDoN1ZHCCIy0
 
@@ -121,9 +121,9 @@ public class DiscoveryNetworkInteropTest {
             TEST_SERIALIZER,
             (oldSeq) -> localNodeRecord,
             () ->
-                new ArrayList<NodeRecord>() {
+                new ArrayList<>() {
                   {
-                    //                    add(remoteNodeRecord);
+                    add(remoteNodeRecord);
                   }
                 });
 
@@ -165,41 +165,42 @@ public class DiscoveryNetworkInteropTest {
     //              }
     //            });
 
-    Flux.from(discoveryManager0.getOutgoingMessages())
-        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
-        .subscribe(
-            networkPacket -> {
-              // 1 -> 2 random
-              if (randomSent1to2.getCount() != 0) {
-                RandomPacket randomPacket = networkPacket.getRandomPacket();
-                System.out.println("1 => 2: " + randomPacket);
-                randomSent1to2.countDown();
-              } else if (authPacketSent1to2.getCount() != 0) {
-                // 1 -> 2 auth packet with FINDNODES
-                AuthHeaderMessagePacket authHeaderMessagePacket =
-                    networkPacket.getAuthHeaderMessagePacket();
-                System.out.println("1 => 2: " + authHeaderMessagePacket);
-                authPacketSent1to2.countDown();
-              }
-
-              // 2 -> 1 whoareyou
-              else if (whoareyouSent2to1.getCount() != 0) {
-                WhoAreYouPacket whoAreYouPacket = networkPacket.getWhoAreYouPacket();
-                System.out.println("2 => 1: " + whoAreYouPacket);
-                whoareyouSent2to1.countDown();
-              } else {
-                // 2 -> 1 nodes
-                MessagePacket messagePacket = networkPacket.getMessagePacket();
-                System.out.println("2 => 1: " + messagePacket);
-                nodesSent2to1.countDown();
-              }
-            });
+//    Flux.from(discoveryManager0.getOutgoingMessages())
+//        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
+//        .subscribe(
+//            networkPacket -> {
+//              // 1 -> 2 random
+//              if (randomSent1to2.getCount() != 0) {
+//                RandomPacket randomPacket = networkPacket.getRandomPacket();
+//                System.out.println("1 => 2: " + randomPacket);
+//                randomSent1to2.countDown();
+//              } else if (authPacketSent1to2.getCount() != 0) {
+//                // 1 -> 2 auth packet with FINDNODES
+//                AuthHeaderMessagePacket authHeaderMessagePacket =
+//                    networkPacket.getAuthHeaderMessagePacket();
+//                System.out.println("1 => 2: " + authHeaderMessagePacket);
+//                authPacketSent1to2.countDown();
+//              }
+//
+//              // 2 -> 1 whoareyou
+//              else if (whoareyouSent2to1.getCount() != 0) {
+//                WhoAreYouPacket whoAreYouPacket = networkPacket.getWhoAreYouPacket();
+//                System.out.println("2 => 1: " + whoAreYouPacket);
+//                whoareyouSent2to1.countDown();
+//              } else {
+//                // 2 -> 1 nodes
+//                MessagePacket messagePacket = networkPacket.getMessagePacket();
+//                System.out.println("2 => 1: " + messagePacket);
+//                nodesSent2to1.countDown();
+//              }
+//            });
 
     discoveryManager0.start();
 
-    discoveryManager0.findNodes(remoteNodeRecord, 0);
+//    discoveryManager0.findNodes(remoteNodeRecord, 0);
 
-    for (int i = 0; i < 5; i++) {
+//    for (int i = 0; i < 5; i++) {
+    while (true) {
       Thread.sleep(5000);
       discoveryManager0.ping(remoteNodeRecord);
     }
