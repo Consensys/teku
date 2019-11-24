@@ -73,7 +73,10 @@ public class RandomPacket extends AbstractPacket {
     blank.tag = Bytes.wrap(getBytes().slice(0, 32));
     blank.authTag =
         Bytes.wrap(
-            ((RlpString) RlpDecoder.decode(getBytes().slice(32,getBytes().size()-32-44).toArray()).getValues().get(0))
+            ((RlpString)
+                    RlpDecoder.decode(getBytes().slice(32, getBytes().size() - 32 - 44).toArray())
+                        .getValues()
+                        .get(0))
                 .getBytes());
     this.decoded = blank;
   }

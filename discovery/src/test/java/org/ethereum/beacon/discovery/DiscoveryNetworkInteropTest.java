@@ -35,10 +35,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.database.Database;
 import org.ethereum.beacon.discovery.packet.AuthHeaderMessagePacket;
-import org.ethereum.beacon.discovery.packet.MessagePacket;
 import org.ethereum.beacon.discovery.packet.RandomPacket;
 import org.ethereum.beacon.discovery.packet.UnknownPacket;
-import org.ethereum.beacon.discovery.packet.WhoAreYouPacket;
 import org.ethereum.beacon.discovery.scheduler.Schedulers;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.EnrFieldV4;
@@ -165,42 +163,42 @@ public class DiscoveryNetworkInteropTest {
     //              }
     //            });
 
-//    Flux.from(discoveryManager0.getOutgoingMessages())
-//        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
-//        .subscribe(
-//            networkPacket -> {
-//              // 1 -> 2 random
-//              if (randomSent1to2.getCount() != 0) {
-//                RandomPacket randomPacket = networkPacket.getRandomPacket();
-//                System.out.println("1 => 2: " + randomPacket);
-//                randomSent1to2.countDown();
-//              } else if (authPacketSent1to2.getCount() != 0) {
-//                // 1 -> 2 auth packet with FINDNODES
-//                AuthHeaderMessagePacket authHeaderMessagePacket =
-//                    networkPacket.getAuthHeaderMessagePacket();
-//                System.out.println("1 => 2: " + authHeaderMessagePacket);
-//                authPacketSent1to2.countDown();
-//              }
-//
-//              // 2 -> 1 whoareyou
-//              else if (whoareyouSent2to1.getCount() != 0) {
-//                WhoAreYouPacket whoAreYouPacket = networkPacket.getWhoAreYouPacket();
-//                System.out.println("2 => 1: " + whoAreYouPacket);
-//                whoareyouSent2to1.countDown();
-//              } else {
-//                // 2 -> 1 nodes
-//                MessagePacket messagePacket = networkPacket.getMessagePacket();
-//                System.out.println("2 => 1: " + messagePacket);
-//                nodesSent2to1.countDown();
-//              }
-//            });
+    //    Flux.from(discoveryManager0.getOutgoingMessages())
+    //        .map(p -> new UnknownPacket(p.getPacket().getBytes()))
+    //        .subscribe(
+    //            networkPacket -> {
+    //              // 1 -> 2 random
+    //              if (randomSent1to2.getCount() != 0) {
+    //                RandomPacket randomPacket = networkPacket.getRandomPacket();
+    //                System.out.println("1 => 2: " + randomPacket);
+    //                randomSent1to2.countDown();
+    //              } else if (authPacketSent1to2.getCount() != 0) {
+    //                // 1 -> 2 auth packet with FINDNODES
+    //                AuthHeaderMessagePacket authHeaderMessagePacket =
+    //                    networkPacket.getAuthHeaderMessagePacket();
+    //                System.out.println("1 => 2: " + authHeaderMessagePacket);
+    //                authPacketSent1to2.countDown();
+    //              }
+    //
+    //              // 2 -> 1 whoareyou
+    //              else if (whoareyouSent2to1.getCount() != 0) {
+    //                WhoAreYouPacket whoAreYouPacket = networkPacket.getWhoAreYouPacket();
+    //                System.out.println("2 => 1: " + whoAreYouPacket);
+    //                whoareyouSent2to1.countDown();
+    //              } else {
+    //                // 2 -> 1 nodes
+    //                MessagePacket messagePacket = networkPacket.getMessagePacket();
+    //                System.out.println("2 => 1: " + messagePacket);
+    //                nodesSent2to1.countDown();
+    //              }
+    //            });
 
     discoveryManager0.start();
 
-//    discoveryManager0.findNodes(remoteNodeRecord, 0);
+    //    discoveryManager0.findNodes(remoteNodeRecord, 0);
 
-//    for (int i = 0; i < 5; i++) {
-    while (true) {
+    for (int i = 0; i < 5; i++) {
+      //    while (true) {
       Thread.sleep(5000);
       discoveryManager0.ping(remoteNodeRecord);
     }
