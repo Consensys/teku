@@ -8,6 +8,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-io'
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
@@ -18,6 +19,8 @@ dependencies {
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.junit.jupiter:junit-jupiter-api'
   implementation 'org.junit.jupiter:junit-jupiter-params'
+
+  runtime project(path: ':eth-reference-tests', configuration: 'testSupportArtifacts')
 }
 
 jmh {

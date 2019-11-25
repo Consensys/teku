@@ -185,7 +185,7 @@ allprojects {
 def refTestVersion = 'v0.9.0'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
-def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
+def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/test-support/resources/eth2.0-spec-tests/"
 
 task downloadRefTests(type: Download) {
   src([
@@ -282,7 +282,6 @@ subprojects {
       java {
         srcDir file('src/referenceTest/java')
       }
-      resources.srcDir file('src/referenceTest/resources')
     }
   }
 

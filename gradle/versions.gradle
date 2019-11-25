@@ -55,6 +55,7 @@ dependencyManagement {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
       entry 'tuweni-crypto' 
+      entry 'tuweni-io'
       entry 'tuweni-junit'
       entry 'tuweni-kv'
       entry 'tuweni-plumtree'
