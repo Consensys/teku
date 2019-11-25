@@ -125,7 +125,7 @@ public class RpcMessageHandler<
 
   private class ResponderHandler extends AbstractHandler {
     private final Connection connection;
-    private MultipacketRpcCodec<TRequest> requestReader;
+    private RpcDecoder requestReader;
     private ResponseCallback<TResponse> callback;
 
     public ResponderHandler(Connection connection) {
@@ -136,7 +136,7 @@ public class RpcMessageHandler<
     public void channelActive(ChannelHandlerContext ctx) {
       callback = new RpcResponseCallback<>(ctx, rpcEncoder, closeNotification, connection);
       requestReader =
-          new RequestRpcCodec<>(request -> invokeLocal(connection, request, callback), method);
+          new RequestRpcDecoder<>(request -> invokeLocal(connection, request, callback), method);
       activeFuture.complete(this);
     }
 
@@ -159,7 +159,7 @@ public class RpcMessageHandler<
   private class RequesterHandler extends AbstractHandler {
     private ChannelHandlerContext ctx;
     private ResponseStreamImpl<TResponse> responseStream;
-    private MultipacketRpcCodec<TResponse> responseHandler;
+    private RpcDecoder responseHandler;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
@@ -188,7 +188,7 @@ public class RpcMessageHandler<
       final Bytes encoded = rpcEncoder.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       responseStream = new ResponseStreamImpl<>();
-      responseHandler = new ResponseRpcCodec<>(responseStream::respond, method);
+      responseHandler = new ResponseRpcDecoder<>(responseStream::respond, method);
       ctx.writeAndFlush(reqByteBuf)
           .addListener(
               future -> {

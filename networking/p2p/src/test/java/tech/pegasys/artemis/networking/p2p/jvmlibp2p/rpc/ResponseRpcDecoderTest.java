@@ -19,66 +19,24 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import com.google.protobuf.CodedOutputStream;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 
-class ResponseRpcCodecTest {
+class ResponseRpcDecoderTest extends RpcDecoderTestBase {
   private static final Bytes SUCCESS_CODE = Bytes.of(0);
   private static final Bytes ERROR_CODE = Bytes.of(1);
-  // Message long enough to require a three byte length prefix.
-  private static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  private static final Bytes MESSAGE_DATA = SimpleOffsetSerializer.serialize(MESSAGE);
-  private static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_DATA.size());
-  private static final String ERROR_MESSAGE = "Bad request";
-  private static final Bytes ERROR_MESSAGE_DATA = Bytes.wrap(SSZ.encodeString(ERROR_MESSAGE));
-  private static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
-      getLengthPrefix(ERROR_MESSAGE_DATA.size());
-
-  private final List<ByteBuf> allocatedBuffers = new ArrayList<>();
 
   @SuppressWarnings("unchecked")
   private final Consumer<BeaconBlocksByRootRequestMessage> callback = mock(Consumer.class);
 
-  private final MultipacketRpcCodec<BeaconBlocksByRootRequestMessage> codec =
-      new ResponseRpcCodec<>(
-          callback,
-          new RpcMethod<>(
-              "", new SszEncoding(), StatusMessage.class, BeaconBlocksByRootRequestMessage.class));
-
-  @BeforeAll
-  public static void sanityCheckConstants() {
-    assertThat(LENGTH_PREFIX.size()).isEqualTo(3);
-  }
-
-  @AfterEach
-  public void tearDownBuffers() {
-    allocatedBuffers.forEach(
-        buffer -> {
-          buffer.release(); // Release our own reference tracked on initial creation
-          assertThat(buffer.refCnt()).describedAs("Did not release buffer").isZero();
-        });
-  }
+  private final RpcDecoder codec = new ResponseRpcDecoder<>(callback, METHOD);
 
   @Test
   public void shouldParseSingleResponseReceivedInSinglePacket() throws Exception {
-    System.out.println(LENGTH_PREFIX);
     codec.onDataReceived(buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA));
 
     verifySingleMessageReceivedSuccessfully();
@@ -232,32 +190,5 @@ class ResponseRpcCodecTest {
 
     codec.close();
     verifyNoMoreInteractions(callback);
-  }
-
-  private ByteBuf buffer(final Bytes... bytes) {
-    final byte[][] data = Stream.of(bytes).map(Bytes::toArrayUnsafe).toArray(byte[][]::new);
-    final ByteBuf buffer = Unpooled.wrappedBuffer(data);
-    allocatedBuffers.add(buffer);
-    return buffer;
-  }
-
-  private static BeaconBlocksByRootRequestMessage createRequestMessage(final int blocksRequested) {
-    final List<Bytes32> roots = new ArrayList<>();
-    for (int i = 0; i < blocksRequested; i++) {
-      roots.add(Bytes32.leftPad(Bytes.ofUnsignedInt(i)));
-    }
-    return new BeaconBlocksByRootRequestMessage(roots);
-  }
-
-  private static Bytes getLengthPrefix(final int size) {
-    try {
-      final ByteArrayOutputStream output = new ByteArrayOutputStream();
-      final CodedOutputStream codedOutputStream = CodedOutputStream.newInstance(output);
-      codedOutputStream.writeUInt32NoTag(size);
-      codedOutputStream.flush();
-      return Bytes.wrap(output.toByteArray());
-    } catch (final IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 }

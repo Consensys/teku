@@ -19,45 +19,41 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class ResponseRpcCodec<T extends SimpleOffsetSerializable> extends MultipacketRpcCodec<T> {
-
-  public static final byte SUCCESS_RESPONSE_CODE = 0;
-  private static final int STATUS_CODE_LENGTH = 1;
+class RequestRpcDecoder<T extends SimpleOffsetSerializable> extends RpcDecoder {
 
   private final Consumer<T> callback;
   private final Class<T> dataType;
   private final RpcEncoding encoding;
 
-  protected ResponseRpcCodec(final Consumer<T> callback, final RpcMethod<?, T> method) {
+  protected RequestRpcDecoder(final Consumer<T> callback, final RpcMethod<T, ?> method) {
+    this(callback, method.getRequestType(), method.getEncoding());
+  }
+
+  protected RequestRpcDecoder(
+      final Consumer<T> callback, final Class<T> dataType, final RpcEncoding encoding) {
     this.callback = callback;
-    this.dataType = method.getResponseType();
-    this.encoding = method.getEncoding();
+    this.dataType = dataType;
+    this.encoding = encoding;
   }
 
   @Override
   public int consumeData(final Bytes currentData) throws RpcException {
-    final byte statusCode = currentData.get(0);
-    Bytes encodedMessageData = currentData.slice(STATUS_CODE_LENGTH);
+    Bytes encodedMessageData = currentData;
+
     final OptionalInt encodingSectionLength = encoding.getMessageLength(encodedMessageData);
     if (encodingSectionLength.isEmpty()) {
       // Too soon to calculate the next message length
       return 0;
     }
     final int encodedMessageLength = encodingSectionLength.getAsInt();
-    final int totalMessageLength = encodedMessageLength + STATUS_CODE_LENGTH;
-
-    if (currentData.size() < totalMessageLength) {
+    if (currentData.size() < encodedMessageLength) {
       // Still waiting for more data
       return 0;
     }
+
     encodedMessageData = encodedMessageData.slice(0, encodedMessageLength);
-    if (statusCode == SUCCESS_RESPONSE_CODE) {
-      final T message = encoding.decodeMessage(encodedMessageData, dataType);
-      callback.accept(message);
-    } else {
-      final String errorMessage = encoding.decodeError(encodedMessageData);
-      throw new RpcException(statusCode, errorMessage);
-    }
-    return totalMessageLength;
+    final T message = encoding.decodeMessage(encodedMessageData, dataType);
+    callback.accept(message);
+    return encodedMessageLength;
   }
 }
