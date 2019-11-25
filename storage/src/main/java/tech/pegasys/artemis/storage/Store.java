@@ -39,8 +39,10 @@ public class Store implements ReadOnlyStore {
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
   private UnsignedLong time;
+  private UnsignedLong genesis_time;
   private Checkpoint justified_checkpoint;
   private Checkpoint finalized_checkpoint;
+  private Checkpoint best_justified_checkpoint;
   private Map<Bytes32, BeaconBlock> blocks;
   private Map<Bytes32, BeaconState> block_states;
   private Map<Checkpoint, BeaconState> checkpoint_states;
@@ -48,15 +50,19 @@ public class Store implements ReadOnlyStore {
 
   public Store(
       final UnsignedLong time,
+      final UnsignedLong genesis_time,
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
+      final Checkpoint best_justified_checkpoint,
       final Map<Bytes32, BeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states,
       final Map<UnsignedLong, Checkpoint> latest_messages) {
     this.time = time;
+    this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
     this.finalized_checkpoint = finalized_checkpoint;
+    this.best_justified_checkpoint = best_justified_checkpoint;
     this.blocks = new ConcurrentHashMap<>(blocks);
     this.block_states = new ConcurrentHashMap<>(block_states);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
@@ -80,8 +86,10 @@ public class Store implements ReadOnlyStore {
 
     return new Store(
         genesisState.getGenesis_time(),
+        genesisState.getGenesis_time(),
         justified_checkpoint,
         finalized_checkpoint,
+        justified_checkpoint,
         blocks,
         block_states,
         checkpoint_states,
@@ -140,6 +148,16 @@ public class Store implements ReadOnlyStore {
   }
 
   @Override
+  public UnsignedLong getGenesisTime() {
+    readLock.lock();
+    try {
+      return genesis_time;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public Checkpoint getJustifiedCheckpoint() {
     readLock.lock();
     try {
@@ -154,6 +172,16 @@ public class Store implements ReadOnlyStore {
     readLock.lock();
     try {
       return finalized_checkpoint;
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public Checkpoint getBestJustifiedCheckpoint() {
+    readLock.lock();
+    try {
+      return best_justified_checkpoint;
     } finally {
       readLock.unlock();
     }
@@ -251,8 +279,10 @@ public class Store implements ReadOnlyStore {
 
   public class Transaction implements ReadOnlyStore {
     private Optional<UnsignedLong> time = Optional.empty();
+    private Optional<UnsignedLong> genesis_time = Optional.empty();
     private Optional<Checkpoint> justified_checkpoint = Optional.empty();
     private Optional<Checkpoint> finalized_checkpoint = Optional.empty();
+    private Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
     private Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
@@ -291,12 +321,20 @@ public class Store implements ReadOnlyStore {
       this.time = Optional.of(time);
     }
 
+    public void setGenesis_time(UnsignedLong genesis_time) {
+      this.genesis_time = Optional.of(genesis_time);
+    }
+
     public void setJustifiedCheckpoint(Checkpoint justified_checkpoint) {
       this.justified_checkpoint = Optional.of(justified_checkpoint);
     }
 
     public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint) {
       this.finalized_checkpoint = Optional.of(finalized_checkpoint);
+    }
+
+    public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
+      this.best_justified_checkpoint = Optional.of(best_justified_checkpoint);
     }
 
     public void setKeysToBeCleaned(
@@ -313,8 +351,10 @@ public class Store implements ReadOnlyStore {
       writeLock.lock();
       try {
         time.ifPresent(value -> Store.this.time = value);
+        genesis_time.ifPresent(value -> Store.this.genesis_time = value);
         justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
         finalized_checkpoint.ifPresent(value -> Store.this.finalized_checkpoint = value);
+        best_justified_checkpoint.ifPresent(value -> Store.this.best_justified_checkpoint = value);
         Store.this.blocks.putAll(blocks);
         Store.this.block_states.putAll(block_states);
         Store.this.checkpoint_states.putAll(checkpoint_states);
@@ -334,6 +374,11 @@ public class Store implements ReadOnlyStore {
     }
 
     @Override
+    public UnsignedLong getGenesisTime() {
+      return genesis_time.orElseGet(Store.this::getGenesisTime);
+    }
+
+    @Override
     public Checkpoint getJustifiedCheckpoint() {
       return justified_checkpoint.orElseGet(Store.this::getJustifiedCheckpoint);
     }
@@ -341,6 +386,11 @@ public class Store implements ReadOnlyStore {
     @Override
     public Checkpoint getFinalizedCheckpoint() {
       return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
+    }
+
+    @Override
+    public Checkpoint getBestJustifiedCheckpoint() {
+      return best_justified_checkpoint.orElseGet(Store.this::getBestJustifiedCheckpoint);
     }
 
     @Override
