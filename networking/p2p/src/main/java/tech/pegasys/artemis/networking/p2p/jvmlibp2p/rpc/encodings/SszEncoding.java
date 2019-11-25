@@ -122,7 +122,7 @@ public class SszEncoding implements RpcEncoding {
     try {
       return OptionalInt.of(in.readRawVarint32() + prefixLength);
     } catch (final IOException e) {
-      throw new RpcException(RpcException.INVALID_REQUEST_CODE, "Invalid message length", e);
+      throw RpcException.MALFORMED_MESSAGE_LENGTH_ERROR;
     }
   }
 
