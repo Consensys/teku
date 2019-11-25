@@ -97,7 +97,7 @@ public class Utils {
   public static Bytes leftPad(Bytes value, int length) {
     checkNotNull(value);
     checkArgument(value.size() <= length, "Expected at most %s bytes but got %s", 4, value.size());
-    MutableBytes result = MutableBytes.create(4);
+    MutableBytes result = MutableBytes.create(length);
     value.copyTo(result, length - value.size());
     return result;
   }
