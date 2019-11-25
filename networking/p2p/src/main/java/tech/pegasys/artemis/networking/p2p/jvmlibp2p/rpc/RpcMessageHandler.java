@@ -30,13 +30,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler.Controller;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RpcMessageHandler<
-        TRequest extends SimpleOffsetSerializable, TResponse extends SimpleOffsetSerializable>
+        TRequest extends RpcRequest, TResponse extends SimpleOffsetSerializable>
     implements ProtocolBinding<Controller<TRequest, ResponseStream<TResponse>>> {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -156,32 +157,13 @@ public class RpcMessageHandler<
 
   private class RequesterHandler extends AbstractHandler {
     private ChannelHandlerContext ctx;
+    private int maximumResponseChunks;
     private ResponseStreamImpl<TResponse> responseStream;
     private ResponseRpcDecoder<TResponse> responseHandler;
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
-        throws IllegalArgumentException {
-      if (responseHandler == null) {
-        STDOUT.log(
-            Level.WARN,
-            "Received " + byteBuf.array().length + " bytes of data before requesting it.");
-        throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
-      }
-      try {
-        STDOUT.log(Level.TRACE, "Requester received " + byteBuf.capacity() + " bytes.");
-        responseHandler.onDataReceived(byteBuf);
-      } catch (final RpcException e) {
-        LOG.debug("Request returned an error {}", e.getErrorMessage());
-        responseStream.completeWithError(e);
-      } catch (final Throwable t) {
-        LOG.error("Failed to handle response", t);
-        responseStream.completeWithError(t);
-      }
-    }
-
-    @Override
     public CompletableFuture<ResponseStream<TResponse>> invoke(TRequest request) {
+      maximumResponseChunks = request.getMaximumRequestChunks();
       final ByteBuf reqByteBuf = ctx.alloc().buffer();
       final Bytes encoded = rpcEncoder.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
@@ -198,6 +180,32 @@ public class RpcMessageHandler<
                 }
               });
       return CompletableFuture.completedFuture(responseStream);
+    }
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
+        throws IllegalArgumentException {
+      if (responseHandler == null) {
+        STDOUT.log(
+            Level.WARN,
+            "Received " + byteBuf.array().length + " bytes of data before requesting it.");
+        throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
+      }
+      try {
+        STDOUT.log(Level.TRACE, "Requester received " + byteBuf.capacity() + " bytes.");
+        responseHandler.onDataReceived(byteBuf);
+        if (responseStream.getResponseChunkCount() == maximumResponseChunks) {
+          responseHandler.close();
+          responseStream.completeSuccessfully();
+          ctx.channel().disconnect();
+        }
+      } catch (final RpcException e) {
+        LOG.debug("Request returned an error {}", e.getErrorMessage());
+        responseStream.completeWithError(e);
+      } catch (final Throwable t) {
+        LOG.error("Failed to handle response", t);
+        responseStream.completeWithError(t);
+      }
     }
 
     @Override

@@ -22,9 +22,8 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContainer {
+public final class GoodbyeMessage implements RpcRequest, SSZContainer {
 
   private final UnsignedLong reason;
 
@@ -83,5 +82,10 @@ public final class GoodbyeMessage implements SimpleOffsetSerializable, SSZContai
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("reason", reason).toString();
+  }
+
+  @Override
+  public int getMaximumRequestChunks() {
+    return 0;
   }
 }
