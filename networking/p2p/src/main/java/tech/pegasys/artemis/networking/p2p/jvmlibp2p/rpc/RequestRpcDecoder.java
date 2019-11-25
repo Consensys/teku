@@ -13,31 +13,39 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import io.netty.buffer.ByteBuf;
+import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-class RequestRpcDecoder<T extends SimpleOffsetSerializable> extends RpcDecoder {
+class RequestRpcDecoder<T extends SimpleOffsetSerializable> {
 
-  private final Consumer<T> callback;
+  protected final MessageBuffer buffer = new MessageBuffer();
   private final Class<T> dataType;
   private final RpcEncoding encoding;
+  private Optional<T> result = Optional.empty();
 
-  protected RequestRpcDecoder(final Consumer<T> callback, final RpcMethod<T, ?> method) {
-    this(callback, method.getRequestType(), method.getEncoding());
+  protected RequestRpcDecoder(final RpcMethod<T, ?> method) {
+    this.dataType = method.getRequestType();
+    this.encoding = method.getEncoding();
   }
 
-  protected RequestRpcDecoder(
-      final Consumer<T> callback, final Class<T> dataType, final RpcEncoding encoding) {
-    this.callback = callback;
-    this.dataType = dataType;
-    this.encoding = encoding;
+  public Optional<T> onDataReceived(final ByteBuf byteBuf) throws RpcException {
+    buffer.appendData(byteBuf);
+    buffer.consumeData(this::consumeData);
+    if (result.isPresent() && !buffer.isEmpty()) {
+      throw RpcException.INCORRECT_LENGTH_ERROR;
+    }
+    return result;
   }
 
-  @Override
-  public int consumeData(final Bytes currentData) throws RpcException {
+  public void close() {
+    buffer.close();
+  }
+
+  private int consumeData(final Bytes currentData) throws RpcException {
     Bytes encodedMessageData = currentData;
 
     final OptionalInt encodingSectionLength = encoding.getMessageLength(encodedMessageData);
@@ -53,7 +61,7 @@ class RequestRpcDecoder<T extends SimpleOffsetSerializable> extends RpcDecoder {
 
     encodedMessageData = encodedMessageData.slice(0, encodedMessageLength);
     final T message = encoding.decodeMessage(encodedMessageData, dataType);
-    callback.accept(message);
+    result = Optional.of(message);
     return encodedMessageLength;
   }
 }

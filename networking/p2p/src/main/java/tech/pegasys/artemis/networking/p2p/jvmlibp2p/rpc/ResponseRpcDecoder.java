@@ -13,16 +13,18 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import io.netty.buffer.ByteBuf;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class ResponseRpcDecoder<T extends SimpleOffsetSerializable> extends RpcDecoder {
+public class ResponseRpcDecoder<T extends SimpleOffsetSerializable> {
 
   public static final byte SUCCESS_RESPONSE_CODE = 0;
   private static final int STATUS_CODE_LENGTH = 1;
+  protected final MessageBuffer buffer = new MessageBuffer();
 
   private final Consumer<T> callback;
   private final Class<T> dataType;
@@ -34,8 +36,12 @@ public class ResponseRpcDecoder<T extends SimpleOffsetSerializable> extends RpcD
     this.encoding = method.getEncoding();
   }
 
-  @Override
-  public int consumeData(final Bytes currentData) throws RpcException {
+  public void onDataReceived(final ByteBuf byteBuf) throws RpcException {
+    buffer.appendData(byteBuf);
+    buffer.consumeData(this::consumeData);
+  }
+
+  private int consumeData(final Bytes currentData) throws RpcException {
     final byte statusCode = currentData.get(0);
     Bytes encodedMessageData = currentData.slice(STATUS_CODE_LENGTH);
     final OptionalInt encodingSectionLength = encoding.getMessageLength(encodedMessageData);
@@ -59,5 +65,13 @@ public class ResponseRpcDecoder<T extends SimpleOffsetSerializable> extends RpcD
       throw new RpcException(statusCode, errorMessage);
     }
     return totalMessageLength;
+  }
+
+  public void close() throws RpcException {
+    final boolean consumedAllData = buffer.isEmpty();
+    buffer.close();
+    if (!consumedAllData) {
+      throw RpcException.INCORRECT_LENGTH_ERROR;
+    }
   }
 }

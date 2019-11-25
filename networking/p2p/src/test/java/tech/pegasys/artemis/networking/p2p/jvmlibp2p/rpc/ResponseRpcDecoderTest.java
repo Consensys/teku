@@ -33,7 +33,8 @@ class ResponseRpcDecoderTest extends RpcDecoderTestBase {
   @SuppressWarnings("unchecked")
   private final Consumer<BeaconBlocksByRootRequestMessage> callback = mock(Consumer.class);
 
-  private final RpcDecoder codec = new ResponseRpcDecoder<>(callback, METHOD);
+  private final ResponseRpcDecoder<BeaconBlocksByRootRequestMessage> codec =
+      new ResponseRpcDecoder<>(callback, METHOD);
 
   @Test
   public void shouldParseSingleResponseReceivedInSinglePacket() throws Exception {

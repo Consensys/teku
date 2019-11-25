@@ -14,14 +14,14 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 public class MessageBuffer {
 
-  private List<ByteBuf> buffers = new LinkedList<>();
+  private List<ByteBuf> buffers = new ArrayList<>();
   private Bytes currentData = Bytes.EMPTY;
 
   public void appendData(final ByteBuf data) {
