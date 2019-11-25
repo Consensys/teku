@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,6 +35,8 @@ public class MessageBuffer {
   public void consumeData(final DataConsumer dataConsumer) throws RpcException {
     while (!currentData.isEmpty()) {
       final int consumedBytes = dataConsumer.consumeData(currentData);
+      checkArgument(
+          consumedBytes < currentData.size(), "Cannot consume more bytes than were in the data");
       if (consumedBytes == 0) {
         // Can't parse any messages, wait for more data to arrive.
         return;
