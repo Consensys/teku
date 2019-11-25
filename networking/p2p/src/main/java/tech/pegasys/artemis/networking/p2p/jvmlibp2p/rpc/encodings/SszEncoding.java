@@ -91,7 +91,6 @@ public class SszEncoding implements RpcEncoding {
       try {
         parsedMessage = parser.apply(payload);
       } catch (final InvalidSSZTypeException e) {
-        e.printStackTrace();
         LOG.debug(
             "Failed to parse network message. Error: {} Message: {}", e.getMessage(), message);
         throw RpcException.MALFORMED_REQUEST_ERROR;
