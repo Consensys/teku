@@ -13,24 +13,4 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import io.netty.buffer.ByteBuf;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-
-public abstract class MultipacketRpcCodec<T extends SimpleOffsetSerializable>
-    implements MessageBuffer.DataConsumer {
-
-  protected final MessageBuffer buffer = new MessageBuffer();
-
-  public void onDataReceived(final ByteBuf byteBuf) throws RpcException {
-    buffer.appendData(byteBuf);
-    buffer.consumeData(this);
-  }
-
-  public void close() throws RpcException {
-    final boolean consumedAllData = buffer.isEmpty();
-    buffer.close();
-    if (!consumedAllData) {
-      throw RpcException.INCORRECT_LENGTH_ERROR;
-    }
-  }
-}
+public class SinglePacketRpcCodec {}

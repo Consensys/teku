@@ -14,19 +14,17 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcCodec;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcEncoder;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
-final class RpcCodecTest {
+final class RpcEncoderTest {
 
   private static final Bytes RECORDED_STATUS_REQUEST_BYTES =
       Bytes.fromHexString(
@@ -43,30 +41,7 @@ final class RpcCodecTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UnsignedLong.ZERO);
 
-  private final RpcCodec codec = new RpcCodec(new SszEncoding());
-
-  @Test
-  void testStatusRoundtripSerialization() throws Exception {
-    final StatusMessage expected =
-        new StatusMessage(
-            Bytes4.rightPad(Bytes.of(4)),
-            Bytes32.random(),
-            UnsignedLong.ZERO,
-            Bytes32.random(),
-            UnsignedLong.ZERO);
-
-    final Bytes encoded = codec.encodeRequest(expected);
-    final StatusMessage actual = codec.decodeRequest(encoded, StatusMessage.class);
-
-    assertThat(actual).isEqualTo(expected);
-  }
-
-  @Test
-  public void shouldDecodeStatusMessageRequest() throws Exception {
-    final StatusMessage actualMessage =
-        codec.decodeRequest(RECORDED_STATUS_REQUEST_BYTES, StatusMessage.class);
-    assertThat(actualMessage).usingRecursiveComparison().isEqualTo(RECORDED_STATUS_MESSAGE_DATA);
-  }
+  private final RpcEncoder codec = new RpcEncoder(new SszEncoding());
 
   @Test
   public void shouldEncodeStatusRequest() {
@@ -75,22 +50,8 @@ final class RpcCodecTest {
   }
 
   @Test
-  public void shouldDecodeStatusResponse() throws Exception {
-    final StatusMessage actualMessage =
-        codec.decodeResponse(RECORDED_STATUS_RESPONSE_BYTES, StatusMessage.class);
-    assertThat(actualMessage).isEqualTo(RECORDED_STATUS_MESSAGE_DATA);
-  }
-
-  @Test
   public void shouldEncodeSuccessfulResponse() {
     final Bytes actual = codec.encodeSuccessfulResponse(RECORDED_STATUS_MESSAGE_DATA);
     assertThat(actual).isEqualTo(RECORDED_STATUS_RESPONSE_BYTES);
-  }
-
-  @Test
-  public void shouldRoundTripError() {
-    final Bytes encoded = codec.encodeErrorResponse(RpcException.INCORRECT_LENGTH_ERROR);
-    assertThatThrownBy(() -> codec.decodeResponse(encoded, StatusMessage.class))
-        .isEqualToComparingFieldByField(RpcException.INCORRECT_LENGTH_ERROR);
   }
 }

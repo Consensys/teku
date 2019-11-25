@@ -43,7 +43,7 @@ public class RpcMessageHandler<
   private final RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
-  private final RpcCodec rpcCodec;
+  private final RpcEncoder rpcEncoder;
   private boolean closeNotification = false;
 
   public RpcMessageHandler(
@@ -53,7 +53,7 @@ public class RpcMessageHandler<
     this.method = method;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
-    this.rpcCodec = new RpcCodec(method.getEncoding());
+    this.rpcEncoder = new RpcEncoder(method.getEncoding());
   }
 
   @SuppressWarnings("unchecked")
@@ -125,9 +125,18 @@ public class RpcMessageHandler<
 
   private class ResponderHandler extends AbstractHandler {
     private final Connection connection;
+    private MultipacketRpcCodec<TRequest> requestReader;
+    private ResponseCallback<TResponse> callback;
 
     public ResponderHandler(Connection connection) {
       this.connection = connection;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) {
+      callback = new RpcResponseCallback<>(ctx, rpcEncoder, closeNotification, connection);
+      requestReader =
+          new RequestRpcCodec<>(request -> invokeLocal(connection, request, callback), method);
       activeFuture.complete(this);
     }
 
@@ -139,12 +148,8 @@ public class RpcMessageHandler<
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
-      Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      final ResponseCallback<TResponse> callback =
-          new RpcResponseCallback<>(ctx, rpcCodec, closeNotification, connection);
       try {
-        final TRequest request = rpcCodec.decodeRequest(bytes, method.getRequestType());
-        invokeLocal(connection, request, callback);
+        requestReader.onDataReceived(byteBuf);
       } catch (final RpcException e) {
         callback.completeWithError(e);
       }
@@ -167,7 +172,7 @@ public class RpcMessageHandler<
       }
       try {
         STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.capacity() + " bytes.");
-        responseHandler.onPacketReceived(byteBuf);
+        responseHandler.onDataReceived(byteBuf);
       } catch (final RpcException e) {
         LOG.debug("Request returned an error {}", e.getErrorMessage());
         responseStream.completeWithError(e);
@@ -180,12 +185,10 @@ public class RpcMessageHandler<
     @Override
     public CompletableFuture<ResponseStream<TResponse>> invoke(TRequest request) {
       final ByteBuf reqByteBuf = ctx.alloc().buffer();
-      final Bytes encoded = rpcCodec.encodeRequest(request);
+      final Bytes encoded = rpcEncoder.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       responseStream = new ResponseStreamImpl<>();
-      responseHandler =
-          new MultipacketRpcCodec<>(
-              responseStream::respond, method.getResponseType(), method.getEncoding());
+      responseHandler = new ResponseRpcCodec<>(responseStream::respond, method);
       ctx.writeAndFlush(reqByteBuf)
           .addListener(
               future -> {

@@ -35,10 +35,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 
-class MultipacketRpcCodecTest {
+class ResponseRpcCodecTest {
   private static final Bytes SUCCESS_CODE = Bytes.of(0);
   private static final Bytes ERROR_CODE = Bytes.of(1);
   // Message long enough to require a three byte length prefix.
@@ -56,8 +57,10 @@ class MultipacketRpcCodecTest {
   private final Consumer<BeaconBlocksByRootRequestMessage> callback = mock(Consumer.class);
 
   private final MultipacketRpcCodec<BeaconBlocksByRootRequestMessage> codec =
-      new MultipacketRpcCodec<>(
-          callback, BeaconBlocksByRootRequestMessage.class, new SszEncoding());
+      new ResponseRpcCodec<>(
+          callback,
+          new RpcMethod<>(
+              "", new SszEncoding(), StatusMessage.class, BeaconBlocksByRootRequestMessage.class));
 
   @BeforeAll
   public static void sanityCheckConstants() {
@@ -76,7 +79,7 @@ class MultipacketRpcCodecTest {
   @Test
   public void shouldParseSingleResponseReceivedInSinglePacket() throws Exception {
     System.out.println(LENGTH_PREFIX);
-    codec.onPacketReceived(buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA));
+    codec.onDataReceived(buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA));
 
     verifySingleMessageReceivedSuccessfully();
   }
@@ -84,8 +87,8 @@ class MultipacketRpcCodecTest {
   @Test
   public void shouldParseSingleResponseReceivedWithStatusCodeSeparateToMessageData()
       throws Exception {
-    codec.onPacketReceived(buffer(SUCCESS_CODE));
-    codec.onPacketReceived(buffer(LENGTH_PREFIX, MESSAGE_DATA));
+    codec.onDataReceived(buffer(SUCCESS_CODE));
+    codec.onDataReceived(buffer(LENGTH_PREFIX, MESSAGE_DATA));
 
     verifySingleMessageReceivedSuccessfully();
   }
@@ -93,29 +96,29 @@ class MultipacketRpcCodecTest {
   @Test
   public void shouldParseSingleResponseReceivedWithStatusCodeLengthAndMessageInDifferentPackets()
       throws Exception {
-    codec.onPacketReceived(buffer(SUCCESS_CODE));
-    codec.onPacketReceived(buffer(LENGTH_PREFIX));
-    codec.onPacketReceived(buffer(MESSAGE_DATA));
+    codec.onDataReceived(buffer(SUCCESS_CODE));
+    codec.onDataReceived(buffer(LENGTH_PREFIX));
+    codec.onDataReceived(buffer(MESSAGE_DATA));
 
     verifySingleMessageReceivedSuccessfully();
   }
 
   @Test
   public void shouldParseSingleResponseReceivedWithLengthSplitInMultiplePackets() throws Exception {
-    codec.onPacketReceived(buffer(SUCCESS_CODE));
-    codec.onPacketReceived(buffer(LENGTH_PREFIX.slice(0, 2)));
-    codec.onPacketReceived(buffer(LENGTH_PREFIX.slice(2), MESSAGE_DATA));
+    codec.onDataReceived(buffer(SUCCESS_CODE));
+    codec.onDataReceived(buffer(LENGTH_PREFIX.slice(0, 2)));
+    codec.onDataReceived(buffer(LENGTH_PREFIX.slice(2), MESSAGE_DATA));
 
     verifySingleMessageReceivedSuccessfully();
   }
 
   @Test
   public void shouldParseSingleResponseReceivedWIthDataInMultiplePackets() throws Exception {
-    codec.onPacketReceived(buffer(SUCCESS_CODE));
-    codec.onPacketReceived(buffer(LENGTH_PREFIX));
+    codec.onDataReceived(buffer(SUCCESS_CODE));
+    codec.onDataReceived(buffer(LENGTH_PREFIX));
     // Split message data into a number of separate packets
     for (int i = 0; i < MESSAGE_DATA.size(); i += 5) {
-      codec.onPacketReceived(buffer(MESSAGE_DATA.slice(i, Math.min(MESSAGE_DATA.size() - i, 5))));
+      codec.onDataReceived(buffer(MESSAGE_DATA.slice(i, Math.min(MESSAGE_DATA.size() - i, 5))));
     }
     verifySingleMessageReceivedSuccessfully();
   }
@@ -124,7 +127,7 @@ class MultipacketRpcCodecTest {
   public void shouldParseMultipleResponsesFromSinglePacket() throws Exception {
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
     final Bytes secondMessageData = SimpleOffsetSerializer.serialize(secondMessage);
-    codec.onPacketReceived(
+    codec.onDataReceived(
         buffer(
             SUCCESS_CODE,
             LENGTH_PREFIX,
@@ -144,10 +147,10 @@ class MultipacketRpcCodecTest {
   public void shouldParseMultipleResponsesWhereSecondMessageIsSplit() throws Exception {
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
     final Bytes secondMessageData = SimpleOffsetSerializer.serialize(secondMessage);
-    codec.onPacketReceived(buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA, SUCCESS_CODE));
+    codec.onDataReceived(buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA, SUCCESS_CODE));
     verify(callback).accept(MESSAGE);
 
-    codec.onPacketReceived(buffer(getLengthPrefix(secondMessageData.size()), secondMessageData));
+    codec.onDataReceived(buffer(getLengthPrefix(secondMessageData.size()), secondMessageData));
     verify(callback).accept(secondMessage);
 
     codec.close();
@@ -156,7 +159,7 @@ class MultipacketRpcCodecTest {
 
   @Test
   public void shouldThrowErrorIfMessagesHaveTrailingData() throws Exception {
-    codec.onPacketReceived(
+    codec.onDataReceived(
         buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA, Bytes.fromHexString("0x1234")));
     verify(callback).accept(MESSAGE);
 
@@ -167,7 +170,7 @@ class MultipacketRpcCodecTest {
   public void shouldThrowErrorIfStatusCodeIsNotSuccess() throws Exception {
     assertThatThrownBy(
             () ->
-                codec.onPacketReceived(
+                codec.onDataReceived(
                     buffer(ERROR_CODE, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA)))
         .isEqualTo(new RpcException(ERROR_CODE.get(0), ERROR_MESSAGE));
     codec.close();
@@ -177,7 +180,7 @@ class MultipacketRpcCodecTest {
   public void shouldNotThrowErrorFromCloseAfterErrorAlreadyThrown() throws Exception {
     assertThatThrownBy(
             () ->
-                codec.onPacketReceived(
+                codec.onDataReceived(
                     buffer(
                         ERROR_CODE,
                         ERROR_MESSAGE_LENGTH_PREFIX,
@@ -192,14 +195,14 @@ class MultipacketRpcCodecTest {
   @Test
   public void shouldReleaseByteBufsFromParsedMessages() throws Exception {
     final ByteBuf packet1 = buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA);
-    codec.onPacketReceived(packet1);
+    codec.onDataReceived(packet1);
     verify(callback).accept(MESSAGE);
     // Should have released first packet buffer as all data has been processed.
     assertThat(packet1.refCnt()).isEqualTo(1);
 
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
     final Bytes secondMessageData = SimpleOffsetSerializer.serialize(secondMessage);
-    codec.onPacketReceived(
+    codec.onDataReceived(
         buffer(SUCCESS_CODE, getLengthPrefix(secondMessageData.size()), secondMessageData));
     verify(callback).accept(secondMessage);
 
@@ -210,14 +213,14 @@ class MultipacketRpcCodecTest {
   @Test
   public void shouldNotReleaseByteBufsThatHaveTrailingData() throws Exception {
     final ByteBuf packet1 = buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA, SUCCESS_CODE);
-    codec.onPacketReceived(packet1);
+    codec.onDataReceived(packet1);
     verify(callback).accept(MESSAGE);
     // Should not release buffer as status code of next response hasn't been handled yet.
     assertThat(packet1.refCnt()).isEqualTo(2);
 
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
     final Bytes secondMessageData = SimpleOffsetSerializer.serialize(secondMessage);
-    codec.onPacketReceived(buffer(getLengthPrefix(secondMessageData.size()), secondMessageData));
+    codec.onDataReceived(buffer(getLengthPrefix(secondMessageData.size()), secondMessageData));
     verify(callback).accept(secondMessage);
 
     codec.close();

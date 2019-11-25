@@ -25,24 +25,24 @@ class RpcResponseCallback<TResponse extends SimpleOffsetSerializable>
     implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
   private final ChannelHandlerContext ctx;
-  private final RpcCodec rpcCodec;
+  private final RpcEncoder rpcEncoder;
   private final boolean closeNotification;
   private final Connection connection;
 
   public RpcResponseCallback(
       final ChannelHandlerContext ctx,
-      final RpcCodec rpcCodec,
+      final RpcEncoder rpcEncoder,
       final boolean closeNotification,
       final Connection connection) {
     this.ctx = ctx;
-    this.rpcCodec = rpcCodec;
+    this.rpcEncoder = rpcEncoder;
     this.closeNotification = closeNotification;
     this.connection = connection;
   }
 
   @Override
   public void respond(final TResponse data) {
-    writeResponse(ctx, rpcCodec.encodeSuccessfulResponse(data));
+    writeResponse(ctx, rpcEncoder.encodeSuccessfulResponse(data));
   }
 
   @Override
@@ -56,7 +56,7 @@ class RpcResponseCallback<TResponse extends SimpleOffsetSerializable>
   @Override
   public void completeWithError(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
-    writeResponse(ctx, rpcCodec.encodeErrorResponse(error));
+    writeResponse(ctx, rpcEncoder.encodeErrorResponse(error));
     ctx.channel().disconnect();
   }
 
