@@ -114,10 +114,6 @@ public class SszEncoding implements RpcEncoding {
       return OptionalInt.empty();
     }
     final int prefixLength = maybePrefixLength.getAsInt();
-    if (message.size() < prefixLength) {
-      return OptionalInt.empty();
-    }
-
     final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
     try {
       return OptionalInt.of(in.readRawVarint32() + prefixLength);
