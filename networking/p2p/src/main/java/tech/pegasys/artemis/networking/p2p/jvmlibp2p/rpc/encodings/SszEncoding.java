@@ -68,7 +68,6 @@ public class SszEncoding implements RpcEncoding {
       try {
         expectedLength = in.readRawVarint32();
       } catch (final InvalidProtocolBufferException e) {
-        e.printStackTrace();
         throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
