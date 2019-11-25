@@ -38,7 +38,12 @@ public class ResponseRpcDecoder<T extends SimpleOffsetSerializable> {
 
   public void onDataReceived(final ByteBuf byteBuf) throws RpcException {
     buffer.appendData(byteBuf);
-    buffer.consumeData(this::consumeData);
+    try {
+      buffer.consumeData(this::consumeData);
+    } catch (final RpcException e) {
+      buffer.close();
+      throw e;
+    }
   }
 
   private int consumeData(final Bytes currentData) throws RpcException {

@@ -31,19 +31,13 @@ public class MessageBuffer {
   }
 
   public void consumeData(final DataConsumer dataConsumer) throws RpcException {
-    try {
-      while (!currentData.isEmpty()) {
-        final int consumedBytes = dataConsumer.consumeData(currentData);
-        if (consumedBytes == 0) {
-          // Can't parse any messages, wait for more data to arrive.
-          return;
-        }
-        trimParsedData(consumedBytes);
+    while (!currentData.isEmpty()) {
+      final int consumedBytes = dataConsumer.consumeData(currentData);
+      if (consumedBytes == 0) {
+        // Can't parse any messages, wait for more data to arrive.
+        return;
       }
-    } catch (final RpcException e) {
-      // Discard data to ensure close doesn't throw an exception
-      currentData = Bytes.EMPTY;
-      throw e;
+      trimParsedData(consumedBytes);
     }
   }
 
