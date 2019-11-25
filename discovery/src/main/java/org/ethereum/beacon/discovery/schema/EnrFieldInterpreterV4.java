@@ -26,6 +26,7 @@ public class EnrFieldInterpreterV4 implements EnrFieldInterpreter {
 
   private Map<String, Function<RlpString, Object>> fieldDecoders = new HashMap<>();
 
+  @SuppressWarnings({"DefaultCharset"})
   public EnrFieldInterpreterV4() {
     fieldDecoders.put(EnrFieldV4.PKEY_SECP256K1, rlpString -> Bytes.wrap(rlpString.getBytes()));
     fieldDecoders.put(

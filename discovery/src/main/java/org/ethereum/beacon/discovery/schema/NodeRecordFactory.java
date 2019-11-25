@@ -76,6 +76,7 @@ public class NodeRecordFactory {
     return fromBytes(bytes.toArray());
   }
 
+  @SuppressWarnings({"DefaultCharset"})
   public NodeRecord fromRlpList(RlpList rlpList) {
     List<RlpType> values = rlpList.getValues();
     if (values.size() < 4) {

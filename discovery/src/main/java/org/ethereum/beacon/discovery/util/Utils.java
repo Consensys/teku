@@ -51,6 +51,7 @@ public class Utils {
         });
   }
 
+  @SuppressWarnings({"MissingOverride"})
   public static <C> Set<C> newLRUSet(int size) {
     return Collections.newSetFromMap(
         new LinkedHashMap<C, Boolean>() {

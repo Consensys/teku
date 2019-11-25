@@ -28,6 +28,8 @@ public class ExpirationScheduler<Key> {
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private final long delay;
   private final TimeUnit timeUnit;
+
+  @SuppressWarnings({"rawtypes"})
   private Map<Key, ScheduledFuture> expirationTasks = new ConcurrentHashMap<>();
 
   public ExpirationScheduler(long delay, TimeUnit timeUnit) {
@@ -41,6 +43,7 @@ public class ExpirationScheduler<Key> {
    * @param key Task key
    * @param runnable Task
    */
+  @SuppressWarnings({"rawtypes"})
   public void put(Key key, Runnable runnable) {
     cancel(key);
     ScheduledFuture future =

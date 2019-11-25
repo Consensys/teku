@@ -30,7 +30,10 @@ public class NodeTableStorageImpl implements NodeTableStorage {
 
   public static final String NODE_TABLE_STORAGE_NAME = "node-table";
   public static final String INDEXES_STORAGE_NAME = "node-table-index";
+
+  @SuppressWarnings({"DefaultCharset"})
   private static final Bytes HOME_NODE_KEY = sha256(Bytes.wrap("HOME_NODE".getBytes()));
+
   private final DataSource<Bytes, Bytes> nodeTableSource;
   private final DataSource<Bytes, Bytes> nodeIndexesSource;
   private final SingleValueSource<NodeRecordInfo> homeNodeSource;

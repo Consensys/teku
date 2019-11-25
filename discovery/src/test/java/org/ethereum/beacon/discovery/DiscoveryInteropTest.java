@@ -52,6 +52,7 @@ import reactor.core.publisher.Flux;
 // @Ignore("Requires manual startup, takes a bit to start")
 public class DiscoveryInteropTest {
   //  @Test
+  @SuppressWarnings({"DoubleBraceInitialization"})
   public void testInterop() throws Exception {
     // 1) start 2 nodes
     Pair<Bytes, NodeRecord> nodePair1 = TestUtil.generateNode(40412, true);

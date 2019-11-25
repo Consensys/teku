@@ -29,6 +29,7 @@ public class NewTaskHandler implements EnvelopeHandler {
   private static final Logger logger = LogManager.getLogger(NewTaskHandler.class);
 
   @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void handle(Envelope envelope) {
     logger.trace(
         () ->

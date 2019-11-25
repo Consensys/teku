@@ -44,10 +44,10 @@ public class WhoAreYouAttempt implements EnvelopeHandler {
     if (!HandlerUtil.requireField(Field.PACKET_UNKNOWN, envelope)) {
       return;
     }
-    if (!(HandlerUtil.requireCondition(
+    if (!HandlerUtil.requireCondition(
         envelope1 ->
             ((UnknownPacket) envelope1.get(Field.PACKET_UNKNOWN)).isWhoAreYouPacket(homeNodeId),
-        envelope))) {
+        envelope)) {
       return;
     }
     logger.trace(

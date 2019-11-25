@@ -51,6 +51,7 @@ import org.web3j.rlp.RlpString;
  * message-pt = message-type || message-data
  * auth-tag = AES-GCM nonce, 12 random bytes unique to message</code>
  */
+@SuppressWarnings({"DefaultCharset"})
 public class AuthHeaderMessagePacket extends AbstractPacket {
   public static final String AUTH_SCHEME_NAME = "gcm";
   public static final Bytes DISCOVERY_ID_NONCE = Bytes.wrap("discovery-id-nonce".getBytes());

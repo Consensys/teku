@@ -29,6 +29,7 @@ public abstract class XorKeyDatabase implements Database {
   }
 
   @Override
+  @SuppressWarnings({"DefaultCharset"})
   public DataSource<Bytes, Bytes> createStorage(String name) {
     return new XorDataSource<>(
         backingDataSource, sourceNameHasher.apply(Bytes.wrap(name.getBytes())));

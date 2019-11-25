@@ -72,7 +72,7 @@ public class NettyDiscoveryClientImpl implements DiscoveryClient {
 
   @Override
   public void send(Bytes data, NodeRecord recipient) {
-    if (!(recipient.getIdentityScheme().equals(IdentitySchema.V4))) {
+    if (!recipient.getIdentityScheme().equals(IdentitySchema.V4)) {
       String error =
           String.format(
               "Accepts only V4 version of recipient's node records. Got %s instead", recipient);

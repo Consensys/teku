@@ -55,9 +55,6 @@ public class NodeTableStorageFactoryImpl implements NodeTableStorageFactory {
           .get()
           .forEach(
               nodeRecord -> {
-                if (!(nodeRecord instanceof NodeRecord)) {
-                  throw new RuntimeException("Only V4 node records are supported as boot nodes");
-                }
                 nodeRecord.verify();
                 NodeRecordInfo nodeRecordInfo = NodeRecordInfo.createDefault(nodeRecord);
                 nodeTableStorage.get().save(nodeRecordInfo);

@@ -103,6 +103,7 @@ public class FunctionsTest {
   }
 
   @Test
+  @SuppressWarnings({"DefaultCharset"})
   public void testRecoverFromSignature() throws Exception {
     Bytes idNonceSig =
         Bytes.fromHexString(

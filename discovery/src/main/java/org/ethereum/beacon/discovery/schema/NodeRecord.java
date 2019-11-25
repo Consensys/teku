@@ -68,6 +68,7 @@ public class NodeRecord {
     return nodeRecord;
   }
 
+  @SuppressWarnings({"unchecked", "DefaultCharset"})
   public static NodeRecord fromRawFields(
       IdentitySchemaInterpreter identitySchemaInterpreter,
       UInt64 seq,
@@ -81,6 +82,7 @@ public class NodeRecord {
     return nodeRecord;
   }
 
+  @SuppressWarnings({"unchecked", "DefaultCharset"})
   public String asBase64() {
     return new String(Base64.getUrlEncoder().encode(serialize().toArray()));
   }

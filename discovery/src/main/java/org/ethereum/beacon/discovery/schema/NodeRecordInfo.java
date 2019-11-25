@@ -64,7 +64,7 @@ public class NodeRecordInfo {
   }
 
   public NodeRecord getNode() {
-    return (NodeRecord) node;
+    return node;
   }
 
   public Long getLastRetry() {

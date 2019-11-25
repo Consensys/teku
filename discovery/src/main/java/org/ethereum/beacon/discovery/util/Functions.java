@@ -191,6 +191,7 @@ public class Functions {
    * {@link #hkdf_expand(Bytes, Bytes, Bytes, Bytes, Bytes)} but with keyAgreement already derived
    * by {@link #deriveECDHKeyAgreement(Bytes, Bytes)}
    */
+  @SuppressWarnings({"DefaultCharset"})
   public static HKDFKeys hkdf_expand(
       Bytes srcNodeId, Bytes destNodeId, Bytes keyAgreement, Bytes idNonce) {
     try {

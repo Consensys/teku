@@ -60,6 +60,7 @@ public class TestUtil {
    * @param verification whether to use valid signature
    * @return <code><private key, node record></code>
    */
+  @SuppressWarnings({"DoubleBraceInitialization"})
   public static Pair<Bytes, NodeRecord> generateNode(int port, boolean verification) {
     final Random rnd = new Random(SEED);
     Bytes localIp = null;

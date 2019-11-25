@@ -47,6 +47,7 @@ public class ControlledExecutorServiceImpl implements ControlledExecutorService 
       timeController.cancelTask(this);
     }
 
+    @Override
     public void execute() {
       ControlledExecutorServiceImpl.this.execute(
           () -> {
@@ -70,7 +71,7 @@ public class ControlledExecutorServiceImpl implements ControlledExecutorService 
     }
   }
 
-  private class ScheduledFutureImpl<V> implements ScheduledFuture<V> {
+  private static class ScheduledFutureImpl<V> implements ScheduledFuture<V> {
     final CompletableFuture<V> delegate = new CompletableFuture<>();
     private final Consumer<Boolean> canceller;
 
@@ -148,6 +149,7 @@ public class ControlledExecutorServiceImpl implements ControlledExecutorService 
   }
 
   @Override
+  @SuppressWarnings({"rawtypes"})
   public ScheduledFuture<?> scheduleAtFixedRate(
       Runnable command, long initialDelay, long period, TimeUnit unit) {
     ScheduledFuture<?>[] activeFut = new ScheduledFutureImpl[1];

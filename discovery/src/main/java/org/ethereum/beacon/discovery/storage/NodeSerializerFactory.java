@@ -23,7 +23,10 @@ import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 
 /** Serializer for {@link NodeRecordInfo}, {@link NodeIndex} and {@link NodeBucket} */
 public class NodeSerializerFactory implements SerializerFactory {
+  @SuppressWarnings({"rawtypes"})
   private final Map<Class, Function<Bytes, Object>> deserializerMap = new HashMap<>();
+
+  @SuppressWarnings({"rawtypes"})
   private final Map<Class, Function<Object, Bytes>> serializerMap = new HashMap<>();
 
   public NodeSerializerFactory(NodeRecordFactory nodeRecordFactory) {
@@ -38,6 +41,7 @@ public class NodeSerializerFactory implements SerializerFactory {
   }
 
   @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public <T> Function<Bytes, T> getDeserializer(Class<? extends T> objectClass) {
     if (!deserializerMap.containsKey(objectClass)) {
       throw new RuntimeException(String.format("Type %s is not supported", objectClass));

@@ -63,6 +63,7 @@ public class ExecutorScheduler implements Scheduler {
   }
 
   @Override
+  @SuppressWarnings({"rawtypes"})
   public CompletableFuture<Void> executeAtFixedRate(
       Duration initialDelay, Duration period, RunnableEx task) {
 

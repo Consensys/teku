@@ -44,6 +44,7 @@ import reactor.core.publisher.Flux;
  * Discovery test without real network, instead outgoing stream of each peer is connected with
  * incoming of another and vice versa
  */
+@SuppressWarnings({"DoubleBraceInitialization"})
 public class DiscoveryNoNetworkTest {
 
   @Test

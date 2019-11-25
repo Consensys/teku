@@ -51,8 +51,8 @@ public class NodeIndex {
 
   public Bytes toRlpBytes() {
     List<RlpType> values = new ArrayList<>();
-    for (Bytes Bytes : getEntries()) {
-      values.add(RlpString.create(Bytes.toArray()));
+    for (Bytes entryBytes : getEntries()) {
+      values.add(RlpString.create(entryBytes.toArray()));
     }
     byte[] bytes = RlpEncoder.encode(new RlpList(values));
     return Bytes.wrap(bytes);

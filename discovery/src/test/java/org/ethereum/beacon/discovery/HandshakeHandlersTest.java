@@ -60,6 +60,7 @@ import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings({"DoubleBraceInitialization"})
 public class HandshakeHandlersTest {
 
   @Test

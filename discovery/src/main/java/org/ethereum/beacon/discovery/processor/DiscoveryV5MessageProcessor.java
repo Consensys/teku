@@ -34,7 +34,10 @@ import org.ethereum.beacon.discovery.schema.Protocol;
  */
 public class DiscoveryV5MessageProcessor implements DiscoveryMessageProcessor<DiscoveryV5Message> {
   private static final Logger logger = LogManager.getLogger(DiscoveryV5MessageProcessor.class);
+
+  @SuppressWarnings({"rawtypes"})
   private final Map<MessageCode, MessageHandler> messageHandlers = new HashMap<>();
+
   private final NodeRecordFactory nodeRecordFactory;
 
   public DiscoveryV5MessageProcessor(NodeRecordFactory nodeRecordFactory) {
@@ -51,6 +54,7 @@ public class DiscoveryV5MessageProcessor implements DiscoveryMessageProcessor<Di
   }
 
   @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void handleMessage(DiscoveryV5Message message, NodeSession session) {
     MessageCode code = message.getCode();
     MessageHandler messageHandler = messageHandlers.get(code);

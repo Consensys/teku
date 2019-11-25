@@ -70,6 +70,7 @@ public class NodeIdToSession implements EnvelopeHandler {
   }
 
   @Override
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void handle(Envelope envelope) {
     logger.trace(
         () ->

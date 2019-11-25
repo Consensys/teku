@@ -56,6 +56,7 @@ import org.web3j.crypto.ECKeyPair;
 import reactor.core.publisher.Flux;
 
 /** Same as {@link DiscoveryNoNetworkTest} but using real network */
+@SuppressWarnings({"DoubleBraceInitialization"})
 public class DiscoveryNetworkInteropTest {
 
   private Function<UInt64, NodeRecord> homeNodeSupplier =
@@ -85,6 +86,7 @@ public class DiscoveryNetworkInteropTest {
       };
 
   @Test
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void testLighthouseInterop() throws Exception {
     //    final String remoteHostEnr =
     // "-IS4QJBOCmTBOuIE0_z16nV8P1KOyVVIu1gq2S83H5HBmfFaFuevJT0XyKH35LNVxHK5dotDTwqlc9NiRXosBcQ1bJ8BgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIyk";
@@ -206,6 +208,7 @@ public class DiscoveryNetworkInteropTest {
 
   Random rnd = new Random(SEED);
 
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public Pair<NodeRecord, byte[]> createLocalNodeRecord(int port) {
 
     try {

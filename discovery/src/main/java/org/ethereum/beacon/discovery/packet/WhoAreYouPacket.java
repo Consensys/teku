@@ -33,6 +33,7 @@ import org.web3j.rlp.RlpString;
  * id-nonce = 32 random bytes
  * enr-seq = highest ENR sequence number of node A known on node B's side</code>
  */
+@SuppressWarnings({"DefaultCharset"})
 public class WhoAreYouPacket extends AbstractPacket {
   private static final Bytes MAGIC_BYTES = Bytes.wrap("WHOAREYOU".getBytes());
   private WhoAreYouDecoded decoded = null;

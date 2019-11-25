@@ -44,6 +44,7 @@ public class SimpleProcessor<T> implements Processor<T, T> {
     publisher = Flux.from(processor).publishOn(scheduler).onBackpressureError().name(name);
   }
 
+  @SuppressWarnings({"rawtypes"})
   public SimpleProcessor doOnAnySubscribed(Runnable handler) {
     publisher =
         publisher.doOnSubscribe(
@@ -56,6 +57,7 @@ public class SimpleProcessor<T> implements Processor<T, T> {
     return this;
   }
 
+  @SuppressWarnings({"rawtypes"})
   public SimpleProcessor doOnNoneSubscribed(Runnable handler) {
     publisher =
         publisher.doOnCancel(
