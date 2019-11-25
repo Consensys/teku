@@ -1,7 +1,5 @@
 dependencies {
   implementation project(':util')
-  implementation project(':ethereum')
-  implementation project(':ethereum:datastructures')
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-crypto'
