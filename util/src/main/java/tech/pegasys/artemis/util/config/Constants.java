@@ -106,6 +106,9 @@ public class Constants {
   public static String DEPOSIT_TEST = "test";
   public static String DEPOSIT_SIM = "simulation";
 
+  // Fork Choice
+  public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
+
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
