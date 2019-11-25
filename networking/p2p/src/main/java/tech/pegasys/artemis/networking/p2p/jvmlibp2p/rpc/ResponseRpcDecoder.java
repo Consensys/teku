@@ -41,6 +41,7 @@ public class ResponseRpcDecoder<T extends SimpleOffsetSerializable> {
     try {
       buffer.consumeData(this::consumeData);
     } catch (final RpcException e) {
+      // Discard remaining data to avoid close throwing exceptions later.
       buffer.close();
       throw e;
     }
