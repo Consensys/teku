@@ -98,7 +98,7 @@ public class Utils {
     checkNotNull(value);
     checkArgument(value.size() <= length, "Expected at most %s bytes but got %s", 4, value.size());
     MutableBytes result = MutableBytes.create(4);
-    value.copyTo(result, 4 - value.size());
+    value.copyTo(result, length - value.size());
     return result;
   }
 }
