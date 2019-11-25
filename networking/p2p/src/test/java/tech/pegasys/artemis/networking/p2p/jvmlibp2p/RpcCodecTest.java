@@ -89,8 +89,8 @@ final class RpcCodecTest {
 
   @Test
   public void shouldRoundTripError() {
-    final Bytes encoded = codec.encodeErrorResponse(RpcException.INCORRECT_LENGTH_ERRROR);
+    final Bytes encoded = codec.encodeErrorResponse(RpcException.INCORRECT_LENGTH_ERROR);
     assertThatThrownBy(() -> codec.decodeResponse(encoded, StatusMessage.class))
-        .isEqualToComparingFieldByField(RpcException.INCORRECT_LENGTH_ERRROR);
+        .isEqualToComparingFieldByField(RpcException.INCORRECT_LENGTH_ERROR);
   }
 }

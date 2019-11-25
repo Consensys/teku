@@ -154,22 +154,20 @@ public class RpcMessageHandler<
   private class RequesterHandler extends AbstractHandler {
     private ChannelHandlerContext ctx;
     private ResponseStreamImpl<TResponse> responseStream;
+    private MultipacketRpcCodec<TResponse> responseHandler;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
         throws IllegalArgumentException {
-      if (responseStream == null) {
+      if (responseHandler == null) {
         STDOUT.log(
             Level.WARN,
             "Received " + byteBuf.array().length + " bytes of data before requesting it.");
         throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
       try {
-        STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
-        Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-
-        final TResponse response = rpcCodec.decodeResponse(bytes, method.getResponseType());
-        responseStream.respond(response);
+        STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.capacity() + " bytes.");
+        responseHandler.onPacketReceived(byteBuf);
       } catch (final RpcException e) {
         LOG.debug("Request returned an error {}", e.getErrorMessage());
         responseStream.completeWithError(e);
@@ -185,6 +183,9 @@ public class RpcMessageHandler<
       final Bytes encoded = rpcCodec.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       responseStream = new ResponseStreamImpl<>();
+      responseHandler =
+          new MultipacketRpcCodec<>(
+              responseStream::respond, method.getResponseType(), method.getEncoding());
       ctx.writeAndFlush(reqByteBuf)
           .addListener(
               future -> {
@@ -215,12 +216,20 @@ public class RpcMessageHandler<
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
-      LOG.info("Handler removed");
       final IllegalStateException exception = new IllegalStateException("Stream closed.");
       // This is an error if we haven't already sent the request...
       activeFuture.completeExceptionally(exception);
-      // But it just means the end of stream if we have.
-      responseStream.completeSuccessfully();
+      try {
+        // But it just means the end of stream if we have.
+        responseHandler.close();
+        responseStream.completeSuccessfully();
+      } catch (final RpcException e) {
+        LOG.debug("Request returned an error {}", e.getErrorMessage());
+        responseStream.completeWithError(e);
+      } catch (final Throwable t) {
+        LOG.error("Failed to handle response", t);
+        responseStream.completeWithError(t);
+      }
       ctx.channel().close();
     }
   }
