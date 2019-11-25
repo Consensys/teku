@@ -111,4 +111,15 @@ class MessageBufferTest {
     // but some data from input2 is left unconsumed so it is still retained
     assertThat(input2.refCnt()).isEqualTo(2);
   }
+
+  @Test
+  public void shouldBeAbleToCallCloseMultipleTimesSafely() {
+    buffer.appendData(input);
+
+    buffer.close();
+    buffer.close();
+    buffer.close();
+
+    assertThat(buffer.isEmpty()).isTrue();
+  }
 }

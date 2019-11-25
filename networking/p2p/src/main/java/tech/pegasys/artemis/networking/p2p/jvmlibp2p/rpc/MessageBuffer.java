@@ -36,7 +36,7 @@ public class MessageBuffer {
     while (!currentData.isEmpty()) {
       final int consumedBytes = dataConsumer.consumeData(currentData);
       checkArgument(
-          consumedBytes < currentData.size(), "Cannot consume more bytes than were in the data");
+          consumedBytes <= currentData.size(), "Cannot consume more bytes than were in the data");
       if (consumedBytes == 0) {
         // Can't parse any messages, wait for more data to arrive.
         return;
