@@ -125,17 +125,10 @@ public class RpcMessageHandler<
 
   private class ResponderHandler extends AbstractHandler {
     private final Connection connection;
-    private RequestRpcDecoder<TRequest> requestReader;
-    private ResponseCallback<TResponse> callback;
+    private RequestRpcDecoder<TRequest> requestReader = new RequestRpcDecoder<>(method);
 
     public ResponderHandler(Connection connection) {
       this.connection = connection;
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-      callback = new RpcResponseCallback<>(ctx, rpcEncoder, closeNotification, connection);
-      requestReader = new RequestRpcDecoder<>(method);
       activeFuture.complete(this);
     }
 
@@ -147,6 +140,8 @@ public class RpcMessageHandler<
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
+      final ResponseCallback<TResponse> callback =
+          new RpcResponseCallback<>(ctx, rpcEncoder, closeNotification, connection);
       try {
         requestReader
             .onDataReceived(byteBuf)
