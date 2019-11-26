@@ -17,6 +17,7 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGeneri
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
@@ -27,6 +28,7 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
@@ -433,20 +435,19 @@ public class ValidatorCoordinator {
             .mapToObj(value -> get_eth1_data(UnsignedLong.valueOf(value)))
             .collect(Collectors.toList());
 
+    boolean period_tail = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)).compareTo(integer_squareroot(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT))) >= 0;
+
+    List<Eth1Data> votes_to_consider;
+    if (period_tail) {
+      votes_to_consider = all_eth1_data;
+    } else {
+      votes_to_consider = new_eth1_data;
+    }
+
     List<Eth1Data> valid_votes = new ArrayList<>();
 
-    ListIterator<Eth1Data> eth1_data_votes = state.getEth1_data_votes().listIterator();
-    while (eth1_data_votes.hasNext()) {
-      UnsignedLong slot = UnsignedLong.valueOf(eth1_data_votes.nextIndex());
-      Eth1Data vote = eth1_data_votes.next();
-
-      boolean period_tail =
-          slot.mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD))
-                  .compareTo(
-                      UnsignedLong.valueOf(
-                          (int) Math.floor(Math.sqrt(SLOTS_PER_ETH1_VOTING_PERIOD))))
-              >= 0;
-      if (new_eth1_data.contains(vote) || (period_tail && all_eth1_data.contains(vote))) {
+    for (Eth1Data vote : state.getEth1_data_votes()) {
+      if (votes_to_consider.contains(vote)) {
         valid_votes.add(vote);
       }
     }
