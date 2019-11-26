@@ -41,7 +41,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -435,7 +434,12 @@ public class ValidatorCoordinator {
             .mapToObj(value -> get_eth1_data(UnsignedLong.valueOf(value)))
             .collect(Collectors.toList());
 
-    boolean period_tail = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)).compareTo(integer_squareroot(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT))) >= 0;
+    boolean period_tail =
+        state
+                .getSlot()
+                .mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD))
+                .compareTo(integer_squareroot(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)))
+            >= 0;
 
     List<Eth1Data> votes_to_consider;
     if (period_tail) {
