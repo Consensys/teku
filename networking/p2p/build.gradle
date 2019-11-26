@@ -5,7 +5,6 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':data')
-  implementation project(':data:adapter')
   implementation project(':data:metrics')
   implementation project(':validator:coordinator')
   implementation 'com.google.guava:guava'
