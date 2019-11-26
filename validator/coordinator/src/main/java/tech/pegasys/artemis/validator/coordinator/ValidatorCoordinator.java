@@ -336,11 +336,17 @@ public class ValidatorCoordinator {
   private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
     SSZList<ProposerSlashing> slashingsForBlock = BeaconBlockBodyLists.createProposerSlashings();
     ProposerSlashing slashing = slashings.poll();
-    while (slashing != null) {
+    while (true) {
       if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
         slashingsForBlock.add(slashing);
       }
+      if (slashingsForBlock.size() >= slashingsForBlock.getMaxSize()) {
+        break;
+      }
       slashing = slashings.poll();
+      if (slashing == null) {
+        break;
+      }
     }
     return slashingsForBlock;
   }
