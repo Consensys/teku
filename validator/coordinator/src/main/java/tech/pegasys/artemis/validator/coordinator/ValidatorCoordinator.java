@@ -67,7 +67,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.Signer;
@@ -76,7 +75,7 @@ import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
-import tech.pegasys.artemis.statetransition.BlockCreator;
+import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.CommitteeAssignment;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -86,8 +85,6 @@ import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -104,7 +101,7 @@ public class ValidatorCoordinator {
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private final StateTransition stateTransition;
-  private final BlockCreator blockCreator;
+  private final BlockProposalUtil blockCreator;
   private final SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
@@ -126,7 +123,7 @@ public class ValidatorCoordinator {
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition(false);
-    this.blockCreator = new BlockCreator(stateTransition);
+    this.blockCreator = new BlockProposalUtil(stateTransition);
     this.validators = initializeValidators(config, chainStorageClient);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
@@ -286,7 +283,7 @@ public class ValidatorCoordinator {
     final UnsignedLong newSlot = previousState.getSlot().plus(UnsignedLong.ONE);
 
     // Check if we should be proposing
-    final BLSPublicKey proposer = getProposerForSlot(previousState, newSlot);
+    final BLSPublicKey proposer = blockCreator.getProposerForSlot(previousState, newSlot);
     if (!validators.containsKey(proposer)) {
       // We're not proposing now
       return;
@@ -318,17 +315,6 @@ public class ValidatorCoordinator {
     } catch (StateTransitionException e) {
       STDOUT.log(Level.WARN, "Error during block creation " + e.toString());
     }
-  }
-
-  private BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
-    BeaconStateWithCache state = BeaconStateWithCache.deepCopy(preState);
-    try {
-      stateTransition.process_slots(state, slot, false);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
-    }
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state);
-    return state.getValidators().get(proposerIndex).getPubkey();
   }
 
   private SSZList<Attestation> getAttestationsForSlot(final UnsignedLong slot) {

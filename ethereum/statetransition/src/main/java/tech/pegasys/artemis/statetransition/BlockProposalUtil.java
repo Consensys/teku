@@ -15,8 +15,10 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -30,24 +32,27 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.validator.Signer;
+import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
+import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
-public class BlockCreator {
+public class BlockProposalUtil {
   private final StateTransition stateTransition;
 
-  public BlockCreator(final StateTransition stateTransition) {
+  public BlockProposalUtil(final StateTransition stateTransition) {
     this.stateTransition = stateTransition;
   }
 
   public BeaconBlock createNewBlock(
       final Signer signer,
       final UnsignedLong newSlot,
-      final BeaconStateWithCache previousState,
+      final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
       final SSZList<Attestation> attestations,
       final SSZList<ProposerSlashing> slashings,
@@ -62,6 +67,7 @@ public class BlockCreator {
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     beaconBlockBody.setProposer_slashings(slashings);
+    beaconBlockBody.setRandao_reveal(get_epoch_signature(newState, newEpoch, signer));
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     final BLSSignature tmpSignature = BLSSignature.empty();
@@ -73,9 +79,6 @@ public class BlockCreator {
     Bytes32 stateRoot = stateTransition.initiate(newState, newBlock, false).hash_tree_root();
     newBlock.setState_root(stateRoot);
 
-    // Set randao reveal
-    beaconBlockBody.setRandao_reveal(get_epoch_signature(newState, newEpoch, signer));
-
     // Sign block and set block signature
     BLSSignature blockSignature = getBlockSignature(newState, newBlock, signer);
     newBlock.setSignature(blockSignature);
@@ -86,7 +89,7 @@ public class BlockCreator {
   public BeaconBlock createEmptyBlock(
       final Signer signer,
       final UnsignedLong newSlot,
-      final BeaconStateWithCache previousState,
+      final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot)
       throws StateTransitionException {
     return createNewBlock(
@@ -97,6 +100,21 @@ public class BlockCreator {
         BeaconBlockBodyLists.createAttestations(),
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());
+  }
+
+  public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
+    int proposerIndex = getProposerIndexForSlot(preState, slot);
+    return preState.getValidators().get(proposerIndex).getPubkey();
+  }
+
+  public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
+    BeaconStateWithCache state = BeaconStateWithCache.deepCopy(preState);
+    try {
+      stateTransition.process_slots(state, slot, false);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
+    }
+    return BeaconStateUtil.get_beacon_proposer_index(state);
   }
 
   /**
