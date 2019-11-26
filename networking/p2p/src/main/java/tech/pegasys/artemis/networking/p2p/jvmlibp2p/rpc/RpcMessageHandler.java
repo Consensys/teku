@@ -43,7 +43,7 @@ public class RpcMessageHandler<
   private final RpcMethod<TRequest, TResponse> method;
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
-  private final RpcCodec rpcCodec;
+  private final RpcEncoder rpcEncoder;
   private boolean closeNotification = false;
 
   public RpcMessageHandler(
@@ -53,7 +53,7 @@ public class RpcMessageHandler<
     this.method = method;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
-    this.rpcCodec = new RpcCodec(method.getEncoding());
+    this.rpcEncoder = new RpcEncoder(method.getEncoding());
   }
 
   @SuppressWarnings("unchecked")
@@ -125,6 +125,8 @@ public class RpcMessageHandler<
 
   private class ResponderHandler extends AbstractHandler {
     private final Connection connection;
+    private RequestRpcDecoder<TRequest> requestReader = new RequestRpcDecoder<>(method);
+    private ResponseCallback<TResponse> callback;
 
     public ResponderHandler(Connection connection) {
       this.connection = connection;
@@ -139,12 +141,13 @@ public class RpcMessageHandler<
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
       STDOUT.log(Level.DEBUG, "Responder received " + byteBuf.array().length + " bytes.");
-      Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-      final ResponseCallback<TResponse> callback =
-          new RpcResponseCallback<>(ctx, rpcCodec, closeNotification, connection);
+      if (callback == null) {
+        callback = new RpcResponseCallback<>(ctx, rpcEncoder, closeNotification, connection);
+      }
       try {
-        final TRequest request = rpcCodec.decodeRequest(bytes, method.getRequestType());
-        invokeLocal(connection, request, callback);
+        requestReader
+            .onDataReceived(byteBuf)
+            .ifPresent(request -> invokeLocal(connection, request, callback));
       } catch (final RpcException e) {
         callback.completeWithError(e);
       }
@@ -154,22 +157,20 @@ public class RpcMessageHandler<
   private class RequesterHandler extends AbstractHandler {
     private ChannelHandlerContext ctx;
     private ResponseStreamImpl<TResponse> responseStream;
+    private ResponseRpcDecoder<TResponse> responseHandler;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
         throws IllegalArgumentException {
-      if (responseStream == null) {
+      if (responseHandler == null) {
         STDOUT.log(
             Level.WARN,
             "Received " + byteBuf.array().length + " bytes of data before requesting it.");
         throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
       try {
-        STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.array().length + " bytes.");
-        Bytes bytes = Bytes.wrapByteBuf(byteBuf);
-
-        final TResponse response = rpcCodec.decodeResponse(bytes, method.getResponseType());
-        responseStream.respond(response);
+        STDOUT.log(Level.TRACE, "Requester received " + byteBuf.capacity() + " bytes.");
+        responseHandler.onDataReceived(byteBuf);
       } catch (final RpcException e) {
         LOG.debug("Request returned an error {}", e.getErrorMessage());
         responseStream.completeWithError(e);
@@ -182,9 +183,10 @@ public class RpcMessageHandler<
     @Override
     public CompletableFuture<ResponseStream<TResponse>> invoke(TRequest request) {
       final ByteBuf reqByteBuf = ctx.alloc().buffer();
-      final Bytes encoded = rpcCodec.encodeRequest(request);
+      final Bytes encoded = rpcEncoder.encodeRequest(request);
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       responseStream = new ResponseStreamImpl<>();
+      responseHandler = new ResponseRpcDecoder<>(responseStream::respond, method);
       ctx.writeAndFlush(reqByteBuf)
           .addListener(
               future -> {
@@ -215,12 +217,20 @@ public class RpcMessageHandler<
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
-      LOG.info("Handler removed");
       final IllegalStateException exception = new IllegalStateException("Stream closed.");
       // This is an error if we haven't already sent the request...
       activeFuture.completeExceptionally(exception);
-      // But it just means the end of stream if we have.
-      responseStream.completeSuccessfully();
+      try {
+        // But it just means the end of stream if we have.
+        responseHandler.close();
+        responseStream.completeSuccessfully();
+      } catch (final RpcException e) {
+        LOG.debug("Request returned an error {}", e.getErrorMessage());
+        responseStream.completeWithError(e);
+      } catch (final Throwable t) {
+        LOG.error("Failed to handle response", t);
+        responseStream.completeWithError(t);
+      }
       ctx.channel().close();
     }
   }
