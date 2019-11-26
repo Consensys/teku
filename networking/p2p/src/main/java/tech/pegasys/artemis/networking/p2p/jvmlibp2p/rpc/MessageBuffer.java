@@ -37,6 +37,7 @@ public class MessageBuffer {
       final int consumedBytes = dataConsumer.consumeData(currentData);
       checkArgument(
           consumedBytes <= currentData.size(), "Cannot consume more bytes than were in the data");
+      checkArgument(consumedBytes >= 0, "Consumed bytes must not be negative");
       if (consumedBytes == 0) {
         // Can't parse any messages, wait for more data to arrive.
         return;
