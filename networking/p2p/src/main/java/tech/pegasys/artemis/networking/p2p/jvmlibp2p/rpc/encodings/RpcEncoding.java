@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
+import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -27,4 +28,6 @@ public interface RpcEncoding {
   String decodeError(Bytes message) throws RpcException;
 
   String getName();
+
+  OptionalInt getMessageLength(Bytes message) throws RpcException;
 }
