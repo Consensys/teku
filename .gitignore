@@ -50,6 +50,3 @@ scripts/.java-version
 config/peer_ids.dat
 eth-reference-tests/src/test/
 eth-reference-tests/src/test-support/resources/eth2.0-spec-tests/
-
-# Deprecated - Reference Test Resources Should Be Moved from ./src/referenceTest/... to ./src/test-support/...
-eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/

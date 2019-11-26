@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.benchmarks;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.primitives.UnsignedLong;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,13 +35,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.io.Resources;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import tech.pegasys.artemis.datastructures.Constants;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -47,20 +50,20 @@ import tech.pegasys.artemis.ethtests.TestObject;
 import tech.pegasys.artemis.ethtests.TestSet;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.BlockProcessorUtil;
-import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockProcessingBenchmark {
   protected static Path configPath = null;
-  private static final ALogger LOG = new ALogger(BlockProcessingBenchmark.class.getName());
   private static final Path pathToTests =
       Paths.get(
           System.getProperty("user.dir").toString(),
           "src",
-          "referenceTest",
+          "test-support",
           "resources",
           "eth2.0-spec-tests",
           "tests");
   private static final String FILE = "file://";
+  private static final String resourceGlobBase = "**/tests/";
 
   @State(Scope.Benchmark)
   public static class ProcessBlockHeaderJMHState {
@@ -69,7 +72,6 @@ public class BlockProcessingBenchmark {
 
     @Setup
     public void setup() throws Exception {
-      System.out.println(pathToTests);
       List<Object> list = minimalBeaconBlockHeaderSuccessSetup();
       block = (BeaconBlock) list.get(0);
       state = (BeaconState) list.get(1);
@@ -93,26 +95,30 @@ public class BlockProcessingBenchmark {
 
   @MustBeClosed
   static Stream<Object> blockSuccessSetup(String config) throws Exception {
-    Path path = Paths.get(config, "phase0", "operations", "block_header", "pyspec_tests");
-    return operationSuccessSetup(path, Paths.get(config), "block.ssz", BeaconBlock.class);
+    String resourcePath =
+        buildResourcePath(config, "phase0", "operations", "block_header", "pyspec_tests");
+    return operationSuccessSetup(
+        resourcePath, buildResourcePath(config), "block.ssz", BeaconBlock.class);
   }
 
   static List<Object> minimalBeaconBlockHeaderSuccessSetup() throws Exception {
-    Stream<Object> blockSuccessStream = blockSuccessSetup("minimal");
-    try {
-      return blockSuccessStream.collect(Collectors.toList());
-    } finally {
-      blockSuccessStream.close();
+    try (Stream<Object> blockSuccessStream = blockSuccessSetup("minimal")) {
+      if (blockSuccessStream != null) {
+        return blockSuccessStream.collect(Collectors.toList());
+      }
     }
+    throw new Exception(
+        "Unable to setup minimal beacon block header tests. Test object stream was null.");
   }
 
   @MustBeClosed
   @SuppressWarnings("rawtypes")
   public static Stream<Object> operationSuccessSetup(
-      Path path, Path configPath, String operationName, Class operationClass) throws Exception {
-    loadConfigFromPath(configPath);
+      String resourcePath, String configPath, String operationName, Class operationClass)
+      throws Exception {
+    loadConfigFromGlob(configPath);
 
-    TestSet testSet = new TestSet(path);
+    TestSet testSet = new TestSet(Path.of(resourcePath));
     testSet.add(new TestObject(operationName, operationClass, null));
     testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
     testSet.add(new TestObject("post.ssz", BeaconState.class, null));
@@ -121,25 +127,25 @@ public class BlockProcessingBenchmark {
   }
 
   @SuppressWarnings({"rawtypes"})
-  public static void loadConfigFromPath(Path path) throws Exception {
-    path = Path.of(pathToTests.toString(), path.toString());
-    String result = "";
-    while (result.isEmpty() && path.getNameCount() > 0) {
-      try (Stream<Path> walk = Files.walk(path)) {
-        result =
-            walk.map(x -> x.toString())
-                .filter(currentPath -> currentPath.contains("config.yaml"))
-                .collect(Collectors.joining());
-      } catch (IOException e) {
-        LOG.log(Level.WARN, e.toString());
+  public static void loadConfigFromGlob(String configGlob) throws Exception {
+    String resourceGlob = buildResourcePath(resourceGlobBase, configGlob, "config.yaml");
+
+    try (Stream<URL> urls = Resources.find(resourceGlob)) {
+      List<String> configTypes = urls.map(url -> url.toString()).collect(Collectors.toList());
+      String joinedConfigs = configTypes.stream().collect(Collectors.joining());
+      if (configTypes.size() != 0 && joinedConfigs.contains(configGlob)) {
+        String constants = joinedConfigs.contains("mainnet") ? "mainnet" : "minimal";
+        Constants.setConstants(constants);
+      } else {
+        STDOUT.log(
+            Level.FATAL,
+            "Unable to load 'config.yaml' configuration file for the '"
+                + configGlob
+                + "' config type.'");
+        throw new Exception(
+            "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
       }
-      if (result.isEmpty()) path = path.getParent();
     }
-    if (result.isEmpty())
-      throw new Exception(
-          "TestSuite.loadConfigFromPath(): Configuration files was not found in the hierarchy of the provided path");
-    String constants = path.toString().contains("mainnet") ? "mainnet" : "minimal";
-    Constants.setConstants(constants);
 
     // TODO fix this massacre of a technical debt
     // Checks if constants were changed from minimal to mainnet or vice-versa, and updates
@@ -153,6 +159,7 @@ public class BlockProcessingBenchmark {
     }
   }
 
+  @SuppressWarnings("unchecked")
   public static Stream<Object> findTestsByPath(TestSet testSet) {
     Path path = Path.of(pathToTests.toString(), testSet.getPath().toString());
     try (Stream<Path> walk = Files.walk(path)) {
@@ -189,7 +196,7 @@ public class BlockProcessingBenchmark {
                     .collect(Collectors.toList());
               });
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      STDOUT.log(Level.WARN, e.toString());
     }
     return null;
   }
@@ -213,7 +220,7 @@ public class BlockProcessingBenchmark {
       }
 
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      STDOUT.log(Level.WARN, e.toString());
     }
     return object;
   }
@@ -237,7 +244,7 @@ public class BlockProcessingBenchmark {
       in.read(targetArray);
       return Bytes.wrap(targetArray);
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      STDOUT.log(Level.WARN, e.toString());
     }
     return null;
   }
@@ -249,9 +256,9 @@ public class BlockProcessingBenchmark {
       url = new URL(FILE + path);
       in = url.openConnection().getInputStream();
     } catch (MalformedURLException e) {
-      LOG.log(Level.WARN, e.toString());
+      STDOUT.log(Level.WARN, e.toString());
     } catch (IOException e) {
-      LOG.log(Level.WARN, e.toString());
+      STDOUT.log(Level.WARN, e.toString());
     }
     return in;
   }
@@ -278,5 +285,17 @@ public class BlockProcessingBenchmark {
     boolean isMetaPath =
         testSet.getFileNames().size() == 1 && testSet.getFileNames().get(0).equals("meta.yaml");
     return isIncludedPath && (isNotExcludedPath || isMetaPath);
+  }
+
+  private static String buildResourcePath(String first, String... more) {
+    if (FileSystems.getDefault().getSeparator().equals("/")) {
+      return Path.of(first, more).toString();
+    } else {
+      // TODO - Determine whether to implement custom handling for this case.
+      // For now, if the default file system name-seperator is not "/",
+      // (as is expected for Java resources), throw UnsupportedOperationException.
+      throw new UnsupportedOperationException(
+          "The JMH resource loader expects the default name-seperator to be '/'.");
+    }
   }
 }

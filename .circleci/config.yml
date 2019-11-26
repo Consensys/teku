@@ -134,7 +134,7 @@ jobs:
       - run:
           name: FetchReferenceTests
           command: |
-            if [ ! -d "eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/tests" ]
+            if [ ! -d "eth-reference-tests/src/test-support/resources/eth2.0-spec-tests/tests" ]
             then
               ./gradlew --no-daemon expandRefTests
             fi
@@ -155,7 +155,7 @@ jobs:
           name: Caching reference tests
           key: reftests-{{ checksum "build.gradle" }}
           paths:
-            - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
+            - eth-reference-tests/src/test-support/resources/eth2.0-spec-tests/
       - capture_test_results
 
   docker:

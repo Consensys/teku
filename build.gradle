@@ -282,6 +282,7 @@ subprojects {
       java {
         srcDir file('src/referenceTest/java')
       }
+      resources.srcDir file('src/referenceTest/resources')
     }
   }
 
