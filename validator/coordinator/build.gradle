@@ -1,6 +1,6 @@
 dependencies {
   implementation project(':validator:client')
-  compile project(':proto')
+  implementation project(':proto')
   implementation project(':storage')
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
@@ -8,8 +8,7 @@ dependencies {
   implementation project(':util')
   implementation project(':pow')
 
-
-  compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
@@ -19,6 +18,8 @@ dependencies {
   // implementation files('../../lib/tuweni-ssz-0.9.0-SNAPSHOT.jar')
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'io.grpc:grpc-stub'
+  implementation 'com.google.protobuf:protobuf-java'
   runtime 'org.apache.logging.log4j:log4j-core'
 
   testImplementation 'org.mockito:mockito-core'
