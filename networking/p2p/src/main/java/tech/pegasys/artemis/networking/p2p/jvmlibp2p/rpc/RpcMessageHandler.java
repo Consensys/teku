@@ -169,7 +169,7 @@ public class RpcMessageHandler<
         throw new IllegalArgumentException("Some data received prior to request: " + byteBuf);
       }
       try {
-        STDOUT.log(Level.DEBUG, "Requester received " + byteBuf.capacity() + " bytes.");
+        STDOUT.log(Level.TRACE, "Requester received " + byteBuf.capacity() + " bytes.");
         responseHandler.onDataReceived(byteBuf);
       } catch (final RpcException e) {
         LOG.debug("Request returned an error {}", e.getErrorMessage());
