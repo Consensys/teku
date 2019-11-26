@@ -76,10 +76,12 @@ public class SszEncoding implements RpcEncoding {
       try {
         payload = Bytes.wrap(in.readRawBytes(expectedLength));
       } catch (final InvalidProtocolBufferException e) {
+        LOG.trace("Failed to parse SSZ message", e);
         throw RpcException.INCORRECT_LENGTH_ERRROR;
       }
 
       if (!in.isAtEnd()) {
+        LOG.trace("Rejecting SSZ message because actual message length exceeds specified length");
         throw RpcException.INCORRECT_LENGTH_ERRROR;
       }
 
@@ -87,8 +89,9 @@ public class SszEncoding implements RpcEncoding {
       try {
         parsedMessage = parser.apply(payload);
       } catch (final InvalidSSZTypeException e) {
-        LOG.debug(
-            "Failed to parse network message. Error: {} Message: {}", e.getMessage(), message);
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Failed to parse network message: " + message, e);
+        }
         throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
