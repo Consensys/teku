@@ -23,7 +23,6 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
-import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -44,7 +43,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
@@ -56,6 +54,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataWithIndexAndDeposits;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -71,11 +70,13 @@ import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
+import tech.pegasys.artemis.datastructures.validator.Signer;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
+import tech.pegasys.artemis.statetransition.BlockCreator;
 import tech.pegasys.artemis.statetransition.CommitteeAssignment;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -87,7 +88,6 @@ import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -98,17 +98,17 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
-  private StateTransition stateTransition;
-  private SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
-  private ChainStorageClient chainStorageClient;
-  private AttestationAggregator attestationAggregator;
-  private BlockAttestationsPool blockAttestationsPool;
+  private final StateTransition stateTransition;
+  private final BlockCreator blockCreator;
+  private final SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
+  private final ChainStorageClient chainStorageClient;
+  private final AttestationAggregator attestationAggregator;
+  private final BlockAttestationsPool blockAttestationsPool;
 
   //  maps slots to Lists of attestation informations
   //  (which contain information for our validators to produce attestations)
@@ -126,6 +126,7 @@ public class ValidatorCoordinator {
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition(false);
+    this.blockCreator = new BlockCreator(stateTransition);
     this.validators = initializeValidators(config, chainStorageClient);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
@@ -279,135 +280,94 @@ public class ValidatorCoordinator {
     this.eventBus.post(attestation);
   }
 
-  /**
-   * Gets the epoch signature used for RANDAO from the Validator Client using gRPC
-   *
-   * @param state
-   * @param proposer
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
-   */
-  // TODO: since this is very similar to a spec function now, move it to a util file and
-  // abstract away the gRPC details
-  public BLSSignature get_epoch_signature(BeaconState state, BLSPublicKey proposer) {
-    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    UnsignedLong epoch = BeaconStateUtil.compute_epoch_at_slot(slot);
+  private void createBlockIfNecessary(
+      BeaconStateWithCache previousState, BeaconBlock previousBlock) {
+    // TODO - we shouldn't assume that we're just incrementing the slot by 1
+    final UnsignedLong newSlot = previousState.getSlot().plus(UnsignedLong.ONE);
 
-    Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
-    Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
-    return getSignature(messageHash, domain, proposer);
-  }
-
-  /**
-   * Gets the block signature from the Validator Client using gRPC
-   *
-   * @param state
-   * @param block
-   * @param proposer
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
-   */
-  private BLSSignature getBlockSignature(
-      BeaconState state, BeaconBlock block, BLSPublicKey proposer) {
-    Bytes domain =
-        get_domain(
-            state,
-            Constants.DOMAIN_BEACON_PROPOSER,
-            BeaconStateUtil.compute_epoch_at_slot(block.getSlot()));
-
-    Bytes32 blockRoot = block.signing_root("signature");
-
-    return getSignature(blockRoot, domain, proposer);
-  }
-
-  private BeaconBlock createInitialBlock(BeaconStateWithCache state, BeaconBlock oldBlock) {
-    Bytes32 blockRoot = oldBlock.signing_root("signature");
-    SSZList<Attestation> current_attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
-    final Bytes32 MockStateRoot = Bytes32.ZERO;
-
-    if (state
-            .getSlot()
-            .compareTo(
-                UnsignedLong.valueOf(
-                    Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-        >= 0) {
-
-      UnsignedLong attestation_slot =
-          state.getSlot().minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
-
-      current_attestations =
-          blockAttestationsPool.getAggregatedAttestationsForBlockAtSlot(attestation_slot);
+    // Check if we should be proposing
+    final BLSPublicKey proposer = getProposerForSlot(previousState, newSlot);
+    if (!validators.containsKey(proposer)) {
+      // We're not proposing now
+      return;
     }
 
-    BeaconBlock newBlock =
-        StartupUtil.newBeaconBlock(
-            state, blockRoot, MockStateRoot, newDeposits, current_attestations);
+    BeaconBlock newBlock;
+    try {
+      // Collect attestations to include
+      SSZList<Attestation> attestations = getAttestationsForSlot(newSlot);
+      // Collect slashing to include
+      final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(previousState);
+      // Collect deposits
+      final SSZList<Deposit> deposits = getDepositsForBlock();
 
-    return newBlock;
+      final Signer signer = getSigner(proposer);
+      final Bytes32 parentRoot = previousBlock.signing_root("signature");
+      newBlock =
+          blockCreator.createNewBlock(
+              signer, newSlot, previousState, parentRoot, attestations, slashingsInBlock, deposits);
+
+      this.eventBus.post(newBlock);
+      STDOUT.log(Level.DEBUG, "Local validator produced a new block");
+
+      if (validators.get(proposer).isNaughty()) {
+        final BeaconBlock naughtyBlock =
+            blockCreator.createEmptyBlock(signer, newSlot, previousState, parentRoot);
+        this.eventBus.post(naughtyBlock);
+      }
+    } catch (StateTransitionException e) {
+      STDOUT.log(Level.WARN, "Error during block creation " + e.toString());
+    }
   }
 
-  private void createBlockIfNecessary(BeaconStateWithCache state, BeaconBlock oldBlock) {
-    BeaconStateWithCache checkState = BeaconStateWithCache.deepCopy(state);
+  private BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
+    BeaconStateWithCache state = BeaconStateWithCache.deepCopy(preState);
     try {
-      stateTransition.process_slots(checkState, checkState.getSlot().plus(UnsignedLong.ONE), false);
+      stateTransition.process_slots(state, slot, false);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
     }
+    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(state);
+    return state.getValidators().get(proposerIndex).getPubkey();
+  }
 
-    // Calculate the block proposer index, and if we have the
-    // block proposer in our set of validators, produce the block
-    int proposerIndex = BeaconStateUtil.get_beacon_proposer_index(checkState);
-    BLSPublicKey proposer = checkState.getValidators().get(proposerIndex).getPubkey();
-    BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(state);
-    if (validators.containsKey(proposer)) {
-      CompletableFuture<BLSSignature> epochSignatureTask =
-          CompletableFuture.supplyAsync(() -> get_epoch_signature(newState, proposer));
-      CompletableFuture<BeaconBlock> blockCreationTask =
-          CompletableFuture.supplyAsync(() -> createInitialBlock(newState, oldBlock));
+  private SSZList<Attestation> getAttestationsForSlot(final UnsignedLong slot) {
+    SSZList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+    if (slot.compareTo(
+            UnsignedLong.valueOf(
+                Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+        >= 0) {
 
-      BeaconBlock newBlock;
-      try {
-        newBlock = blockCreationTask.get();
-        BLSSignature epochSignature = epochSignatureTask.get();
-        newBlock.getBody().setRandao_reveal(epochSignature);
-        List<ProposerSlashing> slashingsInBlock = newBlock.getBody().getProposer_slashings();
-        ProposerSlashing slashing = slashings.poll();
-        while (slashing != null) {
-          if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
-            slashingsInBlock.add(slashing);
-          }
-          slashing = slashings.poll();
-        }
-        boolean validate_state_root = false;
-        Bytes32 stateRoot =
-            stateTransition.initiate(newState, newBlock, validate_state_root).hash_tree_root();
-        newBlock.setState_root(stateRoot);
-        BLSSignature blockSignature = getBlockSignature(newState, newBlock, proposer);
-        newBlock.setSignature(blockSignature);
-        this.eventBus.post(newBlock);
-        STDOUT.log(Level.DEBUG, "Local validator produced a new block");
+      UnsignedLong attestation_slot =
+          slot.minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
 
-        if (validators.get(proposer).isNaughty()) {
-          BeaconStateWithCache naughtyState = BeaconStateWithCache.deepCopy(state);
-          BeaconBlock newestBlock = createInitialBlock(naughtyState, oldBlock);
-          BLSSignature eSignature = epochSignatureTask.get();
-          newestBlock.getBody().setRandao_reveal(eSignature);
-          Bytes32 sRoot =
-              stateTransition
-                  .initiate(naughtyState, newestBlock, validate_state_root)
-                  .hash_tree_root();
-          newestBlock.setState_root(sRoot);
-          BLSSignature bSignature = getBlockSignature(naughtyState, newestBlock, proposer);
-          newestBlock.setSignature(bSignature);
-          this.eventBus.post(newestBlock);
-        }
-      } catch (InterruptedException | ExecutionException | StateTransitionException e) {
-        STDOUT.log(Level.WARN, "Error during block creation " + e.toString());
-      }
+      attestations =
+          blockAttestationsPool.getAggregatedAttestationsForBlockAtSlot(attestation_slot);
     }
+    return attestations;
+  }
+
+  private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
+    SSZList<ProposerSlashing> slashingsForBlock = BeaconBlockBodyLists.createProposerSlashings();
+    ProposerSlashing slashing = slashings.poll();
+    while (slashing != null) {
+      if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
+        slashingsForBlock.add(slashing);
+      }
+      slashing = slashings.poll();
+    }
+    return slashingsForBlock;
+  }
+
+  private SSZList<Deposit> getDepositsForBlock() {
+    // TODO - Look into how deposits should be managed, this seems wrong
+    final SSZList<Deposit> deposits = BeaconBlockBodyLists.createDeposits();
+    deposits.addAll(newDeposits);
+    return deposits;
+  }
+
+  private Signer getSigner(BLSPublicKey signer) {
+    return (message, domain) -> getSignature(message, domain, signer);
   }
 
   private BLSSignature getSignature(Bytes message, Bytes domain, BLSPublicKey signer) {
