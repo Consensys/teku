@@ -109,6 +109,10 @@ public class Constants {
   // Fork Choice
   public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
 
+  // Validator
+  public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
+  public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
+
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
