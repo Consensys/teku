@@ -13,13 +13,18 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import java.util.Objects;
+
 public class RpcException extends Exception {
 
   private static final byte INVALID_REQUEST_CODE = 1;
   private static final byte SERVER_ERROR_CODE = 2;
+
   public static final RpcException MALFORMED_REQUEST_ERROR =
       new RpcException(INVALID_REQUEST_CODE, "Request was malformed");
-  public static final RpcException INCORRECT_LENGTH_ERRROR =
+  public static final RpcException MALFORMED_MESSAGE_LENGTH_ERROR =
+      new RpcException(INVALID_REQUEST_CODE, "Message length was invalid");
+  public static final RpcException INCORRECT_LENGTH_ERROR =
       new RpcException(
           INVALID_REQUEST_CODE, "Specified message length did not match actual length");
   public static final RpcException CHUNK_TOO_LONG_ERROR =
@@ -42,5 +47,22 @@ public class RpcException extends Exception {
 
   public String getErrorMessage() {
     return errorMessage;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final RpcException that = (RpcException) o;
+    return responseCode == that.responseCode && Objects.equals(errorMessage, that.errorMessage);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(responseCode, errorMessage);
   }
 }
