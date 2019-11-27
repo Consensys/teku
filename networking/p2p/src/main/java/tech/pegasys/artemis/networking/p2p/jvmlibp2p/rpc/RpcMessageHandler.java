@@ -22,7 +22,6 @@ import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolMatcher;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.util.concurrent.CompletableFuture;
@@ -170,14 +169,16 @@ public class RpcMessageHandler<
       reqByteBuf.writeBytes(encoded.toArrayUnsafe());
       responseStream = new ResponseStreamImpl<>();
       responseHandler = new ResponseRpcDecoder<>(responseStream::respond, method);
-      final ChannelFuture writeFuture = ctx.writeAndFlush(reqByteBuf);
-      if (closeNotification) {
-        writeFuture.addListener(
-            future -> {
-              ctx.channel().close();
-              responseStream.completeSuccessfully();
-            });
-      }
+      ctx.writeAndFlush(reqByteBuf)
+          .addListener(
+              future -> {
+                if (closeNotification) {
+                  ctx.channel().close();
+                  responseStream.completeSuccessfully();
+                } else {
+                  ctx.channel().disconnect();
+                }
+              });
       return CompletableFuture.completedFuture(responseStream);
     }
 
