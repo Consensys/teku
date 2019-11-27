@@ -66,23 +66,23 @@ public class StateTransition {
    *
    * @param state
    * @param block
-   * @param validate_state_root
+   * @param validateStateRootAndSignatures
    * @return
    * @throws StateTransitionException
    */
   public BeaconStateWithCache initiate(
-      BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
+      BeaconStateWithCache state, BeaconBlock block, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
       // Process slots (including those with no blocks) since block
       process_slots(state, block.getSlot(), printEnabled);
 
       // Process_block
-      process_block(state, block, validate_state_root);
+      process_block(state, block, validateStateRootAndSignatures);
 
       Bytes32 stateRoot = state.hash_tree_root();
       // Validate state root (`validate_state_root == True` in production)
-      if (validate_state_root) {
+      if (validateStateRootAndSignatures) {
         checkArgument(
             block.getState_root().equals(stateRoot),
             "Block state root does NOT match the calculated state root!\n"
@@ -117,10 +117,10 @@ public class StateTransition {
    * @throws BlockProcessingException
    */
   private void process_block(
-      BeaconStateWithCache state, BeaconBlock block, boolean validate_state_root)
+      BeaconStateWithCache state, BeaconBlock block, boolean validateStateRootAndSignatures)
       throws BlockProcessingException {
-    process_block_header(state, block, validate_state_root);
-    process_randao(state, block.getBody());
+    process_block_header(state, block, validateStateRootAndSignatures);
+    process_randao(state, block.getBody(), validateStateRootAndSignatures);
     process_eth1_data(state, block.getBody());
     process_operations(state, block.getBody());
   }

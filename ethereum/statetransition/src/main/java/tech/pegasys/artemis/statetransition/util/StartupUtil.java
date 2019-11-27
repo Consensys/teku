@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -31,10 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -46,7 +42,6 @@ import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
@@ -80,21 +75,6 @@ public final class StartupUtil {
       deposits.add(deposit);
     }
     return deposits;
-  }
-
-  public static BeaconBlock newBeaconBlock(
-      BeaconState state,
-      Bytes32 previous_block_root,
-      Bytes32 state_root,
-      SSZList<Deposit> deposits,
-      SSZList<Attestation> attestations) {
-    BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
-    UnsignedLong slot = state.getSlot().plus(UnsignedLong.ONE);
-    beaconBlockBody.setEth1_data(get_eth1_data_stub(state, compute_epoch_at_slot(slot)));
-    beaconBlockBody.setDeposits(deposits);
-    beaconBlockBody.setAttestations(attestations);
-    return new BeaconBlock(
-        slot, previous_block_root, state_root, beaconBlockBody, BLSSignature.empty());
   }
 
   public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
