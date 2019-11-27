@@ -31,7 +31,7 @@ class ChainStorageClientTest {
 
   private static final Bytes32 BEST_BLOCK_ROOT = Bytes32.fromHexString("0x8462485245");
   private static final BeaconBlock GENESIS_BLOCK = DataStructureUtil.randomBeaconBlock(0, 1);
-  private static final Bytes32 GENESIS_BLOCK_ROOT = GENESIS_BLOCK.hash_tree_root();
+  private static final Bytes32 GENESIS_BLOCK_ROOT = GENESIS_BLOCK.signing_root("signature");
   private final EventBus eventBus = mock(EventBus.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
@@ -75,7 +75,7 @@ class ChainStorageClientTest {
 
     final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     final BeaconBlock genesisBlock = GENESIS_BLOCK;
-    final Bytes32 genesisBlockHash = genesisBlock.hash_tree_root();
+    final Bytes32 genesisBlockHash = genesisBlock.signing_root("signature");
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(0, genesisBlockHash);
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
@@ -96,7 +96,7 @@ class ChainStorageClientTest {
     // Overwrite the genesis hash with a newer block.
     final BeaconBlock newerBlock =
         DataStructureUtil.randomBeaconBlock(bestSlot.longValue() - 1, seed++);
-    final Bytes32 newerBlockRoot = newerBlock.hash_tree_root();
+    final Bytes32 newerBlockRoot = newerBlock.signing_root("signature");
     bestState.getBlock_roots().set(0, newerBlockRoot);
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
@@ -124,7 +124,7 @@ class ChainStorageClientTest {
     final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     final BeaconBlock bestBlock =
         DataStructureUtil.randomBeaconBlock(reqeustedSlot.longValue(), seed++);
-    final Bytes32 bestBlockHash = bestBlock.hash_tree_root();
+    final Bytes32 bestBlockHash = bestBlock.signing_root("signature");
     // Overwrite the genesis hash.
     bestState.getBlock_roots().set(historicalIndex, bestBlockHash);
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
@@ -143,7 +143,7 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
-    final Bytes32 block1Hash = GENESIS_BLOCK.hash_tree_root();
+    final Bytes32 block1Hash = GENESIS_BLOCK.signing_root("signature");
     // The root for BLOCK1 is copied over from it's slot to be the best block at the requested slot
     bestState.getBlock_roots().set(GENESIS_BLOCK.getSlot().intValue(), block1Hash);
     bestState.getBlock_roots().set(reqeustedSlot.intValue(), block1Hash);
@@ -188,7 +188,7 @@ class ChainStorageClientTest {
         DataStructureUtil.randomBeaconBlock(GENESIS_BLOCK.getSlot().longValue(), seed++);
     bestState
         .getBlock_roots()
-        .set(GENESIS_BLOCK.getSlot().intValue(), canonicalBlock.hash_tree_root());
+        .set(GENESIS_BLOCK.getSlot().intValue(), canonicalBlock.signing_root("signature"));
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
 
     assertThat(storageClient.isIncludedInBestState(GENESIS_BLOCK_ROOT)).isFalse();
@@ -203,7 +203,7 @@ class ChainStorageClientTest {
     final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     bestState
         .getBlock_roots()
-        .set(GENESIS_BLOCK.getSlot().intValue(), GENESIS_BLOCK.hash_tree_root());
+        .set(GENESIS_BLOCK.getSlot().intValue(), GENESIS_BLOCK.signing_root("signature"));
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
 
