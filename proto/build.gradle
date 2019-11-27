@@ -11,8 +11,8 @@ buildscript {
 }
 
 dependencies {
-    compileOnly 'io.grpc:grpc-netty-shaded'
-    compileOnly 'io.grpc:grpc-protobuf'
+    implementation 'io.grpc:grpc-netty-shaded'
+    implementation 'io.grpc:grpc-protobuf'
     compileOnly 'io.grpc:grpc-stub'
     compileOnly 'javax.annotation:javax.annotation-api'
 }
