@@ -11,23 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
+package tech.pegasys.artemis.datastructures.validator;
 
-import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-public interface RpcEncoding {
-  <T extends SimpleOffsetSerializable> Bytes encodeMessage(T data);
-
-  <T> T decodeMessage(Bytes message, Class<T> clazz) throws RpcException;
-
-  Bytes encodeError(String errorMessage);
-
-  String decodeError(Bytes message) throws RpcException;
-
-  String getName();
-
-  OptionalInt getMessageLength(Bytes message) throws RpcException;
+@FunctionalInterface
+public interface Signer {
+  BLSSignature sign(Bytes message, Bytes domain);
 }

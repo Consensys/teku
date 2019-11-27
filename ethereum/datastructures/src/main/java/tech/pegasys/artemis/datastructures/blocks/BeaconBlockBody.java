@@ -73,13 +73,11 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     this.randao_reveal = BLSSignature.empty();
     this.eth1_data = new Eth1Data();
     this.graffiti = Bytes32.ZERO;
-    this.proposer_slashings =
-        new SSZList<>(ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS);
-    this.attester_slashings =
-        new SSZList<>(AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
-    this.attestations = new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
-    this.deposits = new SSZList<>(Deposit.class, Constants.MAX_DEPOSITS);
-    this.voluntary_exits = new SSZList<>(VoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
+    this.proposer_slashings = BeaconBlockBodyLists.createProposerSlashings();
+    this.attester_slashings = BeaconBlockBodyLists.createAttesterSlashings();
+    this.attestations = BeaconBlockBodyLists.createAttestations();
+    this.deposits = BeaconBlockBodyLists.createDeposits();
+    this.voluntary_exits = BeaconBlockBodyLists.createVoluntaryExits();
   }
 
   @Override

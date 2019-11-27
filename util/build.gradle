@@ -13,7 +13,7 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-core'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
-  compile (group: 'org.quartz-scheduler', name: 'quartz') {
+  implementation (group: 'org.quartz-scheduler', name: 'quartz') {
     exclude group: 'com.mchange'
   }
 
