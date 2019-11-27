@@ -47,7 +47,7 @@ class RpcResponseCallback<TResponse extends SimpleOffsetSerializable>
 
   @Override
   public void completeSuccessfully() {
-    ctx.disconnect();
+    ctx.close();
     if (closeNotification) {
       connection.getNettyChannel().close();
     }

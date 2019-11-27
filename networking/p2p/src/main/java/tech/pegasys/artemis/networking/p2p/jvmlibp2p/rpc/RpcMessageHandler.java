@@ -175,8 +175,6 @@ public class RpcMessageHandler<
                 if (closeNotification) {
                   ctx.channel().close();
                   responseStream.completeSuccessfully();
-                } else {
-                  ctx.disconnect();
                 }
               });
       return CompletableFuture.completedFuture(responseStream);
