@@ -13,17 +13,17 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
+import static tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding.SSZ;
+
 import java.util.Objects;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 
 public class RpcMethod<I, O> {
 
-  private static final RpcEncoding SSZ = new SszEncoding();
   public static final RpcMethod<StatusMessage, StatusMessage> STATUS =
       new RpcMethod<>(
           "/eth2/beacon_chain/req/status/1", SSZ, StatusMessage.class, StatusMessage.class);

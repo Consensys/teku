@@ -27,9 +27,9 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
-class SszEncodingTest {
+class LengthPrefixedEncodingTest {
 
-  private final SszEncoding encoding = new SszEncoding();
+  private final RpcEncoding encoding = RpcEncoding.SSZ;
   private static final int ONE_BYTE_LENGTH_PREFIX_VALUE = 10;
   private static final Bytes ONE_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x0A");
   private static final int TWO_BYTE_LENGTH_PREFIX_VALUE = 256;

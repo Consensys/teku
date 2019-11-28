@@ -29,14 +29,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcPayloadEncoder;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcSszEncoder;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
 
 public class RpcDecoderTestBase {
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  protected static final Bytes MESSAGE_DATA = RpcSszEncoder.encode(MESSAGE);
+  protected static final RpcPayloadEncoder PAYLOAD_ENCODER = new RpcSszEncoder();
+  protected static final Bytes MESSAGE_DATA = PAYLOAD_ENCODER.encode(MESSAGE);
   protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_DATA.size());
   protected static final String ERROR_MESSAGE = "Bad request";
   protected static final Bytes ERROR_MESSAGE_DATA =
@@ -49,7 +51,7 @@ public class RpcDecoderTestBase {
       METHOD =
           new RpcMethod<>(
               "",
-              new SszEncoding(),
+              RpcEncoding.SSZ,
               BeaconBlocksByRootRequestMessage.class,
               BeaconBlocksByRootRequestMessage.class);
 

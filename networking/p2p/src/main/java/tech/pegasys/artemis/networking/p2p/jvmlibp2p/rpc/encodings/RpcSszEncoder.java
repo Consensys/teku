@@ -26,19 +26,22 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByR
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcSszEncoder {
+public class RpcSszEncoder implements RpcPayloadEncoder {
 
   private static final ImmutableMap<Class<?>, Function<?, Bytes>> CUSTOM_SERIALIZERS =
-      ImmutableMap.of(
-          BeaconBlocksByRootRequestMessage.class,
-          message -> encodeBlockByRootMessage((BeaconBlocksByRootRequestMessage) message));
+      ImmutableMap.<Class<?>, Function<?, Bytes>>builder()
+          .put(
+              BeaconBlocksByRootRequestMessage.class,
+              message -> encodeBlockByRootMessage((BeaconBlocksByRootRequestMessage) message))
+          .build();
 
   private static final ImmutableMap<Class<?>, Function<Bytes, ?>> CUSTOM_DESERIALIZERS =
       ImmutableMap.of(
           BeaconBlocksByRootRequestMessage.class, RpcSszEncoder::decodeBlockByRootMessage);
 
+  @Override
   @SuppressWarnings("unchecked")
-  public static <T> Bytes encode(final T data) {
+  public <T> Bytes encode(final T data) {
     final Function<T, Bytes> customSerializer =
         (Function<T, Bytes>) CUSTOM_SERIALIZERS.get(data.getClass());
     if (customSerializer != null) {
@@ -47,8 +50,9 @@ public class RpcSszEncoder {
     return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) data);
   }
 
+  @Override
   @SuppressWarnings("unchecked")
-  public static <T> T decode(final Bytes message, final Class<T> clazz) {
+  public <T> T decode(final Bytes message, final Class<T> clazz) {
     final Function<Bytes, T> decoder =
         (Function<Bytes, T>)
             CUSTOM_DESERIALIZERS.getOrDefault(

@@ -27,15 +27,23 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 
-public class SszEncoding implements RpcEncoding {
+public class LengthPrefixedEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_CHUNK_SIZE = 1048576;
   // Any protobuf length requiring more bytes than this will also be bigger.
   private static final int MAXIMUM_VARINT_LENGTH = writeVarInt(MAX_CHUNK_SIZE).size();
 
+  private final String name;
+  private final RpcPayloadEncoder payloadEncoder;
+
+  LengthPrefixedEncoding(final String name, final RpcPayloadEncoder payloadEncoder) {
+    this.name = name;
+    this.payloadEncoder = payloadEncoder;
+  }
+
   @Override
   public <T> Bytes encodeMessage(final T data) {
-    final Bytes payload = RpcSszEncoder.encode(data);
+    final Bytes payload = payloadEncoder.encode(data);
     return encodeMessageWithLength(payload);
   }
 
@@ -56,7 +64,7 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public <T> T decodeMessage(final Bytes message, final Class<T> clazz) throws RpcException {
-    return decode(message, payload -> RpcSszEncoder.decode(payload, clazz));
+    return decode(message, payload -> payloadEncoder.decode(payload, clazz));
   }
 
   private <T> T decode(final Bytes message, final Function<Bytes, T> parser) throws RpcException {
@@ -66,10 +74,12 @@ public class SszEncoding implements RpcEncoding {
       try {
         expectedLength = in.readRawVarint32();
       } catch (final InvalidProtocolBufferException e) {
+        LOG.trace("Invalid length prefix", e);
         throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
       if (expectedLength > MAX_CHUNK_SIZE) {
+        LOG.trace("Rejecting message as length is too long");
         throw RpcException.CHUNK_TOO_LONG_ERROR;
       }
 
@@ -77,12 +87,12 @@ public class SszEncoding implements RpcEncoding {
       try {
         payload = Bytes.wrap(in.readRawBytes(expectedLength));
       } catch (final InvalidProtocolBufferException e) {
-        LOG.trace("Failed to parse SSZ message", e);
+        LOG.trace("Failed to read message data", e);
         throw RpcException.INCORRECT_LENGTH_ERROR;
       }
 
       if (!in.isAtEnd()) {
-        LOG.trace("Rejecting SSZ message because actual message length exceeds specified length");
+        LOG.trace("Rejecting message because actual message length exceeds specified length");
         throw RpcException.INCORRECT_LENGTH_ERROR;
       }
 
@@ -105,7 +115,7 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public String getName() {
-    return "ssz";
+    return name;
   }
 
   @Override

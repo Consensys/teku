@@ -13,22 +13,13 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
-import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 
-public interface RpcEncoding {
-  RpcEncoding SSZ = new LengthPrefixedEncoding("ssz", new RpcSszEncoder());
+public interface RpcPayloadEncoder {
 
-  <T> Bytes encodeMessage(T data);
+  @SuppressWarnings("unchecked")
+  <T> Bytes encode(T data);
 
-  <T> T decodeMessage(Bytes message, Class<T> clazz) throws RpcException;
-
-  Bytes encodeError(String errorMessage);
-
-  String decodeError(Bytes message) throws RpcException;
-
-  String getName();
-
-  OptionalInt getMessageLength(Bytes message) throws RpcException;
+  @SuppressWarnings("unchecked")
+  <T> T decode(Bytes message, Class<T> clazz);
 }
