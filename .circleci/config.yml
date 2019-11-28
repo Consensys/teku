@@ -243,9 +243,6 @@ workflows:
           requires:
             - assemble
             - spotless
-      - compatibilityTests:
-          requires:
-            - assemble
       - docker:
           requires:
             - assemble
