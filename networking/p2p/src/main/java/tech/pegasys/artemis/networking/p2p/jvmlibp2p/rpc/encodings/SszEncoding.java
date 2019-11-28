@@ -18,14 +18,13 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.OptionalInt;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -37,18 +36,18 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
-    final Bytes payload = SimpleOffsetSerializer.serialize(data);
+    final Bytes payload = CustomSszEncoders.getEncoder(data).apply(data);
     return encodeMessageWithLength(payload);
   }
 
   @Override
   public Bytes encodeError(final String errorMessage) {
-    return encodeMessageWithLength(SSZ.encodeString(errorMessage));
+    return encodeMessageWithLength(Bytes.wrap(errorMessage.getBytes(StandardCharsets.UTF_8)));
   }
 
   @Override
   public String decodeError(final Bytes message) throws RpcException {
-    return decode(message, SSZ::decodeString);
+    return decode(message, data -> new String(data.toArrayUnsafe(), StandardCharsets.UTF_8));
   }
 
   private Bytes encodeMessageWithLength(final Bytes payload) {
@@ -58,7 +57,7 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public <T> T decodeMessage(final Bytes message, final Class<T> clazz) throws RpcException {
-    return decode(message, payload -> SimpleOffsetSerializer.deserialize(payload, clazz));
+    return decode(message, payload -> CustomSszEncoders.getDecoder(clazz).apply(payload));
   }
 
   private <T> T decode(final Bytes message, final Function<Bytes, T> parser) throws RpcException {

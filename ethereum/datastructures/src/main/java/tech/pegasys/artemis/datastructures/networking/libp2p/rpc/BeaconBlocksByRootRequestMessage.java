@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
+import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -73,10 +74,11 @@ public final class BeaconBlocksByRootRequestMessage
     }
 
     BeaconBlocksByRootRequestMessage other = (BeaconBlocksByRootRequestMessage) obj;
-    return Objects.equals(this.blockRoots(), other.blockRoots());
+    return Objects.equals(this.blockRoots, other.blockRoots);
   }
 
-  public List<Bytes32> blockRoots() {
-    return blockRoots;
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("blockRoots", blockRoots).toString();
   }
 }

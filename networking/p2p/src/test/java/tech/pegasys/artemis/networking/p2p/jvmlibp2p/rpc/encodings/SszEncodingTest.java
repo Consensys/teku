@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,6 +22,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -105,6 +108,28 @@ class SszEncodingTest {
   public void shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes() {
     assertThatThrownBy(() -> encoding.getMessageLength(Bytes.fromHexString("0x80808001")))
         .isEqualTo(RpcException.CHUNK_TOO_LONG_ERROR);
+  }
+
+  @Test
+  public void shouldEncodeBlocksByRootRequest() {
+    final Bytes encoded =
+        encoding.encodeMessage(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
+    // Just the length prefix and the hash itself.
+    assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x20"), Bytes32.ZERO));
+  }
+
+  @Test
+  public void shouldRoundTripBlocksByRootRequest() throws Exception {
+    final BeaconBlocksByRootRequestMessage request =
+        new BeaconBlocksByRootRequestMessage(
+            asList(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02")));
+    final Bytes data = encoding.encodeMessage(request);
+    final int expectedLengthPrefixLength = 1;
+    assertThat(data.size())
+        .isEqualTo(request.getBlockRoots().size() * Bytes32.SIZE + expectedLengthPrefixLength);
+    assertThat(encoding.decodeMessage(data, BeaconBlocksByRootRequestMessage.class))
+        .usingRecursiveComparison()
+        .isEqualTo(request);
   }
 
   private Bytes createValidStatusMessage() {
