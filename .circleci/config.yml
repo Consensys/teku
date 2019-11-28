@@ -230,6 +230,10 @@ workflows:
           requires:
             - assemble
             - spotless
+      - compatibilityTests:
+          requires:
+            - assemble
+            - spotless
       - docker:
           requires:
             - assemble
