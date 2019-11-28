@@ -20,7 +20,6 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -50,7 +49,6 @@ class StatusMessageCompatibilityTest {
   }
 
   @Test
-  @Disabled("Prysm doesn't prefix responses with the status code")
   public void shouldExchangeStatusWhenArtemisConnectsToPrysm() throws Exception {
     waitFor(artemis.connect(PRYSM_NODE.getMultiAddr()));
     waitFor(() -> assertThat(artemis.getPeerManager().getAvailablePeerCount()).isEqualTo(1));
