@@ -28,15 +28,7 @@ public final class BeaconBlocksByRootRequestMessage
 
   private final SSZList<Bytes32> blockRoots = new SSZList<>(Bytes32.class, Integer.MAX_VALUE);
 
-  @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
-  public BeaconBlocksByRootRequestMessage() {}
-
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
-    this.blockRoots.addAll(blockRoots);
-  }
-
-  @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
-  public BeaconBlocksByRootRequestMessage(final SSZList<Bytes32> blockRoots) {
     this.blockRoots.addAll(blockRoots);
   }
 
