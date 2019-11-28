@@ -158,6 +158,19 @@ jobs:
             - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
       - capture_test_results
 
+  compatibilityTests:
+    executor: medium_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: CompatibilityTests
+          no_output_timeout: 20m
+          command: |
+            ./gradlew --no-daemon --parallel compatibilityTest
+      - capture_test_results
+
   docker:
     executor: medium_executor
     steps:
@@ -244,3 +257,16 @@ workflows:
             - integrationTests
             - referenceTests
             - docker
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - assemble
+      - compatibilityTests:
+          requires:
+            - assemble
