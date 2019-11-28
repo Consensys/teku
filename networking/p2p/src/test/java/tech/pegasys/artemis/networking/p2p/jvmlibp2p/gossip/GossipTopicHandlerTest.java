@@ -22,7 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.MessageApi;
@@ -96,8 +96,8 @@ public class GossipTopicHandlerTest {
     topicHandler.accept(mockMessage);
 
     verify(topicHandler, never()).deserialize(any());
-    verifyZeroInteractions(publisher);
-    verifyZeroInteractions(eventBus);
+    verifyNoInteractions(publisher);
+    verifyNoInteractions(eventBus);
   }
 
   @Test

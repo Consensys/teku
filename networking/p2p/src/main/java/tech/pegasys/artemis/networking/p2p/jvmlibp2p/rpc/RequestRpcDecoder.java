@@ -18,9 +18,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-class RequestRpcDecoder<T extends SimpleOffsetSerializable> {
+class RequestRpcDecoder<T> {
 
   protected final MessageBuffer buffer = new MessageBuffer();
   private final Class<T> dataType;

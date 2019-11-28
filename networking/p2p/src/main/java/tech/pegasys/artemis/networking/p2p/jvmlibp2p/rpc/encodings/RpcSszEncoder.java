@@ -28,20 +28,23 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RpcSszEncoder {
 
-  private static final ImmutableMap<Class<?>, Function<SimpleOffsetSerializable, Bytes>>
-      CUSTOM_SERIALIZERS =
-          ImmutableMap.of(
-              BeaconBlocksByRootRequestMessage.class,
-              message -> encodeBlockByRootMessage((BeaconBlocksByRootRequestMessage) message));
+  private static final ImmutableMap<Class<?>, Function<?, Bytes>> CUSTOM_SERIALIZERS =
+      ImmutableMap.of(
+          BeaconBlocksByRootRequestMessage.class,
+          message -> encodeBlockByRootMessage((BeaconBlocksByRootRequestMessage) message));
 
   private static final ImmutableMap<Class<?>, Function<Bytes, ?>> CUSTOM_DESERIALIZERS =
       ImmutableMap.of(
           BeaconBlocksByRootRequestMessage.class, RpcSszEncoder::decodeBlockByRootMessage);
 
-  public static <T extends SimpleOffsetSerializable> Bytes encode(final T data) {
-    return CUSTOM_SERIALIZERS
-        .getOrDefault(data.getClass(), SimpleOffsetSerializer::serialize)
-        .apply(data);
+  @SuppressWarnings("unchecked")
+  public static <T> Bytes encode(final T data) {
+    final Function<T, Bytes> customSerializer =
+        (Function<T, Bytes>) CUSTOM_SERIALIZERS.get(data.getClass());
+    if (customSerializer != null) {
+      return customSerializer.apply(data);
+    }
+    return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) data);
   }
 
   @SuppressWarnings("unchecked")

@@ -33,10 +33,8 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler.Controller;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcMessageHandler<
-        TRequest extends SimpleOffsetSerializable, TResponse extends SimpleOffsetSerializable>
+public class RpcMessageHandler<TRequest, TResponse>
     implements ProtocolBinding<Controller<TRequest, ResponseStream<TResponse>>> {
   private static final Logger LOG = LogManager.getLogger();
 

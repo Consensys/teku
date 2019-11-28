@@ -13,9 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-
-public interface ResponseCallback<T extends SimpleOffsetSerializable> {
+public interface ResponseCallback<T> {
   void respond(T data);
 
   void completeSuccessfully();

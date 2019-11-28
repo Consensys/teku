@@ -20,9 +20,8 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class RpcMethod<I extends SimpleOffsetSerializable, O extends SimpleOffsetSerializable> {
+public class RpcMethod<I, O> {
 
   private static final RpcEncoding SSZ = new SszEncoding();
   public static final RpcMethod<StatusMessage, StatusMessage> STATUS =

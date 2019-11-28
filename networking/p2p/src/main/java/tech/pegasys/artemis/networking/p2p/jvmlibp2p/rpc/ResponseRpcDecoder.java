@@ -18,9 +18,8 @@ import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class ResponseRpcDecoder<T extends SimpleOffsetSerializable> {
+public class ResponseRpcDecoder<T> {
 
   public static final byte SUCCESS_RESPONSE_CODE = 0;
   private static final int STATUS_CODE_LENGTH = 1;

@@ -16,15 +16,11 @@ package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlocksByRootRequestMessage
-    implements SimpleOffsetSerializable, SSZContainer {
+public final class BeaconBlocksByRootRequestMessage implements SSZContainer {
 
   private final SSZList<Bytes32> blockRoots = new SSZList<>(Bytes32.class, Integer.MAX_VALUE);
 
@@ -34,16 +30,6 @@ public final class BeaconBlocksByRootRequestMessage
 
   public SSZList<Bytes32> getBlockRoots() {
     return blockRoots;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 1;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(SSZ.encode(writer -> writer.writeFixedBytesList(blockRoots)));
   }
 
   @Override

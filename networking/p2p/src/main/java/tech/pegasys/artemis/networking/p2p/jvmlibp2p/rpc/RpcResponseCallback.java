@@ -19,10 +19,8 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-class RpcResponseCallback<TResponse extends SimpleOffsetSerializable>
-    implements ResponseCallback<TResponse> {
+class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
   private final ChannelHandlerContext ctx;
   private final RpcEncoder rpcEncoder;

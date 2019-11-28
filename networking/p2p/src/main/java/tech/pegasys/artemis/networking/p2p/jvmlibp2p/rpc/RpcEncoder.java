@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class RpcEncoder {
   public static final byte SUCCESS_RESPONSE_CODE = 0;
@@ -31,11 +30,11 @@ public final class RpcEncoder {
    * @param request the payload of the request
    * @return the encoded RPC message
    */
-  public <T extends SimpleOffsetSerializable> Bytes encodeRequest(T request) {
+  public <T> Bytes encodeRequest(T request) {
     return encoding.encodeMessage(request);
   }
 
-  public <T extends SimpleOffsetSerializable> Bytes encodeSuccessfulResponse(T response) {
+  public <T> Bytes encodeSuccessfulResponse(T response) {
     return Bytes.concatenate(Bytes.of(SUCCESS_RESPONSE_CODE), encoding.encodeMessage(response));
   }
 

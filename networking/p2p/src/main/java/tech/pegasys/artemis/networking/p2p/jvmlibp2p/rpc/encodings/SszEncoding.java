@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.InvalidSSZTypeException;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SszEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
@@ -35,7 +34,7 @@ public class SszEncoding implements RpcEncoding {
   private static final int MAXIMUM_VARINT_LENGTH = writeVarInt(MAX_CHUNK_SIZE).size();
 
   @Override
-  public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
+  public <T> Bytes encodeMessage(final T data) {
     final Bytes payload = RpcSszEncoder.encode(data);
     return encodeMessageWithLength(payload);
   }
