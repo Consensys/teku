@@ -164,6 +164,7 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
+      - setup_remote_docker
       - run:
           name: CompatibilityTests
           no_output_timeout: 20m
