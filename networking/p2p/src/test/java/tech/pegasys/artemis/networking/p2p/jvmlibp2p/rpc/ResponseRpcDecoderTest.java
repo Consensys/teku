@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcSszEncoder;
 
 class ResponseRpcDecoderTest extends RpcDecoderTestBase {
   private static final Bytes SUCCESS_CODE = Bytes.of(0);
@@ -84,7 +85,7 @@ class ResponseRpcDecoderTest extends RpcDecoderTestBase {
   @Test
   public void shouldParseMultipleResponsesFromSinglePacket() throws Exception {
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
-    final Bytes secondMessageData = encodeMessage(secondMessage);
+    final Bytes secondMessageData = RpcSszEncoder.encode(secondMessage);
     codec.onDataReceived(
         buffer(
             SUCCESS_CODE,
@@ -104,7 +105,7 @@ class ResponseRpcDecoderTest extends RpcDecoderTestBase {
   @Test
   public void shouldParseMultipleResponsesWhereSecondMessageIsSplit() throws Exception {
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
-    final Bytes secondMessageData = encodeMessage(secondMessage);
+    final Bytes secondMessageData = RpcSszEncoder.encode(secondMessage);
     codec.onDataReceived(buffer(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA, SUCCESS_CODE));
     verify(callback).accept(MESSAGE);
 
@@ -159,7 +160,7 @@ class ResponseRpcDecoderTest extends RpcDecoderTestBase {
     assertThat(packet1.refCnt()).isEqualTo(1);
 
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
-    final Bytes secondMessageData = encodeMessage(secondMessage);
+    final Bytes secondMessageData = RpcSszEncoder.encode(secondMessage);
     codec.onDataReceived(
         buffer(SUCCESS_CODE, getLengthPrefix(secondMessageData.size()), secondMessageData));
     verify(callback).accept(secondMessage);
@@ -177,7 +178,7 @@ class ResponseRpcDecoderTest extends RpcDecoderTestBase {
     assertThat(packet1.refCnt()).isEqualTo(2);
 
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
-    final Bytes secondMessageData = encodeMessage(secondMessage);
+    final Bytes secondMessageData = RpcSszEncoder.encode(secondMessage);
     codec.onDataReceived(buffer(getLengthPrefix(secondMessageData.size()), secondMessageData));
     verify(callback).accept(secondMessage);
 

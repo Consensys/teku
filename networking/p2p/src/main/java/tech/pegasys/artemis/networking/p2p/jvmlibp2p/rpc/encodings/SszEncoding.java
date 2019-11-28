@@ -36,7 +36,7 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
-    final Bytes payload = CustomSszEncoders.getEncoder(data).apply(data);
+    final Bytes payload = RpcSszEncoder.encode(data);
     return encodeMessageWithLength(payload);
   }
 
@@ -57,7 +57,7 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public <T> T decodeMessage(final Bytes message, final Class<T> clazz) throws RpcException {
-    return decode(message, payload -> CustomSszEncoders.getDecoder(clazz).apply(payload));
+    return decode(message, payload -> RpcSszEncoder.decode(payload, clazz));
   }
 
   private <T> T decode(final Bytes message, final Function<Bytes, T> parser) throws RpcException {
