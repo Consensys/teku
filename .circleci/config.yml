@@ -168,6 +168,8 @@ jobs:
     executor: machine_executor
     steps:
       - prepare
+      - attach_workspace:
+          at: ~/project
       - run:
           name: Install Packages - Java 11
           command: |
@@ -241,7 +243,9 @@ workflows:
           requires:
             - assemble
             - spotless
-      - compatibilityTests
+      - compatibilityTests:
+          requires:
+            - assemble
       - docker:
           requires:
             - assemble
