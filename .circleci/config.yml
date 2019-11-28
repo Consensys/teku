@@ -36,6 +36,12 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx3g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
+  machine_executor:
+    machine:
+      image: ubuntu-1604:201903-01 #Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
+      docker_layer_caching: true
+    working_directory: ~/project
+
 commands:
   prepare:
     description: "Prepare"
@@ -159,7 +165,7 @@ jobs:
       - capture_test_results
 
   compatibilityTests:
-    executor: medium_executor
+    executor: machine_executor
     steps:
       - prepare
       - attach_workspace:
