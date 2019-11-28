@@ -168,8 +168,6 @@ jobs:
     executor: machine_executor
     steps:
       - prepare
-      - attach_workspace:
-          at: ~/project
       - run:
           name: CompatibilityTests
           no_output_timeout: 20m
@@ -236,10 +234,7 @@ workflows:
           requires:
             - assemble
             - spotless
-      - compatibilityTests:
-          requires:
-            - assemble
-            - spotless
+      - compatibilityTests
       - docker:
           requires:
             - assemble
