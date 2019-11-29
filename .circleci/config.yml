@@ -36,6 +36,12 @@ executors:
       JAVA_TOOL_OPTIONS: -Xmx3g
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
+  machine_executor:
+    machine:
+      image: ubuntu-1604:201903-01 #Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
+      docker_layer_caching: true
+    working_directory: ~/project
+
 commands:
   prepare:
     description: "Prepare"
@@ -158,6 +164,26 @@ jobs:
             - eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
       - capture_test_results
 
+  compatibilityTests:
+    executor: machine_executor
+    steps:
+      - prepare
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Install Packages - Java 11
+          command: |
+            sudo add-apt-repository -y ppa:openjdk-r/ppa
+            sudo apt update
+            sudo apt install -y openjdk-11-jdk
+            sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
+      - run:
+          name: CompatibilityTests
+          no_output_timeout: 20m
+          command: |
+            ./gradlew --no-daemon --parallel compatibilityTest
+      - capture_test_results
+
   docker:
     executor: medium_executor
     steps:
@@ -244,3 +270,16 @@ workflows:
             - integrationTests
             - referenceTests
             - docker
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - assemble
+      - compatibilityTests:
+          requires:
+            - assemble
