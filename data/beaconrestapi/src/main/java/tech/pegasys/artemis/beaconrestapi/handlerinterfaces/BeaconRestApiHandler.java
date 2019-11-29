@@ -18,7 +18,7 @@ import io.javalin.http.Context;
 public interface BeaconRestApiHandler {
   String getPath();
 
-  String handleRequest(RequestParams params); // Returns JSON response
+  Object handleRequest(RequestParams params); // Returns JSON response
 
   class RequestParams {
     private final Context javalinContext;

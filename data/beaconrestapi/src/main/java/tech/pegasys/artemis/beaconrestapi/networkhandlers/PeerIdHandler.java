@@ -31,7 +31,7 @@ public class PeerIdHandler implements BeaconRestApiHandler {
   }
 
   @Override
-  public String handleRequest(RequestParams params) {
+  public Object handleRequest(RequestParams params) {
     if (network instanceof JvmLibP2PNetwork) {
       return ((JvmLibP2PNetwork) network).getPeerIdString();
     } else {

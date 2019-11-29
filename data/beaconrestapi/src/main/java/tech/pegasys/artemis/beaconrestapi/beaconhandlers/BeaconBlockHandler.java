@@ -15,8 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconBlockHandler implements BeaconRestApiHandler {
@@ -33,9 +31,8 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
   }
 
   @Override
-  public String handleRequest(RequestParams param) {
+  public Object handleRequest(RequestParams param) {
     Bytes32 root = Bytes32.fromHexString(param.getQueryParam("root"));
-    BeaconBlock block = client.getStore().getBlock(root);
-    return JsonProvider.objectToJSON(block);
+    return client.getStore() != null ? client.getStore().getBlock(root) : null;
   }
 }
