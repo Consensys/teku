@@ -43,8 +43,7 @@ class LengthPrefixedEncodingTest {
   public void shouldReturnErrorWhenMessageLengthIsInvalid() {
     assertThatThrownBy(
             () ->
-                encoding.decode(
-                    Bytes.fromHexString("0xAAAAAAAAAAAAAAAAAAAA"), StatusMessage.class))
+                encoding.decode(Bytes.fromHexString("0xAAAAAAAAAAAAAAAAAAAA"), StatusMessage.class))
         .isEqualTo(RpcException.MALFORMED_REQUEST_ERROR);
   }
 
@@ -79,8 +78,7 @@ class LengthPrefixedEncodingTest {
   public void shouldRejectMessagesThatAreTooLong() {
     // We should reject the message based on the length prefix and skip reading the data entirely.
     assertThatThrownBy(
-            () ->
-                encoding.decode(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH, StatusMessage.class))
+            () -> encoding.decode(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH, StatusMessage.class))
         .isEqualTo(RpcException.CHUNK_TOO_LONG_ERROR);
   }
 
