@@ -43,7 +43,7 @@ class LengthPrefixedEncodingTest {
   public void shouldReturnErrorWhenMessageLengthIsInvalid() {
     assertThatThrownBy(
             () ->
-                encoding.decodeMessage(
+                encoding.decode(
                     Bytes.fromHexString("0xAAAAAAAAAAAAAAAAAAAA"), StatusMessage.class))
         .isEqualTo(RpcException.MALFORMED_REQUEST_ERROR);
   }
@@ -51,7 +51,7 @@ class LengthPrefixedEncodingTest {
   @Test
   public void shouldReturnErrorWhenMessageDataIsInvalid() {
     final Bytes invalidMessage = Bytes.fromHexString("0x01AA");
-    assertThatThrownBy(() -> encoding.decodeMessage(invalidMessage, StatusMessage.class))
+    assertThatThrownBy(() -> encoding.decode(invalidMessage, StatusMessage.class))
         .isEqualTo(RpcException.MALFORMED_REQUEST_ERROR);
   }
 
@@ -60,7 +60,7 @@ class LengthPrefixedEncodingTest {
     final Bytes correctMessage = createValidStatusMessage();
     assertThatThrownBy(
             () ->
-                encoding.decodeMessage(
+                encoding.decode(
                     correctMessage.slice(0, correctMessage.size() - 5), StatusMessage.class))
         .isEqualTo(RpcException.INCORRECT_LENGTH_ERROR);
   }
@@ -70,7 +70,7 @@ class LengthPrefixedEncodingTest {
     final Bytes correctMessage = createValidStatusMessage();
     assertThatThrownBy(
             () ->
-                encoding.decodeMessage(
+                encoding.decode(
                     Bytes.concatenate(correctMessage, Bytes.of(1, 2, 3, 4)), StatusMessage.class))
         .isEqualTo(RpcException.INCORRECT_LENGTH_ERROR);
   }
@@ -80,7 +80,7 @@ class LengthPrefixedEncodingTest {
     // We should reject the message based on the length prefix and skip reading the data entirely.
     assertThatThrownBy(
             () ->
-                encoding.decodeMessage(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH, StatusMessage.class))
+                encoding.decode(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH, StatusMessage.class))
         .isEqualTo(RpcException.CHUNK_TOO_LONG_ERROR);
   }
 
@@ -113,7 +113,7 @@ class LengthPrefixedEncodingTest {
   @Test
   public void shouldEncodeBlocksByRootRequest() {
     final Bytes encoded =
-        encoding.encodeMessage(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
+        encoding.encode(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
     // Just the length prefix and the hash itself.
     assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x20"), Bytes32.ZERO));
   }
@@ -123,17 +123,17 @@ class LengthPrefixedEncodingTest {
     final BeaconBlocksByRootRequestMessage request =
         new BeaconBlocksByRootRequestMessage(
             asList(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02")));
-    final Bytes data = encoding.encodeMessage(request);
+    final Bytes data = encoding.encode(request);
     final int expectedLengthPrefixLength = 1;
     assertThat(data.size())
         .isEqualTo(request.getBlockRoots().size() * Bytes32.SIZE + expectedLengthPrefixLength);
-    assertThat(encoding.decodeMessage(data, BeaconBlocksByRootRequestMessage.class))
+    assertThat(encoding.decode(data, BeaconBlocksByRootRequestMessage.class))
         .usingRecursiveComparison()
         .isEqualTo(request);
   }
 
   private Bytes createValidStatusMessage() {
-    return encoding.encodeMessage(
+    return encoding.encode(
         new StatusMessage(
             new Bytes4(Bytes.of(0, 0, 0, 0)),
             Bytes32.ZERO,

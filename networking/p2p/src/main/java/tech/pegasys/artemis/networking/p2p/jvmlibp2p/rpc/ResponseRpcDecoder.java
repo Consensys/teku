@@ -63,10 +63,10 @@ public class ResponseRpcDecoder<T> {
     }
     encodedMessageData = encodedMessageData.slice(0, encodedMessageLength);
     if (statusCode == SUCCESS_RESPONSE_CODE) {
-      final T message = encoding.decodeMessage(encodedMessageData, dataType);
+      final T message = encoding.decode(encodedMessageData, dataType);
       callback.accept(message);
     } else {
-      final String errorMessage = encoding.decodeError(encodedMessageData);
+      final String errorMessage = encoding.decode(encodedMessageData, String.class);
       throw new RpcException(statusCode, errorMessage);
     }
     return totalMessageLength;

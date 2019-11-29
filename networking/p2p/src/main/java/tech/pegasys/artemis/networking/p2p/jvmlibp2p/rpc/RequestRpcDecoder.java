@@ -59,7 +59,7 @@ class RequestRpcDecoder<T> {
     }
 
     encodedMessageData = encodedMessageData.slice(0, encodedMessageLength);
-    final T message = encoding.decodeMessage(encodedMessageData, dataType);
+    final T message = encoding.decode(encodedMessageData, dataType);
     result = Optional.of(message);
     return encodedMessageLength;
   }

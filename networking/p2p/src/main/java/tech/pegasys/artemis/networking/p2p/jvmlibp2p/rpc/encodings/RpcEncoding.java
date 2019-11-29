@@ -15,18 +15,27 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
 import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.ssz.SimpleOffsetSszEncoder;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.ssz.StringSszEncoder;
 
 public interface RpcEncoding {
-  RpcEncoding SSZ = new LengthPrefixedEncoding("ssz", new RpcSszEncoder());
+  RpcEncoding SSZ =
+      new LengthPrefixedEncoding(
+          "ssz",
+          RpcPayloadEncoders.builder()
+              .withEncoder(
+                  BeaconBlocksByRootRequestMessage.class,
+                  new BeaconBlocksByRootRequestMessageEncoder())
+              .withEncoder(String.class, new StringSszEncoder())
+              .defaultEncoderProvider(SimpleOffsetSszEncoder::new)
+              .build());
 
-  <T> Bytes encodeMessage(T data);
+  <T> Bytes encode(T message);
 
-  <T> T decodeMessage(Bytes message, Class<T> clazz) throws RpcException;
-
-  Bytes encodeError(String errorMessage);
-
-  String decodeError(Bytes message) throws RpcException;
+  <T> T decode(Bytes message, Class<T> clazz) throws RpcException;
 
   String getName();
 

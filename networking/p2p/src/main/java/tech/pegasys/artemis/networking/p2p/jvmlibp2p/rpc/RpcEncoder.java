@@ -31,15 +31,15 @@ public final class RpcEncoder {
    * @return the encoded RPC message
    */
   public <T> Bytes encodeRequest(T request) {
-    return encoding.encodeMessage(request);
+    return encoding.encode(request);
   }
 
   public <T> Bytes encodeSuccessfulResponse(T response) {
-    return Bytes.concatenate(Bytes.of(SUCCESS_RESPONSE_CODE), encoding.encodeMessage(response));
+    return Bytes.concatenate(Bytes.of(SUCCESS_RESPONSE_CODE), encoding.encode(response));
   }
 
   public Bytes encodeErrorResponse(RpcException error) {
     return Bytes.concatenate(
-        Bytes.of(error.getResponseCode()), encoding.encodeError(error.getErrorMessage()));
+        Bytes.of(error.getResponseCode()), encoding.encode(error.getErrorMessage()));
   }
 }

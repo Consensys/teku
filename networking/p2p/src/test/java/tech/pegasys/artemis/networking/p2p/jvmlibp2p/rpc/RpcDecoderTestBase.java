@@ -31,13 +31,14 @@ import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcPayloadEncoder;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcSszEncoder;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
 
 public class RpcDecoderTestBase {
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  protected static final RpcPayloadEncoder PAYLOAD_ENCODER = new RpcSszEncoder();
+  protected static final RpcPayloadEncoder<BeaconBlocksByRootRequestMessage> PAYLOAD_ENCODER =
+      new BeaconBlocksByRootRequestMessageEncoder();
   protected static final Bytes MESSAGE_DATA = PAYLOAD_ENCODER.encode(MESSAGE);
   protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_DATA.size());
   protected static final String ERROR_MESSAGE = "Bad request";
