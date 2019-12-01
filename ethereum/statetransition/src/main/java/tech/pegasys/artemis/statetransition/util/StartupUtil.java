@@ -22,7 +22,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,50 +31,19 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.config.Constants;
 
 public final class StartupUtil {
-  public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
-    ArrayList<DepositWithIndex> deposits = new ArrayList<>();
-
-    for (int i = 0; i < numDeposits; i++) {
-      // https://github.com/ethereum/eth2.0-specs/blob/0.4.0/specs/validator/0_beacon-chain-validator.md#submit-deposit
-      BLSKeyPair keypair = BLSKeyPair.random(i);
-      DepositData depositData =
-          new DepositData(
-              keypair.getPublicKey(),
-              Bytes32.ZERO,
-              UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-              BLSSignature.empty());
-      BLSSignature proof_of_possession =
-          BLSSignature.sign(
-              keypair,
-              depositData.signing_root("signature"),
-              BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
-      depositData.setSignature(proof_of_possession);
-
-      SSZVector<Bytes32> proof =
-          new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
-      DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UnsignedLong.valueOf(i));
-      deposits.add(deposit);
-    }
-    return deposits;
-  }
 
   public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
     UnsignedLong epochs_per_period =

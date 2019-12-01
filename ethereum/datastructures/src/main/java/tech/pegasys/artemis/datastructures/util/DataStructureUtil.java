@@ -296,21 +296,13 @@ public final class DataStructureUtil {
 
   public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
+    final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       DepositData depositData =
-          new DepositData(
-              keypair.getPublicKey(),
-              Bytes32.ZERO,
-              UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-              BLSSignature.empty());
-      BLSSignature proof_of_possession =
-          BLSSignature.sign(
-              keypair,
-              depositData.signing_root("signature"),
-              BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
-      depositData.setSignature(proof_of_possession);
+          depositGenerator.createDepositData(
+              keypair, keypair, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
 
       SSZVector<Bytes32> proof =
           new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);

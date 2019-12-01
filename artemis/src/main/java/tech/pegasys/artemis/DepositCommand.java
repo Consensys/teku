@@ -1,3 +1,16 @@
+/*
+ * Copyright 2019 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
@@ -90,10 +103,13 @@ public class DepositCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      final OkHttpClient httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
-      final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1,
-          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
-      final Web3j web3j = Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
+      final OkHttpClient httpClient =
+          new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
+      final ScheduledExecutorService executorService =
+          Executors.newScheduledThreadPool(
+              1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
+      final Web3j web3j =
+          Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
       final Credentials credentials = Credentials.create(eth1PrivateKey);
       final DepositContract depositContract =
           DepositContract.load(
@@ -151,8 +167,7 @@ public class DepositCommand implements Callable<Integer> {
   private void sendDeposit(
       final DepositTransactionSender sender,
       final BLSKeyPair validatorKey,
-      final BLSKeyPair withdrawalKey)
-      throws Exception {
+      final BLSKeyPair withdrawalKey) {
     futures.add(sender.sendDepositTransaction(validatorKey, withdrawalKey, amount));
     //    if (futures.size() >= 5) {
     //      System.out.println("Waiting for batch: " + futures);
