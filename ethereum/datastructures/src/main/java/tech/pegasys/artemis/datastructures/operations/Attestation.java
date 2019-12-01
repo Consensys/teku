@@ -53,6 +53,13 @@ public class Attestation
     this.signature = signature;
   }
 
+  public Attestation(Attestation attestation) {
+    this.aggregation_bits = attestation.getAggregation_bits().copy();
+    this.data = new AttestationData(attestation.getData());
+    this.custody_bitfield = attestation.getCustody_bitfield().copy();
+    this.signature = BLSSignature.fromBytes(attestation.getAggregate_signature().toBytes());
+  }
+
   public Attestation() {
     this.aggregation_bits =
         new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);

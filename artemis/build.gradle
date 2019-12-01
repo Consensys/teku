@@ -6,7 +6,6 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':util')
   implementation project(':data')
-  implementation project(':data:adapter')
   implementation project(':data:metrics')
   implementation project(':data:recorder')
   implementation project(':ethereum:datastructures')

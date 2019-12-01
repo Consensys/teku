@@ -18,6 +18,7 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.OptionalInt;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,6 +31,9 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SszEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
+  private static final int MAX_CHUNK_SIZE = 1048576;
+  // Any protobuf length requiring more bytes than this will also be bigger.
+  private static final int MAXIMUM_VARINT_LENGTH = writeVarInt(MAX_CHUNK_SIZE).size();
 
   @Override
   public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
@@ -67,23 +71,30 @@ public class SszEncoding implements RpcEncoding {
         throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
+      if (expectedLength > MAX_CHUNK_SIZE) {
+        throw RpcException.CHUNK_TOO_LONG_ERROR;
+      }
+
       final Bytes payload;
       try {
         payload = Bytes.wrap(in.readRawBytes(expectedLength));
       } catch (final InvalidProtocolBufferException e) {
-        throw RpcException.INCORRECT_LENGTH_ERRROR;
+        LOG.trace("Failed to parse SSZ message", e);
+        throw RpcException.INCORRECT_LENGTH_ERROR;
       }
 
       if (!in.isAtEnd()) {
-        throw RpcException.INCORRECT_LENGTH_ERRROR;
+        LOG.trace("Rejecting SSZ message because actual message length exceeds specified length");
+        throw RpcException.INCORRECT_LENGTH_ERROR;
       }
 
       final T parsedMessage;
       try {
         parsedMessage = parser.apply(payload);
       } catch (final InvalidSSZTypeException e) {
-        LOG.debug(
-            "Failed to parse network message. Error: {} Message: {}", e.getMessage(), message);
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("Failed to parse network message: " + message, e);
+        }
         throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
@@ -97,6 +108,34 @@ public class SszEncoding implements RpcEncoding {
   @Override
   public String getName() {
     return "ssz";
+  }
+
+  @Override
+  public OptionalInt getMessageLength(final Bytes message) throws RpcException {
+    final OptionalInt maybePrefixLength = getLengthPrefixSize(message);
+    if (maybePrefixLength.isEmpty()) {
+      return OptionalInt.empty();
+    }
+    final int prefixLength = maybePrefixLength.getAsInt();
+    final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
+    try {
+      return OptionalInt.of(in.readRawVarint32() + prefixLength);
+    } catch (final IOException e) {
+      throw RpcException.MALFORMED_MESSAGE_LENGTH_ERROR;
+    }
+  }
+
+  // Var int ends at first byte where (b & 0x80) == 0
+  private OptionalInt getLengthPrefixSize(final Bytes message) throws RpcException {
+    for (int i = 0; i < message.size() && i <= MAXIMUM_VARINT_LENGTH; i++) {
+      if (i >= MAXIMUM_VARINT_LENGTH) {
+        throw RpcException.CHUNK_TOO_LONG_ERROR;
+      }
+      if ((message.get(i) & 0x80) == 0) {
+        return OptionalInt.of(i + 1);
+      }
+    }
+    return OptionalInt.empty();
   }
 
   private static Bytes writeVarInt(final int value) {

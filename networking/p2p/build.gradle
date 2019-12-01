@@ -5,11 +5,11 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':data')
-  implementation project(':data:adapter')
   implementation project(':data:metrics')
+  implementation project(':validator:coordinator')
   implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'
-  compile "com.google.protobuf:protobuf-java"
+  implementation 'com.google.protobuf:protobuf-java'
   implementation 'io.vertx:vertx-core'
 
   implementation 'org.apache.tuweni:tuweni-bytes'
@@ -19,7 +19,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
 
   implementation 'io.projectreactor:reactor-core'
-  compile group: 'org.javatuples', name: 'javatuples', version: '1.2'
 
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
@@ -32,7 +31,6 @@ dependencies {
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':validator:client', configuration: 'testSupportArtifacts')
 
   integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')

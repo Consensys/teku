@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.primitives.UnsignedLong;
@@ -26,6 +27,14 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 class SszEncodingTest {
 
   private final SszEncoding encoding = new SszEncoding();
+  private static final int ONE_BYTE_LENGTH_PREFIX_VALUE = 10;
+  private static final Bytes ONE_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x0A");
+  private static final int TWO_BYTE_LENGTH_PREFIX_VALUE = 256;
+  private static final Bytes TWO_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x8002");
+  private static final int THREE_BYTE_LENGTH_PREFIX_VALUE = 1048573;
+  private static final Bytes THREE_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0xFDFF3F");
+  private static final Bytes LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH =
+      Bytes.fromHexString("0x818040");
 
   @Test
   public void shouldReturnErrorWhenMessageLengthIsInvalid() {
@@ -50,7 +59,7 @@ class SszEncodingTest {
             () ->
                 encoding.decodeMessage(
                     correctMessage.slice(0, correctMessage.size() - 5), StatusMessage.class))
-        .isEqualTo(RpcException.INCORRECT_LENGTH_ERRROR);
+        .isEqualTo(RpcException.INCORRECT_LENGTH_ERROR);
   }
 
   @Test
@@ -60,7 +69,42 @@ class SszEncodingTest {
             () ->
                 encoding.decodeMessage(
                     Bytes.concatenate(correctMessage, Bytes.of(1, 2, 3, 4)), StatusMessage.class))
-        .isEqualTo(RpcException.INCORRECT_LENGTH_ERRROR);
+        .isEqualTo(RpcException.INCORRECT_LENGTH_ERROR);
+  }
+
+  @Test
+  public void shouldRejectMessagesThatAreTooLong() {
+    // We should reject the message based on the length prefix and skip reading the data entirely.
+    assertThatThrownBy(
+            () ->
+                encoding.decodeMessage(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH, StatusMessage.class))
+        .isEqualTo(RpcException.CHUNK_TOO_LONG_ERROR);
+  }
+
+  @Test
+  public void shouldNotHaveMessageLengthWhenNoDataProvided() throws Exception {
+    assertThat(encoding.getMessageLength(Bytes.EMPTY)).isEmpty();
+  }
+
+  @Test
+  public void shouldNotHaveMessageLengthWhenOnlyPartialLengthPrefixReceived() throws Exception {
+    assertThat(encoding.getMessageLength(TWO_BYTE_LENGTH_PREFIX.slice(0, 1))).isEmpty();
+  }
+
+  @Test
+  public void shouldIncludeBytesInLengthPrefixWhenCalculatingMessageLength() throws Exception {
+    assertThat(encoding.getMessageLength(ONE_BYTE_LENGTH_PREFIX))
+        .hasValue(ONE_BYTE_LENGTH_PREFIX_VALUE + 1);
+    assertThat(encoding.getMessageLength(TWO_BYTE_LENGTH_PREFIX))
+        .hasValue(TWO_BYTE_LENGTH_PREFIX_VALUE + 2);
+    assertThat(encoding.getMessageLength(THREE_BYTE_LENGTH_PREFIX))
+        .hasValue(THREE_BYTE_LENGTH_PREFIX_VALUE + 3);
+  }
+
+  @Test
+  public void shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes() {
+    assertThatThrownBy(() -> encoding.getMessageLength(Bytes.fromHexString("0x80808001")))
+        .isEqualTo(RpcException.CHUNK_TOO_LONG_ERROR);
   }
 
   private Bytes createValidStatusMessage() {

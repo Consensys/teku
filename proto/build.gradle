@@ -11,10 +11,10 @@ buildscript {
 }
 
 dependencies {
-    compile 'io.grpc:grpc-netty-shaded'
-    compile 'io.grpc:grpc-protobuf'
-    compile 'io.grpc:grpc-stub'
-    compile("javax.annotation:javax.annotation-api")
+    implementation 'io.grpc:grpc-netty-shaded'
+    implementation 'io.grpc:grpc-protobuf'
+    compileOnly 'io.grpc:grpc-stub'
+    compileOnly 'javax.annotation:javax.annotation-api'
 }
 
 protobuf {

@@ -11,19 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.compatibility.multiclient.clients;
 
-import org.apache.tuweni.bytes.Bytes32;
+import io.libp2p.core.PeerId;
 
-public class ValidatorAssignmentEvent {
+public interface BeaconChainNode {
 
-  Bytes32 headBlockRoot;
+  String getMultiAddr();
 
-  public ValidatorAssignmentEvent(Bytes32 headBlockRoot) {
-    this.headBlockRoot = headBlockRoot;
-  }
+  PeerId getPeerId();
 
-  public Bytes32 getHeadBlockRoot() {
-    return this.headBlockRoot;
-  }
+  void stop();
 }
