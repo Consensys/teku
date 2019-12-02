@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -88,6 +89,18 @@ public class Peer {
     return requestStream(
         RpcMethod.BEACON_BLOCKS_BY_ROOT,
         new BeaconBlocksByRootRequestMessage(blockRoots),
+        listener);
+  }
+
+  public CompletableFuture<Void> requestBlocksByRange(
+      final Bytes32 headBlockRoot,
+      final UnsignedLong startSlot,
+      final UnsignedLong count,
+      final UnsignedLong step,
+      final ResponseListener<BeaconBlock> listener) {
+    return requestStream(
+        RpcMethod.BEACON_BLOCKS_BY_RANGE,
+        new BeaconBlocksByRangeRequestMessage(headBlockRoot, startSlot, count, step),
         listener);
   }
 

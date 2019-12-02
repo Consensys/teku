@@ -17,6 +17,7 @@ import static tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEnc
 
 import java.util.Objects;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -36,6 +37,13 @@ public class RpcMethod<I, O> {
               "/eth2/beacon_chain/req/beacon_blocks_by_root/1",
               SSZ,
               BeaconBlocksByRootRequestMessage.class,
+              BeaconBlock.class);
+  public static final RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock>
+      BEACON_BLOCKS_BY_RANGE =
+          new RpcMethod<>(
+              "/eth2/beacon_chain/req/beacon_blocks_by_range/1",
+              SSZ,
+              BeaconBlocksByRangeRequestMessage.class,
               BeaconBlock.class);
 
   private final String methodMultistreamId;
