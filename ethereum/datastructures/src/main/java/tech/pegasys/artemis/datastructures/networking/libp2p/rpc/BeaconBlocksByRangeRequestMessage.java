@@ -30,11 +30,6 @@ public final class BeaconBlocksByRangeRequestMessage
   private final UnsignedLong count;
   private final UnsignedLong step;
 
-  @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
-  public BeaconBlocksByRangeRequestMessage() {
-    this(Bytes32.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ONE);
-  }
-
   public BeaconBlocksByRangeRequestMessage(
       final Bytes32 headBlockRoot,
       final UnsignedLong startSlot,
