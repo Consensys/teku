@@ -18,12 +18,14 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
@@ -127,5 +129,48 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getAggregate().getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.BLUE);
+  }
+
+  public Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
+    return getBlockRootBySlot(slot)
+        .map(blockRoot -> store.getBlock(blockRoot))
+        .filter(block -> block.getSlot().equals(slot));
+  }
+
+  public boolean isIncludedInBestState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return false;
+    }
+    final BeaconBlock block = store.getBlock(blockRoot);
+    if (block == null) {
+      return false;
+    }
+    return getBlockRootBySlot(block.getSlot())
+        .map(actualRoot -> actualRoot.equals(block.signing_root("signature")))
+        .orElse(false);
+  }
+
+  private Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
+    if (store == null || Bytes32.ZERO.equals(bestBlockRoot)) {
+      LOG.trace("No block root at slot {} because store or best block root is not set", slot);
+      return Optional.empty();
+    }
+    if (bestSlot.equals(slot)) {
+      LOG.trace("Block root at slot {} is the current best slot root", slot);
+      return Optional.of(bestBlockRoot);
+    }
+
+    final BeaconState bestState = store.getBlockState(bestBlockRoot);
+    if (bestState == null) {
+      LOG.trace("No block root at slot {} because best state is not available", slot);
+      return Optional.empty();
+    }
+
+    if (!BeaconStateUtil.isBlockRootAvailableFromState(bestState, slot)) {
+      LOG.trace("No block root at slot {} because slot is not within historical root", slot);
+      return Optional.empty();
+    }
+
+    return Optional.of(BeaconStateUtil.get_block_root_at_slot(bestState, slot));
   }
 }
