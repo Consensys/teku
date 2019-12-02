@@ -51,6 +51,10 @@ public class BeaconBlocksByRangeMessageHandler
         message.getCount(),
         message.getStep());
     try {
+      if (message.getStep().compareTo(ONE) < 0) {
+        callback.completeWithError(RpcException.INVALID_STEP);
+        return;
+      }
       sendMatchingBlocks(message, callback);
       callback.completeSuccessfully();
     } catch (final RpcException e) {

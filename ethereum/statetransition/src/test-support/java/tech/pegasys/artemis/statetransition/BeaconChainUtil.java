@@ -78,6 +78,7 @@ public class BeaconChainUtil {
     final BlockProcessingRecord record =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
     transaction.commit();
+    storageClient.updateBestBlock(block.signing_root("signature"), block.getSlot());
     return record;
   }
 

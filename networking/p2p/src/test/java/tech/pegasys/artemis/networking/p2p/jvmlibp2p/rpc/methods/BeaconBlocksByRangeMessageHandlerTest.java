@@ -36,6 +36,7 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByR
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.ResponseCallback;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
@@ -259,6 +260,31 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verify(storageClient).getBlockBySlot(UnsignedLong.valueOf(15));
     verify(storageClient).getBlockBySlot(UnsignedLong.valueOf(20));
     verify(storageClient, never()).getBlockBySlot(greaterThan(bestSlot));
+  }
+
+  @Test
+  public void shouldRejectRequestWhenStepIsZero() {
+    final int startBlock = 15;
+    final UnsignedLong count = UnsignedLong.MAX_VALUE;
+    final int skip = 0;
+
+    final BeaconBlock headBlock = BLOCKS.get(5);
+
+    final UnsignedLong bestSlot = UnsignedLong.valueOf(20);
+    withCanonicalHeadBlock(headBlock, bestSlot);
+
+    handler.onIncomingMessage(
+        peer,
+        new BeaconBlocksByRangeRequestMessage(
+            headBlock.hash_tree_root(),
+            UnsignedLong.valueOf(startBlock),
+            count,
+            UnsignedLong.valueOf(skip)),
+        listener);
+
+    verify(listener).completeWithError(RpcException.INVALID_STEP);
+    verifyNoMoreInteractions(listener);
+    verifyNoMoreInteractions(storageClient);
   }
 
   private void withCanonicalHeadBlock(final BeaconBlock headBlock) {
