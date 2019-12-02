@@ -19,36 +19,31 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.OptionalInt;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.InvalidSSZTypeException;
-import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class SszEncoding implements RpcEncoding {
+public class LengthPrefixedEncoding implements RpcEncoding {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_CHUNK_SIZE = 1048576;
   // Any protobuf length requiring more bytes than this will also be bigger.
   private static final int MAXIMUM_VARINT_LENGTH = writeVarInt(MAX_CHUNK_SIZE).size();
 
+  private final String name;
+  private final RpcPayloadEncoders payloadEncoder;
+
+  LengthPrefixedEncoding(final String name, final RpcPayloadEncoders payloadEncoder) {
+    this.name = name;
+    this.payloadEncoder = payloadEncoder;
+  }
+
   @Override
-  public <T extends SimpleOffsetSerializable> Bytes encodeMessage(final T data) {
-    final Bytes payload = SimpleOffsetSerializer.serialize(data);
+  @SuppressWarnings("unchecked")
+  public <T> Bytes encode(final T message) {
+    final RpcPayloadEncoder<T> encoder = payloadEncoder.getEncoder((Class<T>) message.getClass());
+    final Bytes payload = encoder.encode(message);
     return encodeMessageWithLength(payload);
-  }
-
-  @Override
-  public Bytes encodeError(final String errorMessage) {
-    return encodeMessageWithLength(SSZ.encodeString(errorMessage));
-  }
-
-  @Override
-  public String decodeError(final Bytes message) throws RpcException {
-    return decode(message, SSZ::decodeString);
   }
 
   private Bytes encodeMessageWithLength(final Bytes payload) {
@@ -57,21 +52,23 @@ public class SszEncoding implements RpcEncoding {
   }
 
   @Override
-  public <T> T decodeMessage(final Bytes message, final Class<T> clazz) throws RpcException {
-    return decode(message, payload -> SimpleOffsetSerializer.deserialize(payload, clazz));
+  public <T> T decode(final Bytes message, final Class<T> clazz) throws RpcException {
+    return decode(message, payloadEncoder.getEncoder(clazz));
   }
 
-  private <T> T decode(final Bytes message, final Function<Bytes, T> parser) throws RpcException {
+  private <T> T decode(final Bytes message, final RpcPayloadEncoder<T> parser) throws RpcException {
     try {
       final CodedInputStream in = CodedInputStream.newInstance(message.toArrayUnsafe());
       final int expectedLength;
       try {
         expectedLength = in.readRawVarint32();
       } catch (final InvalidProtocolBufferException e) {
+        LOG.trace("Invalid length prefix", e);
         throw RpcException.MALFORMED_REQUEST_ERROR;
       }
 
       if (expectedLength > MAX_CHUNK_SIZE) {
+        LOG.trace("Rejecting message as length is too long");
         throw RpcException.CHUNK_TOO_LONG_ERROR;
       }
 
@@ -79,26 +76,16 @@ public class SszEncoding implements RpcEncoding {
       try {
         payload = Bytes.wrap(in.readRawBytes(expectedLength));
       } catch (final InvalidProtocolBufferException e) {
-        LOG.trace("Failed to parse SSZ message", e);
+        LOG.trace("Failed to read message data", e);
         throw RpcException.INCORRECT_LENGTH_ERROR;
       }
 
       if (!in.isAtEnd()) {
-        LOG.trace("Rejecting SSZ message because actual message length exceeds specified length");
+        LOG.trace("Rejecting message because actual message length exceeds specified length");
         throw RpcException.INCORRECT_LENGTH_ERROR;
       }
 
-      final T parsedMessage;
-      try {
-        parsedMessage = parser.apply(payload);
-      } catch (final InvalidSSZTypeException e) {
-        if (LOG.isTraceEnabled()) {
-          LOG.trace("Failed to parse network message: " + message, e);
-        }
-        throw RpcException.MALFORMED_REQUEST_ERROR;
-      }
-
-      return parsedMessage;
+      return parser.decode(payload);
     } catch (IOException e) {
       LOG.error("Unexpected error while processing message: " + message, e);
       throw RpcException.SERVER_ERROR;
@@ -107,7 +94,7 @@ public class SszEncoding implements RpcEncoding {
 
   @Override
   public String getName() {
-    return "ssz";
+    return name;
   }
 
   @Override
