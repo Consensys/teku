@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.primitives.UnsignedLong;
+import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -128,6 +129,22 @@ class LengthPrefixedEncodingTest {
     assertThat(encoding.decode(data, BeaconBlocksByRootRequestMessage.class))
         .usingRecursiveComparison()
         .isEqualTo(request);
+  }
+
+  @Test
+  public void shouldEncodeStringWithoutWrapper() {
+    final String expected = "Some string to test";
+    final Bytes payloadBytes = Bytes.wrap(expected.getBytes(StandardCharsets.UTF_8));
+    final Bytes encoded = encoding.encode(expected);
+    // Length prefix plus UTF-8 bytes.
+    assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x13"), payloadBytes));
+  }
+
+  @Test
+  public void shouldRoundtripString() throws Exception {
+    final String expected = "Some string to test";
+    final Bytes encoded = encoding.encode(expected);
+    assertThat(encoding.decode(encoded, String.class)).isEqualTo(expected);
   }
 
   private Bytes createValidStatusMessage() {

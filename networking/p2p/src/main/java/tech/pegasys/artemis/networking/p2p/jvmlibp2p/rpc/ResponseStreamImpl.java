@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
   private final CompletableFuture<Void> completionFuture = new CompletableFuture<>();
+  private int receivedResponseCount = 0;
   private ResponseListener<O> responseListener;
 
   @Override
@@ -61,7 +62,12 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
   public void respond(final O data) {
     checkNotNull(responseListener, "Must call an 'expect' method");
+    receivedResponseCount++;
     responseListener.onResponse(data);
+  }
+
+  public int getResponseChunkCount() {
+    return receivedResponseCount;
   }
 
   public void completeSuccessfully() {
