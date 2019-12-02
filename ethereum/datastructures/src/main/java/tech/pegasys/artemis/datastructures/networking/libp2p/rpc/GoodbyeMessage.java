@@ -22,8 +22,9 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class GoodbyeMessage implements RpcRequest, SSZContainer {
+public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
   private final UnsignedLong reason;
 

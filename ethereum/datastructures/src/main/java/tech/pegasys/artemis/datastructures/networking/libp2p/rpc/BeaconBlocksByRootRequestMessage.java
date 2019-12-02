@@ -13,42 +13,23 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
+import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
-public final class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
+public class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
 
   private final SSZList<Bytes32> blockRoots = new SSZList<>(Bytes32.class, Integer.MAX_VALUE);
-
-  @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
-  public BeaconBlocksByRootRequestMessage() {}
 
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
     this.blockRoots.addAll(blockRoots);
   }
 
-  @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
-  public BeaconBlocksByRootRequestMessage(final SSZList<Bytes32> blockRoots) {
-    this.blockRoots.addAll(blockRoots);
-  }
-
   public SSZList<Bytes32> getBlockRoots() {
     return blockRoots;
-  }
-
-  @Override
-  public int getSSZFieldCount() {
-    return 1;
-  }
-
-  @Override
-  public List<Bytes> get_fixed_parts() {
-    return List.of(SSZ.encode(writer -> writer.writeFixedBytesList(blockRoots)));
   }
 
   @Override
@@ -71,11 +52,12 @@ public final class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZCo
     }
 
     BeaconBlocksByRootRequestMessage other = (BeaconBlocksByRootRequestMessage) obj;
-    return Objects.equals(this.blockRoots(), other.blockRoots());
+    return Objects.equals(this.blockRoots, other.blockRoots);
   }
 
-  public List<Bytes32> blockRoots() {
-    return blockRoots;
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("blockRoots", blockRoots).toString();
   }
 
   @Override
