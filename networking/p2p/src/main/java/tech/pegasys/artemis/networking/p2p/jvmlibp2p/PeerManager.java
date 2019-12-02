@@ -35,6 +35,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksByRangeMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksByRootMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
@@ -63,7 +64,8 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
             this,
             new StatusMessageHandler(statusMessageFactory),
             new GoodbyeMessageHandler(metricsSystem),
-            new BeaconBlocksByRootMessageHandler(chainStorageClient));
+            new BeaconBlocksByRootMessageHandler(chainStorageClient),
+            new BeaconBlocksByRangeMessageHandler(chainStorageClient));
   }
 
   @Override

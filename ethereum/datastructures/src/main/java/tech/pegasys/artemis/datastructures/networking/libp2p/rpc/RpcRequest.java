@@ -11,10 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
+package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
-
-public interface LocalMessageHandler<I, O> {
-  void onIncomingMessage(Peer peer, I message, ResponseCallback<O> callback);
+public interface RpcRequest {
+  int getMaximumRequestChunks();
 }

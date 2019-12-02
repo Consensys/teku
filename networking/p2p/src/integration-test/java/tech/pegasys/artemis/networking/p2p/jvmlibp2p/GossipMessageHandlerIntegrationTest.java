@@ -48,6 +48,7 @@ public class GossipMessageHandlerIntegrationTest {
     final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
     final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1, storageClient1);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(12, storageClient1);
+    chainUtil.initializeStorage();
 
     // Setup network 2
     final EventBus eventBus2 = spy(new EventBus());

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -23,19 +22,23 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlocksMessageRequest implements SimpleOffsetSerializable, SSZContainer {
+public final class BeaconBlocksByRangeRequestMessage
+    implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
   private final Bytes32 headBlockRoot;
   private final UnsignedLong startSlot;
   private final UnsignedLong count;
   private final UnsignedLong step;
 
-  public BeaconBlocksMessageRequest(
-      Bytes32 headBlockRoot, UnsignedLong startSlot, UnsignedLong count, UnsignedLong step) {
+  public BeaconBlocksByRangeRequestMessage(
+      final Bytes32 headBlockRoot,
+      final UnsignedLong startSlot,
+      final UnsignedLong count,
+      final UnsignedLong step) {
     this.headBlockRoot = headBlockRoot;
     this.startSlot = startSlot;
-    this.step = step;
     this.count = count;
+    this.step = step;
   }
 
   @Override
@@ -45,40 +48,11 @@ public final class BeaconBlocksMessageRequest implements SimpleOffsetSerializabl
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    List<Bytes> fixedPartsList =
-        new ArrayList<>(
-            List.of(
-                SSZ.encode(writer -> writer.writeFixedBytes(headBlockRoot)),
-                SSZ.encodeUInt64(startSlot.longValue()),
-                SSZ.encodeUInt64(count.longValue()),
-                SSZ.encodeUInt64(step.longValue())));
-    return fixedPartsList;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(headBlockRoot, startSlot, count, step);
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (Objects.isNull(obj)) {
-      return false;
-    }
-
-    if (this == obj) {
-      return true;
-    }
-
-    if (!(obj instanceof BeaconBlocksMessageRequest)) {
-      return false;
-    }
-
-    BeaconBlocksMessageRequest other = (BeaconBlocksMessageRequest) obj;
-    return Objects.equals(this.getHeadBlockRoot(), other.getHeadBlockRoot())
-        && Objects.equals(this.getStartSlot(), other.getStartSlot())
-        && Objects.equals(this.getCount(), other.getCount())
-        && Objects.equals(this.getStep(), other.getStep());
+    return List.of(
+        SSZ.encode(writer -> writer.writeFixedBytes(headBlockRoot)),
+        SSZ.encodeUInt64(startSlot.longValue()),
+        SSZ.encodeUInt64(count.longValue()),
+        SSZ.encodeUInt64(step.longValue()));
   }
 
   public Bytes32 getHeadBlockRoot() {
@@ -95,5 +69,30 @@ public final class BeaconBlocksMessageRequest implements SimpleOffsetSerializabl
 
   public UnsignedLong getStep() {
     return step;
+  }
+
+  @Override
+  public int getMaximumRequestChunks() {
+    return Math.toIntExact(count.longValue());
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final BeaconBlocksByRangeRequestMessage that = (BeaconBlocksByRangeRequestMessage) o;
+    return Objects.equals(headBlockRoot, that.headBlockRoot)
+        && Objects.equals(startSlot, that.startSlot)
+        && Objects.equals(count, that.count)
+        && Objects.equals(step, that.step);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(headBlockRoot, startSlot, count, step);
   }
 }

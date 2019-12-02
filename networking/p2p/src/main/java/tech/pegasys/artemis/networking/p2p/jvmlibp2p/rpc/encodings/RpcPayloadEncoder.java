@@ -11,10 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
+package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings;
 
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcException;
 
-public interface LocalMessageHandler<I, O> {
-  void onIncomingMessage(Peer peer, I message, ResponseCallback<O> callback);
+public interface RpcPayloadEncoder<T> {
+  Bytes encode(T message);
+
+  T decode(Bytes message) throws RpcException;
 }

@@ -39,10 +39,6 @@ public class MockStartValidatorKeyPairFactory {
         .collect(Collectors.toList());
   }
 
-  public List<BLSKeyPair> generateKeyPairs(final int count) {
-    return generateKeyPairs(0, count);
-  }
-
   private BLSKeyPair createKeyPairForValidator(final int validatorIndex) {
     final Bytes hash = sha256(int_to_bytes32(validatorIndex));
     final BigInteger privKey = hash.reverse().toUnsignedBigInteger().mod(CURVE_ORDER);

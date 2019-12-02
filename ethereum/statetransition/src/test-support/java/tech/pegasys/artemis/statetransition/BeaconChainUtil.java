@@ -19,11 +19,14 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.Signer;
+import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -39,7 +42,6 @@ public class BeaconChainUtil {
       final List<BLSKeyPair> validatorKeys, final ChainStorageClient chainStorageClient) {
     this.validatorKeys = validatorKeys;
     this.storageClient = chainStorageClient;
-    initializeStorage(chainStorageClient);
   }
 
   public static BeaconChainUtil create(
@@ -53,12 +55,31 @@ public class BeaconChainUtil {
     StartupUtil.setupInitialState(chainStorageClient, 0, null, validatorKeys);
   }
 
+  public void initializeStorage() {
+    initializeStorage(storageClient);
+  }
+
   public void initializeStorage(final ChainStorageClient chainStorageClient) {
     initializeStorage(chainStorageClient, validatorKeys);
   }
 
   public BeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {
     return createBlockAtSlot(slot, true);
+  }
+
+  public BlockProcessingRecord createAndImportBlockAtSlot(final long slot) throws Exception {
+    return createAndImportBlockAtSlot(UnsignedLong.valueOf(slot));
+  }
+
+  public BlockProcessingRecord createAndImportBlockAtSlot(final UnsignedLong slot)
+      throws Exception {
+    final BeaconBlock block = createBlockAtSlot(slot);
+    final Transaction transaction = storageClient.getStore().startTransaction();
+    final BlockProcessingRecord record =
+        ForkChoiceUtil.on_block(transaction, block, stateTransition);
+    transaction.commit();
+    storageClient.updateBestBlock(block.signing_root("signature"), block.getSlot());
+    return record;
   }
 
   public BeaconBlock createBlockAtSlotFromInvalidProposer(final UnsignedLong slot)

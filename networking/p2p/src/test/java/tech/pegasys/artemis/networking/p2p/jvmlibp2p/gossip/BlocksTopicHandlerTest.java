@@ -54,6 +54,7 @@ public class BlocksTopicHandlerTest {
 
   @BeforeEach
   public void setup() {
+    beaconChainUtil.initializeStorage();
     doReturn(CompletableFuture.completedFuture(null)).when(publisher).publish(any(), any());
     eventBus.register(blocksTopicHandler);
   }
