@@ -22,9 +22,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class StatusMessage implements SimpleOffsetSerializable, SSZContainer {
+public class StatusMessage implements RpcRequest, SSZContainer {
 
   private final Bytes4 headForkVersion;
   private final Bytes32 finalizedRoot;
@@ -118,5 +117,10 @@ public class StatusMessage implements SimpleOffsetSerializable, SSZContainer {
         .add("headRoot", headRoot)
         .add("headSlot", headSlot)
         .toString();
+  }
+
+  @Override
+  public int getMaximumRequestChunks() {
+    return 1;
   }
 }

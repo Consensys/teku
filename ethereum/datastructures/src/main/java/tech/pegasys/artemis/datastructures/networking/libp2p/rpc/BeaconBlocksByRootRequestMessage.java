@@ -20,10 +20,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlocksByRootRequestMessage
-    implements SimpleOffsetSerializable, SSZContainer {
+public final class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
 
   private final SSZList<Bytes32> blockRoots = new SSZList<>(Bytes32.class, Integer.MAX_VALUE);
 
@@ -78,5 +76,10 @@ public final class BeaconBlocksByRootRequestMessage
 
   public List<Bytes32> blockRoots() {
     return blockRoots;
+  }
+
+  @Override
+  public int getMaximumRequestChunks() {
+    return blockRoots.size();
   }
 }
