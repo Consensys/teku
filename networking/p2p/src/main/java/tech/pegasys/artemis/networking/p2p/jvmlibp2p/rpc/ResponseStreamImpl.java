@@ -18,11 +18,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Preconditions;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class ResponseStreamImpl<O extends SimpleOffsetSerializable> implements ResponseStream<O> {
+public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
   private final CompletableFuture<Void> completionFuture = new CompletableFuture<>();
+  private int receivedResponseCount = 0;
   private ResponseListener<O> responseListener;
 
   @Override
@@ -62,7 +62,12 @@ public class ResponseStreamImpl<O extends SimpleOffsetSerializable> implements R
 
   public void respond(final O data) {
     checkNotNull(responseListener, "Must call an 'expect' method");
+    receivedResponseCount++;
     responseListener.onResponse(data);
+  }
+
+  public int getResponseChunkCount() {
+    return receivedResponseCount;
   }
 
   public void completeSuccessfully() {

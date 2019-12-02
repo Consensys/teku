@@ -23,7 +23,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public final class BeaconBlocksByRangeRequestMessage
-    implements SimpleOffsetSerializable, SSZContainer {
+    implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
   private final Bytes32 headBlockRoot;
   private final UnsignedLong startSlot;
@@ -74,6 +74,11 @@ public final class BeaconBlocksByRangeRequestMessage
 
   public UnsignedLong getStep() {
     return step;
+  }
+
+  @Override
+  public int getMaximumRequestChunks() {
+    return Math.toIntExact(count.longValue());
   }
 
   @Override
