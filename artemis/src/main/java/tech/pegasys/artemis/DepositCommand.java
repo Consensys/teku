@@ -17,8 +17,8 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.io.FileWriter;
-import java.io.Writer;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,14 +92,12 @@ public class DepositCommand implements Callable<Integer> {
   @Option(
       names = {"-g", "--generated-validator-count"},
       paramLabel = "<NUMBER>",
-      description =
-          "The number of validators to create new random keys for. An output file must be specified to write the generated keys to")
+      description = "The number of validators to create new random keys for.")
   private int validatorCount = 0;
 
   @Option(
       names = {"--output-file", "-o"},
-      description =
-          "File to write validator keys to. Required if --generated-validator-count is used")
+      description = "File to write validator keys to. Keys are printed to std out if not specified")
   private String outputFile;
 
   @Parameters(
@@ -130,40 +128,37 @@ public class DepositCommand implements Callable<Integer> {
               new DefaultGasProvider());
       final DepositTransactionSender sender = new DepositTransactionSender(depositContract);
 
-      if (validatorCount > 0) {
-        if (outputFile == null || outputFile.isBlank()) {
-          STDOUT.log(Level.FATAL, "--output-file is required when generating new validators.");
-          return 1;
-        }
-        try (final Writer keyWriter = new FileWriter(outputFile, StandardCharsets.UTF_8)) {
-          for (int i = 0; i < validatorCount; i++) {
-            final BLSKeyPair validatorKey = BLSKeyPair.random();
-            final BLSKeyPair withdrawalKey = BLSKeyPair.random();
-            keyWriter.write(
-                String.format(
-                    "- {privkey: '%s', pubkey: '%s', withdrawalPrivkey: '%s', withdrawalPubkey: '%s'}%n",
-                    validatorKey.getSecretKey().getSecretKey().toBytes(),
-                    validatorKey.getPublicKey().toBytesCompressed(),
-                    withdrawalKey.getSecretKey().getSecretKey().toBytes(),
-                    withdrawalKey.getPublicKey().toBytesCompressed()));
-            keyWriter.flush();
-            sendDeposit(sender, validatorKey, withdrawalKey);
-          }
-        }
+      final PrintStream keyWriter;
+      if (outputFile == null || outputFile.isBlank()) {
+        keyWriter = System.out;
+      } else {
+        keyWriter = new PrintStream(new FileOutputStream(outputFile), true, StandardCharsets.UTF_8);
       }
+      try (keyWriter) {
 
-      for (String keyArg : validatorKeys) {
-        final String validatorKey;
-        final String withdrawalKey;
-        if (keyArg.contains(":")) {
-          validatorKey = keyArg.substring(0, keyArg.indexOf(":"));
-          withdrawalKey = keyArg.substring(keyArg.indexOf(":") + 1);
-        } else {
-          validatorKey = keyArg;
-          withdrawalKey = keyArg;
+        for (int i = 0; i < validatorCount; i++) {
+          final BLSKeyPair validatorKey = BLSKeyPair.random();
+          final BLSKeyPair withdrawalKey = BLSKeyPair.random();
+          sendDeposit(keyWriter, sender, validatorKey, withdrawalKey);
         }
 
-        sendDeposit(sender, privateKeyToKeyPair(validatorKey), privateKeyToKeyPair(withdrawalKey));
+        for (String keyArg : validatorKeys) {
+          final String validatorKey;
+          final String withdrawalKey;
+          if (keyArg.contains(":")) {
+            validatorKey = keyArg.substring(0, keyArg.indexOf(":"));
+            withdrawalKey = keyArg.substring(keyArg.indexOf(":") + 1);
+          } else {
+            validatorKey = keyArg;
+            withdrawalKey = keyArg;
+          }
+
+          sendDeposit(
+              keyWriter,
+              sender,
+              privateKeyToKeyPair(validatorKey),
+              privateKeyToKeyPair(withdrawalKey));
+        }
       }
 
       CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(2, TimeUnit.MINUTES);
@@ -172,19 +167,29 @@ public class DepositCommand implements Callable<Integer> {
       httpClient.connectionPool().evictAll();
       executorService.shutdownNow();
 
+      System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
       return 0;
     } catch (final Throwable t) {
       STDOUT.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
+      System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
       return 1;
     }
   }
 
   private void sendDeposit(
+      final PrintStream keyWriter,
       final DepositTransactionSender sender,
       final BLSKeyPair validatorKey,
       final BLSKeyPair withdrawalKey) {
+    keyWriter.println(
+        String.format(
+            "- {privkey: '%s', pubkey: '%s', withdrawalPrivkey: '%s', withdrawalPubkey: '%s'}",
+            validatorKey.getSecretKey().getSecretKey().toBytes(),
+            validatorKey.getPublicKey().toBytesCompressed(),
+            withdrawalKey.getSecretKey().getSecretKey().toBytes(),
+            withdrawalKey.getPublicKey().toBytesCompressed()));
     futures.add(sender.sendDepositTransaction(validatorKey, withdrawalKey, amount));
   }
 
