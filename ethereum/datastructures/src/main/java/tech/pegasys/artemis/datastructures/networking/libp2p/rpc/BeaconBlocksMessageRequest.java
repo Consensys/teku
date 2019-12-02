@@ -21,8 +21,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public final class BeaconBlocksMessageRequest implements RpcRequest, SSZContainer {
+public final class BeaconBlocksMessageRequest
+    implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
   private final Bytes32 headBlockRoot;
   private final UnsignedLong startSlot;

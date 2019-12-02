@@ -18,9 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Preconditions;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class ResponseStreamImpl<O extends SimpleOffsetSerializable> implements ResponseStream<O> {
+public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
   private final CompletableFuture<Void> completionFuture = new CompletableFuture<>();
   private int receivedResponseCount = 0;

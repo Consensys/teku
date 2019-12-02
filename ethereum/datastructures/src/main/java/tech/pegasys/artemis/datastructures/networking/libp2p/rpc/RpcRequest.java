@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
-
-public interface RpcRequest extends SimpleOffsetSerializable {
+public interface RpcRequest {
   int getMaximumRequestChunks();
 }

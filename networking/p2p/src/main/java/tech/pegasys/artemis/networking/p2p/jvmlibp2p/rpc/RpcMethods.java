@@ -26,7 +26,6 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerLookup;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class RpcMethods {
 
@@ -55,9 +54,8 @@ public class RpcMethods {
     return builder.build();
   }
 
-  public <I extends RpcRequest, O extends SimpleOffsetSerializable>
-      CompletableFuture<ResponseStream<O>> invoke(
-          final RpcMethod<I, O> method, final Connection connection, final I request) {
+  public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> invoke(
+      final RpcMethod<I, O> method, final Connection connection, final I request) {
     return getHandler(method).invokeRemote(connection, request);
   }
 
@@ -66,8 +64,8 @@ public class RpcMethods {
   }
 
   @SuppressWarnings("unchecked")
-  private <I extends RpcRequest, O extends SimpleOffsetSerializable>
-      RpcMessageHandler<I, O> getHandler(final RpcMethod<I, O> method) {
+  private <I extends RpcRequest, O> RpcMessageHandler<I, O> getHandler(
+      final RpcMethod<I, O> method) {
     return (RpcMessageHandler<I, O>) methods.get(method);
   }
 }

@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcEncoder;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 final class RpcEncoderTest {
@@ -41,7 +41,7 @@ final class RpcEncoderTest {
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
           UnsignedLong.ZERO);
 
-  private final RpcEncoder codec = new RpcEncoder(new SszEncoding());
+  private final RpcEncoder codec = new RpcEncoder(RpcEncoding.SSZ);
 
   @Test
   public void shouldEncodeStatusRequest() {

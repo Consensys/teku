@@ -32,7 +32,6 @@ import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class Peer {
   private final Connection connection;
@@ -92,17 +91,14 @@ public class Peer {
         listener);
   }
 
-  private <I extends RpcRequest, O extends SimpleOffsetSerializable>
-      CompletableFuture<Void> requestStream(
-          final RpcMethod<I, O> method,
-          I request,
-          final ResponseStream.ResponseListener<O> listener) {
+  private <I extends RpcRequest, O> CompletableFuture<Void> requestStream(
+      final RpcMethod<I, O> method, I request, final ResponseStream.ResponseListener<O> listener) {
     return invoke(method, request)
         .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
   }
 
-  <I extends RpcRequest, O extends SimpleOffsetSerializable>
-      CompletableFuture<ResponseStream<O>> invoke(final RpcMethod<I, O> method, I request) {
+  <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> invoke(
+      final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, connection, request);
   }
 

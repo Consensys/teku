@@ -11,10 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc;
+package tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.ssz;
 
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
+import java.nio.charset.StandardCharsets;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcPayloadEncoder;
 
-public interface LocalMessageHandler<I, O> {
-  void onIncomingMessage(Peer peer, I message, ResponseCallback<O> callback);
+public class StringSszEncoder implements RpcPayloadEncoder<String> {
+
+  @Override
+  public Bytes encode(final String message) {
+    return Bytes.wrap(message.getBytes(StandardCharsets.UTF_8));
+  }
+
+  @Override
+  public String decode(final Bytes message) {
+    return new String(message.toArray(), StandardCharsets.UTF_8);
+  }
 }
