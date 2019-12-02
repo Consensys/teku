@@ -25,7 +25,7 @@ public class ENRHandler implements BeaconRestApiHandler {
   }
 
   @Override
-  public String handleRequest(RequestParams params) {
+  public Object handleRequest(RequestParams params) {
     return "Discovery service not yet implemented";
   }
 }

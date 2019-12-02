@@ -13,20 +13,15 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import java.util.HashMap;
-import java.util.Map;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandler implements BeaconRestApiHandler {
 
-  private final String returnString;
+  private final ChainStorageClient client;
 
   public GenesisTimeHandler(final ChainStorageClient client) {
-    Map<String, Long> jsonObject = new HashMap<>();
-    jsonObject.put("genesis_time", client.getGenesisTime().longValue());
-    returnString = JsonProvider.objectToJSON(jsonObject);
+    this.client = client;
   }
 
   @Override
@@ -35,7 +30,7 @@ public class GenesisTimeHandler implements BeaconRestApiHandler {
   }
 
   @Override
-  public String handleRequest(RequestParams params) {
-    return returnString;
+  public Object handleRequest(RequestParams params) {
+    return client.getGenesisTime();
   }
 }
