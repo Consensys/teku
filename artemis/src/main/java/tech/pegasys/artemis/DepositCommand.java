@@ -17,6 +17,9 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -47,7 +50,7 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 @Command(
     name = "deposit",
-    description = "Send deposit transactions to register validators",
+    description = "Register validators by sending deposit transactions to an Ethereum 1 node",
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
@@ -89,13 +92,21 @@ public class DepositCommand implements Callable<Integer> {
   @Option(
       names = {"-g", "--generated-validator-count"},
       paramLabel = "<NUMBER>",
-      description = "")
+      description =
+          "The number of validators to create new random keys for. An output file must be specified to write the generated keys to")
   private int validatorCount = 0;
+
+  @Option(
+      names = {"--output-file", "-o"},
+      description =
+          "File to write validator keys to. Required if --generated-validator-count is used")
+  private String outputFile;
 
   @Parameters(
       arity = "0..",
       paramLabel = "<KEY>",
-      description = "Validator private keys to register")
+      description =
+          "Validator private keys to register. A different withdrawal key can be specified using a colon separator (<signing-key>:<withdrawal-key>)")
   private List<String> validatorKeys = new ArrayList<>();
 
   private final List<CompletableFuture<TransactionReceipt>> futures = new ArrayList<>();
@@ -119,6 +130,28 @@ public class DepositCommand implements Callable<Integer> {
               new DefaultGasProvider());
       final DepositTransactionSender sender = new DepositTransactionSender(depositContract);
 
+      if (validatorCount > 0) {
+        if (outputFile == null || outputFile.isBlank()) {
+          STDOUT.log(Level.FATAL, "--output-file is required when generating new validators.");
+          return 1;
+        }
+        try (final Writer keyWriter = new FileWriter(outputFile, StandardCharsets.UTF_8)) {
+          for (int i = 0; i < validatorCount; i++) {
+            final BLSKeyPair validatorKey = BLSKeyPair.random();
+            final BLSKeyPair withdrawalKey = BLSKeyPair.random();
+            keyWriter.write(
+                String.format(
+                    "- {privkey: '%s', pubkey: '%s', withdrawalPrivkey: '%s', withdrawalPubkey: '%s'}%n",
+                    validatorKey.getSecretKey().getSecretKey().toBytes(),
+                    validatorKey.getPublicKey().toBytesCompressed(),
+                    withdrawalKey.getSecretKey().getSecretKey().toBytes(),
+                    withdrawalKey.getPublicKey().toBytesCompressed()));
+            keyWriter.flush();
+            sendDeposit(sender, validatorKey, withdrawalKey);
+          }
+        }
+      }
+
       for (String keyArg : validatorKeys) {
         final String validatorKey;
         final String withdrawalKey;
@@ -133,30 +166,14 @@ public class DepositCommand implements Callable<Integer> {
         sendDeposit(sender, privateKeyToKeyPair(validatorKey), privateKeyToKeyPair(withdrawalKey));
       }
 
-      for (int i = 0; i < validatorCount; i++) {
-        final BLSKeyPair validatorKey = BLSKeyPair.random();
-        final BLSKeyPair withdrawalKey = BLSKeyPair.random();
-        System.out.println(
-            "-{privkey: '"
-                + validatorKey.getSecretKey().getSecretKey().toBytes()
-                + "', pubkey: '"
-                + validatorKey.getPublicKey().toBytesCompressed()
-                + "'}");
-        sendDeposit(sender, validatorKey, withdrawalKey);
-      }
-
-      System.out.println("Waiting for final batch: " + futures);
       CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(2, TimeUnit.MINUTES);
-      System.out.println("Shutting down web3j");
       web3j.shutdown();
       httpClient.dispatcher().executorService().shutdownNow();
       httpClient.connectionPool().evictAll();
       executorService.shutdownNow();
-      System.out.println("Done");
 
       return 0;
     } catch (final Throwable t) {
-      t.printStackTrace();
       STDOUT.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
@@ -169,12 +186,6 @@ public class DepositCommand implements Callable<Integer> {
       final BLSKeyPair validatorKey,
       final BLSKeyPair withdrawalKey) {
     futures.add(sender.sendDepositTransaction(validatorKey, withdrawalKey, amount));
-    //    if (futures.size() >= 5) {
-    //      System.out.println("Waiting for batch: " + futures);
-    //      CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(2,
-    // TimeUnit.MINUTES);
-    //      futures.clear();
-    //    }
   }
 
   private BLSKeyPair privateKeyToKeyPair(final String validatorKey) {
