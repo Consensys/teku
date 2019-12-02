@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
@@ -31,14 +29,13 @@ class GenesisTimeHandlerTest {
 
   @Test
   public void shouldReturnEmptyObjectWhenGenesisTimeIsNotSet() {
-    assertThat(handler.handleRequest(requestParams)).isEqualTo(emptyMap());
+    assertThat(handler.handleRequest(requestParams)).isEqualTo(null);
   }
 
   @Test
   public void shouldReturnGenesisTimeWhenSet() {
     final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
     storageClient.setGenesisTime(genesisTime);
-    assertThat(handler.handleRequest(requestParams))
-        .isEqualTo(singletonMap("genesis_time", genesisTime));
+    assertThat(handler.handleRequest(requestParams)).isEqualTo(genesisTime);
   }
 }

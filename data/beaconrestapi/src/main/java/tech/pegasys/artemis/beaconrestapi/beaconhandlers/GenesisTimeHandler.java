@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
-import java.util.Map;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
@@ -34,11 +31,6 @@ public class GenesisTimeHandler implements BeaconRestApiHandler {
 
   @Override
   public Object handleRequest(RequestParams params) {
-    Map<String, Object> jsonObject = new HashMap<>();
-    final UnsignedLong genesisTime = client.getGenesisTime();
-    if (genesisTime != null) {
-      jsonObject.put("genesis_time", genesisTime);
-    }
-    return jsonObject;
+    return client.getGenesisTime();
   }
 }
