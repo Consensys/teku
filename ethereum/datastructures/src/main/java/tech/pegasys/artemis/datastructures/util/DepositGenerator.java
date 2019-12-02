@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
@@ -31,9 +32,9 @@ public class DepositGenerator {
 
   public DepositData createDepositData(
       final BLSKeyPair validatorKeyPair,
-      final BLSKeyPair withdrawalKeyPair,
-      final UnsignedLong amountInGwei) {
-    final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalKeyPair);
+      final UnsignedLong amountInGwei,
+      final BLSPublicKey withdrawalPublicKey) {
+    final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalPublicKey);
     final DepositData depositData =
         new DepositData(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei, null);
 
@@ -45,8 +46,8 @@ public class DepositGenerator {
     return depositData;
   }
 
-  private Bytes32 createWithdrawalCredentials(final BLSKeyPair keyPair) {
-    final Bytes publicKeyHash = sha256(keyPair.getPublicKey().toBytesCompressed());
+  private Bytes32 createWithdrawalCredentials(final BLSPublicKey withdrawalPublicKey) {
+    final Bytes publicKeyHash = sha256(withdrawalPublicKey.toBytesCompressed());
     final Bytes credentials = Bytes.wrap(BLS_WITHDRAWAL_PREFIX, publicKeyHash.slice(1));
     return Bytes32.wrap(credentials);
   }

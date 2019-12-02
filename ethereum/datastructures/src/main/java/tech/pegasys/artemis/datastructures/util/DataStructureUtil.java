@@ -302,7 +302,9 @@ public final class DataStructureUtil {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       DepositData depositData =
           depositGenerator.createDepositData(
-              keypair, keypair, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+              keypair,
+              UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+              keypair.getPublicKey());
 
       SSZVector<Bytes32> proof =
           new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);

@@ -97,7 +97,9 @@ public class PowchainService implements ServiceInterface {
         try {
           transactionSender
               .sendDepositTransaction(
-                  blsKeyPair, blsKeyPair, UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))
+                  blsKeyPair,
+                  blsKeyPair.getPublicKey(), UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)
+              )
               .get();
         } catch (Exception e) {
           LOG.warn(

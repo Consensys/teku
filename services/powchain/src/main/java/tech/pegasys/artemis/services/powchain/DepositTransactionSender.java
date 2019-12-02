@@ -21,13 +21,17 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.FastRawTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
+import org.web3j.tx.response.PollingTransactionReceiptProcessor;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class DepositTransactionSender {
-
+  // Increase the poll rate for tx receipts but keep the default 10 min timeout.
+  private static final int POLL_INTERVAL_MILLIS = 2000;
+  private static final int MAX_POLL_ATTEMPTS = 300;
   private final DepositGenerator depositGenerator = new DepositGenerator();
   private final DepositContract depositContract;
 
@@ -37,14 +41,20 @@ public class DepositTransactionSender {
         DepositContract.load(
             depositContractAddress,
             web3j,
-            new FastRawTransactionManager(web3j, Credentials.create(eth1PrivateKey)),
+            new FastRawTransactionManager(
+                web3j,
+                Credentials.create(eth1PrivateKey),
+                new PollingTransactionReceiptProcessor(
+                    web3j, POLL_INTERVAL_MILLIS, MAX_POLL_ATTEMPTS)),
             new DefaultGasProvider());
   }
 
   public CompletableFuture<TransactionReceipt> sendDepositTransaction(
-      BLSKeyPair validatorKeyPair, BLSKeyPair withdrawalKeyPair, final UnsignedLong amountInGwei) {
+      BLSKeyPair validatorKeyPair,
+      final BLSPublicKey withdrawalPublicKey,
+      final UnsignedLong amountInGwei) {
     final DepositData depositData =
-        depositGenerator.createDepositData(validatorKeyPair, withdrawalKeyPair, amountInGwei);
+        depositGenerator.createDepositData(validatorKeyPair, amountInGwei, withdrawalPublicKey);
 
     return sendDepositTransaction(depositData);
   }
