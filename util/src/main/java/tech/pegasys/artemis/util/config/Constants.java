@@ -191,7 +191,7 @@ public class Constants {
       CHURN_LIMIT_QUOTIENT = 65536;
       SHUFFLE_ROUND_COUNT = 10;
       MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 64;
-      MIN_GENESIS_TIME = UnsignedLong.valueOf(100);
+      MIN_GENESIS_TIME = UnsignedLong.ONE;
 
       // Gwei values
       MIN_DEPOSIT_AMOUNT = 1000000000L;
