@@ -32,7 +32,7 @@ public final class BeaconBlocksByRangeRequestMessage
 
   @SuppressWarnings("unused") // Required by SimpleOffsetSerializer
   public BeaconBlocksByRangeRequestMessage() {
-    this(Bytes32.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO);
+    this(Bytes32.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ONE);
   }
 
   public BeaconBlocksByRangeRequestMessage(
