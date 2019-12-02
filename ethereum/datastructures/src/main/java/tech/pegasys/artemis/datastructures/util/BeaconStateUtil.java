@@ -835,14 +835,17 @@ public class BeaconStateUtil {
    */
   public static Bytes32 get_block_root_at_slot(BeaconState state, UnsignedLong slot)
       throws IllegalArgumentException {
-    UnsignedLong slotPlusHistoricalRoot =
-        slot.plus(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT));
     checkArgument(
-        slot.compareTo(state.getSlot()) < 0
-            && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0,
-        "BeaconStateUtil.get_block_root_at_slot");
+        isBlockRootAvailableFromState(state, slot), "BeaconStateUtil.get_block_root_at_slot");
     int latestBlockRootIndex = slot.mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
     return state.getBlock_roots().get(latestBlockRootIndex);
+  }
+
+  public static boolean isBlockRootAvailableFromState(BeaconState state, UnsignedLong slot) {
+    UnsignedLong slotPlusHistoricalRoot =
+        slot.plus(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT));
+    return slot.compareTo(state.getSlot()) < 0
+        && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
   }
 
   /**

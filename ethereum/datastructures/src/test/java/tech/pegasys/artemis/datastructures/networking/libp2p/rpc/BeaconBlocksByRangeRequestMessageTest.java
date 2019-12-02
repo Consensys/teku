@@ -15,24 +15,25 @@ package tech.pegasys.artemis.datastructures.networking.libp2p.rpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
-class BeaconBlocksByRootRequestMessageTest {
+class BeaconBlocksByRangeRequestMessageTest {
+
   @Test
   public void shouldRoundTripViaSsz() {
-    final BeaconBlocksByRootRequestMessage request =
-        new BeaconBlocksByRootRequestMessage(
-            List.of(
-                Bytes32.ZERO,
-                Bytes32.fromHexStringLenient("0x01"),
-                Bytes32.fromHexStringLenient("0x02")));
+    final BeaconBlocksByRangeRequestMessage request =
+        new BeaconBlocksByRangeRequestMessage(
+            Bytes32.fromHexStringLenient("0x01"),
+            UnsignedLong.valueOf(2),
+            UnsignedLong.valueOf(3),
+            UnsignedLong.valueOf(4));
     final Bytes data = SimpleOffsetSerializer.serialize(request);
-    final BeaconBlocksByRootRequestMessage result =
-        SimpleOffsetSerializer.deserialize(data, BeaconBlocksByRootRequestMessage.class);
+    final BeaconBlocksByRangeRequestMessage result =
+        SimpleOffsetSerializer.deserialize(data, BeaconBlocksByRangeRequestMessage.class);
 
     assertThat(result).isEqualToComparingFieldByField(request);
   }

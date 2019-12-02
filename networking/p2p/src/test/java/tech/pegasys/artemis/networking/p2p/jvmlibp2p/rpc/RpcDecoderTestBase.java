@@ -20,26 +20,30 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.SszEncoding;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcEncoding;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.RpcPayloadEncoder;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
 
 public class RpcDecoderTestBase {
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  protected static final Bytes MESSAGE_DATA = SimpleOffsetSerializer.serialize(MESSAGE);
+  protected static final RpcPayloadEncoder<BeaconBlocksByRootRequestMessage> PAYLOAD_ENCODER =
+      new BeaconBlocksByRootRequestMessageEncoder();
+  protected static final Bytes MESSAGE_DATA = PAYLOAD_ENCODER.encode(MESSAGE);
   protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_DATA.size());
   protected static final String ERROR_MESSAGE = "Bad request";
-  protected static final Bytes ERROR_MESSAGE_DATA = Bytes.wrap(SSZ.encodeString(ERROR_MESSAGE));
+  protected static final Bytes ERROR_MESSAGE_DATA =
+      Bytes.wrap(ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8));
   protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
       getLengthPrefix(ERROR_MESSAGE_DATA.size());
 
@@ -48,7 +52,7 @@ public class RpcDecoderTestBase {
       METHOD =
           new RpcMethod<>(
               "",
-              new SszEncoding(),
+              RpcEncoding.SSZ,
               BeaconBlocksByRootRequestMessage.class,
               BeaconBlocksByRootRequestMessage.class);
 
