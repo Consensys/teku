@@ -31,17 +31,13 @@ import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
-import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.FastRawTransactionManager;
-import org.web3j.tx.gas.DefaultGasProvider;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.cli.VersionProvider;
@@ -119,14 +115,8 @@ public class DepositCommand implements Callable<Integer> {
               1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
       final Web3j web3j =
           Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
-      final Credentials credentials = Credentials.create(eth1PrivateKey);
-      final DepositContract depositContract =
-          DepositContract.load(
-              contractAddress,
-              web3j,
-              new FastRawTransactionManager(web3j, credentials),
-              new DefaultGasProvider());
-      final DepositTransactionSender sender = new DepositTransactionSender(depositContract);
+      final DepositTransactionSender sender =
+          new DepositTransactionSender(web3j, contractAddress, eth1PrivateKey);
 
       final PrintStream keyWriter;
       if (outputFile == null || outputFile.isBlank()) {

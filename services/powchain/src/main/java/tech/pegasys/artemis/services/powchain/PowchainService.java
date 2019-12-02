@@ -14,12 +14,13 @@
 package tech.pegasys.artemis.services.powchain;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
+import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
 import java.io.IOException;
@@ -33,10 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.crypto.SECP256K1;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.gas.DefaultGasProvider;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
@@ -45,10 +43,7 @@ import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.validator.client.Validator;
-import tech.pegasys.artemis.validator.client.ValidatorClientUtil;
 
 public class PowchainService implements ServiceInterface {
   private static final Logger LOG = LogManager.getLogger();
@@ -85,41 +80,32 @@ public class PowchainService implements ServiceInterface {
       listener =
           DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
       Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
-      DefaultGasProvider gasProvider = new DefaultGasProvider();
       MockStartValidatorKeyPairFactory mockStartValidatorKeyPairFactory =
           new MockStartValidatorKeyPairFactory();
-      MockStartDepositGenerator mockStartDepositGenerator = new MockStartDepositGenerator();
       List<BLSKeyPair> blsKeyPairList =
           mockStartValidatorKeyPairFactory.generateKeyPairs(0, controller.getAccounts().size());
-      List<DepositData> depositDataList = mockStartDepositGenerator.createDeposits(blsKeyPairList);
       int i = 0;
       for (SECP256K1.KeyPair keyPair : controller.getAccounts()) {
-        DepositData depositData = depositDataList.get(i);
-        BLSKeyPair blsKeyPair = blsKeyPairList.get(i);
-        Validator validator =
-            new Validator(depositData.getWithdrawal_credentials(), blsKeyPair, keyPair);
+        final DepositTransactionSender transactionSender =
+            new DepositTransactionSender(
+                web3j,
+                listener.getContract().getContractAddress(),
+                keyPair.secretKey().bytes().toHexString());
 
-        BLSSignature sig =
-            BLSSignature.sign(
-                blsKeyPairList.get(i),
-                depositData.signing_root("signature"),
-                compute_domain(Constants.DOMAIN_DEPOSIT));
+        BLSKeyPair blsKeyPair = blsKeyPairList.get(i);
+
         try {
-          ValidatorClientUtil.registerValidatorEth1(
-              validator,
-              depositData.getAmount().longValue(),
-              listener.getContract().getContractAddress(),
-              web3j,
-              gasProvider,
-              depositData.hash_tree_root(),
-              sig);
+          transactionSender
+              .sendDepositTransaction(
+                  blsKeyPair, blsKeyPair, UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))
+              .get();
         } catch (Exception e) {
           LOG.warn(
               "Failed to register Validator with SECP256k1 public key: " + keyPair.publicKey(), e);
         }
         i++;
       }
-    } else if (depositMode.equals(DEPOSIT_SIM) && depositSimFile != null) {
+    } else if (depositMode.equals(DEPOSIT_SIM)) {
       JsonParser parser = new JsonParser();
       try {
         Reader reader = Files.newBufferedReader(Paths.get(depositSimFile), UTF_8);
