@@ -99,7 +99,6 @@ public class BeaconChainController {
     initRestAPI();
   }
 
-  @SuppressWarnings("rawtypes")
   public void initTimer() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initTimer()");
     int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);

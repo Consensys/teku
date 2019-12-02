@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconHeadHandler implements BeaconRestApiHandler {
@@ -35,14 +34,17 @@ public class BeaconHeadHandler implements BeaconRestApiHandler {
   }
 
   @Override
-  public String handleRequest(RequestParams params) {
+  public Object handleRequest(RequestParams params) {
     Bytes32 head_block_root = client.getBestBlockRoot();
+    if (head_block_root == null) {
+      return null;
+    }
     Bytes32 head_state_root = client.getBestBlockRootState().hash_tree_root();
     UnsignedLong head_block_slot = client.getBestSlot();
     Map<String, Object> jsonObject = new HashMap<>();
     jsonObject.put("slot", head_block_slot.longValue());
     jsonObject.put("block_root", head_block_root.toHexString());
     jsonObject.put("state_root", head_state_root.toHexString());
-    return JsonProvider.objectToJSON(jsonObject);
+    return jsonObject;
   }
 }
