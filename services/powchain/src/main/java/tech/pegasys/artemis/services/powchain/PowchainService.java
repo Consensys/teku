@@ -98,8 +98,8 @@ public class PowchainService implements ServiceInterface {
           transactionSender
               .sendDepositTransaction(
                   blsKeyPair,
-                  blsKeyPair.getPublicKey(), UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)
-              )
+                  blsKeyPair.getPublicKey(),
+                  UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))
               .get();
         } catch (Exception e) {
           LOG.warn(
