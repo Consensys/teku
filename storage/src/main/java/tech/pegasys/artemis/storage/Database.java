@@ -59,8 +59,10 @@ public class Database {
 
   // Store object
   private Atomic.Var<UnsignedLong> time;
+  private Atomic.Var<UnsignedLong> genesisTime;
   private Atomic.Var<Checkpoint> justifiedCheckpoint;
   private Atomic.Var<Checkpoint> finalizedCheckpoint;
+  private Atomic.Var<Checkpoint> bestJustifiedCheckpoint;
   private ConcurrentMap<Bytes32, BeaconBlock> blocks;
   private ConcurrentMap<Bytes32, BeaconState> block_states;
   private ConcurrentMap<Checkpoint, BeaconState> checkpoint_states;
@@ -83,11 +85,15 @@ public class Database {
 
     // Store initialization
     time = db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
+    genesisTime = db.atomicVar("genesis_time", new UnsignedLongSerializer()).createOrOpen();
     justifiedCheckpoint =
         db.atomicVar("justified_checkpoint", new MapDBSerializer<Checkpoint>(Checkpoint.class))
             .createOrOpen();
     finalizedCheckpoint =
         db.atomicVar("finalized_checkpoint", new MapDBSerializer<Checkpoint>(Checkpoint.class))
+            .createOrOpen();
+    bestJustifiedCheckpoint =
+        db.atomicVar("best_justified_checkpoint", new MapDBSerializer<Checkpoint>(Checkpoint.class))
             .createOrOpen();
     blocks =
         db.hashMap(
@@ -144,14 +150,17 @@ public class Database {
   }
 
   public Store createMemoryStore() {
-    UnsignedLong slot = latest_slot.get();
-    Checkpoint finalized_checkpoint_memory = new Checkpoint(finalizedCheckpoint.get());
-    Checkpoint justified_checkpoint_memory = new Checkpoint(justifiedCheckpoint.get());
     UnsignedLong time_memory = time.get();
+    UnsignedLong genesis_time_memory = genesisTime.get();
+    Checkpoint justified_checkpoint_memory = new Checkpoint(justifiedCheckpoint.get());
+    Checkpoint finalized_checkpoint_memory = new Checkpoint(finalizedCheckpoint.get());
+    Checkpoint best_justified_checkpoint_memory = new Checkpoint(bestJustifiedCheckpoint.get());
     Map<UnsignedLong, Checkpoint> latest_messages_memory = latest_messages;
     Map<Bytes32, BeaconBlock> blocks_memory = new HashMap<>();
     Map<Bytes32, BeaconState> block_states_memory = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states_memory = new HashMap<>();
+
+    UnsignedLong slot = latest_slot.get();
 
     LongStream.range(
             compute_start_slot_at_epoch(finalized_checkpoint_memory.getEpoch()).longValue(),
@@ -171,8 +180,10 @@ public class Database {
 
     return new Store(
         time_memory,
+        genesis_time_memory,
         justified_checkpoint_memory,
         finalized_checkpoint_memory,
+        best_justified_checkpoint_memory,
         blocks_memory,
         block_states_memory,
         checkpoint_states_memory,
@@ -193,8 +204,10 @@ public class Database {
               });
 
       time.set(transaction.getTime());
+      genesisTime.set(transaction.getGenesisTime());
       justifiedCheckpoint.set(transaction.getJustifiedCheckpoint());
       finalizedCheckpoint.set(transaction.getFinalizedCheckpoint());
+      bestJustifiedCheckpoint.set(transaction.getBestJustifiedCheckpoint());
       blocks.putAll(transaction.getBlocks());
       block_states.putAll(transaction.getBlockStates());
       checkpoint_states.putAll(transaction.getCheckpointStates());
@@ -234,12 +247,20 @@ public class Database {
     return time;
   }
 
+  public Atomic.Var<UnsignedLong> getGenesisTime() {
+    return genesisTime;
+  }
+
   public Atomic.Var<Checkpoint> getJustifiedCheckpoint() {
     return justifiedCheckpoint;
   }
 
   public Atomic.Var<Checkpoint> getFinalizedCheckpoint() {
     return finalizedCheckpoint;
+  }
+
+  public Atomic.Var<Checkpoint> getBestJustifiedCheckpoint() {
+    return bestJustifiedCheckpoint;
   }
 
   public Optional<BeaconBlock> getBlock(Bytes32 blockRoot) {

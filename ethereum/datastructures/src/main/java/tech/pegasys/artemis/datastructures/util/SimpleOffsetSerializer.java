@@ -39,7 +39,6 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -78,9 +77,6 @@ public class SimpleOffsetSerializer {
     classReflectionInfo.put(Attestation.class, new ReflectionInformation(Attestation.class));
     classReflectionInfo.put(
         AttestationData.class, new ReflectionInformation(AttestationData.class));
-    classReflectionInfo.put(
-        AttestationDataAndCustodyBit.class,
-        new ReflectionInformation(AttestationDataAndCustodyBit.class));
     classReflectionInfo.put(
         AttesterSlashing.class, new ReflectionInformation(AttesterSlashing.class));
     classReflectionInfo.put(Deposit.class, new ReflectionInformation(Deposit.class));
