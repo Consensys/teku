@@ -31,7 +31,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -65,8 +64,6 @@ public class MapObjectUtil {
     if (classtype.equals(Attestation.class)) return MapObjectUtil.getAttestation((Map) object);
     else if (classtype.equals(AttestationData.class)) return getAttestationData((Map) object);
     else if (classtype.equals(AttesterSlashing.class)) return getAttesterSlashing((Map) object);
-    else if (classtype.equals(AttestationDataAndCustodyBit.class))
-      return getAttestationDataAndCustodyBit((Map) object);
     else if (classtype.equals(BeaconBlock.class)) return getBeaconBlock((Map) object);
     else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
@@ -523,17 +520,9 @@ public class MapObjectUtil {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static IndexedAttestation getIndexedAttestation(Map map) {
-    SSZList<UnsignedLong> custody_bit_0_indices =
+    SSZList<UnsignedLong> attesting_indices =
         new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("custody_bit_0_indices"))
-                .stream()
-                    .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
-                    .collect(Collectors.toList()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE,
-            UnsignedLong.class);
-    SSZList<UnsignedLong> custody_bit_1_indices =
-        new SSZList<>(
-            new ArrayList<>((List<Object>) map.get("custody_bit_1_indices"))
+            new ArrayList<>((List<Object>) map.get("attesting_indices"))
                 .stream()
                     .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
                     .collect(Collectors.toList()),
@@ -543,15 +532,7 @@ public class MapObjectUtil {
     BLSSignature signature =
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
-    return new IndexedAttestation(custody_bit_0_indices, custody_bit_1_indices, data, signature);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static AttestationDataAndCustodyBit getAttestationDataAndCustodyBit(Map map) {
-
-    return new AttestationDataAndCustodyBit(
-        getAttestationData((Map) map.get("data")),
-        Boolean.getBoolean(map.get("custody_bit").toString()));
+    return new IndexedAttestation(attesting_indices, data, signature);
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -561,9 +542,6 @@ public class MapObjectUtil {
             Bytes.fromHexString(map.get("aggregation_bits").toString()),
             Constants.MAX_VALIDATORS_PER_COMMITTEE),
         getAttestationData((Map) map.get("data")),
-        Bitlist.fromBytes(
-            Bytes.fromHexString(map.get("custody_bits").toString()),
-            Constants.MAX_VALIDATORS_PER_COMMITTEE),
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString())));
   }
 

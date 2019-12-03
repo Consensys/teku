@@ -23,7 +23,6 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -62,15 +61,6 @@ public class IsVariableTest {
   void isEth1DataVariableTest() {
     assertEquals(
         false, SimpleOffsetSerializer.classReflectionInfo.get(Eth1Data.class).isVariable());
-  }
-
-  @Test
-  void isAttestationDataAndCustodyBitVariableTest() {
-    assertEquals(
-        false,
-        SimpleOffsetSerializer.classReflectionInfo
-            .get(AttestationDataAndCustodyBit.class)
-            .isVariable());
   }
 
   @Test

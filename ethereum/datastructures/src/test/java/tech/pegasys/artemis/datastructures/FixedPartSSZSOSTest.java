@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockHeader;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
@@ -27,8 +26,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
-import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.operations.AttestationDataAndCustodyBit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
@@ -179,23 +176,6 @@ class FixedPartSSZSOSTest {
 
     // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
     // assertEquals(sszEth1DataVoteBytes, sosEth1DataVoteBytes);
-  }
-
-  @Test
-  void testAttestationDataAndCustodyBitSOS() {
-    AttestationData attestationData = randomAttestationData(100);
-
-    AttestationDataAndCustodyBit attestationDataAndCustodyBit =
-        new AttestationDataAndCustodyBit(attestationData, false);
-    ;
-
-    Bytes sszattestationDataAndCustodyBitBytes =
-        SimpleOffsetSerializer.serialize(attestationDataAndCustodyBit);
-    Bytes sosattestationDataAndCustodyBitBytes =
-        SimpleOffsetSerializer.serialize(attestationDataAndCustodyBit);
-
-    // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
-    // assertEquals(sszattestationDataAndCustodyBitBytes, sosattestationDataAndCustodyBitBytes);
   }
 
   @Test

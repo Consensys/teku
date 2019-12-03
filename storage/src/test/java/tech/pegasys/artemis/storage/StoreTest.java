@@ -42,12 +42,18 @@ class StoreTest {
   private static final int SEED = 12424242;
   private static final Checkpoint INITIAL_JUSTIFIED_CHECKPOINT =
       new Checkpoint(UnsignedLong.valueOf(50), randomBytes32(SEED - 1));
+  private static final Checkpoint INITIAL_BEST_JUSTIFIED_CHECKPOINT =
+      new Checkpoint(UnsignedLong.valueOf(33), randomBytes32(SEED - 2));
   private static final Checkpoint INITIAL_FINALIZED_CHECKPOINT = new Checkpoint();
+  private UnsignedLong INITIAL_GENESIS_TIME = UnsignedLong.ZERO;
+  private UnsignedLong INITIAL_TIME = UnsignedLong.ONE;
   private final Store store =
       new Store(
-          UnsignedLong.ZERO,
+          INITIAL_TIME,
+          INITIAL_GENESIS_TIME,
           INITIAL_JUSTIFIED_CHECKPOINT,
           INITIAL_FINALIZED_CHECKPOINT,
+          INITIAL_BEST_JUSTIFIED_CHECKPOINT,
           new HashMap<>(),
           new HashMap<>(),
           new HashMap<>(),
@@ -59,29 +65,37 @@ class StoreTest {
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
+    final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
     final BeaconBlock block = randomBeaconBlock(10, 100);
     final BeaconState state = randomBeaconState(100);
+    final UnsignedLong genesisTime = UnsignedLong.valueOf(1);
     final UnsignedLong time = UnsignedLong.valueOf(3);
     transaction.putBlock(blockRoot, block);
     transaction.putBlockState(blockRoot, state);
     transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     transaction.setJustifiedCheckpoint(justifiedCheckpoint);
+    transaction.setBestJustifiedCheckpoint(bestJustifiedCheckpoint);
     transaction.putCheckpointState(justifiedCheckpoint, state);
     transaction.setTime(time);
+    transaction.setGenesis_time(genesisTime);
 
     assertFalse(store.containsBlock(blockRoot));
     assertFalse(store.containsBlockState(blockRoot));
     assertFalse(store.containsCheckpointState(justifiedCheckpoint));
-    assertEquals(UnsignedLong.ZERO, store.getTime());
+    assertEquals(INITIAL_TIME, store.getTime());
+    assertEquals(INITIAL_GENESIS_TIME, store.getGenesisTime());
     assertEquals(INITIAL_FINALIZED_CHECKPOINT, store.getFinalizedCheckpoint());
     assertEquals(INITIAL_JUSTIFIED_CHECKPOINT, store.getJustifiedCheckpoint());
+    assertEquals(INITIAL_BEST_JUSTIFIED_CHECKPOINT, store.getBestJustifiedCheckpoint());
 
     assertEquals(block, transaction.getBlock(blockRoot));
     assertEquals(state, transaction.getBlockState(blockRoot));
     assertEquals(finalizedCheckpoint, transaction.getFinalizedCheckpoint());
     assertEquals(justifiedCheckpoint, transaction.getJustifiedCheckpoint());
+    assertEquals(bestJustifiedCheckpoint, transaction.getBestJustifiedCheckpoint());
     assertEquals(state, transaction.getCheckpointState(justifiedCheckpoint));
     assertEquals(time, transaction.getTime());
+    assertEquals(genesisTime, transaction.getGenesisTime());
 
     transaction.commit();
 
@@ -89,8 +103,10 @@ class StoreTest {
     assertEquals(state, store.getBlockState(blockRoot));
     assertEquals(finalizedCheckpoint, store.getFinalizedCheckpoint());
     assertEquals(justifiedCheckpoint, store.getJustifiedCheckpoint());
+    assertEquals(bestJustifiedCheckpoint, store.getBestJustifiedCheckpoint());
     assertEquals(state, store.getCheckpointState(justifiedCheckpoint));
     assertEquals(time, store.getTime());
+    assertEquals(genesisTime, store.getGenesisTime());
   }
 
   @Test
@@ -102,15 +118,19 @@ class StoreTest {
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
+    final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
     final BeaconBlock block = randomBeaconBlock(10, 100);
     final BeaconState state = randomBeaconState(100);
     final UnsignedLong time = UnsignedLong.valueOf(3);
+    final UnsignedLong genesisTime = UnsignedLong.valueOf(2);
     transaction.putBlock(blockRoot, block);
     transaction.putBlockState(blockRoot, state);
     transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     transaction.setJustifiedCheckpoint(justifiedCheckpoint);
+    transaction.setBestJustifiedCheckpoint(bestJustifiedCheckpoint);
     transaction.putCheckpointState(justifiedCheckpoint, state);
     transaction.setTime(time);
+    transaction.setGenesis_time(genesisTime);
 
     db.insert(transaction);
 
@@ -118,8 +138,10 @@ class StoreTest {
     assertEquals(state, db.getBlock_state(blockRoot).get());
     assertEquals(finalizedCheckpoint, db.getFinalizedCheckpoint().get());
     assertEquals(justifiedCheckpoint, db.getJustifiedCheckpoint().get());
+    assertEquals(bestJustifiedCheckpoint, db.getBestJustifiedCheckpoint().get());
     assertEquals(state, db.getCheckpoint_state(justifiedCheckpoint).get());
     assertEquals(time, db.getTime().get());
+    assertEquals(genesisTime, db.getGenesisTime().get());
   }
 
   @Test
@@ -131,15 +153,19 @@ class StoreTest {
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
+    final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
     final BeaconBlock block = randomBeaconBlock(10, 100);
     final BeaconState state = randomBeaconState(100);
     final UnsignedLong time = UnsignedLong.valueOf(3);
+    final UnsignedLong genesisTime = UnsignedLong.valueOf(2);
     transaction.putBlock(blockRoot, block);
     transaction.putBlockState(blockRoot, state);
     transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     transaction.setJustifiedCheckpoint(justifiedCheckpoint);
+    transaction.setBestJustifiedCheckpoint(bestJustifiedCheckpoint);
     transaction.putCheckpointState(justifiedCheckpoint, state);
     transaction.setTime(time);
+    transaction.setGenesis_time(genesisTime);
 
     db.insert(transaction);
     db.close();
@@ -150,8 +176,10 @@ class StoreTest {
     assertEquals(state, newDB.getBlock_state(blockRoot).get());
     assertEquals(finalizedCheckpoint, newDB.getFinalizedCheckpoint().get());
     assertEquals(justifiedCheckpoint, newDB.getJustifiedCheckpoint().get());
+    assertEquals(bestJustifiedCheckpoint, newDB.getBestJustifiedCheckpoint().get());
     assertEquals(state, newDB.getCheckpoint_state(justifiedCheckpoint).get());
     assertEquals(time, newDB.getTime().get());
+    assertEquals(genesisTime, newDB.getGenesisTime().get());
   }
 
   @Test

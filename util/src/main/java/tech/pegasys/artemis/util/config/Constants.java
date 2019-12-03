@@ -106,6 +106,13 @@ public class Constants {
   public static String DEPOSIT_TEST = "test";
   public static String DEPOSIT_SIM = "simulation";
 
+  // Fork Choice
+  public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
+
+  // Validator
+  public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
+  public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
+
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
@@ -133,7 +140,7 @@ public class Constants {
       MIN_PER_EPOCH_CHURN_LIMIT = 4;
       CHURN_LIMIT_QUOTIENT = 65536;
       SHUFFLE_ROUND_COUNT = 90;
-      MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 65536;
+      MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 16384;
       MIN_GENESIS_TIME = UnsignedLong.valueOf(1578009600);
 
       // Gwei values
