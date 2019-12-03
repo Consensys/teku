@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
@@ -25,10 +24,8 @@ import java.nio.file.Files;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -38,7 +35,6 @@ import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -94,7 +90,6 @@ public final class StartupUtil {
       final long genesisTime,
       final String startState,
       final List<BLSKeyPair> validatorKeyPairs) {
-    chainStorageClient.setGenesisTime(UnsignedLong.valueOf(genesisTime));
     BeaconStateWithCache initialState;
     if (startState != null) {
       try {
@@ -108,10 +103,6 @@ public final class StartupUtil {
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs);
     }
 
-    final Store store = Store.get_genesis_store(initialState);
-    chainStorageClient.setStore(store);
-    Bytes32 headBlockRoot = get_head(store);
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
+    chainStorageClient.initialize(initialState);
   }
 }

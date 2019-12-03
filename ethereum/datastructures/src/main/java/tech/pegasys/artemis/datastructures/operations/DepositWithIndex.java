@@ -29,21 +29,6 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
     this.index = index;
   }
 
-  public DepositWithIndex(Deposit deposit) {
-    super(deposit.getProof(), deposit.getData());
-    this.index = UnsignedLong.ZERO;
-  }
-
-  public DepositWithIndex(Deposit deposit, UnsignedLong index) {
-    super(deposit.getProof(), deposit.getData());
-    this.index = index;
-  }
-
-  public DepositWithIndex() {
-    super();
-    this.index = null;
-  }
-
   public DepositWithIndex(DepositData data, UnsignedLong index) {
     super(data);
     this.index = index;

@@ -14,17 +14,14 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
@@ -51,13 +48,13 @@ public class GossipMessageHandlerIntegrationTest {
     chainUtil.initializeStorage();
 
     // Setup network 2
-    final EventBus eventBus2 = spy(new EventBus());
+    final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
     final JvmLibP2PNetwork network2 = networkFactory.startNetwork(eventBus2, storageClient2);
     chainUtil.initializeStorage(storageClient2);
 
     // Setup network 3
-    final EventBus eventBus3 = spy(new EventBus());
+    final EventBus eventBus3 = new EventBus();
     final ChainStorageClient storageClient3 = new ChainStorageClient(eventBus3);
     final JvmLibP2PNetwork network3 = networkFactory.startNetwork(eventBus3, storageClient3);
     chainUtil.initializeStorage(storageClient3);
@@ -80,20 +77,31 @@ public class GossipMessageHandlerIntegrationTest {
     eventBus1.post(newBlock);
 
     // Listen for new block event to arrive on networks 2 and 3
-    final Collection<BeaconBlock> propagatedBlocks = new ConcurrentLinkedQueue<>();
-    Waiter.waitFor(
-        () -> {
-          final ArgumentCaptor<BeaconBlock> blockCaptor =
-              ArgumentCaptor.forClass(BeaconBlock.class);
-          verify(eventBus2, atLeastOnce()).post(blockCaptor.capture());
-          verify(eventBus3, atLeastOnce()).post(blockCaptor.capture());
-          propagatedBlocks.addAll(blockCaptor.getAllValues());
-        });
+    final BeaconBlockCollector network2Blocks = new BeaconBlockCollector(eventBus2);
+    final BeaconBlockCollector network3Blocks = new BeaconBlockCollector(eventBus3);
 
     // Verify the expected block was gossiped across the network
-    assertThat(propagatedBlocks.size()).isEqualTo(2);
-    for (BeaconBlock propagatedBlock : propagatedBlocks) {
-      assertThat(propagatedBlock).isEqualTo(newBlock);
+    Waiter.waitFor(
+        () -> {
+          assertThat(network2Blocks.getBlocks()).containsExactly(newBlock);
+          assertThat(network3Blocks.getBlocks()).containsExactly(newBlock);
+        });
+  }
+
+  private static class BeaconBlockCollector {
+    private final Collection<BeaconBlock> blocks = new ConcurrentLinkedQueue<>();
+
+    public BeaconBlockCollector(final EventBus eventBus) {
+      eventBus.register(this);
+    }
+
+    @Subscribe
+    public void onBeaconBlock(final BeaconBlock block) {
+      blocks.add(block);
+    }
+
+    public Collection<BeaconBlock> getBlocks() {
+      return blocks;
     }
   }
 }

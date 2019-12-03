@@ -45,6 +45,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -66,6 +67,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
@@ -88,6 +90,7 @@ import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -124,7 +127,7 @@ public class ValidatorCoordinator {
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition(false);
     this.blockCreator = new BlockProposalUtil(stateTransition);
-    this.validators = initializeValidators(config, chainStorageClient);
+    this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.eventBus.register(this);
@@ -173,6 +176,30 @@ public class ValidatorCoordinator {
   }
 
   */
+
+  @Subscribe
+  public void onStoreInitializedEvent(final StoreInitializedEvent event) {
+    final Store store = chainStorageClient.getStore();
+    final Bytes32 head = chainStorageClient.getBestBlockRoot();
+    final BeaconState genesisState = store.getBlockState(head);
+
+    // Any deposits pre-genesis can be ignored.
+    newDeposits.clear();
+
+    // Get validator indices of our own validators
+    List<Validator> validatorRegistry = genesisState.getValidators();
+    IntStream.range(0, validatorRegistry.size())
+        .forEach(
+            i -> {
+              if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
+                STDOUT.log(
+                    Level.DEBUG,
+                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
+                validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
+              }
+            });
+  }
+
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
