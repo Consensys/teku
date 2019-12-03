@@ -24,9 +24,13 @@ public interface ReadOnlyStore {
 
   UnsignedLong getTime();
 
+  UnsignedLong getGenesisTime();
+
   Checkpoint getJustifiedCheckpoint();
 
   Checkpoint getFinalizedCheckpoint();
+
+  Checkpoint getBestJustifiedCheckpoint();
 
   BeaconBlock getBlock(Bytes32 blockRoot);
 

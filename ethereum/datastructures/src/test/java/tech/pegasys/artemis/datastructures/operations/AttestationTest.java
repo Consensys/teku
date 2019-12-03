@@ -27,11 +27,9 @@ class AttestationTest {
   private int seed = 100;
   private Bitlist aggregationBitfield = randomBitlist(seed);
   private AttestationData data = randomAttestationData(seed++);
-  private Bitlist custodyBitfield = randomBitlist(seed++);
   private BLSSignature aggregateSignature = BLSSignature.random(seed++);
 
-  private Attestation attestation =
-      new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
+  private Attestation attestation = new Attestation(aggregationBitfield, data, aggregateSignature);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -42,16 +40,14 @@ class AttestationTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    Attestation testAttestation =
-        new Attestation(aggregationBitfield, data, custodyBitfield, aggregateSignature);
+    Attestation testAttestation = new Attestation(aggregationBitfield, data, aggregateSignature);
 
     assertEquals(attestation, testAttestation);
   }
 
   @Test
   void equalsReturnsFalseWhenAggregationBitfieldsAreDifferent() {
-    Attestation testAttestation =
-        new Attestation(randomBitlist(seed++), data, custodyBitfield, aggregateSignature);
+    Attestation testAttestation = new Attestation(randomBitlist(seed++), data, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -66,15 +62,7 @@ class AttestationTest {
     }
 
     Attestation testAttestation =
-        new Attestation(aggregationBitfield, otherData, custodyBitfield, aggregateSignature);
-
-    assertNotEquals(attestation, testAttestation);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenCustodyBitfieldsAreDifferent() {
-    Attestation testAttestation =
-        new Attestation(aggregationBitfield, data, randomBitlist(seed++), aggregateSignature);
+        new Attestation(aggregationBitfield, otherData, aggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
@@ -87,7 +75,7 @@ class AttestationTest {
     }
 
     Attestation testAttestation =
-        new Attestation(aggregationBitfield, data, custodyBitfield, differentAggregateSignature);
+        new Attestation(aggregationBitfield, data, differentAggregateSignature);
 
     assertNotEquals(attestation, testAttestation);
   }
