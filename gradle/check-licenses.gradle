@@ -154,6 +154,9 @@ downloadLicenses {
       (group('org.glassfish.jersey.core')): apache,
       (group('org.glassfish.jersey.bundles.repackaged')): apache,
       (group('org.glassfish.jersey.connectors')): apache,
+      // Explicitly declare jaxb-api as CDDL 1.1 - it's dual licensed with GPL2
+      'javax.xml.bind:jaxb-api:2.3.1': cddl1_1,
+      'javax.activation:javax.activation-api:1.2.0': cddl1_1,
       //Explicitly declare EPL 2.0 for jnr-poxix - it is simultaneously licensed under 3 licenses.
       'com.github.jnr:jnr-posix:3.0.33': epl2_0,
       'com.github.jnr:jnr-posix:3.0.47': epl2_0,
