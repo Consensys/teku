@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import io.grpc.ManagedChannel;
@@ -21,13 +20,7 @@ import io.grpc.ManagedChannelBuilder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -36,8 +29,7 @@ import tech.pegasys.artemis.validator.client.ValidatorClient;
 
 class ValidatorLoader {
 
-  static Map<BLSPublicKey, ValidatorInfo> initializeValidators(
-      ArtemisConfiguration config, ChainStorageClient chainStorageClient) {
+  static Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
     int naughtinessPercentage = config.getNaughtinessPercentage();
     int numValidators = config.getNumValidators();
 
@@ -60,29 +52,11 @@ class ValidatorLoader {
       new ValidatorClient(keypair, port);
       ManagedChannel channel =
           ManagedChannelBuilder.forAddress("localhost", port).usePlaintext().build();
-      STDOUT.log(Level.DEBUG, "i = " + i + ": " + keypair.getPublicKey().toString());
+      STDOUT.log(Level.DEBUG, "Validator " + i + ": " + keypair.getPublicKey().toString());
 
       validators.put(keypair.getPublicKey(), new ValidatorInfo(numNaughtyValidators > 0, channel));
       numNaughtyValidators--;
     }
-
-    final Store store = chainStorageClient.getStore();
-    final Bytes32 head = get_head(store);
-    final BeaconState genesisState = store.getBlockState(head);
-
-    // Get validator indices of our own validators
-    List<Validator> validatorRegistry = genesisState.getValidators();
-    IntStream.range(0, validatorRegistry.size())
-        .forEach(
-            i -> {
-              if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
-                STDOUT.log(
-                    Level.DEBUG,
-                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
-                validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
-              }
-            });
-
     return validators;
   }
 }

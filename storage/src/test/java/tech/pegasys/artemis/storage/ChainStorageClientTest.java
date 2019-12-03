@@ -43,6 +43,16 @@ class ChainStorageClientTest {
   }
 
   @Test
+  public void initialize_setupInitialState() {
+    final BeaconState initialState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    storageClient.initialize(initialState);
+    assertThat(storageClient.getGenesisTime()).isEqualTo(initialState.getGenesis_time());
+    assertThat(storageClient.getBestSlot()).isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    assertThat(storageClient.getBestBlockRootState()).isEqualTo(initialState);
+    assertThat(storageClient.getStore()).isNotNull();
+  }
+
+  @Test
   public void getBlockBySlot_returnEmptyWhenStoreNotSet() {
     assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
   }

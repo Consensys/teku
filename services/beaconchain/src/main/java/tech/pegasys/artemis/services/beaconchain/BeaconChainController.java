@@ -16,6 +16,7 @@ package tech.pegasys.artemis.services.beaconchain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.eventbus.EventBus;
@@ -54,6 +55,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
@@ -83,8 +85,8 @@ public class BeaconChainController {
     this.eventBus = eventBus;
     this.config = config;
     this.metricsSystem = metricsSystem;
+    this.testMode = config.getDepositMode().equals(DEPOSIT_TEST);
     this.eventBus.register(this);
-    this.testMode = config.getDepositMode().equals("test");
   }
 
   public void initAll() {
@@ -111,23 +113,6 @@ public class BeaconChainController {
 
   public void initStorage() {
     this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
-    StartupUtil.setupInitialState(
-        chainStorageClient,
-        config.getGenesisTime(),
-        config.getStartState(),
-        config.getNumValidators());
-
-    UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
-    UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
-    UnsignedLong currentSlot = UnsignedLong.ZERO;
-    if (currentTime.compareTo(genesisTime) > 0) {
-      UnsignedLong deltaTime = currentTime.minus(genesisTime);
-      currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
-    } else {
-      UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
-      STDOUT.log(Level.INFO, timeUntilGenesis + " seconds until genesis.", ALogger.Color.GREEN);
-    }
-    nodeSlot = currentSlot;
   }
 
   public void initMetrics() {
@@ -208,6 +193,18 @@ public class BeaconChainController {
     this.timer.start();
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting BeaconRestAPI");
     this.beaconRestAPI.start();
+
+    if (testMode) {
+      generateTestModeGenesis();
+    }
+  }
+
+  private void generateTestModeGenesis() {
+    StartupUtil.setupInitialState(
+        chainStorageClient,
+        config.getGenesisTime(),
+        config.getStartState(),
+        config.getNumValidators());
   }
 
   public void stop() {
@@ -226,6 +223,22 @@ public class BeaconChainController {
     this.timer.stop();
     this.beaconRestAPI.stop();
     this.eventBus.unregister(this);
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onStoreInitializedEvent(final StoreInitializedEvent event) {
+    UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
+    UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
+    UnsignedLong currentSlot = UnsignedLong.ZERO;
+    if (currentTime.compareTo(genesisTime) > 0) {
+      UnsignedLong deltaTime = currentTime.minus(genesisTime);
+      currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+    } else {
+      UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
+      STDOUT.log(Level.INFO, timeUntilGenesis + " seconds until genesis.", ALogger.Color.GREEN);
+    }
+    nodeSlot = currentSlot;
   }
 
   @Subscribe

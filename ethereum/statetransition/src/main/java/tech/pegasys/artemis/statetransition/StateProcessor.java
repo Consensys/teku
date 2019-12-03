@@ -63,7 +63,6 @@ public class StateProcessor {
   private ChainStorageClient chainStorageClient;
   private ArtemisConfiguration config;
   private List<DepositWithIndex> deposits;
-  private BeaconStateWithCache initialState;
 
   private boolean genesisReady = false;
 
@@ -82,9 +81,9 @@ public class StateProcessor {
   public void eth2Genesis(GenesisEvent genesisEvent) {
     this.genesisReady = true;
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
-    this.initialState = genesisEvent.getBeaconState();
-    Store store = chainStorageClient.getStore();
-    Bytes32 genesisBlockRoot = get_head(store);
+    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
+    chainStorageClient.initialize(initialState);
+    Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
@@ -225,14 +224,9 @@ public class StateProcessor {
   }
 
   private void setSimulationGenesisTime(BeaconState state) {
-    if (Constants.GENESIS_TIME.equals(UnsignedLong.MAX_VALUE)) {
-      Date date = new Date();
-      state.setGenesis_time(
-          UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));
-    } else {
-      state.setGenesis_time(Constants.GENESIS_TIME);
-    }
-    chainStorageClient.setGenesisTime(state.getGenesis_time());
+    Date date = new Date();
+    state.setGenesis_time(
+        UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));
   }
 
   public boolean isGenesisReady() {

@@ -26,6 +26,7 @@ import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
@@ -44,6 +45,18 @@ public class ChainStorageClient implements ChainStorage {
   public ChainStorageClient(EventBus eventBus) {
     this.eventBus = eventBus;
     this.eventBus.register(this);
+  }
+
+  public void initialize(final BeaconState initialState) {
+    setGenesisTime(initialState.getGenesis_time());
+    final Store store = Store.get_genesis_store(initialState);
+    setStore(store);
+
+    // The genesis state is by definition finalised so just get the root from there.
+    Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    updateBestBlock(headBlockRoot, headBlock.getSlot());
+    eventBus.post(new StoreInitializedEvent());
   }
 
   public void setGenesisTime(UnsignedLong genesisTime) {
