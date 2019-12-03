@@ -28,6 +28,7 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -35,7 +36,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final ChainStorageClient storageClient;
   private final HistoricalChainData historicalChainData;
 
-  private ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final Subscribers<PeerConnectedSubscriber> connectSubscribers = Subscribers.create(true);
+  private final ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
   private final RpcMethods rpcMethods;
 
@@ -66,6 +68,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     eth2Peer.subscribeInitialStatus(
         (status) ->
             PeerChainValidator.create(storageClient, historicalChainData, eth2Peer, status).run());
+
+    connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
+  }
+
+  public void subscribeConnect(final PeerConnectedSubscriber subscriber) {
+    connectSubscribers.subscribe(subscriber);
   }
 
   @Override
