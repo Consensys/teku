@@ -91,11 +91,6 @@ public class PeerManager implements ConnectionHandler {
             });
   }
 
-  public Peer getPeer(Connection conn) {
-    final NodeId nodeId = new LibP2PNodeId(conn.getSecureSession().getRemoteId());
-    return connectedPeerMap.get(nodeId);
-  }
-
   public Optional<Peer> getPeer(NodeId id) {
     return Optional.ofNullable(connectedPeerMap.get(id));
   }

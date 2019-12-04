@@ -90,10 +90,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     return connectedPeerMap.values().stream().filter(this::peerIsReady);
   }
 
-  public int getAvailablePeerCount() {
-    return (int) connectedPeerMap.values().stream().filter(Eth2Peer::hasStatus).count();
-  }
-
   private boolean peerIsReady(Eth2Peer peer) {
     return peer.hasStatus();
   }
