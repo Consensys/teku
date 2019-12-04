@@ -13,26 +13,90 @@
 
 package tech.pegasys.artemis.networking.eth2;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.google.common.eventbus.EventBus;
+import java.net.BindException;
+import java.util.ArrayList;
 import java.util.Collection;
-import tech.pegasys.artemis.network.p2p.jvmlibp2p.P2PNetworkFactory;
-import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Protocol;
+import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.Waiter;
 
-public class Eth2NetworkFactory extends P2PNetworkFactory<Eth2Network, Eth2P2PNetworkBuilder> {
+public class Eth2NetworkFactory {
 
-  @Override
+  protected static final Logger LOG = LogManager.getLogger();
+  protected static final NoOpMetricsSystem METRICS_SYSTEM = new NoOpMetricsSystem();
+  private static final int MIN_PORT = 6000;
+  private static final int MAX_PORT = 9000;
+
+  private final List<Eth2Network> networks = new ArrayList<>();
+
   public Eth2P2PNetworkBuilder builder() {
     return new Eth2P2PNetworkBuilder();
   }
 
-  public class Eth2P2PNetworkBuilder
-      extends P2PNetworkFactory<Eth2Network, Eth2P2PNetworkBuilder>.NetworkBuilder {
+  public void stopAll() {
+    networks.forEach(P2PNetwork::stop);
+  }
 
-    @Override
+  public class Eth2P2PNetworkBuilder {
+
+    protected List<Eth2Network> peers = new ArrayList<>();
+    protected EventBus eventBus;
+    protected ChainStorageClient chainStorageClient;
+    protected List<Protocol<?>> protocols = new ArrayList<>();
+    protected List<PeerHandler> peerHandlers = new ArrayList<>();
+
+    public Eth2Network startNetwork() throws Exception {
+      setDefaults();
+      final Eth2Network network = buildAndStartNetwork();
+      networks.add(network);
+      return network;
+    }
+
+    protected Eth2Network buildAndStartNetwork() throws Exception {
+      int attempt = 1;
+      while (true) {
+        final NetworkConfig config = generateConfig();
+        final Eth2Network network = buildNetwork(config);
+        try {
+          network.start().get(30, TimeUnit.SECONDS);
+          networks.add(network);
+          Waiter.waitFor(() -> assertThat(network.getPeerCount()).isEqualTo(peers.size()));
+          return network;
+        } catch (ExecutionException e) {
+          if (e.getCause() instanceof BindException) {
+            if (attempt > 10) {
+              throw new RuntimeException("Failed to find a free port after multiple attempts", e);
+            }
+            LOG.info(
+                "Port conflict detected, retrying with a new port. Original message: {}",
+                e.getMessage());
+            attempt++;
+            network.stop();
+          } else {
+            throw e;
+          }
+        }
+      }
+    }
+
     protected Eth2Network buildNetwork(final NetworkConfig config) {
       {
         // Setup eth2 handlers
@@ -40,8 +104,8 @@ public class Eth2NetworkFactory extends P2PNetworkFactory<Eth2Network, Eth2P2PNe
             new Eth2PeerManager(chainStorageClient, METRICS_SYSTEM);
         final Collection<? extends Protocol<?>> eth2Protocols =
             eth2PeerManager.getRpcMethods().all();
-        protocols.addAll(eth2Protocols);
-        peerHandlers.add(eth2PeerManager);
+        // Configure eth2 handlers
+        this.protocols(eth2Protocols).peerHandler(eth2PeerManager);
 
         final P2PNetwork network =
             new JvmLibP2PNetwork(
@@ -49,6 +113,55 @@ public class Eth2NetworkFactory extends P2PNetworkFactory<Eth2Network, Eth2P2PNe
 
         return new Eth2Network(network, eth2PeerManager);
       }
+    }
+
+    private NetworkConfig generateConfig() {
+      final List<String> peerAddresses =
+          peers.stream().map(P2PNetwork::getNodeAddress).collect(Collectors.toList());
+
+      final Random random = new Random();
+      final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+
+      return new NetworkConfig(
+          Optional.empty(), "127.0.0.1", port, port, peerAddresses, false, false, false);
+    }
+
+    private void setDefaults() {
+      if (eventBus == null) {
+        eventBus = new EventBus();
+      }
+      if (chainStorageClient == null) {
+        chainStorageClient = new ChainStorageClient(eventBus);
+      }
+    }
+
+    public Eth2P2PNetworkBuilder peer(final Eth2Network peer) {
+      this.peers.add(peer);
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder eventBus(final EventBus eventBus) {
+      checkNotNull(eventBus);
+      this.eventBus = eventBus;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder chainStorageClient(final ChainStorageClient chainStorageClient) {
+      checkNotNull(chainStorageClient);
+      this.chainStorageClient = chainStorageClient;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder protocols(final Collection<? extends Protocol<?>> protocols) {
+      checkNotNull(protocols);
+      this.protocols.addAll(protocols);
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder peerHandler(final PeerHandler peerHandler) {
+      checkNotNull(peerHandler);
+      peerHandlers.add(peerHandler);
+      return this;
     }
   }
 }
