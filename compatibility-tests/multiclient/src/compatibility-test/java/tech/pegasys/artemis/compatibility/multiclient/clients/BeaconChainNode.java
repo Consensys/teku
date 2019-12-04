@@ -13,13 +13,13 @@
 
 package tech.pegasys.artemis.compatibility.multiclient.clients;
 
-import io.libp2p.core.PeerId;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public interface BeaconChainNode {
 
   String getMultiAddr();
 
-  PeerId getPeerId();
+  NodeId getId();
 
   void stop();
 }

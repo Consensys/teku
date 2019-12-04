@@ -17,66 +17,47 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
-import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMessageHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.RpcMethods;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksByRangeMessageHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.BeaconBlocksByRootMessageHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.GoodbyeMessageHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageFactory;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.rpc.methods.StatusMessageHandler;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class PeerManager implements ConnectionHandler, PeerLookup {
+public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ScheduledExecutorService scheduler;
   private static final long RECONNECT_TIMEOUT = 5000;
-  private final StatusMessageFactory statusMessageFactory;
 
-  private ConcurrentHashMap<PeerId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
-
-  private final RpcMethods rpcMethods;
+  private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final List<PeerHandler> peerHandlers;
 
   public PeerManager(
       final ScheduledExecutorService scheduler,
       final ChainStorageClient chainStorageClient,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final List<PeerHandler> peerHandlers) {
     this.scheduler = scheduler;
-    statusMessageFactory = new StatusMessageFactory(chainStorageClient);
-    this.rpcMethods =
-        new RpcMethods(
-            this,
-            new StatusMessageHandler(statusMessageFactory),
-            new GoodbyeMessageHandler(metricsSystem),
-            new BeaconBlocksByRootMessageHandler(chainStorageClient),
-            new BeaconBlocksByRangeMessageHandler(chainStorageClient));
+    this.peerHandlers = peerHandlers;
   }
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new Peer(connection, rpcMethods, statusMessageFactory);
+    Peer peer = new LibP2PPeer(connection);
     onConnectedPeer(peer);
     connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
-
-    if (connection.isInitiator()) {
-      peer.sendStatus();
-    }
   }
 
   public CompletableFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
@@ -110,37 +91,31 @@ public class PeerManager implements ConnectionHandler, PeerLookup {
             });
   }
 
-  @Override
   public Peer getPeer(Connection conn) {
-    return connectedPeerMap.get(conn.getSecureSession().getRemoteId());
+    final NodeId nodeId = new LibP2PNodeId(conn.getSecureSession().getRemoteId());
+    return connectedPeerMap.get(nodeId);
   }
 
-  public Optional<Peer> getAvailablePeer(PeerId peerId) {
-    return Optional.ofNullable(connectedPeerMap.get(peerId)).filter(Peer::hasStatus);
+  public Optional<Peer> getPeer(NodeId id) {
+    return Optional.ofNullable(connectedPeerMap.get(id));
   }
 
   private void onConnectedPeer(Peer peer) {
-    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getPeerId(), peer) == null;
+    final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
-      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getPeerId());
+      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
+      peerHandlers.forEach(h -> h.onConnect(peer));
     }
   }
 
   private void onDisconnectedPeer(Peer peer) {
-    if (connectedPeerMap.remove(peer.getPeerId()) != null) {
-      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getPeerId());
+    if (connectedPeerMap.remove(peer.getId()) != null) {
+      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getId());
+      peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
   }
 
-  public Collection<RpcMessageHandler<?, ?>> getRpcMessageHandlers() {
-    return rpcMethods.all();
-  }
-
-  public int getAvailablePeerCount() {
-    return (int) connectedPeerMap.values().stream().filter(Peer::hasStatus).count();
-  }
-
-  public List<String> getPeerIds() {
-    return connectedPeerMap.keySet().stream().map(PeerId::toBase58).collect(Collectors.toList());
+  public Stream<Peer> streamPeers() {
+    return connectedPeerMap.values().stream();
   }
 }

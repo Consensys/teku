@@ -14,10 +14,17 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.core.PeerId;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.LibP2PNodeId;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
 public class MockP2PNetwork implements P2PNetwork {
+  private final NodeId nodeId = new LibP2PNodeId(PeerId.random());
 
   public MockP2PNetwork(EventBus eventBus) {
     eventBus.register(this);
@@ -25,7 +32,29 @@ public class MockP2PNetwork implements P2PNetwork {
 
   @Override
   public CompletableFuture<?> connect(String peer) {
-    return null;
+    final CompletableFuture<?> connectFuture = new CompletableFuture<>();
+    connectFuture.completeExceptionally(new UnsupportedOperationException());
+    return connectFuture;
+  }
+
+  @Override
+  public Optional<? extends Peer> getPeer(final NodeId id) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Stream<? extends Peer> streamPeers() {
+    return Stream.empty();
+  }
+
+  @Override
+  public String getNodeAddress() {
+    return "127.0.0.1" + "/p2p/" + nodeId.toBase58();
+  }
+
+  @Override
+  public NodeId getNodeId() {
+    return nodeId;
   }
 
   /** Stops the P2P network layer. */

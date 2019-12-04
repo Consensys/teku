@@ -30,20 +30,22 @@ import org.apache.tuweni.bytes.Bytes;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.artemis.networking.p2p.jvmlibp2p.LibP2PNodeId;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public class Prysm extends GenericContainer<Prysm> implements BeaconChainNode {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final String PRIVKEY_TARGET_PATH = "/tmp/privkey.tmp";
   private final File privKeyFile;
-  private final PeerId peerId;
+  private final NodeId nodeId;
 
   public Prysm() {
     super("gcr.io/prysmaticlabs/prysm/beacon-chain:latest");
     try {
       PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
       PubKey pubKey = privKey.publicKey();
-      peerId = PeerId.fromPubKey(pubKey);
+      nodeId = new LibP2PNodeId(PeerId.fromPubKey(pubKey));
 
       privKeyFile = writePrivKeyToFile(privKey);
 
@@ -85,12 +87,12 @@ public class Prysm extends GenericContainer<Prysm> implements BeaconChainNode {
 
   @Override
   public String getMultiAddr() {
-    return "/ip4/127.0.0.1/tcp/" + getMappedPort(13000) + "/p2p/" + peerId.toBase58();
+    return "/ip4/127.0.0.1/tcp/" + getMappedPort(13000) + "/p2p/" + nodeId.toBase58();
   }
 
   @Override
-  public PeerId getPeerId() {
-    return peerId;
+  public NodeId getId() {
+    return nodeId;
   }
 
   @Override

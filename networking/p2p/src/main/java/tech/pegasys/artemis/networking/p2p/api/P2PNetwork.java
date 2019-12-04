@@ -13,7 +13,11 @@
 
 package tech.pegasys.artemis.networking.p2p.api;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
 public interface P2PNetwork {
   /**
@@ -23,6 +27,18 @@ public interface P2PNetwork {
    * @return Future of the established PeerConnection
    */
   CompletableFuture<?> connect(String peer);
+
+  Optional<? extends Peer> getPeer(NodeId id);
+
+  Stream<? extends Peer> streamPeers();
+
+  default long getPeerCount() {
+    return streamPeers().count();
+  }
+
+  String getNodeAddress();
+
+  NodeId getNodeId();
 
   /**
    * starts the p2p network layer
