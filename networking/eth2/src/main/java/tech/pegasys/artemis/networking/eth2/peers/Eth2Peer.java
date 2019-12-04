@@ -62,7 +62,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public CompletableFuture<StatusData> sendStatus() {
-    return invoke(BeaconChainMethods.STATUS, statusMessageFactory.createStatusMessage())
+    return sendRequest(BeaconChainMethods.STATUS, statusMessageFactory.createStatusMessage())
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
             remoteStatus -> {
@@ -72,7 +72,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public CompletableFuture<Void> sendGoodbye(final UnsignedLong reason) {
-    return invoke(BeaconChainMethods.GOODBYE, new GoodbyeMessage(reason))
+    return sendRequest(BeaconChainMethods.GOODBYE, new GoodbyeMessage(reason))
         .thenCompose(ResponseStream::expectNoResponse);
   }
 
@@ -98,11 +98,11 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   private <I extends RpcRequest, O> CompletableFuture<Void> requestStream(
       final RpcMethod<I, O> method, I request, final ResponseStream.ResponseListener<O> listener) {
-    return invoke(method, request)
+    return sendRequest(method, request)
         .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
   }
 
-  public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> invoke(
+  public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> sendRequest(
       final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, this.getConnection(), request);
   }

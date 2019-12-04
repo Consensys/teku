@@ -48,7 +48,7 @@ public class ErrorConditionsIntegrationTest {
     final Eth2Peer peer = network1.getPeer(network2.getNodeId()).orElseThrow();
 
     final CompletableFuture<StatusMessage> response =
-        peer.invoke(BeaconChainMethods.STATUS, new InvalidStatusMessage())
+        peer.sendRequest(BeaconChainMethods.STATUS, new InvalidStatusMessage())
             .thenCompose(ResponseStream::expectSingleResponse);
 
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
