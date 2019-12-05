@@ -51,7 +51,7 @@ public class BeaconChainUtil {
   }
 
   public static BeaconChainUtil create(
-          final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys) {
+      final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys) {
     return new BeaconChainUtil(validatorKeys, storageClient);
   }
 

@@ -27,8 +27,6 @@ import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.ByteBuf;
-
-import java.io.ObjectInputFilter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
@@ -40,17 +38,12 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
-import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class AttestationTopicHandlerTest {
 
@@ -154,5 +147,4 @@ public class AttestationTopicHandlerTest {
 
     verify(publisher, never()).publish(any(), any());
   }
-
 }

@@ -123,8 +123,7 @@ public class ValidatorCoordinator {
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
   private HashMap<UnsignedLong, Eth1DataWithIndexAndDeposits> eth1DataCache = new HashMap<>();
 
-  @VisibleForTesting
-  public Map<Integer, Integer> committeeIndexTTL = new HashMap<>();
+  @VisibleForTesting public Map<Integer, Integer> committeeIndexTTL = new HashMap<>();
 
   public ValidatorCoordinator(
       EventBus eventBus,
@@ -261,20 +260,18 @@ public class ValidatorCoordinator {
 
       // At the start of each epoch or at genesis, update attestation assignments
       // for all validators
-      System.out.println("hey1");
       if (isGenesisOrEpochStart(slot)) {
-        System.out.println("hey2");
         List<Integer> committeeIndices = updateAttestationAssignments(headState);
         List<Integer> newCommitteeIndices = new ArrayList<>();
 
-        committeeIndices.forEach(index -> {
-          if (!committeeIndexTTL.containsKey(index)) {
-            newCommitteeIndices.add(index);
-          }
-          committeeIndexTTL.put(index, COMMITTEE_INDEX_SUBSCRIPTION_LENGTH);
-        });
-        if (!newCommitteeIndices.isEmpty())
-        {
+        committeeIndices.forEach(
+            index -> {
+              if (!committeeIndexTTL.containsKey(index)) {
+                newCommitteeIndices.add(index);
+              }
+              committeeIndexTTL.put(index, COMMITTEE_INDEX_SUBSCRIPTION_LENGTH);
+            });
+        if (!newCommitteeIndices.isEmpty()) {
           this.eventBus.post(new CommitteeAssignmentEvent(newCommitteeIndices));
         }
       }
@@ -284,9 +281,7 @@ public class ValidatorCoordinator {
 
       // Reset the attestation validator and pass attester information necessary
       // for validator to know which committees and validators to aggregate for
-      System.out.println("hey3");
       attestationAggregator.updateAggregatorInformations(attesterInformations);
-      System.out.println("hey4");
 
       asyncProduceAttestations(
           attesterInformations, headState, getGenericAttestationData(headState, headBlock));
@@ -604,7 +599,7 @@ public class ValidatorCoordinator {
               });
         });
 
-      return new ArrayList<>(committeeIndicesToSubscribe);
+    return new ArrayList<>(committeeIndicesToSubscribe);
   }
 
   private void asyncProduceAttestations(
