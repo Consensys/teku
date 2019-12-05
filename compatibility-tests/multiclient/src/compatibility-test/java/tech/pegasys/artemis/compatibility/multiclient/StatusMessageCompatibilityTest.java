@@ -25,22 +25,22 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tech.pegasys.artemis.compatibility.multiclient.clients.Prysm;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
-import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Peer.StatusData;
+import tech.pegasys.artemis.networking.eth2.Eth2Network;
+import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
 
 @Testcontainers
 class StatusMessageCompatibilityTest {
 
   @Container private static final Prysm PRYSM_NODE = new Prysm();
 
-  private final NetworkFactory networkFactory = new NetworkFactory();
-  private JvmLibP2PNetwork artemis;
+  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private Eth2Network artemis;
 
   @BeforeEach
   public void setUp() throws Exception {
-    artemis = networkFactory.startNetwork();
+    artemis = networkFactory.builder().startNetwork();
   }
 
   @AfterEach
@@ -51,9 +51,8 @@ class StatusMessageCompatibilityTest {
   @Test
   public void shouldExchangeStatusWhenArtemisConnectsToPrysm() throws Exception {
     waitFor(artemis.connect(PRYSM_NODE.getMultiAddr()));
-    waitFor(() -> assertThat(artemis.getPeerManager().getAvailablePeerCount()).isEqualTo(1));
-    final Peer prysm =
-        artemis.getPeerManager().getAvailablePeer(PRYSM_NODE.getPeerId()).orElseThrow();
+    waitFor(() -> assertThat(artemis.getPeerCount()).isEqualTo(1));
+    final Eth2Peer prysm = artemis.getPeer(PRYSM_NODE.getId()).orElseThrow();
     final StatusData status = prysm.getStatus();
     assertThat(status).isNotNull();
     assertThat(status.getHeadForkVersion()).isEqualTo(Fork.VERSION_ZERO);
