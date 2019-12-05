@@ -14,8 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
 public class PeerIdHandler implements BeaconRestApiHandler {
 
@@ -32,10 +31,6 @@ public class PeerIdHandler implements BeaconRestApiHandler {
 
   @Override
   public Object handleRequest(RequestParams params) {
-    if (network instanceof JvmLibP2PNetwork) {
-      return ((JvmLibP2PNetwork) network).getPeerIdString();
-    } else {
-      return "p2pNetwork not set to libP2P";
-    }
+    return network.getNodeAddress();
   }
 }

@@ -40,10 +40,10 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
-import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.MockP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Config;
+import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
@@ -150,8 +150,8 @@ public class BeaconChainController {
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
       PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
-      Config p2pConfig =
-          new Config(
+      NetworkConfig p2pConfig =
+          new NetworkConfig(
               Optional.of(pk),
               config.getNetworkInterface(),
               config.getPort(),
@@ -161,7 +161,12 @@ public class BeaconChainController {
               true,
               true);
       this.p2pNetwork =
-          new JvmLibP2PNetwork(p2pConfig, eventBus, chainStorageClient, metricsSystem);
+          Eth2NetworkBuilder.create()
+              .config(p2pConfig)
+              .eventBus(eventBus)
+              .chainStorageClient(chainStorageClient)
+              .metricsSystem(metricsSystem)
+              .build();
       this.networkTask = () -> this.p2pNetwork.start();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());

@@ -32,10 +32,6 @@ dependencies {
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
-  integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  integrationTestImplementation 'org.mockito:mockito-core'
-
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
   testSupportCompile 'org.assertj:assertj-core'
