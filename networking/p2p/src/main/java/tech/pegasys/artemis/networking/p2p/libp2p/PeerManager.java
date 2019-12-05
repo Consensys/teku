@@ -34,7 +34,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -47,11 +46,11 @@ public class PeerManager implements ConnectionHandler {
 
   public PeerManager(
       final ScheduledExecutorService scheduler,
-      final ChainStorageClient chainStorageClient,
       final MetricsSystem metricsSystem,
       final List<PeerHandler> peerHandlers) {
     this.scheduler = scheduler;
     this.peerHandlers = peerHandlers;
+    // TODO - add metrics
   }
 
   @Override

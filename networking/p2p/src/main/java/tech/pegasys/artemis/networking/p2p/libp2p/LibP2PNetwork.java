@@ -81,7 +81,7 @@ public class LibP2PNetwork implements P2PNetwork {
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
     gossip = new Gossip();
     GossipMessageHandler.create(gossip, privKey, eventBus, chainStorageClient).start();
-    peerManager = new PeerManager(scheduler, chainStorageClient, metricsSystem, peerHandlers);
+    peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers);
     advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
 
     host =
