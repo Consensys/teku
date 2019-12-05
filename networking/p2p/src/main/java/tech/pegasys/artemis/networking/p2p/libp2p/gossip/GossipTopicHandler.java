@@ -20,7 +20,8 @@ import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.Unpooled;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,8 +32,13 @@ import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
-    implements Consumer<MessageApi> {
+    implements Function<MessageApi, CompletableFuture<Boolean>> {
   private static final Logger LOG = LogManager.getLogger();
+  
+  private static CompletableFuture<Boolean> VALIDATION_FAILED =
+      CompletableFuture.completedFuture(false);
+  private static CompletableFuture<Boolean> VALIDATION_SUCCEEDED =
+      CompletableFuture.completedFuture(true);
   static final int GOSSIP_MAX_SIZE = 1048576;
   private static final int MAX_SENT_MESSAGES = 2048;
 
@@ -50,19 +56,19 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
   public abstract Topic getTopic();
 
   @Override
-  public final void accept(MessageApi message) {
+  public final CompletableFuture<Boolean> apply(MessageApi message) {
     Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
     if (bytes.size() > GOSSIP_MAX_SIZE) {
       LOG.trace(
           "Rejecting gossip message of length {} which exceeds maximum size of {}",
           bytes.size(),
           GOSSIP_MAX_SIZE);
-      return;
+      return VALIDATION_FAILED;
     }
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", getTopic(), bytes.size());
-      return;
+      return VALIDATION_FAILED;
     }
     LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
 
@@ -71,19 +77,20 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
       data = deserializeData(bytes);
       if (!validateData(data)) {
         LOG.trace("Received invalid message for topic: {}", getTopic());
-        return;
+        return VALIDATION_FAILED;
       }
     } catch (SSZException e) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-      return;
+      return VALIDATION_FAILED;
     } catch (Throwable e) {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return;
+      return VALIDATION_FAILED;
     }
 
     // Post and re-gossip data on successful processing
     gossip(bytes);
     eventBus.post(data);
+    return VALIDATION_SUCCEEDED;
   }
 
   private T deserializeData(Bytes bytes) throws SSZException {
