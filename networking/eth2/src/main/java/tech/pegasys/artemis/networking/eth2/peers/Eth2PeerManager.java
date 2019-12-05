@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
-import io.libp2p.core.Connection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -24,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
-import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -76,9 +74,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     return rpcMethods;
   }
 
+  /**
+   * Look up peer by id, returning peer result regardless of validation status of the peer.
+   *
+   * @param nodeId The nodeId of the peer to lookup
+   * @return the peer corresponding to this node id.
+   */
   @Override
-  public Eth2Peer getPeer(Connection conn) {
-    final NodeId nodeId = new LibP2PNodeId(conn.getSecureSession().getRemoteId());
+  public Eth2Peer getConnectedPeer(NodeId nodeId) {
     return connectedPeerMap.get(nodeId);
   }
 

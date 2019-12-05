@@ -33,7 +33,9 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMessageHandler.Controller;
+import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.Protocol;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     implements Protocol<Controller<TRequest, ResponseStream<TResponse>>> {
@@ -69,7 +71,8 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
   private void invokeLocal(
       Connection connection, TRequest request, ResponseCallback<TResponse> callback) {
     try {
-      final Eth2Peer peer = peerLookup.getPeer(connection);
+      final NodeId nodeId = new LibP2PNodeId(connection.getSecureSession().getRemoteId());
+      final Eth2Peer peer = peerLookup.getConnectedPeer(nodeId);
       localMessageHandler.onIncomingMessage(peer, request, callback);
     } catch (final Throwable t) {
       LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);

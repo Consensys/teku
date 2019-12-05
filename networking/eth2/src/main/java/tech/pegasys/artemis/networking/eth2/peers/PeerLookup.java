@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
-import io.libp2p.core.Connection;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public interface PeerLookup {
-  Eth2Peer getPeer(Connection connection);
+  Eth2Peer getConnectedPeer(NodeId nodeId);
 }
