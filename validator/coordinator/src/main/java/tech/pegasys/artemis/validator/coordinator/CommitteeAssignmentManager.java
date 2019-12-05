@@ -120,7 +120,7 @@ public class CommitteeAssignmentManager {
     // for all validators
     if (!isGenesis(slot) && isEpochStart(slot)) {
       UnsignedLong epoch = compute_epoch_at_slot(slot);
-      // NOTE: we get attestation assignments for NEXT epoch
+      // NOTE: we get commmittee assignments for NEXT epoch
       Set<Integer> committeeIndices =
           updateCommitteeAssignments(headState, epoch.plus(UnsignedLong.ONE));
 

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -30,6 +31,8 @@ import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -118,10 +121,8 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(network1.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
           assertThat(network2.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
         });
-    // TODO: debug this - we shouldn't have to wait here
-    Thread.sleep(2000);
 
-    // Listen for new block event to arrive on network 2
+    // Listen for new attestation event to arrive on network 2
     final AttestationCollector network2Attestations = new AttestationCollector(eventBus2);
 
     // Propagate attestation from network 1
@@ -129,9 +130,122 @@ public class GossipMessageHandlerIntegrationTest {
     Attestation validAttestation = attestationGenerator.validAttestation(storageClient1);
     eventBus1.post(validAttestation);
 
-    Thread.sleep(2000);
+    // Wait for the message to be propagated
+    Thread.sleep(1000);
 
     assertThat(network2Attestations.getAttestations()).isEmpty();
+  }
+
+  @Test
+  public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
+    // Setup network 1
+    final EventBus eventBus1 = new EventBus();
+    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1, storageClient1);
+    List<BLSKeyPair> blsKeyPairList =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient1, blsKeyPairList);
+    chainUtil.initializeStorage();
+
+    // Setup network 2
+    final EventBus eventBus2 = new EventBus();
+    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final JvmLibP2PNetwork network2 = networkFactory.startNetwork(eventBus2, storageClient2);
+    chainUtil.initializeStorage(storageClient2);
+
+    // Connect networks 1 -> 2
+    network1.connect(network2.getPeerAddress());
+    // Wait for connections to get set up
+    Waiter.waitFor(
+        () -> {
+          assertThat(network1.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
+          assertThat(network2.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
+        });
+
+    // Listen for new attestation event to arrive on network 2
+    final AttestationCollector network2Attestations = new AttestationCollector(eventBus2);
+
+    // Propagate attestation from network 1
+    AttestationGenerator attestationGenerator = new AttestationGenerator(blsKeyPairList);
+    Attestation validAttestation = attestationGenerator.validAttestation(storageClient1);
+
+    eventBus1.post(
+        new CommitteeAssignmentEvent(List.of(validAttestation.getData().getIndex().intValue())));
+    eventBus2.post(
+        new CommitteeAssignmentEvent(List.of(validAttestation.getData().getIndex().intValue())));
+
+    // Sleep here because registering to new topics take time
+    Thread.sleep(1000);
+
+    eventBus1.post(validAttestation);
+
+    Thread.sleep(1000);
+    // Sleep here because receiving new messages over the network takes time
+
+    assertTrue(network2Attestations.getAttestations().contains(validAttestation));
+  }
+
+  @Test
+  public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
+    // Setup network 1
+    final EventBus eventBus1 = new EventBus();
+    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1, storageClient1);
+    List<BLSKeyPair> blsKeyPairList =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient1, blsKeyPairList);
+    chainUtil.initializeStorage();
+
+    // Setup network 2
+    final EventBus eventBus2 = new EventBus();
+    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final JvmLibP2PNetwork network2 = networkFactory.startNetwork(eventBus2, storageClient2);
+    chainUtil.initializeStorage(storageClient2);
+
+    // Connect networks 1 -> 2
+    network1.connect(network2.getPeerAddress());
+    // Wait for connections to get set up
+    Waiter.waitFor(
+        () -> {
+          assertThat(network1.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
+          assertThat(network2.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
+        });
+
+    // Listen for new attestation event to arrive on network 2
+    final AttestationCollector network2Attestations = new AttestationCollector(eventBus2);
+
+    // Propagate attestation from network 1
+    AttestationGenerator attestationGenerator = new AttestationGenerator(blsKeyPairList);
+    Attestation validAttestation = attestationGenerator.validAttestation(storageClient1);
+
+    eventBus1.post(
+        new CommitteeAssignmentEvent(List.of(validAttestation.getData().getIndex().intValue())));
+    eventBus2.post(
+        new CommitteeAssignmentEvent(List.of(validAttestation.getData().getIndex().intValue())));
+    // Sleep here because registering to new topics take time
+    Thread.sleep(1000);
+    eventBus1.post(validAttestation);
+
+    Thread.sleep(1000);
+    // Sleep here because receiving new messages over the network takes time
+    assertTrue(network2Attestations.getAttestations().contains(validAttestation));
+
+    eventBus1.post(
+        new CommitteeDismissalEvent(List.of(validAttestation.getData().getIndex().intValue())));
+    eventBus2.post(
+        new CommitteeDismissalEvent(List.of(validAttestation.getData().getIndex().intValue())));
+
+    // Sleep here because deregistering from topics take time
+    Thread.sleep(1000);
+
+    // Listen if the new attestation arrives on network 2
+    final AttestationCollector network2AttestationsAfterDeregistration =
+        new AttestationCollector(eventBus2);
+
+    Thread.sleep(1000);
+    // Sleep here because receiving new messages over the network takes time
+
+    assertThat(network2AttestationsAfterDeregistration.getAttestations()).isEmpty();
   }
 
   private static class BeaconBlockCollector {
