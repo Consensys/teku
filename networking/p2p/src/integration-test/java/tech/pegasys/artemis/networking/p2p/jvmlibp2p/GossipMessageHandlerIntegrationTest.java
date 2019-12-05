@@ -148,7 +148,7 @@ public class GossipMessageHandlerIntegrationTest {
 
   @Test
   public void shouldReceiveAttestationAcrossPeersInSameSubnet() throws Exception {
-    int numValidators = 12;
+    final int numValidators = 12;
 
     ArtemisConfiguration config = mock(ArtemisConfiguration.class);
     doReturn(0).when(config).getNaughtinessPercentage();
@@ -181,7 +181,7 @@ public class GossipMessageHandlerIntegrationTest {
     eventBus1.post(new StoreInitializedEvent());
 
     // Setup VC 2
-    Constants.VALIDATOR_CLIENT_PORT_BASE = Constants.VALIDATOR_CLIENT_PORT_BASE + 64;
+    Constants.VALIDATOR_CLIENT_PORT_BASE = Constants.VALIDATOR_CLIENT_PORT_BASE + numValidators;
     new ValidatorCoordinator(
         eventBus2, storageClient2, aggregator, mock(BlockAttestationsPool.class), config);
     eventBus2.post(new StoreInitializedEvent());
