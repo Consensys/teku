@@ -24,6 +24,7 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
 public class MockP2PNetwork implements P2PNetwork {
+  private final int port = 6000;
   private final NodeId nodeId = new LibP2PNodeId(PeerId.random());
 
   public MockP2PNetwork(EventBus eventBus) {
@@ -49,7 +50,7 @@ public class MockP2PNetwork implements P2PNetwork {
 
   @Override
   public String getNodeAddress() {
-    return "/ip4/127.0.0.1" + "/p2p/" + nodeId.toBase58();
+    return "/ip4/127.0.0.1/tcp/" + port + "/p2p/" + nodeId.toBase58();
   }
 
   @Override
