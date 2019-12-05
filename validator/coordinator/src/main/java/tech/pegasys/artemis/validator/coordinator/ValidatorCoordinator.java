@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGenericAttestationData;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -21,6 +22,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.config.Constants.COMMITTEE_INDEX_SUBSCRIPTION_LENGTH;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
@@ -31,6 +33,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_RO
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -39,9 +42,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -83,6 +88,7 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
@@ -116,6 +122,9 @@ public class ValidatorCoordinator {
 
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
   private HashMap<UnsignedLong, Eth1DataWithIndexAndDeposits> eth1DataCache = new HashMap<>();
+
+  @VisibleForTesting
+  public Map<Integer, Integer> committeeIndexTTL = new HashMap<>();
 
   public ValidatorCoordinator(
       EventBus eventBus,
@@ -252,8 +261,22 @@ public class ValidatorCoordinator {
 
       // At the start of each epoch or at genesis, update attestation assignments
       // for all validators
+      System.out.println("hey1");
       if (isGenesisOrEpochStart(slot)) {
-        updateAttestationAssignments(headState);
+        System.out.println("hey2");
+        List<Integer> committeeIndices = updateAttestationAssignments(headState);
+        List<Integer> newCommitteeIndices = new ArrayList<>();
+
+        committeeIndices.forEach(index -> {
+          if (!committeeIndexTTL.containsKey(index)) {
+            newCommitteeIndices.add(index);
+          }
+          committeeIndexTTL.put(index, COMMITTEE_INDEX_SUBSCRIPTION_LENGTH);
+        });
+        if (!newCommitteeIndices.isEmpty())
+        {
+          this.eventBus.post(new CommitteeAssignmentEvent(newCommitteeIndices));
+        }
       }
 
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
@@ -261,7 +284,9 @@ public class ValidatorCoordinator {
 
       // Reset the attestation validator and pass attester information necessary
       // for validator to know which committees and validators to aggregate for
+      System.out.println("hey3");
       attestationAggregator.updateAggregatorInformations(attesterInformations);
+      System.out.println("hey4");
 
       asyncProduceAttestations(
           attesterInformations, headState, getGenericAttestationData(headState, headBlock));
@@ -533,7 +558,9 @@ public class ValidatorCoordinator {
     return slot.equals(UnsignedLong.valueOf(GENESIS_SLOT));
   }
 
-  private void updateAttestationAssignments(BeaconState state) {
+  private List<Integer> updateAttestationAssignments(BeaconState state) {
+
+    Set<Integer> committeeIndicesToSubscribe = new HashSet<>();
 
     // For each validator, using the spec defined get_committee_assignment,
     // get each validators committee assignment. i.e. learn to which
@@ -555,16 +582,17 @@ public class ValidatorCoordinator {
               assignment -> {
                 UnsignedLong slot = assignment.getSlot();
                 UnsignedLong committeeIndex = assignment.getCommitteeIndex();
+                committeeIndicesToSubscribe.add(toIntExact(committeeIndex.longValue()));
                 BLSSignature slot_signature = slot_signature(state, slot, pubKey);
                 boolean is_aggregator = is_aggregator(state, slot, committeeIndex, slot_signature);
 
                 List<AttesterInformation> attesterInformationInSlot =
                     attestationAssignments.computeIfAbsent(slot, k -> new ArrayList<>());
 
-                List<Integer> committeeIndices = assignment.getCommittee();
-                Committee committee = new Committee(committeeIndex, committeeIndices);
+                List<Integer> indicesInCommittee = assignment.getCommittee();
+                Committee committee = new Committee(committeeIndex, indicesInCommittee);
                 int validatorIndex = validatorInformation.getValidatorIndex();
-                int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
+                int indexIntoCommittee = indicesInCommittee.indexOf(validatorIndex);
 
                 attesterInformationInSlot.add(
                     new AttesterInformation(
@@ -575,6 +603,8 @@ public class ValidatorCoordinator {
                         is_aggregator ? Optional.of(slot_signature) : Optional.empty()));
               });
         });
+
+      return new ArrayList<>(committeeIndicesToSubscribe);
   }
 
   private void asyncProduceAttestations(

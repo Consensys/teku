@@ -50,6 +50,11 @@ public class BeaconChainUtil {
     return new BeaconChainUtil(validatorKeys, storageClient);
   }
 
+  public static BeaconChainUtil create(
+          final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys) {
+    return new BeaconChainUtil(validatorKeys, storageClient);
+  }
+
   public static void initializeStorage(
       final ChainStorageClient chainStorageClient, final List<BLSKeyPair> validatorKeys) {
     StartupUtil.setupInitialState(chainStorageClient, 0, null, validatorKeys);
