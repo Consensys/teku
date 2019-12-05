@@ -14,11 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -33,18 +28,11 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
-import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class GossipMessageHandlerIntegrationTest {
 
@@ -144,75 +132,6 @@ public class GossipMessageHandlerIntegrationTest {
     Thread.sleep(2000);
 
     assertThat(network2Attestations.getAttestations()).isEmpty();
-  }
-
-  @Test
-  public void shouldReceiveAttestationAcrossPeersInSameSubnet() throws Exception {
-    final int numValidators = 12;
-
-    ArtemisConfiguration config = mock(ArtemisConfiguration.class);
-    doReturn(0).when(config).getNaughtinessPercentage();
-    doReturn(numValidators).when(config).getNumValidators();
-    doReturn(null).when(config).getValidatorsKeyFile();
-    doReturn(0).when(config).getInteropOwnedValidatorStartIndex();
-    doReturn(numValidators).when(config).getInteropOwnedValidatorCount();
-
-    AttestationAggregator aggregator = mock(AttestationAggregator.class);
-    doNothing().when(aggregator).updateAggregatorInformations(any());
-
-    // Setup network 1
-    final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
-    final JvmLibP2PNetwork network1 = networkFactory.startNetwork(eventBus1, storageClient1);
-    List<BLSKeyPair> blsKeyPairList =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient1, blsKeyPairList);
-    chainUtil.initializeStorage();
-
-    // Setup network 2
-    final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
-    final JvmLibP2PNetwork network2 = networkFactory.startNetwork(eventBus2, storageClient2);
-    chainUtil.initializeStorage(storageClient2);
-
-    // Setup VC 1
-    new ValidatorCoordinator(
-        eventBus1, storageClient1, aggregator, mock(BlockAttestationsPool.class), config);
-    eventBus1.post(new StoreInitializedEvent());
-
-    // Setup VC 2
-    Constants.VALIDATOR_CLIENT_PORT_BASE = Constants.VALIDATOR_CLIENT_PORT_BASE + numValidators;
-    new ValidatorCoordinator(
-        eventBus2, storageClient2, aggregator, mock(BlockAttestationsPool.class), config);
-    eventBus2.post(new StoreInitializedEvent());
-
-    // Connect networks 1 -> 2
-    network1.connect(network2.getPeerAddress());
-    // Wait for connections to get set up
-    Waiter.waitFor(
-        () -> {
-          assertThat(network1.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
-          assertThat(network2.getPeerManager().getAvailablePeerCount()).isEqualTo(1);
-        });
-
-    Thread.sleep(500);
-
-    eventBus1.post(new BroadcastAttestationEvent(storageClient1.getBestBlockRoot()));
-    eventBus2.post(new BroadcastAttestationEvent(storageClient2.getBestBlockRoot()));
-
-    Thread.sleep(500);
-
-    // Propagate attestation from network 1
-    AttestationGenerator attestationGenerator = new AttestationGenerator(blsKeyPairList);
-    Attestation validAttestation = attestationGenerator.validAttestation(storageClient1);
-    eventBus1.post(validAttestation);
-
-    // Listen for new block event to arrive on network 2
-    final AttestationCollector network2Attestations = new AttestationCollector(eventBus2);
-
-    Thread.sleep(500);
-
-    assertTrue(network2Attestations.getAttestations().contains(validAttestation));
   }
 
   private static class BeaconBlockCollector {
