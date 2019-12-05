@@ -49,7 +49,7 @@ public class MockP2PNetwork implements P2PNetwork {
 
   @Override
   public String getNodeAddress() {
-    return "127.0.0.1" + "/p2p/" + nodeId.toBase58();
+    return "/ip4/127.0.0.1" + "/p2p/" + nodeId.toBase58();
   }
 
   @Override
