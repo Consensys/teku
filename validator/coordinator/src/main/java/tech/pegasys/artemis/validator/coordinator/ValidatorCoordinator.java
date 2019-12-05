@@ -89,6 +89,7 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
@@ -262,17 +263,34 @@ public class ValidatorCoordinator {
       // for all validators
       if (isGenesisOrEpochStart(slot)) {
         List<Integer> committeeIndices = updateAttestationAssignments(headState);
-        List<Integer> newCommitteeIndices = new ArrayList<>();
+        List<Integer> committeeIndicesToRegister = new ArrayList<>();
 
         committeeIndices.forEach(
             index -> {
               if (!committeeIndexTTL.containsKey(index)) {
-                newCommitteeIndices.add(index);
+                committeeIndicesToRegister.add(index);
               }
               committeeIndexTTL.put(index, COMMITTEE_INDEX_SUBSCRIPTION_LENGTH);
             });
-        if (!newCommitteeIndices.isEmpty()) {
-          this.eventBus.post(new CommitteeAssignmentEvent(newCommitteeIndices));
+        if (!committeeIndicesToRegister.isEmpty()) {
+          this.eventBus.post(new CommitteeAssignmentEvent(committeeIndicesToRegister));
+        }
+
+        List<Integer> committeeIndicesToDeregister = new ArrayList<>();
+        for (Map.Entry<Integer, Integer> entry : committeeIndexTTL.entrySet()) {
+          int ttl = entry.getValue();
+          int index = entry.getKey();
+          ttl--;
+          if (ttl == 0) {
+            committeeIndicesToDeregister.add(index);
+            committeeIndexTTL.remove(index);
+          } else {
+            entry.setValue(ttl);
+          }
+        }
+
+        if (!committeeIndicesToDeregister.isEmpty()) {
+          this.eventBus.post(new CommitteeDismissalEvent(committeeIndicesToDeregister));
         }
       }
 
