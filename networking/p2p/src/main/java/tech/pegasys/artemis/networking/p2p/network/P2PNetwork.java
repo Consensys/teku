@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.api;
+package tech.pegasys.artemis.networking.p2p.network;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -32,9 +32,7 @@ public interface P2PNetwork {
 
   Stream<? extends Peer> streamPeers();
 
-  default long getPeerCount() {
-    return streamPeers().count();
-  }
+  long getPeerCount();
 
   String getNodeAddress();
 

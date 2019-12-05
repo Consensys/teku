@@ -11,12 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p;
+package tech.pegasys.artemis.networking.p2p.network;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
@@ -40,6 +39,11 @@ public class DelegatingP2PNetwork implements P2PNetwork {
   @Override
   public Stream<? extends Peer> streamPeers() {
     return network.streamPeers();
+  }
+
+  @Override
+  public long getPeerCount() {
+    return network.getPeerCount();
   }
 
   @Override

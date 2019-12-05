@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p;
+package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
@@ -42,18 +42,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.LibP2PNodeId;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerManager;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Protocol;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.gossip.GossipMessageHandler;
+import tech.pegasys.artemis.networking.p2p.libp2p.gossip.GossipMessageHandler;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
+import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
-public class JvmLibP2PNetwork implements P2PNetwork {
+public class LibP2PNetwork implements P2PNetwork {
   private final PrivKey privKey;
   private final NetworkConfig config;
   private final NodeId nodeId;
@@ -64,7 +63,7 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   private final Multiaddr advertisedAddr;
   private final Gossip gossip;
 
-  public JvmLibP2PNetwork(
+  public LibP2PNetwork(
       final NetworkConfig config,
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient,
@@ -161,6 +160,11 @@ public class JvmLibP2PNetwork implements P2PNetwork {
   @Override
   public Stream<? extends Peer> streamPeers() {
     return peerManager.streamPeers();
+  }
+
+  @Override
+  public long getPeerCount() {
+    return peerManager.getPeerCount();
   }
 
   @Override

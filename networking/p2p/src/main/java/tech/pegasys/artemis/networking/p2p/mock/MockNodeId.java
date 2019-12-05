@@ -11,49 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
+package tech.pegasys.artemis.networking.p2p.mock;
 
-import io.libp2p.core.PeerId;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
-public class LibP2PNodeId implements NodeId {
-  private final PeerId peerId;
-
-  public LibP2PNodeId(final PeerId peerId) {
-    this.peerId = peerId;
-  }
+public class MockNodeId implements NodeId {
+  private final Bytes bytes = Bytes.fromHexString("0x00", 32);
+  private final String base58 = "11111111111111111111111111111111";
 
   @Override
   public Bytes toBytes() {
-    return Bytes.wrap(peerId.getBytes());
+    return bytes;
   }
 
   @Override
   public String toBase58() {
-    return peerId.toBase58();
-  }
-
-  @Override
-  public String toString() {
-    return toBase58();
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof LibP2PNodeId)) {
-      return false;
-    }
-    final LibP2PNodeId that = (LibP2PNodeId) o;
-    return Objects.equals(peerId, that.peerId);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(peerId);
+    return base58;
   }
 }

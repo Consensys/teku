@@ -30,11 +30,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
-import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Protocol;
+import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
+import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.Waiter;
 
@@ -108,7 +108,7 @@ public class Eth2NetworkFactory {
         this.protocols(eth2Protocols).peerHandler(eth2PeerManager);
 
         final P2PNetwork network =
-            new JvmLibP2PNetwork(
+            new LibP2PNetwork(
                 config, eventBus, chainStorageClient, METRICS_SYSTEM, protocols, peerHandlers);
 
         return new Eth2Network(network, eth2PeerManager);

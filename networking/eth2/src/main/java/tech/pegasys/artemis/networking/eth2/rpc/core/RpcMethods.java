@@ -27,7 +27,6 @@ public class RpcMethods {
   private final Map<RpcMethod<?, ?>, RpcMessageHandler<?, ?>> methods;
 
   public RpcMethods(final RpcMessageHandler<?, ?>... handlers) {
-
     this.methods = createMethodMap(handlers);
   }
 

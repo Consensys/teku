@@ -17,8 +17,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
-import tech.pegasys.artemis.networking.p2p.DelegatingP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
@@ -37,5 +37,12 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
   @Override
   public Stream<Eth2Peer> streamPeers() {
     return peerManager.streamPeers();
+  }
+
+  @Override
+  public long getPeerCount() {
+    // TODO - look into keep separate collections for pending peers / validated peers so
+    // we don't have to iterate over the peer list to get this count.
+    return streamPeers().count();
   }
 }

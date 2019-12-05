@@ -11,21 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p;
+package tech.pegasys.artemis.networking.p2p.mock;
 
 import com.google.common.eventbus.EventBus;
-import io.libp2p.core.PeerId;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.LibP2PNodeId;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
 public class MockP2PNetwork implements P2PNetwork {
   private final int port = 6000;
-  private final NodeId nodeId = new LibP2PNodeId(PeerId.random());
+  private final NodeId nodeId = new MockNodeId();
 
   public MockP2PNetwork(EventBus eventBus) {
     eventBus.register(this);
@@ -46,6 +44,11 @@ public class MockP2PNetwork implements P2PNetwork {
   @Override
   public Stream<? extends Peer> streamPeers() {
     return Stream.empty();
+  }
+
+  @Override
+  public long getPeerCount() {
+    return 0L;
   }
 
   @Override

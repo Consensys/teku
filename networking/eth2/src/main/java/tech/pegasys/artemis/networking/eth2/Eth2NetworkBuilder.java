@@ -22,11 +22,11 @@ import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
-import tech.pegasys.artemis.networking.p2p.JvmLibP2PNetwork;
-import tech.pegasys.artemis.networking.p2p.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.api.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Protocol;
+import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
+import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class Eth2NetworkBuilder {
@@ -59,7 +59,7 @@ public class Eth2NetworkBuilder {
   }
 
   protected P2PNetwork buildNetwork() {
-    return new JvmLibP2PNetwork(
+    return new LibP2PNetwork(
         config, eventBus, chainStorageClient, metricsSystem, protocols, peerHandlers);
   }
 

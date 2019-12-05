@@ -33,7 +33,7 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMessageHandler.Controller;
-import tech.pegasys.artemis.networking.p2p.jvmlibp2p.Protocol;
+import tech.pegasys.artemis.networking.p2p.network.Protocol;
 
 public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     implements Protocol<Controller<TRequest, ResponseStream<TResponse>>> {
