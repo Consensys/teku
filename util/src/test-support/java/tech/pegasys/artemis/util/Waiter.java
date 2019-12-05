@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.awaitility.Awaitility;
+import org.hamcrest.Matchers;
 
 /**
  * A simpler wrapper around Awaitility that directs people towards best practices for waiting. The
@@ -29,7 +30,15 @@ public class Waiter {
   private static final int DEFAULT_TIMEOUT_SECONDS = 30;
 
   public static void waitFor(final Condition assertion) {
-    Awaitility.waitAtMost(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS).untilAsserted(assertion::run);
+    Awaitility.waitAtMost(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .ignoreExceptions()
+        .untilAsserted(assertion::run);
+  }
+
+  public static <T> T waitFor(final UnsafeSupplier<T> assertion) {
+    return Awaitility.waitAtMost(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .ignoreExceptions()
+        .until(assertion::get, Matchers.notNullValue());
   }
 
   public static <T> T waitFor(final CompletableFuture<T> future)
@@ -39,5 +48,9 @@ public class Waiter {
 
   public interface Condition {
     void run() throws Throwable;
+  }
+
+  public interface UnsafeSupplier<T> {
+    T get() throws Exception;
   }
 }

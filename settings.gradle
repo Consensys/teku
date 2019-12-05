@@ -1,4 +1,5 @@
 rootProject.name='artemis'
+include 'acceptance-tests'
 include 'ethereum:datastructures'
 include 'ethereum:statetransition'
 include 'networking:p2p'

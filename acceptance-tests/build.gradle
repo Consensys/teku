@@ -1,0 +1,7 @@
+dependencies {
+  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportImplementation 'org.apache.tuweni:tuweni-toml'
+  testSupportImplementation 'org.assertj:assertj-core'
+  testSupportImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testSupportImplementation 'com.squareup.okhttp3:okhttp'
+}

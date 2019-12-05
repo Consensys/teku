@@ -270,6 +270,14 @@ subprojects {
       }
       resources.srcDir file('src/integration-test/resources')
     }
+    acceptanceTest {
+      java {
+        compileClasspath += main.output
+        runtimeClasspath += main.output
+        srcDir file('src/acceptance-test/java')
+      }
+      resources.srcDir file('src/acceptance-test/resources')
+    }
     compatibilityTest {
       java {
         compileClasspath += main.output
@@ -289,6 +297,7 @@ subprojects {
   configurations {
     testSupportImplementation.extendsFrom implementation
     integrationTestImplementation.extendsFrom implementation
+    acceptanceTestImplementation.extendsFrom implementation
     compatibilityTestImplementation.extendsFrom implementation
     referenceTestImplementation.extendsFrom implementation
     testSupportArtifacts.extendsFrom testSupportImplementation
@@ -345,6 +354,16 @@ subprojects {
     integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     integrationTestRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
 
+    acceptanceTestImplementation sourceSets.testSupport.output
+    acceptanceTestImplementation sourceSets.testSupport.runtimeClasspath
+    acceptanceTestImplementation 'org.assertj:assertj-core'
+    acceptanceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
+    acceptanceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
+    acceptanceTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    acceptanceTestRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
+    acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-core'
+    acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
+
     compatibilityTestImplementation 'org.assertj:assertj-core'
     compatibilityTestImplementation 'org.junit.jupiter:junit-jupiter-api'
     compatibilityTestImplementation 'org.junit.jupiter:junit-jupiter-params'
@@ -360,6 +379,14 @@ subprojects {
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
+  }
+
+  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", "installDist"]){
+    group = "verification"
+    description = "Runs the Artemis acceptance tests"
+
+    testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
+    classpath = sourceSets.acceptanceTest.runtimeClasspath
   }
 
   task compatibilityTest(type: Test, dependsOn:["compileCompatibilityTestJava"]){
