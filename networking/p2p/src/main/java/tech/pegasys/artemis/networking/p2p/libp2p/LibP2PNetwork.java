@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -26,6 +25,7 @@ import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.dsl.BuildersJKt;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multistream.ProtocolBinding;
+import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.etc.types.ByteArrayExtKt;
 import io.libp2p.mux.mplex.MplexStreamMuxer;
 import io.libp2p.protocol.Identify;
@@ -36,20 +36,24 @@ import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.networking.p2p.libp2p.gossip.GossipMessageHandler;
+import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class LibP2PNetwork implements P2PNetwork {
@@ -62,11 +66,12 @@ public class LibP2PNetwork implements P2PNetwork {
   private final PeerManager peerManager;
   private final Multiaddr advertisedAddr;
   private final Gossip gossip;
+  private final GossipNetwork gossipNetwork;
+
+  private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
   public LibP2PNetwork(
       final NetworkConfig config,
-      final EventBus eventBus,
-      final ChainStorageClient chainStorageClient,
       final MetricsSystem metricsSystem,
       final List<Protocol<?>> protocols,
       final List<PeerHandler> peerHandlers) {
@@ -76,13 +81,18 @@ public class LibP2PNetwork implements P2PNetwork {
             .orElseGet(() -> KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1());
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
     this.config = config;
+
+    advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
     scheduler =
         Executors.newSingleThreadScheduledExecutor(
             new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
+
+    // Setup gossip
     gossip = new Gossip();
-    GossipMessageHandler.create(gossip, privKey, eventBus, chainStorageClient).start();
+    final PubsubPublisherApi publisher = gossip.createPublisher(privKey, new Random().nextLong());
+    gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
+
     peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers);
-    advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
 
     host =
         BuildersJKt.hostJ(
@@ -96,7 +106,6 @@ public class LibP2PNetwork implements P2PNetwork {
                       "/ip4/" + config.getNetworkInterface() + "/tcp/" + config.getListenPort());
 
               b.getProtocols().addAll(getDefaultProtocols());
-              b.getProtocols().add(gossip);
               b.getProtocols().addAll(protocols);
 
               if (config.isLogWireCipher()) {
@@ -127,11 +136,14 @@ public class LibP2PNetwork implements P2PNetwork {
             .addProtocols(ping.getAnnounce())
             .addProtocols(gossip.getAnnounce())
             .build();
-    return List.of(ping, new Identify(identifyMsg));
+    return List.of(ping, new Identify(identifyMsg), gossip);
   }
 
   @Override
   public CompletableFuture<?> start() {
+    if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
+      return CompletableFuture.failedFuture(new IllegalStateException("Network already started"));
+    }
     STDOUT.log(Level.INFO, "Starting libp2p network...");
     return host.start()
         .thenApply(
@@ -169,13 +181,26 @@ public class LibP2PNetwork implements P2PNetwork {
 
   @Override
   public void stop() {
+    if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
+      return;
+    }
     STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
     host.stop();
     scheduler.shutdownNow();
   }
 
   @Override
+  public State getState() {
+    return state.get();
+  }
+
+  @Override
   public NodeId getNodeId() {
     return nodeId;
+  }
+
+  @Override
+  public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
+    return gossipNetwork.subscribe(topic, topicHandler);
   }
 }

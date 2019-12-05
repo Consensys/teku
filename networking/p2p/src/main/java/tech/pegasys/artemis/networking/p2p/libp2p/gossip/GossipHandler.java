@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.MessageApi;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -25,16 +23,13 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZException;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
-    implements Function<MessageApi, CompletableFuture<Boolean>> {
+public class GossipHandler implements Function<MessageApi, CompletableFuture<Boolean>> {
   private static final Logger LOG = LogManager.getLogger();
-  
+
   private static CompletableFuture<Boolean> VALIDATION_FAILED =
       CompletableFuture.completedFuture(false);
   private static CompletableFuture<Boolean> VALIDATION_SUCCEEDED =
@@ -42,21 +37,21 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
   static final int GOSSIP_MAX_SIZE = 1048576;
   private static final int MAX_SENT_MESSAGES = 2048;
 
+  private final Topic topic;
   private final PubsubPublisherApi publisher;
-  private final EventBus eventBus;
-
+  private final TopicHandler handler;
   private final Set<Bytes> processedMessages =
       LimitedSet.create(MAX_SENT_MESSAGES, Mode.DROP_LEAST_RECENTLY_ACCESSED);
 
-  protected GossipTopicHandler(final PubsubPublisherApi publisher, final EventBus eventBus) {
+  public GossipHandler(
+      final Topic topic, final PubsubPublisherApi publisher, final TopicHandler handler) {
+    this.topic = topic;
     this.publisher = publisher;
-    this.eventBus = eventBus;
+    this.handler = handler;
   }
 
-  public abstract Topic getTopic();
-
   @Override
-  public final CompletableFuture<Boolean> apply(MessageApi message) {
+  public CompletableFuture<Boolean> apply(final MessageApi message) {
     Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
     if (bytes.size() > GOSSIP_MAX_SIZE) {
       LOG.trace(
@@ -67,65 +62,31 @@ public abstract class GossipTopicHandler<T extends SimpleOffsetSerializable>
     }
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
-      LOG.trace("Ignoring duplicate message for topic {}: {} bytes", getTopic(), bytes.size());
+      LOG.trace("Ignoring duplicate message for topic {}: {} bytes", topic, bytes.size());
       return VALIDATION_FAILED;
     }
-    LOG.trace("Received message for topic {}: {} bytes", getTopic(), bytes.size());
+    LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
 
-    T data;
-    try {
-      data = deserializeData(bytes);
-      if (!validateData(data)) {
-        LOG.trace("Received invalid message for topic: {}", getTopic());
-        return VALIDATION_FAILED;
-      }
-    } catch (SSZException e) {
-      LOG.trace("Received malformed gossip message on {}", getTopic());
-      return VALIDATION_FAILED;
-    } catch (Throwable e) {
-      LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return VALIDATION_FAILED;
-    }
-
-    // Post and re-gossip data on successful processing
-    gossip(bytes);
-    eventBus.post(data);
-    return VALIDATION_SUCCEEDED;
+    final boolean result = handler.handleMessage(bytes);
+    return result ? VALIDATION_SUCCEEDED : VALIDATION_FAILED;
   }
 
-  private T deserializeData(Bytes bytes) throws SSZException {
-    final T deserialized = deserialize(bytes);
-    if (deserialized == null) {
-      throw new SSZException("Unable to deserialize message for topic " + getTopic());
-    }
-    return deserialized;
-  }
-
-  protected abstract T deserialize(Bytes bytes) throws SSZException;
-
-  protected abstract boolean validateData(T dataObject);
-
-  @VisibleForTesting
-  public final void gossip(final T data) {
-    final Bytes bytes = SimpleOffsetSerializer.serialize(data);
+  public void gossip(Bytes bytes) {
     if (!processedMessages.add(bytes)) {
       // We've already gossiped this data
       return;
     }
-    gossip(bytes);
-  }
 
-  private void gossip(Bytes bytes) {
-    LOG.trace("Gossiping {}: {} bytes", getTopic(), bytes.size());
+    LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
     publisher
-        .publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), getTopic())
+        .publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic)
         .whenComplete(
             (res, err) -> {
               if (err != null) {
-                LOG.debug("Failed to gossip message on {}", getTopic(), err);
+                LOG.debug("Failed to gossip message on {}", topic, err);
                 return;
               }
-              LOG.trace("Successfully gossiped message on {}", getTopic());
+              LOG.trace("Successfully gossiped message on {}", topic);
             });
   }
 }

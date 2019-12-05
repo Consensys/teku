@@ -17,6 +17,8 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -66,7 +68,17 @@ public class MockP2PNetwork implements P2PNetwork {
   public void stop() {}
 
   @Override
+  public State getState() {
+    return State.IDLE;
+  }
+
+  @Override
   public CompletableFuture<?> start() {
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
+    return new MockTopicChannel();
   }
 }

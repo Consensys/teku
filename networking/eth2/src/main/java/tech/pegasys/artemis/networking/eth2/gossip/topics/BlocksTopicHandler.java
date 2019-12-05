@@ -11,16 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
+package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import io.libp2p.core.pubsub.PubsubPublisherApi;
-import io.libp2p.core.pubsub.Topic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -37,27 +34,19 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
-public class BlocksTopicHandler extends GossipTopicHandler<BeaconBlock> {
+public class BlocksTopicHandler extends Eth2TopicHandler<BeaconBlock> {
+  public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
   private static final Logger LOG = LogManager.getLogger();
-  private static final Topic BLOCKS_TOPIC = new Topic("/eth2/beacon_block/ssz");
   private final ChainStorageClient chainStorageClient;
 
-  protected BlocksTopicHandler(
-      final PubsubPublisherApi publisher,
-      final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
-    super(publisher, eventBus);
+  public BlocksTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
+    super(eventBus);
     this.chainStorageClient = chainStorageClient;
   }
 
   @Override
-  public Topic getTopic() {
+  public String getTopic() {
     return BLOCKS_TOPIC;
-  }
-
-  @Subscribe
-  public void onNewBlock(final BeaconBlock block) {
-    gossip(block);
   }
 
   @Override

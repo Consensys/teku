@@ -16,10 +16,17 @@ package tech.pegasys.artemis.networking.p2p.network;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
-public interface P2PNetwork {
+public interface P2PNetwork extends GossipNetwork {
+  enum State {
+    IDLE,
+    RUNNING,
+    STOPPED
+  }
+
   /**
    * Connects to a Peer.
    *
@@ -47,4 +54,6 @@ public interface P2PNetwork {
 
   /** Stops the P2P network layer. */
   void stop();
+
+  State getState();
 }
