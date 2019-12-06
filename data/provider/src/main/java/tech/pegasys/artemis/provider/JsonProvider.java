@@ -31,9 +31,9 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class JsonProvider {
 
-  private final Gson gson;
+  private static final Gson gson;
 
-  public JsonProvider() {
+  static {
     ExclusionStrategy strategy =
         new ExclusionStrategy() {
           @Override
@@ -122,11 +122,13 @@ public class JsonProvider {
     gson = builder.create();
   }
 
-  public <T> String objectToJSON(T object) {
+  private JsonProvider() {}
+
+  public static <T> String objectToJSON(T object) {
     return gson.toJson(object);
   }
 
-  public <T> T jsonToObject(String json, Class<T> clazz) {
+  public static <T> T jsonToObject(String json, Class<T> clazz) {
     return gson.fromJson(json, clazz);
   }
 }

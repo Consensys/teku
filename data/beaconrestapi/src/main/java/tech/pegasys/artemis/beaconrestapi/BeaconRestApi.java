@@ -34,7 +34,6 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 public class BeaconRestApi {
 
   private List<BeaconRestApiHandler> handlers = new ArrayList<>();
-  private JsonProvider jsonProvider = new JsonProvider();
   private Javalin app;
 
   public BeaconRestApi(
@@ -59,9 +58,9 @@ public class BeaconRestApi {
                   ctx.contentType("application/json");
                   final Object response = handler.handleRequest(new RequestParams(ctx));
                   if (response != null) {
-                    ctx.result(jsonProvider.objectToJSON(response));
+                    ctx.result(JsonProvider.objectToJSON(response));
                   } else {
-                    ctx.status(SC_NOT_FOUND).result(jsonProvider.objectToJSON("Not found"));
+                    ctx.status(SC_NOT_FOUND).result(JsonProvider.objectToJSON("Not found"));
                   }
                 }));
   }

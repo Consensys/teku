@@ -27,7 +27,7 @@ class JsonProviderTest {
   void beaconStateJsonTest() {
     Constants.setConstants("minimal");
     BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
-    String jsonState = new JsonProvider().objectToJSON(state);
+    String jsonState = JsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
   }
 }

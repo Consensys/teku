@@ -42,7 +42,6 @@ public class ArtemisNode {
       new File(System.getProperty("artemis.binary.path", "../build/install/artemis/bin/artemis"))
           .getAbsolutePath();
 
-  private final JsonProvider jsonProvider = new JsonProvider();
   private final SimpleHttpClient httpClient;
 
   private boolean started = false;
@@ -85,7 +84,7 @@ public class ArtemisNode {
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
     final BeaconHead beaconHead =
-        jsonProvider.jsonToObject(
+        JsonProvider.jsonToObject(
             httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
     LOG.debug("Retrieved beacon head: {}", beaconHead);
     return beaconHead;
