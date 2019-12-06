@@ -270,6 +270,10 @@ workflows:
           requires:
             - assemble
             - spotless
+      - acceptanceTests:
+          requires:
+            - assemble
+            - spotless
       - docker:
           requires:
             - assemble
@@ -284,6 +288,7 @@ workflows:
           requires:
             - unitTests
             - integrationTests
+            - acceptanceTests
             - referenceTests
             - docker
       - publishDocker:
@@ -295,6 +300,7 @@ workflows:
           requires:
             - unitTests
             - integrationTests
+            - acceptanceTests
             - referenceTests
             - docker
   nightly:
