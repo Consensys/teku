@@ -14,6 +14,8 @@ plugins {
   id 'de.undercouch.download' version '4.0.1'
 }
 
+apply plugin: 'application'
+
 defaultTasks 'build','checkLicenses'
 
 def buildAliases = [
@@ -381,7 +383,7 @@ subprojects {
     classpath = sourceSets.integrationTest.runtimeClasspath
   }
 
-  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", "installDist"]){
+  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.installDist]){
     group = "verification"
     description = "Runs the Artemis acceptance tests"
 
@@ -408,7 +410,6 @@ subprojects {
 
 jar { enabled = false }
 
-apply plugin: 'application'
 mainClassName = "tech.pegasys.artemis.Artemis"
 applicationDefaultJvmArgs = [
   "-Djava.library.path=ARTEMIS_HOME/native",
