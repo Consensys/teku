@@ -387,6 +387,7 @@ subprojects {
     group = "verification"
     description = "Runs the Artemis acceptance tests"
 
+    systemProperty("artemis.binary.path", ("${rootProject.buildDir}/install/artemis/bin/artemis" as File).absolutePath)
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
   }
