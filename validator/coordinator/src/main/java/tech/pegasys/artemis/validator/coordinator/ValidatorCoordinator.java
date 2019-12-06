@@ -31,6 +31,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_RO
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -582,7 +583,8 @@ public class ValidatorCoordinator {
         });
   }
 
-  private void asyncProduceAttestations(
+  @VisibleForTesting
+  void asyncProduceAttestations(
       List<AttesterInformation> attesterInformations,
       BeaconState state,
       AttestationData genericAttestationData) {
