@@ -14,15 +14,18 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGenericAttestationData;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.getSignature;
+import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
@@ -38,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -57,6 +61,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
@@ -93,6 +98,7 @@ public class ValidatorCoordinator {
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
+  private CommitteeAssignmentManager committeeAssignmentManager;
 
   //  maps slots to Lists of attestation informations
   //  (which contain information for our validators to produce attestations)
@@ -114,7 +120,6 @@ public class ValidatorCoordinator {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
-    new CommitteeAssignmentManager(chainStorageClient, validators, committeeAssignments, eventBus);
     this.eventBus.register(this);
   }
   /*
@@ -166,6 +171,33 @@ public class ValidatorCoordinator {
   public void onStoreInitializedEvent(final StoreInitializedEvent event) {
     // Any deposits pre-genesis can be ignored.
     newDeposits.clear();
+
+    final Store store = chainStorageClient.getStore();
+    final Bytes32 head = chainStorageClient.getBestBlockRoot();
+    final BeaconState genesisState = store.getBlockState(head);
+
+    // Get validator indices of our own validators
+    List<Validator> validatorRegistry = genesisState.getValidators();
+    IntStream.range(0, validatorRegistry.size())
+        .forEach(
+            i -> {
+              if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
+                STDOUT.log(
+                    Level.DEBUG,
+                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
+                validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
+              }
+            });
+
+    this.committeeAssignmentManager =
+        new CommitteeAssignmentManager(validators, committeeAssignments);
+
+    // Update committee assignments and subscribe to required committee indices for the next 2
+    // epochs
+    UnsignedLong genesisEpoch = UnsignedLong.valueOf(GENESIS_EPOCH);
+    committeeAssignmentManager.updateCommiteeAssignments(genesisState, genesisEpoch, eventBus);
+    committeeAssignmentManager.updateCommiteeAssignments(
+        genesisState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
   }
 
   @Subscribe
@@ -217,6 +249,15 @@ public class ValidatorCoordinator {
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
       UnsignedLong slot = event.getNodeSlot();
+
+      if (!isGenesis(slot) && isEpochStart(slot)) {
+        UnsignedLong epoch = compute_epoch_at_slot(slot);
+        // NOTE: we get commmittee assignments for NEXT epoch
+        CompletableFuture.runAsync(
+            () ->
+                committeeAssignmentManager.updateCommiteeAssignments(
+                    headState, epoch.plus(UnsignedLong.ONE), eventBus));
+      }
 
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
       List<AttesterInformation> attesterInformations = committeeAssignments.get(slot);
