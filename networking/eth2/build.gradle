@@ -1,0 +1,42 @@
+dependencies {
+  implementation project(':util')
+  implementation project(':storage')
+  implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
+  implementation project(':data')
+  implementation project(':data:metrics')
+  implementation project(':networking:p2p')
+
+  implementation 'com.google.guava:guava'
+  implementation 'io.libp2p:jvm-libp2p-minimal'
+  implementation 'com.google.protobuf:protobuf-java'
+  implementation 'io.vertx:vertx-core'
+
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-plumtree'
+  implementation 'org.apache.tuweni:tuweni-rlpx'
+  implementation 'org.apache.tuweni:tuweni-ssz'
+  implementation 'org.apache.tuweni:tuweni-units'
+
+  implementation 'org.apache.logging.log4j:log4j-api'
+  runtime 'org.apache.logging.log4j:log4j-core'
+
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'de.undercouch:bson4jackson'
+  implementation 'org.xerial.snappy:snappy-java'
+  implementation 'org.hyperledger.besu:plugin-api'
+
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
+  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
+  integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
+  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+  integrationTestImplementation 'org.mockito:mockito-core'
+
+  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportImplementation project(path: ':networking:p2p', configuration: 'testSupportArtifacts')
+  testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testSupportCompile 'org.assertj:assertj-core'
+}

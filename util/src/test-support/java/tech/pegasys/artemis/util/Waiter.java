@@ -41,9 +41,9 @@ public class Waiter {
     void run() throws Throwable;
   }
 
-  public static void ensureConditionRemainsMet(final Condition condition)
-      throws InterruptedException {
-    final long mustBeTrueUntil = System.currentTimeMillis() + 2000;
+  public static void ensureConditionRemainsMet(
+      final Condition condition, int waitTimeInMilliseconds) throws InterruptedException {
+    final long mustBeTrueUntil = System.currentTimeMillis() + waitTimeInMilliseconds;
     while (System.currentTimeMillis() < mustBeTrueUntil) {
       try {
         condition.run();
@@ -52,5 +52,10 @@ public class Waiter {
       }
       Thread.sleep(500);
     }
+  }
+
+  public static void ensureConditionRemainsMet(final Condition condition)
+      throws InterruptedException {
+    ensureConditionRemainsMet(condition, 2000);
   }
 }
