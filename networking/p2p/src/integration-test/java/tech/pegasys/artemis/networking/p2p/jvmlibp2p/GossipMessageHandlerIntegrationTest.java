@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.jvmlibp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -130,10 +131,7 @@ public class GossipMessageHandlerIntegrationTest {
     Attestation validAttestation = attestationGenerator.validAttestation(storageClient1);
     eventBus1.post(validAttestation);
 
-    // Wait for the message to be propagated
-    Thread.sleep(1000);
-
-    assertThat(network2Attestations.getAttestations()).isEmpty();
+    ensureConditionRemainsMet(() -> assertThat(network2Attestations.getAttestations()).isEmpty());
   }
 
   @Test
@@ -179,10 +177,8 @@ public class GossipMessageHandlerIntegrationTest {
 
     eventBus1.post(validAttestation);
 
-    Thread.sleep(1000);
-    // Sleep here because receiving new messages over the network takes time
-
-    assertTrue(network2Attestations.getAttestations().contains(validAttestation));
+    Waiter.waitFor(
+        () -> assertThat(network2Attestations.getAttestations()).containsExactly(validAttestation));
   }
 
   @Test
@@ -242,10 +238,8 @@ public class GossipMessageHandlerIntegrationTest {
     final AttestationCollector network2AttestationsAfterDeregistration =
         new AttestationCollector(eventBus2);
 
-    Thread.sleep(1000);
-    // Sleep here because receiving new messages over the network takes time
-
-    assertThat(network2AttestationsAfterDeregistration.getAttestations()).isEmpty();
+    ensureConditionRemainsMet(
+        () -> assertThat(network2AttestationsAfterDeregistration.getAttestations()).isEmpty());
   }
 
   private static class BeaconBlockCollector {

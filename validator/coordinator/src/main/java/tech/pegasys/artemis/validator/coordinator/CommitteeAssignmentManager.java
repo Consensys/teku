@@ -152,7 +152,7 @@ public class CommitteeAssignmentManager {
     return committeeIndicesToSubscribe;
   }
 
-  private BLSSignature slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
+  BLSSignature slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
     Bytes domain = get_domain(state, DOMAIN_BEACON_ATTESTER, compute_epoch_at_slot(slot));
     Bytes32 slot_hash =
         HashTreeUtil.hash_tree_root(
@@ -160,7 +160,7 @@ public class CommitteeAssignmentManager {
     return getSignature(validators, slot_hash, domain, signer);
   }
 
-  private boolean is_aggregator(
+  boolean is_aggregator(
       BeaconState state,
       UnsignedLong slot,
       UnsignedLong committeeIndex,

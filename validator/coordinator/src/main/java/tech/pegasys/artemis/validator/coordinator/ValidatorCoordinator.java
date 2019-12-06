@@ -177,17 +177,7 @@ public class ValidatorCoordinator {
     final BeaconState genesisState = store.getBlockState(head);
 
     // Get validator indices of our own validators
-    List<Validator> validatorRegistry = genesisState.getValidators();
-    IntStream.range(0, validatorRegistry.size())
-        .forEach(
-            i -> {
-              if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
-                STDOUT.log(
-                    Level.DEBUG,
-                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
-                validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
-              }
-            });
+    getIndicesOfOurValidators(genesisState, validators);
 
     this.committeeAssignmentManager =
         new CommitteeAssignmentManager(validators, committeeAssignments);
@@ -508,5 +498,20 @@ public class ValidatorCoordinator {
                             attesterInfo.getIndexIntoCommitee(),
                             attesterInfo.getCommittee(),
                             genericAttestationData)));
+  }
+
+  static void getIndicesOfOurValidators(
+      BeaconState state, Map<BLSPublicKey, ValidatorInfo> validators) {
+    List<Validator> validatorRegistry = state.getValidators();
+    IntStream.range(0, validatorRegistry.size())
+        .forEach(
+            i -> {
+              if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
+                STDOUT.log(
+                    Level.DEBUG,
+                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
+                validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
+              }
+            });
   }
 }
