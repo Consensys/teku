@@ -11,15 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
+package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import io.libp2p.core.pubsub.PubsubPublisherApi;
-import io.libp2p.core.pubsub.Topic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,28 +28,21 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class AggregateTopicHandler extends GossipTopicHandler<AggregateAndProof> {
-
+public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
   private static final Logger LOG = LogManager.getLogger();
-  private static final Topic TOPIC = new Topic("/eth2/beacon_aggregate_and_proof/ssz");
+
+  public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
   private final ChainStorageClient chainStorageClient;
 
-  protected AggregateTopicHandler(
-      final PubsubPublisherApi publisher,
-      final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
-    super(publisher, eventBus);
+  public AggregateTopicHandler(
+      final EventBus eventBus, final ChainStorageClient chainStorageClient) {
+    super(eventBus);
     this.chainStorageClient = chainStorageClient;
   }
 
   @Override
-  public Topic getTopic() {
+  public String getTopic() {
     return TOPIC;
-  }
-
-  @Subscribe
-  public void onNewAggregate(final AggregateAndProof aggregateAndProof) {
-    gossip(aggregateAndProof);
   }
 
   @Override
