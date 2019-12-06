@@ -1,3 +1,16 @@
+/*
+ * Copyright 2019 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.test.acceptance.dsl;
 
 import static org.apache.tuweni.io.file.Files.deleteRecursively;
@@ -19,6 +32,9 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 
 public class ArtemisNode {
   private static final Logger LOG = LogManager.getLogger();
@@ -26,6 +42,7 @@ public class ArtemisNode {
       new File(System.getProperty("artemis.binary.path", "../build/install/artemis/bin/artemis"))
           .getAbsolutePath();
 
+  private final JsonProvider jsonProvider = new JsonProvider();
   private final SimpleHttpClient httpClient;
 
   private boolean started = false;
@@ -57,17 +74,22 @@ public class ArtemisNode {
   }
 
   public void waitForGenesis() {
+    waitFor(() -> httpClient.get(getRestApiUrl(), "/node/genesis_time"));
+  }
+
+  public void waitForNewBlock() throws IOException {
+    final Bytes32 startingBlockRoot = getCurrentBeaconHead().getBlockRoot();
     waitFor(
-        () -> httpClient.get(getRestApiUrl(), "/node/genesis_time"));
+        () -> assertThat(getCurrentBeaconHead().getBlockRoot()).isNotEqualTo(startingBlockRoot));
   }
 
-  public void waitForNewBlock() {
-    String startingBlockRoot = waitFor(() -> {
-      return httpClient.get(getRestApiUrl(), "/node")
-    });
+  private BeaconHead getCurrentBeaconHead() throws IOException {
+    final BeaconHead beaconHead =
+        jsonProvider.jsonToObject(
+            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
+    LOG.debug("Retrieved beacon head: {}", beaconHead);
+    return beaconHead;
   }
-
-  private BeaconHead
 
   private URI getRestApiUrl() {
     return URI.create("http://127.0.0.1:9051");
@@ -77,10 +99,11 @@ public class ArtemisNode {
     if (!started) {
       return;
     }
-    LOG.info("Shutting down");
+    LOG.debug("Shutting down");
     try {
       process.destroy();
       if (!process.waitFor(1, TimeUnit.MINUTES)) {
+        LOG.warn("Didn't shutdown in a timely fashion, being more aggressive");
         process.destroyForcibly();
       }
 

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.provider;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.provider.JsonProvider.objectToJSON;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,7 @@ class JsonProviderTest {
   void beaconStateJsonTest() {
     Constants.setConstants("minimal");
     BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
-    String jsonState = objectToJSON(state);
+    String jsonState = new JsonProvider().objectToJSON(state);
     assertTrue(jsonState.length() > 0);
   }
 }
