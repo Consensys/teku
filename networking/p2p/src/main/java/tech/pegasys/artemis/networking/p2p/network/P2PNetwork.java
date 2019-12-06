@@ -54,6 +54,4 @@ public interface P2PNetwork extends GossipNetwork {
 
   /** Stops the P2P network layer. */
   void stop();
-
-  State getState();
 }

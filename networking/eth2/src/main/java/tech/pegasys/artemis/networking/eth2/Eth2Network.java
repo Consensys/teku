@@ -53,13 +53,11 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
 
   @Override
   public CompletableFuture<?> start() {
-    if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
-      return CompletableFuture.failedFuture(new IllegalStateException("Network already started"));
-    }
     return super.start().thenAccept(r -> startup());
   }
 
   private void startup() {
+    state.set(State.RUNNING);
     blockGossipManager = new BlockGossipManager(network, eventBus, chainStorageClient);
     attestationGossipManager = new AttestationGossipManager(network, eventBus, chainStorageClient);
     aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);

@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -32,6 +34,8 @@ import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AttestationGossipManager {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final GossipNetwork gossipNetwork;
   private final EventBus eventBus;
   private final ChainStorageClient chainStorageClient;
@@ -55,6 +59,9 @@ public class AttestationGossipManager {
     final TopicChannel channel = attestationChannels.get(committeeIndex);
     if (channel == null) {
       // We're not managing attestations for this committee right now
+      LOG.trace(
+          "Ignoring attestation for committee {}, which does not correspond to any currently assigned committee.",
+          committeeIndex);
       return;
     }
     final Bytes data = SimpleOffsetSerializer.serialize(attestation);

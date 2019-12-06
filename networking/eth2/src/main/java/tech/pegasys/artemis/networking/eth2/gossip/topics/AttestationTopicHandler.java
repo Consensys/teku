@@ -42,7 +42,7 @@ public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
     this.chainStorageClient = chainStorageClient;
   }
 
-  public static String getTopic(final int committeeIndex) {
+  private static String getTopic(final int committeeIndex) {
     return "/eth2/index" + committeeIndex + "_beacon_attestation/ssz";
   }
 

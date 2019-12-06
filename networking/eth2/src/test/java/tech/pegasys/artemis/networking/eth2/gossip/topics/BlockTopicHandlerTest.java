@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -28,10 +30,10 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockTopicHandlerTest {
-  private final EventBus eventBus = spy(new EventBus());
+  private final EventBus eventBus = mock(EventBus.class);
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
-  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, storageClient);
-  private final BlocksTopicHandler topicHandler = new BlocksTopicHandler(eventBus, storageClient);
+  private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
+  private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, storageClient);
 
   @BeforeEach
   public void setup() {
@@ -46,19 +48,21 @@ public class BlockTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(true);
+    verify(eventBus).post(block);
   }
 
   @Test
-  public void handleMessage_invalidBlock_random() {
+  public void handleMessage_invalidBlock_unknownPreState() {
     BeaconBlock block = DataStructureUtil.randomBeaconBlock(1, 100);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(block);
   }
 
   @Test
-  public void handleMessage_invalidBlock_badData() {
+  public void handleMessage_invalidBlock_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -73,5 +77,6 @@ public class BlockTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(block);
   }
 }

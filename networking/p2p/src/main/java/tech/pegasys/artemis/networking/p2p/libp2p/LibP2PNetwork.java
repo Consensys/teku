@@ -190,11 +190,6 @@ public class LibP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public State getState() {
-    return state.get();
-  }
-
-  @Override
   public NodeId getNodeId() {
     return nodeId;
   }

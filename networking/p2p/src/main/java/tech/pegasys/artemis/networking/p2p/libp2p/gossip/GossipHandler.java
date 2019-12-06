@@ -52,14 +52,15 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Boo
 
   @Override
   public CompletableFuture<Boolean> apply(final MessageApi message) {
-    Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
-    if (bytes.size() > GOSSIP_MAX_SIZE) {
+    final int messageSize = message.getData().capacity();
+    if (messageSize > GOSSIP_MAX_SIZE) {
       LOG.trace(
           "Rejecting gossip message of length {} which exceeds maximum size of {}",
-          bytes.size(),
+          messageSize,
           GOSSIP_MAX_SIZE);
       return VALIDATION_FAILED;
     }
+    Bytes bytes = Bytes.wrapByteBuf(message.getData()).copy();
     if (!processedMessages.add(bytes)) {
       // We've already seen this message, skip processing
       LOG.trace("Ignoring duplicate message for topic {}: {} bytes", topic, bytes.size());
@@ -83,7 +84,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Boo
         .whenComplete(
             (res, err) -> {
               if (err != null) {
-                LOG.debug("Failed to gossip message on {}", topic, err);
+                LOG.debug("Failed to gossip message on " + topic, err);
                 return;
               }
               LOG.trace("Successfully gossiped message on {}", topic);

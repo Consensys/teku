@@ -29,8 +29,9 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
-  public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
   private static final Logger LOG = LogManager.getLogger();
+
+  public static final String TOPIC = "/eth2/beacon_aggregate_and_proof/ssz";
   private final ChainStorageClient chainStorageClient;
 
   public AggregateTopicHandler(

@@ -68,11 +68,6 @@ public class MockP2PNetwork implements P2PNetwork {
   public void stop() {}
 
   @Override
-  public State getState() {
-    return State.IDLE;
-  }
-
-  @Override
   public CompletableFuture<?> start() {
     return CompletableFuture.completedFuture(null);
   }

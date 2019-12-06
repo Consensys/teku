@@ -69,11 +69,6 @@ public class DelegatingP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public State getState() {
-    return network.getState();
-  }
-
-  @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
     return network.subscribe(topic, topicHandler);
   }

@@ -17,7 +17,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
@@ -34,7 +33,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AggregateGossipManagerTest {
 
-  private final EventBus eventBus = spy(new EventBus());
+  private final EventBus eventBus = new EventBus();
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);

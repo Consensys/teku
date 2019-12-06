@@ -34,12 +34,12 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 
-public class BlocksTopicHandler extends Eth2TopicHandler<BeaconBlock> {
+public class BlockTopicHandler extends Eth2TopicHandler<BeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
   private static final Logger LOG = LogManager.getLogger();
   private final ChainStorageClient chainStorageClient;
 
-  public BlocksTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
+  public BlockTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
     super(eventBus);
     this.chainStorageClient = chainStorageClient;
   }

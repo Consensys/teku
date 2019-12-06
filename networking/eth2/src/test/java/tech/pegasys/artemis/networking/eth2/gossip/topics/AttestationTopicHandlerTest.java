@@ -16,7 +16,8 @@ package tech.pegasys.artemis.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
@@ -35,7 +36,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class AttestationTopicHandlerTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final EventBus eventBus = spy(new EventBus());
+  private final EventBus eventBus = mock(EventBus.class);
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(eventBus, storageClient, 1);
@@ -53,6 +54,7 @@ public class AttestationTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(true);
+    verify(eventBus).post(attestation);
   }
 
   @Test
@@ -64,10 +66,11 @@ public class AttestationTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(attestation);
   }
 
   @Test
-  public void handleMessage_invalidAttestation_badData() {
+  public void handleMessage_invalidAttestation_invalidSSZ() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
 
     final boolean result = topicHandler.handleMessage(serialized);
@@ -88,5 +91,6 @@ public class AttestationTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(attestation);
   }
 }

@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
@@ -29,17 +28,18 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.network.p2p.gossip.MockTopicHandler;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 
 public class GossipHandlerTest {
   private final Topic topic = new Topic("Testing");
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
-  private final MockTopicHandler topicHandler = spy(new MockTopicHandler());
+  private final TopicHandler topicHandler = mock(TopicHandler.class);
   private final GossipHandler gossipHandler = new GossipHandler(topic, publisher, topicHandler);
 
   @BeforeEach
   public void setup() {
+    doReturn(true).when(topicHandler).handleMessage(any());
     doReturn(CompletableFuture.completedFuture(null)).when(publisher).publish(any(), any());
   }
 
@@ -47,7 +47,6 @@ public class GossipHandlerTest {
   public void apply_valid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    topicHandler.setShouldValidate(true);
     final CompletableFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(true);
@@ -57,7 +56,7 @@ public class GossipHandlerTest {
   public void apply_invalid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    topicHandler.setShouldValidate(false);
+    doReturn(false).when(topicHandler).handleMessage(any());
     final CompletableFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
@@ -67,7 +66,6 @@ public class GossipHandlerTest {
   public void apply_exceedsMaxSize() {
     final Bytes data = Bytes.wrap(new byte[GossipHandler.GOSSIP_MAX_SIZE + 1]);
     final MockMessageApi message = new MockMessageApi(data, topic);
-    topicHandler.setShouldValidate(true);
     final CompletableFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
@@ -78,7 +76,6 @@ public class GossipHandlerTest {
   public void apply_duplicate() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    topicHandler.setShouldValidate(true);
 
     gossipHandler.apply(message);
     final CompletableFuture<Boolean> result = gossipHandler.apply(message);
@@ -116,7 +113,6 @@ public class GossipHandlerTest {
   public void gossip_afterDuplicateApply() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    topicHandler.setShouldValidate(true);
 
     gossipHandler.apply(message);
     gossipHandler.gossip(data);
@@ -128,7 +124,6 @@ public class GossipHandlerTest {
   public void apply_afterDuplicateGossip() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    topicHandler.setShouldValidate(true);
 
     gossipHandler.gossip(data);
     gossipHandler.apply(message);

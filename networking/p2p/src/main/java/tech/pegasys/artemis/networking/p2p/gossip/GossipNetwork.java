@@ -15,5 +15,5 @@ package tech.pegasys.artemis.networking.p2p.gossip;
 
 public interface GossipNetwork {
 
-  public TopicChannel subscribe(String topic, TopicHandler topicHandler);
+  TopicChannel subscribe(String topic, TopicHandler topicHandler);
 }

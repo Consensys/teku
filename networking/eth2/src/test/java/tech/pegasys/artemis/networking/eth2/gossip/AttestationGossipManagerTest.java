@@ -18,11 +18,12 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,21 +37,18 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
-import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class AttestationGossipManagerTest {
 
   private final String topicRegex = "/eth2/index\\d+_beacon_attestation/ssz";
-  private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final EventBus eventBus = spy(new EventBus());
+  private final EventBus eventBus = new EventBus();
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
   @BeforeEach
   public void setup() {
-    BeaconChainUtil.initializeStorage(storageClient, validatorKeys);
+    BeaconChainUtil.initializeStorage(storageClient, Collections.emptyList());
     doReturn(topicChannel)
         .when(gossipNetwork)
         .subscribe(argThat((val) -> val.matches(topicRegex)), any());
@@ -85,10 +83,9 @@ public class AttestationGossipManagerTest {
     // Post new attestation
     final Attestation attestation = DataStructureUtil.randomAttestation(1);
     attestation.setData(attestation.getData().withIndex(UnsignedLong.valueOf(committeeIndex + 1)));
-    final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
     eventBus.post(attestation);
 
-    verify(topicChannel, never()).gossip(serialized);
+    verifyNoInteractions(topicChannel);
   }
 
   @Test

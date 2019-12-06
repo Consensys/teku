@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.networking.eth2.gossip.topics.BlocksTopicHandler;
+import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -33,7 +33,7 @@ public class BlockGossipManager {
       final GossipNetwork gossipNetwork,
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient) {
-    final BlocksTopicHandler topicHandler = new BlocksTopicHandler(eventBus, chainStorageClient);
+    final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, chainStorageClient);
     this.eventBus = eventBus;
     channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
     eventBus.register(this);

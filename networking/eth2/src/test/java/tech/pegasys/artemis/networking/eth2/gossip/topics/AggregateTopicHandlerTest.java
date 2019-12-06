@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
@@ -29,7 +29,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AggregateTopicHandlerTest {
-  private final EventBus eventBus = spy(new EventBus());
+  private final EventBus eventBus = mock(EventBus.class);
   private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
   private final AggregateTopicHandler topicHandler =
       new AggregateTopicHandler(eventBus, storageClient);

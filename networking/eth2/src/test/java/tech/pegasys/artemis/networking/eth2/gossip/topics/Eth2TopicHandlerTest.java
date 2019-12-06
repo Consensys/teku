@@ -14,12 +14,15 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
+import com.google.common.base.Suppliers;
 import com.google.common.eventbus.EventBus;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import org.junit.jupiter.api.Test;
@@ -27,59 +30,80 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 public class Eth2TopicHandlerTest {
+  private static final String TOPIC = "testing";
 
-  private final EventBus eventBus = new EventBus();
+  private final EventBus eventBus = mock(EventBus.class);
   private final MockTopicHandler topicHandler = spy(new MockTopicHandler(eventBus));
   private final Bytes message = Bytes.fromHexString("0x01");
 
+  private final Attestation deserialized = DataStructureUtil.randomAttestation(1);
+  private Supplier<Attestation> deserializer = Suppliers.ofInstance(deserialized);
+  private Supplier<Boolean> validator = Suppliers.ofInstance(true);
+
   @Test
   public void handleMessage_valid() {
-    topicHandler.setShouldValidate(true);
     final boolean result = topicHandler.handleMessage(message);
 
     assertThat(result).isEqualTo(true);
+    verify(eventBus).post(deserialized);
   }
 
   @Test
   public void handleMessage_invalid() {
-    topicHandler.setShouldValidate(false);
+    validator = Suppliers.ofInstance(false);
     final boolean result = topicHandler.handleMessage(message);
 
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(deserialized);
   }
 
   @Test
   public void handleMessage_whenDeserializationFails() {
-    topicHandler.setShouldValidate(true);
+    deserializer =
+        () -> {
+          throw new SSZException("whoops");
+        };
     doThrow(new SSZException("whoops")).when(topicHandler).deserialize(message);
     final boolean result = topicHandler.handleMessage(message);
 
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(deserialized);
+  }
+
+  @Test
+  public void handleMessage_whenDeserializationThrowsUnexpectedException() {
+    deserializer =
+        () -> {
+          throw new RuntimeException("whoops");
+        };
+    final boolean result = topicHandler.handleMessage(message);
+
+    assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(deserialized);
   }
 
   @Test
   public void handleMessage_whenDeserializeReturnsNull() {
-    topicHandler.setShouldValidate(true);
-    doReturn(null).when(topicHandler).deserialize(message);
+    deserializer = () -> null;
     final boolean result = topicHandler.handleMessage(message);
 
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(deserialized);
   }
 
   @Test
   public void handleMessage_whenValidationThrowsAnException() {
-    topicHandler.setShouldValidate(true);
-    doThrow(new RuntimeException("whoops")).when(topicHandler).validateData(any());
+    validator =
+        () -> {
+          throw new RuntimeException("whoops");
+        };
     final boolean result = topicHandler.handleMessage(message);
 
     assertThat(result).isEqualTo(false);
+    verify(eventBus, never()).post(deserialized);
   }
 
-  private static class MockTopicHandler extends Eth2TopicHandler<Attestation> {
-    private static final String topic = "testing";
-    private static final Attestation deserialized = DataStructureUtil.randomAttestation(1);
-
-    private boolean shouldValidate = true;
+  private class MockTopicHandler extends Eth2TopicHandler<Attestation> {
 
     protected MockTopicHandler(final EventBus eventBus) {
       super(eventBus);
@@ -87,21 +111,17 @@ public class Eth2TopicHandlerTest {
 
     @Override
     public String getTopic() {
-      return topic;
+      return TOPIC;
     }
 
     @Override
     protected Attestation deserialize(final Bytes bytes) throws SSZException {
-      return deserialized;
+      return deserializer.get();
     }
 
     @Override
     protected boolean validateData(final Attestation attestation) {
-      return shouldValidate;
-    }
-
-    public void setShouldValidate(final boolean shouldValidate) {
-      this.shouldValidate = shouldValidate;
+      return validator.get();
     }
   }
 }
