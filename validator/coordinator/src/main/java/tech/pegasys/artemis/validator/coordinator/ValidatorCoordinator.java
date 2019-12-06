@@ -260,14 +260,16 @@ public class ValidatorCoordinator {
       List<AttesterInformation> attesterInformations = attestationAssignments.get(slot);
 
       // If our beacon node does have any attestation responsibilities for this slot
-      if (attesterInformations != null) {
-        // Pass attestationAggregator all the attester information necessary
-        // for aggregation
-        attestationAggregator.updateAggregatorInformations(attesterInformations);
-
-        asyncProduceAttestations(
-            attesterInformations, headState, getGenericAttestationData(headState, headBlock));
+      if (attesterInformations == null) {
+        return;
       }
+
+      // Pass attestationAggregator all the attester information necessary
+      // for aggregation
+      attestationAggregator.updateAggregatorInformations(attesterInformations);
+
+      asyncProduceAttestations(
+          attesterInformations, headState, getGenericAttestationData(headState, headBlock));
 
       // Save headState to check for slashings
       //      this.headState = headState;
