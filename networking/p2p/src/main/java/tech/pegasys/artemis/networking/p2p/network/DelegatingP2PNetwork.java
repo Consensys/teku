@@ -16,6 +16,8 @@ package tech.pegasys.artemis.networking.p2p.network;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
@@ -64,5 +66,10 @@ public class DelegatingP2PNetwork implements P2PNetwork {
   @Override
   public void stop() {
     network.stop();
+  }
+
+  @Override
+  public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
+    return network.subscribe(topic, topicHandler);
   }
 }
