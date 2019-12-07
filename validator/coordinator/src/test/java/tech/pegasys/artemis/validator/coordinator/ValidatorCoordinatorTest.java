@@ -26,6 +26,7 @@ import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.cr
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -42,31 +43,50 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ValidatorCoordinatorTest {
 
+  private BlockAttestationsPool blockAttestationsPool;
+  private AttestationAggregator attestationAggregator;
+  private EventBus eventBus;
+  private ChainStorageClient storageClient;
+  private ArtemisConfiguration config;
   private ValidatorCoordinator vc;
 
-  @Test
-  void noValidators_noAttestationProduced() throws Exception {
-    int numValidators = 0;
+  private final int numValidators = 12;
 
-    ArtemisConfiguration config = mock(ArtemisConfiguration.class);
+  @BeforeEach
+  void setup() {
+    config = mock(ArtemisConfiguration.class);
     doReturn(0).when(config).getNaughtinessPercentage();
     doReturn(numValidators).when(config).getNumValidators();
     doReturn(null).when(config).getValidatorsKeyFile();
     doReturn(0).when(config).getInteropOwnedValidatorStartIndex();
     doReturn(numValidators).when(config).getInteropOwnedValidatorCount();
 
-    EventBus eventBus = spy(new EventBus());
-    AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
-    BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
-    final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(numValidators, storageClient);
+    attestationAggregator = mock(AttestationAggregator.class);
+    blockAttestationsPool = mock(BlockAttestationsPool.class);
+    doReturn(createAttestations())
+        .when(blockAttestationsPool)
+        .getAggregatedAttestationsForBlockAtSlot(any());
+
+    eventBus = spy(new EventBus());
+    storageClient = new ChainStorageClient(eventBus);
+    List<BLSKeyPair> blsKeyPairList =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
     chainUtil.initializeStorage();
 
     vc =
         spy(
             new ValidatorCoordinator(
                 eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
+  }
 
+  @Test
+  void onAttestationEvent_noAttestationAssignments() throws Exception {
+    doReturn(0).when(config).getInteropOwnedValidatorCount();
+    vc =
+        spy(
+            new ValidatorCoordinator(
+                eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
     eventBus.post(new BroadcastAttestationEvent(storageClient.getBestBlockRoot()));
 
     // Until the PR #1043 gets merged in that contains "ensureConditionRemainsMet"
@@ -77,32 +97,6 @@ public class ValidatorCoordinatorTest {
 
   @Test
   void createBlockAfterNormalSlot() {
-    int numValidators = 12;
-
-    ArtemisConfiguration config = mock(ArtemisConfiguration.class);
-    doReturn(0).when(config).getNaughtinessPercentage();
-    doReturn(numValidators).when(config).getNumValidators();
-    doReturn(null).when(config).getValidatorsKeyFile();
-    doReturn(0).when(config).getInteropOwnedValidatorStartIndex();
-    doReturn(numValidators).when(config).getInteropOwnedValidatorCount();
-
-    EventBus eventBus = spy(new EventBus());
-    AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
-    BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
-    doReturn(createAttestations())
-        .when(blockAttestationsPool)
-        .getAggregatedAttestationsForBlockAtSlot(any());
-    final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
-    List<BLSKeyPair> blsKeyPairList =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
-    chainUtil.initializeStorage();
-
-    vc =
-        spy(
-            new ValidatorCoordinator(
-                eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
-
     eventBus.post(new SlotEvent(storageClient.getBestSlot().plus(UnsignedLong.ONE)));
     ArgumentCaptor<BeaconBlock> blockArgumentCaptor = ArgumentCaptor.forClass(BeaconBlock.class);
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(blockArgumentCaptor.capture()));
@@ -113,33 +107,6 @@ public class ValidatorCoordinatorTest {
 
   @Test
   void createBlockAfterSkippedSlot() {
-    int numValidators = 12;
-
-    ArtemisConfiguration config = mock(ArtemisConfiguration.class);
-    doReturn(0).when(config).getNaughtinessPercentage();
-    doReturn(numValidators).when(config).getNumValidators();
-    doReturn(null).when(config).getValidatorsKeyFile();
-    doReturn(0).when(config).getInteropOwnedValidatorStartIndex();
-    doReturn(numValidators).when(config).getInteropOwnedValidatorCount();
-
-    EventBus eventBus = spy(new EventBus());
-    AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
-    BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
-    doReturn(createAttestations())
-        .when(blockAttestationsPool)
-        .getAggregatedAttestationsForBlockAtSlot(any());
-
-    final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
-    List<BLSKeyPair> blsKeyPairList =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
-    chainUtil.initializeStorage();
-
-    vc =
-        spy(
-            new ValidatorCoordinator(
-                eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
-
     eventBus.post(new SlotEvent(storageClient.getBestSlot().plus(UnsignedLong.valueOf(2))));
     ArgumentCaptor<BeaconBlock> blockArgumentCaptor = ArgumentCaptor.forClass(BeaconBlock.class);
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(blockArgumentCaptor.capture()));
@@ -150,33 +117,6 @@ public class ValidatorCoordinatorTest {
 
   @Test
   void createBlockAfterMultipleSkippedSlots() {
-    int numValidators = 12;
-
-    ArtemisConfiguration config = mock(ArtemisConfiguration.class);
-    doReturn(0).when(config).getNaughtinessPercentage();
-    doReturn(numValidators).when(config).getNumValidators();
-    doReturn(null).when(config).getValidatorsKeyFile();
-    doReturn(0).when(config).getInteropOwnedValidatorStartIndex();
-    doReturn(numValidators).when(config).getInteropOwnedValidatorCount();
-
-    EventBus eventBus = spy(new EventBus());
-    AttestationAggregator attestationAggregator = mock(AttestationAggregator.class);
-    BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
-    doReturn(createAttestations())
-        .when(blockAttestationsPool)
-        .getAggregatedAttestationsForBlockAtSlot(any());
-
-    final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
-    List<BLSKeyPair> blsKeyPairList =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
-    chainUtil.initializeStorage();
-
-    vc =
-        spy(
-            new ValidatorCoordinator(
-                eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
-
     eventBus.post(new SlotEvent(storageClient.getBestSlot().plus(UnsignedLong.valueOf(10))));
     ArgumentCaptor<BeaconBlock> blockArgumentCaptor = ArgumentCaptor.forClass(BeaconBlock.class);
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(blockArgumentCaptor.capture()));
