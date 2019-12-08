@@ -31,6 +31,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_RO
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -259,8 +260,13 @@ public class ValidatorCoordinator {
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
       List<AttesterInformation> attesterInformations = attestationAssignments.get(slot);
 
-      // Reset the attestation validator and pass attester information necessary
-      // for validator to know which committees and validators to aggregate for
+      // If our beacon node does have any attestation responsibilities for this slot
+      if (attesterInformations == null) {
+        return;
+      }
+
+      // Pass attestationAggregator all the attester information necessary
+      // for aggregation
       attestationAggregator.updateAggregatorInformations(attesterInformations);
 
       asyncProduceAttestations(
@@ -577,7 +583,8 @@ public class ValidatorCoordinator {
         });
   }
 
-  private void asyncProduceAttestations(
+  @VisibleForTesting
+  void asyncProduceAttestations(
       List<AttesterInformation> attesterInformations,
       BeaconState state,
       AttestationData genericAttestationData) {

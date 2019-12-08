@@ -101,6 +101,70 @@ public class GossipMessageHandlerIntegrationTest {
         });
   }
 
+  @Test
+  public void shouldNotGossipInvalidBlocks() throws Exception {
+    // Setup network 1
+    final EventBus eventBus1 = new EventBus();
+    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final Eth2Network network1 =
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
+    final BeaconChainUtil chainUtil = BeaconChainUtil.create(12, storageClient1);
+    chainUtil.initializeStorage();
+
+    // Setup network 2
+    final EventBus eventBus2 = new EventBus();
+    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final Eth2Network network2 =
+        networkFactory
+            .builder()
+            .eventBus(eventBus2)
+            .chainStorageClient(storageClient2)
+            .startNetwork();
+    chainUtil.initializeStorage(storageClient2);
+
+    // Setup network 3
+    final EventBus eventBus3 = new EventBus();
+    final ChainStorageClient storageClient3 = new ChainStorageClient(eventBus3);
+    final Eth2Network network3 =
+        networkFactory
+            .builder()
+            .eventBus(eventBus3)
+            .chainStorageClient(storageClient3)
+            .startNetwork();
+    chainUtil.initializeStorage(storageClient3);
+
+    // Connect networks 1 -> 2 -> 3
+    network1.connect(network2.getNodeAddress());
+    network2.connect(network3.getNodeAddress());
+    // Wait for connections to get set up
+    Waiter.waitFor(
+        () -> {
+          assertThat(network1.getPeerCount()).isEqualTo(1);
+          assertThat(network2.getPeerCount()).isEqualTo(2);
+          assertThat(network3.getPeerCount()).isEqualTo(1);
+        });
+    // TODO: debug this - we shouldn't have to wait here
+    Thread.sleep(2000);
+
+    // Propagate block from network 1
+    final BeaconBlock newBlock =
+        chainUtil.createBlockAtSlotFromInvalidProposer(UnsignedLong.valueOf(2L));
+    eventBus1.post(newBlock);
+
+    // Listen for new block event to arrive on networks 2 and 3
+    final BeaconBlockCollector network2Blocks = new BeaconBlockCollector(eventBus2);
+    final BeaconBlockCollector network3Blocks = new BeaconBlockCollector(eventBus3);
+
+    // Wait for blocks to propagate
+    Thread.sleep(10_000);
+    assertThat(network2Blocks.getBlocks()).isEmpty();
+    assertThat(network3Blocks.getBlocks()).isEmpty();
+  }
+
   private static class BeaconBlockCollector {
     private final Collection<BeaconBlock> blocks = new ConcurrentLinkedQueue<>();
 

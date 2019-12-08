@@ -11,16 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
+package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import io.libp2p.core.pubsub.PubsubPublisherApi;
-import io.libp2p.core.pubsub.Topic;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,35 +27,28 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
+public class AttestationTopicHandler extends Eth2TopicHandler<Attestation> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Topic attestationsTopic;
+  private final String attestationsTopic;
   private final ChainStorageClient chainStorageClient;
 
-  private final int committeeIndex;
-
-  protected AttestationTopicHandler(
-      final PubsubPublisherApi publisher,
+  public AttestationTopicHandler(
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient,
       final int committeeIndex) {
-    super(publisher, eventBus);
-    this.committeeIndex = committeeIndex;
-    this.attestationsTopic = new Topic("/eth2/index" + committeeIndex + "_beacon_attestation/ssz");
+    super(eventBus);
+    this.attestationsTopic = getTopic(committeeIndex);
     this.chainStorageClient = chainStorageClient;
   }
 
-  @Override
-  public Topic getTopic() {
-    return attestationsTopic;
+  private static String getTopic(final int committeeIndex) {
+    return "/eth2/index" + committeeIndex + "_beacon_attestation/ssz";
   }
 
-  @Subscribe
-  public void onNewAttestation(final Attestation attestation) {
-    if (toIntExact(attestation.getData().getIndex().longValue()) == committeeIndex) {
-      gossip(attestation);
-    }
+  @Override
+  public String getTopic() {
+    return attestationsTopic;
   }
 
   @Override
@@ -88,9 +77,5 @@ public class AttestationTopicHandler extends GossipTopicHandler<Attestation> {
     }
 
     return true;
-  }
-
-  public int getCommitteeIndex() {
-    return committeeIndex;
   }
 }
