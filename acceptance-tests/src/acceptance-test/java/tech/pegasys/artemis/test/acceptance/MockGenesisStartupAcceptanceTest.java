@@ -11,23 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.provider;
+package tech.pegasys.artemis.test.acceptance;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
+import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
 
-class JsonProviderTest {
+public class MockGenesisStartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  void beaconStateJsonTest() {
-    Constants.setConstants("minimal");
-    BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
-    String jsonState = JsonProvider.objectToJSON(state);
-    assertTrue(jsonState.length() > 0);
+  public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
+    final ArtemisNode node = createArtemisNode();
+    node.start();
+    node.waitForGenesis();
+    node.waitForNewBlock();
   }
 }

@@ -37,8 +37,9 @@ public class BeaconRestApi {
   private Javalin app;
 
   public BeaconRestApi(
-      ChainStorageClient chainStorageClient, P2PNetwork p2pNetwork, final int portNumber) {
-    app = Javalin.create().start(portNumber);
+      ChainStorageClient chainStorageClient, P2PNetwork p2pNetwork, final int requestedPortNumber) {
+    app = Javalin.create();
+    app.server().setServerPort(requestedPortNumber);
 
     handlers.add(new GenesisTimeHandler(chainStorageClient));
     handlers.add(new BeaconHeadHandler(chainStorageClient));
@@ -49,7 +50,12 @@ public class BeaconRestApi {
     handlers.add(new ENRHandler());
   }
 
+  public int getPort() {
+    return app.server().getServerPort();
+  }
+
   public void start() {
+    app.start();
     handlers.forEach(
         handler ->
             app.get(
