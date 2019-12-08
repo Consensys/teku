@@ -68,7 +68,7 @@ public class ArtemisNode {
         configFile.getAbsolutePath());
     process =
         new ProcessBuilder(
-                ARTEMIS_BINARY, "--config", configFile.getAbsolutePath(), "--logging", "DEBUG")
+                ARTEMIS_BINARY, "--config", configFile.getAbsolutePath())
             .directory(workDir.toFile())
             .inheritIO()
             .start();
