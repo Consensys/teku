@@ -43,6 +43,7 @@ public class ArtemisNode {
           .getAbsolutePath();
 
   private final SimpleHttpClient httpClient;
+  private final Config config;
 
   private boolean started = false;
   private File configFile;
@@ -51,6 +52,7 @@ public class ArtemisNode {
 
   ArtemisNode(final SimpleHttpClient httpClient) {
     this.httpClient = httpClient;
+    config = new Config();
   }
 
   public void start() throws Exception {
@@ -59,7 +61,7 @@ public class ArtemisNode {
     workDir = Files.createTempDirectory("artemis");
     configFile = File.createTempFile("config", ".toml");
     configFile.deleteOnExit();
-    new ConfigBuilder().writeTo(configFile);
+    config.writeTo(configFile);
     LOG.info(
         "Starting artemis from {} with config file {}",
         ARTEMIS_BINARY,
@@ -91,7 +93,7 @@ public class ArtemisNode {
   }
 
   private URI getRestApiUrl() {
-    return URI.create("http://127.0.0.1:9051");
+    return URI.create("http://127.0.0.1:" + config.getRestApiPortNumber());
   }
 
   public void stop() {
@@ -115,30 +117,38 @@ public class ArtemisNode {
     }
   }
 
-  private static class ConfigBuilder {
+  private static class Config {
 
+    private static final String BEACONRESTAPI_SECTION = "beaconrestapi";
+    private static final String DEPOSIT_SECTION = "deposit";
+    private static final String INTEROP_SECTION = "interop";
+    private static final String NODE_SECTION = "node";
     private Map<String, Map<String, Object>> options = new HashMap<>();
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
-    public ConfigBuilder() {
-      final Map<String, Object> node = getSection("node");
+    public Config() {
+      final Map<String, Object> node = getSection(NODE_SECTION);
       node.put("networkMode", "mock");
       node.put("networkInterface", "127.0.0.1");
       node.put("port", 9000);
       node.put("discovery", "static");
       node.put("constants", "minimal");
 
-      final Map<String, Object> interop = getSection("interop");
+      final Map<String, Object> interop = getSection(INTEROP_SECTION);
       interop.put("genesisTime", 0);
       interop.put("ownedValidatorStartIndex", 0);
       interop.put("ownedValidatorCount", DEFAULT_VALIDATOR_COUNT);
 
-      final Map<String, Object> deposit = getSection("deposit");
+      final Map<String, Object> deposit = getSection(DEPOSIT_SECTION);
       deposit.put("mode", "test");
       deposit.put("numValidators", DEFAULT_VALIDATOR_COUNT);
 
-      final Map<String, Object> beaconRestApi = getSection("beaconrestapi");
+      final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", 9051);
+    }
+
+    public int getRestApiPortNumber() {
+      return (int) getSection(BEACONRESTAPI_SECTION).get("portNumber");
     }
 
     private Map<String, Object> getSection(final String interop) {
