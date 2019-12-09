@@ -499,7 +499,7 @@ task distDocker(type: Exec) {
   dependsOn dockerDistUntar
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = project.hasProperty('release.releaseVersion') ? "pegasyseng/artemis:" + project.property('release.releaseVersion') : "pegasyseng/artemis:${project.version}"
+  def image = "pegasyseng/artemis:develop"
   def dockerBuildDir = "build/docker-artemis/"
   workingDir "${dockerBuildDir}"
 
@@ -658,9 +658,10 @@ task dockerUpload(type: Exec) {
   dependsOn([distDocker, distDockerWhiteblock])
   def imageRepos = 'pegasyseng'
   def imageName = "${imageRepos}/artemis"
-  def image = "${imageName}:${rootProject.version}"
-  def cmd = "docker push '${image}'"
+  def image = "${imageName}:develop"
+  def cmd = "docker push ${imageName}:whiteblock"
   def additionalTags = []
+  additionalTags.add("${imageName}:${rootProject.version}")
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
   }
