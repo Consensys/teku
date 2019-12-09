@@ -231,6 +231,94 @@ task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, clean
 
 task deploy() {}
 
+
+installDist { }
+
+distTar {
+  dependsOn checkLicenses
+  doFirst {
+    delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
+  }
+  compression = Compression.GZIP
+  extension = 'tar.gz'
+}
+
+distZip {
+  dependsOn checkLicenses
+  doFirst {
+    delete fileTree(dir: 'build/distributions', include: '*.zip')
+  }
+}
+
+// rename the top level dir from artemis-<version> to artemis and this makes it really
+// simple for use in docker
+tasks.register("dockerDistUntar") {
+  dependsOn distTar
+  def dockerBuildDir = "build/docker-artemis/"
+  def distTarFile = distTar.outputs.files.singleFile
+  def distTarFileName = distTar.outputs.files.singleFile.name.replace(".tar.gz", "")
+
+  doFirst {
+    new File(dockerBuildDir).mkdir()
+    copy {
+      from tarTree(distTarFile)
+      into(dockerBuildDir)
+    }
+    file("${dockerBuildDir}/${distTarFileName}").renameTo("${dockerBuildDir}/artemis")
+  }
+}
+
+task distDocker(type: Exec) {
+  dependsOn dockerDistUntar
+
+  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
+  def image = "pegasyseng/artemis:develop"
+  def dockerBuildDir = "build/docker-artemis/"
+  workingDir "${dockerBuildDir}"
+
+  doFirst {
+    copy {
+      from file("${projectDir}/docker/Dockerfile")
+      into(workingDir)
+    }
+  }
+
+  executable "sh"
+  args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+}
+
+task distDockerWhiteblock(type: Exec) {
+  dependsOn installDist
+
+  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
+  def image = "pegasyseng/artemis:whiteblock"
+  def dockerBuildDir = "build/docker-artemis-whiteblock/"
+  workingDir "${dockerBuildDir}"
+
+  doFirst {
+    new File(dockerBuildDir).mkdir()
+    copy {
+      from fileTree("${projectDir}/docker/whiteblock/")
+      into(workingDir)
+    }
+    copy {
+      from fileTree("${projectDir}/build/install/")
+      into(workingDir)
+    }
+    copy {
+      from fileTree("${projectDir}/scripts/")
+      into("${workingDir}/scripts")
+    }
+    copy {
+      from fileTree("${projectDir}/config/")
+      into("${workingDir}/config")
+    }
+  }
+
+  executable "sh"
+  args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+}
+
 subprojects {
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
@@ -336,7 +424,7 @@ subprojects {
   dependencies {
     implementation 'org.apache.logging.log4j:log4j-core'
     runtime 'org.apache.logging.log4j:log4j-slf4j-impl'
-    
+
     testImplementation sourceSets.testSupport.output
     integrationTestImplementation sourceSets.testSupport.output
 
@@ -383,11 +471,10 @@ subprojects {
     classpath = sourceSets.integrationTest.runtimeClasspath
   }
 
-  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.installDist]){
+  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.distDocker]){
     group = "verification"
     description = "Runs the Artemis acceptance tests"
 
-    systemProperty("artemis.binary.path", ("${rootProject.buildDir}/install/artemis/bin/artemis" as File).absolutePath)
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
   }
@@ -457,93 +544,6 @@ distributions {
       from("libs") { into "native" }
     }
   }
-}
-
-installDist { }
-
-distTar {
-  dependsOn checkLicenses
-  doFirst {
-    delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
-  }
-  compression = Compression.GZIP
-  extension = 'tar.gz'
-}
-
-distZip {
-  dependsOn checkLicenses
-  doFirst {
-    delete fileTree(dir: 'build/distributions', include: '*.zip')
-  }
-}
-
-// rename the top level dir from artemis-<version> to artemis and this makes it really
-// simple for use in docker
-tasks.register("dockerDistUntar") {
-  dependsOn distTar
-  def dockerBuildDir = "build/docker-artemis/"
-  def distTarFile = distTar.outputs.files.singleFile
-  def distTarFileName = distTar.outputs.files.singleFile.name.replace(".tar.gz", "")
-
-  doFirst {
-    new File(dockerBuildDir).mkdir()
-    copy {
-      from tarTree(distTarFile)
-      into(dockerBuildDir)
-    }
-    file("${dockerBuildDir}/${distTarFileName}").renameTo("${dockerBuildDir}/artemis")
-  }
-}
-
-task distDocker(type: Exec) {
-  dependsOn dockerDistUntar
-
-  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "pegasyseng/artemis:develop"
-  def dockerBuildDir = "build/docker-artemis/"
-  workingDir "${dockerBuildDir}"
-
-  doFirst {
-    copy {
-      from file("${projectDir}/docker/Dockerfile")
-      into(workingDir)
-    }
-  }
-
-  executable "sh"
-  args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
-}
-
-task distDockerWhiteblock(type: Exec) {
-  dependsOn installDist
-
-  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "pegasyseng/artemis:whiteblock"
-  def dockerBuildDir = "build/docker-artemis-whiteblock/"
-  workingDir "${dockerBuildDir}"
-
-  doFirst {
-    new File(dockerBuildDir).mkdir()
-    copy {
-      from fileTree("${projectDir}/docker/whiteblock/")
-      into(workingDir)
-    }
-    copy {
-      from fileTree("${projectDir}/build/install/")
-      into(workingDir)
-    }
-    copy {
-      from fileTree("${projectDir}/scripts/")
-      into("${workingDir}/scripts")
-    }
-    copy {
-      from fileTree("${projectDir}/config/")
-      into("${workingDir}/config")
-    }
-  }
-
-  executable "sh"
-  args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
 }
 
 // http://label-schema.org/rc1/
@@ -661,7 +661,7 @@ task dockerUpload(type: Exec) {
   def image = "${imageName}:develop"
   def cmd = "docker push ${imageName}:whiteblock"
   def additionalTags = []
-  additionalTags.add("${imageName}:${rootProject.version}")
+  additionalTags.add("${rootProject.version}")
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
   }
