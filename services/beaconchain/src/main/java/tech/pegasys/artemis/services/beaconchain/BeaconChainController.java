@@ -288,7 +288,7 @@ public class BeaconChainController {
                   + "                       "
                   + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
 
-          this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot));
+          this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
           this.eventBus.post(new BroadcastAggregatesEvent());
           nodeSlot = nodeSlot.plus(UnsignedLong.ONE);

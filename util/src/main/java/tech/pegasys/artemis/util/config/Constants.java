@@ -99,6 +99,7 @@ public class Constants {
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
+  public static int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
 
   // Deposit
   public static String DEPOSIT_NORMAL = "normal";

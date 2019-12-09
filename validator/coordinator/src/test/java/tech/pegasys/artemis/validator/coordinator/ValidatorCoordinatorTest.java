@@ -56,7 +56,9 @@ public class ValidatorCoordinatorTest {
             new ValidatorCoordinator(
                 eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
 
-    eventBus.post(new BroadcastAttestationEvent(storageClient.getBestBlockRoot()));
+    eventBus.post(
+        new BroadcastAttestationEvent(
+            storageClient.getBestBlockRoot(), storageClient.getBestSlot()));
 
     // Until the PR #1043 gets merged in that contains "ensureConditionRemainsMet"
     Thread.sleep(1000);
