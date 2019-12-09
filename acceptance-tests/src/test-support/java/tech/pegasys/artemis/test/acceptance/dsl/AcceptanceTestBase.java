@@ -13,31 +13,14 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
-import com.github.dockerjava.api.model.Network.Ipam;
-import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
-import org.testcontainers.containers.Network;
 
 public class AcceptanceTestBase {
 
-  private static final String SUBNET_PREFIX = "10.105.47.";
   private final SimpleHttpClient httpClient = new SimpleHttpClient();
   private final List<ArtemisNode> nodes = new ArrayList<>();
-  private int nextAllocation = 2;
-  private final Supplier<Network> networkSupplier =
-      Suppliers.memoize(
-          () ->
-              Network.builder()
-                  .createNetworkCmdModifier(
-                      modifier ->
-                          modifier.withIpam(
-                              new Ipam()
-                                  .withConfig(
-                                      new Ipam.Config().withSubnet(SUBNET_PREFIX + "0/24"))))
-                  .build());
 
   @AfterEach
   final void shutdownNodes() {
@@ -45,14 +28,8 @@ public class AcceptanceTestBase {
   }
 
   protected ArtemisNode createArtemisNode() {
-    final ArtemisNode artemisNode =
-        new ArtemisNode(httpClient, networkSupplier.get(), allocateNextIp());
+    final ArtemisNode artemisNode = new ArtemisNode(httpClient);
     nodes.add(artemisNode);
     return artemisNode;
-  }
-
-  private String allocateNextIp() {
-    final int allocation = nextAllocation++;
-    return SUBNET_PREFIX + allocation;
   }
 }
