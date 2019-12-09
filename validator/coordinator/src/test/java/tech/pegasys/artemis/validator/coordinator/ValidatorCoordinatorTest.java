@@ -13,14 +13,14 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
 
 import com.google.common.eventbus.EventBus;
@@ -28,7 +28,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
@@ -37,7 +36,6 @@ import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -48,45 +46,35 @@ public class ValidatorCoordinatorTest {
   private EventBus eventBus;
   private ChainStorageClient storageClient;
   private ArtemisConfiguration config;
-  private ValidatorCoordinator vc;
 
-  private final int numValidators = 12;
+  private static final int NUM_VALIDATORS = 12;
 
   @BeforeEach
   void setup() {
     config = mock(ArtemisConfiguration.class);
-    doReturn(0).when(config).getNaughtinessPercentage();
-    doReturn(numValidators).when(config).getNumValidators();
-    doReturn(null).when(config).getValidatorsKeyFile();
-    doReturn(0).when(config).getInteropOwnedValidatorStartIndex();
-    doReturn(numValidators).when(config).getInteropOwnedValidatorCount();
+    when(config.getNaughtinessPercentage()).thenReturn(0);
+    when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
+    when(config.getValidatorsKeyFile()).thenReturn(null);
+    when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);
+    when(config.getInteropOwnedValidatorCount()).thenReturn(NUM_VALIDATORS);
 
     attestationAggregator = mock(AttestationAggregator.class);
     blockAttestationsPool = mock(BlockAttestationsPool.class);
-    doReturn(createAttestations())
-        .when(blockAttestationsPool)
-        .getAggregatedAttestationsForBlockAtSlot(any());
+
+    when(blockAttestationsPool.getAggregatedAttestationsForBlockAtSlot(any()))
+        .thenReturn(createAttestations());
 
     eventBus = spy(new EventBus());
     storageClient = new ChainStorageClient(eventBus);
     List<BLSKeyPair> blsKeyPairList =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
     chainUtil.initializeStorage();
-
-    vc =
-        spy(
-            new ValidatorCoordinator(
-                eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
   }
 
   @Test
   void onAttestationEvent_noAttestationAssignments() throws Exception {
-    doReturn(0).when(config).getInteropOwnedValidatorCount();
-    vc =
-        spy(
-            new ValidatorCoordinator(
-                eventBus, storageClient, attestationAggregator, blockAttestationsPool, config));
+    ValidatorCoordinator vc = createValidatorCoordinator(0);
     eventBus.post(new BroadcastAttestationEvent(storageClient.getBestBlockRoot()));
 
     // Until the PR #1043 gets merged in that contains "ensureConditionRemainsMet"
@@ -97,31 +85,42 @@ public class ValidatorCoordinatorTest {
 
   @Test
   void createBlockAfterNormalSlot() {
-    eventBus.post(new SlotEvent(storageClient.getBestSlot().plus(UnsignedLong.ONE)));
-    ArgumentCaptor<BeaconBlock> blockArgumentCaptor = ArgumentCaptor.forClass(BeaconBlock.class);
-    Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(blockArgumentCaptor.capture()));
-
-    assertThat(blockArgumentCaptor.getValue().getSlot())
-        .isEqualByComparingTo(storageClient.getBestSlot().plus(UnsignedLong.ONE));
+    createValidatorCoordinator(NUM_VALIDATORS);
+    UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
+    eventBus.post(new SlotEvent(newBlockSlot));
+    verify(eventBus, atLeastOnce()).post(blockWithSlot(newBlockSlot));
   }
 
   @Test
   void createBlockAfterSkippedSlot() {
-    eventBus.post(new SlotEvent(storageClient.getBestSlot().plus(UnsignedLong.valueOf(2))));
-    ArgumentCaptor<BeaconBlock> blockArgumentCaptor = ArgumentCaptor.forClass(BeaconBlock.class);
-    Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(blockArgumentCaptor.capture()));
-
-    assertThat(blockArgumentCaptor.getValue().getSlot())
-        .isEqualByComparingTo(storageClient.getBestSlot().plus(UnsignedLong.valueOf(2)));
+    createValidatorCoordinator(NUM_VALIDATORS);
+    UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(2));
+    eventBus.post(new SlotEvent(newBlockSlot));
+    verify(eventBus, atLeastOnce()).post(blockWithSlot(newBlockSlot));
   }
 
   @Test
   void createBlockAfterMultipleSkippedSlots() {
-    eventBus.post(new SlotEvent(storageClient.getBestSlot().plus(UnsignedLong.valueOf(10))));
-    ArgumentCaptor<BeaconBlock> blockArgumentCaptor = ArgumentCaptor.forClass(BeaconBlock.class);
-    Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(blockArgumentCaptor.capture()));
+    createValidatorCoordinator(NUM_VALIDATORS);
+    UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(10));
+    eventBus.post(new SlotEvent(newBlockSlot));
+    verify(eventBus, atLeastOnce()).post(blockWithSlot(newBlockSlot));
+  }
 
-    assertThat(blockArgumentCaptor.getValue().getSlot())
-        .isEqualByComparingTo(storageClient.getBestSlot().plus(UnsignedLong.valueOf(10)));
+  private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
+    when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
+    return new ValidatorCoordinator(
+        eventBus, storageClient, attestationAggregator, blockAttestationsPool, config);
+  }
+
+  private Object blockWithSlot(final UnsignedLong slotNumber) {
+    return argThat(
+        argument -> {
+          if (!(argument instanceof BeaconBlock)) {
+            return false;
+          }
+          final BeaconBlock block = (BeaconBlock) argument;
+          return block.getSlot().equals(slotNumber);
+        });
   }
 }
