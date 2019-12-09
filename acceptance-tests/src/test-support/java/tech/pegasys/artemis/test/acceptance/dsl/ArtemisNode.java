@@ -31,6 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -43,19 +44,22 @@ public class ArtemisNode {
   private final SimpleHttpClient httpClient;
   private final Config config = new Config();
 
-  private final GenericContainer<?> container =
-      new GenericContainer<>("pegasyseng/artemis:develop")
-          .withExposedPorts(REST_API_PORT)
-          .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
-          .waitingFor(
-              new HttpWaitStrategy()
-                  .forPort(config.getRestApiPortNumber())
-                  .forPath("/network/peer_id"));
+  private final GenericContainer<?> container;
   private boolean started = false;
   private File configFile;
 
-  ArtemisNode(final SimpleHttpClient httpClient) {
+  ArtemisNode(final SimpleHttpClient httpClient, final Network network, final String ipAddress) {
     this.httpClient = httpClient;
+    container =
+        new GenericContainer<>("pegasyseng/artemis:develop")
+            .withExposedPorts(REST_API_PORT)
+            .withNetwork(network)
+            .withCreateContainerCmdModifier(modifier -> modifier.withIpv4Address(ipAddress))
+            .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
+            .waitingFor(
+                new HttpWaitStrategy()
+                    .forPort(config.getRestApiPortNumber())
+                    .forPath("/network/peer_id"));
   }
 
   public void start() throws Exception {
