@@ -29,6 +29,7 @@ import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUti
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -487,7 +488,8 @@ public class ValidatorCoordinator {
     return eth1DataCache.get(cacheSize.minus(distance).minus(UnsignedLong.ONE));
   }
 
-  private void asyncProduceAttestations(
+  @VisibleForTesting
+  void asyncProduceAttestations(
       List<AttesterInformation> attesterInformations,
       BeaconState state,
       AttestationData genericAttestationData) {
@@ -505,6 +507,7 @@ public class ValidatorCoordinator {
                             genericAttestationData)));
   }
 
+  @VisibleForTesting
   static void getIndicesOfOurValidators(
       BeaconState state, Map<BLSPublicKey, ValidatorInfo> validators) {
     List<Validator> validatorRegistry = state.getValidators();
