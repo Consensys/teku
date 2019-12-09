@@ -22,6 +22,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
+import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -74,13 +75,15 @@ public class ValidatorCoordinatorTest {
 
   @Test
   void onAttestationEvent_noAttestationAssignments() throws Exception {
-    ValidatorCoordinator vc = createValidatorCoordinator(0);
-    eventBus.post(new BroadcastAttestationEvent(storageClient.getBestBlockRoot()));
+    ValidatorCoordinator vc = spy(createValidatorCoordinator(0));
+    eventBus.post(
+        new BroadcastAttestationEvent(
+            storageClient.getBestBlockRoot(), storageClient.getBestSlot()));
 
-    // Until the PR #1043 gets merged in that contains "ensureConditionRemainsMet"
-    Thread.sleep(1000);
-    verify(attestationAggregator, never()).updateAggregatorInformations(any());
-    verify(vc, never()).asyncProduceAttestations(any(), any(), any());
+    ensureConditionRemainsMet(
+        () -> verify(attestationAggregator, never()).updateAggregatorInformations(any()));
+    ensureConditionRemainsMet(
+        () -> verify(vc, never()).asyncProduceAttestations(any(), any(), any()));
   }
 
   @Test

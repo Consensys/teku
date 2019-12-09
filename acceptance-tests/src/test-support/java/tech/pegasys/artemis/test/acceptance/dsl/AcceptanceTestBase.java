@@ -11,26 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.test.acceptance.dsl;
 
-import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 
-public class BroadcastAttestationEvent {
+public class AcceptanceTestBase {
 
-  Bytes32 headBlockRoot;
-  UnsignedLong nodeSlot;
+  private final SimpleHttpClient httpClient = new SimpleHttpClient();
+  private final List<ArtemisNode> nodes = new ArrayList<>();
 
-  public BroadcastAttestationEvent(Bytes32 headBlockRoot, UnsignedLong nodeSlot) {
-    this.headBlockRoot = headBlockRoot;
-    this.nodeSlot = nodeSlot;
+  @AfterEach
+  final void shutdownNodes() {
+    nodes.forEach(ArtemisNode::stop);
   }
 
-  public Bytes32 getHeadBlockRoot() {
-    return this.headBlockRoot;
-  }
-
-  public UnsignedLong getNodeSlot() {
-    return nodeSlot;
+  protected ArtemisNode createArtemisNode() {
+    final ArtemisNode artemisNode = new ArtemisNode(httpClient);
+    nodes.add(artemisNode);
+    return artemisNode;
   }
 }

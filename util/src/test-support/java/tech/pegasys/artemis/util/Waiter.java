@@ -13,11 +13,13 @@
 
 package tech.pegasys.artemis.util;
 
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.awaitility.Awaitility;
+import org.awaitility.pollinterval.IterativePollInterval;
 
 /**
  * A simpler wrapper around Awaitility that directs people towards best practices for waiting. The
@@ -27,9 +29,20 @@ import org.awaitility.Awaitility;
 public class Waiter {
 
   private static final int DEFAULT_TIMEOUT_SECONDS = 30;
+  private static final Duration INITIAL_POLL_INTERVAL = Duration.ofMillis(200);
+  private static final Duration MAX_POLL_INTERVAL = Duration.ofSeconds(5);
 
   public static void waitFor(final Condition assertion) {
-    Awaitility.waitAtMost(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS).untilAsserted(assertion::run);
+    Awaitility.waitAtMost(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .ignoreExceptions()
+        .pollInterval(
+            IterativePollInterval.iterative(Waiter::nextPollInterval, INITIAL_POLL_INTERVAL))
+        .untilAsserted(assertion::run);
+  }
+
+  private static Duration nextPollInterval(final Duration duration) {
+    final Duration nextInterval = duration.multipliedBy(2);
+    return nextInterval.compareTo(MAX_POLL_INTERVAL) <= 0 ? nextInterval : MAX_POLL_INTERVAL;
   }
 
   public static <T> T waitFor(final CompletableFuture<T> future)
@@ -39,5 +52,23 @@ public class Waiter {
 
   public interface Condition {
     void run() throws Throwable;
+  }
+
+  public static void ensureConditionRemainsMet(
+      final Condition condition, int waitTimeInMilliseconds) throws InterruptedException {
+    final long mustBeTrueUntil = System.currentTimeMillis() + waitTimeInMilliseconds;
+    while (System.currentTimeMillis() < mustBeTrueUntil) {
+      try {
+        condition.run();
+      } catch (final Throwable t) {
+        throw new RuntimeException("Condition did not remain met", t);
+      }
+      Thread.sleep(500);
+    }
+  }
+
+  public static void ensureConditionRemainsMet(final Condition condition)
+      throws InterruptedException {
+    ensureConditionRemainsMet(condition, 2000);
   }
 }
