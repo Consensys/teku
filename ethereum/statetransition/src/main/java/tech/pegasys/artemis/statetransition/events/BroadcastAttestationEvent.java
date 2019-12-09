@@ -13,17 +13,24 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class BroadcastAttestationEvent {
 
   Bytes32 headBlockRoot;
+  UnsignedLong nodeSlot;
 
-  public BroadcastAttestationEvent(Bytes32 headBlockRoot) {
+  public BroadcastAttestationEvent(Bytes32 headBlockRoot, UnsignedLong nodeSlot) {
     this.headBlockRoot = headBlockRoot;
+    this.nodeSlot = nodeSlot;
   }
 
   public Bytes32 getHeadBlockRoot() {
     return this.headBlockRoot;
+  }
+
+  public UnsignedLong getNodeSlot() {
+    return nodeSlot;
   }
 }

@@ -53,4 +53,22 @@ public class Waiter {
   public interface Condition {
     void run() throws Throwable;
   }
+
+  public static void ensureConditionRemainsMet(
+      final Condition condition, int waitTimeInMilliseconds) throws InterruptedException {
+    final long mustBeTrueUntil = System.currentTimeMillis() + waitTimeInMilliseconds;
+    while (System.currentTimeMillis() < mustBeTrueUntil) {
+      try {
+        condition.run();
+      } catch (final Throwable t) {
+        throw new RuntimeException("Condition did not remain met", t);
+      }
+      Thread.sleep(500);
+    }
+  }
+
+  public static void ensureConditionRemainsMet(final Condition condition)
+      throws InterruptedException {
+    ensureConditionRemainsMet(condition, 2000);
+  }
 }
