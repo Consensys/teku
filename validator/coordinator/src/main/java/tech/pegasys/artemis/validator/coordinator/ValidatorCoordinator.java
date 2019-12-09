@@ -347,7 +347,7 @@ public class ValidatorCoordinator {
         this.eventBus.post(naughtyBlock);
       }
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
-      STDOUT.log(Level.WARN, "Error during block creation " + e.toString());
+      STDOUT.log(Level.ERROR, "Error during block creation " + e.toString());
     }
   }
 
