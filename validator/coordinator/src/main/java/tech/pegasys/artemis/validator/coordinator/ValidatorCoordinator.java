@@ -315,8 +315,7 @@ public class ValidatorCoordinator {
     try {
 
       // Process empty slots up to the new slot
-      StateTransition st = new StateTransition(false);
-      st.process_slots(previousState, newSlot, false);
+      stateTransition.process_slots(previousState, newSlot, false);
 
       // Check if we should be proposing
       final BLSPublicKey proposer = blockCreator.getProposerForSlot(previousState, newSlot);
