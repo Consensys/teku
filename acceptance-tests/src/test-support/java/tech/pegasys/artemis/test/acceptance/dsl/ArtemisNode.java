@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
-import static org.apache.tuweni.io.file.Files.deleteRecursively;
 import static org.apache.tuweni.toml.Toml.tomlEscape;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.util.Waiter.waitFor;
@@ -24,53 +23,55 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 
 public class ArtemisNode {
+  private static final int REST_API_PORT = 9051;
   private static final Logger LOG = LogManager.getLogger();
-  private static final String ARTEMIS_BINARY =
-      new File(System.getProperty("artemis.binary.path", "../build/install/artemis/bin/artemis"))
-          .getAbsolutePath();
 
   private final SimpleHttpClient httpClient;
-  private final Config config;
+  private final Config config = new Config();
 
+  private final GenericContainer<?> container;
   private boolean started = false;
   private File configFile;
-  private Process process;
-  private Path workDir;
 
-  ArtemisNode(final SimpleHttpClient httpClient) {
+  ArtemisNode(final SimpleHttpClient httpClient, final Network network, final String ipAddress) {
     this.httpClient = httpClient;
-    config = new Config();
+    container =
+        new GenericContainer<>("pegasyseng/artemis:develop")
+            .withExposedPorts(REST_API_PORT)
+            .withNetwork(network)
+            .withCreateContainerCmdModifier(modifier -> modifier.withIpv4Address(ipAddress))
+            .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
+            .waitingFor(
+                new HttpWaitStrategy()
+                    .forPort(config.getRestApiPortNumber())
+                    .forPath("/network/peer_id"));
   }
 
   public void start() throws Exception {
     assertThat(started).isFalse();
     started = true;
-    workDir = Files.createTempDirectory("artemis");
     configFile = File.createTempFile("config", ".toml");
     configFile.deleteOnExit();
     config.writeTo(configFile);
-    LOG.info(
-        "Starting artemis from {} with config file {}",
-        ARTEMIS_BINARY,
-        configFile.getAbsolutePath());
-    process =
-        new ProcessBuilder(ARTEMIS_BINARY, "--config", configFile.getAbsolutePath())
-            .directory(workDir.toFile())
-            .inheritIO()
-            .start();
+    container.withCopyFileToContainer(
+        MountableFile.forHostPath(configFile.getAbsolutePath()), "/config.toml");
+    container.setCommand("--config", "/config.toml");
+    container.start();
   }
 
   public void waitForGenesis() {
@@ -92,7 +93,7 @@ public class ArtemisNode {
   }
 
   private URI getRestApiUrl() {
-    return URI.create("http://127.0.0.1:" + config.getRestApiPortNumber());
+    return URI.create("http://127.0.0.1:" + container.getMappedPort(config.getRestApiPortNumber()));
   }
 
   public void stop() {
@@ -100,20 +101,10 @@ public class ArtemisNode {
       return;
     }
     LOG.debug("Shutting down");
-    try {
-      process.destroy();
-      if (!process.waitFor(1, TimeUnit.MINUTES)) {
-        LOG.warn("Didn't shutdown in a timely fashion, being more aggressive");
-        process.destroyForcibly();
-      }
-
-      if (!configFile.delete() && configFile.exists()) {
-        throw new IOException("Failed to delete config file: " + configFile);
-      }
-      deleteRecursively(workDir);
-    } catch (final IOException | InterruptedException e) {
-      throw new RuntimeException(e);
+    if (!configFile.delete() && configFile.exists()) {
+      throw new RuntimeException("Failed to delete config file: " + configFile);
     }
+    container.stop();
   }
 
   private static class Config {
@@ -143,7 +134,7 @@ public class ArtemisNode {
       deposit.put("numValidators", DEFAULT_VALIDATOR_COUNT);
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
-      beaconRestApi.put("portNumber", 9051);
+      beaconRestApi.put("portNumber", REST_API_PORT);
     }
 
     public int getRestApiPortNumber() {

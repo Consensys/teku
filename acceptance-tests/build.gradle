@@ -6,4 +6,5 @@ dependencies {
   testSupportImplementation 'org.apache.tuweni:tuweni-toml'
   testSupportImplementation 'org.assertj:assertj-core'
   testSupportImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testSupportImplementation "org.testcontainers:testcontainers"
 }
