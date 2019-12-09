@@ -77,6 +77,8 @@ import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
+import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
+import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -203,7 +205,7 @@ public class ValidatorCoordinator {
     // Copy state so that state transition during block creation
     // does not manipulate headState in storage
     if (!isGenesis(slot)) {
-      createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock);
+      createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock, slot);
     }
   }
 
@@ -302,19 +304,20 @@ public class ValidatorCoordinator {
   }
 
   private void createBlockIfNecessary(
-      BeaconStateWithCache previousState, BeaconBlock previousBlock) {
-    // TODO - we shouldn't assume that we're just incrementing the slot by 1
-    final UnsignedLong newSlot = previousState.getSlot().plus(UnsignedLong.ONE);
-
-    // Check if we should be proposing
-    final BLSPublicKey proposer = blockCreator.getProposerForSlot(previousState, newSlot);
-    if (!validators.containsKey(proposer)) {
-      // We're not proposing now
-      return;
-    }
-
-    BeaconBlock newBlock;
+      BeaconStateWithCache previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
     try {
+
+      // Process empty slots up to the new slot
+      stateTransition.process_slots(previousState, newSlot, false);
+
+      // Check if we should be proposing
+      final BLSPublicKey proposer = blockCreator.getProposerForSlot(previousState, newSlot);
+      if (!validators.containsKey(proposer)) {
+        // We're not proposing now
+        return;
+      }
+
+      BeaconBlock newBlock;
       // Collect attestations to include
       SSZList<Attestation> attestations = getAttestationsForSlot(newSlot);
       // Collect slashing to include
@@ -336,8 +339,8 @@ public class ValidatorCoordinator {
             blockCreator.createEmptyBlock(signer, newSlot, previousState, parentRoot);
         this.eventBus.post(naughtyBlock);
       }
-    } catch (StateTransitionException e) {
-      STDOUT.log(Level.WARN, "Error during block creation " + e.toString());
+    } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
+      STDOUT.log(Level.ERROR, "Error during block creation " + e.toString());
     }
   }
 
