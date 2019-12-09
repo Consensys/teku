@@ -252,8 +252,13 @@ public class ValidatorCoordinator {
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
       List<AttesterInformation> attesterInformations = committeeAssignments.get(slot);
 
-      // Reset the attestation validator and pass attester information necessary
-      // for validator to know which committees and validators to aggregate for
+      // If our beacon node does have any attestation responsibilities for this slot
+      if (attesterInformations == null) {
+        return;
+      }
+
+      // Pass attestationAggregator all the attester information necessary
+      // for aggregation
       attestationAggregator.updateAggregatorInformations(attesterInformations);
 
       asyncProduceAttestations(
