@@ -60,8 +60,8 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
     this.slot = slot;
     this.index = data.getIndex();
     this.beacon_block_root = data.getBeacon_block_root();
-    this.source = data.getSource();
-    this.target = data.getTarget();
+    this.source = new Checkpoint(data.getSource());
+    this.target = new Checkpoint(data.getTarget());
   }
 
   public AttestationData(AttestationData attestationData) {
