@@ -383,11 +383,10 @@ subprojects {
     classpath = sourceSets.integrationTest.runtimeClasspath
   }
 
-  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.installDist]){
+  task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", "rootProject.distDocker"]){
     group = "verification"
     description = "Runs the Artemis acceptance tests"
 
-    systemProperty("artemis.binary.path", ("${rootProject.buildDir}/install/artemis/bin/artemis" as File).absolutePath)
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
   }
