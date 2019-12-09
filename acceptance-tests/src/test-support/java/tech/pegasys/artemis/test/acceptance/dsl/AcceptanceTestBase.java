@@ -45,9 +45,14 @@ public class AcceptanceTestBase {
   }
 
   protected ArtemisNode createArtemisNode() {
-    final String ip = SUBNET_PREFIX + (nextAllocation++);
-    final ArtemisNode artemisNode = new ArtemisNode(httpClient, networkSupplier.get(), ip);
+    final ArtemisNode artemisNode =
+        new ArtemisNode(httpClient, networkSupplier.get(), allocateNextIp());
     nodes.add(artemisNode);
     return artemisNode;
+  }
+
+  private String allocateNextIp() {
+    final int allocation = nextAllocation++;
+    return SUBNET_PREFIX + allocation;
   }
 }
