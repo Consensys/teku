@@ -268,8 +268,7 @@ public class GossipMessageHandlerIntegrationTest {
     eventBus2.post(
         new CommitteeAssignmentEvent(List.of(validAttestation.getData().getIndex().intValue())));
 
-    // Sleep here because registering to new topics take time
-    Thread.sleep(1000);
+    waitForTopicRegistration();
 
     eventBus1.post(validAttestation);
 
@@ -324,12 +323,13 @@ public class GossipMessageHandlerIntegrationTest {
         new CommitteeAssignmentEvent(List.of(validAttestation.getData().getIndex().intValue())));
     eventBus2.post(
         new CommitteeAssignmentEvent(List.of(validAttestation.getData().getIndex().intValue())));
-    // Sleep here because registering to new topics take time
-    Thread.sleep(1000);
+
+    waitForTopicRegistration();
+
     eventBus1.post(validAttestation);
 
-    Thread.sleep(1000);
-    // Sleep here because receiving new messages over the network takes time
+    waitForMessageToBeDelivered();
+
     assertTrue(network2Attestations.getAttestations().contains(validAttestation));
 
     eventBus1.post(
@@ -337,8 +337,7 @@ public class GossipMessageHandlerIntegrationTest {
     eventBus2.post(
         new CommitteeDismissalEvent(List.of(validAttestation.getData().getIndex().intValue())));
 
-    // Sleep here because deregistering from topics take time
-    Thread.sleep(1000);
+    waitForTopicDeregistration();
 
     // Listen if the new attestation arrives on network 2
     final AttestationCollector network2AttestationsAfterDeregistration =
@@ -380,5 +379,17 @@ public class GossipMessageHandlerIntegrationTest {
     public Collection<Attestation> getAttestations() {
       return attestations;
     }
+  }
+
+  private void waitForTopicRegistration() throws Exception {
+    Thread.sleep(1000);
+  }
+
+  private void waitForTopicDeregistration() throws Exception {
+    Thread.sleep(1000);
+  }
+
+  private void waitForMessageToBeDelivered() throws Exception {
+    Thread.sleep(1000);
   }
 }
