@@ -23,7 +23,7 @@ import org.testcontainers.containers.Network;
 
 public class AcceptanceTestBase {
 
-  private static final String SUBNET_PREFIX = "172.20.0.";
+  private static final String SUBNET_PREFIX = "10.105.47.";
   private final SimpleHttpClient httpClient = new SimpleHttpClient();
   private final List<ArtemisNode> nodes = new ArrayList<>();
   private int nextAllocation = 2;
