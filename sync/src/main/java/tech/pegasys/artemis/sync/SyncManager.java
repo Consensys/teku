@@ -13,11 +13,14 @@
 
 package tech.pegasys.artemis.sync;
 
+import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage.REASON_FAULT_ERROR;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
@@ -69,9 +72,7 @@ public class SyncManager {
                   .getEpoch()
                   .compareTo(syncAdvertisedFinalizedEpoch)
               < 0) {
-            syncPeer
-                .sendGoodbye(UnsignedLong.valueOf(BAD_SYNC_DISCONNECT_REASON_CODE))
-                .thenRun(this::sync);
+            disconnectFromPeerAndRunSyncAgain(syncPeer);
           }
         });
   }
@@ -79,14 +80,9 @@ public class SyncManager {
   private Optional<Eth2Peer> findBestSyncPeer() {
     UnsignedLong ourFinalizedEpoch = storageClient.getStore().getFinalizedCheckpoint().getEpoch();
     return network
-        .streamPeers()
-        .filter(peer -> peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0)
-        .max(
-            (p1, p2) -> {
-              Eth2Peer.StatusData p1StatusData = p1.getStatus();
-              Eth2Peer.StatusData p2StatusData = p2.getStatus();
-              return p1StatusData.getFinalizedEpoch().compareTo(p2StatusData.getFinalizedEpoch());
-            });
+            .streamPeers()
+            .filter(peer -> peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0)
+            .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
   }
 
   private CompletableFuture<Void> requestSyncBlocks(
@@ -109,8 +105,12 @@ public class SyncManager {
         transaction.commit();
         eventBus.post(new StoreDiskUpdateEvent(transaction));
       } catch (StateTransitionException e) {
-        peer.sendGoodbye(UnsignedLong.valueOf(BAD_SYNC_DISCONNECT_REASON_CODE)).thenRun(this::sync);
+        disconnectFromPeerAndRunSyncAgain(peer);
       }
     });
+  }
+
+  private void disconnectFromPeerAndRunSyncAgain(Eth2Peer peer) {
+    peer.sendGoodbye(REASON_FAULT_ERROR).thenRun(this::sync);
   }
 }
