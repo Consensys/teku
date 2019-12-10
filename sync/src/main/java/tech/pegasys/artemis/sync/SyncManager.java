@@ -50,7 +50,13 @@ public class SyncManager {
   }
 
   private void sync() {
-    Eth2Peer syncPeer = findSyncPeer().orElseThrow();
+    Optional<Eth2Peer> anySyncPeer = findSyncPeer();
+    if (anySyncPeer.isEmpty()) {
+      return;
+    }
+
+    Eth2Peer syncPeer = anySyncPeer.get();
+
     requestSyncBlocks(
         syncPeer,
         ((block) -> {
