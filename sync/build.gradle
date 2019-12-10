@@ -1,0 +1,9 @@
+dependencies {
+    implementation project(':ethereum:datastructures')
+    implementation project(':ethereum:statetransition')
+    implementation project(':networking:p2p')
+    implementation project(':networking:eth2')
+    implementation project(':storage')
+    implementation project(':util')
+    implementation 'org.apache.tuweni:tuweni-bytes'
+}
