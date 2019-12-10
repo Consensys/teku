@@ -23,12 +23,10 @@ import org.testcontainers.utility.MountableFile;
 public class BesuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final int JSON_RPC_PORT = 8545;
-  private final SimpleHttpClient httpClient;
 
   private final GenericContainer<?> container;
 
-  public BesuNode(final SimpleHttpClient httpClient, final Network network) {
-    this.httpClient = httpClient;
+  public BesuNode(final Network network) {
     container =
         new GenericContainer<>("hyperledger/besu:1.3.6")
             .withNetwork(network)

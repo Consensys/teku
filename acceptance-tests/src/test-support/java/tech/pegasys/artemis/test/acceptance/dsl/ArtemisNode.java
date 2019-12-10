@@ -23,7 +23,6 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,24 +31,19 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.containers.wait.strategy.WaitStrategy;
-import org.testcontainers.containers.wait.strategy.WaitStrategyTarget;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 
-public class ArtemisNode extends Node {
+public class ArtemisNode extends AbstractArtemisNode {
   private static final int REST_API_PORT = 9051;
   private static final Logger LOG = LogManager.getLogger();
-  private static final String VALIDATORS_YAML_PATH = "/validators.yaml";
 
   private final SimpleHttpClient httpClient;
   private final Config config = new Config();
 
-  private final GenericContainer<?> container;
   private boolean started = false;
   private File configFile;
 
@@ -57,47 +51,13 @@ public class ArtemisNode extends Node {
       final SimpleHttpClient httpClient,
       final Network network,
       final Consumer<Config> configOptions) {
+    super(network);
     this.httpClient = httpClient;
     configOptions.accept(config);
-    container =
-        new GenericContainer<>("pegasyseng/artemis:develop")
-            .withNetwork(network)
-            .withNetworkAliases(nodeAlias)
-            .withExposedPorts(REST_API_PORT)
-            .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()));
-  }
-
-  public void createValidators(final BesuNode eth1Node, final int numberOfValidators)
-      throws Exception {
-    container.setWaitStrategy(
-        new WaitStrategy() {
-          @Override
-          public void waitUntilReady(final WaitStrategyTarget waitStrategyTarget) {}
-
-          @Override
-          public WaitStrategy withStartupTimeout(final Duration startupTimeout) {
-            return this;
-          }
-        });
-    container.setCommand(
-        "validator",
-        "generate",
-        "--contract-address",
-        eth1Node.getDepositContractAddress(),
-        "--number-of-validators",
-        Integer.toString(numberOfValidators),
-        "--private-key",
-        eth1Node.getRichBenefactorKey(),
-        "--node-url",
-        eth1Node.getInternalJsonRpcUrl(),
-        "--output-file",
-        VALIDATORS_YAML_PATH);
-    container.withReuse(true);
-    container.start();
-    while (container.isRunning()) {
-      Thread.sleep(2000);
-    }
-    container.stop();
+    container
+        .withExposedPorts(REST_API_PORT)
+        .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
+        .withCommand("--config", "/config.toml");
   }
 
   public void start() throws Exception {
@@ -106,11 +66,11 @@ public class ArtemisNode extends Node {
     configFile = File.createTempFile("config", ".toml");
     configFile.deleteOnExit();
     config.writeTo(configFile);
-    container.waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"));
-    container.withCopyFileToContainer(
-        MountableFile.forHostPath(configFile.getAbsolutePath()), "/config.toml");
-    container.setCommand("--config", "/config.toml");
-    container.start();
+
+    container
+        .withCopyFileToContainer(
+            MountableFile.forHostPath(configFile.getAbsolutePath()), "/config.toml")
+        .start();
   }
 
   public void waitForGenesis() {
@@ -183,9 +143,6 @@ public class ArtemisNode extends Node {
       final Map<String, Object> depositSection = getSection(DEPOSIT_SECTION);
       depositSection.put("contractAddr", eth1Node.getDepositContractAddress());
       depositSection.put("nodeUrl", eth1Node.getInternalJsonRpcUrl());
-
-      final Map<String, Object> validatorSection = getSection(VALIDATOR_SECTION);
-      validatorSection.put("validatorKeysFile", VALIDATORS_YAML_PATH);
     }
 
     private void setDepositMode(final String mode) {

@@ -37,15 +37,19 @@ public class AcceptanceTestBase {
   }
 
   protected ArtemisNode createArtemisNode(final Consumer<ArtemisNode.Config> configOptions) {
-    final ArtemisNode artemisNode =
-        new ArtemisNode(httpClient, networkSupplier.get(), configOptions);
-    nodes.add(artemisNode);
-    return artemisNode;
+    return addNode(new ArtemisNode(httpClient, networkSupplier.get(), configOptions));
+  }
+
+  protected ArtemisDepositSender createArtemisDepositSender() {
+    return addNode(new ArtemisDepositSender(networkSupplier.get()));
   }
 
   protected BesuNode createBesuNode() {
-    final BesuNode besuNode = new BesuNode(httpClient, networkSupplier.get());
-    nodes.add(besuNode);
-    return besuNode;
+    return addNode(new BesuNode(networkSupplier.get()));
+  }
+
+  private <T extends Node> T addNode(final T node) {
+    nodes.add(node);
+    return node;
   }
 }

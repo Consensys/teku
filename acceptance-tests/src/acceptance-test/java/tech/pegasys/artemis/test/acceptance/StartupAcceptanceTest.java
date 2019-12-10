@@ -34,9 +34,9 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     eth1Node.start();
 
     final ArtemisNode artemisNode = createArtemisNode(config -> config.withDepositsFrom(eth1Node));
-    artemisNode.createValidators(eth1Node, 64);
-
     artemisNode.start();
+
+    createArtemisDepositSender().sendValidatorDeposits(eth1Node, 64);
     artemisNode.waitForGenesis();
   }
 }
