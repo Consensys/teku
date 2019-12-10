@@ -5,5 +5,6 @@ dependencies {
     implementation project(':networking:eth2')
     implementation project(':storage')
     implementation project(':util')
+    implementation project(':data')
     implementation 'org.apache.tuweni:tuweni-bytes'
 }
