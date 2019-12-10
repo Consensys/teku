@@ -37,9 +37,12 @@ import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 
-public class ArtemisNode extends AbstractArtemisNode {
-  private static final int REST_API_PORT = 9051;
+public class ArtemisNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
+
+  public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/artemis:develop";
+  private static final int REST_API_PORT = 9051;
+  private static final String CONFIG_FILE_PATH = "/config.toml";
 
   private final SimpleHttpClient httpClient;
   private final Config config = new Config();
@@ -51,13 +54,13 @@ public class ArtemisNode extends AbstractArtemisNode {
       final SimpleHttpClient httpClient,
       final Network network,
       final Consumer<Config> configOptions) {
-    super(network);
+    super(network, ARTEMIS_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
     configOptions.accept(config);
     container
         .withExposedPorts(REST_API_PORT)
         .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
-        .withCommand("--config", "/config.toml");
+        .withCommand("--config", CONFIG_FILE_PATH);
   }
 
   public void start() throws Exception {
@@ -69,7 +72,7 @@ public class ArtemisNode extends AbstractArtemisNode {
 
     container
         .withCopyFileToContainer(
-            MountableFile.forHostPath(configFile.getAbsolutePath()), "/config.toml")
+            MountableFile.forHostPath(configFile.getAbsolutePath()), CONFIG_FILE_PATH)
         .start();
   }
 

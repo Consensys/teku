@@ -14,14 +14,25 @@
 package tech.pegasys.artemis.test.acceptance.dsl;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 
 public abstract class Node {
   private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
+  protected final GenericContainer<?> container;
   protected final String nodeAlias;
 
-  public Node() {
+  public Node(final Network network, final String dockerImageName, final Logger log) {
     this.nodeAlias = getClass().getSimpleName() + NODE_UNIQUIFIER.incrementAndGet();
+    this.container =
+        new GenericContainer<>(dockerImageName)
+            .withNetwork(network)
+            .withNetworkAliases(nodeAlias)
+            .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
   }
 
-  public abstract void stop();
+  public void stop() {
+    container.stop();
+  }
 }
