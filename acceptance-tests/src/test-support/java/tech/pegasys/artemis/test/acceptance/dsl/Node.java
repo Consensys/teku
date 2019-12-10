@@ -34,9 +34,6 @@ public abstract class Node {
         new GenericContainer<>(dockerImageName)
             .withNetwork(network)
             .withNetworkAliases(nodeAlias)
-            .withCreateContainerCmdModifier(
-                modifier ->
-                    modifier.withHostName(nodeAlias).withDomainName(nodeAlias).withName(nodeAlias))
             .withLogConsumer(frame -> log.debug(frame.getUtf8String().trim()));
   }
 
