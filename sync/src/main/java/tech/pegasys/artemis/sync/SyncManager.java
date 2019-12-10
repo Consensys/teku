@@ -86,11 +86,11 @@ public class SyncManager {
       Eth2Peer peer, ResponseStream.ResponseListener<BeaconBlock> blockResponseListener) {
     Eth2Peer.StatusData peerStatusData = peer.getStatus();
     Bytes32 headBlockRoot = peerStatusData.getHeadRoot();
-    UnsignedLong headBlockSlot = peerStatusData.getHeadSlot();
+    UnsignedLong peerFinalizedBlockSlot = compute_start_slot_at_epoch(peerStatusData.getFinalizedEpoch());
     UnsignedLong startSlot =
         compute_start_slot_at_epoch(storageClient.getStore().getFinalizedCheckpoint().getEpoch());
     UnsignedLong step = UnsignedLong.ONE;
-    UnsignedLong count = headBlockSlot.minus(startSlot);
+    UnsignedLong count = peerFinalizedBlockSlot.minus(startSlot);
     peer.requestBlocksByRange(headBlockRoot, startSlot, count, step, blockResponseListener);
   }
 }
