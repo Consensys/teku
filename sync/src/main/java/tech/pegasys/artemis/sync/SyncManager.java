@@ -18,9 +18,13 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -36,18 +40,16 @@ public class SyncManager {
 
   private final Eth2Network network;
   private final ChainStorageClient storageClient;
-  private final StateTransition stateTransition;
   private final EventBus eventBus;
 
-  private Set<Eth2Peer> peerBlacklist;
+  private final StateTransition stateTransition = new StateTransition(false);
+  private final Set<Eth2Peer> peerBlacklist = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public SyncManager(
       final Eth2Network network, final ChainStorageClient storageClient, final EventBus eventBus) {
     this.network = network;
     this.storageClient = storageClient;
     this.eventBus = eventBus;
-    this.stateTransition = new StateTransition(false);
-    this.peerBlacklist = new HashSet<>();
   }
 
   private void sync() {
