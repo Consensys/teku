@@ -19,9 +19,10 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
-import java.util.Optional;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -50,29 +51,18 @@ public class SyncManager {
   }
 
   private void sync() {
-    Optional<Eth2Peer> anySyncPeer = findSyncPeer();
-    if (anySyncPeer.isEmpty()) {
+    List<Eth2Peer> syncPeers = findSyncPeers();
+    if (syncPeers.isEmpty()) {
       return;
     }
 
-    Eth2Peer syncPeer = anySyncPeer.get();
-
-    requestSyncBlocks(
-        syncPeer,
-        ((block) -> {
-          try {
-            Store.Transaction transaction = storageClient.getStore().startTransaction();
-            on_block(transaction, block, stateTransition);
-            transaction.commit();
-            eventBus.post(new StoreDiskUpdateEvent(transaction));
-          } catch (StateTransitionException e) {
-            peerBlacklist.add(syncPeer);
-            sync();
-          }
-        }));
+    Set<Bytes32> seenBlockRoots = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    for (Eth2Peer peer : syncPeers) {
+      requestSyncBlocks(peer, blockResponseListener(peer, seenBlockRoots));
+    }
   }
 
-  private Optional<Eth2Peer> findSyncPeer() {
+  private List<Eth2Peer> findSyncPeers() {
     UnsignedLong ourFinalizedEpoch = storageClient.getStore().getFinalizedCheckpoint().getEpoch();
     return network
         .streamPeers()
@@ -82,7 +72,7 @@ public class SyncManager {
               Eth2Peer.StatusData statusData = peer.getStatus();
               return statusData.getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0;
             })
-        .findAny();
+        .collect(Collectors.toList());
   }
 
   private void requestSyncBlocks(
@@ -96,5 +86,24 @@ public class SyncManager {
     UnsignedLong step = UnsignedLong.ONE;
     UnsignedLong count = peerFinalizedBlockSlot.minus(startSlot);
     peer.requestBlocksByRange(headBlockRoot, startSlot, count, step, blockResponseListener);
+  }
+
+  private ResponseStream.ResponseListener<BeaconBlock> blockResponseListener(
+      Eth2Peer peer, Set<Bytes32> seenBlockRoots) {
+    return ((block) -> {
+      if (seenBlockRoots.contains(block.signing_root("signature"))) {
+        return;
+      }
+
+      try {
+        Store.Transaction transaction = storageClient.getStore().startTransaction();
+        on_block(transaction, block, stateTransition);
+        transaction.commit();
+        eventBus.post(new StoreDiskUpdateEvent(transaction));
+      } catch (StateTransitionException e) {
+        peerBlacklist.add(peer);
+        sync();
+      }
+    });
   }
 }
