@@ -30,9 +30,8 @@ out/
 web3j/
 ganache-cli/
 pow/src/main/resources/keys.json
-*.csv*
-*.json*
 !validator_test_data.json
+/interopDepositsAndKeys.json
 *.vscode/
 pow/truffle/.vscode/
 pow/truffle/node_modules/

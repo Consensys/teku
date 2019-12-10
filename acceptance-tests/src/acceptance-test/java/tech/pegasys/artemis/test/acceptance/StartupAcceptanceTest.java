@@ -16,8 +16,9 @@ package tech.pegasys.artemis.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
+import tech.pegasys.artemis.test.acceptance.dsl.BesuNode;
 
-public class MockGenesisStartupAcceptanceTest extends AcceptanceTestBase {
+public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
@@ -25,5 +26,17 @@ public class MockGenesisStartupAcceptanceTest extends AcceptanceTestBase {
     node.start();
     node.waitForGenesis();
     node.waitForNewBlock();
+  }
+
+  @Test
+  public void shouldStartChainFromDepositContract() throws Exception {
+    final BesuNode eth1Node = createBesuNode();
+    eth1Node.start();
+
+    final ArtemisNode artemisNode = createArtemisNode(config -> config.withDepositsFrom(eth1Node));
+    artemisNode.start();
+
+    createArtemisDepositSender().sendValidatorDeposits(eth1Node, 64);
+    artemisNode.waitForGenesis();
   }
 }
