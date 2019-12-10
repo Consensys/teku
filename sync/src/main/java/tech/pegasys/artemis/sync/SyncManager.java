@@ -20,7 +20,6 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -61,19 +60,20 @@ public class SyncManager {
 
     CompletableFuture<Void> syncCompletableFuture =
         requestSyncBlocks(syncPeer, blockResponseListener(syncPeer));
-    try {
-      syncCompletableFuture.get();
-      if (storageClient
-              .getStore()
-              .getFinalizedCheckpoint()
-              .getEpoch()
-              .compareTo(syncAdvertisedFinalizedEpoch)
-          < 0) {
-        syncPeer.sendGoodbye(UnsignedLong.valueOf(BAD_SYNC_DISCONNECT_REASON_CODE));
-      }
-    } catch (InterruptedException | ExecutionException e) {
-      sync();
-    }
+
+    syncCompletableFuture.thenRun(
+        () -> {
+          if (storageClient
+                  .getStore()
+                  .getFinalizedCheckpoint()
+                  .getEpoch()
+                  .compareTo(syncAdvertisedFinalizedEpoch)
+              < 0) {
+            syncPeer
+                .sendGoodbye(UnsignedLong.valueOf(BAD_SYNC_DISCONNECT_REASON_CODE))
+                .thenRun(this::sync);
+          }
+        });
   }
 
   private Optional<Eth2Peer> findBestSyncPeer() {
@@ -109,7 +109,7 @@ public class SyncManager {
         transaction.commit();
         eventBus.post(new StoreDiskUpdateEvent(transaction));
       } catch (StateTransitionException e) {
-        peer.sendGoodbye(UnsignedLong.valueOf(BAD_SYNC_DISCONNECT_REASON_CODE));
+        peer.sendGoodbye(UnsignedLong.valueOf(BAD_SYNC_DISCONNECT_REASON_CODE)).thenRun(this::sync);
       }
     });
   }
