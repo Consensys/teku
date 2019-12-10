@@ -13,23 +13,39 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
+import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
+import org.testcontainers.containers.Network;
 
 public class AcceptanceTestBase {
 
   private final SimpleHttpClient httpClient = new SimpleHttpClient();
-  private final List<ArtemisNode> nodes = new ArrayList<>();
+  private final List<Node> nodes = new ArrayList<>();
+  private final Supplier<Network> networkSupplier = Suppliers.memoize(Network::newNetwork);
 
   @AfterEach
   final void shutdownNodes() {
-    nodes.forEach(ArtemisNode::stop);
+    nodes.forEach(Node::stop);
   }
 
   protected ArtemisNode createArtemisNode() {
-    final ArtemisNode artemisNode = new ArtemisNode(httpClient);
+    return createArtemisNode(config -> {});
+  }
+
+  protected ArtemisNode createArtemisNode(final Consumer<ArtemisNode.Config> configOptions) {
+    final ArtemisNode artemisNode =
+        new ArtemisNode(httpClient, networkSupplier.get(), configOptions);
     nodes.add(artemisNode);
     return artemisNode;
+  }
+
+  protected BesuNode createBesuNode() {
+    final BesuNode besuNode = new BesuNode(httpClient, networkSupplier.get());
+    nodes.add(besuNode);
+    return besuNode;
   }
 }

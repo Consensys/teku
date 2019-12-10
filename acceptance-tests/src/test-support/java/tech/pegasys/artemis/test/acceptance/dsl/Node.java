@@ -11,19 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.test.acceptance;
+package tech.pegasys.artemis.test.acceptance.dsl;
 
-import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class MockGenesisStartupAcceptanceTest extends AcceptanceTestBase {
+public abstract class Node {
+  private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
+  protected final String nodeAlias;
 
-  @Test
-  public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
-    final ArtemisNode node = createArtemisNode();
-    node.start();
-    node.waitForGenesis();
-    node.waitForNewBlock();
+  public Node() {
+    this.nodeAlias = getClass().getSimpleName() + NODE_UNIQUIFIER.incrementAndGet();
   }
+
+  public abstract void stop();
 }

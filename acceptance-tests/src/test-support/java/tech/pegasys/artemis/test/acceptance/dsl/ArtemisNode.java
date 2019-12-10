@@ -23,22 +23,28 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitStrategyTarget;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 
-public class ArtemisNode {
+public class ArtemisNode extends Node {
   private static final int REST_API_PORT = 9051;
   private static final Logger LOG = LogManager.getLogger();
+  private static final String VALIDATORS_YAML_PATH = "/validators.yaml";
 
   private final SimpleHttpClient httpClient;
   private final Config config = new Config();
@@ -47,16 +53,51 @@ public class ArtemisNode {
   private boolean started = false;
   private File configFile;
 
-  ArtemisNode(final SimpleHttpClient httpClient) {
+  ArtemisNode(
+      final SimpleHttpClient httpClient,
+      final Network network,
+      final Consumer<Config> configOptions) {
     this.httpClient = httpClient;
+    configOptions.accept(config);
     container =
         new GenericContainer<>("pegasyseng/artemis:develop")
+            .withNetwork(network)
+            .withNetworkAliases(nodeAlias)
             .withExposedPorts(REST_API_PORT)
-            .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
-            .waitingFor(
-                new HttpWaitStrategy()
-                    .forPort(config.getRestApiPortNumber())
-                    .forPath("/network/peer_id"));
+            .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()));
+  }
+
+  public void createValidators(final BesuNode eth1Node, final int numberOfValidators)
+      throws Exception {
+    container.setWaitStrategy(
+        new WaitStrategy() {
+          @Override
+          public void waitUntilReady(final WaitStrategyTarget waitStrategyTarget) {}
+
+          @Override
+          public WaitStrategy withStartupTimeout(final Duration startupTimeout) {
+            return this;
+          }
+        });
+    container.setCommand(
+        "validator",
+        "generate",
+        "--contract-address",
+        eth1Node.getDepositContractAddress(),
+        "--number-of-validators",
+        Integer.toString(numberOfValidators),
+        "--private-key",
+        eth1Node.getRichBenefactorKey(),
+        "--node-url",
+        eth1Node.getInternalJsonRpcUrl(),
+        "--output-file",
+        VALIDATORS_YAML_PATH);
+    container.withReuse(true);
+    container.start();
+    while (container.isRunning()) {
+      Thread.sleep(2000);
+    }
+    container.stop();
   }
 
   public void start() throws Exception {
@@ -65,6 +106,7 @@ public class ArtemisNode {
     configFile = File.createTempFile("config", ".toml");
     configFile.deleteOnExit();
     config.writeTo(configFile);
+    container.waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"));
     container.withCopyFileToContainer(
         MountableFile.forHostPath(configFile.getAbsolutePath()), "/config.toml");
     container.setCommand("--config", "/config.toml");
@@ -90,9 +132,10 @@ public class ArtemisNode {
   }
 
   private URI getRestApiUrl() {
-    return URI.create("http://127.0.0.1:" + container.getMappedPort(config.getRestApiPortNumber()));
+    return URI.create("http://127.0.0.1:" + container.getMappedPort(REST_API_PORT));
   }
 
+  @Override
   public void stop() {
     if (!started) {
       return;
@@ -104,12 +147,13 @@ public class ArtemisNode {
     container.stop();
   }
 
-  private static class Config {
+  public static class Config {
 
     private static final String BEACONRESTAPI_SECTION = "beaconrestapi";
     private static final String DEPOSIT_SECTION = "deposit";
     private static final String INTEROP_SECTION = "interop";
     private static final String NODE_SECTION = "node";
+    private static final String VALIDATOR_SECTION = "validator";
     private Map<String, Map<String, Object>> options = new HashMap<>();
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
@@ -127,15 +171,25 @@ public class ArtemisNode {
       interop.put("ownedValidatorCount", DEFAULT_VALIDATOR_COUNT);
 
       final Map<String, Object> deposit = getSection(DEPOSIT_SECTION);
-      deposit.put("mode", "test");
+      setDepositMode("test");
       deposit.put("numValidators", DEFAULT_VALIDATOR_COUNT);
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", REST_API_PORT);
     }
 
-    public int getRestApiPortNumber() {
-      return (int) getSection(BEACONRESTAPI_SECTION).get("portNumber");
+    public void withDepositsFrom(final BesuNode eth1Node) {
+      setDepositMode("normal");
+      final Map<String, Object> depositSection = getSection(DEPOSIT_SECTION);
+      depositSection.put("contractAddr", eth1Node.getDepositContractAddress());
+      depositSection.put("nodeUrl", eth1Node.getInternalJsonRpcUrl());
+
+      final Map<String, Object> validatorSection = getSection(VALIDATOR_SECTION);
+      validatorSection.put("validatorKeysFile", VALIDATORS_YAML_PATH);
+    }
+
+    private void setDepositMode(final String mode) {
+      getSection(DEPOSIT_SECTION).put("mode", mode);
     }
 
     private Map<String, Object> getSection(final String interop) {
