@@ -18,13 +18,10 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -86,7 +83,8 @@ public class SyncManager {
       Eth2Peer peer, ResponseStream.ResponseListener<BeaconBlock> blockResponseListener) {
     Eth2Peer.StatusData peerStatusData = peer.getStatus();
     Bytes32 headBlockRoot = peerStatusData.getHeadRoot();
-    UnsignedLong peerFinalizedBlockSlot = compute_start_slot_at_epoch(peerStatusData.getFinalizedEpoch());
+    UnsignedLong peerFinalizedBlockSlot =
+        compute_start_slot_at_epoch(peerStatusData.getFinalizedEpoch());
     UnsignedLong startSlot =
         compute_start_slot_at_epoch(storageClient.getStore().getFinalizedCheckpoint().getEpoch());
     UnsignedLong step = UnsignedLong.ONE;
