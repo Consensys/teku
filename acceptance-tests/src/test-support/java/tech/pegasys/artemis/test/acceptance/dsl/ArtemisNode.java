@@ -116,7 +116,6 @@ public class ArtemisNode extends Node {
     private static final String DEPOSIT_SECTION = "deposit";
     private static final String INTEROP_SECTION = "interop";
     private static final String NODE_SECTION = "node";
-    private static final String VALIDATOR_SECTION = "validator";
     private Map<String, Map<String, Object>> options = new HashMap<>();
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
