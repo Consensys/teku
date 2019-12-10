@@ -15,6 +15,7 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.fail;
 
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
@@ -27,7 +28,8 @@ public abstract class Node {
   protected final String nodeAlias;
 
   public Node(final Network network, final String dockerImageName, final Logger log) {
-    this.nodeAlias = getClass().getSimpleName() + NODE_UNIQUIFIER.incrementAndGet();
+    this.nodeAlias =
+        getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
     this.container =
         new GenericContainer<>(dockerImageName)
             .withNetwork(network)
