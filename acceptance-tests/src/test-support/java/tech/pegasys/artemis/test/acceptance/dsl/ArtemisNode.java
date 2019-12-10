@@ -15,7 +15,6 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 
 import static org.apache.tuweni.toml.Toml.tomlEscape;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import java.io.File;
 import java.io.IOException;

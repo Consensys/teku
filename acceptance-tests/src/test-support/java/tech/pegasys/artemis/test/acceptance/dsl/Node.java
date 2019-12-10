@@ -13,10 +13,13 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
+import static org.assertj.core.api.Assertions.fail;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import tech.pegasys.artemis.util.Waiter;
 
 public abstract class Node {
   private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();
@@ -34,5 +37,13 @@ public abstract class Node {
 
   public void stop() {
     container.stop();
+  }
+
+  protected void waitFor(final Waiter.Condition condition) {
+    try {
+      Waiter.waitFor(condition);
+    } catch (final Throwable t) {
+      fail(t.getMessage() + " Logs: " + container.getLogs(), t);
+    }
   }
 }
