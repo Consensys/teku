@@ -18,6 +18,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -39,6 +40,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final RpcMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private volatile Optional<StatusData> remoteStatus = Optional.empty();
+  private final CompletableFuture<StatusData> initialStatus = new CompletableFuture<>();
+  private AtomicBoolean chainValidated = new AtomicBoolean(false);
 
   public Eth2Peer(
       final Peer peer,
@@ -50,7 +53,13 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public void updateStatus(final StatusMessage message) {
-    remoteStatus = Optional.of(StatusData.fromStatusMessage(message));
+    final StatusData statusData = StatusData.fromStatusMessage(message);
+    remoteStatus = Optional.of(statusData);
+    initialStatus.complete(statusData);
+  }
+
+  public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
+    initialStatus.thenAccept(subscriber::onInitialStatus);
   }
 
   public StatusData getStatus() {
@@ -59,6 +68,14 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public boolean hasStatus() {
     return remoteStatus.isPresent();
+  }
+
+  boolean isChainValidated() {
+    return chainValidated.get();
+  }
+
+  void markChainValidated() {
+    chainValidated.set(true);
   }
 
   public CompletableFuture<StatusData> sendStatus() {
@@ -82,6 +99,15 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         BeaconChainMethods.BEACON_BLOCKS_BY_ROOT,
         new BeaconBlocksByRootRequestMessage(blockRoots),
         listener);
+  }
+
+  public CompletableFuture<BeaconBlock> requestBlockBySlot(
+      final Bytes32 headBlockRoot, final UnsignedLong slot) {
+    final BeaconBlocksByRangeRequestMessage request =
+        new BeaconBlocksByRangeRequestMessage(
+            headBlockRoot, slot, UnsignedLong.ONE, UnsignedLong.ONE);
+    return sendRequest(BeaconChainMethods.BEACON_BLOCKS_BY_RANGE, request)
+        .thenCompose(ResponseStream::expectSingleResponse);
   }
 
   public CompletableFuture<Void> requestBlocksByRange(
@@ -123,7 +149,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
           message.getHeadSlot());
     }
 
-    private StatusData(
+    StatusData(
         final Bytes4 headForkVersion,
         final Bytes32 finalizedRoot,
         final UnsignedLong finalizedEpoch,
@@ -166,5 +192,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
           .add("headSlot", headSlot)
           .toString();
     }
+  }
+
+  public interface InitialStatusSubscriber {
+    void onInitialStatus(final StatusData initialStatus);
   }
 }

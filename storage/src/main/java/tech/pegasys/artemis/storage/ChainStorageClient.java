@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
@@ -25,8 +26,10 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
@@ -89,6 +92,18 @@ public class ChainStorageClient implements ChainStorage {
     this.bestSlot = slot;
   }
 
+  public Bytes4 getForkAtSlot(UnsignedLong slot) {
+    return getForkAtEpoch(compute_epoch_at_slot(slot));
+  }
+
+  public Bytes4 getForkAtEpoch(UnsignedLong epoch) {
+    // For now, we don't have any forks, so just use the latest
+    Fork latestFork = getBestBlockRootState().getFork();
+    return epoch.compareTo(latestFork.getEpoch()) < 0
+        ? latestFork.getPrevious_version()
+        : latestFork.getCurrent_version();
+  }
+
   /**
    * Retrives the block chosen by fork choice to build and attest on
    *
@@ -148,6 +163,10 @@ public class ChainStorageClient implements ChainStorage {
     return getBlockRootBySlot(slot)
         .map(blockRoot -> store.getBlock(blockRoot))
         .filter(block -> block.getSlot().equals(slot));
+  }
+
+  public Optional<BeaconBlock> getBlockAtOrPriorToSlot(final UnsignedLong slot) {
+    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlock(blockRoot));
   }
 
   public boolean isIncludedInBestState(final Bytes32 blockRoot) {

@@ -31,17 +31,19 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final StatusMessageFactory statusMessageFactory;
+  private final ChainStorageClient storageClient;
 
   private ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
   private final RpcMethods rpcMethods;
 
   public Eth2PeerManager(
-      final ChainStorageClient chainStorageClient, final MetricsSystem metricsSystem) {
-    statusMessageFactory = new StatusMessageFactory(chainStorageClient);
+      final ChainStorageClient storageClient, final MetricsSystem metricsSystem) {
+    this.storageClient = storageClient;
+    statusMessageFactory = new StatusMessageFactory(storageClient);
     this.rpcMethods =
         BeaconChainMethods.createRpcMethods(
-            this, chainStorageClient, metricsSystem, statusMessageFactory);
+            this, storageClient, metricsSystem, statusMessageFactory);
   }
 
   @Override
@@ -56,6 +58,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     if (peer.connectionInitiatedLocally()) {
       eth2Peer.sendStatus();
     }
+    eth2Peer.subscribeInitialStatus(
+        (status) -> PeerChainValidator.create(storageClient, eth2Peer).run());
   }
 
   @Override
@@ -94,6 +98,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   private boolean peerIsReady(Eth2Peer peer) {
-    return peer.hasStatus();
+    return peer.hasStatus() && peer.isChainValidated();
   }
 }
