@@ -191,15 +191,6 @@ public class StateProcessor {
       //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));
       STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
     }
-    System.out.println("Requesting");
-    new HistoricalChainData(eventBus)
-        .getBlockBySlot(block.getSlot().minus(UnsignedLong.ONE))
-        .thenAccept(b -> System.out.println(b))
-        .exceptionally(
-            t -> {
-              t.printStackTrace();
-              return null;
-            });
   }
 
   private void onAttestation(Attestation attestation) {
