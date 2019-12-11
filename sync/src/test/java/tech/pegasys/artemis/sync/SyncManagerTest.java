@@ -113,7 +113,7 @@ public class SyncManagerTest {
     requestFuture.complete(null);
 
     // Check that the sync is done and the peer was not disconnected.
-    assertThat(syncFuture.isDone());
+    assertThat(syncFuture).isDone();
     verify(peer, never()).sendGoodbye(any());
   }
 
