@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +37,7 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
+import tech.pegasys.artemis.test.acceptance.dsl.data.FinalizedCheckpoint;
 
 public class ArtemisNode {
   private static final int REST_API_PORT = 9051;
@@ -56,14 +59,22 @@ public class ArtemisNode {
             .waitingFor(
                 new HttpWaitStrategy()
                     .forPort(config.getRestApiPortNumber())
-                    .forPath("/network/peer_id"));
+                    .forPath("/network/peer_id"))
+            .waitingFor(new HttpWaitStrategy()
+                    .forPort(config.getRestApiPortNumber())
+                    .forPath("/beacon/finalized_checkpoint"));
   }
 
   public void start() throws Exception {
+    start(false);
+  }
+
+  public void start(boolean fromDisk) throws Exception {
     assertThat(started).isFalse();
     started = true;
     configFile = File.createTempFile("config", ".toml");
     configFile.deleteOnExit();
+    if (fromDisk) config.getSection(Config.DATABASE_SECTION).put("startFromDisk", true);
     config.writeTo(configFile);
     container.withCopyFileToContainer(
         MountableFile.forHostPath(configFile.getAbsolutePath()), "/config.toml");
@@ -81,12 +92,26 @@ public class ArtemisNode {
         () -> assertThat(getCurrentBeaconHead().getBlockRoot()).isNotEqualTo(startingBlockRoot));
   }
 
+  public void waitForFinalization() throws IOException {
+    UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
+    waitFor(
+            () -> assertThat(getCurrentFinalizedCheckpoint().getEpoch()).isNotEqualTo(startingFinalizedEpoch), 2000);
+  }
+
   private BeaconHead getCurrentBeaconHead() throws IOException {
     final BeaconHead beaconHead =
         JsonProvider.jsonToObject(
             httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
     LOG.debug("Retrieved beacon head: {}", beaconHead);
     return beaconHead;
+  }
+
+  private FinalizedCheckpoint getCurrentFinalizedCheckpoint() throws IOException {
+    final FinalizedCheckpoint finalizedCheckpoint =
+            JsonProvider.jsonToObject(
+                    httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"), FinalizedCheckpoint.class);
+    LOG.debug("Retrieved finalized checkpoint: {}", finalizedCheckpoint);
+    return finalizedCheckpoint;
   }
 
   private URI getRestApiUrl() {
@@ -106,6 +131,7 @@ public class ArtemisNode {
 
   private static class Config {
 
+    private static final String DATABASE_SECTION = "database";
     private static final String BEACONRESTAPI_SECTION = "beaconrestapi";
     private static final String DEPOSIT_SECTION = "deposit";
     private static final String INTEROP_SECTION = "interop";
@@ -132,6 +158,9 @@ public class ArtemisNode {
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", REST_API_PORT);
+
+      final Map<String, Object> database = getSection(DATABASE_SECTION);
+      database.put("startFromDisk", false);
     }
 
     public int getRestApiPortNumber() {

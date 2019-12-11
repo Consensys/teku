@@ -140,10 +140,6 @@ public class Database {
             .createOrOpen();
 
     if (startFromDisk) {
-      STDOUT.log(
-          Level.INFO,
-          "Using the database to load Store and thus the previously built Store will be overwritten.",
-          ALogger.Color.GREEN);
       Store memoryStore = createMemoryStore();
       eventBus.post(memoryStore);
     }

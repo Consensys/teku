@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
 
-public class MockGenesisStartupAcceptanceTest extends AcceptanceTestBase {
+public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
@@ -25,5 +25,18 @@ public class MockGenesisStartupAcceptanceTest extends AcceptanceTestBase {
     node.start();
     node.waitForGenesis();
     node.waitForNewBlock();
+  }
+
+  @Test
+  public void shouldProgressChainAfterStartingFromDisk() throws Exception {
+    final ArtemisNode node = createArtemisNode();
+    node.start(false);
+    node.waitForFinalization();
+    node.stop();
+
+    // TODO
+    // copyFileFromContainer to some tmp directory
+    // createArtemisNode
+    // copyFileToContainer
   }
 }

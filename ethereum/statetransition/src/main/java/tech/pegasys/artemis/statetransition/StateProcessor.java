@@ -82,26 +82,17 @@ public class StateProcessor {
     this.genesisReady = true;
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
-    chainStorageClient.initialize(initialState);
+    chainStorageClient.initializeFromGenesis(initialState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
-  public Bytes32 processHead(UnsignedLong nodeSlot) {
+  public Bytes32 processHead() {
     Store store = chainStorageClient.getStore();
     Bytes32 headBlockRoot = get_head(store);
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    BeaconState headState = store.getBlockState(headBlockRoot);
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
-
-    try {
-      stateTransition.process_slots(
-          BeaconStateWithCache.fromBeaconState(headState), nodeSlot, false);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.WARN, "Error when processing empty slots");
-      STDOUT.log(Level.WARN, e.toString());
-    }
     return headBlockRoot;
   }
 
