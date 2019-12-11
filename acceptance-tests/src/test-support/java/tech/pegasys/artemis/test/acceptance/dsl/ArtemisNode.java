@@ -15,7 +15,6 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 
 import static org.apache.tuweni.toml.Toml.tomlEscape;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,36 +26,40 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 
-public class ArtemisNode {
-  private static final int REST_API_PORT = 9051;
+public class ArtemisNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
+
+  public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/artemis:develop";
+  private static final int REST_API_PORT = 9051;
+  private static final String CONFIG_FILE_PATH = "/config.toml";
 
   private final SimpleHttpClient httpClient;
   private final Config config = new Config();
 
-  private final GenericContainer<?> container;
   private boolean started = false;
   private File configFile;
 
-  ArtemisNode(final SimpleHttpClient httpClient) {
+  ArtemisNode(
+      final SimpleHttpClient httpClient,
+      final Network network,
+      final Consumer<Config> configOptions) {
+    super(network, ARTEMIS_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
-    container =
-        new GenericContainer<>("pegasyseng/artemis:develop")
-            .withExposedPorts(REST_API_PORT)
-            .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
-            .waitingFor(
-                new HttpWaitStrategy()
-                    .forPort(config.getRestApiPortNumber())
-                    .forPath("/network/peer_id"));
+    configOptions.accept(config);
+    container
+        .withExposedPorts(REST_API_PORT)
+        .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
+        .withCommand("--config", CONFIG_FILE_PATH);
   }
 
   public void start() throws Exception {
@@ -65,10 +68,11 @@ public class ArtemisNode {
     configFile = File.createTempFile("config", ".toml");
     configFile.deleteOnExit();
     config.writeTo(configFile);
-    container.withCopyFileToContainer(
-        MountableFile.forHostPath(configFile.getAbsolutePath()), "/config.toml");
-    container.setCommand("--config", "/config.toml");
-    container.start();
+
+    container
+        .withCopyFileToContainer(
+            MountableFile.forHostPath(configFile.getAbsolutePath()), CONFIG_FILE_PATH)
+        .start();
   }
 
   public void waitForGenesis() {
@@ -90,9 +94,10 @@ public class ArtemisNode {
   }
 
   private URI getRestApiUrl() {
-    return URI.create("http://127.0.0.1:" + container.getMappedPort(config.getRestApiPortNumber()));
+    return URI.create("http://127.0.0.1:" + container.getMappedPort(REST_API_PORT));
   }
 
+  @Override
   public void stop() {
     if (!started) {
       return;
@@ -104,7 +109,7 @@ public class ArtemisNode {
     container.stop();
   }
 
-  private static class Config {
+  public static class Config {
 
     private static final String BEACONRESTAPI_SECTION = "beaconrestapi";
     private static final String DEPOSIT_SECTION = "deposit";
@@ -127,15 +132,22 @@ public class ArtemisNode {
       interop.put("ownedValidatorCount", DEFAULT_VALIDATOR_COUNT);
 
       final Map<String, Object> deposit = getSection(DEPOSIT_SECTION);
-      deposit.put("mode", "test");
+      setDepositMode("test");
       deposit.put("numValidators", DEFAULT_VALIDATOR_COUNT);
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", REST_API_PORT);
     }
 
-    public int getRestApiPortNumber() {
-      return (int) getSection(BEACONRESTAPI_SECTION).get("portNumber");
+    public void withDepositsFrom(final BesuNode eth1Node) {
+      setDepositMode("normal");
+      final Map<String, Object> depositSection = getSection(DEPOSIT_SECTION);
+      depositSection.put("contractAddr", eth1Node.getDepositContractAddress());
+      depositSection.put("nodeUrl", eth1Node.getInternalJsonRpcUrl());
+    }
+
+    private void setDepositMode(final String mode) {
+      getSection(DEPOSIT_SECTION).put("mode", mode);
     }
 
     private Map<String, Object> getSection(final String interop) {
