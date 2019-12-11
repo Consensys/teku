@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.config.Constants;
@@ -42,6 +43,7 @@ public class PeerChainValidatorTest {
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
 
   private final Bytes4 remoteFork = new Bytes4(Bytes.fromHexString("0x1234", 4));
   private final Bytes4 otherFork = new Bytes4(Bytes.fromHexString("0x3333", 4));
@@ -50,13 +52,16 @@ public class PeerChainValidatorTest {
   private final UnsignedLong earlierEpoch = UnsignedLong.valueOf(8L);
   private final UnsignedLong laterEpoch = UnsignedLong.valueOf(12L);
 
+  private final UnsignedLong remoteFinalizedEpochSlot =
+      compute_start_slot_at_epoch(remoteFinalizedEpoch);
+  private final UnsignedLong earlierEpochSlot = compute_start_slot_at_epoch(earlierEpoch);
+  private final UnsignedLong laterEpochSlot = compute_start_slot_at_epoch(laterEpoch);
+
   // Offset slots from epoch to simulate skipped blocks
   private final UnsignedLong remoteFinalizedBlockSlot =
-      compute_start_slot_at_epoch(remoteFinalizedEpoch).minus(UnsignedLong.ONE);
-  private final UnsignedLong earlierBlockSlot =
-      compute_start_slot_at_epoch(earlierEpoch).minus(UnsignedLong.ONE);
-  private final UnsignedLong laterBlockSlot =
-      compute_start_slot_at_epoch(laterEpoch).minus(UnsignedLong.ONE);
+      remoteFinalizedEpochSlot.minus(UnsignedLong.ONE);
+  private final UnsignedLong earlierBlockSlot = earlierEpochSlot.minus(UnsignedLong.ONE);
+  private final UnsignedLong laterBlockSlot = laterEpochSlot.minus(UnsignedLong.ONE);
 
   private final BeaconBlock remoteFinalizedBlock =
       DataStructureUtil.randomBeaconBlock(remoteFinalizedBlockSlot.longValue(), 1);
@@ -75,7 +80,7 @@ public class PeerChainValidatorTest {
   private final StatusData remoteStatus = createStatusData();
 
   private final PeerChainValidator peerChainValidator =
-      PeerChainValidator.create(storageClient, peer);
+      PeerChainValidator.create(storageClient, historicalChainData, peer);
 
   @BeforeEach
   public void setup() {
@@ -156,7 +161,7 @@ public class PeerChainValidatorTest {
     assertPeerChainVerified();
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(storageClient, never()).getBlockAtOrPriorToSlot(any());
+    verify(historicalChainData, never()).getBlockBySlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -169,7 +174,7 @@ public class PeerChainValidatorTest {
     assertPeerChainRejected(GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
     // Verify other checks were skipped when fork mismatch was detected
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(storageClient, never()).getBlockAtOrPriorToSlot(any());
+    verify(historicalChainData, never()).getBlockBySlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -197,44 +202,55 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnSameChain() {
-    when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(store.getBlock(earlierBlock.signing_root("signature"))).thenReturn(earlierBlock);
     final CompletableFuture<BeaconBlock> blockFuture =
         CompletableFuture.completedFuture(earlierBlock);
+    final CompletableFuture<Optional<BeaconBlock>> optionalBlockFuture =
+        CompletableFuture.completedFuture(Optional.of(earlierBlock));
+
+    when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
+    when(historicalChainData.getBlockBySlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
-    when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(store.getBlock(earlierBlock.signing_root("signature"))).thenReturn(earlierBlock);
     final CompletableFuture<BeaconBlock> blockFuture =
         CompletableFuture.completedFuture(randomBlock(earlierBlockSlot));
+    final CompletableFuture<Optional<BeaconBlock>> optionalBlockFuture =
+        CompletableFuture.completedFuture(Optional.of(earlierBlock));
+
+    when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
+    when(historicalChainData.getBlockBySlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
 
   private void remoteChainIsAheadAndUnresponsive() {
-    when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(store.getBlock(earlierBlock.signing_root("signature"))).thenReturn(earlierBlock);
     final CompletableFuture<BeaconBlock> blockFuture =
         CompletableFuture.failedFuture(new NullPointerException());
+    final CompletableFuture<Optional<BeaconBlock>> optionalBlockFuture =
+        CompletableFuture.completedFuture(Optional.of(earlierBlock));
+
+    when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
+    when(historicalChainData.getBlockBySlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
 
   private void remoteChainIsBehindOnSameChain() {
-    final UnsignedLong finalizedEpochSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
+    CompletableFuture<Optional<BeaconBlock>> blockResult =
+        CompletableFuture.completedFuture(Optional.of(remoteFinalizedBlock));
+
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    Optional<BeaconBlock> blockResult = Optional.of(remoteFinalizedBlock);
-    when(storageClient.getBlockAtOrPriorToSlot(finalizedEpochSlot)).thenReturn(blockResult);
+    when(historicalChainData.getBlockBySlot(remoteFinalizedEpochSlot)).thenReturn(blockResult);
   }
 
   private void remoteChainIsBehindOnDifferentChain() {
-    final UnsignedLong finalizedEpochSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
+    CompletableFuture<Optional<BeaconBlock>> blockResult =
+        CompletableFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
+
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    Optional<BeaconBlock> blockResult = Optional.of(randomBlock(remoteFinalizedBlockSlot));
-    when(storageClient.getBlockAtOrPriorToSlot(finalizedEpochSlot)).thenReturn(blockResult);
+    when(historicalChainData.getBlockBySlot(remoteFinalizedEpochSlot)).thenReturn(blockResult);
   }
 
   private BeaconBlock randomBlock(UnsignedLong slot) {

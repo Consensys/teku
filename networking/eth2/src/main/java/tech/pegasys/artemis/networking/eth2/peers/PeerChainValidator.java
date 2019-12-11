@@ -18,28 +18,38 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 public class PeerChainValidator {
   private final ChainStorageClient storageClient;
+  private final HistoricalChainData historicalChainData;
   private final Eth2Peer peer;
   private final AtomicBoolean hasRun = new AtomicBoolean(false);
 
-  private PeerChainValidator(final ChainStorageClient storageClient, final Eth2Peer peer) {
+  private PeerChainValidator(
+      final ChainStorageClient storageClient,
+      final HistoricalChainData historicalChainData,
+      final Eth2Peer peer) {
     this.storageClient = storageClient;
+    this.historicalChainData = historicalChainData;
     this.peer = peer;
   }
 
   public static PeerChainValidator create(
-      final ChainStorageClient storageClient, final Eth2Peer peer) {
-    return new PeerChainValidator(storageClient, peer);
+      final ChainStorageClient storageClient,
+      final HistoricalChainData historicalChainData,
+      final Eth2Peer peer) {
+    return new PeerChainValidator(storageClient, historicalChainData, peer);
   }
 
   public void run() {
@@ -94,8 +104,7 @@ public class PeerChainValidator {
       isChainValid.complete(chainsAreConsistent);
     } else if (finalizedEpoch.compareTo(remoteFinalizedEpoch) > 0) {
       // We're ahead of our peer, check that we agree with our peer's finalized epoch
-      final boolean chainsAreConsistent = verifyPeersFinalizedCheckpointIsCanonical(peerStatus);
-      isChainValid.complete(chainsAreConsistent);
+      verifyPeersFinalizedCheckpointIsCanonical(peerStatus, isChainValid);
     } else {
       // Our peer is ahead of us, check that they agree on our finalized epoch
       verifyPeerAgreesWithOurFinalizedCheckpoint(finalizedCheckpoint, peerStatus, isChainValid);
@@ -108,37 +117,53 @@ public class PeerChainValidator {
     return Objects.equals(finalizedCheckpoint.getRoot(), peerStatus.getFinalizedRoot());
   }
 
-  private boolean verifyPeersFinalizedCheckpointIsCanonical(StatusData peerStatus) {
+  private void verifyPeersFinalizedCheckpointIsCanonical(
+      StatusData peerStatus, CompletableFuture<Boolean> isChainValid) {
     final UnsignedLong remoteFinalizedEpoch = peerStatus.getFinalizedEpoch();
     final UnsignedLong remoteFinalizedSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
-    return storageClient
-        .getBlockAtOrPriorToSlot(remoteFinalizedSlot)
-        .map(
-            block -> Objects.equals(block.signing_root("signature"), peerStatus.getFinalizedRoot()))
-        // TODO - if we get no response, we need to look up the block by slot from cold
-        // storage. For now, don't disconnect peers who are very far behind
-        .orElse(true);
+    historicalChainData
+        // TODO - we need to get the block at or before this slot
+        .getBlockBySlot(remoteFinalizedSlot)
+        .thenApply(maybeBlock -> toBlock(remoteFinalizedSlot, maybeBlock))
+        .thenApply((block) -> block.signing_root("signature").equals(peerStatus.getFinalizedRoot()))
+        .whenComplete(propagateFutureResult(isChainValid));
   }
 
-  private CompletableFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
+  private void verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint,
       StatusData peerStatus,
       CompletableFuture<Boolean> isChainValid) {
-    // TODO - handle lookup across hot and cold storage
-    final BeaconBlock finalizedBlock =
-        storageClient.getStore().getBlock(finalizedCheckpoint.getRoot());
-    final UnsignedLong finalizedBlockSlot = finalizedBlock.getSlot();
+    final UnsignedLong finalizedEpochSlot =
+        compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());
 
-    return peer.requestBlockBySlot(peerStatus.getHeadRoot(), finalizedBlockSlot)
-        .thenApply(
-            block -> Objects.equals(block.signing_root("signature"), finalizedCheckpoint.getRoot()))
-        .whenComplete(
-            (res, error) -> {
-              if (error != null) {
-                isChainValid.completeExceptionally(error);
-                return;
-              }
-              isChainValid.complete(res);
-            });
+    historicalChainData
+        .getBlockBySlot(finalizedEpochSlot)
+        .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
+        .thenCompose(blockSlot -> peer.requestBlockBySlot(peerStatus.getHeadRoot(), blockSlot))
+        .thenApply(block -> block.signing_root("signature").equals(finalizedCheckpoint.getRoot()))
+        .whenComplete(propagateFutureResult(isChainValid));
+  }
+
+  private BeaconBlock toBlock(UnsignedLong lookupSlot, Optional<BeaconBlock> maybeBlock) {
+    return maybeBlock.orElseThrow(
+        () -> new IllegalStateException("Missing finalized block at slot " + lookupSlot));
+  }
+
+  private UnsignedLong blockToSlot(UnsignedLong lookupSlot, Optional<BeaconBlock> maybeBlock) {
+    if (maybeBlock.isEmpty()) {
+      throw new IllegalStateException("Missing historical block for slot " + lookupSlot);
+    }
+    return maybeBlock.get().getSlot();
+  }
+
+  private <T> BiConsumer<? super T, ? super Throwable> propagateFutureResult(
+      CompletableFuture<T> future) {
+    return (T res, Throwable err) -> {
+      if (err != null) {
+        future.completeExceptionally(err);
+        return;
+      }
+      future.complete(res);
+    };
   }
 }
