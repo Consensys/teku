@@ -57,6 +57,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
+import tech.pegasys.artemis.sync.BlockImporter;
 import tech.pegasys.artemis.sync.SyncManager;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -199,7 +200,10 @@ public class BeaconChainController {
       return;
     }
     syncManager =
-        new SyncManager((Eth2Network) p2pNetwork, chainStorageClient, eventBus, blockImporter);
+        new SyncManager(
+            (Eth2Network) p2pNetwork,
+            chainStorageClient,
+            new BlockImporter(chainStorageClient, eventBus));
   }
 
   public void start() {
