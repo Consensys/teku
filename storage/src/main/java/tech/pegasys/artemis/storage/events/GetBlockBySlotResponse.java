@@ -18,16 +18,16 @@ import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
 public class GetBlockBySlotResponse {
-  private final UnsignedLong root;
+  private final UnsignedLong slot;
   private final Optional<BeaconBlock> block;
 
-  public GetBlockBySlotResponse(final UnsignedLong root, final Optional<BeaconBlock> block) {
-    this.root = root;
+  public GetBlockBySlotResponse(final UnsignedLong slot, final Optional<BeaconBlock> block) {
+    this.slot = slot;
     this.block = block;
   }
 
-  public UnsignedLong getRoot() {
-    return root;
+  public UnsignedLong getSlot() {
+    return slot;
   }
 
   public Optional<BeaconBlock> getBlock() {

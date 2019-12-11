@@ -44,7 +44,7 @@ public class HistoricalChainData {
   @Subscribe
   public void onResponse(final GetBlockBySlotResponse response) {
     final CompletableFuture<Optional<BeaconBlock>> future =
-        blockBySlotRequests.remove(response.getRoot());
+        blockBySlotRequests.remove(response.getSlot());
     if (future != null) {
       future.complete(response.getBlock());
     }

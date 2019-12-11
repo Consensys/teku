@@ -17,14 +17,14 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 
 public class GetBlockBySlotRequest {
-  private final UnsignedLong root;
+  private final UnsignedLong slot;
 
-  public GetBlockBySlotRequest(final UnsignedLong root) {
-    this.root = root;
+  public GetBlockBySlotRequest(final UnsignedLong slot) {
+    this.slot = slot;
   }
 
   public UnsignedLong getSlot() {
-    return root;
+    return slot;
   }
 
   @Override
@@ -36,11 +36,11 @@ public class GetBlockBySlotRequest {
       return false;
     }
     final GetBlockBySlotRequest that = (GetBlockBySlotRequest) o;
-    return Objects.equals(root, that.root);
+    return Objects.equals(slot, that.slot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(root);
+    return Objects.hash(slot);
   }
 }
