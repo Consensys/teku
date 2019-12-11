@@ -283,6 +283,14 @@ public class Database {
     return blockContained ? Optional.of(latest_messages.get(validatorIndex)) : Optional.empty();
   }
 
+  public Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
+    final Bytes32 root = block_root_references.get(slot);
+    if (root == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(blocks.get(root));
+  }
+
   public void close() {
     db.close();
   }
