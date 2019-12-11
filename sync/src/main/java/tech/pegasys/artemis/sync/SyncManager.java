@@ -15,11 +15,9 @@ package tech.pegasys.artemis.sync;
 
 import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage.REASON_FAULT_ERROR;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
-import com.google.common.eventbus.EventBus;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -28,34 +26,30 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
-import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 
 public class SyncManager {
 
   private final Eth2Network network;
   private final ChainStorageClient storageClient;
-  private final EventBus eventBus;
-
-  private final StateTransition stateTransition = new StateTransition(false);
-  private static final int BAD_SYNC_DISCONNECT_REASON_CODE = 128;
+  private final BlockImporter blockImporter;
 
   public SyncManager(
-      final Eth2Network network, final ChainStorageClient storageClient, final EventBus eventBus) {
+      final Eth2Network network,
+      final ChainStorageClient storageClient,
+      final BlockImporter blockImporter) {
     this.network = network;
     this.storageClient = storageClient;
-    this.eventBus = eventBus;
+    this.blockImporter = blockImporter;
   }
 
-  private void sync() {
+  public CompletableFuture<Void> sync() {
     Optional<Eth2Peer> possibleSyncPeer = findBestSyncPeer();
 
     // If there are no peers ahead of us, return
     if (possibleSyncPeer.isEmpty()) {
-      return;
+      return CompletableFuture.completedFuture(null);
     }
 
     Eth2Peer syncPeer = possibleSyncPeer.get();
@@ -64,34 +58,29 @@ public class SyncManager {
     CompletableFuture<Void> syncCompletableFuture =
         requestSyncBlocks(syncPeer, blockResponseListener(syncPeer));
 
-    syncCompletableFuture.thenRun(
+    return syncCompletableFuture.thenRun(
         () -> {
-          if (storageClient
-                  .getStore()
-                  .getFinalizedCheckpoint()
-                  .getEpoch()
-                  .compareTo(syncAdvertisedFinalizedEpoch)
-              < 0) {
+          if (storageClient.getFinalizedEpoch().compareTo(syncAdvertisedFinalizedEpoch) < 0) {
             disconnectFromPeerAndRunSyncAgain(syncPeer);
           }
         });
   }
 
   private Optional<Eth2Peer> findBestSyncPeer() {
-    UnsignedLong ourFinalizedEpoch = storageClient.getStore().getFinalizedCheckpoint().getEpoch();
+    UnsignedLong ourFinalizedEpoch = storageClient.getFinalizedEpoch();
     return network
-            .streamPeers()
-            .filter(peer -> peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0)
-            .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
+        .streamPeers()
+        .filter(peer -> peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0)
+        .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
   }
 
-  private CompletableFuture<Void> requestSyncBlocks(
+  @VisibleForTesting
+  CompletableFuture<Void> requestSyncBlocks(
       Eth2Peer peer, ResponseStream.ResponseListener<BeaconBlock> blockResponseListener) {
     Eth2Peer.StatusData peerStatusData = peer.getStatus();
     Bytes32 headBlockRoot = peerStatusData.getHeadRoot();
     UnsignedLong headBlockSlot = peerStatusData.getHeadSlot();
-    UnsignedLong startSlot =
-        compute_start_slot_at_epoch(storageClient.getStore().getFinalizedCheckpoint().getEpoch());
+    UnsignedLong startSlot = compute_start_slot_at_epoch(storageClient.getFinalizedEpoch());
     UnsignedLong step = UnsignedLong.ONE;
     UnsignedLong count = headBlockSlot.minus(startSlot);
     return peer.requestBlocksByRange(headBlockRoot, startSlot, count, step, blockResponseListener);
@@ -100,17 +89,15 @@ public class SyncManager {
   private ResponseStream.ResponseListener<BeaconBlock> blockResponseListener(Eth2Peer peer) {
     return ((block) -> {
       try {
-        Store.Transaction transaction = storageClient.getStore().startTransaction();
-        on_block(transaction, block, stateTransition);
-        transaction.commit();
-        eventBus.post(new StoreDiskUpdateEvent(transaction));
+        blockImporter.importBlock(block);
       } catch (StateTransitionException e) {
         disconnectFromPeerAndRunSyncAgain(peer);
       }
     });
   }
 
-  private void disconnectFromPeerAndRunSyncAgain(Eth2Peer peer) {
+  @VisibleForTesting
+  void disconnectFromPeerAndRunSyncAgain(Eth2Peer peer) {
     peer.sendGoodbye(REASON_FAULT_ERROR).thenRun(this::sync);
   }
 }

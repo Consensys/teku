@@ -7,4 +7,8 @@ dependencies {
     implementation project(':util')
     implementation project(':data')
     implementation 'org.apache.tuweni:tuweni-bytes'
+
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+    testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
 }

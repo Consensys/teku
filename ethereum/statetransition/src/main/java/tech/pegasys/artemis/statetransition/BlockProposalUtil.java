@@ -102,6 +102,23 @@ public class BlockProposalUtil {
         BeaconBlockBodyLists.createDeposits());
   }
 
+  public BeaconBlock createBlockWithAttestations(
+      final Signer signer,
+      final UnsignedLong newSlot,
+      final BeaconState previousState,
+      final Bytes32 parentBlockSigningRoot,
+      final SSZList<Attestation> attestations)
+      throws StateTransitionException {
+    return createNewBlock(
+        signer,
+        newSlot,
+        previousState,
+        parentBlockSigningRoot,
+        attestations,
+        BeaconBlockBodyLists.createProposerSlashings(),
+        BeaconBlockBodyLists.createDeposits());
+  }
+
   public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
     int proposerIndex = getProposerIndexForSlot(preState, slot);
     return preState.getValidators().get(proposerIndex).getPubkey();
