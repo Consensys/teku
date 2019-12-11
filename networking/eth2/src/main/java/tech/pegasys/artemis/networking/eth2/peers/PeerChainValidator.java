@@ -77,7 +77,13 @@ public class PeerChainValidator {
       return isChainValid;
     }
 
-    // Check finalized checkpoints are compatible
+    // If we haven't reached genesis, accept our peer at this point
+    if (storageClient.isPreGenesis()) {
+      isChainValid.complete(true);
+      return isChainValid;
+    }
+
+    // Check whether finalized checkpoints are compatible
     final Checkpoint finalizedCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
     final UnsignedLong remoteFinalizedEpoch = peerStatus.getFinalizedEpoch();

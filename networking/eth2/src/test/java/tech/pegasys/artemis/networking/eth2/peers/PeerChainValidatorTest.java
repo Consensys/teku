@@ -145,6 +145,22 @@ public class PeerChainValidatorTest {
   }
 
   @Test
+  public void chainsAreCompatible_sameFork_preGenesis() {
+    // Setup mocks
+    forksMatch();
+    // Store is null pre-genesis
+    when(storageClient.isPreGenesis()).thenReturn(true);
+    when(storageClient.getStore()).thenReturn(null);
+
+    peerChainValidator.run();
+    assertPeerChainVerified();
+    // Verify remaining checks were skipped
+    verify(peer, never()).requestBlockBySlot(any(), any());
+    verify(storageClient, never()).getBlockAtOrPriorToSlot(any());
+    verify(store, never()).getFinalizedCheckpoint();
+  }
+
+  @Test
   public void chainsAreIncompatible_differentForks_finalizedCheckpointsMatch() {
     // Setup mocks
     forksDontMatch();

@@ -70,6 +70,10 @@ public class ChainStorageClient implements ChainStorage {
     return genesisTime;
   }
 
+  public boolean isPreGenesis() {
+    return this.store == null;
+  }
+
   @Subscribe
   public void setStore(Store store) {
     this.store = store;
