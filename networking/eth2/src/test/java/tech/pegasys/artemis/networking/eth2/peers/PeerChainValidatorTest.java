@@ -43,15 +43,35 @@ public class PeerChainValidatorTest {
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
 
-  private final Bytes32 randomBlockRoot = DataStructureUtil.randomBytes32(1);
   private final Bytes4 remoteFork = new Bytes4(Bytes.fromHexString("0x1234", 4));
   private final Bytes4 otherFork = new Bytes4(Bytes.fromHexString("0x3333", 4));
+
+  private final UnsignedLong remoteFinalizedEpoch = UnsignedLong.valueOf(10L);
+  private final UnsignedLong earlierEpoch = UnsignedLong.valueOf(8L);
+  private final UnsignedLong laterEpoch = UnsignedLong.valueOf(12L);
+
+  // Offset slots from epoch to simulate skipped blocks
+  private final UnsignedLong remoteFinalizedBlockSlot =
+      compute_start_slot_at_epoch(remoteFinalizedEpoch).minus(UnsignedLong.ONE);
+  private final UnsignedLong earlierBlockSlot =
+      compute_start_slot_at_epoch(earlierEpoch).minus(UnsignedLong.ONE);
+  private final UnsignedLong laterBlockSlot =
+      compute_start_slot_at_epoch(laterEpoch).minus(UnsignedLong.ONE);
+
+  private final BeaconBlock remoteFinalizedBlock =
+      DataStructureUtil.randomBeaconBlock(remoteFinalizedBlockSlot.longValue(), 1);
+  private final BeaconBlock earlierBlock =
+      DataStructureUtil.randomBeaconBlock(earlierBlockSlot.longValue(), 2);
+  private final BeaconBlock laterBlock =
+      DataStructureUtil.randomBeaconBlock(laterBlockSlot.longValue(), 3);
+
   private final Checkpoint remoteFinalizedCheckpoint =
-      new Checkpoint(UnsignedLong.valueOf(10L), Bytes32.fromHexString("0x5555"));
+      new Checkpoint(remoteFinalizedEpoch, remoteFinalizedBlock.signing_root("signature"));
   private final Checkpoint earlierCheckpoint =
-      new Checkpoint(UnsignedLong.valueOf(8L), Bytes32.fromHexString("0x4444"));
+      new Checkpoint(earlierEpoch, earlierBlock.signing_root("signature"));
   private final Checkpoint laterCheckpoint =
-      new Checkpoint(UnsignedLong.valueOf(12L), Bytes32.fromHexString("0x6666"));
+      new Checkpoint(laterEpoch, laterBlock.signing_root("signature"));
+
   private final StatusData remoteStatus = createStatusData();
 
   private final PeerChainValidator peerChainValidator =
@@ -162,54 +182,47 @@ public class PeerChainValidatorTest {
 
   private void remoteChainIsAheadOnSameChain() {
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    final UnsignedLong localFinalizedSlot =
-        compute_start_slot_at_epoch(earlierCheckpoint.getEpoch());
+    when(store.getBlock(earlierBlock.signing_root("signature"))).thenReturn(earlierBlock);
     final CompletableFuture<BeaconBlock> blockFuture =
-        CompletableFuture.completedFuture(blockWithRoot(earlierCheckpoint.getRoot()));
-    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), localFinalizedSlot))
+        CompletableFuture.completedFuture(earlierBlock);
+    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    final UnsignedLong localFinalizedSlot =
-        compute_start_slot_at_epoch(earlierCheckpoint.getEpoch());
+    when(store.getBlock(earlierBlock.signing_root("signature"))).thenReturn(earlierBlock);
     final CompletableFuture<BeaconBlock> blockFuture =
-        CompletableFuture.completedFuture(blockWithRoot(randomBlockRoot));
-    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), localFinalizedSlot))
+        CompletableFuture.completedFuture(randomBlock(earlierBlockSlot));
+    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
 
   private void remoteChainIsAheadAndUnresponsive() {
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    final UnsignedLong localFinalizedSlot =
-        compute_start_slot_at_epoch(earlierCheckpoint.getEpoch());
+    when(store.getBlock(earlierBlock.signing_root("signature"))).thenReturn(earlierBlock);
     final CompletableFuture<BeaconBlock> blockFuture =
         CompletableFuture.failedFuture(new NullPointerException());
-    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), localFinalizedSlot))
+    when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
 
   private void remoteChainIsBehindOnSameChain() {
-    final UnsignedLong remoteFinalizedSlot =
-        compute_start_slot_at_epoch(remoteStatus.getFinalizedEpoch());
+    final UnsignedLong finalizedEpochSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    Optional<BeaconBlock> blockResult = Optional.of(blockWithRoot(remoteStatus.getFinalizedRoot()));
-    when(storageClient.getBlockAtOrPriorToSlot(remoteFinalizedSlot)).thenReturn(blockResult);
+    Optional<BeaconBlock> blockResult = Optional.of(remoteFinalizedBlock);
+    when(storageClient.getBlockAtOrPriorToSlot(finalizedEpochSlot)).thenReturn(blockResult);
   }
 
   private void remoteChainIsBehindOnDifferentChain() {
-    final UnsignedLong remoteFinalizedSlot =
-        compute_start_slot_at_epoch(remoteStatus.getFinalizedEpoch());
+    final UnsignedLong finalizedEpochSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    Optional<BeaconBlock> blockResult = Optional.of(blockWithRoot(randomBlockRoot));
-    when(storageClient.getBlockAtOrPriorToSlot(remoteFinalizedSlot)).thenReturn(blockResult);
+    Optional<BeaconBlock> blockResult = Optional.of(randomBlock(remoteFinalizedBlockSlot));
+    when(storageClient.getBlockAtOrPriorToSlot(finalizedEpochSlot)).thenReturn(blockResult);
   }
 
-  private BeaconBlock blockWithRoot(Bytes32 signingRoot) {
-    final BeaconBlock block = mock(BeaconBlock.class);
-    when(block.signing_root("signature")).thenReturn(signingRoot);
-    return block;
+  private BeaconBlock randomBlock(UnsignedLong slot) {
+    return DataStructureUtil.randomBeaconBlock(slot.longValue(), slot.intValue());
   }
 
   private Checkpoint getFinalizedCheckpoint(final StatusData status) {

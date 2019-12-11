@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
@@ -83,38 +84,55 @@ public class PeerChainValidator {
 
     if (finalizedEpoch.compareTo(remoteFinalizedEpoch) == 0) {
       final boolean chainsAreConsistent =
-          Objects.equals(finalizedCheckpoint.getRoot(), peerStatus.getFinalizedRoot());
+          verifyFinalizedCheckpointsAreTheSame(finalizedCheckpoint, peerStatus);
       isChainValid.complete(chainsAreConsistent);
     } else if (finalizedEpoch.compareTo(remoteFinalizedEpoch) > 0) {
       // We're ahead of our peer, check that we agree with our peer's finalized epoch
-      final UnsignedLong remoteFinalizedSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
-      final boolean chainsAreConsistent =
-          storageClient
-              .getBlockAtOrPriorToSlot(remoteFinalizedSlot)
-              .map(
-                  block ->
-                      Objects.equals(
-                          block.signing_root("signature"), peerStatus.getFinalizedRoot()))
-              // TODO - if we get no response, we need to look up the block by slot from cold
-              // storage. For now, don't disconnect peers who are very far behind
-              .orElse(true);
+      final boolean chainsAreConsistent = verifyPeersFinalizedCheckpointIsCanonical(peerStatus);
       isChainValid.complete(chainsAreConsistent);
     } else {
       // Our peer is ahead of us, check that they agree on our finalized epoch
-      final UnsignedLong localFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-      peer.requestBlockBySlot(peerStatus.getHeadRoot(), localFinalizedSlot)
-          .thenApply(
-              block ->
-                  Objects.equals(block.signing_root("signature"), finalizedCheckpoint.getRoot()))
-          .whenComplete(
-              (res, error) -> {
-                if (error != null) {
-                  isChainValid.completeExceptionally(error);
-                  return;
-                }
-                isChainValid.complete(res);
-              });
+      verifyPeerAgreesWithOurFinalizedCheckpoint(finalizedCheckpoint, peerStatus, isChainValid);
     }
     return isChainValid;
+  }
+
+  private boolean verifyFinalizedCheckpointsAreTheSame(
+      Checkpoint finalizedCheckpoint, StatusData peerStatus) {
+    return Objects.equals(finalizedCheckpoint.getRoot(), peerStatus.getFinalizedRoot());
+  }
+
+  private boolean verifyPeersFinalizedCheckpointIsCanonical(StatusData peerStatus) {
+    final UnsignedLong remoteFinalizedEpoch = peerStatus.getFinalizedEpoch();
+    final UnsignedLong remoteFinalizedSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
+    return storageClient
+        .getBlockAtOrPriorToSlot(remoteFinalizedSlot)
+        .map(
+            block -> Objects.equals(block.signing_root("signature"), peerStatus.getFinalizedRoot()))
+        // TODO - if we get no response, we need to look up the block by slot from cold
+        // storage. For now, don't disconnect peers who are very far behind
+        .orElse(true);
+  }
+
+  private CompletableFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
+      Checkpoint finalizedCheckpoint,
+      StatusData peerStatus,
+      CompletableFuture<Boolean> isChainValid) {
+    // TODO - handle lookup across hot and cold storage
+    final BeaconBlock finalizedBlock =
+        storageClient.getStore().getBlock(finalizedCheckpoint.getRoot());
+    final UnsignedLong finalizedBlockSlot = finalizedBlock.getSlot();
+
+    return peer.requestBlockBySlot(peerStatus.getHeadRoot(), finalizedBlockSlot)
+        .thenApply(
+            block -> Objects.equals(block.signing_root("signature"), finalizedCheckpoint.getRoot()))
+        .whenComplete(
+            (res, error) -> {
+              if (error != null) {
+                isChainValid.completeExceptionally(error);
+                return;
+              }
+              isChainValid.complete(res);
+            });
   }
 }
