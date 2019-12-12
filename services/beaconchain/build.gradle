@@ -4,6 +4,7 @@ dependencies {
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
   implementation project(':storage')
+  implementation project(':sync')
   implementation project(':data:metrics')
   implementation project(':data:beaconrestapi')
   implementation project(':ethereum:statetransition')
