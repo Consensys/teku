@@ -169,10 +169,6 @@ public class ChainStorageClient implements ChainStorage {
         .filter(block -> block.getSlot().equals(slot));
   }
 
-  public Optional<BeaconBlock> getBlockAtOrPriorToSlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlock(blockRoot));
-  }
-
   public boolean isIncludedInBestState(final Bytes32 blockRoot) {
     if (store == null) {
       return false;
