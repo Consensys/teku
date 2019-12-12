@@ -22,6 +22,9 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -31,6 +34,8 @@ import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 public class PeerChainValidator {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final ChainStorageClient storageClient;
   private final HistoricalChainData historicalChainData;
   private final Eth2Peer peer;
@@ -59,17 +64,21 @@ public class PeerChainValidator {
   }
 
   private void executeCheck() {
+    LOG.trace("Validate chain of peer: {}", peer);
     checkRemoteChain()
         .whenComplete(
             (isValid, error) -> {
               if (error != null) {
+                LOG.debug("Unable to validate peer's chain, disconnecting: " + peer, error);
                 peer.sendGoodbye(GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK);
                 return;
               } else if (!isValid) {
                 // We are not on the same chain
+                LOG.trace("Disconnecting peer on different chain: {}", peer);
                 peer.sendGoodbye(GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
                 return;
               }
+              LOG.trace("Validated peer's chain: {}", peer);
               peer.markChainValidated();
             });
   }
@@ -83,12 +92,18 @@ public class PeerChainValidator {
     // Check fork compatibility
     Bytes4 expectedFork = storageClient.getForkAtSlot(peerStatus.getHeadSlot());
     if (!Objects.equals(expectedFork, peerStatus.getHeadForkVersion())) {
+      LOG.trace(
+          "Peer's fork ({}) differs from our fork ({}): {}",
+          peerStatus.getHeadForkVersion(),
+          expectedFork,
+          peer);
       isChainValid.complete(false);
       return isChainValid;
     }
 
     // If we haven't reached genesis, accept our peer at this point
     if (storageClient.isPreGenesis()) {
+      LOG.trace("Validating peer pre-genesis, skip finalized block checks for peer {}", peer);
       isChainValid.complete(true);
       return isChainValid;
     }
@@ -125,7 +140,7 @@ public class PeerChainValidator {
         // TODO - we need to get the block at or before this slot
         .getBlockBySlot(remoteFinalizedSlot)
         .thenApply(maybeBlock -> toBlock(remoteFinalizedSlot, maybeBlock))
-        .thenApply((block) -> block.signing_root("signature").equals(peerStatus.getFinalizedRoot()))
+        .thenApply((block) -> validateBlockRootsMatch(block, peerStatus.getFinalizedRoot()))
         .whenComplete(propagateFutureResult(isChainValid));
   }
 
@@ -140,7 +155,7 @@ public class PeerChainValidator {
         .getBlockBySlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(blockSlot -> peer.requestBlockBySlot(peerStatus.getHeadRoot(), blockSlot))
-        .thenApply(block -> block.signing_root("signature").equals(finalizedCheckpoint.getRoot()))
+        .thenApply(block -> validateBlockRootsMatch(block, finalizedCheckpoint.getRoot()))
         .whenComplete(propagateFutureResult(isChainValid));
   }
 
@@ -154,6 +169,18 @@ public class PeerChainValidator {
       throw new IllegalStateException("Missing historical block for slot " + lookupSlot);
     }
     return maybeBlock.get().getSlot();
+  }
+
+  private boolean validateBlockRootsMatch(final BeaconBlock block, final Bytes32 root) {
+    final Bytes32 blockRoot = block.signing_root("signature");
+    final boolean rootsMatch = Objects.equals(blockRoot, root);
+    if (rootsMatch) {
+      LOG.trace("Verified finalized blocks match for peer: {}", peer);
+    } else {
+      LOG.warn(
+          "Detected peer with inconsistent finalized block at slot {}: {}", block.getSlot(), peer);
+    }
+    return rootsMatch;
   }
 
   private <T> BiConsumer<? super T, ? super Throwable> propagateFutureResult(
