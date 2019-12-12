@@ -13,17 +13,16 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
-import java.util.List;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
-public class ProcessedBlockEvent {
-  private final List<Attestation> attestationList;
+public class BlockImportedEvent {
+  private final BeaconBlock block;
 
-  public ProcessedBlockEvent(List<Attestation> attestationList) {
-    this.attestationList = attestationList;
+  public BlockImportedEvent(BeaconBlock block) {
+    this.block = block;
   }
 
-  public List<Attestation> getAttestationList() {
-    return attestationList;
+  public BeaconBlock getBlock() {
+    return block;
   }
 }

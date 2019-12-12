@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
@@ -31,11 +30,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -47,7 +44,6 @@ import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -144,43 +140,6 @@ public class StateProcessor {
     if (isSimulation) return sufficientValidators;
     final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
     return afterMinGenesisTime && sufficientValidators;
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onBlock(BeaconBlock block) {
-    try {
-      Store.Transaction transaction =
-          chainStorageClient.getStore().startTransaction(block.getSlot());
-      final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-      transaction.commit();
-      eventBus.post(new StoreDiskUpdateEvent(transaction));
-
-      // Add attestations that were processed in the block to processed attestations storage
-      List<Long> numberOfAttestersInAttestations = new ArrayList<>();
-      block
-          .getBody()
-          .getAttestations()
-          .forEach(
-              attestation -> {
-                numberOfAttestersInAttestations.add(
-                    IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
-                        .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
-                        .count());
-              });
-
-      this.eventBus.post(new ProcessedBlockEvent(block.getBody().getAttestations()));
-
-      STDOUT.log(
-          Level.DEBUG, "Number of attestations: " + block.getBody().getAttestations().size());
-      STDOUT.log(
-          Level.DEBUG, "Number of attesters in attestations: " + numberOfAttestersInAttestations);
-
-      this.eventBus.post(record);
-    } catch (StateTransitionException e) {
-      //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));
-      STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
-    }
   }
 
   private void onAttestation(Attestation attestation) {
