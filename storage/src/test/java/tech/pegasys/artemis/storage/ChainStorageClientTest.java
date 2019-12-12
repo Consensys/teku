@@ -16,7 +16,6 @@ package tech.pegasys.artemis.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -48,7 +47,7 @@ class ChainStorageClientTest {
     final BeaconState initialState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
     storageClient.initialize(initialState);
     assertThat(storageClient.getGenesisTime()).isEqualTo(initialState.getGenesis_time());
-    assertThat(storageClient.getBestSlot()).isEqualTo(UnsignedLong.valueOf(GENESIS_SLOT));
+    assertThat(storageClient.getBestSlot()).isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
     assertThat(storageClient.getBestBlockRootState()).isEqualTo(initialState);
     assertThat(storageClient.getStore()).isNotNull();
   }

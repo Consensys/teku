@@ -166,7 +166,7 @@ public class PeerChainValidatorTest {
   }
 
   @Test
-  public void chainsAreIncompatible_differentForks_finalizedCheckpointsMatch() {
+  public void chainsAreIncompatible_differentForks() {
     // Setup mocks
     forksDontMatch();
 

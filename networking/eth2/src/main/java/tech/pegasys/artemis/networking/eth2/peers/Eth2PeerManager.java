@@ -103,6 +103,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   private boolean peerIsReady(Eth2Peer peer) {
-    return peer.hasStatus() && peer.isChainValidated();
+    return peer.isChainValidated();
   }
 }
