@@ -16,6 +16,9 @@ package tech.pegasys.artemis.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
+import tech.pegasys.artemis.test.acceptance.dsl.BesuNode;
+
+import java.io.File;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
@@ -29,14 +32,28 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromDisk() throws Exception {
-    final ArtemisNode node = createArtemisNode();
-    node.start(false);
-    node.waitForFinalization();
-    node.stop();
+    final ArtemisNode node1 = createArtemisNode();
+    node1.start();
+    node1.waitForNewBlock();
+    File tempDatabaseFile = File.createTempFile("artemis", ".db");
+    node1.getDatabaseFileFromContainer(tempDatabaseFile);
 
-    // TODO
-    // copyFileFromContainer to some tmp directory
-    // createArtemisNode
-    // copyFileToContainer
+    final ArtemisNode node2 = createArtemisNode(ArtemisNode.Config::startFromDisk);
+    node2.copyDatabaseFileToContainer(tempDatabaseFile);
+    node2.start();
+    node2.waitForNewFinalization();
+    node2.stop();
+  }
+
+  @Test
+  public void shouldStartChainFromDepositContract() throws Exception {
+    final BesuNode eth1Node = createBesuNode();
+    eth1Node.start();
+
+    final ArtemisNode artemisNode = createArtemisNode(config -> config.withDepositsFrom(eth1Node));
+    artemisNode.start();
+
+    createArtemisDepositSender().sendValidatorDeposits(eth1Node, 64);
+    artemisNode.waitForGenesis();
   }
 }
