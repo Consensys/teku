@@ -64,7 +64,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       eth2Peer.sendStatus();
     }
     eth2Peer.subscribeInitialStatus(
-        (status) -> PeerChainValidator.create(storageClient, historicalChainData, eth2Peer).run());
+        (status) ->
+            PeerChainValidator.create(storageClient, historicalChainData, eth2Peer, status).run());
   }
 
   @Override

@@ -80,7 +80,7 @@ public class PeerChainValidatorTest {
   private final StatusData remoteStatus = createStatusData();
 
   private final PeerChainValidator peerChainValidator =
-      PeerChainValidator.create(storageClient, historicalChainData, peer);
+      PeerChainValidator.create(storageClient, historicalChainData, peer, remoteStatus);
 
   @BeforeEach
   public void setup() {
