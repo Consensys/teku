@@ -152,6 +152,7 @@ public class PeerChainValidator {
         compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());
 
     historicalChainData
+        // TODO - we need to get the block at or before this slot
         .getBlockBySlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(blockSlot -> peer.requestBlockBySlot(peerStatus.getHeadRoot(), blockSlot))
