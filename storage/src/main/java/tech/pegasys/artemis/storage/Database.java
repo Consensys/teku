@@ -24,8 +24,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -63,7 +65,7 @@ public class Database {
   private final ConcurrentMap<UnsignedLong, Checkpoint> latest_messages;
 
   // Slot -> Map references
-  private final ConcurrentMap<UnsignedLong, Bytes32> block_root_references;
+  private final ConcurrentNavigableMap<UnsignedLong, Bytes32> block_root_references;
   private final ConcurrentMap<UnsignedLong, Checkpoint> checkpoint_references;
   private final Atomic.Var<UnsignedLong> latest_slot;
 
@@ -120,7 +122,7 @@ public class Database {
       latest_slot.set(UnsignedLong.ZERO);
     }
     block_root_references =
-        db.hashMap(
+        db.treeMap(
                 "block_root_references_map", new UnsignedLongSerializer(), new Bytes32Serializer())
             .createOrOpen();
     checkpoint_references =
@@ -274,12 +276,12 @@ public class Database {
     return blockContained ? Optional.of(latest_messages.get(validatorIndex)) : Optional.empty();
   }
 
-  public Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
-    final Bytes32 root = block_root_references.get(slot);
-    if (root == null) {
+  public Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot) {
+    if (compute_start_slot_at_epoch(finalizedCheckpoint.get().getEpoch()).compareTo(slot) < 0) {
       return Optional.empty();
     }
-    return Optional.ofNullable(blocks.get(root));
+    return Optional.ofNullable(block_root_references.headMap(slot, true).firstEntry())
+        .map(Entry::getValue);
   }
 
   public void close() {

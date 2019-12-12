@@ -21,8 +21,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.storage.events.GetBlockBySlotRequest;
-import tech.pegasys.artemis.storage.events.GetBlockBySlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 
 public class HistoricalChainData {
   private final ConcurrentMap<UnsignedLong, CompletableFuture<Optional<BeaconBlock>>>
@@ -34,15 +34,15 @@ public class HistoricalChainData {
     eventBus.register(this);
   }
 
-  public CompletableFuture<Optional<BeaconBlock>> getBlockBySlot(final UnsignedLong slot) {
+  public CompletableFuture<Optional<BeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
     final CompletableFuture<Optional<BeaconBlock>> future =
         blockBySlotRequests.computeIfAbsent(slot, key -> new CompletableFuture<>());
-    eventBus.post(new GetBlockBySlotRequest(slot));
+    eventBus.post(new GetFinalizedBlockAtSlotRequest(slot));
     return future;
   }
 
   @Subscribe
-  public void onResponse(final GetBlockBySlotResponse response) {
+  public void onResponse(final GetFinalizedBlockAtSlotResponse response) {
     final CompletableFuture<Optional<BeaconBlock>> future =
         blockBySlotRequests.remove(response.getSlot());
     if (future != null) {
