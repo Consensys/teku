@@ -159,7 +159,7 @@ public class PeerChainValidatorTest {
     assertPeerChainVerified();
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(historicalChainData, never()).getBlockBySlot(any());
+    verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -177,7 +177,7 @@ public class PeerChainValidatorTest {
     assertPeerChainVerified();
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(historicalChainData, never()).getBlockBySlot(any());
+    verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -190,7 +190,7 @@ public class PeerChainValidatorTest {
     assertPeerChainRejected(GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
     // Verify other checks were skipped when fork mismatch was detected
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(historicalChainData, never()).getBlockBySlot(any());
+    verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -224,7 +224,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getBlockBySlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
+    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+        .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
@@ -236,7 +237,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getBlockBySlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
+    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+        .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
@@ -248,7 +250,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getBlockBySlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
+    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+        .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
@@ -258,7 +261,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(remoteFinalizedBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    when(historicalChainData.getBlockBySlot(remoteFinalizedEpochSlot)).thenReturn(blockResult);
+    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
+        .thenReturn(blockResult);
   }
 
   private void remoteChainIsBehindOnDifferentChain() {
@@ -266,7 +270,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    when(historicalChainData.getBlockBySlot(remoteFinalizedEpochSlot)).thenReturn(blockResult);
+    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
+        .thenReturn(blockResult);
   }
 
   private BeaconBlock randomBlock(UnsignedLong slot) {

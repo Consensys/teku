@@ -17,11 +17,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
-public class GetBlockBySlotResponse {
+public class GetFinalizedBlockAtSlotResponse {
   private final UnsignedLong slot;
   private final Optional<BeaconBlock> block;
 
-  public GetBlockBySlotResponse(final UnsignedLong slot, final Optional<BeaconBlock> block) {
+  public GetFinalizedBlockAtSlotResponse(
+      final UnsignedLong slot, final Optional<BeaconBlock> block) {
     this.slot = slot;
     this.block = block;
   }

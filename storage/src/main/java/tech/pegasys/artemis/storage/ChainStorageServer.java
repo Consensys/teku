@@ -17,8 +17,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.storage.events.GetBlockBySlotRequest;
-import tech.pegasys.artemis.storage.events.GetBlockBySlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -29,7 +29,7 @@ public class ChainStorageServer {
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.eventBus = eventBus;
     eventBus.register(this);
-    this.database = new Database("artemis.db", eventBus, config.startFromDisk());
+    this.database = Database.createForFile("artemis.db", eventBus, config.startFromDisk());
   }
 
   @Subscribe
@@ -39,8 +39,9 @@ public class ChainStorageServer {
   }
 
   @Subscribe
-  public void onGetBlockBySlotRequest(final GetBlockBySlotRequest request) {
-    final Optional<BeaconBlock> block = database.getBlockBySlot(request.getSlot());
-    eventBus.post(new GetBlockBySlotResponse(request.getSlot(), block));
+  public void onGetBlockBySlotRequest(final GetFinalizedBlockAtSlotRequest request) {
+    final Optional<BeaconBlock> block =
+        database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getBlock);
+    eventBus.post(new GetFinalizedBlockAtSlotResponse(request.getSlot(), block));
   }
 }
