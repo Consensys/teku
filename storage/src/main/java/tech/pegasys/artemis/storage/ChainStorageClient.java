@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
@@ -25,8 +26,10 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
@@ -34,6 +37,7 @@ public class ChainStorageClient implements ChainStorage {
 
   protected EventBus eventBus;
 
+  private final Bytes4 genesisFork = Fork.VERSION_ZERO;
   private volatile Store store;
   private volatile Bytes32 bestBlockRoot =
       Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
@@ -67,6 +71,10 @@ public class ChainStorageClient implements ChainStorage {
     return genesisTime;
   }
 
+  public boolean isPreGenesis() {
+    return this.store == null;
+  }
+
   @Subscribe
   public void setStore(Store store) {
     this.store = store;
@@ -87,6 +95,27 @@ public class ChainStorageClient implements ChainStorage {
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
     this.bestBlockRoot = root;
     this.bestSlot = slot;
+  }
+
+  public Bytes4 getForkAtHead() {
+    return getForkAtSlot(bestSlot);
+  }
+
+  public Bytes4 getForkAtSlot(UnsignedLong slot) {
+    return getForkAtEpoch(compute_epoch_at_slot(slot));
+  }
+
+  public Bytes4 getForkAtEpoch(UnsignedLong epoch) {
+    // TODO - add better fork configuration management
+    if (isPreGenesis()) {
+      // We don't have anywhere to look for fork data, so just return the initial fork
+      return genesisFork;
+    }
+    // For now, we don't have any forks, so just use the latest
+    Fork latestFork = getBestBlockRootState().getFork();
+    return epoch.compareTo(latestFork.getEpoch()) < 0
+        ? latestFork.getPrevious_version()
+        : latestFork.getCurrent_version();
   }
 
   /**
