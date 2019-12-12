@@ -31,17 +31,12 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private UnsignedLong epoch;
-  private Bytes32 root;
+  private final UnsignedLong epoch;
+  private final Bytes32 root;
 
   public Checkpoint(UnsignedLong epoch, Bytes32 root) {
     this.epoch = epoch;
     this.root = root;
-  }
-
-  public Checkpoint(Checkpoint checkpoint) {
-    this.epoch = checkpoint.getEpoch();
-    this.root = checkpoint.getRoot();
   }
 
   public Checkpoint() {
@@ -106,16 +101,8 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
     return epoch;
   }
 
-  public void setEpoch(UnsignedLong epoch) {
-    this.epoch = epoch;
-  }
-
   public Bytes32 getRoot() {
     return root;
-  }
-
-  public void setRoot(Bytes32 root) {
-    this.root = root;
   }
 
   @Override

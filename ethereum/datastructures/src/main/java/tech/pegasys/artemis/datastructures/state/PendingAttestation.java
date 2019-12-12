@@ -66,7 +66,7 @@ public class PendingAttestation
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
     this.aggregation_bits = pendingAttestation.getAggregation_bits().copy();
-    this.data = new AttestationData(pendingAttestation.getData());
+    this.data = pendingAttestation.getData();
     this.inclusion_delay = pendingAttestation.getInclusion_delay();
     this.proposer_index = pendingAttestation.getProposer_index();
   }
