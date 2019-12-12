@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.test.acceptance;
 
 import java.io.File;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
