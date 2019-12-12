@@ -29,7 +29,7 @@ public class ChainStorageServer {
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.eventBus = eventBus;
     eventBus.register(this);
-    this.database = new Database("artemis.db", eventBus, config.startFromDisk());
+    this.database = Database.createForFile("artemis.db", eventBus, config.startFromDisk());
   }
 
   @Subscribe

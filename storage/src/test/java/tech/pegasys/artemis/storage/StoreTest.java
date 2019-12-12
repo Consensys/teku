@@ -112,7 +112,7 @@ class StoreTest {
   @Test
   public void shouldApplyChangesToDisk() {
     EventBus eventBus = new EventBus();
-    final Database db = new Database("test.db", eventBus, false);
+    final Database db = Database.createInMemory(eventBus);
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
@@ -147,7 +147,7 @@ class StoreTest {
   @Test
   public void shouldPersistOnDisk() {
     EventBus eventBus = new EventBus();
-    final Database db = new Database("test.db", eventBus, false);
+    final Database db = Database.createForFile("test.db", eventBus, false);
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
@@ -170,7 +170,7 @@ class StoreTest {
     db.insert(transaction);
     db.close();
 
-    final Database newDB = new Database("test.db", eventBus, true);
+    final Database newDB = Database.createForFile("test.db", eventBus, true);
 
     assertEquals(block, newDB.getBlock(blockRoot).get());
     assertEquals(state, newDB.getBlock_state(blockRoot).get());

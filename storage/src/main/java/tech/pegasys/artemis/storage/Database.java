@@ -37,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.mapdb.Atomic;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.mapdb.DBMaker.Maker;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -69,15 +70,23 @@ public class Database {
   private final ConcurrentMap<UnsignedLong, Checkpoint> checkpoint_references;
   private final Atomic.Var<UnsignedLong> latest_slot;
 
-  @SuppressWarnings("CheckReturnValue")
-  Database(String dbFileName, EventBus eventBus, boolean startFromDisk) {
+  static Database createForFile(
+      final String dbFileName, final EventBus eventBus, final boolean startFromDisk) {
     try {
       if (!startFromDisk) Files.deleteIfExists(Paths.get(dbFileName));
     } catch (IOException e) {
       STDOUT.log(Level.WARN, "Failed to clear old database");
     }
+    return new Database(DBMaker.fileDB(dbFileName), eventBus, startFromDisk);
+  }
 
-    db = DBMaker.fileDB(dbFileName).transactionEnable().make();
+  static Database createInMemory(final EventBus eventBus) {
+    return new Database(DBMaker.memoryDB(), eventBus, false);
+  }
+
+  @SuppressWarnings("CheckReturnValue")
+  private Database(Maker dbMaker, EventBus eventBus, boolean startFromDisk) {
+    db = dbMaker.transactionEnable().make();
 
     // Store initialization
     time = db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
@@ -277,11 +286,19 @@ public class Database {
   }
 
   public Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot) {
-    if (compute_start_slot_at_epoch(finalizedCheckpoint.get().getEpoch()).compareTo(slot) < 0) {
+    final Checkpoint finalizedCheckpoint = this.finalizedCheckpoint.get();
+    if (finalizedCheckpoint == null || slotIsNotFinalized(slot, finalizedCheckpoint)) {
       return Optional.empty();
     }
-    return Optional.ofNullable(block_root_references.headMap(slot, true).firstEntry())
+    return Optional.ofNullable(block_root_references.headMap(slot, true).lastEntry())
         .map(Entry::getValue);
+  }
+
+  private boolean slotIsNotFinalized(
+      final UnsignedLong slot, final Checkpoint finalizedCheckpoint) {
+    final UnsignedLong firstSlotAfterFinalizedEpoch =
+        compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch().plus(UnsignedLong.ONE));
+    return firstSlotAfterFinalizedEpoch.compareTo(slot) <= 0;
   }
 
   public void close() {
