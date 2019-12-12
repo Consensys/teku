@@ -133,7 +133,6 @@ public class PeerChainValidator {
     final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
     final UnsignedLong remoteFinalizedSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
     return historicalChainData
-        // TODO - we need to get the block at or before this slot
         .getBlockBySlot(remoteFinalizedSlot)
         .thenApply(maybeBlock -> toBlock(remoteFinalizedSlot, maybeBlock))
         .thenApply((block) -> validateBlockRootsMatch(block, status.getFinalizedRoot()));
@@ -145,7 +144,6 @@ public class PeerChainValidator {
         compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());
 
     return historicalChainData
-        // TODO - we need to get the block at or before this slot
         .getBlockBySlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(blockSlot -> peer.requestBlockBySlot(status.getHeadRoot(), blockSlot))
