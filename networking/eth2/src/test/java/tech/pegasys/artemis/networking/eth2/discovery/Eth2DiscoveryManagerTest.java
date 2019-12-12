@@ -41,6 +41,6 @@ class Eth2DiscoveryManagerTest {
     discoveryManager.setEventBus(eventBus);
     eventBus.register(discoveryManager);
     eventBus.post(discoveryRequest);
-    verify(discoveryManager).onDiscoveryRequest(discoveryRequest);
+    verify(discoveryManager).onDiscoveryRequest(new Eth2DiscoveryManager.DiscoveryRequest(2));
   }
 }
