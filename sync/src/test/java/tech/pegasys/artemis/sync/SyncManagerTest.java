@@ -96,7 +96,7 @@ public class SyncManagerTest {
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
             eq(UnsignedLong.ZERO),
-            eq(PEER_HEAD_SLOT),
+            eq(PEER_HEAD_SLOT.plus(UnsignedLong.ONE)),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -132,7 +132,7 @@ public class SyncManagerTest {
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
             eq(UnsignedLong.ZERO),
-            eq(PEER_HEAD_SLOT),
+            eq(PEER_HEAD_SLOT.plus(UnsignedLong.ONE)),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -171,7 +171,7 @@ public class SyncManagerTest {
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
             eq(UnsignedLong.ZERO),
-            eq(PEER_HEAD_SLOT),
+            eq(PEER_HEAD_SLOT.plus(UnsignedLong.ONE)),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
 
