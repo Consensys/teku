@@ -200,6 +200,9 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
           responseStream.completeSuccessfully();
           ctx.channel().disconnect();
         }
+      } catch (final InvalidResponseException e) {
+        LOG.debug("Peer responded with invalid data", e);
+        responseStream.completeWithError(e);
       } catch (final RpcException e) {
         LOG.debug("Request returned an error {}", e.getErrorMessage());
         responseStream.completeWithError(e);

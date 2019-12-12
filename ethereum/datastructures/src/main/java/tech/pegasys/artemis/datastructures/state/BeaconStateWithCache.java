@@ -136,9 +136,9 @@ public final class BeaconStateWithCache extends BeaconState {
 
         // Finality
         state.getJustification_bits().copy(),
-        new Checkpoint(state.getPrevious_justified_checkpoint()),
-        new Checkpoint(state.getCurrent_justified_checkpoint()),
-        new Checkpoint(state.getFinalized_checkpoint()));
+        state.getPrevious_justified_checkpoint(),
+        state.getCurrent_justified_checkpoint(),
+        state.getFinalized_checkpoint());
   }
 
   /**

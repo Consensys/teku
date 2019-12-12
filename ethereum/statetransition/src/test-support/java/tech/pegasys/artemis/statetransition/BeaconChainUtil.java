@@ -15,21 +15,26 @@ package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.Signer;
 import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconChainUtil {
 
@@ -76,9 +81,9 @@ public class BeaconChainUtil {
     return createAndImportBlockAtSlot(UnsignedLong.valueOf(slot));
   }
 
-  public BlockProcessingRecord createAndImportBlockAtSlot(final UnsignedLong slot)
-      throws Exception {
-    final BeaconBlock block = createBlockAtSlot(slot);
+  public BlockProcessingRecord createAndImportBlockAtSlot(
+      final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
+    final BeaconBlock block = createBlockAtSlot(slot, true, attestations);
     final Transaction transaction = storageClient.getStore().startTransaction();
     final BlockProcessingRecord record =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
@@ -87,12 +92,25 @@ public class BeaconChainUtil {
     return record;
   }
 
+  public BlockProcessingRecord createAndImportBlockAtSlot(final UnsignedLong slot)
+      throws Exception {
+    return createAndImportBlockAtSlot(slot, Optional.empty());
+  }
+
   public BeaconBlock createBlockAtSlotFromInvalidProposer(final UnsignedLong slot)
       throws Exception {
     return createBlockAtSlot(slot, false);
   }
 
   private BeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
+      throws Exception {
+    return createBlockAtSlot(slot, withValidProposer, Optional.empty());
+  }
+
+  private BeaconBlock createBlockAtSlot(
+      final UnsignedLong slot,
+      boolean withValidProposer,
+      Optional<SSZList<Attestation>> attestations)
       throws Exception {
     checkState(
         withValidProposer || validatorKeys.size() > 1,
@@ -107,7 +125,37 @@ public class BeaconChainUtil {
         withValidProposer ? correctProposerIndex : getWrongProposerIndex(correctProposerIndex);
 
     final Signer signer = getSigner(proposerIndex);
-    return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot);
+    if (attestations.isPresent()) {
+      return blockCreator.createBlockWithAttestations(
+          signer, slot, preState, bestBlockRoot, attestations.get());
+    } else {
+      return blockCreator.createEmptyBlock(signer, slot, preState, bestBlockRoot);
+    }
+  }
+
+  public void finalizeChainAtEpoch(final UnsignedLong epoch) throws Exception {
+    if (storageClient.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) >= 0) {
+      throw new Exception("Chain already finalized at this or higher epoch");
+    }
+
+    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    createAndImportBlockAtSlot(
+        storageClient.getBestSlot().plus(UnsignedLong.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)));
+
+    while (storageClient.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
+
+      BeaconState headState =
+          storageClient.getStore().getBlockState(storageClient.getBestBlockRoot());
+      BeaconBlock headBlock = storageClient.getStore().getBlock(storageClient.getBestBlockRoot());
+      UnsignedLong slot = storageClient.getBestSlot();
+      SSZList<Attestation> currentSlotAssignments =
+          new SSZList<>(
+              attestationGenerator.getAttestationsForSlot(headState, headBlock, slot),
+              Constants.MAX_ATTESTATIONS,
+              Attestation.class);
+      createAndImportBlockAtSlot(
+          storageClient.getBestSlot().plus(UnsignedLong.ONE), Optional.of(currentSlotAssignments));
+    }
   }
 
   public int getWrongProposerIndex(final int actualProposerIndex) {
