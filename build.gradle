@@ -65,6 +65,7 @@ allprojects {
     jcenter()
     mavenCentral()
     maven { url "https://hyperledger-org.bintray.com/besu-repo/" }
+    mavenLocal()
   }
 
   dependencies {

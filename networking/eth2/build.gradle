@@ -7,6 +7,8 @@ dependencies {
   implementation project(':data:metrics')
   implementation project(':networking:p2p')
 
+  implementation 'tech.pegasys.discovery:discovery:0.1.0-SNAPSHOT'
+
   implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'com.google.protobuf:protobuf-java'
