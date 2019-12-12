@@ -14,22 +14,32 @@
 package tech.pegasys.artemis.storage.utils;
 
 import java.io.IOException;
-import java.io.Serializable;
 import org.apache.tuweni.bytes.Bytes32;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
-import org.mapdb.Serializer;
+import org.mapdb.serializer.GroupSerializerObjectArray;
 
-public class Bytes32Serializer implements Serializer<Bytes32>, Serializable {
+public class Bytes32Serializer extends GroupSerializerObjectArray<Bytes32> {
 
   @Override
   public void serialize(DataOutput2 out, Bytes32 value) throws IOException {
-    out.writeChars(value.toHexString());
+    out.write(value.toArrayUnsafe());
   }
 
   @Override
   public Bytes32 deserialize(DataInput2 in, int available) throws IOException {
-    Bytes32 returnVal = Bytes32.fromHexString(in.readLine());
-    return returnVal;
+    final byte[] data = new byte[Bytes32.SIZE];
+    in.readFully(data);
+    return Bytes32.wrap(data);
+  }
+
+  @Override
+  public boolean isTrusted() {
+    return true;
+  }
+
+  @Override
+  public int fixedSize() {
+    return Bytes32.SIZE;
   }
 }
