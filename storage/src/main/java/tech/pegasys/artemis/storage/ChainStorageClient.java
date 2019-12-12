@@ -37,6 +37,7 @@ public class ChainStorageClient implements ChainStorage {
 
   protected EventBus eventBus;
 
+  private final Bytes4 genesisFork = Fork.VERSION_ZERO;
   private volatile Store store;
   private volatile Bytes32 bestBlockRoot =
       Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
@@ -96,11 +97,20 @@ public class ChainStorageClient implements ChainStorage {
     this.bestSlot = slot;
   }
 
+  public Bytes4 getForkAtHead() {
+    return getForkAtSlot(bestSlot);
+  }
+
   public Bytes4 getForkAtSlot(UnsignedLong slot) {
     return getForkAtEpoch(compute_epoch_at_slot(slot));
   }
 
   public Bytes4 getForkAtEpoch(UnsignedLong epoch) {
+    // TODO - add better fork configuration management
+    if (isPreGenesis()) {
+      // We don't have anywhere to look for fork data, so just return the initial fork
+      return genesisFork;
+    }
     // For now, we don't have any forks, so just use the latest
     Fork latestFork = getBestBlockRootState().getFork();
     return epoch.compareTo(latestFork.getEpoch()) < 0
