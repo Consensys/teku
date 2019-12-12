@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
@@ -34,13 +33,12 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private final RpcMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
-  private volatile Optional<StatusData> remoteStatus = Optional.empty();
-  private final CompletableFuture<StatusData> initialStatus = new CompletableFuture<>();
+  private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
+  private final CompletableFuture<PeerStatus> initialStatus = new CompletableFuture<>();
   private AtomicBoolean chainValidated = new AtomicBoolean(false);
 
   public Eth2Peer(
@@ -53,7 +51,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public void updateStatus(final StatusMessage message) {
-    final StatusData statusData = StatusData.fromStatusMessage(message);
+    final PeerStatus statusData = PeerStatus.fromStatusMessage(message);
     remoteStatus = Optional.of(statusData);
     initialStatus.complete(statusData);
   }
@@ -62,7 +60,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     initialStatus.thenAccept(subscriber::onInitialStatus);
   }
 
-  public StatusData getStatus() {
+  public PeerStatus getStatus() {
     return remoteStatus.orElseThrow();
   }
 
@@ -78,7 +76,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     chainValidated.set(true);
   }
 
-  public CompletableFuture<StatusData> sendStatus() {
+  public CompletableFuture<PeerStatus> sendStatus() {
     return sendRequest(BeaconChainMethods.STATUS, statusMessageFactory.createStatusMessage())
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
@@ -133,68 +131,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return rpcMethods.invoke(method, this.getConnection(), request);
   }
 
-  public static class StatusData {
-    private final Bytes4 headForkVersion;
-    private final Bytes32 finalizedRoot;
-    private final UnsignedLong finalizedEpoch;
-    private final Bytes32 headRoot;
-    private final UnsignedLong headSlot;
-
-    public static StatusData fromStatusMessage(final StatusMessage message) {
-      return new StatusData(
-          message.getHeadForkVersion().copy(),
-          message.getFinalizedRoot().copy(),
-          message.getFinalizedEpoch(),
-          message.getHeadRoot().copy(),
-          message.getHeadSlot());
-    }
-
-    StatusData(
-        final Bytes4 headForkVersion,
-        final Bytes32 finalizedRoot,
-        final UnsignedLong finalizedEpoch,
-        final Bytes32 headRoot,
-        final UnsignedLong headSlot) {
-      this.headForkVersion = headForkVersion;
-      this.finalizedRoot = finalizedRoot;
-      this.finalizedEpoch = finalizedEpoch;
-      this.headRoot = headRoot;
-      this.headSlot = headSlot;
-    }
-
-    public Bytes4 getHeadForkVersion() {
-      return headForkVersion;
-    }
-
-    public Bytes32 getFinalizedRoot() {
-      return finalizedRoot;
-    }
-
-    public UnsignedLong getFinalizedEpoch() {
-      return finalizedEpoch;
-    }
-
-    public Bytes32 getHeadRoot() {
-      return headRoot;
-    }
-
-    public UnsignedLong getHeadSlot() {
-      return headSlot;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("currentFork", headForkVersion)
-          .add("finalizedRoot", finalizedRoot)
-          .add("finalizedEpoch", finalizedEpoch)
-          .add("headRoot", headRoot)
-          .add("headSlot", headSlot)
-          .toString();
-    }
-  }
-
   public interface InitialStatusSubscriber {
-    void onInitialStatus(final StatusData initialStatus);
+    void onInitialStatus(final PeerStatus initialStatus);
   }
 }

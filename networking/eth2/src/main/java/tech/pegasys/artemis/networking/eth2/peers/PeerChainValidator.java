@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -38,13 +37,13 @@ public class PeerChainValidator {
   private final HistoricalChainData historicalChainData;
   private final Eth2Peer peer;
   private final AtomicBoolean hasRun = new AtomicBoolean(false);
-  private final StatusData status;
+  private final PeerStatus status;
 
   private PeerChainValidator(
       final ChainStorageClient storageClient,
       final HistoricalChainData historicalChainData,
       final Eth2Peer peer,
-      final StatusData status) {
+      final PeerStatus status) {
     this.storageClient = storageClient;
     this.historicalChainData = historicalChainData;
     this.peer = peer;
@@ -55,7 +54,7 @@ public class PeerChainValidator {
       final ChainStorageClient storageClient,
       final HistoricalChainData historicalChainData,
       final Eth2Peer peer,
-      final StatusData status) {
+      final PeerStatus status) {
     return new PeerChainValidator(storageClient, historicalChainData, peer, status);
   }
 
@@ -96,9 +95,14 @@ public class PeerChainValidator {
       return CompletableFuture.completedFuture(false);
     }
 
-    // If we haven't reached genesis, accept our peer at this point
+    // Shortcut finalized block checks if our node or our peer has not reached genesis
     if (storageClient.isPreGenesis()) {
+      // If we haven't reached genesis, accept our peer at this point
       LOG.trace("Validating peer pre-genesis, skip finalized block checks for peer {}", peer);
+      return CompletableFuture.completedFuture(true);
+    } else if (PeerStatus.isPreGenesisStatus(status, expectedFork)) {
+      // Our peer hasn't reached genesis, accept them for now
+      LOG.trace("Peer has not reached genesis, skip finalized block checks for peer {}", peer);
       return CompletableFuture.completedFuture(true);
     }
 

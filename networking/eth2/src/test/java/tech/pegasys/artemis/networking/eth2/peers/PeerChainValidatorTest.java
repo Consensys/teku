@@ -31,7 +31,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
@@ -77,9 +76,8 @@ public class PeerChainValidatorTest {
   private final Checkpoint laterCheckpoint =
       new Checkpoint(laterEpoch, laterBlock.signing_root("signature"));
 
-  private final StatusData remoteStatus = createStatusData();
-
-  private final PeerChainValidator peerChainValidator =
+  private PeerStatus remoteStatus = createStatusData();
+  private PeerChainValidator peerChainValidator =
       PeerChainValidator.create(storageClient, historicalChainData, peer, remoteStatus);
 
   @BeforeEach
@@ -156,6 +154,24 @@ public class PeerChainValidatorTest {
     // Store is null pre-genesis
     when(storageClient.isPreGenesis()).thenReturn(true);
     when(storageClient.getStore()).thenReturn(null);
+
+    peerChainValidator.run();
+    assertPeerChainVerified();
+    // Verify remaining checks were skipped
+    verify(peer, never()).requestBlockBySlot(any(), any());
+    verify(historicalChainData, never()).getBlockBySlot(any());
+    verify(store, never()).getFinalizedCheckpoint();
+  }
+
+  @Test
+  public void chainsAreCompatible_sameFork_peerIsPreGenesis() {
+    // Setup peer to report a pre-genesis status
+    remoteStatus = PeerStatus.createPreGenesisStatus(remoteFork);
+    peerChainValidator =
+        PeerChainValidator.create(storageClient, historicalChainData, peer, remoteStatus);
+
+    // Setup mocks
+    forksMatch();
 
     peerChainValidator.run();
     assertPeerChainVerified();
@@ -257,11 +273,11 @@ public class PeerChainValidatorTest {
     return DataStructureUtil.randomBeaconBlock(slot.longValue(), slot.intValue());
   }
 
-  private Checkpoint getFinalizedCheckpoint(final StatusData status) {
+  private Checkpoint getFinalizedCheckpoint(final PeerStatus status) {
     return new Checkpoint(status.getFinalizedEpoch(), status.getFinalizedRoot());
   }
 
-  private StatusData createStatusData() {
+  private PeerStatus createStatusData() {
 
     final Bytes32 headRoot = Bytes32.fromHexString("0xeeee");
     // Set a head slot some distance beyond the finalized epoch
@@ -271,7 +287,7 @@ public class PeerChainValidatorTest {
             .times(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
             .plus(UnsignedLong.valueOf(10L));
 
-    return new StatusData(
+    return new PeerStatus(
         remoteFork,
         remoteFinalizedCheckpoint.getRoot(),
         remoteFinalizedCheckpoint.getEpoch(),

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
+import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -60,13 +60,7 @@ public class PeerStatusIntegrationTest {
         });
 
     final Eth2Peer network2ViewOfPeer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
-    assertStatus(
-        network2ViewOfPeer1.getStatus(),
-        Fork.VERSION_ZERO,
-        Bytes32.ZERO,
-        UnsignedLong.ZERO,
-        Bytes32.ZERO,
-        UnsignedLong.ZERO);
+    assertPreGenesisStatus(network2ViewOfPeer1.getStatus());
 
     final Eth2Peer network1ViewOfPeer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
     assertStatusMatchesStorage(storageClient2, network1ViewOfPeer2.getStatus());
@@ -96,24 +90,34 @@ public class PeerStatusIntegrationTest {
 
     final Eth2Peer network2ViewOfPeer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
 
-    assertStatus(
-        network2ViewOfPeer1.getStatus(),
-        Fork.VERSION_ZERO,
-        Bytes32.ZERO,
-        UnsignedLong.ZERO,
-        Bytes32.ZERO,
-        UnsignedLong.ZERO);
+    assertPreGenesisStatus(network2ViewOfPeer1.getStatus());
 
     // Peer 1 goes through genesis event.
     StartupUtil.setupInitialState(storageClient1, 0, null, 0);
 
-    final StatusData updatedStatusData = Waiter.waitFor(network2ViewOfPeer1.sendStatus());
+    final PeerStatus updatedStatusData = Waiter.waitFor(network2ViewOfPeer1.sendStatus());
     assertStatusMatchesStorage(storageClient1, updatedStatusData);
     assertStatusMatchesStorage(storageClient1, network2ViewOfPeer1.getStatus());
   }
 
+  private void assertPreGenesisStatus(final PeerStatus status) {
+    assertThat(PeerStatus.isPreGenesisStatus(status, Fork.VERSION_ZERO)).isTrue();
+  }
+
+  private void assertStatusMatchesStorage(
+      final ChainStorageClient storageClient, final PeerStatus status) {
+    final Store network2Store = storageClient.getStore();
+    assertStatus(
+        status,
+        storageClient.getBestBlockRootState().getFork().getCurrent_version(),
+        network2Store.getFinalizedCheckpoint().getRoot(),
+        network2Store.getFinalizedCheckpoint().getEpoch(),
+        storageClient.getBestBlockRoot(),
+        storageClient.getBestSlot());
+  }
+
   private void assertStatus(
-      final StatusData status,
+      final PeerStatus status,
       final Bytes4 versionZero,
       final Bytes32 zero,
       final UnsignedLong zero2,
@@ -124,17 +128,5 @@ public class PeerStatusIntegrationTest {
     assertThat(status.getFinalizedEpoch()).isEqualTo(zero2);
     assertThat(status.getHeadRoot()).isEqualTo(zero3);
     assertThat(status.getHeadSlot()).isEqualTo(zero4);
-  }
-
-  private void assertStatusMatchesStorage(
-      final ChainStorageClient storageClient, final StatusData status) {
-    final Store network2Store = storageClient.getStore();
-    assertStatus(
-        status,
-        storageClient.getBestBlockRootState().getFork().getCurrent_version(),
-        network2Store.getFinalizedCheckpoint().getRoot(),
-        network2Store.getFinalizedCheckpoint().getEpoch(),
-        storageClient.getBestBlockRoot(),
-        storageClient.getBestSlot());
   }
 }
