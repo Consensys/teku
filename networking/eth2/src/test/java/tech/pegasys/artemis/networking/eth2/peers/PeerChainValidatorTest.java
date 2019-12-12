@@ -224,7 +224,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
+    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+        .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
@@ -236,7 +237,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
+    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+        .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
@@ -248,7 +250,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot)).thenReturn(optionalBlockFuture);
+    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+        .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
   }
@@ -258,7 +261,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(remoteFinalizedBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot)).thenReturn(blockResult);
+    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
+        .thenReturn(blockResult);
   }
 
   private void remoteChainIsBehindOnDifferentChain() {
@@ -266,7 +270,8 @@ public class PeerChainValidatorTest {
         CompletableFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot)).thenReturn(blockResult);
+    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
+        .thenReturn(blockResult);
   }
 
   private BeaconBlock randomBlock(UnsignedLong slot) {
