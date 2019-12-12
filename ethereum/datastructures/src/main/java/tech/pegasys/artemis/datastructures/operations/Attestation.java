@@ -49,7 +49,7 @@ public class Attestation
 
   public Attestation(Attestation attestation) {
     this.aggregation_bits = attestation.getAggregation_bits().copy();
-    this.data = new AttestationData(attestation.getData());
+    this.data = attestation.getData();
     this.signature = BLSSignature.fromBytes(attestation.getAggregate_signature().toBytes());
   }
 

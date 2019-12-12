@@ -154,9 +154,9 @@ public class Database {
   public Store createMemoryStore() {
     UnsignedLong time_memory = time.get();
     UnsignedLong genesis_time_memory = genesisTime.get();
-    Checkpoint justified_checkpoint_memory = new Checkpoint(justifiedCheckpoint.get());
-    Checkpoint finalized_checkpoint_memory = new Checkpoint(finalizedCheckpoint.get());
-    Checkpoint best_justified_checkpoint_memory = new Checkpoint(bestJustifiedCheckpoint.get());
+    Checkpoint justified_checkpoint_memory = justifiedCheckpoint.get();
+    Checkpoint finalized_checkpoint_memory = finalizedCheckpoint.get();
+    Checkpoint best_justified_checkpoint_memory = bestJustifiedCheckpoint.get();
     Map<UnsignedLong, Checkpoint> latest_messages_memory = latest_messages;
     Map<Bytes32, BeaconBlock> blocks_memory = new HashMap<>();
     Map<Bytes32, BeaconState> block_states_memory = new HashMap<>();
