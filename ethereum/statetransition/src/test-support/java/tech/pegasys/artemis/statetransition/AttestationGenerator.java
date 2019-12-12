@@ -179,18 +179,20 @@ public class AttestationGenerator {
       }
 
       CommitteeAssignment assignment = maybeAssignment.get();
-      if (assignment.getSlot().equals(slot)) {
-        List<Integer> committeeIndices = assignment.getCommittee();
-        UnsignedLong committeeIndex = assignment.getCommitteeIndex();
-        Committee committee = new Committee(committeeIndex, committeeIndices);
-        int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
-        AttestationData genericAttestationData =
-            AttestationUtil.getGenericAttestationData(state, block);
-        final BLSKeyPair validatorKeyPair = validatorKeys.get(validatorIndex);
-        attestations.add(
-            createAttestation(
-                state, validatorKeyPair, indexIntoCommittee, committee, genericAttestationData));
+      if (!assignment.getSlot().equals(slot)) {
+        continue;
       }
+
+      List<Integer> committeeIndices = assignment.getCommittee();
+      UnsignedLong committeeIndex = assignment.getCommitteeIndex();
+      Committee committee = new Committee(committeeIndex, committeeIndices);
+      int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
+      AttestationData genericAttestationData =
+          AttestationUtil.getGenericAttestationData(state, block);
+      final BLSKeyPair validatorKeyPair = validatorKeys.get(validatorIndex);
+      attestations.add(
+          createAttestation(
+              state, validatorKeyPair, indexIntoCommittee, committee, genericAttestationData));
     }
 
     return attestations;

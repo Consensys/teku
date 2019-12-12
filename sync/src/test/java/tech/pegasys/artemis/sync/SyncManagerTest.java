@@ -40,6 +40,7 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
 import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
+import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
