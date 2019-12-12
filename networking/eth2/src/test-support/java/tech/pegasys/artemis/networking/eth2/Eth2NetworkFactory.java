@@ -36,6 +36,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.Waiter;
 
 public class Eth2NetworkFactory {
@@ -100,8 +101,9 @@ public class Eth2NetworkFactory {
     protected Eth2Network buildNetwork(final NetworkConfig config) {
       {
         // Setup eth2 handlers
+        final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
         final Eth2PeerManager eth2PeerManager =
-            new Eth2PeerManager(chainStorageClient, METRICS_SYSTEM);
+            new Eth2PeerManager(chainStorageClient, historicalChainData, METRICS_SYSTEM);
         final Collection<? extends Protocol<?>> eth2Protocols =
             eth2PeerManager.getRpcMethods().all();
         // Configure eth2 handlers

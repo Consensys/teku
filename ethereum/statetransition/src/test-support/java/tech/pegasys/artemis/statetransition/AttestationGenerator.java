@@ -29,7 +29,6 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -58,11 +57,7 @@ public class AttestationGenerator {
 
   public static AttestationData diffSlotAttestationData(UnsignedLong slot, AttestationData data) {
     return new AttestationData(
-        slot,
-        data.getIndex(),
-        data.getBeacon_block_root(),
-        new Checkpoint(data.getSource()),
-        new Checkpoint(data.getTarget()));
+        slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
   }
 
   public static Attestation aggregateAttestation(int numAttesters) {
@@ -137,16 +132,9 @@ public class AttestationGenerator {
       final Optional<CommitteeAssignment> maybeAssignment =
           CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex);
       if (maybeAssignment.isPresent()) {
-        slot = Optional.of(maybeAssignment.get().getSlot());
-        committeeAssignment =
-            Optional.of(
-                new CommitteeAssignment(
-                    maybeAssignment
-                        .get()
-                        .getCommittee(), // List of validator indices in this committee
-                    maybeAssignment.get().getCommitteeIndex(), // Assigned shard
-                    UnsignedLong.valueOf(validatorIndex) // The index of the current validator
-                    ));
+        CommitteeAssignment assignment = maybeAssignment.get();
+        slot = Optional.of(assignment.getSlot());
+        committeeAssignment = Optional.of(assignment);
         break;
       }
     }
@@ -167,6 +155,42 @@ public class AttestationGenerator {
         withValidSignature ? validatorKeys.get(validatorIndex) : randomKeyPair;
     return createAttestation(
         state, validatorKeyPair, indexIntoCommittee, committee, genericAttestationData);
+  }
+
+  public List<Attestation> getAttestationsForSlot(
+      final BeaconState state, final BeaconBlock block, final UnsignedLong slot) {
+
+    final UnsignedLong epoch = compute_epoch_at_slot(slot);
+    List<Attestation> attestations = new ArrayList<>();
+
+    int validatorIndex;
+    for (validatorIndex = 0; validatorIndex < validatorKeys.size(); validatorIndex++) {
+
+      final Optional<CommitteeAssignment> maybeAssignment =
+          CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex);
+
+      if (maybeAssignment.isEmpty()) {
+        continue;
+      }
+
+      CommitteeAssignment assignment = maybeAssignment.get();
+      if (!assignment.getSlot().equals(slot)) {
+        continue;
+      }
+
+      List<Integer> committeeIndices = assignment.getCommittee();
+      UnsignedLong committeeIndex = assignment.getCommitteeIndex();
+      Committee committee = new Committee(committeeIndex, committeeIndices);
+      int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
+      AttestationData genericAttestationData =
+          AttestationUtil.getGenericAttestationData(state, block);
+      final BLSKeyPair validatorKeyPair = validatorKeys.get(validatorIndex);
+      attestations.add(
+          createAttestation(
+              state, validatorKeyPair, indexIntoCommittee, committee, genericAttestationData));
+    }
+
+    return attestations;
   }
 
   private BeaconStateWithCache processStateToSlot(BeaconState preState, UnsignedLong slot)

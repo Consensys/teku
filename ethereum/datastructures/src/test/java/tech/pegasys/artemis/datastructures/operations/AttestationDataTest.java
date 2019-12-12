@@ -65,8 +65,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenSourceEpochsAreDifferent() {
-    Checkpoint newSource = new Checkpoint(source);
-    newSource.setEpoch(randomUnsignedLong(seed++));
+    Checkpoint newSource = new Checkpoint(randomUnsignedLong(seed++), source.getRoot());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, newSource, target);
 
@@ -75,8 +74,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenSourceRootsAreDifferent() {
-    Checkpoint newSource = new Checkpoint(source);
-    newSource.setRoot(Bytes32.random());
+    Checkpoint newSource = new Checkpoint(source.getEpoch(), Bytes32.random());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, newSource, target);
 
@@ -85,8 +83,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenTargetEpochsAreDifferent() {
-    Checkpoint newTarget = new Checkpoint(target);
-    newTarget.setEpoch(randomUnsignedLong(seed++));
+    Checkpoint newTarget = new Checkpoint(randomUnsignedLong(seed++), target.getRoot());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, source, newTarget);
 
@@ -95,8 +92,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenTargetRootsAreDifferent() {
-    Checkpoint newTarget = new Checkpoint(target);
-    newTarget.setRoot(Bytes32.random());
+    Checkpoint newTarget = new Checkpoint(target.getEpoch(), Bytes32.random());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, source, newTarget);
 

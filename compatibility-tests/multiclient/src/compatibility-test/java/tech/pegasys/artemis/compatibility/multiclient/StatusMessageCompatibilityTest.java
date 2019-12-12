@@ -28,7 +28,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
+import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 
 @Testcontainers
 class StatusMessageCompatibilityTest {
@@ -53,7 +53,7 @@ class StatusMessageCompatibilityTest {
     waitFor(artemis.connect(PRYSM_NODE.getMultiAddr()));
     waitFor(() -> assertThat(artemis.getPeerCount()).isEqualTo(1));
     final Eth2Peer prysm = artemis.getPeer(PRYSM_NODE.getId()).orElseThrow();
-    final StatusData status = prysm.getStatus();
+    final PeerStatus status = prysm.getStatus();
     assertThat(status).isNotNull();
     assertThat(status.getHeadForkVersion()).isEqualTo(Fork.VERSION_ZERO);
 

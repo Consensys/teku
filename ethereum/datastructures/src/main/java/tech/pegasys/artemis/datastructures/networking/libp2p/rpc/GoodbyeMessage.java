@@ -33,6 +33,9 @@ public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializabl
   public static final UnsignedLong REASON_FAULT_ERROR = UnsignedLong.valueOf(3);
   public static final UnsignedLong MIN_CUSTOM_REASON_CODE = UnsignedLong.valueOf(128);
 
+  // Custom reasons
+  public static final UnsignedLong REASON_UNABLE_TO_VERIFY_NETWORK = UnsignedLong.valueOf(128);
+
   public GoodbyeMessage(UnsignedLong reason) {
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)

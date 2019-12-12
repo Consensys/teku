@@ -15,33 +15,38 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public class ChainStorageServer {
-  private final Database database;
+public class HistoricalChainData {
+  private final ConcurrentMap<UnsignedLong, CompletableFuture<Optional<BeaconBlock>>>
+      blockBySlotRequests = new ConcurrentHashMap<>();
   private final EventBus eventBus;
 
-  public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
+  public HistoricalChainData(final EventBus eventBus) {
     this.eventBus = eventBus;
     eventBus.register(this);
-    this.database = Database.createForFile("artemis.db", eventBus, config.startFromDisk());
+  }
+
+  public CompletableFuture<Optional<BeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+    final CompletableFuture<Optional<BeaconBlock>> future =
+        blockBySlotRequests.computeIfAbsent(slot, key -> new CompletableFuture<>());
+    eventBus.post(new GetFinalizedBlockAtSlotRequest(slot));
+    return future;
   }
 
   @Subscribe
-  public void onStoreDiskUpdate(StoreDiskUpdateEvent storeDiskUpdateEvent) {
-    Store.Transaction transaction = storeDiskUpdateEvent.getTransaction();
-    database.insert(transaction);
-  }
-
-  @Subscribe
-  public void onGetBlockBySlotRequest(final GetFinalizedBlockAtSlotRequest request) {
-    final Optional<BeaconBlock> block =
-        database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getBlock);
-    eventBus.post(new GetFinalizedBlockAtSlotResponse(request.getSlot(), block));
+  public void onResponse(final GetFinalizedBlockAtSlotResponse response) {
+    final CompletableFuture<Optional<BeaconBlock>> future =
+        blockBySlotRequests.remove(response.getSlot());
+    if (future != null) {
+      future.complete(response.getBlock());
+    }
   }
 }

@@ -20,34 +20,31 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.LongStream;
 import org.apache.logging.log4j.Level;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.mapdb.Atomic;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.DataInput2;
-import org.mapdb.DataOutput2;
-import org.mapdb.Serializer;
+import org.mapdb.DBMaker.Maker;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
+import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class Database {
 
@@ -58,66 +55,71 @@ public class Database {
   private DB db;
 
   // Store object
-  private Atomic.Var<UnsignedLong> time;
-  private Atomic.Var<UnsignedLong> genesisTime;
-  private Atomic.Var<Checkpoint> justifiedCheckpoint;
-  private Atomic.Var<Checkpoint> finalizedCheckpoint;
-  private Atomic.Var<Checkpoint> bestJustifiedCheckpoint;
-  private ConcurrentMap<Bytes32, BeaconBlock> blocks;
-  private ConcurrentMap<Bytes32, BeaconState> block_states;
-  private ConcurrentMap<Checkpoint, BeaconState> checkpoint_states;
-  private ConcurrentMap<UnsignedLong, Checkpoint> latest_messages;
+  private final Atomic.Var<UnsignedLong> time;
+  private final Atomic.Var<UnsignedLong> genesisTime;
+  private final Atomic.Var<Checkpoint> justifiedCheckpoint;
+  private final Atomic.Var<Checkpoint> finalizedCheckpoint;
+  private final Atomic.Var<Checkpoint> bestJustifiedCheckpoint;
+  private final ConcurrentMap<Bytes32, BeaconBlock> blocks;
+  private final ConcurrentMap<Bytes32, BeaconState> block_states;
+  private final ConcurrentMap<Checkpoint, BeaconState> checkpoint_states;
+  private final ConcurrentMap<UnsignedLong, Checkpoint> latest_messages;
 
   // Slot -> Map references
-  private ConcurrentMap<UnsignedLong, Bytes32> block_root_references;
-  private ConcurrentMap<UnsignedLong, Checkpoint> checkpoint_references;
-  private Atomic.Var<UnsignedLong> latest_slot;
+  private final ConcurrentNavigableMap<UnsignedLong, Bytes32> block_root_references;
+  private final ConcurrentMap<UnsignedLong, Checkpoint> checkpoint_references;
+  private final Atomic.Var<UnsignedLong> latest_slot;
 
-  @SuppressWarnings("CheckReturnValue")
-  Database(String dbFileName, EventBus eventBus, boolean startFromDisk) {
+  static Database createForFile(
+      final String dbFileName, final EventBus eventBus, final boolean startFromDisk) {
     try {
       if (!startFromDisk) Files.deleteIfExists(Paths.get(dbFileName));
     } catch (IOException e) {
       STDOUT.log(Level.WARN, "Failed to clear old database");
     }
+    return new Database(DBMaker.fileDB(dbFileName), eventBus, startFromDisk);
+  }
 
-    db = DBMaker.fileDB(dbFileName).transactionEnable().make();
+  static Database createInMemory(final EventBus eventBus) {
+    return new Database(DBMaker.memoryDB(), eventBus, false);
+  }
+
+  @SuppressWarnings("CheckReturnValue")
+  private Database(Maker dbMaker, EventBus eventBus, boolean startFromDisk) {
+    db = dbMaker.transactionEnable().make();
 
     // Store initialization
     time = db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
     genesisTime = db.atomicVar("genesis_time", new UnsignedLongSerializer()).createOrOpen();
     justifiedCheckpoint =
-        db.atomicVar("justified_checkpoint", new MapDBSerializer<Checkpoint>(Checkpoint.class))
+        db.atomicVar("justified_checkpoint", new MapDBSerializer<>(Checkpoint.class))
             .createOrOpen();
     finalizedCheckpoint =
-        db.atomicVar("finalized_checkpoint", new MapDBSerializer<Checkpoint>(Checkpoint.class))
+        db.atomicVar("finalized_checkpoint", new MapDBSerializer<>(Checkpoint.class))
             .createOrOpen();
     bestJustifiedCheckpoint =
-        db.atomicVar("best_justified_checkpoint", new MapDBSerializer<Checkpoint>(Checkpoint.class))
+        db.atomicVar("best_justified_checkpoint", new MapDBSerializer<>(Checkpoint.class))
             .createOrOpen();
     blocks =
-        db.hashMap(
-                "blocks_map",
-                new Bytes32Serializer(),
-                new MapDBSerializer<BeaconBlock>(BeaconBlock.class))
+        db.hashMap("blocks_map", new Bytes32Serializer(), new MapDBSerializer<>(BeaconBlock.class))
             .createOrOpen();
     block_states =
         db.hashMap(
                 "block_states_map",
                 new Bytes32Serializer(),
-                new MapDBSerializer<BeaconState>(BeaconState.class))
+                new MapDBSerializer<>(BeaconState.class))
             .createOrOpen();
     checkpoint_states =
         db.hashMap(
                 "checkpoint_states_map",
-                new MapDBSerializer<Checkpoint>(Checkpoint.class),
-                new MapDBSerializer<BeaconState>(BeaconState.class))
+                new MapDBSerializer<>(Checkpoint.class),
+                new MapDBSerializer<>(BeaconState.class))
             .createOrOpen();
     latest_messages =
         db.hashMap(
                 "latest_messages_map",
                 new UnsignedLongSerializer(),
-                new MapDBSerializer<Checkpoint>(Checkpoint.class))
+                new MapDBSerializer<>(Checkpoint.class))
             .createOrOpen();
 
     // Optimization variables (used to not load the entire database content in memory when Artemis
@@ -129,14 +131,14 @@ public class Database {
       latest_slot.set(UnsignedLong.ZERO);
     }
     block_root_references =
-        db.hashMap(
+        db.treeMap(
                 "block_root_references_map", new UnsignedLongSerializer(), new Bytes32Serializer())
             .createOrOpen();
     checkpoint_references =
         db.hashMap(
                 "checkpoint_references_map",
                 new UnsignedLongSerializer(),
-                new MapDBSerializer<Checkpoint>(Checkpoint.class))
+                new MapDBSerializer<>(Checkpoint.class))
             .createOrOpen();
 
     if (startFromDisk) {
@@ -148,9 +150,9 @@ public class Database {
   public Store createMemoryStore() {
     UnsignedLong time_memory = time.get();
     UnsignedLong genesis_time_memory = genesisTime.get();
-    Checkpoint justified_checkpoint_memory = new Checkpoint(justifiedCheckpoint.get());
-    Checkpoint finalized_checkpoint_memory = new Checkpoint(finalizedCheckpoint.get());
-    Checkpoint best_justified_checkpoint_memory = new Checkpoint(bestJustifiedCheckpoint.get());
+    Checkpoint justified_checkpoint_memory = justifiedCheckpoint.get();
+    Checkpoint finalized_checkpoint_memory = finalizedCheckpoint.get();
+    Checkpoint best_justified_checkpoint_memory = bestJustifiedCheckpoint.get();
     Map<UnsignedLong, Checkpoint> latest_messages_memory = latest_messages;
     Map<Bytes32, BeaconBlock> blocks_memory = new HashMap<>();
     Map<Bytes32, BeaconState> block_states_memory = new HashMap<>();
@@ -284,28 +286,23 @@ public class Database {
     return blockContained ? Optional.of(latest_messages.get(validatorIndex)) : Optional.empty();
   }
 
-  public void close() {
-    db.close();
+  public Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot) {
+    final Checkpoint finalizedCheckpoint = this.finalizedCheckpoint.get();
+    if (finalizedCheckpoint == null || slotIsNotFinalized(slot, finalizedCheckpoint)) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(block_root_references.headMap(slot, true).lastEntry())
+        .map(Entry::getValue);
   }
 
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private static class MapDBSerializer<T> implements Serializer<T>, Serializable {
+  private boolean slotIsNotFinalized(
+      final UnsignedLong slot, final Checkpoint finalizedCheckpoint) {
+    final UnsignedLong firstSlotAfterFinalizedEpoch =
+        compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch().plus(UnsignedLong.ONE));
+    return firstSlotAfterFinalizedEpoch.compareTo(slot) <= 0;
+  }
 
-    private Class classInfo;
-
-    public MapDBSerializer(Class classInformation) {
-      this.classInfo = classInformation;
-    }
-
-    @Override
-    public void serialize(DataOutput2 out, Object object) throws IOException {
-      out.writeChars(
-          SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) object).toHexString());
-    }
-
-    @Override
-    public T deserialize(DataInput2 in, int available) throws IOException {
-      return (T) SimpleOffsetSerializer.deserialize(Bytes.fromHexString(in.readLine()), classInfo);
-    }
+  public void close() {
+    db.close();
   }
 }
