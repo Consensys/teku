@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.test.acceptance;
 
+import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
 import tech.pegasys.artemis.test.acceptance.dsl.BesuNode;
-
-import java.io.File;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 

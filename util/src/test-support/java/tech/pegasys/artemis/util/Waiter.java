@@ -44,7 +44,6 @@ public class Waiter {
     waitFor(assertion, DEFAULT_TIMEOUT_SECONDS);
   }
 
-
   private static Duration nextPollInterval(final Duration duration) {
     final Duration nextInterval = duration.multipliedBy(2);
     return nextInterval.compareTo(MAX_POLL_INTERVAL) <= 0 ? nextInterval : MAX_POLL_INTERVAL;

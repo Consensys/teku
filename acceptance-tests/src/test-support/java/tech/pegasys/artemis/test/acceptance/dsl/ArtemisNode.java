@@ -16,6 +16,7 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 import static org.apache.tuweni.toml.Toml.tomlEscape;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -26,8 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import com.google.common.primitives.UnsignedLong;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +61,8 @@ public class ArtemisNode extends Node {
     container
         .withExposedPorts(REST_API_PORT)
         .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
-        .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/beacon/finalized_checkpoint"))
+        .waitingFor(
+            new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/beacon/finalized_checkpoint"))
         .withCommand("--config", CONFIG_FILE_PATH);
   }
 
@@ -91,7 +91,10 @@ public class ArtemisNode extends Node {
   public void waitForNewFinalization() throws IOException {
     UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
     waitFor(
-            () -> assertThat(getCurrentFinalizedCheckpoint().getEpoch()).isNotEqualTo(startingFinalizedEpoch), 2000);
+        () ->
+            assertThat(getCurrentFinalizedCheckpoint().getEpoch())
+                .isNotEqualTo(startingFinalizedEpoch),
+        2000);
   }
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
@@ -104,8 +107,9 @@ public class ArtemisNode extends Node {
 
   private FinalizedCheckpoint getCurrentFinalizedCheckpoint() throws IOException {
     final FinalizedCheckpoint finalizedCheckpoint =
-            JsonProvider.jsonToObject(
-                    httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"), FinalizedCheckpoint.class);
+        JsonProvider.jsonToObject(
+            httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"),
+            FinalizedCheckpoint.class);
     LOG.debug("Retrieved finalized checkpoint: {}", finalizedCheckpoint);
     return finalizedCheckpoint;
   }
@@ -115,7 +119,8 @@ public class ArtemisNode extends Node {
   }
 
   public void copyDatabaseFileToContainer(File databaseFile) {
-    container.withCopyFileToContainer(MountableFile.forHostPath(databaseFile.getAbsolutePath()), "/artemis.db");
+    container.withCopyFileToContainer(
+        MountableFile.forHostPath(databaseFile.getAbsolutePath()), "/artemis.db");
   }
 
   private URI getRestApiUrl() {

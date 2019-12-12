@@ -13,13 +13,12 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import java.util.HashMap;
+import java.util.Map;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class FinalizedCheckpointHandler implements BeaconRestApiHandler {
 

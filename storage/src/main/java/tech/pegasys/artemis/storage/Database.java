@@ -168,7 +168,8 @@ public class Database {
         .forEach(
             currentSlot -> {
               Bytes32 root = block_root_references.get(UnsignedLong.valueOf(currentSlot));
-              UnsignedLong checkpointSlot = compute_start_slot_at_epoch(
+              UnsignedLong checkpointSlot =
+                  compute_start_slot_at_epoch(
                       compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot)));
 
               if (checkpoint_references.containsKey(checkpointSlot)) {
@@ -178,7 +179,6 @@ public class Database {
 
               blocks_memory.put(root, blocks.get(root));
               block_states_memory.put(root, block_states.get(root));
-
             });
 
     return new Store(

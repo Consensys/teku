@@ -40,8 +40,7 @@ public class FinalizedCheckpoint {
       return false;
     }
     final FinalizedCheckpoint that = (FinalizedCheckpoint) o;
-    return Objects.equals(epoch, that.epoch)
-            && Objects.equals(root, that.root);
+    return Objects.equals(epoch, that.epoch) && Objects.equals(root, that.root);
   }
 
   @Override
@@ -51,10 +50,7 @@ public class FinalizedCheckpoint {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-            .add("epoch", epoch)
-            .add("root", root)
-            .toString();
+    return MoreObjects.toStringHelper(this).add("epoch", epoch).add("root", root).toString();
   }
 
   public UnsignedLong getEpoch() {

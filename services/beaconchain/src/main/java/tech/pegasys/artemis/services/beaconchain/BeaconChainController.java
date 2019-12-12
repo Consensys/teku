@@ -25,7 +25,6 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,8 +36,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -325,9 +322,6 @@ public class BeaconChainController {
   public void setNodeSlotAccordingToDBStore(Store store) {
     Bytes32 headBlockRoot = get_head(store);
     chainStorageClient.initializeFromStore(store, headBlockRoot);
-    STDOUT.log(
-        Level.INFO,
-        "Node being started from database.",
-        ALogger.Color.GREEN);
+    STDOUT.log(Level.INFO, "Node being started from database.", ALogger.Color.GREEN);
   }
 }
