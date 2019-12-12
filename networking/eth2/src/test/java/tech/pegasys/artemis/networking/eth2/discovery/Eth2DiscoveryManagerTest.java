@@ -1,15 +1,11 @@
 package tech.pegasys.artemis.networking.eth2.discovery;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManager.DiscoveryRequest;
 import tech.pegasys.artemis.networking.eth2.discovery.ProtocolManager.State;
