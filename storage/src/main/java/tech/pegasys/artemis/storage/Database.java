@@ -157,6 +157,8 @@ public class Database {
     Map<Checkpoint, BeaconState> checkpoint_states_memory = new HashMap<>();
 
     UnsignedLong slot = latest_slot.get();
+    System.out.println(finalized_checkpoint_memory);
+    System.out.println(finalized_checkpoint_memory.getEpoch());
 
     LongStream.range(
             compute_start_slot_at_epoch(finalized_checkpoint_memory.getEpoch()).longValue(),
@@ -164,14 +166,17 @@ public class Database {
         .forEach(
             currentSlot -> {
               Bytes32 root = block_root_references.get(UnsignedLong.valueOf(currentSlot));
-              Checkpoint checkpoint =
-                  checkpoint_references.get(
-                      compute_start_slot_at_epoch(
-                          compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot))));
+              UnsignedLong checkpointSlot = compute_start_slot_at_epoch(
+                      compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot)));
+
+              if (checkpoint_references.containsKey(checkpointSlot)) {
+                Checkpoint checkpoint = checkpoint_references.get(checkpointSlot);
+                checkpoint_states_memory.put(checkpoint, checkpoint_states.get(checkpoint));
+              }
 
               blocks_memory.put(root, blocks.get(root));
               block_states_memory.put(root, block_states.get(root));
-              checkpoint_states_memory.put(checkpoint, checkpoint_states.get(checkpoint));
+
             });
 
     return new Store(

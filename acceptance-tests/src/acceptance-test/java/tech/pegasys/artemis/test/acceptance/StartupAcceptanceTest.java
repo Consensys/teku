@@ -34,9 +34,10 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
   public void shouldProgressChainAfterStartingFromDisk() throws Exception {
     final ArtemisNode node1 = createArtemisNode();
     node1.start();
-    node1.waitForNewBlock();
+    node1.waitForNewFinalization();
     File tempDatabaseFile = File.createTempFile("artemis", ".db");
     node1.getDatabaseFileFromContainer(tempDatabaseFile);
+    node1.stop();
 
     final ArtemisNode node2 = createArtemisNode(ArtemisNode.Config::startFromDisk);
     node2.copyDatabaseFileToContainer(tempDatabaseFile);
