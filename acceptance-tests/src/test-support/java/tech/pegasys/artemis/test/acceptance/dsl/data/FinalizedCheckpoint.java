@@ -15,7 +15,6 @@ package tech.pegasys.artemis.test.acceptance.dsl.data;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
-import com.google.gson.annotations.SerializedName;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
