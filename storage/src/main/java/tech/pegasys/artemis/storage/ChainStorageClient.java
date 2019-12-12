@@ -215,4 +215,8 @@ public class ChainStorageClient implements ChainStorage {
 
     return Optional.of(BeaconStateUtil.get_block_root_at_slot(bestState, slot));
   }
+
+  public UnsignedLong getFinalizedEpoch() {
+    return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
+  }
 }
