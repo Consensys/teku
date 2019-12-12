@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.statetransition.BlockImporter;
@@ -77,9 +78,9 @@ public class SyncManager {
 
   private CompletableFuture<Void> requestSyncBlocks(
       Eth2Peer peer, ResponseStream.ResponseListener<BeaconBlock> blockResponseListener) {
-    Eth2Peer.StatusData peerStatusData = peer.getStatus();
-    Bytes32 headBlockRoot = peerStatusData.getHeadRoot();
-    UnsignedLong headBlockSlot = peerStatusData.getHeadSlot();
+    PeerStatus peerStatus = peer.getStatus();
+    Bytes32 headBlockRoot = peerStatus.getHeadRoot();
+    UnsignedLong headBlockSlot = peerStatus.getHeadSlot();
     UnsignedLong startSlot = compute_start_slot_at_epoch(storageClient.getFinalizedEpoch());
     UnsignedLong step = UnsignedLong.ONE;
     UnsignedLong count = headBlockSlot.minus(startSlot).plus(UnsignedLong.ONE);

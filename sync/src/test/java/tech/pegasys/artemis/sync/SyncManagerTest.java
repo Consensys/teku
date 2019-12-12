@@ -37,7 +37,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer.StatusData;
+import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.statetransition.BlockImporter;
@@ -55,8 +55,8 @@ public class SyncManagerTest {
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
   private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
-  private static final StatusData PEER_STATUS =
-      StatusData.fromStatusMessage(
+  private static final PeerStatus PEER_STATUS =
+      PeerStatus.fromStatusMessage(
           new StatusMessage(
               Fork.VERSION_ZERO,
               Bytes32.ZERO,
