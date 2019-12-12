@@ -13,11 +13,11 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -33,12 +33,13 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private final RpcMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
-  private volatile Optional<StatusData> remoteStatus = Optional.empty();
+  private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
+  private final CompletableFuture<PeerStatus> initialStatus = new CompletableFuture<>();
+  private AtomicBoolean chainValidated = new AtomicBoolean(false);
 
   public Eth2Peer(
       final Peer peer,
@@ -50,10 +51,16 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public void updateStatus(final StatusMessage message) {
-    remoteStatus = Optional.of(StatusData.fromStatusMessage(message));
+    final PeerStatus statusData = PeerStatus.fromStatusMessage(message);
+    remoteStatus = Optional.of(statusData);
+    initialStatus.complete(statusData);
   }
 
-  public StatusData getStatus() {
+  public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
+    initialStatus.thenAccept(subscriber::onInitialStatus);
+  }
+
+  public PeerStatus getStatus() {
     return remoteStatus.orElseThrow();
   }
 
@@ -61,7 +68,15 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return remoteStatus.isPresent();
   }
 
-  public CompletableFuture<StatusData> sendStatus() {
+  boolean isChainValidated() {
+    return chainValidated.get();
+  }
+
+  void markChainValidated() {
+    chainValidated.set(true);
+  }
+
+  public CompletableFuture<PeerStatus> sendStatus() {
     return sendRequest(BeaconChainMethods.STATUS, statusMessageFactory.createStatusMessage())
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
@@ -82,6 +97,15 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         BeaconChainMethods.BEACON_BLOCKS_BY_ROOT,
         new BeaconBlocksByRootRequestMessage(blockRoots),
         listener);
+  }
+
+  public CompletableFuture<BeaconBlock> requestBlockBySlot(
+      final Bytes32 headBlockRoot, final UnsignedLong slot) {
+    final BeaconBlocksByRangeRequestMessage request =
+        new BeaconBlocksByRangeRequestMessage(
+            headBlockRoot, slot, UnsignedLong.ONE, UnsignedLong.ONE);
+    return sendRequest(BeaconChainMethods.BEACON_BLOCKS_BY_RANGE, request)
+        .thenCompose(ResponseStream::expectSingleResponse);
   }
 
   public CompletableFuture<Void> requestBlocksByRange(
@@ -107,64 +131,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return rpcMethods.invoke(method, this.getConnection(), request);
   }
 
-  public static class StatusData {
-    private final Bytes4 headForkVersion;
-    private final Bytes32 finalizedRoot;
-    private final UnsignedLong finalizedEpoch;
-    private final Bytes32 headRoot;
-    private final UnsignedLong headSlot;
-
-    public static StatusData fromStatusMessage(final StatusMessage message) {
-      return new StatusData(
-          message.getHeadForkVersion().copy(),
-          message.getFinalizedRoot().copy(),
-          message.getFinalizedEpoch(),
-          message.getHeadRoot().copy(),
-          message.getHeadSlot());
-    }
-
-    private StatusData(
-        final Bytes4 headForkVersion,
-        final Bytes32 finalizedRoot,
-        final UnsignedLong finalizedEpoch,
-        final Bytes32 headRoot,
-        final UnsignedLong headSlot) {
-      this.headForkVersion = headForkVersion;
-      this.finalizedRoot = finalizedRoot;
-      this.finalizedEpoch = finalizedEpoch;
-      this.headRoot = headRoot;
-      this.headSlot = headSlot;
-    }
-
-    public Bytes4 getHeadForkVersion() {
-      return headForkVersion;
-    }
-
-    public Bytes32 getFinalizedRoot() {
-      return finalizedRoot;
-    }
-
-    public UnsignedLong getFinalizedEpoch() {
-      return finalizedEpoch;
-    }
-
-    public Bytes32 getHeadRoot() {
-      return headRoot;
-    }
-
-    public UnsignedLong getHeadSlot() {
-      return headSlot;
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("currentFork", headForkVersion)
-          .add("finalizedRoot", finalizedRoot)
-          .add("finalizedEpoch", finalizedEpoch)
-          .add("headRoot", headRoot)
-          .add("headSlot", headSlot)
-          .toString();
-    }
+  public interface InitialStatusSubscriber {
+    void onInitialStatus(final PeerStatus initialStatus);
   }
 }

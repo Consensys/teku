@@ -121,26 +121,26 @@ class ChainStorageClientTest {
     storageClient.setStore(store);
     // We've wrapped around a lot of times and are 5 slots into the next "loop"
     final int historicalIndex = 5;
-    final UnsignedLong reqeustedSlot =
+    final UnsignedLong requestedSlot =
         UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT)
             .times(UnsignedLong.valueOf(900000000))
             .plus(UnsignedLong.valueOf(historicalIndex));
     // Avoid the simple case where the requested slot is the best slot so we have to go to the
     // historic blocks
-    final UnsignedLong bestSlot = reqeustedSlot.plus(UnsignedLong.ONE);
+    final UnsignedLong bestSlot = requestedSlot.plus(UnsignedLong.ONE);
 
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     final BeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++);
     final BeaconBlock bestBlock =
-        DataStructureUtil.randomBeaconBlock(reqeustedSlot.longValue(), seed++);
+        DataStructureUtil.randomBeaconBlock(requestedSlot.longValue(), seed++);
     final Bytes32 bestBlockHash = bestBlock.signing_root("signature");
     // Overwrite the genesis hash.
     bestState.getBlock_roots().set(historicalIndex, bestBlockHash);
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(bestBlockHash)).thenReturn(bestBlock);
 
-    assertThat(storageClient.getBlockBySlot(reqeustedSlot)).contains(bestBlock);
+    assertThat(storageClient.getBlockBySlot(requestedSlot)).contains(bestBlock);
   }
 
   @Test
