@@ -50,6 +50,10 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
     return true;
   }
 
+  protected void postData(final EventBus eventBus, T data) {
+    eventBus.post(data);
+  }
+
   public abstract String getTopic();
 
   protected abstract T deserialize(Bytes bytes) throws SSZException;

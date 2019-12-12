@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.networking.eth2.gossip.events;
 
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
-/** This event is emitted when a new block has been imported locally. */
-public class BlockImportedEvent {
+public class GossipedBlockEvent {
   private final BeaconBlock block;
 
-  public BlockImportedEvent(BeaconBlock block) {
+  public GossipedBlockEvent(final BeaconBlock block) {
     this.block = block;
   }
 

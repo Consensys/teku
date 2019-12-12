@@ -27,6 +27,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
@@ -42,6 +43,11 @@ public class BlockTopicHandler extends Eth2TopicHandler<BeaconBlock> {
   public BlockTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
     super(eventBus);
     this.chainStorageClient = chainStorageClient;
+  }
+
+  @Override
+  protected void postData(final EventBus eventBus, final BeaconBlock block) {
+    eventBus.post(new GossipedBlockEvent(block));
   }
 
   @Override

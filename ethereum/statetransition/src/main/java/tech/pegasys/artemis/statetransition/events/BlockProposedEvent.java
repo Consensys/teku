@@ -15,11 +15,11 @@ package tech.pegasys.artemis.statetransition.events;
 
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
-/** This event is emitted when a new block has been imported locally. */
-public class BlockImportedEvent {
+/** This event is emitted when a new block is proposed locally */
+public class BlockProposedEvent {
   private final BeaconBlock block;
 
-  public BlockImportedEvent(BeaconBlock block) {
+  public BlockProposedEvent(final BeaconBlock block) {
     this.block = block;
   }
 

@@ -18,6 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
@@ -47,7 +48,8 @@ public class BlockPropagationManager {
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBlock(BeaconBlock block) {
+  private void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
+    final BeaconBlock block = gossipedBlockEvent.getBlock();
     try {
       // TODO - check if block is attached, if so import it, otherwise add it to our pending pool
       blockImporter.importBlock(block);
