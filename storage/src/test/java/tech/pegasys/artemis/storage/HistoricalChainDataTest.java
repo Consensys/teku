@@ -24,8 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.storage.events.GetBlockBySlotRequest;
-import tech.pegasys.artemis.storage.events.GetBlockBySlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 
 class HistoricalChainDataTest {
   private static final Optional<BeaconBlock> BLOCK =
@@ -40,38 +40,40 @@ class HistoricalChainDataTest {
 
   @Test
   public void shouldRetrieveBlockBySlot() {
-    final CompletableFuture<Optional<BeaconBlock>> result = historicalChainData.getBlockBySlot(ONE);
-    verify(eventBus).post(new GetBlockBySlotRequest(ONE));
+    final CompletableFuture<Optional<BeaconBlock>> result =
+        historicalChainData.getFinalizedBlockAtSlot(ONE);
+    verify(eventBus).post(new GetFinalizedBlockAtSlotRequest(ONE));
     assertThat(result).isNotDone();
 
-    historicalChainData.onResponse(new GetBlockBySlotResponse(ONE, BLOCK));
+    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
     assertThat(result).isCompletedWithValue(BLOCK);
   }
 
   @Test
   public void shouldResolveWithEmptyOptionalWhenBlockNotAvailable() {
-    final CompletableFuture<Optional<BeaconBlock>> result = historicalChainData.getBlockBySlot(ONE);
+    final CompletableFuture<Optional<BeaconBlock>> result =
+        historicalChainData.getFinalizedBlockAtSlot(ONE);
 
-    historicalChainData.onResponse(new GetBlockBySlotResponse(ONE, Optional.empty()));
+    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, Optional.empty()));
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
   @Test
   public void shouldIgnoreBlocksThatDoNotMatchOutstandingRequests() {
-    historicalChainData.onResponse(new GetBlockBySlotResponse(ONE, BLOCK));
+    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
   }
 
   @Test
   public void shouldResolveMultipleRequestsForTheSameSlotWithFirstAvailableData() {
     final CompletableFuture<Optional<BeaconBlock>> result1 =
-        historicalChainData.getBlockBySlot(ONE);
+        historicalChainData.getFinalizedBlockAtSlot(ONE);
     final CompletableFuture<Optional<BeaconBlock>> result2 =
-        historicalChainData.getBlockBySlot(ONE);
+        historicalChainData.getFinalizedBlockAtSlot(ONE);
 
     assertThat(result1).isNotDone();
     assertThat(result2).isNotDone();
 
-    historicalChainData.onResponse(new GetBlockBySlotResponse(ONE, BLOCK));
+    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
 
     assertThat(result1).isCompletedWithValue(BLOCK);
     assertThat(result2).isCompletedWithValue(BLOCK);

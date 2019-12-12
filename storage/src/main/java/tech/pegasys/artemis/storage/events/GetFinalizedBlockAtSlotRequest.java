@@ -16,10 +16,10 @@ package tech.pegasys.artemis.storage.events;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 
-public class GetBlockBySlotRequest {
+public class GetFinalizedBlockAtSlotRequest {
   private final UnsignedLong slot;
 
-  public GetBlockBySlotRequest(final UnsignedLong slot) {
+  public GetFinalizedBlockAtSlotRequest(final UnsignedLong slot) {
     this.slot = slot;
   }
 
@@ -35,7 +35,7 @@ public class GetBlockBySlotRequest {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final GetBlockBySlotRequest that = (GetBlockBySlotRequest) o;
+    final GetFinalizedBlockAtSlotRequest that = (GetFinalizedBlockAtSlotRequest) o;
     return Objects.equals(slot, that.slot);
   }
 
