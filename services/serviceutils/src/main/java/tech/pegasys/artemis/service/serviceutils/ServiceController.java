@@ -32,7 +32,7 @@ public class ServiceController {
 
   private boolean powChainServiceActive;
 
-  // initializeFromGenesis/register all services
+  // initialize/register all services
   public <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
       void initAll(
           ServiceConfig config,

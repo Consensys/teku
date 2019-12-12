@@ -32,8 +32,8 @@ public class Waiter {
   private static final Duration INITIAL_POLL_INTERVAL = Duration.ofMillis(200);
   private static final Duration MAX_POLL_INTERVAL = Duration.ofSeconds(5);
 
-  public static void waitFor(final Condition assertion, int timeoutSeconds) {
-    Awaitility.waitAtMost(timeoutSeconds, TimeUnit.SECONDS)
+  public static void waitFor(final Condition assertion, final TimeUnit timeUnit, final int timeoutValue) {
+    Awaitility.waitAtMost(timeoutValue, timeUnit)
         .ignoreExceptions()
         .pollInterval(
             IterativePollInterval.iterative(Waiter::nextPollInterval, INITIAL_POLL_INTERVAL))
@@ -41,7 +41,7 @@ public class Waiter {
   }
 
   public static void waitFor(final Condition assertion) {
-    waitFor(assertion, DEFAULT_TIMEOUT_SECONDS);
+    waitFor(assertion, TimeUnit.SECONDS, DEFAULT_TIMEOUT_SECONDS);
   }
 
   private static Duration nextPollInterval(final Duration duration) {

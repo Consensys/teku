@@ -22,8 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 public class FinalizedCheckpoint {
 
   private final UnsignedLong epoch;
-
-  @SerializedName("root")
   private final Bytes32 root;
 
   public FinalizedCheckpoint(final UnsignedLong epoch, final Bytes32 root) {

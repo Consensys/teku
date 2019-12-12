@@ -61,8 +61,6 @@ public class ArtemisNode extends Node {
     container
         .withExposedPorts(REST_API_PORT)
         .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
-        .waitingFor(
-            new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/beacon/finalized_checkpoint"))
         .withCommand("--config", CONFIG_FILE_PATH);
   }
 
@@ -94,7 +92,7 @@ public class ArtemisNode extends Node {
         () ->
             assertThat(getCurrentFinalizedCheckpoint().getEpoch())
                 .isNotEqualTo(startingFinalizedEpoch),
-        2000);
+        540);
   }
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
@@ -114,8 +112,11 @@ public class ArtemisNode extends Node {
     return finalizedCheckpoint;
   }
 
-  public void getDatabaseFileFromContainer(File databaseFile) throws Exception {
-    container.copyFileFromContainer("/artemis.db", databaseFile.getAbsolutePath());
+  public File getDatabaseFileFromContainer() throws Exception {
+    File tempDatabaseFile = File.createTempFile("artemis", ".db");
+    tempDatabaseFile.deleteOnExit();
+    container.copyFileFromContainer("/artemis.db", tempDatabaseFile.getAbsolutePath());
+    return tempDatabaseFile;
   }
 
   public void copyDatabaseFileToContainer(File databaseFile) {
@@ -168,9 +169,6 @@ public class ArtemisNode extends Node {
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", REST_API_PORT);
-
-      final Map<String, Object> database = getSection(DATABASE_SECTION);
-      database.put("startFromDisk", false);
     }
 
     public void withDepositsFrom(final BesuNode eth1Node) {

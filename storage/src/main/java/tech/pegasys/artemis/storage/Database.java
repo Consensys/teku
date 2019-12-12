@@ -159,8 +159,6 @@ public class Database {
     Map<Checkpoint, BeaconState> checkpoint_states_memory = new HashMap<>();
 
     UnsignedLong slot = latest_slot.get();
-    System.out.println(finalized_checkpoint_memory);
-    System.out.println(finalized_checkpoint_memory.getEpoch());
 
     LongStream.range(
             compute_start_slot_at_epoch(finalized_checkpoint_memory.getEpoch()).longValue(),
