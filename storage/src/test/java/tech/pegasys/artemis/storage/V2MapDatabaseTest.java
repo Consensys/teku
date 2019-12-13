@@ -13,17 +13,22 @@
 
 package tech.pegasys.artemis.storage;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class V2MapDatabaseTest {
   private static final BeaconState GENESIS_STATE =
@@ -39,11 +44,22 @@ class V2MapDatabaseTest {
 
   private int seed = 498242;
 
+  @BeforeEach
+  public void recordGenesis() {
+    database.storeGenesis(store);
+  }
+
+  @Test
+  public void shouldRecreateOriginalGenesisStore() {
+    final Store memoryStore = database.createMemoryStore();
+    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "lock", "readLock");
+  }
+
   @Test
   public void shouldGetHotBlockByRoot() {
     final Transaction transaction = store.startTransaction();
-    final BeaconBlock block1 = DataStructureUtil.randomBeaconBlock(1, seed++);
-    final BeaconBlock block2 = DataStructureUtil.randomBeaconBlock(2, seed++);
+    final BeaconBlock block1 = blockAtSlot(1);
+    final BeaconBlock block2 = blockAtSlot(2);
     final Bytes32 block1Root = block1.signing_root("signature");
     final Bytes32 block2Root = block2.signing_root("signature");
     transaction.putBlock(block1Root, block1);
@@ -173,9 +189,10 @@ class V2MapDatabaseTest {
 
   @Test
   public void shouldLoadHotBlocksAndStatesIntoMemoryStore() {
+    final Bytes32 genesisRoot = store.getFinalizedCheckpoint().getRoot();
     final Transaction transaction = store.startTransaction();
-    final BeaconBlock block1 = DataStructureUtil.randomBeaconBlock(1, seed++);
-    final BeaconBlock block2 = DataStructureUtil.randomBeaconBlock(2, seed++);
+    final BeaconBlock block1 = blockAtSlot(1);
+    final BeaconBlock block2 = blockAtSlot(2);
     final BeaconState state1 = DataStructureUtil.randomBeaconState(seed++);
     final BeaconState state2 = DataStructureUtil.randomBeaconState(seed++);
     final Bytes32 block1Root = block1.signing_root("signature");
@@ -188,21 +205,21 @@ class V2MapDatabaseTest {
     database.insert(transaction);
 
     final Store result = database.createMemoryStore();
+    assertThat(result.getBlock(genesisRoot)).isEqualTo(store.getBlock(genesisRoot));
     assertThat(result.getBlock(block1Root)).isEqualTo(block1);
     assertThat(result.getBlock(block2Root)).isEqualTo(block2);
     assertThat(result.getBlockState(block1Root)).isEqualTo(state1);
     assertThat(result.getBlockState(block2Root)).isEqualTo(state2);
-    assertThat(result.getBlockRoots()).containsOnly(block1Root, block2Root);
+    assertThat(result.getBlockRoots()).containsOnly(genesisRoot, block1Root, block2Root);
   }
 
   @Test
   public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
     final Transaction transaction = store.startTransaction();
-    final BeaconBlock block1 = DataStructureUtil.randomBeaconBlock(1, seed++);
-    final BeaconBlock block2 = DataStructureUtil.randomBeaconBlock(2, seed++);
+    final BeaconBlock block1 = blockAtSlot(1);
+    final BeaconBlock block2 = blockAtSlot(2);
     final BeaconBlock unfinalizedBlock =
-        DataStructureUtil.randomBeaconBlock(
-            compute_start_slot_at_epoch(UnsignedLong.valueOf(2)).longValue(), seed++);
+        blockAtSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)).longValue());
     final BeaconState state1 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1), seed++);
     final BeaconState state2 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(2), seed++);
     final BeaconState unfinalizedState =
@@ -232,9 +249,87 @@ class V2MapDatabaseTest {
     assertThat(result.getBlockRoots()).containsOnly(unfinalizedBlockRoot);
   }
 
+  @Test
+  public void shouldRecordFinalizedBlocksAndStates() {
+    BeaconBlock genesisBlock = new BeaconBlock(GENESIS_STATE.hash_tree_root());
+    Bytes32 root = genesisBlock.signing_root("signature");
+    final BeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
+    final BeaconBlock block2 = blockAtSlot(2, block1);
+    final BeaconBlock block3 = blockAtSlot(3, block2);
+    // Few skipped slots
+    final BeaconBlock block7 = blockAtSlot(7, block3);
+    final BeaconBlock block8 = blockAtSlot(8, block7);
+    final BeaconBlock block9 = blockAtSlot(9, block8);
+
+    // Create some blocks on a different fork
+    final BeaconBlock forkBlock6 = blockAtSlot(6, block1);
+    final BeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
+    final BeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
+    final BeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
+
+    addBlocks(
+        block1,
+        block2,
+        block3,
+        block7,
+        block8,
+        block9,
+        forkBlock6,
+        forkBlock7,
+        forkBlock8,
+        forkBlock9);
+    assertThat(database.getBlock(block7.signing_root("signature"))).contains(block7);
+
+    finalizeEpoch(UnsignedLong.ONE, block7.signing_root("signature"));
+
+    assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
+    assertBlocksFinalized(block1, block2, block3, block7);
+  }
+
+  private void assertBlocksFinalized(final BeaconBlock... blocks) {
+    for (BeaconBlock block : blocks) {
+      assertThat(database.getFinalizedRootAtSlot(block.getSlot()))
+          .describedAs("Block root at slot %s", block.getSlot())
+          .contains(block.signing_root("signature"));
+    }
+  }
+
+  private void assertOnlyHotBlocks(final BeaconBlock... blocks) {
+    final Store memoryStore = database.createMemoryStore();
+    assertThat(memoryStore.getBlockRoots())
+        .hasSameElementsAs(
+            Stream.of(blocks).map(block -> block.signing_root("signature")).collect(toList()));
+  }
+
+  private void addBlocks(final BeaconBlock... blocks) {
+    final Transaction transaction = store.startTransaction();
+    for (BeaconBlock block : blocks) {
+      transaction.putBlock(block.signing_root("signature"), block);
+    }
+    transaction.commit();
+    database.insert(transaction);
+  }
+
   private void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
     final Transaction transaction2 = store.startTransaction();
     transaction2.setFinalizedCheckpoint(new Checkpoint(epoch, root));
     database.insert(transaction2);
+  }
+
+  private BeaconBlock blockAtSlot(final long slot) {
+    return blockAtSlot(slot, store.getFinalizedCheckpoint().getRoot());
+  }
+
+  private BeaconBlock blockAtSlot(final long slot, final BeaconBlock parent) {
+    return blockAtSlot(slot, parent.signing_root("signature"));
+  }
+
+  private BeaconBlock blockAtSlot(final long slot, final Bytes32 parentRoot) {
+    return new BeaconBlock(
+        UnsignedLong.valueOf(slot),
+        parentRoot,
+        Bytes32.ZERO,
+        new BeaconBlockBody(),
+        BLSSignature.empty());
   }
 }

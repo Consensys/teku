@@ -183,6 +183,10 @@ public class V1MapDatabase implements Database {
   }
 
   @Override
+  public void storeGenesis(final Store store) {
+  }
+
+  @Override
   public void insert(Store.Transaction transaction) {
     final Lock writeLock = lock.writeLock();
     writeLock.lock();

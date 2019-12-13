@@ -49,9 +49,9 @@ public class V2MapDatabase implements Database {
   private final Atomic.Var<Checkpoint> bestJustifiedCheckpoint;
   private final Atomic.Var<Checkpoint> finalizedCheckpoint;
 
-  //  private final ConcurrentNavigableMap<UnsignedLong, Bytes32> finalizedRootsBySlot;
-  //  private final ConcurrentMap<Bytes32, BeaconBlock> finalizedBlocksByRoot;
-  //  private final ConcurrentMap<Bytes32, BeaconState> finalizedStatesByRoot;
+  private final ConcurrentNavigableMap<UnsignedLong, Bytes32> finalizedRootsBySlot;
+  private final ConcurrentMap<Bytes32, BeaconBlock> finalizedBlocksByRoot;
+  private final ConcurrentMap<Bytes32, BeaconState> finalizedStatesByRoot;
   private final ConcurrentMap<Bytes32, BeaconBlock> hotBlocksByRoot;
   private final ConcurrentMap<Bytes32, BeaconState> hotStatesByRoot;
 
@@ -83,22 +83,21 @@ public class V2MapDatabase implements Database {
     finalizedCheckpoint =
         db.atomicVar("finalizedCheckpoint", new MapDBSerializer<>(Checkpoint.class)).createOrOpen();
 
-    //    finalizedRootsBySlot =
-    //        db.treeMap("finalizedRootsBySlot", new UnsignedLongSerializer(), new
-    // Bytes32Serializer())
-    //            .createOrOpen();
-    //    finalizedBlocksByRoot =
-    //        db.hashMap(
-    //                "finalizedBlocksByRoot",
-    //                new Bytes32Serializer(),
-    //                new MapDBSerializer<>(BeaconBlock.class))
-    //            .createOrOpen();
-    //    finalizedStatesByRoot =
-    //        db.hashMap(
-    //                "finalizedStatsByRoot",
-    //                new Bytes32Serializer(),
-    //                new MapDBSerializer<>(BeaconState.class))
-    //            .createOrOpen();
+    finalizedRootsBySlot =
+        db.treeMap("finalizedRootsBySlot", new UnsignedLongSerializer(), new Bytes32Serializer())
+            .createOrOpen();
+    finalizedBlocksByRoot =
+        db.hashMap(
+                "finalizedBlocksByRoot",
+                new Bytes32Serializer(),
+                new MapDBSerializer<>(BeaconBlock.class))
+            .createOrOpen();
+    finalizedStatesByRoot =
+        db.hashMap(
+                "finalizedStatsByRoot",
+                new Bytes32Serializer(),
+                new MapDBSerializer<>(BeaconState.class))
+            .createOrOpen();
 
     hotBlocksByRoot =
         db.hashMap(
@@ -132,48 +131,108 @@ public class V2MapDatabase implements Database {
   }
 
   @Override
+  public void storeGenesis(final Store store) {
+    time.set(store.getTime());
+    genesisTime.set(store.getGenesisTime());
+    justifiedCheckpoint.set(store.getJustifiedCheckpoint());
+    finalizedCheckpoint.set(store.getFinalizedCheckpoint());
+    bestJustifiedCheckpoint.set(store.getBestJustifiedCheckpoint());
+    store
+        .getBlockRoots()
+        .forEach(
+            root -> {
+              addHotBlock(root, store.getBlock(root));
+              hotStatesByRoot.put(root, store.getBlockState(root));
+            });
+    checkpointStates.put(
+        store.getJustifiedCheckpoint(),
+        store.getBlockState(store.getJustifiedCheckpoint().getRoot()));
+  }
+
+  @Override
   public void insert(final Transaction transaction) {
     final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
     final Checkpoint newFinalizedCheckpoint = transaction.getFinalizedCheckpoint();
     time.set(transaction.getTime());
     genesisTime.set(transaction.getGenesisTime());
-    this.finalizedCheckpoint.set(newFinalizedCheckpoint);
+    finalizedCheckpoint.set(newFinalizedCheckpoint);
     justifiedCheckpoint.set(transaction.getJustifiedCheckpoint());
     bestJustifiedCheckpoint.set(transaction.getBestJustifiedCheckpoint());
     checkpointStates.putAll(transaction.getCheckpointStates());
     latestMessages.putAll(transaction.getLatestMessages());
 
-    transaction
-        .getBlocks()
-        .forEach(
-            (root, block) -> {
-              hotBlocksByRoot.put(root, block);
-              addToHotRootsBySlotCache(root, block);
-            });
+    transaction.getBlocks().forEach(this::addHotBlock);
     hotStatesByRoot.putAll(transaction.getBlockStates());
 
     if (previousFinalizedCheckpoint == null
         || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
-      checkpointStates
-          .keySet()
-          .removeIf(
-              checkpoint -> checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0);
-
-      // TODO: Should we be finalizing until the end of the epoch (and is epoch 0 special in that
-      // case)?
-      final UnsignedLong startOfFinalizedEpoch =
-          compute_start_slot_at_epoch(newFinalizedCheckpoint.getEpoch());
-      LOG.debug("Removing non-finalized blocks prior to {}", startOfFinalizedEpoch);
-      hotRootsBySlotCache
-          .headMap(startOfFinalizedEpoch)
-          .values()
-          .forEach(
-              roots -> {
-                hotBlocksByRoot.keySet().removeAll(roots);
-                hotStatesByRoot.keySet().removeAll(roots);
-              });
+      recordFinalizedBlocks(newFinalizedCheckpoint);
+      pruneCheckpointStates(newFinalizedCheckpoint);
+      pruneHotBlocks(newFinalizedCheckpoint);
     }
     db.commit();
+  }
+
+  private void addHotBlock(final Bytes32 root, final BeaconBlock block) {
+    hotBlocksByRoot.put(root, block);
+    addToHotRootsBySlotCache(root, block);
+  }
+
+  private void recordFinalizedBlocks(final Checkpoint newFinalizedCheckpoint) {
+    LOG.debug(
+        "Record finalized blocks for epoch {} starting at block {}",
+        newFinalizedCheckpoint.getEpoch(),
+        newFinalizedCheckpoint.getRoot());
+    final UnsignedLong highestFinalizedSlot =
+        finalizedRootsBySlot.isEmpty() ? UnsignedLong.ZERO : finalizedRootsBySlot.lastKey();
+    Bytes32 newlyFinalizedBlockRoot = newFinalizedCheckpoint.getRoot();
+    BeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
+    while (newlyFinalizedBlock != null
+        && newlyFinalizedBlock.getSlot().compareTo(highestFinalizedSlot) > 0) {
+      LOG.debug(
+          "Recording finalized block {} at slot {}",
+          newlyFinalizedBlock.getSlot(),
+          newlyFinalizedBlockRoot);
+      finalizedRootsBySlot.put(newlyFinalizedBlock.getSlot(), newlyFinalizedBlockRoot);
+      finalizedBlocksByRoot.put(newlyFinalizedBlockRoot, newlyFinalizedBlock);
+      final Optional<BeaconState> finalizedState = getState(newlyFinalizedBlockRoot);
+      if (finalizedState.isPresent()) {
+        finalizedStatesByRoot.put(newlyFinalizedBlockRoot, finalizedState.get());
+      }
+      newlyFinalizedBlockRoot = newlyFinalizedBlock.getParent_root();
+      newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
+    }
+
+    if (newlyFinalizedBlock == null) {
+      LOG.error(
+          "Missing finalized block {} for epoch {}",
+          newlyFinalizedBlockRoot,
+          newFinalizedCheckpoint.getEpoch());
+    }
+  }
+
+  private void pruneCheckpointStates(final Checkpoint newFinalizedCheckpoint) {
+    checkpointStates
+        .keySet()
+        .removeIf(
+            checkpoint -> checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0);
+  }
+
+  private void pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
+    // TODO: Should we be finalizing until the end of the epoch (and is epoch 0 special in that
+    // case)?
+    final UnsignedLong startOfFinalizedEpoch =
+        compute_start_slot_at_epoch(newFinalizedCheckpoint.getEpoch());
+    final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> toRemove =
+        hotRootsBySlotCache.headMap(startOfFinalizedEpoch);
+    LOG.trace("Pruning slots {} from non-finalized pool", toRemove::keySet);
+    toRemove
+        .values()
+        .forEach(
+            roots -> {
+              hotBlocksByRoot.keySet().removeAll(roots);
+              hotStatesByRoot.keySet().removeAll(roots);
+            });
   }
 
   private void addToHotRootsBySlotCache(final Bytes32 root, final BeaconBlock block) {
@@ -199,7 +258,7 @@ public class V2MapDatabase implements Database {
 
   @Override
   public Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot) {
-    return Optional.empty();
+    return Optional.ofNullable(finalizedRootsBySlot.get(slot));
   }
 
   @Override

@@ -21,6 +21,9 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public interface Database extends Closeable {
+
+  void storeGenesis(Store store);
+
   void insert(Store.Transaction transaction);
 
   Store createMemoryStore();
