@@ -251,7 +251,6 @@ class V2MapDatabaseTest {
 
   @Test
   public void shouldRecordFinalizedBlocksAndStates() {
-    BeaconBlock genesisBlock = new BeaconBlock(GENESIS_STATE.hash_tree_root());
     final BeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
     final BeaconBlock block2 = blockAtSlot(2, block1);
     final BeaconBlock block3 = blockAtSlot(3, block2);
