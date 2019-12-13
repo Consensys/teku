@@ -14,17 +14,14 @@
 package tech.pegasys.artemis.sync;
 
 import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage.REASON_FAULT_ERROR;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.statetransition.BlockImporter;
@@ -55,17 +52,17 @@ public class SyncManager {
     }
 
     Eth2Peer syncPeer = possibleSyncPeer.get();
-    UnsignedLong syncAdvertisedFinalizedEpoch = syncPeer.getStatus().getFinalizedEpoch();
+    PeerSync peerSync =
+            new PeerSync(syncPeer, storageClient, blockResponseListener(syncPeer));
 
-    CompletableFuture<Void> syncCompletableFuture =
-        requestSyncBlocks(syncPeer, blockResponseListener(syncPeer));
+    PeerSyncResult syncResult = peerSync.sync().join();
 
-    return syncCompletableFuture.thenRun(
-        () -> {
-          if (storageClient.getFinalizedEpoch().compareTo(syncAdvertisedFinalizedEpoch) < 0) {
-            disconnectFromPeerAndRunSyncAgain(syncPeer);
-          }
-        });
+    if (syncResult.equals(PeerSyncResult.FAULTY_ADVERTISEMENT)) {
+      disconnectFromPeer(syncPeer);
+      return sync();
+    } else {
+      return CompletableFuture.completedFuture(null);
+    }
   }
 
   private Optional<Eth2Peer> findBestSyncPeer() {
@@ -76,34 +73,20 @@ public class SyncManager {
         .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
   }
 
-  private CompletableFuture<Void> requestSyncBlocks(
-      Eth2Peer peer, ResponseStream.ResponseListener<BeaconBlock> blockResponseListener) {
-    PeerStatus peerStatus = peer.getStatus();
-    Bytes32 headBlockRoot = peerStatus.getHeadRoot();
-    UnsignedLong headBlockSlot = peerStatus.getHeadSlot();
-    UnsignedLong startSlot = compute_start_slot_at_epoch(storageClient.getFinalizedEpoch());
-    UnsignedLong step = UnsignedLong.ONE;
-    UnsignedLong count = headBlockSlot.minus(startSlot).plus(UnsignedLong.ONE);
-    return peer.requestBlocksByRange(headBlockRoot, startSlot, count, step, blockResponseListener);
-  }
 
   private ResponseStream.ResponseListener<BeaconBlock> blockResponseListener(Eth2Peer peer) {
     return ((block) -> {
       try {
         blockImporter.importBlock(block);
       } catch (StateTransitionException e) {
-        disconnectFromPeerAndRunSyncAgain(peer);
+        disconnectFromPeer(peer);
+        sync();
         throw new InvalidResponseException("Received bad block from peer", e);
       }
     });
   }
 
-  private void disconnectFromPeerAndRunSyncAgain(Eth2Peer peer) {
-    // TODO: this is going to schedule a new sync but never return a CompletableFuture to know when
-    // it completes or if it fails. One option to solve this would be to have one class responsible
-    // for syncing to a single peer, and another responsible for starting a new sync whenever the
-    // previous one finishes (it will eventually decide whether to activate a new sync based on
-    // whether we are in sync or not)
-    peer.sendGoodbye(REASON_FAULT_ERROR).thenRun(this::sync);
+  private void disconnectFromPeer(Eth2Peer peer) {
+    peer.sendGoodbye(REASON_FAULT_ERROR);
   }
 }
