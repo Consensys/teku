@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
@@ -38,6 +39,8 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
+
+  private Eth2DiscoveryManager eth2DiscoveryManager;
 
   public Eth2Network(
       final P2PNetwork network,
@@ -61,6 +64,8 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
     blockGossipManager = new BlockGossipManager(network, eventBus, chainStorageClient);
     attestationGossipManager = new AttestationGossipManager(network, eventBus, chainStorageClient);
     aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);
+    eth2DiscoveryManager = new Eth2DiscoveryManager(network, eventBus);
+    eth2DiscoveryManager.start();
   }
 
   @Override
@@ -71,6 +76,7 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
+    eth2DiscoveryManager.stop();
     super.stop();
   }
 
