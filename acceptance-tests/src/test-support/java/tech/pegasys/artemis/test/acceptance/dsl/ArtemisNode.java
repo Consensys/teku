@@ -16,6 +16,7 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 import static org.apache.tuweni.toml.Toml.tomlEscape;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,6 +36,7 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
+import tech.pegasys.artemis.test.acceptance.dsl.data.FinalizedCheckpoint;
 
 public class ArtemisNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -68,7 +70,6 @@ public class ArtemisNode extends Node {
     configFile = File.createTempFile("config", ".toml");
     configFile.deleteOnExit();
     config.writeTo(configFile);
-
     container
         .withCopyFileToContainer(
             MountableFile.forHostPath(configFile.getAbsolutePath()), CONFIG_FILE_PATH)
@@ -85,12 +86,42 @@ public class ArtemisNode extends Node {
         () -> assertThat(getCurrentBeaconHead().getBlockRoot()).isNotEqualTo(startingBlockRoot));
   }
 
+  public void waitForNewFinalization() throws IOException {
+    UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
+    waitFor(
+        () ->
+            assertThat(getCurrentFinalizedCheckpoint().getEpoch())
+                .isNotEqualTo(startingFinalizedEpoch),
+        540);
+  }
+
   private BeaconHead getCurrentBeaconHead() throws IOException {
     final BeaconHead beaconHead =
         JsonProvider.jsonToObject(
             httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
     LOG.debug("Retrieved beacon head: {}", beaconHead);
     return beaconHead;
+  }
+
+  private FinalizedCheckpoint getCurrentFinalizedCheckpoint() throws IOException {
+    final FinalizedCheckpoint finalizedCheckpoint =
+        JsonProvider.jsonToObject(
+            httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"),
+            FinalizedCheckpoint.class);
+    LOG.debug("Retrieved finalized checkpoint: {}", finalizedCheckpoint);
+    return finalizedCheckpoint;
+  }
+
+  public File getDatabaseFileFromContainer() throws Exception {
+    File tempDatabaseFile = File.createTempFile("artemis", ".db");
+    tempDatabaseFile.deleteOnExit();
+    container.copyFileFromContainer("/artemis.db", tempDatabaseFile.getAbsolutePath());
+    return tempDatabaseFile;
+  }
+
+  public void copyDatabaseFileToContainer(File databaseFile) {
+    container.withCopyFileToContainer(
+        MountableFile.forHostPath(databaseFile.getAbsolutePath()), "/artemis.db");
   }
 
   private URI getRestApiUrl() {
@@ -111,6 +142,7 @@ public class ArtemisNode extends Node {
 
   public static class Config {
 
+    private static final String DATABASE_SECTION = "database";
     private static final String BEACONRESTAPI_SECTION = "beaconrestapi";
     private static final String DEPOSIT_SECTION = "deposit";
     private static final String INTEROP_SECTION = "interop";
@@ -144,6 +176,10 @@ public class ArtemisNode extends Node {
       final Map<String, Object> depositSection = getSection(DEPOSIT_SECTION);
       depositSection.put("contractAddr", eth1Node.getDepositContractAddress());
       depositSection.put("nodeUrl", eth1Node.getInternalJsonRpcUrl());
+    }
+
+    public void startFromDisk() {
+      getSection(DATABASE_SECTION).put("startFromDisk", true);
     }
 
     private void setDepositMode(final String mode) {

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
@@ -24,7 +25,6 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.time.Instant;
 import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,8 +36,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -216,7 +214,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting BeaconRestAPI");
     this.beaconRestAPI.start();
 
-    if (testMode) {
+    if (testMode && !config.startFromDisk()) {
       generateTestModeGenesis();
     }
 
@@ -293,7 +291,7 @@ public class BeaconChainController {
           STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
           STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
           Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-          Bytes32 headBlockRoot = this.stateProcessor.processHead(nodeSlot);
+          Bytes32 headBlockRoot = this.stateProcessor.processHead();
           // Logging
           STDOUT.log(
               Level.INFO,
@@ -322,15 +320,8 @@ public class BeaconChainController {
 
   @Subscribe
   public void setNodeSlotAccordingToDBStore(Store store) {
-    Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
-    BeaconState state = store.getBlockState(finalizedCheckpoint.getRoot());
-    UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
-    UnsignedLong genesisTime = state.getGenesis_time();
-    chainStorageClient.setGenesisTime(genesisTime);
-    nodeSlot = unixTimeStamp.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
-    STDOUT.log(
-        Level.INFO,
-        "Database Store genesis time " + genesisTime + " and current node slot " + nodeSlot + ".",
-        ALogger.Color.GREEN);
+    Bytes32 headBlockRoot = get_head(store);
+    chainStorageClient.initializeFromStore(store, headBlockRoot);
+    STDOUT.log(Level.INFO, "Node being started from database.", ALogger.Color.GREEN);
   }
 }

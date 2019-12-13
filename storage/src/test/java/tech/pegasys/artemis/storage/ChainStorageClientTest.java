@@ -45,7 +45,7 @@ class ChainStorageClientTest {
   @Test
   public void initialize_setupInitialState() {
     final BeaconState initialState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
-    storageClient.initialize(initialState);
+    storageClient.initializeFromGenesis(initialState);
     assertThat(storageClient.getGenesisTime()).isEqualTo(initialState.getGenesis_time());
     assertThat(storageClient.getBestSlot()).isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
     assertThat(storageClient.getBestBlockRootState()).isEqualTo(initialState);

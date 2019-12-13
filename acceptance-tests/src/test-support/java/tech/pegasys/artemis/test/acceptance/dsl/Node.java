@@ -16,6 +16,7 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
@@ -39,6 +40,14 @@ public abstract class Node {
 
   public void stop() {
     container.stop();
+  }
+
+  protected void waitFor(final Waiter.Condition condition, final int timeoutSeconds) {
+    try {
+      Waiter.waitFor(condition, TimeUnit.SECONDS, timeoutSeconds);
+    } catch (final Throwable t) {
+      fail(t.getMessage() + " Logs: " + container.getLogs(), t);
+    }
   }
 
   protected void waitFor(final Waiter.Condition condition) {

@@ -307,11 +307,12 @@ public class ValidatorCoordinator {
       BeaconStateWithCache previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
     try {
 
+      BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(previousState);
       // Process empty slots up to the new slot
-      stateTransition.process_slots(previousState, newSlot, false);
+      stateTransition.process_slots(newState, newSlot, false);
 
       // Check if we should be proposing
-      final BLSPublicKey proposer = blockCreator.getProposerForSlot(previousState, newSlot);
+      final BLSPublicKey proposer = blockCreator.getProposerForSlot(newState, newSlot);
       if (!validators.containsKey(proposer)) {
         // We're not proposing now
         return;
@@ -321,7 +322,7 @@ public class ValidatorCoordinator {
       // Collect attestations to include
       SSZList<Attestation> attestations = getAttestationsForSlot(newSlot);
       // Collect slashing to include
-      final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(previousState);
+      final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(newState);
       // Collect deposits
       final SSZList<Deposit> deposits = getDepositsForBlock();
 
@@ -329,14 +330,14 @@ public class ValidatorCoordinator {
       final Bytes32 parentRoot = previousBlock.signing_root("signature");
       newBlock =
           blockCreator.createNewBlock(
-              signer, newSlot, previousState, parentRoot, attestations, slashingsInBlock, deposits);
+              signer, newSlot, newState, parentRoot, attestations, slashingsInBlock, deposits);
 
       this.eventBus.post(newBlock);
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
 
       if (validators.get(proposer).isNaughty()) {
         final BeaconBlock naughtyBlock =
-            blockCreator.createEmptyBlock(signer, newSlot, previousState, parentRoot);
+            blockCreator.createEmptyBlock(signer, newSlot, newState, parentRoot);
         this.eventBus.post(naughtyBlock);
       }
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
