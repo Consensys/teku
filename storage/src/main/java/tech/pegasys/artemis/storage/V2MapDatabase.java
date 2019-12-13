@@ -14,9 +14,12 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -24,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -62,9 +66,17 @@ public class V2MapDatabase implements Database {
   private final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
       new ConcurrentSkipListMap<>();
 
-  public static Database createOnDisk(final File directory) {
+  public static Database createOnDisk(final File directory, final boolean startFromDisk) {
     // TODO: Record version and db type to a file.
-    return new V2MapDatabase(DBMaker.fileDB(new File(directory, "artemis.db")));
+    final File databaseFile = new File(directory, "artemis.db");
+    try {
+      if (!startFromDisk) {
+        Files.deleteIfExists(databaseFile.toPath());
+      }
+    } catch (IOException e) {
+      STDOUT.log(Level.WARN, "Failed to clear old database");
+    }
+    return new V2MapDatabase(DBMaker.fileDB(databaseFile));
   }
 
   public static Database createInMemory() {
@@ -263,7 +275,10 @@ public class V2MapDatabase implements Database {
 
   @Override
   public Optional<BeaconBlock> getBlock(final Bytes32 root) {
-    return Optional.ofNullable(hotBlocksByRoot.get(root));
+    final BeaconBlock block = hotBlocksByRoot.get(root);
+    return block != null
+        ? Optional.of(block)
+        : Optional.ofNullable(finalizedBlocksByRoot.get(root));
   }
 
   @Override

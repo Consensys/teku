@@ -13,17 +13,13 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Optional;
-import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
@@ -35,10 +31,6 @@ public class ChainStorageServer {
     this.database = V1MapDatabase.createForFile("artemis.db", config.startFromDisk());
     eventBus.register(this);
     if (config.startFromDisk()) {
-      STDOUT.log(
-          Level.INFO,
-          "Using the database to load Store and thus the previously built Store will be overwritten.",
-          ALogger.Color.GREEN);
       Store memoryStore = database.createMemoryStore();
       eventBus.post(memoryStore);
     }
