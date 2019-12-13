@@ -52,8 +52,7 @@ public class SyncManager {
     }
 
     Eth2Peer syncPeer = possibleSyncPeer.get();
-    PeerSync peerSync =
-            new PeerSync(syncPeer, storageClient, blockResponseListener(syncPeer));
+    PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockResponseListener(syncPeer));
 
     PeerSyncResult syncResult = peerSync.sync().join();
 
@@ -72,7 +71,6 @@ public class SyncManager {
         .filter(peer -> peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0)
         .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
   }
-
 
   private ResponseStream.ResponseListener<BeaconBlock> blockResponseListener(Eth2Peer peer) {
     return ((block) -> {
