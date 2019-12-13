@@ -13,6 +13,8 @@ dependencies {
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'com.google.protobuf:protobuf-java'
   implementation 'io.vertx:vertx-core'
+  implementation 'org.javatuples:javatuples'
+  implementation 'io.projectreactor:reactor-core'
 
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-plumtree'
