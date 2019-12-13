@@ -13,15 +13,19 @@
 
 package tech.pegasys.artemis.sync;
 
+import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage.REASON_FAULT_ERROR;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
+import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
+import tech.pegasys.artemis.statetransition.BlockImporter;
+import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class PeerSync {
@@ -33,17 +37,18 @@ public class PeerSync {
   private final UnsignedLong advertisedHeadBlockSlot;
   private final Bytes32 advertisedHeadBlockRoot;
   private final ChainStorageClient storageClient;
-  private final ResponseStream.ResponseListener<BeaconBlock> blockResponseListener;
+  private final BlockImporter blockImporter;
 
   private UnsignedLong latestRequestedSlot;
+  private final CompletableFuture<PeerSyncResult> finalResult = new CompletableFuture<>();
 
   public PeerSync(
       final Eth2Peer peer,
       final ChainStorageClient storageClient,
-      final ResponseStream.ResponseListener<BeaconBlock> blockResponseListener) {
+      final BlockImporter blockImporter) {
     this.peer = peer;
     this.storageClient = storageClient;
-    this.blockResponseListener = blockResponseListener;
+    this.blockImporter = blockImporter;
 
     this.advertisedFinalizedEpoch = peer.getStatus().getFinalizedEpoch();
     this.advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
@@ -52,19 +57,33 @@ public class PeerSync {
   }
 
   public CompletableFuture<PeerSyncResult> sync() {
-    while (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
-      requestSyncBlocks(peer, blockResponseListener).join();
-    }
-
-    if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch) < 0) {
-      return CompletableFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
-    } else {
-      return CompletableFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
-    }
+    executeSync();
+    return finalResult;
   }
 
-  private CompletableFuture<Void> requestSyncBlocks(
-      Eth2Peer peer, ResponseStream.ResponseListener<BeaconBlock> blockResponseListener) {
+  private void executeSync() {
+    requestSyncBlocks(peer)
+        .whenComplete(
+            (res, err) -> {
+              if (err != null) {
+                Throwable rootException = Throwables.getRootCause(err);
+                if (rootException instanceof BadBlockException) {
+                  disconnectFromPeer(peer);
+                }
+                finalResult.completeExceptionally(err);
+              } else if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch)
+                  >= 0) {
+                finalResult.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+              } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
+                executeSync();
+              } else {
+                finalResult.completeExceptionally(new FaultyAdvertisementException());
+                disconnectFromPeer(peer);
+              }
+            });
+  }
+
+  private CompletableFuture<Void> requestSyncBlocks(Eth2Peer peer) {
     UnsignedLong diff = advertisedHeadBlockSlot.minus(latestRequestedSlot);
     UnsignedLong count =
         diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
@@ -72,6 +91,26 @@ public class PeerSync {
             : diff;
     latestRequestedSlot = latestRequestedSlot.plus(count);
     return peer.requestBlocksByRange(
-        advertisedHeadBlockRoot, latestRequestedSlot, count, STEP, blockResponseListener);
+        advertisedHeadBlockRoot, latestRequestedSlot, count, STEP, this::blockResponseListener);
   }
+
+  private void blockResponseListener(BeaconBlock block) {
+    try {
+      blockImporter.importBlock(block);
+    } catch (StateTransitionException e) {
+      throw new BadBlockException("State transition error", e);
+    }
+  }
+
+  private void disconnectFromPeer(Eth2Peer peer) {
+    peer.sendGoodbye(REASON_FAULT_ERROR);
+  }
+
+  public class BadBlockException extends InvalidResponseException {
+    public BadBlockException(String message, Throwable cause) {
+      super(message, cause);
+    }
+  }
+
+  public class FaultyAdvertisementException extends RuntimeException {}
 }

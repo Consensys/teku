@@ -22,6 +22,7 @@ public interface ResponseStream<O> {
 
   CompletableFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
 
+  @FunctionalInterface
   interface ResponseListener<O> {
     void onResponse(O response);
   }

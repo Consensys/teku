@@ -13,19 +13,14 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage.REASON_FAULT_ERROR;
-
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
-import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.statetransition.BlockImporter;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class SyncManager {
@@ -44,24 +39,39 @@ public class SyncManager {
   }
 
   public CompletableFuture<Void> sync() {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    executeSync(future);
+    return future;
+  }
+
+  private void executeSync(CompletableFuture<Void> finalResult) {
     Optional<Eth2Peer> possibleSyncPeer = findBestSyncPeer();
 
     // If there are no peers ahead of us, return
     if (possibleSyncPeer.isEmpty()) {
-      return CompletableFuture.completedFuture(null);
+      finalResult.complete(null);
+      return;
     }
 
     Eth2Peer syncPeer = possibleSyncPeer.get();
-    PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockResponseListener(syncPeer));
+    PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockImporter);
 
-    PeerSyncResult syncResult = peerSync.sync().join();
-
-    if (syncResult.equals(PeerSyncResult.FAULTY_ADVERTISEMENT)) {
-      disconnectFromPeer(syncPeer);
-      return sync();
-    } else {
-      return CompletableFuture.completedFuture(null);
-    }
+    peerSync
+        .sync()
+        .whenComplete(
+            (result, err) -> {
+              if (err != null) {
+                Throwable rootException = Throwables.getRootCause(err);
+                if (rootException instanceof PeerSync.FaultyAdvertisementException
+                    || rootException instanceof PeerSync.BadBlockException) {
+                  executeSync(finalResult);
+                } else {
+                  finalResult.completeExceptionally(err);
+                }
+              } else {
+                finalResult.complete(null);
+              }
+            });
   }
 
   private Optional<Eth2Peer> findBestSyncPeer() {
@@ -70,21 +80,5 @@ public class SyncManager {
         .streamPeers()
         .filter(peer -> peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0)
         .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
-  }
-
-  private ResponseStream.ResponseListener<BeaconBlock> blockResponseListener(Eth2Peer peer) {
-    return ((block) -> {
-      try {
-        blockImporter.importBlock(block);
-      } catch (StateTransitionException e) {
-        disconnectFromPeer(peer);
-        sync();
-        throw new InvalidResponseException("Received bad block from peer", e);
-      }
-    });
-  }
-
-  private void disconnectFromPeer(Eth2Peer peer) {
-    peer.sendGoodbye(REASON_FAULT_ERROR);
   }
 }
