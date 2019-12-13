@@ -284,6 +284,9 @@ class V2MapDatabaseTest {
 
     assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
     assertBlocksFinalized(block1, block2, block3, block7);
+
+    // Should still be able to retrieve finalized blocks by root
+    assertThat(database.getBlock(block1.signing_root("signature"))).contains(block1);
   }
 
   private void assertBlocksFinalized(final BeaconBlock... blocks) {
