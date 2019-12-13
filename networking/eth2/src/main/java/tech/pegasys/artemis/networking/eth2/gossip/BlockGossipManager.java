@@ -40,6 +40,7 @@ public class BlockGossipManager {
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   public void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
     final Bytes data = SimpleOffsetSerializer.serialize(blockProposedEvent.getBlock());
     channel.gossip(data);

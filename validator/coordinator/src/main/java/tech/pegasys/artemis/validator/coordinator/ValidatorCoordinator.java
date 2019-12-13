@@ -69,7 +69,6 @@ import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.Signer;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
-import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -103,7 +102,6 @@ public class ValidatorCoordinator {
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
-  private final BlockImporter blockImporter;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
   //  maps slots to Lists of attestation informations
@@ -127,8 +125,6 @@ public class ValidatorCoordinator {
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.eventBus.register(this);
-
-    this.blockImporter = new BlockImporter(chainStorageClient, eventBus);
   }
   /*
   @Subscribe
@@ -337,7 +333,6 @@ public class ValidatorCoordinator {
           blockCreator.createNewBlock(
               signer, newSlot, newState, parentRoot, attestations, slashingsInBlock, deposits);
 
-      blockImporter.importBlock(newBlock);
       this.eventBus.post(new BlockProposedEvent(newBlock));
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
 

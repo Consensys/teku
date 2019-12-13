@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -41,6 +43,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.metrics.EpochMetrics;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
@@ -54,11 +57,14 @@ import tech.pegasys.artemis.util.config.Constants;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final EventBus eventBus;
   private final StateTransition stateTransition;
-  private ChainStorageClient chainStorageClient;
-  private ArtemisConfiguration config;
-  private List<DepositWithIndex> deposits;
+  private final BlockImporter blockImporter;
+  private final ChainStorageClient chainStorageClient;
+  private final ArtemisConfiguration config;
+  private final List<DepositWithIndex> deposits = new ArrayList<>();
 
   private boolean genesisReady = false;
 
@@ -72,6 +78,8 @@ public class StateProcessor {
     this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
+
+    this.blockImporter = new BlockImporter(chainStorageClient, eventBus);
   }
 
   public void eth2Genesis(GenesisEvent genesisEvent) {
@@ -95,7 +103,6 @@ public class StateProcessor {
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     STDOUT.log(Level.DEBUG, "New deposit received");
-    if (deposits == null) deposits = new ArrayList<>();
     deposits.add(DepositUtil.convertDepositEventToOperationDeposit(event));
 
     UnsignedLong eth1_timestamp = null;
@@ -140,6 +147,16 @@ public class StateProcessor {
     if (isSimulation) return sufficientValidators;
     final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
     return afterMinGenesisTime && sufficientValidators;
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  public void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
+    try {
+      blockImporter.importBlock(blockProposedEvent.getBlock());
+    } catch (StateTransitionException e) {
+      LOG.error("Failed to import proposed block: " + blockProposedEvent, e);
+    }
   }
 
   private void onAttestation(Attestation attestation) {
