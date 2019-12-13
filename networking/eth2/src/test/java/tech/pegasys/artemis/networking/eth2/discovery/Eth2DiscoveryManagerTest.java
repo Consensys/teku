@@ -28,17 +28,23 @@ class Eth2DiscoveryManagerTest {
   void testDiscoveryMangerStartStop() throws ExecutionException, InterruptedException {
     Eth2DiscoveryManager dm = new Eth2DiscoveryManager();
     Assertions.assertEquals(
-        dm.getState(), Eth2DiscoveryManager.State.STOPPED, "Discovery did not start in state STOPPED");
+        dm.getState(),
+        Eth2DiscoveryManager.State.STOPPED,
+        "Discovery did not start in state STOPPED");
     Assertions.assertTrue(
         dm.stop().isCompletedExceptionally(),
         "Discovery cannot be stopped when already in state STOPPED");
     Assertions.assertEquals(
-        dm.start().get(), Eth2DiscoveryManager.State.RUNNING, "Discovery failed to start from STOPPED to RUNNING");
+        dm.start().get(),
+        Eth2DiscoveryManager.State.RUNNING,
+        "Discovery failed to start from STOPPED to RUNNING");
     Assertions.assertTrue(
         dm.start().isCompletedExceptionally(),
         "Discovery cannot be started when already in state RUNNING");
     Assertions.assertEquals(
-        dm.stop().get(), Eth2DiscoveryManager.State.STOPPED, "Discovery failed to stop from RUNNING to STOPPED");
+        dm.stop().get(),
+        Eth2DiscoveryManager.State.STOPPED,
+        "Discovery failed to stop from RUNNING to STOPPED");
   }
 
   EventBus eventBus = new EventBus();

@@ -59,7 +59,6 @@ public class Eth2DiscoveryManager {
   static final int SEED = 123456789;
   Random rnd = new Random(SEED);
 
-
   public static final NodeRecordFactory NODE_RECORD_FACTORY =
       new NodeRecordFactory(new IdentitySchemaV4Interpreter());
   public static final SerializerFactory TEST_SERIALIZER =
