@@ -106,11 +106,11 @@ public class PeerSync {
     peer.sendGoodbye(REASON_FAULT_ERROR);
   }
 
-  public class BadBlockException extends InvalidResponseException {
+  public static class BadBlockException extends InvalidResponseException {
     public BadBlockException(String message, Throwable cause) {
       super(message, cause);
     }
   }
 
-  public class FaultyAdvertisementException extends RuntimeException {}
+  public static class FaultyAdvertisementException extends RuntimeException {}
 }
