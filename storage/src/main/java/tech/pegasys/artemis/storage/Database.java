@@ -142,10 +142,6 @@ public class Database {
             .createOrOpen();
 
     if (startFromDisk) {
-      STDOUT.log(
-          Level.INFO,
-          "Using the database to load Store and thus the previously built Store will be overwritten.",
-          ALogger.Color.GREEN);
       Store memoryStore = createMemoryStore();
       eventBus.post(memoryStore);
     }
@@ -170,14 +166,17 @@ public class Database {
         .forEach(
             currentSlot -> {
               Bytes32 root = block_root_references.get(UnsignedLong.valueOf(currentSlot));
-              Checkpoint checkpoint =
-                  checkpoint_references.get(
-                      compute_start_slot_at_epoch(
-                          compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot))));
+              UnsignedLong checkpointSlot =
+                  compute_start_slot_at_epoch(
+                      compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot)));
+
+              if (checkpoint_references.containsKey(checkpointSlot)) {
+                Checkpoint checkpoint = checkpoint_references.get(checkpointSlot);
+                checkpoint_states_memory.put(checkpoint, checkpoint_states.get(checkpoint));
+              }
 
               blocks_memory.put(root, blocks.get(root));
               block_states_memory.put(root, block_states.get(root));
-              checkpoint_states_memory.put(checkpoint, checkpoint_states.get(checkpoint));
             });
 
     return new Store(

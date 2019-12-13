@@ -51,13 +51,24 @@ public class ChainStorageClient implements ChainStorage {
     this.eventBus.register(this);
   }
 
-  public void initialize(final BeaconState initialState) {
+  public void initializeFromGenesis(final BeaconState initialState) {
     setGenesisTime(initialState.getGenesis_time());
     final Store store = Store.get_genesis_store(initialState);
     setStore(store);
 
     // The genesis state is by definition finalised so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
+    BeaconBlock headBlock = store.getBlock(headBlockRoot);
+    updateBestBlock(headBlockRoot, headBlock.getSlot());
+    eventBus.post(new StoreInitializedEvent());
+  }
+
+  public void initializeFromStore(final Store store, final Bytes32 headBlockRoot) {
+    BeaconState state = store.getBlockState(headBlockRoot);
+    setGenesisTime(state.getGenesis_time());
+    setStore(store);
+
+    // The genesis state is by definition finalised so just get the root from there.
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     updateBestBlock(headBlockRoot, headBlock.getSlot());
     eventBus.post(new StoreInitializedEvent());
@@ -75,7 +86,6 @@ public class ChainStorageClient implements ChainStorage {
     return this.store == null;
   }
 
-  @Subscribe
   public void setStore(Store store) {
     this.store = store;
   }

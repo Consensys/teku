@@ -21,6 +21,7 @@ import java.util.List;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler.RequestParams;
@@ -45,6 +46,7 @@ public class BeaconRestApi {
     handlers.add(new BeaconHeadHandler(chainStorageClient));
     handlers.add(new BeaconBlockHandler(chainStorageClient));
     handlers.add(new BeaconStateHandler(chainStorageClient));
+    handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
     handlers.add(new PeerIdHandler(p2pNetwork));
     handlers.add(new PeersHandler(p2pNetwork));
     handlers.add(new ENRHandler());
