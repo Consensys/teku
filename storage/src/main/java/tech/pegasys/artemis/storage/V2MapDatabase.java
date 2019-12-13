@@ -67,7 +67,6 @@ public class V2MapDatabase implements Database {
       new ConcurrentSkipListMap<>();
 
   public static Database createOnDisk(final File directory, final boolean startFromDisk) {
-    // TODO: Record version and db type to a file.
     final File databaseFile = new File(directory, "artemis.db");
     try {
       if (!startFromDisk) {
@@ -231,8 +230,7 @@ public class V2MapDatabase implements Database {
   }
 
   private void pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
-    // TODO: Should we be finalizing until the end of the epoch (and is epoch 0 special in that
-    // case)?
+    // TODO: Can we prune blocks from in the finalized epoch as well?
     final UnsignedLong startOfFinalizedEpoch =
         compute_start_slot_at_epoch(newFinalizedCheckpoint.getEpoch());
     final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> toRemove =
