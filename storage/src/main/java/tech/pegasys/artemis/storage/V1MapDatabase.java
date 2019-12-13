@@ -160,14 +160,17 @@ public class V1MapDatabase implements Database {
         .forEach(
             currentSlot -> {
               Bytes32 root = block_root_references.get(UnsignedLong.valueOf(currentSlot));
-              Checkpoint checkpoint =
-                  checkpoint_references.get(
-                      compute_start_slot_at_epoch(
-                          compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot))));
+              final UnsignedLong checkpointSlot =
+                  compute_start_slot_at_epoch(
+                      compute_epoch_at_slot(UnsignedLong.valueOf(currentSlot)));
+
+              if (checkpoint_references.containsKey(checkpointSlot)) {
+                Checkpoint checkpoint = checkpoint_references.get(checkpointSlot);
+                checkpoint_states_memory.put(checkpoint, checkpoint_states.get(checkpoint));
+              }
 
               blocks_memory.put(root, blocks.get(root));
               block_states_memory.put(root, block_states.get(root));
-              checkpoint_states_memory.put(checkpoint, checkpoint_states.get(checkpoint));
             });
 
     return new Store(
@@ -183,8 +186,7 @@ public class V1MapDatabase implements Database {
   }
 
   @Override
-  public void storeGenesis(final Store store) {
-  }
+  public void storeGenesis(final Store store) {}
 
   @Override
   public void insert(Store.Transaction transaction) {

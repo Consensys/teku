@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.test.acceptance;
 
+import java.io.File;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
@@ -26,6 +28,24 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     node.start();
     node.waitForGenesis();
     node.waitForNewBlock();
+  }
+
+  @Disabled
+  @Test
+  public void shouldProgressChainAfterStartingFromDisk() throws Exception {
+    final ArtemisNode node1 = createArtemisNode();
+    node1.start();
+    node1.waitForGenesis();
+    node1.waitForNewFinalization();
+    File tempDatabaseFile = node1.getDatabaseFileFromContainer();
+    node1.stop();
+
+    final ArtemisNode node2 = createArtemisNode(ArtemisNode.Config::startFromDisk);
+    node2.copyDatabaseFileToContainer(tempDatabaseFile);
+    node2.start();
+    node1.waitForGenesis();
+    node2.waitForNewFinalization();
+    node2.stop();
   }
 
   @Test
