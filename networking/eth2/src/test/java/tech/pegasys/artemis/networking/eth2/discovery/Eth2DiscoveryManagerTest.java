@@ -13,16 +13,31 @@
 
 package tech.pegasys.artemis.networking.eth2.discovery;
 
+import static org.ethereum.beacon.discovery.schema.EnrField.IP_V4;
+import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
+import org.apache.tuweni.bytes.Bytes;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
+import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
 @SuppressWarnings("UnstableApiUsage")
 class Eth2DiscoveryManagerTest {
+
+  private final EventBus eventBus = new EventBus();
+
+  private final Eth2DiscoveryManager discoveryManager = mock(Eth2DiscoveryManager.class);
+  private final P2PNetwork mockNetwork = mock(P2PNetwork.class);
+
 
   @Test
   void testDiscoveryMangerStartStop() throws ExecutionException, InterruptedException {
@@ -47,9 +62,6 @@ class Eth2DiscoveryManagerTest {
         "Discovery failed to stop from RUNNING to STOPPED");
   }
 
-  EventBus eventBus = new EventBus();
-  private final Eth2DiscoveryManager discoveryManager = mock(Eth2DiscoveryManager.class);
-
   @Test
   void testEventBusRegistration() {
     DiscoveryRequest discoveryRequest = new DiscoveryRequest(2);
@@ -57,5 +69,24 @@ class Eth2DiscoveryManagerTest {
     eventBus.register(discoveryManager);
     eventBus.post(discoveryRequest);
     verify(discoveryManager).onDiscoveryRequest(new DiscoveryRequest(2));
+  }
+
+  @Test
+  void testNetworkUsage()
+      throws UnknownHostException {
+    Eth2DiscoveryManager dm = new Eth2DiscoveryManager(mockNetwork,eventBus);
+    eventBus.register(dm);
+    dm.start();
+
+    final String remoteHostEnr =
+        "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
+    NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
+    dm.getNodeTable().save(NodeRecordInfo.createDefault(remoteNodeRecord));
+    InetAddress byAddress = InetAddress
+        .getByAddress(((Bytes) remoteNodeRecord.get(IP_V4)).toArray());
+
+    verify(mockNetwork)
+        .connect(
+            "/ip/" + byAddress.getHostAddress() + "/tcp/" + (int) remoteNodeRecord.get(UDP_V4));
   }
 }

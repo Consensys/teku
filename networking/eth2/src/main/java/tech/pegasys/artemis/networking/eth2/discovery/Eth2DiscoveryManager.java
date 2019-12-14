@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.discovery;
 
 import static org.ethereum.beacon.discovery.schema.EnrField.IP_V4;
-import static org.ethereum.beacon.discovery.schema.EnrField.TCP_V4;
+import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -64,11 +64,17 @@ public class Eth2DiscoveryManager {
   public static final SerializerFactory TEST_SERIALIZER =
       new NodeSerializerFactory(NODE_RECORD_FACTORY);
 
+  public static enum State {
+    RUNNING,
+    STOPPED
+  }
+
   private final AtomicReference<State> state = new AtomicReference<>(State.STOPPED);
 
   DiscoveryManager dm;
+  private NodeTable nodeTable;
 
-  private Optional<P2PNetwork> network;
+  private Optional<P2PNetwork> network = Optional.empty();
   private Optional<EventBus> eventBus = Optional.empty();
 
   public Eth2DiscoveryManager() {
@@ -81,17 +87,23 @@ public class Eth2DiscoveryManager {
     setupDiscoveryManager();
   }
 
+  public NodeTable getNodeTable() {
+    return nodeTable;
+  }
+
   @Subscribe
   public void onDiscoveryRequest(final DiscoveryRequest request) {
     if (request.numPeersToFind == 0) {
       this.stop();
       return;
     }
-    this.start();
+    if (getState().equals(State.STOPPED)) {
+      this.start();
+    }
   }
 
   /**
-   * Start discovery from idle or stopped state
+   * Start discovery from stopped state
    *
    * @return Future indicating failure or State.RUNNING
    */
@@ -99,7 +111,6 @@ public class Eth2DiscoveryManager {
     if (!state.compareAndSet(State.STOPPED, State.RUNNING)) {
       return CompletableFuture.failedFuture(new IllegalStateException("Network already started"));
     }
-    dm.start();
     eventBus.ifPresent(
         v -> {
           v.register(this);
@@ -127,12 +138,22 @@ public class Eth2DiscoveryManager {
     return state.get();
   }
 
+  public void setNetwork(P2PNetwork network) {
+    this.network = Optional.of(network);
+  }
+
+  public Optional<P2PNetwork> getNetwork() {
+    return network;
+  }
+
   public void setEventBus(EventBus eventBus) {
     this.eventBus = Optional.of(eventBus);
-    this.eventBus.ifPresent(
-        eb -> {
-          eb.register(this);
-        });
+    if (state.get().equals(State.RUNNING)) {
+      this.eventBus.ifPresent(
+          eb -> {
+            eb.register(this);
+          });
+    }
   }
 
   public Optional<EventBus> getEventBus() {
@@ -175,61 +196,69 @@ public class Eth2DiscoveryManager {
     NodeBucketStorage nodeBucketStorage0 =
         nodeTableStorageFactory.createBucketStorage(database0, TEST_SERIALIZER, localNodeRecord);
 
-    DiscoveryManagerImpl discoveryManager0 =
-        new DiscoveryManagerImpl(
-            new NodeTable() {
-              final NodeTable nt = nodeTableStorage0.get();
+    nodeTable = new NodeTable() {
+      final NodeTable nt = nodeTableStorage0.get();
 
-              @Override
-              public void save(NodeRecordInfo node) {
-                nt.save(node);
-                eventBus.ifPresent(
-                    eb -> {
-                      eb.post(new DiscoveryNewPeerResponse(node));
-                    });
-                network.ifPresent(
-                    n -> {
-                      n.connect(
-                          "/ip4/"
-                              + node.getNode().getKey(IP_V4)
-                              + "/tcp/"
-                              + node.getNode().getKey(TCP_V4));
-                    });
-              }
+      @Override
+      public void save(NodeRecordInfo node) {
+        nt.save(node);
+        eventBus.ifPresent(
+            eb -> {
+              eb.post(new DiscoveryNewPeerResponse(node));
+            });
 
-              @Override
-              public void remove(NodeRecordInfo node) {
-                nt.remove(node);
-              }
+        try {
+          InetAddress byAddress = InetAddress
+              .getByAddress(((Bytes) node.getNode().get(IP_V4)).toArray());
 
-              @Override
-              public Optional<NodeRecordInfo> getNode(Bytes nodeId) {
-                return nt.getNode(nodeId);
-              }
+          network.ifPresent(
+              n -> {
+                n.connect(
+                    "/ip/"
+                        + byAddress.getHostAddress()
+                        + "/tcp/"
+                        + (int) node.getNode().get(UDP_V4));
+              });
+        } catch (UnknownHostException e) {
+          logger.error("Got unknown host exception for Peer Response");
+        }
+      }
 
-              @Override
-              public List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit) {
-                List<NodeRecordInfo> closestNodes = nt.findClosestNodes(nodeId, logLimit);
-                eventBus.ifPresent(
-                    eb -> {
-                      eb.post(new DiscoveryFindNodesResponse(closestNodes));
-                    });
-                return closestNodes;
-              }
+      @Override
+      public void remove(NodeRecordInfo node) {
+        nt.remove(node);
+      }
 
-              @Override
-              public NodeRecord getHomeNode() {
-                return nt.getHomeNode();
-              }
-            },
-            nodeBucketStorage0,
-            localNodeRecord,
-            Bytes.wrap(localPrivKey),
-            NODE_RECORD_FACTORY,
-            Schedulers.createDefault().newSingleThreadDaemon("server-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("client-1"));
+      @Override
+      public Optional<NodeRecordInfo> getNode(Bytes nodeId) {
+        return nt.getNode(nodeId);
+      }
 
-    dm = discoveryManager0;
+      @Override
+      public List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit) {
+        List<NodeRecordInfo> closestNodes = nt.findClosestNodes(nodeId, logLimit);
+        eventBus.ifPresent(
+            eb -> {
+              eb.post(new DiscoveryFindNodesResponse(closestNodes));
+            });
+        return closestNodes;
+      }
+
+      @Override
+      public NodeRecord getHomeNode() {
+        return nt.getHomeNode();
+      }
+    };
+
+    dm = new DiscoveryManagerImpl(
+        // delegating node table
+        nodeTable,
+        nodeBucketStorage0,
+        localNodeRecord,
+        Bytes.wrap(localPrivKey),
+        NODE_RECORD_FACTORY,
+        Schedulers.createDefault().newSingleThreadDaemon("server-1"),
+        Schedulers.createDefault().newSingleThreadDaemon("client-1"));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -251,14 +280,9 @@ public class Eth2DiscoveryManager {
                 EnrFieldV4.PKEY_SECP256K1,
                 Functions.derivePublicKeyFromPrivate(Bytes.wrap(privKey1))),
             Pair.with(EnrField.TCP_V4, port),
-            Pair.with(EnrField.UDP_V4, port));
+            Pair.with(UDP_V4, port));
     nodeRecord1.sign(Bytes.wrap(privKey1));
     nodeRecord1.verify();
     return new Pair(nodeRecord1, privKey1);
-  }
-
-  public static enum State {
-    RUNNING,
-    STOPPED
   }
 }
