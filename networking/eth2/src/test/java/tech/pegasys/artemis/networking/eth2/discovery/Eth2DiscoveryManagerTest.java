@@ -38,7 +38,6 @@ class Eth2DiscoveryManagerTest {
   private final Eth2DiscoveryManager discoveryManager = mock(Eth2DiscoveryManager.class);
   private final P2PNetwork mockNetwork = mock(P2PNetwork.class);
 
-
   @Test
   void testDiscoveryMangerStartStop() throws ExecutionException, InterruptedException {
     Eth2DiscoveryManager dm = new Eth2DiscoveryManager();
@@ -72,9 +71,8 @@ class Eth2DiscoveryManagerTest {
   }
 
   @Test
-  void testNetworkUsage()
-      throws UnknownHostException {
-    Eth2DiscoveryManager dm = new Eth2DiscoveryManager(mockNetwork,eventBus);
+  void testNetworkUsage() throws UnknownHostException {
+    Eth2DiscoveryManager dm = new Eth2DiscoveryManager(mockNetwork, eventBus);
     eventBus.register(dm);
     dm.start();
 
@@ -82,8 +80,8 @@ class Eth2DiscoveryManagerTest {
         "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
     NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
     dm.getNodeTable().save(NodeRecordInfo.createDefault(remoteNodeRecord));
-    InetAddress byAddress = InetAddress
-        .getByAddress(((Bytes) remoteNodeRecord.get(IP_V4)).toArray());
+    InetAddress byAddress =
+        InetAddress.getByAddress(((Bytes) remoteNodeRecord.get(IP_V4)).toArray());
 
     verify(mockNetwork)
         .connect(

@@ -196,69 +196,71 @@ public class Eth2DiscoveryManager {
     NodeBucketStorage nodeBucketStorage0 =
         nodeTableStorageFactory.createBucketStorage(database0, TEST_SERIALIZER, localNodeRecord);
 
-    nodeTable = new NodeTable() {
-      final NodeTable nt = nodeTableStorage0.get();
+    nodeTable =
+        new NodeTable() {
+          final NodeTable nt = nodeTableStorage0.get();
 
-      @Override
-      public void save(NodeRecordInfo node) {
-        nt.save(node);
-        eventBus.ifPresent(
-            eb -> {
-              eb.post(new DiscoveryNewPeerResponse(node));
-            });
+          @Override
+          public void save(NodeRecordInfo node) {
+            nt.save(node);
+            eventBus.ifPresent(
+                eb -> {
+                  eb.post(new DiscoveryNewPeerResponse(node));
+                });
 
-        try {
-          InetAddress byAddress = InetAddress
-              .getByAddress(((Bytes) node.getNode().get(IP_V4)).toArray());
+            try {
+              InetAddress byAddress =
+                  InetAddress.getByAddress(((Bytes) node.getNode().get(IP_V4)).toArray());
 
-          network.ifPresent(
-              n -> {
-                n.connect(
-                    "/ip/"
-                        + byAddress.getHostAddress()
-                        + "/tcp/"
-                        + (int) node.getNode().get(UDP_V4));
-              });
-        } catch (UnknownHostException e) {
-          logger.error("Got unknown host exception for Peer Response");
-        }
-      }
+              network.ifPresent(
+                  n -> {
+                    n.connect(
+                        "/ip/"
+                            + byAddress.getHostAddress()
+                            + "/tcp/"
+                            + (int) node.getNode().get(UDP_V4));
+                  });
+            } catch (UnknownHostException e) {
+              logger.error("Got unknown host exception for Peer Response");
+            }
+          }
 
-      @Override
-      public void remove(NodeRecordInfo node) {
-        nt.remove(node);
-      }
+          @Override
+          public void remove(NodeRecordInfo node) {
+            nt.remove(node);
+          }
 
-      @Override
-      public Optional<NodeRecordInfo> getNode(Bytes nodeId) {
-        return nt.getNode(nodeId);
-      }
+          @Override
+          public Optional<NodeRecordInfo> getNode(Bytes nodeId) {
+            return nt.getNode(nodeId);
+          }
 
-      @Override
-      public List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit) {
-        List<NodeRecordInfo> closestNodes = nt.findClosestNodes(nodeId, logLimit);
-        eventBus.ifPresent(
-            eb -> {
-              eb.post(new DiscoveryFindNodesResponse(closestNodes));
-            });
-        return closestNodes;
-      }
+          @Override
+          public List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit) {
+            List<NodeRecordInfo> closestNodes = nt.findClosestNodes(nodeId, logLimit);
+            eventBus.ifPresent(
+                eb -> {
+                  eb.post(new DiscoveryFindNodesResponse(closestNodes));
+                });
+            return closestNodes;
+          }
 
-      @Override
-      public NodeRecord getHomeNode() {
-        return nt.getHomeNode();
-      }
-    };
+          @Override
+          public NodeRecord getHomeNode() {
+            return nt.getHomeNode();
+          }
+        };
 
-    dm = new DiscoveryManagerImpl(
-        // delegating node table
-        nodeTable,
-        nodeBucketStorage0,
-        localNodeRecord,
-        Bytes.wrap(localPrivKey),
-        NODE_RECORD_FACTORY,
-        Schedulers.createDefault().newSingleThreadDaemon("server-1"),
-        Schedulers.createDefault().newSingleThreadDaemon("client-1"));
+    dm =
+        new DiscoveryManagerImpl(
+            // delegating node table
+            nodeTable,
+            nodeBucketStorage0,
+            localNodeRecord,
+            Bytes.wrap(localPrivKey),
+            NODE_RECORD_FACTORY,
+            Schedulers.createDefault().newSingleThreadDaemon("server-1"),
+            Schedulers.createDefault().newSingleThreadDaemon("client-1"));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
