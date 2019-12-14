@@ -57,7 +57,7 @@ public class IndexedAttestation
 
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
     this.attesting_indices = new SSZList<>(indexedAttestation.getAttesting_indices());
-    this.data = new AttestationData(data);
+    this.data = indexedAttestation.getData();
     this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
   }
 

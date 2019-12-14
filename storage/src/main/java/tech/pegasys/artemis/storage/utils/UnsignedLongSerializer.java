@@ -15,21 +15,38 @@ package tech.pegasys.artemis.storage.utils;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
-import java.io.Serializable;
+import java.util.Comparator;
+import org.jetbrains.annotations.NotNull;
 import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
-import org.mapdb.Serializer;
+import org.mapdb.serializer.SerializerEightByte;
 
-public class UnsignedLongSerializer implements Serializer<UnsignedLong>, Serializable {
+public class UnsignedLongSerializer extends SerializerEightByte<UnsignedLong> {
 
   @Override
-  public void serialize(DataOutput2 out, UnsignedLong value) throws IOException {
-    out.writeChars(value.toString(10));
+  protected UnsignedLong unpack(final long data) {
+    return UnsignedLong.fromLongBits(data);
   }
 
   @Override
-  public UnsignedLong deserialize(DataInput2 in, int available) throws IOException {
-    UnsignedLong returnVal = UnsignedLong.valueOf(in.readLine(), 10);
-    return returnVal;
+  protected long pack(final UnsignedLong value) {
+    return value.longValue();
+  }
+
+  @Override
+  public int valueArraySearch(final Object keys, final UnsignedLong key) {
+    return valueArraySearch(keys, key, Comparator.naturalOrder());
+  }
+
+  @Override
+  public void serialize(@NotNull final DataOutput2 out, @NotNull final UnsignedLong value)
+      throws IOException {
+    out.writeLong(value.longValue());
+  }
+
+  @Override
+  public UnsignedLong deserialize(@NotNull final DataInput2 input, final int available)
+      throws IOException {
+    return UnsignedLong.fromLongBits(input.readLong());
   }
 }

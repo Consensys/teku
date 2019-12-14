@@ -103,6 +103,6 @@ public final class StartupUtil {
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs);
     }
 
-    chainStorageClient.initialize(initialState);
+    chainStorageClient.initializeFromGenesis(initialState);
   }
 }

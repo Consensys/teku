@@ -17,9 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 public class StatusMessageFactory {
 
@@ -30,21 +28,18 @@ public class StatusMessageFactory {
   }
 
   public StatusMessage createStatusMessage() {
-    final Bytes4 currentFork;
     final Bytes32 finalizedRoot;
     final UnsignedLong finalizedEpoch;
     if (chainStorageClient.getStore() != null) {
-      currentFork = chainStorageClient.getBestBlockRootState().getFork().getCurrent_version();
       final Checkpoint finalizedCheckpoint = chainStorageClient.getStore().getFinalizedCheckpoint();
       finalizedRoot = finalizedCheckpoint.getRoot();
       finalizedEpoch = finalizedCheckpoint.getEpoch();
     } else {
-      currentFork = Fork.VERSION_ZERO;
       finalizedRoot = Bytes32.ZERO;
       finalizedEpoch = UnsignedLong.ZERO;
     }
     return new StatusMessage(
-        currentFork,
+        chainStorageClient.getForkAtHead(),
         finalizedRoot,
         finalizedEpoch,
         chainStorageClient.getBestBlockRoot(),
