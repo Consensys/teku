@@ -142,46 +142,65 @@ public class V2MapDatabase implements Database {
   }
 
   @Override
-  public void storeGenesis(final Store store) {
-    time.set(store.getTime());
-    genesisTime.set(store.getGenesisTime());
-    justifiedCheckpoint.set(store.getJustifiedCheckpoint());
-    finalizedCheckpoint.set(store.getFinalizedCheckpoint());
-    bestJustifiedCheckpoint.set(store.getBestJustifiedCheckpoint());
-    store
-        .getBlockRoots()
-        .forEach(
-            root -> {
-              addHotBlock(root, store.getBlock(root));
-              hotStatesByRoot.put(root, store.getBlockState(root));
-            });
-    checkpointStates.put(
-        store.getJustifiedCheckpoint(),
-        store.getBlockState(store.getJustifiedCheckpoint().getRoot()));
+  public synchronized void storeGenesis(final Store store) {
+    try {
+      time.set(store.getTime());
+      genesisTime.set(store.getGenesisTime());
+      justifiedCheckpoint.set(store.getJustifiedCheckpoint());
+      finalizedCheckpoint.set(store.getFinalizedCheckpoint());
+      bestJustifiedCheckpoint.set(store.getBestJustifiedCheckpoint());
+      store
+          .getBlockRoots()
+          .forEach(
+              root -> {
+                final BeaconBlock block = store.getBlock(root);
+                final BeaconState state = store.getBlockState(root);
+                addHotBlock(root, block);
+                hotStatesByRoot.put(root, state);
+                finalizedRootsBySlot.put(block.getSlot(), root);
+                finalizedBlocksByRoot.put(root, block);
+                finalizedStatesByRoot.put(root, state);
+              });
+      checkpointStates.put(
+          store.getJustifiedCheckpoint(),
+          store.getBlockState(store.getJustifiedCheckpoint().getRoot()));
+      checkpointStates.put(
+          store.getBestJustifiedCheckpoint(),
+          store.getBlockState(store.getBestJustifiedCheckpoint().getRoot()));
+      db.commit();
+    } catch (final RuntimeException | Error e) {
+      db.rollback();
+      throw e;
+    }
   }
 
   @Override
-  public void insert(final Transaction transaction) {
-    final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
-    final Checkpoint newFinalizedCheckpoint = transaction.getFinalizedCheckpoint();
-    time.set(transaction.getTime());
-    genesisTime.set(transaction.getGenesisTime());
-    finalizedCheckpoint.set(newFinalizedCheckpoint);
-    justifiedCheckpoint.set(transaction.getJustifiedCheckpoint());
-    bestJustifiedCheckpoint.set(transaction.getBestJustifiedCheckpoint());
-    checkpointStates.putAll(transaction.getCheckpointStates());
-    latestMessages.putAll(transaction.getLatestMessages());
+  public synchronized void insert(final Transaction transaction) {
+    try {
+      final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
+      final Checkpoint newFinalizedCheckpoint = transaction.getFinalizedCheckpoint();
+      time.set(transaction.getTime());
+      genesisTime.set(transaction.getGenesisTime());
+      finalizedCheckpoint.set(newFinalizedCheckpoint);
+      justifiedCheckpoint.set(transaction.getJustifiedCheckpoint());
+      bestJustifiedCheckpoint.set(transaction.getBestJustifiedCheckpoint());
+      checkpointStates.putAll(transaction.getCheckpointStates());
+      latestMessages.putAll(transaction.getLatestMessages());
 
-    transaction.getBlocks().forEach(this::addHotBlock);
-    hotStatesByRoot.putAll(transaction.getBlockStates());
+      transaction.getBlocks().forEach(this::addHotBlock);
+      hotStatesByRoot.putAll(transaction.getBlockStates());
 
-    if (previousFinalizedCheckpoint == null
-        || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
-      recordFinalizedBlocks(newFinalizedCheckpoint);
-      pruneCheckpointStates(newFinalizedCheckpoint);
-      pruneHotBlocks(newFinalizedCheckpoint);
+      if (previousFinalizedCheckpoint == null
+          || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
+        recordFinalizedBlocks(newFinalizedCheckpoint);
+        pruneCheckpointStates(newFinalizedCheckpoint);
+        pruneHotBlocks(newFinalizedCheckpoint);
+      }
+      db.commit();
+    } catch (final RuntimeException | Error e) {
+      db.rollback();
+      throw e;
     }
-    db.commit();
   }
 
   private void addHotBlock(final Bytes32 root, final BeaconBlock block) {
@@ -209,6 +228,11 @@ public class V2MapDatabase implements Database {
       final Optional<BeaconState> finalizedState = getState(newlyFinalizedBlockRoot);
       if (finalizedState.isPresent()) {
         finalizedStatesByRoot.put(newlyFinalizedBlockRoot, finalizedState.get());
+      } else {
+        LOG.error(
+            "Missing finalized state {} for epoch {}",
+            newlyFinalizedBlockRoot,
+            newFinalizedCheckpoint.getEpoch());
       }
       newlyFinalizedBlockRoot = newlyFinalizedBlock.getParent_root();
       newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
@@ -243,6 +267,7 @@ public class V2MapDatabase implements Database {
               hotBlocksByRoot.keySet().removeAll(roots);
               hotStatesByRoot.keySet().removeAll(roots);
             });
+    hotRootsBySlotCache.keySet().removeAll(toRemove.keySet());
   }
 
   private void addToHotRootsBySlotCache(final Bytes32 root, final BeaconBlock block) {
