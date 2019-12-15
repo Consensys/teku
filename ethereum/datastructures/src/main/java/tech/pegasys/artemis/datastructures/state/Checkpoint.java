@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
@@ -94,6 +95,11 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
     Checkpoint other = (Checkpoint) obj;
     return Objects.equals(this.getEpoch(), other.getEpoch())
         && Objects.equals(this.getRoot(), other.getRoot());
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("epoch", epoch).add("root", root).toString();
   }
 
   /** ****************** * GETTERS & SETTERS * * ******************* */
