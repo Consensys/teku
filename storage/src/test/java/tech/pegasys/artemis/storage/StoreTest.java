@@ -109,41 +109,6 @@ class StoreTest {
   }
 
   @Test
-  public void shouldApplyChangesToDisk() {
-    final Database db = MapDbDatabase.createInMemory();
-
-    final Transaction transaction = store.startTransaction();
-    final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
-    final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
-    final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
-    final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
-    final BeaconBlock block = randomBeaconBlock(10, 100);
-    final BeaconState state = randomBeaconState(100);
-    final UnsignedLong time = UnsignedLong.valueOf(3);
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(2);
-    transaction.putBlock(blockRoot, block);
-    transaction.putBlockState(blockRoot, state);
-    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
-    transaction.setJustifiedCheckpoint(justifiedCheckpoint);
-    transaction.setBestJustifiedCheckpoint(bestJustifiedCheckpoint);
-    transaction.putCheckpointState(justifiedCheckpoint, state);
-    transaction.setTime(time);
-    transaction.setGenesis_time(genesisTime);
-
-    db.insert(transaction);
-
-    assertEquals(block, db.getBlock(blockRoot).get());
-    assertEquals(state, db.getState(blockRoot).get());
-    final Store memoryStore = db.createMemoryStore();
-    assertEquals(finalizedCheckpoint, memoryStore.getFinalizedCheckpoint());
-    assertEquals(justifiedCheckpoint, memoryStore.getJustifiedCheckpoint());
-    assertEquals(bestJustifiedCheckpoint, memoryStore.getBestJustifiedCheckpoint());
-    assertEquals(state, memoryStore.getCheckpointState(justifiedCheckpoint));
-    assertEquals(time, memoryStore.getTime());
-    assertEquals(genesisTime, memoryStore.getGenesisTime());
-  }
-
-  @Test
   public void removesOldObjectsFromStore() {
     int numValidObjects = 2;
     int numInvalidObjects = 2;
