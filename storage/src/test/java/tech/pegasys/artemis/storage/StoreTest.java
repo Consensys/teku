@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomB
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomCheckpoint;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -111,8 +110,7 @@ class StoreTest {
 
   @Test
   public void shouldApplyChangesToDisk() {
-    EventBus eventBus = new EventBus();
-    final Database db = Database.createInMemory(eventBus);
+    final V1MapDatabase db = V1MapDatabase.createInMemory();
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
@@ -135,7 +133,7 @@ class StoreTest {
     db.insert(transaction);
 
     assertEquals(block, db.getBlock(blockRoot).get());
-    assertEquals(state, db.getBlock_state(blockRoot).get());
+    assertEquals(state, db.getState(blockRoot).get());
     assertEquals(finalizedCheckpoint, db.getFinalizedCheckpoint().get());
     assertEquals(justifiedCheckpoint, db.getJustifiedCheckpoint().get());
     assertEquals(bestJustifiedCheckpoint, db.getBestJustifiedCheckpoint().get());
@@ -146,8 +144,7 @@ class StoreTest {
 
   @Test
   public void shouldPersistOnDisk() {
-    EventBus eventBus = new EventBus();
-    final Database db = Database.createForFile("test.db", eventBus, false);
+    final V1MapDatabase db = V1MapDatabase.createForFile("test.db", false);
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
@@ -170,10 +167,10 @@ class StoreTest {
     db.insert(transaction);
     db.close();
 
-    final Database newDB = Database.createForFile("test.db", eventBus, true);
+    final V1MapDatabase newDB = V1MapDatabase.createForFile("test.db", true);
 
     assertEquals(block, newDB.getBlock(blockRoot).get());
-    assertEquals(state, newDB.getBlock_state(blockRoot).get());
+    assertEquals(state, newDB.getState(blockRoot).get());
     assertEquals(finalizedCheckpoint, newDB.getFinalizedCheckpoint().get());
     assertEquals(justifiedCheckpoint, newDB.getJustifiedCheckpoint().get());
     assertEquals(bestJustifiedCheckpoint, newDB.getBestJustifiedCheckpoint().get());
