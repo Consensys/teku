@@ -40,7 +40,6 @@ public class PeerSync {
   private final BlockImporter blockImporter;
 
   private UnsignedLong latestRequestedSlot;
-  private final CompletableFuture<PeerSyncResult> finalResult = new CompletableFuture<>();
 
   public PeerSync(
       final Eth2Peer peer,
@@ -57,27 +56,33 @@ public class PeerSync {
   }
 
   public CompletableFuture<PeerSyncResult> sync() {
-    executeSync();
-    return finalResult;
+    return executeSync();
   }
 
-  private void executeSync() {
-    requestSyncBlocks(peer)
-        .whenComplete(
-            (res, err) -> {
-              if (err != null) {
-                if (err instanceof BadBlockException) {
-                  disconnectFromPeer(peer);
-                }
-                finalResult.completeExceptionally(err);
-              } else if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch)
-                  >= 0) {
-                finalResult.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+  private CompletableFuture<PeerSyncResult> executeSync() {
+    return requestSyncBlocks(peer)
+        .thenCompose(
+            res -> {
+              if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch) >= 0) {
+                return CompletableFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
               } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
-                executeSync();
+                return executeSync();
               } else {
                 disconnectFromPeer(peer);
-                finalResult.completeExceptionally(new FaultyAdvertisementException());
+                return CompletableFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
+              }
+            })
+        .exceptionally(
+            err -> {
+              Throwable rootException = Throwables.getRootCause(err);
+              if (rootException instanceof BadBlockException) {
+                disconnectFromPeer(peer);
+                return PeerSyncResult.BAD_BLOCK;
+              }
+              if (err instanceof RuntimeException) {
+                throw (RuntimeException) err;
+              } else {
+                throw new RuntimeException("Unhandled error while syncing", err);
               }
             });
   }
@@ -112,5 +117,4 @@ public class PeerSync {
     }
   }
 
-  public static class FaultyAdvertisementException extends RuntimeException {}
 }

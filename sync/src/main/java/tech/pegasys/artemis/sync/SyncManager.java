@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.sync;
 
-import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
@@ -39,39 +38,27 @@ public class SyncManager {
   }
 
   public CompletableFuture<Void> sync() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    executeSync(future);
-    return future;
+    return executeSync();
   }
 
-  private void executeSync(CompletableFuture<Void> finalResult) {
+  private CompletableFuture<Void> executeSync() {
     Optional<Eth2Peer> possibleSyncPeer = findBestSyncPeer();
 
     // If there are no peers ahead of us, return
     if (possibleSyncPeer.isEmpty()) {
-      finalResult.complete(null);
-      return;
+      return CompletableFuture.completedFuture(null);
     }
 
     Eth2Peer syncPeer = possibleSyncPeer.get();
     PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockImporter);
 
-    peerSync
+    return peerSync
         .sync()
-        .whenComplete(
-            (result, err) -> {
-              if (err != null) {
-                Throwable rootException = Throwables.getRootCause(err);
-                if (rootException instanceof PeerSync.FaultyAdvertisementException
-                    || rootException instanceof PeerSync.BadBlockException) {
-                  executeSync(finalResult);
-                } else {
-                  finalResult.completeExceptionally(err);
-                }
-              } else {
-                finalResult.complete(null);
-              }
-            });
+        .thenCompose(
+            result ->
+                result != PeerSyncResult.SUCCESSFUL_SYNC
+                    ? executeSync()
+                    : CompletableFuture.completedFuture(null));
   }
 
   private Optional<Eth2Peer> findBestSyncPeer() {
