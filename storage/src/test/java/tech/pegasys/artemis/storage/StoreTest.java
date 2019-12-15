@@ -110,7 +110,7 @@ class StoreTest {
 
   @Test
   public void shouldApplyChangesToDisk() {
-    final Database db = V2MapDatabase.createInMemory();
+    final Database db = MapDbDatabase.createInMemory();
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);

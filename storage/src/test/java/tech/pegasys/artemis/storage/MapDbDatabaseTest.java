@@ -35,7 +35,7 @@ import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @ExtendWith(TempDirectoryExtension.class)
-class V2MapDatabaseTest {
+class MapDbDatabaseTest {
   private static final BeaconState GENESIS_STATE =
       DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, 1);
   private static final Checkpoint CHECKPOINT1 =
@@ -46,7 +46,7 @@ class V2MapDatabaseTest {
       new Checkpoint(UnsignedLong.valueOf(8), Bytes32.fromHexString("0x9012"));
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
 
-  private Database database = V2MapDatabase.createInMemory();
+  private Database database = MapDbDatabase.createInMemory();
 
   private int seed = 498242;
 
@@ -295,7 +295,7 @@ class V2MapDatabaseTest {
 
   @Test
   public void shouldPersistOnDisk(@TempDirectory final Path tempDir) throws Exception {
-    database = V2MapDatabase.createOnDisk(tempDir.toFile(), false);
+    database = MapDbDatabase.createOnDisk(tempDir.toFile(), false);
     database.storeGenesis(store);
 
     final BeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
@@ -329,7 +329,7 @@ class V2MapDatabaseTest {
 
     // Close and re-read from disk store.
     database.close();
-    database = V2MapDatabase.createOnDisk(tempDir.toFile(), true);
+    database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
     assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
     assertBlocksFinalized(block1, block2, block3, block7);
 

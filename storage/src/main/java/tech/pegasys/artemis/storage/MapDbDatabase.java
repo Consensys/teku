@@ -44,7 +44,7 @@ import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
 import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 
-public class V2MapDatabase implements Database {
+public class MapDbDatabase implements Database {
   private static final Logger LOG = LogManager.getLogger();
   private final DB db;
   private final Var<UnsignedLong> time;
@@ -75,14 +75,14 @@ public class V2MapDatabase implements Database {
     } catch (IOException e) {
       STDOUT.log(Level.WARN, "Failed to clear old database");
     }
-    return new V2MapDatabase(DBMaker.fileDB(databaseFile));
+    return new MapDbDatabase(DBMaker.fileDB(databaseFile));
   }
 
   public static Database createInMemory() {
-    return new V2MapDatabase(DBMaker.memoryDB());
+    return new MapDbDatabase(DBMaker.memoryDB());
   }
 
-  private V2MapDatabase(final Maker dbMaker) {
+  private MapDbDatabase(final Maker dbMaker) {
     db = dbMaker.transactionEnable().make();
     time = db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
     genesisTime = db.atomicVar("genesisTime", new UnsignedLongSerializer()).createOrOpen();
