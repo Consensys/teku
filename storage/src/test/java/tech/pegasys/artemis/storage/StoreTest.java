@@ -110,7 +110,7 @@ class StoreTest {
 
   @Test
   public void shouldApplyChangesToDisk() {
-    final V1MapDatabase db = V1MapDatabase.createInMemory();
+    final Database db = V2MapDatabase.createInMemory();
 
     final Transaction transaction = store.startTransaction();
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
@@ -134,49 +134,13 @@ class StoreTest {
 
     assertEquals(block, db.getBlock(blockRoot).get());
     assertEquals(state, db.getState(blockRoot).get());
-    assertEquals(finalizedCheckpoint, db.getFinalizedCheckpoint().get());
-    assertEquals(justifiedCheckpoint, db.getJustifiedCheckpoint().get());
-    assertEquals(bestJustifiedCheckpoint, db.getBestJustifiedCheckpoint().get());
-    assertEquals(state, db.getCheckpoint_state(justifiedCheckpoint).get());
-    assertEquals(time, db.getTime().get());
-    assertEquals(genesisTime, db.getGenesisTime().get());
-  }
-
-  @Test
-  public void shouldPersistOnDisk() {
-    final V1MapDatabase db = V1MapDatabase.createForFile("test.db", false);
-
-    final Transaction transaction = store.startTransaction();
-    final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
-    final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
-    final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
-    final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
-    final BeaconBlock block = randomBeaconBlock(10, 100);
-    final BeaconState state = randomBeaconState(100);
-    final UnsignedLong time = UnsignedLong.valueOf(3);
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(2);
-    transaction.putBlock(blockRoot, block);
-    transaction.putBlockState(blockRoot, state);
-    transaction.setFinalizedCheckpoint(finalizedCheckpoint);
-    transaction.setJustifiedCheckpoint(justifiedCheckpoint);
-    transaction.setBestJustifiedCheckpoint(bestJustifiedCheckpoint);
-    transaction.putCheckpointState(justifiedCheckpoint, state);
-    transaction.setTime(time);
-    transaction.setGenesis_time(genesisTime);
-
-    db.insert(transaction);
-    db.close();
-
-    final V1MapDatabase newDB = V1MapDatabase.createForFile("test.db", true);
-
-    assertEquals(block, newDB.getBlock(blockRoot).get());
-    assertEquals(state, newDB.getState(blockRoot).get());
-    assertEquals(finalizedCheckpoint, newDB.getFinalizedCheckpoint().get());
-    assertEquals(justifiedCheckpoint, newDB.getJustifiedCheckpoint().get());
-    assertEquals(bestJustifiedCheckpoint, newDB.getBestJustifiedCheckpoint().get());
-    assertEquals(state, newDB.getCheckpoint_state(justifiedCheckpoint).get());
-    assertEquals(time, newDB.getTime().get());
-    assertEquals(genesisTime, newDB.getGenesisTime().get());
+    final Store memoryStore = db.createMemoryStore();
+    assertEquals(finalizedCheckpoint, memoryStore.getFinalizedCheckpoint());
+    assertEquals(justifiedCheckpoint, memoryStore.getJustifiedCheckpoint());
+    assertEquals(bestJustifiedCheckpoint, memoryStore.getBestJustifiedCheckpoint());
+    assertEquals(state, memoryStore.getCheckpointState(justifiedCheckpoint));
+    assertEquals(time, memoryStore.getTime());
+    assertEquals(genesisTime, memoryStore.getGenesisTime());
   }
 
   @Test

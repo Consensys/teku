@@ -18,10 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.junit.TempDirectory;
+import org.apache.tuweni.junit.TempDirectoryExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -30,6 +34,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
+@ExtendWith(TempDirectoryExtension.class)
 class V2MapDatabaseTest {
   private static final BeaconState GENESIS_STATE =
       DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, 1);
@@ -40,7 +45,8 @@ class V2MapDatabaseTest {
   private static final Checkpoint CHECKPOINT3 =
       new Checkpoint(UnsignedLong.valueOf(8), Bytes32.fromHexString("0x9012"));
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
-  private final Database database = V2MapDatabase.createInMemory();
+
+  private Database database = V2MapDatabase.createInMemory();
 
   private int seed = 498242;
 
@@ -280,6 +286,50 @@ class V2MapDatabaseTest {
 
     finalizeEpoch(UnsignedLong.ONE, block7.signing_root("signature"));
 
+    assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
+    assertBlocksFinalized(block1, block2, block3, block7);
+
+    // Should still be able to retrieve finalized blocks by root
+    assertThat(database.getBlock(block1.signing_root("signature"))).contains(block1);
+  }
+
+  @Test
+  public void shouldPersistOnDisk(@TempDirectory final Path tempDir) throws Exception {
+    database = V2MapDatabase.createOnDisk(tempDir.toFile(), false);
+    database.storeGenesis(store);
+
+    final BeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
+    final BeaconBlock block2 = blockAtSlot(2, block1);
+    final BeaconBlock block3 = blockAtSlot(3, block2);
+    // Few skipped slots
+    final BeaconBlock block7 = blockAtSlot(7, block3);
+    final BeaconBlock block8 = blockAtSlot(8, block7);
+    final BeaconBlock block9 = blockAtSlot(9, block8);
+
+    // Create some blocks on a different fork
+    final BeaconBlock forkBlock6 = blockAtSlot(6, block1);
+    final BeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
+    final BeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
+    final BeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
+
+    addBlocks(
+        block1,
+        block2,
+        block3,
+        block7,
+        block8,
+        block9,
+        forkBlock6,
+        forkBlock7,
+        forkBlock8,
+        forkBlock9);
+    assertThat(database.getBlock(block7.signing_root("signature"))).contains(block7);
+
+    finalizeEpoch(UnsignedLong.ONE, block7.signing_root("signature"));
+
+    // Close and re-read from disk store.
+    database.close();
+    database = V2MapDatabase.createOnDisk(tempDir.toFile(), true);
     assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
     assertBlocksFinalized(block1, block2, block3, block7);
 
