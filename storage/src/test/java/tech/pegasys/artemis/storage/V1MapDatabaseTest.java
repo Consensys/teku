@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,9 +28,8 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 
-class DatabaseTest {
-  private final EventBus eventBus = mock(EventBus.class);
-  private final Database database = Database.createInMemory(eventBus);
+class V1MapDatabaseTest {
+  private final V1MapDatabase database = V1MapDatabase.createInMemory();
   private int seed = 49824;
 
   @Test
