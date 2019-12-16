@@ -17,51 +17,93 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class BlockPropagationManager {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
   private final ChainStorageClient storageClient;
-  private final HistoricalChainData historicalChainData;
   private final BlockImporter blockImporter;
+  private final PendingBlocks pendingBlocks;
+  private final FutureBlocks futureBlocks;
 
   public BlockPropagationManager(
       final EventBus eventBus,
       final ChainStorageClient storageClient,
-      final HistoricalChainData historicalChainData,
-      final BlockImporter blockImporter) {
+      final BlockImporter blockImporter,
+      final PendingBlocks pendingBlocks,
+      final FutureBlocks futureBlocks) {
     this.eventBus = eventBus;
     this.storageClient = storageClient;
-    this.historicalChainData = historicalChainData;
     this.blockImporter = blockImporter;
+    this.pendingBlocks = pendingBlocks;
+    this.futureBlocks = futureBlocks;
 
     this.eventBus.register(this);
   }
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
+  public void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
     final BeaconBlock block = gossipedBlockEvent.getBlock();
-    try {
-      // TODO - check if block is attached, if so import it, otherwise add it to our pending pool
-      blockImporter.importBlock(block);
-    } catch (StateTransitionException e) {
-      LOG.warn("Unable to import propagated block " + block, e);
+    if (blockIsKnown(block)) {
+      // Nothing to do
+      return;
+    }
+
+    if (!blockImporter.isBlockAttached(block)) {
+      pendingBlocks.add(block);
+    } else if (blockImporter.isFutureBlock(block)) {
+      futureBlocks.add(block);
+    } else {
+      importBlock(block);
     }
   }
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBlockImported(BlockImportedEvent blockImportedEvent) {
-    // TODO - check to see if any pending blocks can now be imported
+  public void onBlockImported(BlockImportedEvent blockImportedEvent) {
+    // Check if any pending blocks can now be imported
+    final BeaconBlock block = blockImportedEvent.getBlock();
+    final Bytes32 blockRoot = block.signing_root("signature");
+    pendingBlocks.remove(block);
+    pendingBlocks
+        .childrenOf(blockRoot)
+        .forEach(
+            child -> {
+              pendingBlocks.remove(child);
+              if (blockImporter.isFutureBlock(child)) {
+                futureBlocks.add(child);
+              } else {
+                importBlock(child);
+              }
+            });
+  }
+
+  @Subscribe
+  public void onSlot(final SlotEvent slotEvent) {
+    futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
+  }
+
+  private boolean blockIsKnown(final BeaconBlock block) {
+    final Bytes32 blockRoot = block.signing_root("signature");
+    return pendingBlocks.contains(block) || storageClient.getBlockByRoot(blockRoot).isPresent();
+  }
+
+  private void importBlock(final BeaconBlock block) {
+    try {
+      blockImporter.importBlock(block);
+    } catch (StateTransitionException e) {
+      LOG.debug("Unable to import propagated block " + block, e);
+    }
   }
 
   public void shutdown() {
