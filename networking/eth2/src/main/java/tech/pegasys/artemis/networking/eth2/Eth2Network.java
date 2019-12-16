@@ -30,7 +30,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
-  private final P2PNetwork network;
+  private final P2PNetwork<?> network;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
   private final ChainStorageClient chainStorageClient;
@@ -41,7 +41,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   private AggregateGossipManager aggregateGossipManager;
 
   public Eth2Network(
-      final P2PNetwork network,
+      final P2PNetwork<?> network,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient) {

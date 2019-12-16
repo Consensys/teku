@@ -46,7 +46,8 @@ public class PeerManager implements ConnectionHandler {
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final List<PeerHandler> peerHandlers;
 
-  private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers = Subscribers.create(true);
+  private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
+      Subscribers.create(true);
 
   public PeerManager(
       final ScheduledExecutorService scheduler,
