@@ -30,6 +30,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -96,11 +97,11 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate block from network 1
     final BeaconBlock newBlock = chainUtil.createBlockAtSlot(UnsignedLong.valueOf(2L));
-    eventBus1.post(newBlock);
+    eventBus1.post(new BlockProposedEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
-    final BeaconBlockCollector network2Blocks = new BeaconBlockCollector(eventBus2);
-    final BeaconBlockCollector network3Blocks = new BeaconBlockCollector(eventBus3);
+    final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(eventBus2);
+    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(eventBus3);
 
     // Verify the expected block was gossiped across the network
     Waiter.waitFor(
@@ -162,11 +163,11 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate block from network 1
     final BeaconBlock newBlock =
         chainUtil.createBlockAtSlotFromInvalidProposer(UnsignedLong.valueOf(2L));
-    eventBus1.post(newBlock);
+    eventBus1.post(new BlockProposedEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
-    final BeaconBlockCollector network2Blocks = new BeaconBlockCollector(eventBus2);
-    final BeaconBlockCollector network3Blocks = new BeaconBlockCollector(eventBus3);
+    final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(eventBus2);
+    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(eventBus3);
 
     // Wait for blocks to propagate
     ensureConditionRemainsMet(() -> assertThat(network2Blocks.getBlocks()).isEmpty(), 10000);
@@ -345,23 +346,6 @@ public class GossipMessageHandlerIntegrationTest {
 
     ensureConditionRemainsMet(
         () -> assertThat(network2AttestationsAfterDeregistration.getAttestations()).isEmpty());
-  }
-
-  private static class BeaconBlockCollector {
-    private final Collection<BeaconBlock> blocks = new ConcurrentLinkedQueue<>();
-
-    public BeaconBlockCollector(final EventBus eventBus) {
-      eventBus.register(this);
-    }
-
-    @Subscribe
-    public void onBeaconBlock(final BeaconBlock block) {
-      blocks.add(block);
-    }
-
-    public Collection<BeaconBlock> getBlocks() {
-      return blocks;
-    }
   }
 
   private static class AttestationCollector {

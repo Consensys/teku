@@ -46,12 +46,12 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable> imple
       return false;
     }
 
-    eventBus.post(data);
+    eventBus.post(createEvent(data));
     return true;
   }
 
-  protected void postData(final EventBus eventBus, T data) {
-    eventBus.post(data);
+  protected Object createEvent(T data) {
+    return data;
   }
 
   public abstract String getTopic();

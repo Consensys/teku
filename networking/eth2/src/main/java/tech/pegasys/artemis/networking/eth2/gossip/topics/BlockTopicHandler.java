@@ -46,8 +46,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<BeaconBlock> {
   }
 
   @Override
-  protected void postData(final EventBus eventBus, final BeaconBlock block) {
-    eventBus.post(new GossipedBlockEvent(block));
+  protected Object createEvent(final BeaconBlock block) {
+    return new GossipedBlockEvent(block);
   }
 
   @Override
