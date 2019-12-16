@@ -100,12 +100,7 @@ public class Store implements ReadOnlyStore {
     return new Transaction();
   }
 
-  public Transaction startTransaction(UnsignedLong slot) {
-    return new Transaction(slot);
-  }
-
   public void cleanStoreUntilSlot(UnsignedLong slot) {
-
     // Find keys of objects to clean from store
     Set<Bytes32> blocks = new HashSet<>();
     Set<Bytes32> block_states = new HashSet<>();
@@ -288,14 +283,6 @@ public class Store implements ReadOnlyStore {
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
-    private Optional<UnsignedLong> slot = Optional.empty();
-
-    Transaction() {}
-
-    public Transaction(UnsignedLong slot) {
-      this.slot = Optional.of(slot);
-    }
-
     // Keys to be removed from Store for memory cleaning purposes
     private Set<Bytes32> block_keys = new HashSet<>();
     private Set<Bytes32> block_state_keys = new HashSet<>();
@@ -446,10 +433,6 @@ public class Store implements ReadOnlyStore {
     }
 
     // Disk Storage Related Functions
-
-    public Optional<UnsignedLong> getSlot() {
-      return slot;
-    }
 
     public Map<Bytes32, BeaconBlock> getBlocks() {
       return blocks;
