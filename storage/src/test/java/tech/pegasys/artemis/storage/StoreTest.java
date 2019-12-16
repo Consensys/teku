@@ -51,6 +51,7 @@ class StoreTest {
           new HashMap<>(),
           new HashMap<>());
 
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
   public void shouldApplyChangesWhenTransactionCommits() {
     final Transaction transaction = store.startTransaction();
