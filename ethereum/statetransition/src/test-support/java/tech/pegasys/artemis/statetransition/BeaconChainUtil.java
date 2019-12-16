@@ -73,6 +73,17 @@ public class BeaconChainUtil {
     initializeStorage(chainStorageClient, validatorKeys);
   }
 
+  public void setSlot(final UnsignedLong currentSlot) {
+    if (storageClient.isPreGenesis()) {
+      throw new IllegalStateException("Cannot set current slot before genesis");
+    }
+    final UnsignedLong secPerSlot = UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT);
+    final UnsignedLong time = storageClient.getGenesisTime().plus(currentSlot.times(secPerSlot));
+    final Transaction tx = storageClient.getStore().startTransaction();
+    tx.setTime(time);
+    tx.commit();
+  }
+
   public BeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {
     return createBlockAtSlot(slot, true);
   }
@@ -84,6 +95,7 @@ public class BeaconChainUtil {
   public BlockProcessingRecord createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
     final BeaconBlock block = createBlockAtSlot(slot, true, attestations);
+    setSlot(slot);
     final Transaction transaction = storageClient.getStore().startTransaction();
     final BlockProcessingRecord record =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
