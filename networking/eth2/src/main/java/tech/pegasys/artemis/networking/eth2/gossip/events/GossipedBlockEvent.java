@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.events;
 
+import java.util.Objects;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
 public class GossipedBlockEvent {
@@ -24,5 +25,22 @@ public class GossipedBlockEvent {
 
   public BeaconBlock getBlock() {
     return block;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof GossipedBlockEvent)) {
+      return false;
+    }
+    final GossipedBlockEvent that = (GossipedBlockEvent) o;
+    return Objects.equals(block, that.block);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(block);
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
+import java.util.Objects;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 
 /** This event is emitted when a new block is proposed locally */
@@ -25,5 +26,22 @@ public class BlockProposedEvent {
 
   public BeaconBlock getBlock() {
     return block;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof BlockProposedEvent)) {
+      return false;
+    }
+    final BlockProposedEvent that = (BlockProposedEvent) o;
+    return Objects.equals(block, that.block);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(block);
   }
 }
