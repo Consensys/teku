@@ -73,15 +73,15 @@ class PendingBlocks extends Service {
     }
 
     final Bytes32 blockRoot = beaconBlock.signing_root("signature");
-    if (pendingBlocks.putIfAbsent(blockRoot, beaconBlock) != null) {
-      return;
-    }
+    final Bytes32 parentRoot = beaconBlock.getParent_root();
 
     // Index block by parent
-    final Bytes32 parentRoot = beaconBlock.getParent_root();
     pendingBlocksByParentRoot
         .computeIfAbsent(parentRoot, (key) -> createRootSet(blockRoot))
         .add(blockRoot);
+
+    // Index block by root
+    pendingBlocks.putIfAbsent(blockRoot, beaconBlock);
   }
 
   public void remove(BeaconBlock beaconBlock) {
@@ -119,7 +119,7 @@ class PendingBlocks extends Service {
   }
 
   @Subscribe
-  public void onSlot(final SlotEvent slotEvent) {
+  void onSlot(final SlotEvent slotEvent) {
     currentSlot = slotEvent.getSlot();
     if (currentSlot.mod(historicalBlockTolerance).equals(UnsignedLong.ZERO)) {
       // Purge old blocks

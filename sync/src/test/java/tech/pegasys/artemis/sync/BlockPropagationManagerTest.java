@@ -77,7 +77,7 @@ public class BlockPropagationManagerTest {
     incrementSlot();
 
     assertThat(importedBlocks.get()).isEmpty();
-    blockPropagationManager.onGossipedBlock(new GossipedBlockEvent(nextBlock));
+    localEventBus.post(new GossipedBlockEvent(nextBlock));
     assertThat(importedBlocks.get()).containsExactlyInAnyOrder(nextBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
@@ -93,7 +93,7 @@ public class BlockPropagationManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockPropagationManager.onGossipedBlock(new GossipedBlockEvent(nextNextBlock));
+    localEventBus.post(new GossipedBlockEvent(nextNextBlock));
     assertThat(importedBlocks.get()).isEmpty();
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
@@ -105,7 +105,7 @@ public class BlockPropagationManagerTest {
     final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
     final BeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock();
 
-    blockPropagationManager.onGossipedBlock(new GossipedBlockEvent(nextBlock));
+    localEventBus.post(new GossipedBlockEvent(nextBlock));
     assertThat(importedBlocks.get()).isEmpty();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
@@ -122,7 +122,7 @@ public class BlockPropagationManagerTest {
         remoteChain.createAndImportBlockAtSlot(nextNextSlot).getBlock();
 
     incrementSlot();
-    blockPropagationManager.onGossipedBlock(new GossipedBlockEvent(nextNextBlock));
+    localEventBus.post(new GossipedBlockEvent(nextNextBlock));
     assertThat(importedBlocks.get()).isEmpty();
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
@@ -131,7 +131,6 @@ public class BlockPropagationManagerTest {
 
   @Test
   public void onBlockImported_withPendingBlocks() throws Exception {
-
     final int blockCount = 3;
     final List<BeaconBlock> blocks = new ArrayList<>(blockCount);
 
@@ -155,7 +154,6 @@ public class BlockPropagationManagerTest {
 
   @Test
   public void onBlockImported_withPendingFutureBlocks() throws Exception {
-
     final int blockCount = 3;
     final List<BeaconBlock> blocks = new ArrayList<>(blockCount);
 

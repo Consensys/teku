@@ -68,7 +68,7 @@ public class BlockPropagationManager extends Service {
 
   @Subscribe
   @SuppressWarnings("unused")
-  public void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
+  void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
     final BeaconBlock block = gossipedBlockEvent.getBlock();
     if (blockIsKnown(block)) {
       // Nothing to do
@@ -86,7 +86,7 @@ public class BlockPropagationManager extends Service {
 
   @Subscribe
   @SuppressWarnings("unused")
-  public void onBlockImported(BlockImportedEvent blockImportedEvent) {
+  void onBlockImported(BlockImportedEvent blockImportedEvent) {
     // Check if any pending blocks can now be imported
     final BeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.signing_root("signature");
@@ -105,7 +105,7 @@ public class BlockPropagationManager extends Service {
   }
 
   @Subscribe
-  public void onSlot(final SlotEvent slotEvent) {
+  void onSlot(final SlotEvent slotEvent) {
     futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
   }
 

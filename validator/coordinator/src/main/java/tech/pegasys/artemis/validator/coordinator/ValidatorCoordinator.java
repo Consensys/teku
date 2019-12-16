@@ -221,7 +221,7 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onProcessedBlockEvent(BlockImportedEvent event) {
+  public void onBlockImported(BlockImportedEvent event) {
     event
         .getBlock()
         .getBody()

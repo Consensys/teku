@@ -151,7 +151,7 @@ public class StateProcessor {
 
   @Subscribe
   @SuppressWarnings("unused")
-  public void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
+  private void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
     try {
       blockImporter.importBlock(blockProposedEvent.getBlock());
     } catch (StateTransitionException e) {
