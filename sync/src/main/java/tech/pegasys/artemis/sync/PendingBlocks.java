@@ -21,15 +21,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class PendingBlocks {
+class PendingBlocks extends Service {
   private static final UnsignedLong DEFAULT_FUTURE_BLOCK_TOLERANCE = UnsignedLong.valueOf(2);
   private static final UnsignedLong DEFAULT_HISTORICAL_BLOCK_TOLERANCE =
       UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 10);
@@ -51,12 +53,17 @@ public class PendingBlocks {
     this.eventBus = eventBus;
     this.historicalBlockTolerance = historicalBlockTolerance;
     this.futureBlockTolerance = futureBlockTolerance;
-    eventBus.register(this);
   }
 
   public static PendingBlocks create(final EventBus eventBus) {
     return new PendingBlocks(
         eventBus, DEFAULT_HISTORICAL_BLOCK_TOLERANCE, DEFAULT_FUTURE_BLOCK_TOLERANCE);
+  }
+
+  @Override
+  protected CompletableFuture<?> doStart() {
+    eventBus.register(this);
+    return CompletableFuture.completedFuture(null);
   }
 
   public void add(BeaconBlock beaconBlock) {
@@ -158,7 +165,9 @@ public class PendingBlocks {
     return rootSet;
   }
 
-  public void shutdown() {
+  @Override
+  protected CompletableFuture<?> doStop() {
     eventBus.unregister(this);
+    return CompletableFuture.completedFuture(null);
   }
 }

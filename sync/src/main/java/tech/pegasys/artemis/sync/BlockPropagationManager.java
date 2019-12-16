@@ -15,18 +15,20 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 
-public class BlockPropagationManager {
+public class BlockPropagationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
@@ -35,7 +37,7 @@ public class BlockPropagationManager {
   private final PendingBlocks pendingBlocks;
   private final FutureBlocks futureBlocks;
 
-  public BlockPropagationManager(
+  BlockPropagationManager(
       final EventBus eventBus,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter,
@@ -46,8 +48,22 @@ public class BlockPropagationManager {
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
+  }
 
+  public static BlockPropagationManager create(
+      final EventBus eventBus,
+      final ChainStorageClient storageClient,
+      final BlockImporter blockImporter) {
+    final PendingBlocks pendingBlocks = PendingBlocks.create(eventBus);
+    final FutureBlocks futureBlocks = new FutureBlocks();
+    return new BlockPropagationManager(
+        eventBus, storageClient, blockImporter, pendingBlocks, futureBlocks);
+  }
+
+  @Override
+  public CompletableFuture<?> doStart() {
     this.eventBus.register(this);
+    return this.pendingBlocks.start();
   }
 
   @Subscribe
@@ -106,7 +122,10 @@ public class BlockPropagationManager {
     }
   }
 
-  public void shutdown() {
+  @Override
+  protected CompletableFuture<?> doStop() {
+    final CompletableFuture<?> shutdownFuture = pendingBlocks.stop();
     eventBus.unregister(this);
+    return shutdownFuture;
   }
 }

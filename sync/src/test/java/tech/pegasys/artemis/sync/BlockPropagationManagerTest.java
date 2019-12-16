@@ -19,6 +19,7 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -60,6 +61,13 @@ public class BlockPropagationManagerTest {
   public void setup() {
     localChain.initializeStorage();
     remoteChain.initializeStorage();
+    blockPropagationManager.start();
+  }
+
+  @AfterEach
+  public void cleanup() throws Exception {
+    blockPropagationManager.stop();
+    importedBlocks.close();
   }
 
   @Test

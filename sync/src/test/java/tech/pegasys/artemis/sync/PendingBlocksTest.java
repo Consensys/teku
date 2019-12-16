@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -24,7 +25,6 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class PendingBlocksTest {
-
   private final EventBus eventBus = new EventBus();
   private final UnsignedLong historicalTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureTolerance = UnsignedLong.valueOf(2);
@@ -35,7 +35,13 @@ public class PendingBlocksTest {
   @BeforeEach
   public void setup() {
     // Set up slot
+    pendingBlocks.start();
     eventBus.post(new SlotEvent(currentSlot));
+  }
+
+  @AfterEach
+  public void cleanup() {
+    pendingBlocks.stop();
   }
 
   @Test
