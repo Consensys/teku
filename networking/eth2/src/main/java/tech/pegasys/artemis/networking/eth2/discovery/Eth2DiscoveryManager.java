@@ -18,6 +18,7 @@ import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -215,10 +216,12 @@ public class Eth2DiscoveryManager {
               network.ifPresent(
                   n -> {
                     n.connect(
-                        "/ip/"
+                        "/ip4/"
                             + byAddress.getHostAddress()
                             + "/tcp/"
-                            + (int) node.getNode().get(UDP_V4));
+                            + (int) node.getNode().get(UDP_V4)
+                            + "/p2p/"
+                            + Base58.INSTANCE.encode(node.getNode().getNodeId().toArray()));
                   });
             } catch (UnknownHostException e) {
               logger.error("Got unknown host exception for Peer Response");
