@@ -109,7 +109,7 @@ public class Eth2NetworkFactory {
         // Configure eth2 handlers
         this.protocols(eth2Protocols).peerHandler(eth2PeerManager);
 
-        final P2PNetwork network =
+        final P2PNetwork<?> network =
             new LibP2PNetwork(config, METRICS_SYSTEM, protocols, peerHandlers);
 
         return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);

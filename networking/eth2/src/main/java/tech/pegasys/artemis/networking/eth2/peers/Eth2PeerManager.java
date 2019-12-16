@@ -37,7 +37,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final ChainStorageClient storageClient;
   private final HistoricalChainData historicalChainData;
 
-  private final Subscribers<PeerConnectedSubscriber<Eth2Peer>> connectSubscribers = Subscribers.create(true);
+  private final Subscribers<PeerConnectedSubscriber<Eth2Peer>> connectSubscribers =
+      Subscribers.create(true);
   private final ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
   private final RpcMethods rpcMethods;

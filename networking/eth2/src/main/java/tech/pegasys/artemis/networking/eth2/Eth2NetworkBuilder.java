@@ -56,12 +56,12 @@ public class Eth2NetworkBuilder {
     peerHandlers.add(eth2PeerManager);
 
     // Build core network and inject eth2 handlers
-    final P2PNetwork network = buildNetwork();
+    final P2PNetwork<?> network = buildNetwork();
 
     return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
   }
 
-  protected P2PNetwork buildNetwork() {
+  protected P2PNetwork<?> buildNetwork() {
     return new LibP2PNetwork(config, metricsSystem, protocols, peerHandlers);
   }
 
