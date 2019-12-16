@@ -39,7 +39,7 @@ import org.mapdb.DBMaker.Maker;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
 import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
@@ -175,20 +175,21 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public synchronized void insert(final Transaction transaction) {
+  public synchronized void insert(final StoreDiskUpdateEvent event) {
     try {
       final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
-      final Checkpoint newFinalizedCheckpoint = transaction.getFinalizedCheckpoint();
-      time.set(transaction.getTime());
-      genesisTime.set(transaction.getGenesisTime());
-      finalizedCheckpoint.set(newFinalizedCheckpoint);
-      justifiedCheckpoint.set(transaction.getJustifiedCheckpoint());
-      bestJustifiedCheckpoint.set(transaction.getBestJustifiedCheckpoint());
-      checkpointStates.putAll(transaction.getCheckpointStates());
-      latestMessages.putAll(transaction.getLatestMessages());
+      final Checkpoint newFinalizedCheckpoint =
+          event.getFinalizedCheckpoint().orElse(previousFinalizedCheckpoint);
+      event.getTime().ifPresent(time::set);
+      event.getGenesisTime().ifPresent(genesisTime::set);
+      event.getFinalizedCheckpoint().ifPresent(finalizedCheckpoint::set);
+      event.getJustifiedCheckpoint().ifPresent(justifiedCheckpoint::set);
+      event.getBestJustifiedCheckpoint().ifPresent(bestJustifiedCheckpoint::set);
+      checkpointStates.putAll(event.getCheckpointStates());
+      latestMessages.putAll(event.getLatestMessages());
 
-      transaction.getBlocks().forEach(this::addHotBlock);
-      hotStatesByRoot.putAll(transaction.getBlockStates());
+      event.getBlocks().forEach(this::addHotBlock);
+      hotStatesByRoot.putAll(event.getBlockStates());
 
       if (previousFinalizedCheckpoint == null
           || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {

@@ -151,8 +151,8 @@ public class StateProcessor {
     try {
       Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-      transaction.commit();
-      eventBus.post(new StoreDiskUpdateEvent(transaction));
+      final StoreDiskUpdateEvent storeEvent = transaction.commit();
+      eventBus.post(storeEvent);
 
       // Add attestations that were processed in the block to processed attestations storage
       List<Long> numberOfAttestersInAttestations = new ArrayList<>();
@@ -185,8 +185,8 @@ public class StateProcessor {
     try {
       final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_attestation(transaction, attestation, stateTransition);
-      transaction.commit();
-      eventBus.post(new StoreDiskUpdateEvent(transaction));
+      final StoreDiskUpdateEvent storeEvent = transaction.commit();
+      eventBus.post(storeEvent);
 
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());

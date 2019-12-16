@@ -39,8 +39,7 @@ public class ChainStorageServer {
 
   @Subscribe
   public void onStoreDiskUpdate(StoreDiskUpdateEvent storeDiskUpdateEvent) {
-    Store.Transaction transaction = storeDiskUpdateEvent.getTransaction();
-    database.insert(transaction);
+    database.insert(storeDiskUpdateEvent);
   }
 
   @Subscribe
