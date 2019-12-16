@@ -93,7 +93,8 @@ public class PeerSync {
         diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
             ? MAX_BLOCK_BY_RANGE_REQUEST_SIZE
             : diff;
-    CompletableFuture<Void> future = peer.requestBlocksByRange(
+    CompletableFuture<Void> future =
+        peer.requestBlocksByRange(
             advertisedHeadBlockRoot, latestRequestedSlot, count, STEP, this::blockResponseListener);
     latestRequestedSlot = latestRequestedSlot.plus(count);
     return future;
@@ -116,5 +117,4 @@ public class PeerSync {
       super(message, cause);
     }
   }
-
 }

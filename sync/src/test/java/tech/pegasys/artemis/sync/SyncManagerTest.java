@@ -14,10 +14,8 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -31,14 +29,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
-import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -117,6 +113,4 @@ public class SyncManagerTest {
     assertThat(syncFuture).isDone();
     verify(peer, never()).sendGoodbye(any());
   }
-
-
 }
