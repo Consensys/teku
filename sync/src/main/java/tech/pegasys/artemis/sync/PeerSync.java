@@ -39,7 +39,7 @@ public class PeerSync {
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
 
-  private UnsignedLong latestRequestedSlot;
+  private volatile UnsignedLong latestRequestedSlot;
 
   public PeerSync(
       final Eth2Peer peer,
