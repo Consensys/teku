@@ -34,6 +34,8 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,6 +45,8 @@ public class PeerManager implements ConnectionHandler {
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final List<PeerHandler> peerHandlers;
+
+  private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers = Subscribers.create(true);
 
   public PeerManager(
       final ScheduledExecutorService scheduler,
@@ -58,6 +62,10 @@ public class PeerManager implements ConnectionHandler {
     Peer peer = new LibP2PPeer(connection);
     onConnectedPeer(peer);
     connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
+  }
+
+  public void subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    connectSubscribers.subscribe(subscriber);
   }
 
   public CompletableFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
@@ -100,6 +108,7 @@ public class PeerManager implements ConnectionHandler {
     if (wasAdded) {
       STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
+      connectSubscribers.forEach(c -> c.onConnected(peer));
     }
   }
 

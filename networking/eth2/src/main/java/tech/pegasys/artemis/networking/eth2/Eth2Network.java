@@ -26,11 +26,10 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.eth2.peers.PeerConnectedSubscriber;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.events.Subscribers;
 
-public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
+public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
   private final P2PNetwork network;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -93,7 +92,8 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
     return streamPeers().count();
   }
 
-  public void subscribeConnect(final PeerConnectedSubscriber subscriber) {
+  @Override
+  public void subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
     peerManager.subscribeConnect(subscriber);
   }
 }
