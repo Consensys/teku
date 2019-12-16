@@ -17,6 +17,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.config.Constants;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
@@ -39,7 +40,7 @@ public class PeerSyncTest {
 
   private static final BeaconBlock BLOCK = DataStructureUtil.randomBeaconBlock(1, 100);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
-  private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
+  private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(30);
   private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
 
   private static final PeerStatus PEER_STATUS =
@@ -100,7 +101,9 @@ public class PeerSyncTest {
 
     // Should disconnect the peer and consider the sync complete.
     verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
-    assertThat(syncFuture).isCompletedExceptionally();
+    assertThat(syncFuture).isCompleted();
+    PeerSyncResult result = syncFuture.join();
+    assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
   }
 
   @Test
@@ -134,6 +137,70 @@ public class PeerSyncTest {
 
     // Signal the request for data from the peer is complete.
     requestFuture.complete(null);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncFuture).isCompleted();
+    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+  }
+
+
+  @Test
+  void sync_longSyncWithTwoRequests() throws StateTransitionException {
+    UnsignedLong peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(UnsignedLong.ONE);
+
+    final PeerStatus peer_status =
+            PeerStatus.fromStatusMessage(
+                    new StatusMessage(
+                            Fork.VERSION_ZERO,
+                            Bytes32.ZERO,
+                            PEER_FINALIZED_EPOCH,
+                            PEER_HEAD_BLOCK_ROOT,
+                            peerHeadSlot
+                            ));
+
+    when(peer.getStatus()).thenReturn(peer_status);
+    peerSync = new PeerSync(peer, storageClient, blockImporter);
+
+    final CompletableFuture<Void> requestFuture1 = new CompletableFuture<>();
+    final CompletableFuture<Void> requestFuture2 = new CompletableFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any(), any()))
+            .thenReturn(requestFuture1)
+            .thenReturn(requestFuture2);
+
+    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync();
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+            .requestBlocksByRange(
+                    eq(PEER_HEAD_BLOCK_ROOT),
+                    any(),
+                    eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+                    eq(UnsignedLong.ONE),
+                    responseListenerArgumentCaptor.capture());
+
+    // Signal the request for data from the peer is complete.
+    requestFuture1.complete(null);
+
+    verify(peer)
+            .requestBlocksByRange(
+                    eq(PEER_HEAD_BLOCK_ROOT),
+                    any(),
+                    eq(peerHeadSlot.minus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE)),
+                    eq(UnsignedLong.ONE),
+                    responseListenerArgumentCaptor.capture());
+
+    // Respond with blocks and check they're passed to the block importer.
+    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
+            responseListenerArgumentCaptor.getValue();
+    responseListener.onResponse(BLOCK);
+    verify(blockImporter).importBlock(BLOCK);
+    assertThat(syncFuture).isNotDone();
+
+    // Signal the request for data from the peer is complete.
+    requestFuture2.complete(null);
+
+    when(storageClient.getFinalizedEpoch())
+            .thenReturn(PEER_FINALIZED_EPOCH);
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();

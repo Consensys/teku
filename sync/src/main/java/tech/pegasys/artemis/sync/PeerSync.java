@@ -75,7 +75,7 @@ public class PeerSync {
         .exceptionally(
             err -> {
               Throwable rootException = Throwables.getRootCause(err);
-              if (rootException instanceof BadBlockException) {
+              if (rootException instanceof StateTransitionException) {
                 disconnectFromPeer(peer);
                 return PeerSyncResult.BAD_BLOCK;
               }
