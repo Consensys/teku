@@ -32,7 +32,7 @@ public class PeerSync {
 
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
-  private Eth2Peer peer;
+  private final Eth2Peer peer;
   private final UnsignedLong advertisedFinalizedEpoch;
   private final UnsignedLong advertisedHeadBlockSlot;
   private final Bytes32 advertisedHeadBlockRoot;
@@ -66,8 +66,7 @@ public class PeerSync {
         .whenComplete(
             (res, err) -> {
               if (err != null) {
-                Throwable rootException = Throwables.getRootCause(err);
-                if (rootException instanceof BadBlockException) {
+                if (err instanceof BadBlockException) {
                   disconnectFromPeer(peer);
                 }
                 finalResult.completeExceptionally(err);
@@ -77,8 +76,8 @@ public class PeerSync {
               } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
                 executeSync();
               } else {
-                finalResult.completeExceptionally(new FaultyAdvertisementException());
                 disconnectFromPeer(peer);
+                finalResult.completeExceptionally(new FaultyAdvertisementException());
               }
             });
   }
@@ -89,9 +88,10 @@ public class PeerSync {
         diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
             ? MAX_BLOCK_BY_RANGE_REQUEST_SIZE
             : diff;
+    CompletableFuture<Void> future = peer.requestBlocksByRange(
+            advertisedHeadBlockRoot, latestRequestedSlot, count, STEP, this::blockResponseListener);
     latestRequestedSlot = latestRequestedSlot.plus(count);
-    return peer.requestBlocksByRange(
-        advertisedHeadBlockRoot, latestRequestedSlot, count, STEP, this::blockResponseListener);
+    return future;
   }
 
   private void blockResponseListener(BeaconBlock block) {

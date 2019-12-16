@@ -95,8 +95,8 @@ public class SyncManagerTest {
     verify(peer)
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
-            eq(UnsignedLong.ZERO),
-            eq(PEER_HEAD_SLOT.plus(UnsignedLong.ONE)),
+            any(),
+            any(),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -118,81 +118,5 @@ public class SyncManagerTest {
     verify(peer, never()).sendGoodbye(any());
   }
 
-  @Test
-  void sync_badAdvertisedFinalizedEpoch() throws StateTransitionException {
-    when(network.streamPeers()).thenReturn(Stream.of(peer));
 
-    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
-
-    final CompletableFuture<Void> syncFuture = syncManager.sync();
-    assertThat(syncFuture).isNotDone();
-
-    verify(peer)
-        .requestBlocksByRange(
-            eq(PEER_HEAD_BLOCK_ROOT),
-            eq(UnsignedLong.ZERO),
-            eq(PEER_HEAD_SLOT.plus(UnsignedLong.ONE)),
-            eq(UnsignedLong.ONE),
-            responseListenerArgumentCaptor.capture());
-
-    // Respond with blocks and check they're passed to the block importer.
-
-    final ResponseListener<BeaconBlock> responseListener =
-        responseListenerArgumentCaptor.getValue();
-    responseListener.onResponse(BLOCK);
-    verify(blockImporter).importBlock(BLOCK);
-    assertThat(syncFuture).isNotDone();
-
-    // Now that we've imported the block, our finalized epoch has updated but hasn't reached what
-    // the peer claimed
-    when(storageClient.getFinalizedEpoch())
-        .thenReturn(PEER_FINALIZED_EPOCH.minus(UnsignedLong.ONE));
-
-    // Signal the request for data from the peer is complete.
-    requestFuture.complete(null);
-
-    // Check that the sync is done and the peer was not disconnected.
-    assertThat(syncFuture).isCompleted();
-    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
-  }
-
-  @Test
-  void sync_badBlock() throws StateTransitionException {
-    when(network.streamPeers()).thenReturn(Stream.of(peer));
-
-    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
-
-    final CompletableFuture<Void> syncFuture = syncManager.sync();
-    assertThat(syncFuture).isNotDone();
-
-    verify(peer)
-        .requestBlocksByRange(
-            eq(PEER_HEAD_BLOCK_ROOT),
-            eq(UnsignedLong.ZERO),
-            eq(PEER_HEAD_SLOT.plus(UnsignedLong.ONE)),
-            eq(UnsignedLong.ONE),
-            responseListenerArgumentCaptor.capture());
-
-    // Respond with blocks and check they're passed to the block importer.
-    final ResponseListener<BeaconBlock> responseListener =
-        responseListenerArgumentCaptor.getValue();
-
-    // Importing the returned block fails
-    doThrow(new StateTransitionException("Bad block")).when(blockImporter).importBlock(BLOCK);
-    // Probably want to have a specific exception type to indicate bad data.
-    try {
-      responseListener.onResponse(BLOCK);
-      fail("Should have thrown an error to indicate the response was bad");
-    } catch (final InvalidResponseException e) {
-      // RpcMessageHandler will consider the request complete if there's an error processing a
-      // response
-      requestFuture.completeExceptionally(e);
-    }
-
-    // Should disconnect the peer and consider the sync complete.
-    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
-    assertThat(syncFuture).isCompletedExceptionally();
-  }
 }
