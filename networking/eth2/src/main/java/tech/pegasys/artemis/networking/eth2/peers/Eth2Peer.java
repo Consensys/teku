@@ -25,7 +25,6 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByR
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
@@ -51,10 +50,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     this.statusMessageFactory = statusMessageFactory;
   }
 
-  public void updateStatus(final StatusMessage message) {
-    final PeerStatus statusData = PeerStatus.fromStatusMessage(message);
-    remoteStatus = Optional.of(statusData);
-    initialStatus.complete(statusData);
+  public void updateStatus(final PeerStatus status) {
+    remoteStatus = Optional.of(status);
+    initialStatus.complete(status);
   }
 
   public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
@@ -82,7 +80,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
             remoteStatus -> {
-              updateStatus(remoteStatus);
+              final PeerStatus status = PeerStatus.fromStatusMessage(remoteStatus);
+              updateStatus(status);
               return getStatus();
             });
   }

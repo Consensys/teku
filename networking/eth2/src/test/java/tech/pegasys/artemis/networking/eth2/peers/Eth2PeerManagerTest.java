@@ -19,24 +19,39 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 
 public class Eth2PeerManagerTest {
 
+  private final PeerStatusFactory statusFactory = PeerStatusFactory.create(1L);
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
-  private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   private final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(storageClient);
+
+  private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
+  private final PeerValidatorFactory peerValidatorFactory = (peer, status) -> peerChainValidator;
+  private final CompletableFuture<Boolean> peerValidationResult = new CompletableFuture<>();
+
   private final Eth2PeerManager peerManager =
-      new Eth2PeerManager(storageClient, historicalChainData, new NoOpMetricsSystem());
+      new Eth2PeerManager(storageClient, new NoOpMetricsSystem(), peerValidatorFactory);
+
+  @BeforeEach
+  public void setup() {
+    when(peerChainValidator.run()).thenReturn(peerValidationResult);
+  }
 
   @Test
   public void subscribeConnect_singleListener() {
+    // Setup validation to succeed
+    peerValidationResult.complete(true);
+
     final List<Peer> connectedPeers = new ArrayList<>();
     peerManager.subscribeConnect(connectedPeers::add);
     // Sanity check
@@ -46,17 +61,68 @@ public class Eth2PeerManagerTest {
     final Peer peer = createPeer();
     final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
+
+    // Connect event should not broadcast until status is set
+    assertThat(connectedPeers).isEmpty();
+
+    // Set status and check event was broadcast
+    setInitialPeerStatus(eth2Peer);
+    assertThat(connectedPeers).containsExactly(eth2Peer);
+  }
+
+  @Test
+  public void subscribeConnect_peerWithInvalidChain() {
+    // Setup validation to fail
+    peerValidationResult.complete(false);
+
+    final List<Peer> connectedPeers = new ArrayList<>();
+    peerManager.subscribeConnect(connectedPeers::add);
+    // Sanity check
+    assertThat(connectedPeers).isEmpty();
+
+    // Add a peer
+    final Peer peer = createPeer();
+    final Eth2Peer eth2Peer = createEth2Peer(peer);
+    peerManager.onConnect(peer);
+
+    // Connect event should not broadcast until status is set
+    assertThat(connectedPeers).isEmpty();
+
+    // Set status, which should trigger peerValidation to fail
+    setInitialPeerStatus(eth2Peer);
+    assertThat(connectedPeers).isEmpty();
+  }
+
+  @Test
+  public void subscribeConnect_singleListener_multiplePeers() {
+    // Setup validation to succeed
+    peerValidationResult.complete(true);
+
+    final List<Peer> connectedPeers = new ArrayList<>();
+    peerManager.subscribeConnect(connectedPeers::add);
+    // Sanity check
+    assertThat(connectedPeers).isEmpty();
+
+    // Add a peer
+    final Peer peer = createPeer();
+    final Eth2Peer eth2Peer = createEth2Peer(peer);
+    peerManager.onConnect(peer);
+    setInitialPeerStatus(eth2Peer);
     assertThat(connectedPeers).containsExactly(eth2Peer);
 
     // Add another peer
     final Peer peerB = createPeer();
     final Eth2Peer eth2PeerB = createEth2Peer(peerB);
     peerManager.onConnect(peerB);
+    setInitialPeerStatus(eth2PeerB);
     assertThat(connectedPeers).containsExactly(eth2Peer, eth2PeerB);
   }
 
   @Test
   public void subscribeConnect_multipleListeners() {
+    // Setup validation to succeed
+    peerValidationResult.complete(true);
+
     final List<Peer> connectedPeers = new ArrayList<>();
     final List<Peer> connectedPeersB = new ArrayList<>();
     peerManager.subscribeConnect(connectedPeers::add);
@@ -67,6 +133,7 @@ public class Eth2PeerManagerTest {
     final Peer peer = createPeer();
     final Eth2Peer eth2Peer = createEth2Peer(peer);
     peerManager.onConnect(peer);
+    setInitialPeerStatus(eth2Peer);
 
     assertThat(connectedPeers).containsExactly(eth2Peer);
     assertThat(connectedPeersB).containsExactly(eth2Peer);
@@ -76,6 +143,11 @@ public class Eth2PeerManagerTest {
     final Peer peer = mock(Peer.class);
     when(peer.getId()).thenReturn(new MockNodeId());
     return peer;
+  }
+
+  private void setInitialPeerStatus(final Eth2Peer peer) {
+    final PeerStatus status = statusFactory.random();
+    peerManager.getConnectedPeer(peer.getId()).updateStatus(status);
   }
 
   private Eth2Peer createEth2Peer(final Peer peer) {
