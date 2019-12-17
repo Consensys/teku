@@ -78,7 +78,7 @@ public class BlockPropagationManagerTest {
 
     assertThat(importedBlocks.get()).isEmpty();
     localEventBus.post(new GossipedBlockEvent(nextBlock));
-    assertThat(importedBlocks.get()).containsExactlyInAnyOrder(nextBlock);
+    assertThat(importedBlocks.get()).containsExactly(nextBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -148,7 +148,7 @@ public class BlockPropagationManagerTest {
 
     // Import next block, causing remaining blocks to be imported
     blockImporter.importBlock(blocks.get(0));
-    assertThat(importedBlocks.get()).containsExactlyInAnyOrderElementsOf(blocks);
+    assertThat(importedBlocks.get()).containsExactlyElementsOf(blocks);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
