@@ -273,21 +273,14 @@ public class BeaconChainController {
     if (chainStorageClient.getStore() != null) {
       final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_tick(transaction, currentTime);
-      chainStorageClient.commit(
-          transaction,
-          () -> {
-            if (chainStorageClient
-                    .getStore()
-                    .getTime()
-                    .compareTo(
-                        chainStorageClient
-                            .getGenesisTime()
-                            .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-                >= 0) {
-              processSlot();
-            }
-          },
-          "Failed to store on_tick changes");
+      chainStorageClient.commit(transaction).join();
+      final UnsignedLong nextSlotStartTime =
+          chainStorageClient
+              .getGenesisTime()
+              .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+      if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
+        processSlot();
+      }
     }
   }
 
