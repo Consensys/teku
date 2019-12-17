@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
+import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -36,6 +37,7 @@ public class HistoricalChainData {
   }
 
   @Subscribe
+  @AllowConcurrentEvents
   public void onResponse(final GetFinalizedBlockAtSlotResponse response) {
     eventTracker.onResponse(response.getSlot(), response.getBlock());
   }
