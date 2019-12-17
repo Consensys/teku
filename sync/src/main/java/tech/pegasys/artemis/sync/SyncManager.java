@@ -42,7 +42,10 @@ public class SyncManager {
   }
 
   public CompletableFuture<Void> sync() {
-    return executeSync();
+    if (!syncActive.compareAndSet(false, true)) {
+      return CompletableFuture.failedFuture(new RuntimeException("Sync already active"));
+    }
+    return executeSync().thenRun(() -> syncActive.set(false));
   }
 
   private CompletableFuture<Void> executeSync() {
@@ -53,7 +56,6 @@ public class SyncManager {
       return CompletableFuture.completedFuture(null);
     }
 
-    syncActive.set(true);
     Eth2Peer syncPeer = possibleSyncPeer.get();
     PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockImporter);
 
