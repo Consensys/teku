@@ -38,6 +38,7 @@ public class PeerChainValidator {
   private final Eth2Peer peer;
   private final AtomicBoolean hasRun = new AtomicBoolean(false);
   private final PeerStatus status;
+  private CompletableFuture<Boolean> result;
 
   private PeerChainValidator(
       final ChainStorageClient storageClient,
@@ -58,21 +59,19 @@ public class PeerChainValidator {
     return new PeerChainValidator(storageClient, historicalChainData, peer, status);
   }
 
-  public void run() {
+  public CompletableFuture<Boolean> run() {
     if (hasRun.compareAndSet(false, true)) {
-      executeCheck();
+      result = executeCheck();
     }
+    return result;
   }
 
-  private void executeCheck() {
+  private CompletableFuture<Boolean> executeCheck() {
     LOG.trace("Validate chain of peer: {}", peer);
-    checkRemoteChain()
-        .whenComplete(
-            (isValid, error) -> {
-              if (error != null) {
-                LOG.debug("Unable to validate peer's chain, disconnecting: " + peer, error);
-                peer.sendGoodbye(GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK);
-              } else if (!isValid) {
+    return checkRemoteChain()
+        .thenApply(
+            isValid -> {
+              if (!isValid) {
                 // We are not on the same chain
                 LOG.trace("Disconnecting peer on different chain: {}", peer);
                 peer.sendGoodbye(GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
@@ -80,6 +79,13 @@ public class PeerChainValidator {
                 LOG.trace("Validated peer's chain: {}", peer);
                 peer.markChainValidated();
               }
+              return isValid;
+            })
+        .exceptionally(
+            err -> {
+              LOG.debug("Unable to validate peer's chain, disconnecting: " + peer, err);
+              peer.sendGoodbye(GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK);
+              return false;
             });
   }
 

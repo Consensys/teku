@@ -21,9 +21,9 @@ import tech.pegasys.artemis.networking.p2p.peer.Peer;
 
 public class PeersHandler implements BeaconRestApiHandler {
 
-  private final P2PNetwork network;
+  private final P2PNetwork<?> network;
 
-  public PeersHandler(P2PNetwork network) {
+  public PeersHandler(P2PNetwork<?> network) {
     this.network = network;
   }
 

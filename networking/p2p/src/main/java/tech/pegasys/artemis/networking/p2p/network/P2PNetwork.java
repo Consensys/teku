@@ -19,8 +19,9 @@ import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 
-public interface P2PNetwork extends GossipNetwork {
+public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   enum State {
     IDLE,
     RUNNING,
@@ -35,9 +36,11 @@ public interface P2PNetwork extends GossipNetwork {
    */
   CompletableFuture<?> connect(String peer);
 
-  Optional<? extends Peer> getPeer(NodeId id);
+  void subscribeConnect(final PeerConnectedSubscriber<T> subscriber);
 
-  Stream<? extends Peer> streamPeers();
+  Optional<T> getPeer(NodeId id);
+
+  Stream<T> streamPeers();
 
   long getPeerCount();
 
