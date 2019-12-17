@@ -18,7 +18,6 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.statetransition.BlockImporter;
@@ -59,17 +58,16 @@ public class SyncManager {
     PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockImporter);
 
     return peerSync
-            .sync()
-            .thenCompose(
-                    result -> {
-                      if (result != PeerSyncResult.SUCCESSFUL_SYNC) {
-                        return executeSync();
-                      } else {
-                        syncActive.set(false);
-                        return CompletableFuture.completedFuture(null);
-                      }
-                    });
-
+        .sync()
+        .thenCompose(
+            result -> {
+              if (result != PeerSyncResult.SUCCESSFUL_SYNC) {
+                return executeSync();
+              } else {
+                syncActive.set(false);
+                return CompletableFuture.completedFuture(null);
+              }
+            });
   }
 
   private Optional<Eth2Peer> findBestSyncPeer() {
