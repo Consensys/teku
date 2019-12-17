@@ -73,19 +73,19 @@ public class SyncManager {
   private Optional<Eth2Peer> findBestSyncPeer() {
     return network
         .streamPeers()
-        .filter(this::isSyncSuitable)
+        .filter(this::isPeerSyncSuitable)
         .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
   }
 
   private void onNewPeer(Eth2Peer peer) {
-    if (isSyncSuitable(peer)) {
+    if (isPeerSyncSuitable(peer)) {
       if (!syncActive.get()) {
         executeSync();
       }
     }
   }
 
-  private boolean isSyncSuitable(Eth2Peer peer) {
+  private boolean isPeerSyncSuitable(Eth2Peer peer) {
     UnsignedLong ourFinalizedEpoch = storageClient.getFinalizedEpoch();
     return peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0;
   }
