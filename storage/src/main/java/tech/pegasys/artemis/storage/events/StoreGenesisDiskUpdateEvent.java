@@ -11,26 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.networkhandlers;
+package tech.pegasys.artemis.storage.events;
 
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.storage.Store;
 
-public class PeerIdHandler implements BeaconRestApiHandler {
+public class StoreGenesisDiskUpdateEvent {
 
-  private final P2PNetwork<?> network;
+  private final Store store;
 
-  public PeerIdHandler(P2PNetwork<?> network) {
-    this.network = network;
+  public StoreGenesisDiskUpdateEvent(final Store store) {
+    this.store = store;
   }
 
-  @Override
-  public String getPath() {
-    return "/network/peer_id";
-  }
-
-  @Override
-  public Object handleRequest(RequestParams params) {
-    return network.getNodeAddress();
+  public Store getStore() {
+    return store;
   }
 }

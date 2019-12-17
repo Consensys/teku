@@ -77,7 +77,20 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForGenesis() {
-    waitFor(() -> httpClient.get(getRestApiUrl(), "/node/genesis_time"));
+    waitFor(this::fetchGenesisTime);
+  }
+
+  public void waitForGenesisTime(final UnsignedLong expectedGenesisTime) {
+    waitFor(() -> assertThat(fetchGenesisTime()).isEqualTo(expectedGenesisTime));
+  }
+
+  private UnsignedLong fetchGenesisTime() throws IOException {
+    return UnsignedLong.valueOf(httpClient.get(getRestApiUrl(), "/node/genesis_time"));
+  }
+
+  public UnsignedLong getGenesisTime() throws IOException {
+    waitForGenesis();
+    return fetchGenesisTime();
   }
 
   public void waitForNewBlock() throws IOException {

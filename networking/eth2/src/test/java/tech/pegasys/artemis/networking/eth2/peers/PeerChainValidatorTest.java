@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -93,8 +94,8 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
 
-    peerChainValidator.run();
-    assertPeerChainVerified();
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainVerified(result);
   }
 
   @Test
@@ -103,8 +104,8 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsAheadOnSameChain();
 
-    peerChainValidator.run();
-    assertPeerChainVerified();
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainVerified(result);
   }
 
   @Test
@@ -113,8 +114,8 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsBehindOnSameChain();
 
-    peerChainValidator.run();
-    assertPeerChainVerified();
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainVerified(result);
   }
 
   @Test
@@ -123,8 +124,8 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsBehindOnDifferentChain();
 
-    peerChainValidator.run();
-    assertPeerChainRejected(GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
   }
 
   @Test
@@ -133,8 +134,8 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsAheadOnDifferentChain();
 
-    peerChainValidator.run();
-    assertPeerChainRejected(GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
   }
 
   @Test
@@ -143,8 +144,8 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsAheadAndUnresponsive();
 
-    peerChainValidator.run();
-    assertPeerChainRejected(GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK);
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainRejected(result, GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK);
   }
 
   @Test
@@ -155,8 +156,8 @@ public class PeerChainValidatorTest {
     when(storageClient.isPreGenesis()).thenReturn(true);
     when(storageClient.getStore()).thenReturn(null);
 
-    peerChainValidator.run();
-    assertPeerChainVerified();
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainVerified(result);
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
     verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
@@ -173,8 +174,8 @@ public class PeerChainValidatorTest {
     // Setup mocks
     forksMatch();
 
-    peerChainValidator.run();
-    assertPeerChainVerified();
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainVerified(result);
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
     verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
@@ -186,20 +187,23 @@ public class PeerChainValidatorTest {
     // Setup mocks
     forksDontMatch();
 
-    peerChainValidator.run();
-    assertPeerChainRejected(GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
     // Verify other checks were skipped when fork mismatch was detected
     verify(peer, never()).requestBlockBySlot(any(), any());
     verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
-  private void assertPeerChainRejected(UnsignedLong goodbyeReason) {
+  private void assertPeerChainRejected(
+      final CompletableFuture<Boolean> result, UnsignedLong goodbyeReason) {
+    assertThat(result).isCompletedWithValue(false);
     verify(peer, never()).markChainValidated();
     verify(peer).sendGoodbye(goodbyeReason);
   }
 
-  private void assertPeerChainVerified() {
+  private void assertPeerChainVerified(final CompletableFuture<Boolean> result) {
+    assertThat(result).isCompletedWithValue(true);
     verify(peer).markChainValidated();
     verify(peer, never()).sendGoodbye(any());
   }
