@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
@@ -37,6 +38,7 @@ class StatusMessageHandlerTest {
           UnsignedLong.ZERO,
           Bytes32.fromHexStringLenient("0x11"),
           UnsignedLong.ZERO);
+  private static final PeerStatus PEER_STATUS = PeerStatus.fromStatusMessage(REMOTE_STATUS);
   private static final StatusMessage LOCAL_STATUS =
       new StatusMessage(
           Bytes4.rightPad(Bytes.of(4)),
@@ -61,7 +63,8 @@ class StatusMessageHandlerTest {
   @Test
   public void shouldRegisterStatusMessageWithPeer() {
     handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
-    verify(peer).updateStatus(REMOTE_STATUS);
+
+    verify(peer).updateStatus(PEER_STATUS);
   }
 
   @Test
