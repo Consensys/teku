@@ -19,12 +19,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.util.collections.LimitedSet;
+import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 
 /** Holds blocks with slots that are in the future relative to our node's current slot */
 class FutureBlocks {
+  private static final int MAX_BLOCKS_PER_SLOT = 500;
   private final NavigableMap<UnsignedLong, Set<BeaconBlock>> queuedFutureBlocks =
       new ConcurrentSkipListMap<>();
 
@@ -34,10 +36,7 @@ class FutureBlocks {
    * @param block The block to add
    */
   public void add(final BeaconBlock block) {
-    queuedFutureBlocks
-        .computeIfAbsent(
-            block.getSlot(), key -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
-        .add(block);
+    queuedFutureBlocks.computeIfAbsent(block.getSlot(), key -> createNewSet()).add(block);
   }
 
   /**
@@ -56,14 +55,14 @@ class FutureBlocks {
   }
 
   public boolean contains(final BeaconBlock block) {
-    final Set<BeaconBlock> blocks = queuedFutureBlocks.get(block.getSlot());
-    if (blocks == null) {
-      return false;
-    }
-    return blocks.contains(block);
+    return queuedFutureBlocks.getOrDefault(block.getSlot(), Collections.emptySet()).contains(block);
   }
 
   public int size() {
     return queuedFutureBlocks.values().stream().map(Set::size).reduce(Integer::sum).orElse(0);
+  }
+
+  private final Set<BeaconBlock> createNewSet() {
+    return LimitedSet.create(MAX_BLOCKS_PER_SLOT, Mode.DROP_LEAST_RECENTLY_ACCESSED);
   }
 }
