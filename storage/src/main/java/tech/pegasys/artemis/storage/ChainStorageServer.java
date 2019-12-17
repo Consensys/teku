@@ -21,6 +21,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
@@ -38,8 +39,13 @@ public class ChainStorageServer {
   }
 
   @Subscribe
-  public void onStoreDiskUpdate(StoreDiskUpdateEvent storeDiskUpdateEvent) {
+  public void onStoreDiskUpdate(final StoreDiskUpdateEvent storeDiskUpdateEvent) {
     database.insert(storeDiskUpdateEvent);
+  }
+
+  @Subscribe
+  public void onStoreGenesis(final StoreGenesisDiskUpdateEvent event) {
+    database.storeGenesis(event.getStore());
   }
 
   @Subscribe
