@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis;
 
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
@@ -49,8 +50,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
       description = "Path/filename of the config file")
   private String configFile = "./config/config.toml";
 
-  public Level getLoggingLevel() {
-    return this.logLevel;
+  public Optional<Level> getLoggingLevel() {
+    return Optional.ofNullable(this.logLevel);
   }
 
   public String getConfigFile() {

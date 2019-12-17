@@ -22,6 +22,7 @@ import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
 import io.vertx.core.Vertx;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
@@ -53,7 +54,7 @@ public class BeaconNode {
   private EventBus eventBus;
   private MetricsEndpoint metricsEndpoint;
 
-  BeaconNode(Level loggingLevel, ArtemisConfiguration config) {
+  BeaconNode(Optional<Level> loggingLevel, ArtemisConfiguration config) {
     System.setProperty("logPath", config.getLogPath());
     System.setProperty("rollingFile", config.getLogFile());
 
@@ -70,10 +71,11 @@ public class BeaconNode {
     }
 
     // set log level per CLI flags
-    if (loggingLevel != null) {
-      System.out.println("Setting logging level to " + loggingLevel.name());
-      Configurator.setAllLevels("", loggingLevel);
-    }
+    loggingLevel.ifPresent(
+        level -> {
+          System.out.println("Setting logging level to " + level.name());
+          Configurator.setAllLevels("", level);
+        });
   }
 
   public void start() {
