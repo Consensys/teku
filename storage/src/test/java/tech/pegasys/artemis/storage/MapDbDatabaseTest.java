@@ -18,10 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.junit.TempDirectory;
+import org.apache.tuweni.junit.TempDirectoryExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -30,7 +34,8 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class V2MapDatabaseTest {
+@ExtendWith(TempDirectoryExtension.class)
+class MapDbDatabaseTest {
   private static final BeaconState GENESIS_STATE =
       DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, 1);
   private static final Checkpoint CHECKPOINT1 =
@@ -40,7 +45,8 @@ class V2MapDatabaseTest {
   private static final Checkpoint CHECKPOINT3 =
       new Checkpoint(UnsignedLong.valueOf(8), Bytes32.fromHexString("0x9012"));
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
-  private final Database database = V2MapDatabase.createInMemory();
+
+  private Database database = MapDbDatabase.createInMemory();
 
   private int seed = 498242;
 
@@ -65,7 +71,7 @@ class V2MapDatabaseTest {
     transaction.putBlock(block1Root, block1);
     transaction.putBlock(block2Root, block2);
 
-    database.insert(transaction);
+    database.insert(transaction.commit());
 
     assertThat(database.getBlock(block1Root)).contains(block1);
     assertThat(database.getBlock(block2Root)).contains(block2);
@@ -81,7 +87,7 @@ class V2MapDatabaseTest {
     transaction.putBlockState(block1Root, state1);
     transaction.putBlockState(block2Root, state2);
 
-    database.insert(transaction);
+    database.insert(transaction.commit());
 
     assertThat(database.getState(block1Root)).contains(state1);
     assertThat(database.getState(block2Root)).contains(state2);
@@ -96,7 +102,7 @@ class V2MapDatabaseTest {
     transaction.setJustifiedCheckpoint(CHECKPOINT2);
     transaction.setBestJustifiedCheckpoint(CHECKPOINT3);
 
-    database.insert(transaction);
+    database.insert(transaction.commit());
 
     final Store result = database.createMemoryStore();
 
@@ -118,7 +124,7 @@ class V2MapDatabaseTest {
     transaction.putLatestMessage(validator1, CHECKPOINT1);
     transaction.putLatestMessage(validator2, CHECKPOINT2);
     transaction.putLatestMessage(validator3, CHECKPOINT1);
-    database.insert(transaction);
+    database.insert(transaction.commit());
 
     final Store result1 = database.createMemoryStore();
     assertThat(result1.getLatestMessage(validator1)).isEqualTo(CHECKPOINT1);
@@ -128,7 +134,7 @@ class V2MapDatabaseTest {
     // Should overwrite when later changes are made.
     final Transaction transaction2 = store.startTransaction();
     transaction2.putLatestMessage(validator3, CHECKPOINT2);
-    database.insert(transaction2);
+    database.insert(transaction2.commit());
 
     final Store result2 = database.createMemoryStore();
     assertThat(result2.getLatestMessage(validator1)).isEqualTo(CHECKPOINT1);
@@ -146,7 +152,7 @@ class V2MapDatabaseTest {
     transaction.putCheckpointState(CHECKPOINT2, DataStructureUtil.randomBeaconState(seed++));
     transaction.putCheckpointState(forkCheckpoint, DataStructureUtil.randomBeaconState(seed++));
 
-    database.insert(transaction);
+    database.insert(transaction.commit());
 
     final Store result = database.createMemoryStore();
     assertThat(result.getCheckpointState(CHECKPOINT1))
@@ -171,13 +177,12 @@ class V2MapDatabaseTest {
     transaction1.putCheckpointState(earlyCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     transaction1.putCheckpointState(middleCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     transaction1.putCheckpointState(laterCheckpoint, DataStructureUtil.randomBeaconState(seed++));
-    transaction1.commit();
-    database.insert(transaction1);
+    database.insert(transaction1.commit());
 
     // Now update the finalized checkpoint
     final Transaction transaction2 = store.startTransaction();
     transaction2.setFinalizedCheckpoint(middleCheckpoint);
-    database.insert(transaction2);
+    database.insert(transaction2.commit());
 
     final Store result = database.createMemoryStore();
     assertThat(result.getCheckpointState(earlyCheckpoint)).isNull();
@@ -202,7 +207,7 @@ class V2MapDatabaseTest {
     transaction.putBlockState(block1Root, state1);
     transaction.putBlockState(block2Root, state2);
 
-    database.insert(transaction);
+    database.insert(transaction.commit());
 
     final Store result = database.createMemoryStore();
     assertThat(result.getBlock(genesisRoot)).isEqualTo(store.getBlock(genesisRoot));
@@ -235,7 +240,7 @@ class V2MapDatabaseTest {
     transaction.putBlockState(block2Root, state2);
     transaction.putBlockState(unfinalizedBlockRoot, unfinalizedState);
 
-    database.insert(transaction);
+    database.insert(transaction.commit());
 
     finalizeEpoch(UnsignedLong.ONE, block2Root);
 
@@ -287,6 +292,50 @@ class V2MapDatabaseTest {
     assertThat(database.getBlock(block1.signing_root("signature"))).contains(block1);
   }
 
+  @Test
+  public void shouldPersistOnDisk(@TempDirectory final Path tempDir) throws Exception {
+    database = MapDbDatabase.createOnDisk(tempDir.toFile(), false);
+    database.storeGenesis(store);
+
+    final BeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
+    final BeaconBlock block2 = blockAtSlot(2, block1);
+    final BeaconBlock block3 = blockAtSlot(3, block2);
+    // Few skipped slots
+    final BeaconBlock block7 = blockAtSlot(7, block3);
+    final BeaconBlock block8 = blockAtSlot(8, block7);
+    final BeaconBlock block9 = blockAtSlot(9, block8);
+
+    // Create some blocks on a different fork
+    final BeaconBlock forkBlock6 = blockAtSlot(6, block1);
+    final BeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
+    final BeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
+    final BeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
+
+    addBlocks(
+        block1,
+        block2,
+        block3,
+        block7,
+        block8,
+        block9,
+        forkBlock6,
+        forkBlock7,
+        forkBlock8,
+        forkBlock9);
+    assertThat(database.getBlock(block7.signing_root("signature"))).contains(block7);
+
+    finalizeEpoch(UnsignedLong.ONE, block7.signing_root("signature"));
+
+    // Close and re-read from disk store.
+    database.close();
+    database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
+    assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
+    assertBlocksFinalized(block1, block2, block3, block7);
+
+    // Should still be able to retrieve finalized blocks by root
+    assertThat(database.getBlock(block1.signing_root("signature"))).contains(block1);
+  }
+
   private void assertBlocksFinalized(final BeaconBlock... blocks) {
     for (BeaconBlock block : blocks) {
       assertThat(database.getFinalizedRootAtSlot(block.getSlot()))
@@ -307,14 +356,13 @@ class V2MapDatabaseTest {
     for (BeaconBlock block : blocks) {
       transaction.putBlock(block.signing_root("signature"), block);
     }
-    transaction.commit();
-    database.insert(transaction);
+    database.insert(transaction.commit());
   }
 
   private void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
     final Transaction transaction2 = store.startTransaction();
     transaction2.setFinalizedCheckpoint(new Checkpoint(epoch, root));
-    database.insert(transaction2);
+    database.insert(transaction2.commit());
   }
 
   private BeaconBlock blockAtSlot(final long slot) {

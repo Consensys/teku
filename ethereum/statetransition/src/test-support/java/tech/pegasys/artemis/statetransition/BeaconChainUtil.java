@@ -92,6 +92,7 @@ public class BeaconChainUtil {
     return createAndImportBlockAtSlot(UnsignedLong.valueOf(slot));
   }
 
+  @SuppressWarnings({"ResultOfMethodCallIgnored"})
   public BlockProcessingRecord createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
     final BeaconBlock block = createBlockAtSlot(slot, true, attestations);

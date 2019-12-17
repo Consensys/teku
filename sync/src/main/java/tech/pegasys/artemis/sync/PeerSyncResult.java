@@ -11,19 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core;
+package tech.pegasys.artemis.sync;
 
-import java.util.concurrent.CompletableFuture;
-
-public interface ResponseStream<O> {
-  CompletableFuture<O> expectSingleResponse();
-
-  CompletableFuture<Void> expectNoResponse();
-
-  CompletableFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
-
-  @FunctionalInterface
-  interface ResponseListener<O> {
-    void onResponse(O response);
-  }
+enum PeerSyncResult {
+  SUCCESSFUL_SYNC,
+  FAULTY_ADVERTISEMENT,
+  BAD_BLOCK
 }
