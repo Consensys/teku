@@ -51,18 +51,7 @@ public class ValidatorClient {
         port,
         keypair.getPublicKey());
 
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread() {
-              @Override
-              public void run() {
-                // Use stderr here since the logger may have been reset by its JVM shutdown hook.
-                System.err.println(
-                    "*** Shutting down Validator Client gRPC server since JVM is shutting down");
-                stopServer();
-                System.err.println("*** Server shut down");
-              }
-            });
+    Runtime.getRuntime().addShutdownHook(new Thread(this::stopServer));
   }
 
   private void stopServer() {
