@@ -41,7 +41,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       paramLabel = "<LOG VERBOSITY LEVEL>",
       description =
           "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).")
-  private Level logLevel = Level.INFO;
+  private Level logLevel;
 
   @Option(
       names = {"-c", "--config"},

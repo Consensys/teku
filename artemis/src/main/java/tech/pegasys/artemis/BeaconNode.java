@@ -70,8 +70,10 @@ public class BeaconNode {
     }
 
     // set log level per CLI flags
-    System.out.println("Setting logging level to " + loggingLevel.name());
-    Configurator.setAllLevels("", loggingLevel);
+    if (loggingLevel != null) {
+      System.out.println("Setting logging level to " + loggingLevel.name());
+      Configurator.setAllLevels("", loggingLevel);
+    }
   }
 
   public void start() {
