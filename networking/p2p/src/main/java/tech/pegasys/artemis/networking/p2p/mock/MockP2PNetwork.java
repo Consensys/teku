@@ -22,8 +22,9 @@ import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 
-public class MockP2PNetwork implements P2PNetwork {
+public class MockP2PNetwork implements P2PNetwork<Peer> {
   private final int port = 6000;
   private final NodeId nodeId = new MockNodeId();
 
@@ -39,12 +40,17 @@ public class MockP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public Optional<? extends Peer> getPeer(final NodeId id) {
+  public void subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    // Nothing to do
+  }
+
+  @Override
+  public Optional<Peer> getPeer(final NodeId id) {
     return Optional.empty();
   }
 
   @Override
-  public Stream<? extends Peer> streamPeers() {
+  public Stream<Peer> streamPeers() {
     return Stream.empty();
   }
 
