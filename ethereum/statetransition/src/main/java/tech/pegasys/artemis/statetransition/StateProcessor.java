@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
@@ -150,11 +149,10 @@ public class StateProcessor {
   @SuppressWarnings("unused")
   private void onBlock(BeaconBlock block) {
     try {
-      Store.Transaction transaction =
-          chainStorageClient.getStore().startTransaction(block.getSlot());
+      Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-      transaction.commit();
-      eventBus.post(new StoreDiskUpdateEvent(transaction));
+      final StoreDiskUpdateEvent storeEvent = transaction.commit();
+      eventBus.post(storeEvent);
 
       // Add attestations that were processed in the block to processed attestations storage
       List<Long> numberOfAttestersInAttestations = new ArrayList<>();
@@ -185,14 +183,10 @@ public class StateProcessor {
 
   private void onAttestation(Attestation attestation) {
     try {
-      final Store.Transaction transaction =
-          chainStorageClient
-              .getStore()
-              .startTransaction(
-                  compute_start_slot_at_epoch(attestation.getData().getTarget().getEpoch()));
+      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_attestation(transaction, attestation, stateTransition);
-      transaction.commit();
-      eventBus.post(new StoreDiskUpdateEvent(transaction));
+      final StoreDiskUpdateEvent storeEvent = transaction.commit();
+      eventBus.post(storeEvent);
 
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());

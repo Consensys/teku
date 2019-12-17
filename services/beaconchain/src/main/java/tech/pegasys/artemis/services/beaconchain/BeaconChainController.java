@@ -276,7 +276,7 @@ public class BeaconChainController {
       if (chainStorageClient.getStore() != null) {
         final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
         on_tick(transaction, currentTime);
-        transaction.commit();
+        eventBus.post(transaction.commit());
         if (chainStorageClient
                 .getStore()
                 .getTime()

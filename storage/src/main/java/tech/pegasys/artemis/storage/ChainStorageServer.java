@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.io.File;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
@@ -28,14 +29,17 @@ public class ChainStorageServer {
 
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.eventBus = eventBus;
+    this.database = MapDbDatabase.createOnDisk(new File("./"), config.startFromDisk());
     eventBus.register(this);
-    this.database = Database.createForFile("artemis.db", eventBus, config.startFromDisk());
+    if (config.startFromDisk()) {
+      Store memoryStore = database.createMemoryStore();
+      eventBus.post(memoryStore);
+    }
   }
 
   @Subscribe
   public void onStoreDiskUpdate(StoreDiskUpdateEvent storeDiskUpdateEvent) {
-    Store.Transaction transaction = storeDiskUpdateEvent.getTransaction();
-    database.insert(transaction);
+    database.insert(storeDiskUpdateEvent);
   }
 
   @Subscribe
