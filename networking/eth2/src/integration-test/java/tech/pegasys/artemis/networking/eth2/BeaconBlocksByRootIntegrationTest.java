@@ -114,7 +114,7 @@ public class BeaconBlocksByRootIntegrationTest {
     final Bytes32 blockRoot = block.hash_tree_root();
     final Transaction transaction = storageClient1.getStore().startTransaction();
     transaction.putBlock(blockRoot, block);
-    storageClient1.commit(transaction).join();
+    transaction.commit();
     return block;
   }
 

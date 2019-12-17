@@ -15,6 +15,7 @@ package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
@@ -308,6 +309,7 @@ public class Store implements ReadOnlyStore {
           latest_messages);
     }
 
+    @VisibleForTesting
     public void commit() {
       final Lock writeLock = Store.this.lock.writeLock();
       writeLock.lock();
