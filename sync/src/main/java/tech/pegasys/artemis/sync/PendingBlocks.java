@@ -77,6 +77,8 @@ class PendingBlocks extends Service {
 
     // Index block by parent
     pendingBlocksByParentRoot
+        // Go ahead and add our root when the set is constructed to ensure we don't accidentally
+        // drop this set when we prune empty sets
         .computeIfAbsent(parentRoot, (key) -> createRootSet(blockRoot))
         .add(blockRoot);
 
