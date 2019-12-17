@@ -20,12 +20,15 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 
 /** Holds blocks with slots that are in the future relative to our node's current slot */
 class FutureBlocks {
+  private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_BLOCKS_PER_SLOT = 500;
   private final NavigableMap<UnsignedLong, Set<BeaconBlock>> queuedFutureBlocks =
       new ConcurrentSkipListMap<>();
@@ -36,6 +39,7 @@ class FutureBlocks {
    * @param block The block to add
    */
   public void add(final BeaconBlock block) {
+    LOG.trace("Save future block at slot {} for later import: {}", block.getSlot(), block);
     queuedFutureBlocks.computeIfAbsent(block.getSlot(), key -> createNewSet()).add(block);
   }
 

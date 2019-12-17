@@ -25,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -32,6 +34,8 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
 
 class PendingBlocks extends Service {
+  private static final Logger LOG = LogManager.getLogger();
+
   private static final UnsignedLong DEFAULT_FUTURE_BLOCK_TOLERANCE = UnsignedLong.valueOf(2);
   private static final UnsignedLong DEFAULT_HISTORICAL_BLOCK_TOLERANCE =
       UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 10);
@@ -66,14 +70,14 @@ class PendingBlocks extends Service {
     return CompletableFuture.completedFuture(null);
   }
 
-  public void add(BeaconBlock beaconBlock) {
-    if (shouldIgnoreBlock(beaconBlock)) {
+  public void add(BeaconBlock block) {
+    if (shouldIgnoreBlock(block)) {
       // Ignore blocks outside of the range we care about
       return;
     }
 
-    final Bytes32 blockRoot = beaconBlock.signing_root("signature");
-    final Bytes32 parentRoot = beaconBlock.getParent_root();
+    final Bytes32 blockRoot = block.signing_root("signature");
+    final Bytes32 parentRoot = block.getParent_root();
 
     // Index block by parent
     pendingBlocksByParentRoot
@@ -83,7 +87,9 @@ class PendingBlocks extends Service {
         .add(blockRoot);
 
     // Index block by root
-    pendingBlocks.putIfAbsent(blockRoot, beaconBlock);
+    if (pendingBlocks.putIfAbsent(blockRoot, block) == null) {
+      LOG.trace("Save unattached block at slot {} for future import: {}", block.getSlot(), block);
+    }
   }
 
   public void remove(BeaconBlock beaconBlock) {

@@ -17,6 +17,8 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
@@ -26,7 +28,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 
 public class BlockImporter {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final ChainStorageClient storageClient;
   private final EventBus eventBus;
   private final StateTransition stateTransition = new StateTransition(false);
@@ -57,6 +59,7 @@ public class BlockImporter {
   }
 
   public void importBlock(BeaconBlock block) throws StateTransitionException {
+    LOG.trace("Import block at slot {}: {}", block.getSlot(), block);
     Store.Transaction transaction = storageClient.getStore().startTransaction();
     final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
     final StoreDiskUpdateEvent storeEvent = transaction.commit();
