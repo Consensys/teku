@@ -110,8 +110,12 @@ public class BlockPropagationManager extends Service {
   }
 
   private boolean blockIsKnown(final BeaconBlock block) {
-    final Bytes32 blockRoot = block.signing_root("signature");
-    return pendingBlocks.contains(block) || storageClient.getBlockByRoot(blockRoot).isPresent();
+    return pendingBlocks.contains(block)
+        || storageClient.getBlockByRoot(blockRoot(block)).isPresent();
+  }
+
+  private Bytes32 blockRoot(final BeaconBlock block) {
+    return block.signing_root("signature");
   }
 
   private void importBlock(final BeaconBlock block) {
