@@ -152,6 +152,7 @@ public class StateProcessor {
   @SuppressWarnings("unused")
   private void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
     try {
+      LOG.trace("Import proposed block: {}", blockProposedEvent.getBlock());
       blockImporter.importBlock(blockProposedEvent.getBlock());
     } catch (StateTransitionException e) {
       LOG.error("Failed to import proposed block: " + blockProposedEvent, e);
