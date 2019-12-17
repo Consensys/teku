@@ -54,9 +54,10 @@ import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
-public class LibP2PNetwork implements P2PNetwork {
+public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final PrivKey privKey;
   private final NetworkConfig config;
   private final NodeId nodeId;
@@ -165,12 +166,17 @@ public class LibP2PNetwork implements P2PNetwork {
   }
 
   @Override
+  public void subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    peerManager.subscribeConnect(subscriber);
+  }
+
+  @Override
   public Optional<Peer> getPeer(final NodeId id) {
     return peerManager.getPeer(id);
   }
 
   @Override
-  public Stream<? extends Peer> streamPeers() {
+  public Stream<Peer> streamPeers() {
     return peerManager.streamPeers();
   }
 

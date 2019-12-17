@@ -72,7 +72,7 @@ public class BeaconChainController {
   private EventBus eventBus;
   private Timer timer;
   private ChainStorageClient chainStorageClient;
-  private P2PNetwork p2pNetwork;
+  private P2PNetwork<?> p2pNetwork;
   private final MetricsSystem metricsSystem;
   private SettableGauge currentSlotGauge;
   private SettableGauge currentEpochGauge;

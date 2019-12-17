@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2.peers;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,7 +25,6 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByR
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
@@ -50,10 +50,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     this.statusMessageFactory = statusMessageFactory;
   }
 
-  public void updateStatus(final StatusMessage message) {
-    final PeerStatus statusData = PeerStatus.fromStatusMessage(message);
-    remoteStatus = Optional.of(statusData);
-    initialStatus.complete(statusData);
+  public void updateStatus(final PeerStatus status) {
+    remoteStatus = Optional.of(status);
+    initialStatus.complete(status);
   }
 
   public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
@@ -81,7 +80,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
             remoteStatus -> {
-              updateStatus(remoteStatus);
+              final PeerStatus status = PeerStatus.fromStatusMessage(remoteStatus);
+              updateStatus(status);
               return getStatus();
             });
   }
@@ -129,6 +129,23 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> sendRequest(
       final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, this.getConnection(), request);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof Eth2Peer)) {
+      return false;
+    }
+    final Eth2Peer eth2Peer = (Eth2Peer) o;
+    return Objects.equals(rpcMethods, eth2Peer.rpcMethods) && super.equals(o);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), rpcMethods);
   }
 
   public interface InitialStatusSubscriber {

@@ -26,10 +26,11 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
-  private final P2PNetwork network;
+public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
+  private final P2PNetwork<?> network;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
   private final ChainStorageClient chainStorageClient;
@@ -40,7 +41,7 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
   private AggregateGossipManager aggregateGossipManager;
 
   public Eth2Network(
-      final P2PNetwork network,
+      final P2PNetwork<?> network,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient) {
@@ -89,5 +90,10 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
     // TODO - look into keep separate collections for pending peers / validated peers so
     // we don't have to iterate over the peer list to get this count.
     return streamPeers().count();
+  }
+
+  @Override
+  public void subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
+    peerManager.subscribeConnect(subscriber);
   }
 }

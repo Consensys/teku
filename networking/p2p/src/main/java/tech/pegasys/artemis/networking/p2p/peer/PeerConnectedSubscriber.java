@@ -11,26 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.networkhandlers;
+package tech.pegasys.artemis.networking.p2p.peer;
 
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+@FunctionalInterface
+public interface PeerConnectedSubscriber<T extends Peer> {
 
-public class PeerIdHandler implements BeaconRestApiHandler {
-
-  private final P2PNetwork<?> network;
-
-  public PeerIdHandler(P2PNetwork<?> network) {
-    this.network = network;
-  }
-
-  @Override
-  public String getPath() {
-    return "/network/peer_id";
-  }
-
-  @Override
-  public Object handleRequest(RequestParams params) {
-    return network.getNodeAddress();
-  }
+  void onConnected(T peer);
 }

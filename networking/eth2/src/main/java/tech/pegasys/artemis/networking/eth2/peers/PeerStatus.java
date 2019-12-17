@@ -96,4 +96,25 @@ public class PeerStatus {
         .add("headSlot", headSlot)
         .toString();
   }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof PeerStatus)) {
+      return false;
+    }
+    final PeerStatus that = (PeerStatus) o;
+    return Objects.equals(headForkVersion, that.headForkVersion)
+        && Objects.equals(finalizedRoot, that.finalizedRoot)
+        && Objects.equals(finalizedEpoch, that.finalizedEpoch)
+        && Objects.equals(headRoot, that.headRoot)
+        && Objects.equals(headSlot, that.headSlot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(headForkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
+  }
 }
