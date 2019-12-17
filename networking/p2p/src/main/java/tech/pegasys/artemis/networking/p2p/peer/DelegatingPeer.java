@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.peer;
 
 import io.libp2p.core.Connection;
+import java.util.Objects;
 
 public class DelegatingPeer implements Peer {
   private final Peer peer;
@@ -45,5 +46,22 @@ public class DelegatingPeer implements Peer {
   @Override
   public boolean connectionInitiatedRemotely() {
     return peer.connectionInitiatedRemotely();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof DelegatingPeer)) {
+      return false;
+    }
+    final DelegatingPeer that = (DelegatingPeer) o;
+    return Objects.equals(peer, that.peer);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(peer);
   }
 }

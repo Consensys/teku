@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2.peers;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -129,6 +130,23 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> sendRequest(
       final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, this.getConnection(), request);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof Eth2Peer)) {
+      return false;
+    }
+    final Eth2Peer eth2Peer = (Eth2Peer) o;
+    return Objects.equals(rpcMethods, eth2Peer.rpcMethods) && super.equals(o);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), rpcMethods);
   }
 
   public interface InitialStatusSubscriber {
