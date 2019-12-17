@@ -109,6 +109,7 @@ public class BeaconBlocksByRootIntegrationTest {
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   private BeaconBlock addBlock() {
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(seed, seed++);
     final Bytes32 blockRoot = block.hash_tree_root();
