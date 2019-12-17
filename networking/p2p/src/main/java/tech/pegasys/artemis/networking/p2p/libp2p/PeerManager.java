@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
@@ -104,7 +105,8 @@ public class PeerManager implements ConnectionHandler {
     return Optional.ofNullable(connectedPeerMap.get(id));
   }
 
-  private void onConnectedPeer(Peer peer) {
+  @VisibleForTesting
+  void onConnectedPeer(Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
       STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());

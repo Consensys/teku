@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
 
@@ -34,7 +35,8 @@ public class StatusMessageHandler implements LocalMessageHandler<StatusMessage, 
       final StatusMessage message,
       final ResponseCallback<StatusMessage> callback) {
     LOG.trace("Peer {} sent status.", peer.getId());
-    peer.updateStatus(message);
+    final PeerStatus status = PeerStatus.fromStatusMessage(message);
+    peer.updateStatus(status);
     callback.respond(statusMessageFactory.createStatusMessage());
     callback.completeSuccessfully();
   }

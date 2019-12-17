@@ -50,7 +50,7 @@ public class Eth2NetworkBuilder {
     // Setup eth2 handlers
     final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     final Eth2PeerManager eth2PeerManager =
-        new Eth2PeerManager(chainStorageClient, historicalChainData, metricsSystem);
+        Eth2PeerManager.create(chainStorageClient, historicalChainData, metricsSystem);
     final Collection<? extends Protocol<?>> eth2Protocols = eth2PeerManager.getRpcMethods().all();
     protocols.addAll(eth2Protocols);
     peerHandlers.add(eth2PeerManager);

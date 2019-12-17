@@ -103,7 +103,7 @@ public class Eth2NetworkFactory {
         // Setup eth2 handlers
         final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
         final Eth2PeerManager eth2PeerManager =
-            new Eth2PeerManager(chainStorageClient, historicalChainData, METRICS_SYSTEM);
+            Eth2PeerManager.create(chainStorageClient, historicalChainData, METRICS_SYSTEM);
         final Collection<? extends Protocol<?>> eth2Protocols =
             eth2PeerManager.getRpcMethods().all();
         // Configure eth2 handlers

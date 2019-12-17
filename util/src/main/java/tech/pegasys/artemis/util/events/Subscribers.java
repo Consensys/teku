@@ -58,8 +58,8 @@ public class Subscribers<T> {
     return (Subscribers<T>) NONE;
   }
 
-  public static <T> Subscribers<T> create(final boolean catchCallbackExceptions) {
-    return new Subscribers<T>(catchCallbackExceptions);
+  public static <T> Subscribers<T> create(final boolean suppressCallbackExceptions) {
+    return new Subscribers<T>(suppressCallbackExceptions);
   }
 
   /**
