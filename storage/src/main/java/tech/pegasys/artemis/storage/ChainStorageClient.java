@@ -20,7 +20,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -28,6 +33,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -35,7 +41,8 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
-
+  private static final Logger LOG = LogManager.getLogger();
+  private final TransactionCommitter transactionCommitter;
   protected EventBus eventBus;
 
   private final Bytes4 genesisFork = Fork.VERSION_ZERO;
@@ -49,7 +56,33 @@ public class ChainStorageClient implements ChainStorage {
 
   public ChainStorageClient(EventBus eventBus) {
     this.eventBus = eventBus;
+    transactionCommitter = new TransactionCommitter(eventBus);
     this.eventBus.register(this);
+  }
+
+  public void commit(
+      final Store.Transaction transaction, final Runnable onSuccess, final String errorMessage) {
+    commit(transaction, onSuccess, err -> LOG.error(errorMessage, err));
+  }
+
+  public void commit(
+      final Store.Transaction transaction,
+      final Runnable onSuccess,
+      final Consumer<Throwable> onError) {
+    commit(transaction)
+        .whenComplete(
+            (result, error) -> {
+              if (error != null) {
+                onError.accept(error);
+              } else {
+                onSuccess.run();
+              }
+            });
+  }
+
+  @CheckReturnValue
+  public CompletableFuture<Void> commit(final Transaction transaction) {
+    return transactionCommitter.commit(transaction);
   }
 
   public void initializeFromGenesis(final BeaconState initialState) {

@@ -199,9 +199,7 @@ public class BeaconChainController {
     }
     syncManager =
         new SyncManager(
-            (Eth2Network) p2pNetwork,
-            chainStorageClient,
-            new BlockImporter(chainStorageClient, eventBus));
+            (Eth2Network) p2pNetwork, chainStorageClient, new BlockImporter(chainStorageClient));
   }
 
   public void start() {
@@ -271,48 +269,56 @@ public class BeaconChainController {
     if (!testMode && !stateProcessor.isGenesisReady()) {
       return;
     }
-    try {
-      final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
-      if (chainStorageClient.getStore() != null) {
-        final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
-        on_tick(transaction, currentTime);
-        eventBus.post(transaction.commit());
-        if (chainStorageClient
-                .getStore()
-                .getTime()
-                .compareTo(
-                    chainStorageClient
-                        .getGenesisTime()
-                        .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-            >= 0) {
-          this.eventBus.post(new SlotEvent(nodeSlot));
-          this.currentSlotGauge.set(nodeSlot.longValue());
-          this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
-          STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
-          STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
-          Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-          Bytes32 headBlockRoot = this.stateProcessor.processHead();
-          // Logging
-          STDOUT.log(
-              Level.INFO,
-              "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
-          STDOUT.log(
-              Level.INFO,
-              "Justified epoch:"
-                  + "                       "
-                  + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
-          STDOUT.log(
-              Level.INFO,
-              "Finalized epoch:"
-                  + "                       "
-                  + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
+    final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
+    if (chainStorageClient.getStore() != null) {
+      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      on_tick(transaction, currentTime);
+      chainStorageClient.commit(
+          transaction,
+          () -> {
+            if (chainStorageClient
+                    .getStore()
+                    .getTime()
+                    .compareTo(
+                        chainStorageClient
+                            .getGenesisTime()
+                            .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
+                >= 0) {
+              processSlot();
+            }
+          },
+          "Failed to store on_tick changes");
+    }
+  }
 
-          this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
-          Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-          this.eventBus.post(new BroadcastAggregatesEvent());
-          nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
-        }
-      }
+  private void processSlot() {
+    try {
+      this.eventBus.post(new SlotEvent(nodeSlot));
+      this.currentSlotGauge.set(nodeSlot.longValue());
+      this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
+      STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
+      STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
+      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
+      Bytes32 headBlockRoot = this.stateProcessor.processHead();
+      // Logging
+      STDOUT.log(
+          Level.INFO,
+          "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
+      STDOUT.log(
+          Level.INFO,
+          "Justified epoch:"
+              + "                       "
+              + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
+      STDOUT.log(
+          Level.INFO,
+          "Finalized epoch:"
+              + "                       "
+              + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
+
+      this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
+      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
+      this.eventBus.post(new BroadcastAggregatesEvent());
+      nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
     } catch (InterruptedException e) {
       STDOUT.log(Level.FATAL, "onTick: " + e.toString());
     }

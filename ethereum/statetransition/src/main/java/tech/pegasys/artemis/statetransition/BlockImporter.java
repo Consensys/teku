@@ -15,27 +15,22 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
-import com.google.common.eventbus.EventBus;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 
 public class BlockImporter {
 
   private final ChainStorageClient storageClient;
-  private final EventBus eventBus;
   private final StateTransition stateTransition = new StateTransition(false);
 
-  public BlockImporter(ChainStorageClient storageClient, EventBus eventBus) {
+  public BlockImporter(ChainStorageClient storageClient) {
     this.storageClient = storageClient;
-    this.eventBus = eventBus;
   }
 
   public void importBlock(BeaconBlock block) throws StateTransitionException {
     Store.Transaction transaction = storageClient.getStore().startTransaction();
     on_block(transaction, block, stateTransition);
-    final StoreDiskUpdateEvent storeEvent = transaction.commit();
-    eventBus.post(storeEvent);
+    storageClient.commit(transaction).join();
   }
 }

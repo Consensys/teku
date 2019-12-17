@@ -109,13 +109,12 @@ public class BeaconBlocksByRootIntegrationTest {
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
-  @SuppressWarnings("ResultOfMethodCallIgnored")
   private BeaconBlock addBlock() {
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(seed, seed++);
     final Bytes32 blockRoot = block.hash_tree_root();
     final Transaction transaction = storageClient1.getStore().startTransaction();
     transaction.putBlock(blockRoot, block);
-    transaction.commit();
+    storageClient1.commit(transaction).join();
     return block;
   }
 

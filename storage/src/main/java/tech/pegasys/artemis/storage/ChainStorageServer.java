@@ -20,6 +20,7 @@ import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -40,7 +41,16 @@ public class ChainStorageServer {
 
   @Subscribe
   public void onStoreDiskUpdate(final StoreDiskUpdateEvent storeDiskUpdateEvent) {
-    database.insert(storeDiskUpdateEvent);
+    try {
+      database.insert(storeDiskUpdateEvent);
+      eventBus.post(
+          new StoreDiskUpdateCompleteEvent(
+              storeDiskUpdateEvent.getTransactionId(), Optional.empty()));
+    } catch (final RuntimeException e) {
+      eventBus.post(
+          new StoreDiskUpdateCompleteEvent(
+              storeDiskUpdateEvent.getTransactionId(), Optional.of(e)));
+    }
   }
 
   @Subscribe
