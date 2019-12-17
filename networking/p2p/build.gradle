@@ -31,6 +31,7 @@ dependencies {
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
