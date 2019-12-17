@@ -66,7 +66,6 @@ public class SyncManager {
               if (result != PeerSyncResult.SUCCESSFUL_SYNC) {
                 return executeSync();
               } else {
-                syncActive.set(false);
                 return CompletableFuture.completedFuture(null);
               }
             });
