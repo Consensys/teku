@@ -80,8 +80,9 @@ then
   usage >&2; exit 3
 fi
 
-# If LOG is undefined default to INFO
-[[ -z "$LOG" ]] && LOG="INFO"
+# Set logging cli flag if it was supplied
+LOG_FLAG=""
+[[ -z "$LOG" ]] || LOG_FLAG="--logging=$LOG"
 
 # If VALIDATORS is undefined default to INFO
 [[ -z "$VALIDATORS" ]] && VALIDATORS=64
@@ -90,7 +91,7 @@ fi
 LOG_OPTIONS=("OFF FATAL WARN INFO DEBUG TRACE ALL")
 # If LOG is not a valid input pipe the usage statement to stderr and exit
 # with exit code 3
-if [[ ! " ${LOG_OPTIONS[@]} " =~ " ${LOG} " ]]
+if [[ -n "$LOG" && ! " ${LOG_OPTIONS[@]} " =~ " ${LOG} " ]]
 then
   usage >&2; exit 3
 fi
