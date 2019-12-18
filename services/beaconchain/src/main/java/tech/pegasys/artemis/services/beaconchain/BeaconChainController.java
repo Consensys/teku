@@ -270,7 +270,7 @@ public class BeaconChainController {
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
     if (chainStorageClient.getStore() != null) {
-      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
       on_tick(transaction, currentTime);
       transaction.commit().join();
       final UnsignedLong nextSlotStartTime =

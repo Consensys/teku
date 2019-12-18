@@ -18,16 +18,16 @@ import java.util.concurrent.CompletableFuture;
 import javax.annotation.CheckReturnValue;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 
-public interface TransactionCommitter {
+public interface TransactionPrecommit {
 
-  static TransactionCommitter memoryOnly() {
+  static TransactionPrecommit memoryOnly() {
     return event -> CompletableFuture.completedFuture(null);
   }
 
-  static TransactionCommitter storageEnabled(final EventBus eventBus) {
-    return new EventBusTransactionCommitter(eventBus);
+  static TransactionPrecommit storageEnabled(final EventBus eventBus) {
+    return new StoreToDiskTransactionPrecommit(eventBus);
   }
 
   @CheckReturnValue
-  CompletableFuture<Void> commit(StoreDiskUpdateEvent updateEvent);
+  CompletableFuture<Void> precommit(StoreDiskUpdateEvent updateEvent);
 }

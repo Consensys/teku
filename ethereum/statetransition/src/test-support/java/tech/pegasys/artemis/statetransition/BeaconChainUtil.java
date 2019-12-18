@@ -85,7 +85,7 @@ public class BeaconChainUtil {
   public BlockProcessingRecord createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
     final BeaconBlock block = createBlockAtSlot(slot, true, attestations);
-    final Transaction transaction = storageClient.getStore().startTransaction();
+    final Transaction transaction = storageClient.startStoreTransaction();
     final BlockProcessingRecord record =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
     transaction.commit().get(5, TimeUnit.SECONDS);

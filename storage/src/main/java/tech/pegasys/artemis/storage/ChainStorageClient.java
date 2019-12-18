@@ -38,8 +38,8 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
   private static final Logger LOG = LogManager.getLogger();
-  protected EventBus eventBus;
-  private final TransactionCommitter transactionCommitter;
+  protected final EventBus eventBus;
+  private final TransactionPrecommit transactionPrecommit;
 
   private final Bytes4 genesisFork = Fork.VERSION_ZERO;
   private volatile Store store;
@@ -51,22 +51,22 @@ public class ChainStorageClient implements ChainStorage {
   private volatile UnsignedLong genesisTime;
 
   public static ChainStorageClient memoryOnlyClient(final EventBus eventBus) {
-    return new ChainStorageClient(eventBus, TransactionCommitter.memoryOnly());
+    return new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
   }
 
   public static ChainStorageClient storageBackedClient(final EventBus eventBus) {
-    return new ChainStorageClient(eventBus, TransactionCommitter.storageEnabled(eventBus));
+    return new ChainStorageClient(eventBus, TransactionPrecommit.storageEnabled(eventBus));
   }
 
-  private ChainStorageClient(EventBus eventBus, final TransactionCommitter transactionCommitter) {
+  private ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
     this.eventBus = eventBus;
-    this.transactionCommitter = transactionCommitter;
+    this.transactionPrecommit = transactionPrecommit;
     this.eventBus.register(this);
   }
 
   public void initializeFromGenesis(final BeaconState initialState) {
     setGenesisTime(initialState.getGenesis_time());
-    final Store store = Store.get_genesis_store(initialState, transactionCommitter);
+    final Store store = Store.get_genesis_store(initialState);
     setStore(store);
     eventBus.post(new StoreGenesisDiskUpdateEvent(store));
 
@@ -106,6 +106,10 @@ public class ChainStorageClient implements ChainStorage {
 
   public Store getStore() {
     return store;
+  }
+
+  public Store.Transaction startStoreTransaction() {
+    return store.startTransaction(transactionPrecommit);
   }
 
   // NETWORKING RELATED INFORMATION METHODS:

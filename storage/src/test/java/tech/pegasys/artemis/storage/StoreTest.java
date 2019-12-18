@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomB
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
-import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -40,6 +39,7 @@ class StoreTest {
   private static final Checkpoint INITIAL_FINALIZED_CHECKPOINT = new Checkpoint();
   private UnsignedLong INITIAL_GENESIS_TIME = UnsignedLong.ZERO;
   private UnsignedLong INITIAL_TIME = UnsignedLong.ONE;
+  private final TransactionPrecommit transactionPrecommit = TransactionPrecommit.memoryOnly();
   private final Store store =
       new Store(
           INITIAL_TIME,
@@ -50,13 +50,12 @@ class StoreTest {
           new HashMap<>(),
           new HashMap<>(),
           new HashMap<>(),
-          new HashMap<>(),
-          storeEvent -> CompletableFuture.completedFuture(null));
+          new HashMap<>());
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
   public void shouldApplyChangesWhenTransactionCommits() {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(transactionPrecommit);
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);

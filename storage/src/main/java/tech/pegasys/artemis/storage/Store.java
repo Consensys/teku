@@ -53,7 +53,6 @@ public class Store implements ReadOnlyStore {
   private Map<Bytes32, BeaconState> block_states;
   private Map<Checkpoint, BeaconState> checkpoint_states;
   private Map<UnsignedLong, Checkpoint> latest_messages;
-  private final TransactionCommitter transactionCommitter;
 
   public Store(
       final UnsignedLong time,
@@ -64,8 +63,7 @@ public class Store implements ReadOnlyStore {
       final Map<Bytes32, BeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states,
-      final Map<UnsignedLong, Checkpoint> latest_messages,
-      final TransactionCommitter transactionCommitter) {
+      final Map<UnsignedLong, Checkpoint> latest_messages) {
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -75,11 +73,9 @@ public class Store implements ReadOnlyStore {
     this.block_states = new ConcurrentHashMap<>(block_states);
     this.checkpoint_states = new ConcurrentHashMap<>(checkpoint_states);
     this.latest_messages = new ConcurrentHashMap<>(latest_messages);
-    this.transactionCommitter = transactionCommitter;
   }
 
-  public static Store get_genesis_store(
-      final BeaconState genesisState, final TransactionCommitter transactionCommitter) {
+  public static Store get_genesis_store(final BeaconState genesisState) {
     BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
     Bytes32 root = genesisBlock.signing_root("signature");
 
@@ -103,12 +99,11 @@ public class Store implements ReadOnlyStore {
         blocks,
         block_states,
         checkpoint_states,
-        latest_messages,
-        transactionCommitter);
+        latest_messages);
   }
 
-  public Transaction startTransaction() {
-    return new Transaction(transactionCount++);
+  Transaction startTransaction(final TransactionPrecommit transactionPrecommit) {
+    return new Transaction(transactionCount++, transactionPrecommit);
   }
 
   @Override
@@ -254,6 +249,7 @@ public class Store implements ReadOnlyStore {
   public class Transaction implements ReadOnlyStore {
 
     private final long id;
+    private final TransactionPrecommit transactionPrecommit;
     private Optional<UnsignedLong> time = Optional.empty();
     private Optional<UnsignedLong> genesis_time = Optional.empty();
     private Optional<Checkpoint> justified_checkpoint = Optional.empty();
@@ -264,8 +260,9 @@ public class Store implements ReadOnlyStore {
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
-    Transaction(final long id) {
+    Transaction(final long id, final TransactionPrecommit transactionPrecommit) {
       this.id = id;
+      this.transactionPrecommit = transactionPrecommit;
     }
 
     public void putLatestMessage(UnsignedLong validatorIndex, Checkpoint latestMessage) {
@@ -318,8 +315,8 @@ public class Store implements ReadOnlyStore {
               block_states,
               checkpoint_states,
               latest_messages);
-      return transactionCommitter
-          .commit(updateEvent)
+      return transactionPrecommit
+          .precommit(updateEvent)
           .thenRun(
               () -> {
                 final Lock writeLock = Store.this.lock.writeLock();

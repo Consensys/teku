@@ -148,7 +148,7 @@ public class StateProcessor {
   @SuppressWarnings("unused")
   private void onBlock(BeaconBlock block) {
     try {
-      Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      Store.Transaction transaction = chainStorageClient.startStoreTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
       transaction.commit(
           () -> postBlockProcessingRecord(record), "Failed to persist block storage result");
@@ -183,7 +183,7 @@ public class StateProcessor {
 
   private void onAttestation(Attestation attestation) {
     try {
-      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
       on_attestation(transaction, attestation, stateTransition);
       transaction.commit(() -> {}, "Failed to persist attestation result");
     } catch (SlotProcessingException | EpochProcessingException e) {

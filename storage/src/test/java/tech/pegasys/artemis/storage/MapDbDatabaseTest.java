@@ -48,12 +48,12 @@ class MapDbDatabaseTest {
       new Checkpoint(UnsignedLong.valueOf(8), Bytes32.fromHexString("0x9012"));
 
   private Database database = MapDbDatabase.createInMemory();
-  private final TransactionCommitter immediateTransactionCommitter =
+  private final TransactionPrecommit databaseTransactionPrecommit =
       updateEvent -> {
         database.insert(updateEvent);
         return CompletableFuture.completedFuture(null);
       };
-  private final Store store = Store.get_genesis_store(GENESIS_STATE, immediateTransactionCommitter);
+  private final Store store = Store.get_genesis_store(GENESIS_STATE);
 
   private int seed = 498242;
 
@@ -64,13 +64,13 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldRecreateOriginalGenesisStore() {
-    final Store memoryStore = database.createMemoryStore(immediateTransactionCommitter);
+    final Store memoryStore = database.createMemoryStore();
     assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "lock", "readLock");
   }
 
   @Test
   public void shouldGetHotBlockByRoot() {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     final BeaconBlock block1 = blockAtSlot(1);
     final BeaconBlock block2 = blockAtSlot(2);
     final Bytes32 block1Root = block1.signing_root("signature");
@@ -90,7 +90,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldGetHotStateByRoot() {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     final BeaconState state1 = DataStructureUtil.randomBeaconState(seed++);
     final BeaconState state2 = DataStructureUtil.randomBeaconState(seed++);
     final Bytes32 block1Root = Bytes32.fromHexString("0x1234");
@@ -106,7 +106,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldStoreSingleValueFields() {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     transaction.setGenesis_time(UnsignedLong.valueOf(3));
     transaction.setTime(UnsignedLong.valueOf(5));
     transaction.setFinalizedCheckpoint(CHECKPOINT1);
@@ -115,7 +115,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore(immediateTransactionCommitter);
+    final Store result = database.createMemoryStore();
 
     assertThat(result.getTime()).isEqualTo(transaction.getTime());
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
@@ -131,23 +131,23 @@ class MapDbDatabaseTest {
     final UnsignedLong validator2 = UnsignedLong.valueOf(2);
     final UnsignedLong validator3 = UnsignedLong.valueOf(3);
 
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     transaction.putLatestMessage(validator1, CHECKPOINT1);
     transaction.putLatestMessage(validator2, CHECKPOINT2);
     transaction.putLatestMessage(validator3, CHECKPOINT1);
     commit(transaction);
 
-    final Store result1 = database.createMemoryStore(immediateTransactionCommitter);
+    final Store result1 = database.createMemoryStore();
     assertThat(result1.getLatestMessage(validator1)).isEqualTo(CHECKPOINT1);
     assertThat(result1.getLatestMessage(validator2)).isEqualTo(CHECKPOINT2);
     assertThat(result1.getLatestMessage(validator3)).isEqualTo(CHECKPOINT1);
 
     // Should overwrite when later changes are made.
-    final Transaction transaction2 = store.startTransaction();
+    final Transaction transaction2 = store.startTransaction(databaseTransactionPrecommit);
     transaction2.putLatestMessage(validator3, CHECKPOINT2);
     commit(transaction2);
 
-    final Store result2 = database.createMemoryStore(immediateTransactionCommitter);
+    final Store result2 = database.createMemoryStore();
     assertThat(result2.getLatestMessage(validator1)).isEqualTo(CHECKPOINT1);
     assertThat(result2.getLatestMessage(validator2)).isEqualTo(CHECKPOINT2);
     assertThat(result2.getLatestMessage(validator3)).isEqualTo(CHECKPOINT2);
@@ -155,7 +155,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldStoreCheckpointStates() {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
 
     final Checkpoint forkCheckpoint =
         new Checkpoint(CHECKPOINT1.getEpoch(), Bytes32.fromHexString("0x88677727"));
@@ -165,7 +165,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore(immediateTransactionCommitter);
+    final Store result = database.createMemoryStore();
     assertThat(result.getCheckpointState(CHECKPOINT1))
         .isEqualTo(transaction.getCheckpointState(CHECKPOINT1));
     assertThat(result.getCheckpointState(CHECKPOINT2))
@@ -184,18 +184,18 @@ class MapDbDatabaseTest {
         new Checkpoint(UnsignedLong.valueOf(3), Bytes32.fromHexString("0x03"));
 
     // First store the initial checkpoints.
-    final Transaction transaction1 = store.startTransaction();
+    final Transaction transaction1 = store.startTransaction(databaseTransactionPrecommit);
     transaction1.putCheckpointState(earlyCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     transaction1.putCheckpointState(middleCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     transaction1.putCheckpointState(laterCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     commit(transaction1);
 
     // Now update the finalized checkpoint
-    final Transaction transaction2 = store.startTransaction();
+    final Transaction transaction2 = store.startTransaction(databaseTransactionPrecommit);
     transaction2.setFinalizedCheckpoint(middleCheckpoint);
     commit(transaction2);
 
-    final Store result = database.createMemoryStore(immediateTransactionCommitter);
+    final Store result = database.createMemoryStore();
     assertThat(result.getCheckpointState(earlyCheckpoint)).isNull();
     assertThat(result.getCheckpointState(middleCheckpoint))
         .isEqualTo(transaction1.getCheckpointState(middleCheckpoint));
@@ -206,7 +206,7 @@ class MapDbDatabaseTest {
   @Test
   public void shouldLoadHotBlocksAndStatesIntoMemoryStore() {
     final Bytes32 genesisRoot = store.getFinalizedCheckpoint().getRoot();
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     final BeaconBlock block1 = blockAtSlot(1);
     final BeaconBlock block2 = blockAtSlot(2);
     final BeaconState state1 = DataStructureUtil.randomBeaconState(seed++);
@@ -220,7 +220,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore(immediateTransactionCommitter);
+    final Store result = database.createMemoryStore();
     assertThat(result.getBlock(genesisRoot)).isEqualTo(store.getBlock(genesisRoot));
     assertThat(result.getBlock(block1Root)).isEqualTo(block1);
     assertThat(result.getBlock(block2Root)).isEqualTo(block2);
@@ -231,7 +231,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     final BeaconBlock block1 = blockAtSlot(1);
     final BeaconBlock block2 = blockAtSlot(2);
     final BeaconBlock unfinalizedBlock =
@@ -255,7 +255,7 @@ class MapDbDatabaseTest {
 
     finalizeEpoch(UnsignedLong.ONE, block2Root);
 
-    final Store result = database.createMemoryStore(immediateTransactionCommitter);
+    final Store result = database.createMemoryStore();
     assertThat(result.getBlock(block1Root)).isNull();
     assertThat(result.getBlock(block2Root)).isNull();
     assertThat(result.getBlock(unfinalizedBlockRoot)).isEqualTo(unfinalizedBlock);
@@ -356,14 +356,14 @@ class MapDbDatabaseTest {
   }
 
   private void assertOnlyHotBlocks(final BeaconBlock... blocks) {
-    final Store memoryStore = database.createMemoryStore(immediateTransactionCommitter);
+    final Store memoryStore = database.createMemoryStore();
     assertThat(memoryStore.getBlockRoots())
         .hasSameElementsAs(
             Stream.of(blocks).map(block -> block.signing_root("signature")).collect(toList()));
   }
 
   private void addBlocks(final BeaconBlock... blocks) {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     for (BeaconBlock block : blocks) {
       transaction.putBlock(block.signing_root("signature"), block);
     }
@@ -371,7 +371,7 @@ class MapDbDatabaseTest {
   }
 
   private void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
     commit(transaction);
   }

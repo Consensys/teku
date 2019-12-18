@@ -38,7 +38,7 @@ public class ChainStorageServer {
     this.database = MapDbDatabase.createOnDisk(new File("./"), config.startFromDisk());
     eventBus.register(this);
     if (config.startFromDisk()) {
-      Store memoryStore = database.createMemoryStore(new EventBusTransactionCommitter(eventBus));
+      Store memoryStore = database.createMemoryStore();
       eventBus.post(memoryStore);
     }
   }
