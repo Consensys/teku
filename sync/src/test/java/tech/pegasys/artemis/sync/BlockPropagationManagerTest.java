@@ -43,8 +43,10 @@ public class BlockPropagationManagerTest {
       new PendingBlocks(localEventBus, historicalBlockTolerance, futureBlockTolerance);
   private final FutureBlocks futureBlocks = new FutureBlocks();
 
-  private final ChainStorageClient localStorage = new ChainStorageClient(localEventBus);
-  private final ChainStorageClient remoteStorage = new ChainStorageClient(remoteEventBus);
+  private final ChainStorageClient localStorage =
+      ChainStorageClient.memoryOnlyClient(localEventBus);
+  private final ChainStorageClient remoteStorage =
+      ChainStorageClient.memoryOnlyClient(remoteEventBus);
   private final BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys);
   private final BeaconChainUtil remoteChain = BeaconChainUtil.create(remoteStorage, validatorKeys);
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);

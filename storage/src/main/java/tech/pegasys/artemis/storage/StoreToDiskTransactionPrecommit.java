@@ -16,29 +16,38 @@ package tech.pegasys.artemis.storage;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
-import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import javax.annotation.CheckReturnValue;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.async.AsyncEventTracker;
 
-public class HistoricalChainData {
-  private final AsyncEventTracker<UnsignedLong, Optional<BeaconBlock>> eventTracker;
+public class StoreToDiskTransactionPrecommit implements TransactionPrecommit {
+  private final AsyncEventTracker<Long, Optional<RuntimeException>> tracker;
 
-  public HistoricalChainData(final EventBus eventBus) {
-    this.eventTracker = new AsyncEventTracker<>(eventBus);
+  public StoreToDiskTransactionPrecommit(final EventBus eventBus) {
+    this.tracker = new AsyncEventTracker<>(eventBus);
     eventBus.register(this);
   }
 
-  public CompletableFuture<Optional<BeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
-    return eventTracker.sendRequest(slot, new GetFinalizedBlockAtSlotRequest(slot));
+  @Override
+  @CheckReturnValue
+  public CompletableFuture<Void> precommit(final StoreDiskUpdateEvent updateEvent) {
+    return tracker
+        .sendRequest(updateEvent.getTransactionId(), updateEvent)
+        .thenApply(
+            error -> {
+              if (error.isPresent()) {
+                throw error.get();
+              }
+              return null;
+            });
   }
 
   @Subscribe
   @AllowConcurrentEvents
-  public void onResponse(final GetFinalizedBlockAtSlotResponse response) {
-    eventTracker.onResponse(response.getSlot(), response.getBlock());
+  void onResponse(final StoreDiskUpdateCompleteEvent event) {
+    tracker.onResponse(event.getTransactionId(), event.getError());
   }
 }

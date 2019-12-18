@@ -42,7 +42,7 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldExchangeStatusMessagesOnConnection() throws Exception {
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network1 = networkFactory.builder().startNetwork();
     final Eth2Network network2 =
@@ -69,7 +69,7 @@ public class PeerStatusIntegrationTest {
   @Test
   public void shouldUpdatePeerStatus() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -78,7 +78,7 @@ public class PeerStatusIntegrationTest {
             .startNetwork();
 
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network2 =
         networkFactory

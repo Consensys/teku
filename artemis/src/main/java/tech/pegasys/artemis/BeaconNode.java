@@ -20,6 +20,7 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -43,11 +44,7 @@ public class BeaconNode {
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
-          r -> {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            return t;
-          });
+          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
   private final ServiceController serviceController = new ServiceController();
   private final ServiceConfig serviceConfig;

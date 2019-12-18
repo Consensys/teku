@@ -22,12 +22,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.CheckReturnValue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -36,9 +40,10 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 
 public class Store implements ReadOnlyStore {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
+  private long transactionCount = 0;
   private UnsignedLong time;
   private UnsignedLong genesis_time;
   private Checkpoint justified_checkpoint;
@@ -97,8 +102,8 @@ public class Store implements ReadOnlyStore {
         latest_messages);
   }
 
-  public Transaction startTransaction() {
-    return new Transaction();
+  Transaction startTransaction(final TransactionPrecommit transactionPrecommit) {
+    return new Transaction(transactionCount++, transactionPrecommit);
   }
 
   @Override
@@ -242,6 +247,9 @@ public class Store implements ReadOnlyStore {
   }
 
   public class Transaction implements ReadOnlyStore {
+
+    private final long id;
+    private final TransactionPrecommit transactionPrecommit;
     private Optional<UnsignedLong> time = Optional.empty();
     private Optional<UnsignedLong> genesis_time = Optional.empty();
     private Optional<Checkpoint> justified_checkpoint = Optional.empty();
@@ -251,6 +259,11 @@ public class Store implements ReadOnlyStore {
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
+
+    Transaction(final long id, final TransactionPrecommit transactionPrecommit) {
+      this.id = id;
+      this.transactionPrecommit = transactionPrecommit;
+    }
 
     public void putLatestMessage(UnsignedLong validatorIndex, Checkpoint latestMessage) {
       latest_messages.put(validatorIndex, latestMessage);
@@ -289,33 +302,56 @@ public class Store implements ReadOnlyStore {
     }
 
     @CheckReturnValue
-    public StoreDiskUpdateEvent commit() {
-      final Lock writeLock = Store.this.lock.writeLock();
-      writeLock.lock();
-      try {
-        time.ifPresent(value -> Store.this.time = value);
-        genesis_time.ifPresent(value -> Store.this.genesis_time = value);
-        justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
-        finalized_checkpoint.ifPresent(value -> Store.this.finalized_checkpoint = value);
-        best_justified_checkpoint.ifPresent(value -> Store.this.best_justified_checkpoint = value);
-        Store.this.blocks.putAll(blocks);
-        Store.this.block_states.putAll(block_states);
-        Store.this.checkpoint_states.putAll(checkpoint_states);
-        Store.this.latest_messages.putAll(latest_messages);
+    public CompletableFuture<Void> commit() {
+      final StoreDiskUpdateEvent updateEvent =
+          new StoreDiskUpdateEvent(
+              id,
+              time,
+              genesis_time,
+              justified_checkpoint,
+              finalized_checkpoint,
+              best_justified_checkpoint,
+              blocks,
+              block_states,
+              checkpoint_states,
+              latest_messages);
+      return transactionPrecommit
+          .precommit(updateEvent)
+          .thenRun(
+              () -> {
+                final Lock writeLock = Store.this.lock.writeLock();
+                writeLock.lock();
+                try {
+                  time.ifPresent(value -> Store.this.time = value);
+                  genesis_time.ifPresent(value -> Store.this.genesis_time = value);
+                  justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
+                  finalized_checkpoint.ifPresent(value -> Store.this.finalized_checkpoint = value);
+                  best_justified_checkpoint.ifPresent(
+                      value -> Store.this.best_justified_checkpoint = value);
+                  Store.this.blocks.putAll(blocks);
+                  Store.this.block_states.putAll(block_states);
+                  Store.this.checkpoint_states.putAll(checkpoint_states);
+                  Store.this.latest_messages.putAll(latest_messages);
+                } finally {
+                  writeLock.unlock();
+                }
+              });
+    }
 
-        return new StoreDiskUpdateEvent(
-            time,
-            genesis_time,
-            justified_checkpoint,
-            finalized_checkpoint,
-            best_justified_checkpoint,
-            blocks,
-            block_states,
-            checkpoint_states,
-            latest_messages);
-      } finally {
-        writeLock.unlock();
-      }
+    public void commit(final Runnable onSuccess, final String errorMessage) {
+      commit(onSuccess, err -> LOG.error(errorMessage, err));
+    }
+
+    public void commit(final Runnable onSuccess, final Consumer<Throwable> onError) {
+      commit()
+          .whenComplete(
+              (result, error) -> {
+                if (error != null) {
+                  onError.accept(error);
+                } else {
+                  onSuccess.run();
+                }
+              });
     }
 
     @Override

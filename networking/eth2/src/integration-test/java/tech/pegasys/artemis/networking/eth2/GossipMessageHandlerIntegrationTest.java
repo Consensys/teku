@@ -50,7 +50,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -62,7 +62,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory
             .builder()
@@ -73,7 +73,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 3
     final EventBus eventBus3 = new EventBus();
-    final ChainStorageClient storageClient3 = new ChainStorageClient(eventBus3);
+    final ChainStorageClient storageClient3 = ChainStorageClient.memoryOnlyClient(eventBus3);
     final Eth2Network network3 =
         networkFactory
             .builder()
@@ -115,7 +115,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipInvalidBlocks() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -127,7 +127,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory
             .builder()
@@ -138,7 +138,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 3
     final EventBus eventBus3 = new EventBus();
-    final ChainStorageClient storageClient3 = new ChainStorageClient(eventBus3);
+    final ChainStorageClient storageClient3 = ChainStorageClient.memoryOnlyClient(eventBus3);
     final Eth2Network network3 =
         networkFactory
             .builder()
@@ -178,7 +178,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -192,7 +192,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory
             .builder()
@@ -225,7 +225,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -239,7 +239,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory
             .builder()
@@ -281,7 +281,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -295,7 +295,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory
             .builder()

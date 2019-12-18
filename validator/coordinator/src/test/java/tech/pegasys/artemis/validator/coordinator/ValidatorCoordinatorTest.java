@@ -66,7 +66,7 @@ public class ValidatorCoordinatorTest {
         .thenReturn(createAttestations());
 
     eventBus = spy(new EventBus());
-    storageClient = new ChainStorageClient(eventBus);
+    storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);

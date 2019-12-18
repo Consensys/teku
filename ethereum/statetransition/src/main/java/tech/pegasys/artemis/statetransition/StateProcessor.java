@@ -50,7 +50,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -161,11 +160,9 @@ public class StateProcessor {
 
   private void onAttestation(Attestation attestation) {
     try {
-      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
       on_attestation(transaction, attestation, stateTransition);
-      final StoreDiskUpdateEvent storeEvent = transaction.commit();
-      eventBus.post(storeEvent);
-
+      transaction.commit(() -> {}, "Failed to persist attestation result");
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }

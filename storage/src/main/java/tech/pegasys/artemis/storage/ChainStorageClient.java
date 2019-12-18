@@ -21,6 +21,8 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -35,8 +37,9 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
-
-  protected EventBus eventBus;
+  private static final Logger LOG = LogManager.getLogger();
+  protected final EventBus eventBus;
+  private final TransactionPrecommit transactionPrecommit;
 
   private final Bytes4 genesisFork = Fork.VERSION_ZERO;
   private volatile Store store;
@@ -47,8 +50,17 @@ public class ChainStorageClient implements ChainStorage {
   // Time
   private volatile UnsignedLong genesisTime;
 
-  public ChainStorageClient(EventBus eventBus) {
+  public static ChainStorageClient memoryOnlyClient(final EventBus eventBus) {
+    return new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+  }
+
+  public static ChainStorageClient storageBackedClient(final EventBus eventBus) {
+    return new ChainStorageClient(eventBus, TransactionPrecommit.storageEnabled(eventBus));
+  }
+
+  private ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
     this.eventBus = eventBus;
+    this.transactionPrecommit = transactionPrecommit;
     this.eventBus.register(this);
   }
 
@@ -94,6 +106,10 @@ public class ChainStorageClient implements ChainStorage {
 
   public Store getStore() {
     return store;
+  }
+
+  public Store.Transaction startStoreTransaction() {
+    return store.startTransaction(transactionPrecommit);
   }
 
   // NETWORKING RELATED INFORMATION METHODS:
