@@ -36,6 +36,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -63,6 +64,10 @@ public class SyncManagerTest {
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<ResponseListener<BeaconBlock>> responseListenerArgumentCaptor =
       ArgumentCaptor.forClass(ResponseListener.class);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> onConnectionListener =
+      ArgumentCaptor.forClass(PeerConnectedSubscriber.class);
 
   @BeforeEach
   public void setUp() {
@@ -112,5 +117,19 @@ public class SyncManagerTest {
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isDone();
     verify(peer, never()).sendGoodbye(any());
+  }
+
+  @Test
+  void sync_newPeer() {
+    verify(network).subscribeConnect(onConnectionListener.capture());
+    final PeerConnectedSubscriber<Eth2Peer> subscriber = onConnectionListener.getValue();
+
+    final CompletableFuture<Void> requestFuture = CompletableFuture.completedFuture(null);
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
+    subscriber.onConnected(peer);
+
+    verify(peer)
+        .requestBlocksByRange(eq(PEER_HEAD_BLOCK_ROOT), any(), any(), eq(UnsignedLong.ONE), any());
   }
 }
