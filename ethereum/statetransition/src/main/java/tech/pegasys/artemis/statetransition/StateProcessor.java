@@ -51,7 +51,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -151,43 +150,44 @@ public class StateProcessor {
     try {
       Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-      final StoreDiskUpdateEvent storeEvent = transaction.commit();
-      eventBus.post(storeEvent);
-
-      // Add attestations that were processed in the block to processed attestations storage
-      List<Long> numberOfAttestersInAttestations = new ArrayList<>();
-      block
-          .getBody()
-          .getAttestations()
-          .forEach(
-              attestation -> {
-                numberOfAttestersInAttestations.add(
-                    IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
-                        .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
-                        .count());
-              });
-
-      this.eventBus.post(new ProcessedBlockEvent(block.getBody().getAttestations()));
-
-      STDOUT.log(
-          Level.DEBUG, "Number of attestations: " + block.getBody().getAttestations().size());
-      STDOUT.log(
-          Level.DEBUG, "Number of attesters in attestations: " + numberOfAttestersInAttestations);
-
-      this.eventBus.post(record);
+      chainStorageClient.commit(
+          transaction,
+          () -> postBlockProcessingRecord(record),
+          "Failed to persist block storage result");
     } catch (StateTransitionException e) {
       //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));
       STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
     }
   }
 
+  private void postBlockProcessingRecord(final BlockProcessingRecord record) {
+    final BeaconBlock block = record.getBlock();
+    // Add attestations that were processed in the block to processed attestations
+    // storage
+    List<Long> numberOfAttestersInAttestations = new ArrayList<>();
+    block
+        .getBody()
+        .getAttestations()
+        .forEach(
+            attestation ->
+                numberOfAttestersInAttestations.add(
+                    IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
+                        .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
+                        .count()));
+
+    this.eventBus.post(new ProcessedBlockEvent(block.getBody().getAttestations()));
+    STDOUT.log(Level.DEBUG, "Number of attestations: " + block.getBody().getAttestations().size());
+    STDOUT.log(
+        Level.DEBUG, "Number of attesters in attestations: " + numberOfAttestersInAttestations);
+
+    this.eventBus.post(record);
+  }
+
   private void onAttestation(Attestation attestation) {
     try {
       final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_attestation(transaction, attestation, stateTransition);
-      final StoreDiskUpdateEvent storeEvent = transaction.commit();
-      eventBus.post(storeEvent);
-
+      chainStorageClient.commit(transaction, () -> {}, "Failed to persist attestation result");
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
