@@ -132,7 +132,7 @@ public class Eth2NetworkFactory {
         eventBus = new EventBus();
       }
       if (chainStorageClient == null) {
-        chainStorageClient = new ChainStorageClient(eventBus);
+        chainStorageClient = ChainStorageClient.memoryOnlyClient(eventBus);
       }
     }
 

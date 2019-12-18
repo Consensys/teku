@@ -27,7 +27,7 @@ public interface Database extends Closeable {
 
   void insert(StoreDiskUpdateEvent event);
 
-  Store createMemoryStore();
+  Store createMemoryStore(TransactionCommitter transactionCommitter);
 
   Optional<Bytes32> getFinalizedRootAtSlot(UnsignedLong slot);
 

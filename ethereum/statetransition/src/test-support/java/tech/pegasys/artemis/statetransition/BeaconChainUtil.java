@@ -20,6 +20,7 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSI
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -87,7 +88,7 @@ public class BeaconChainUtil {
     final Transaction transaction = storageClient.getStore().startTransaction();
     final BlockProcessingRecord record =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
-    transaction.commit();
+    transaction.commit().get(5, TimeUnit.SECONDS);
     storageClient.updateBestBlock(block.signing_root("signature"), block.getSlot());
     return record;
   }

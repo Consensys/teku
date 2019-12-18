@@ -15,10 +15,12 @@ package tech.pegasys.artemis.storage;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.TempDirectory;
@@ -44,9 +46,14 @@ class MapDbDatabaseTest {
       new Checkpoint(UnsignedLong.valueOf(7), Bytes32.fromHexString("0x5678"));
   private static final Checkpoint CHECKPOINT3 =
       new Checkpoint(UnsignedLong.valueOf(8), Bytes32.fromHexString("0x9012"));
-  private final Store store = Store.get_genesis_store(GENESIS_STATE);
 
   private Database database = MapDbDatabase.createInMemory();
+  private final TransactionCommitter immediateTransactionCommitter =
+      updateEvent -> {
+        database.insert(updateEvent);
+        return CompletableFuture.completedFuture(null);
+      };
+  private final Store store = Store.get_genesis_store(GENESIS_STATE, immediateTransactionCommitter);
 
   private int seed = 498242;
 
@@ -57,7 +64,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldRecreateOriginalGenesisStore() {
-    final Store memoryStore = database.createMemoryStore();
+    final Store memoryStore = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "lock", "readLock");
   }
 
@@ -71,10 +78,14 @@ class MapDbDatabaseTest {
     transaction.putBlock(block1Root, block1);
     transaction.putBlock(block2Root, block2);
 
-    database.insert(transaction.precommit());
+    commit(transaction);
 
     assertThat(database.getBlock(block1Root)).contains(block1);
     assertThat(database.getBlock(block2Root)).contains(block2);
+  }
+
+  private void commit(final Transaction transaction) {
+    transaction.commit().exceptionally(error -> fail("Error while committing", error));
   }
 
   @Test
@@ -87,7 +98,7 @@ class MapDbDatabaseTest {
     transaction.putBlockState(block1Root, state1);
     transaction.putBlockState(block2Root, state2);
 
-    database.insert(transaction.precommit());
+    commit(transaction);
 
     assertThat(database.getState(block1Root)).contains(state1);
     assertThat(database.getState(block2Root)).contains(state2);
@@ -102,9 +113,9 @@ class MapDbDatabaseTest {
     transaction.setJustifiedCheckpoint(CHECKPOINT2);
     transaction.setBestJustifiedCheckpoint(CHECKPOINT3);
 
-    database.insert(transaction.precommit());
+    commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore(immediateTransactionCommitter);
 
     assertThat(result.getTime()).isEqualTo(transaction.getTime());
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
@@ -124,9 +135,9 @@ class MapDbDatabaseTest {
     transaction.putLatestMessage(validator1, CHECKPOINT1);
     transaction.putLatestMessage(validator2, CHECKPOINT2);
     transaction.putLatestMessage(validator3, CHECKPOINT1);
-    database.insert(transaction.precommit());
+    commit(transaction);
 
-    final Store result1 = database.createMemoryStore();
+    final Store result1 = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(result1.getLatestMessage(validator1)).isEqualTo(CHECKPOINT1);
     assertThat(result1.getLatestMessage(validator2)).isEqualTo(CHECKPOINT2);
     assertThat(result1.getLatestMessage(validator3)).isEqualTo(CHECKPOINT1);
@@ -134,9 +145,9 @@ class MapDbDatabaseTest {
     // Should overwrite when later changes are made.
     final Transaction transaction2 = store.startTransaction();
     transaction2.putLatestMessage(validator3, CHECKPOINT2);
-    database.insert(transaction2.precommit());
+    commit(transaction2);
 
-    final Store result2 = database.createMemoryStore();
+    final Store result2 = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(result2.getLatestMessage(validator1)).isEqualTo(CHECKPOINT1);
     assertThat(result2.getLatestMessage(validator2)).isEqualTo(CHECKPOINT2);
     assertThat(result2.getLatestMessage(validator3)).isEqualTo(CHECKPOINT2);
@@ -152,9 +163,9 @@ class MapDbDatabaseTest {
     transaction.putCheckpointState(CHECKPOINT2, DataStructureUtil.randomBeaconState(seed++));
     transaction.putCheckpointState(forkCheckpoint, DataStructureUtil.randomBeaconState(seed++));
 
-    database.insert(transaction.precommit());
+    commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(result.getCheckpointState(CHECKPOINT1))
         .isEqualTo(transaction.getCheckpointState(CHECKPOINT1));
     assertThat(result.getCheckpointState(CHECKPOINT2))
@@ -177,14 +188,14 @@ class MapDbDatabaseTest {
     transaction1.putCheckpointState(earlyCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     transaction1.putCheckpointState(middleCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     transaction1.putCheckpointState(laterCheckpoint, DataStructureUtil.randomBeaconState(seed++));
-    database.insert(transaction1.precommit());
+    commit(transaction1);
 
     // Now update the finalized checkpoint
     final Transaction transaction2 = store.startTransaction();
     transaction2.setFinalizedCheckpoint(middleCheckpoint);
-    database.insert(transaction2.precommit());
+    commit(transaction2);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(result.getCheckpointState(earlyCheckpoint)).isNull();
     assertThat(result.getCheckpointState(middleCheckpoint))
         .isEqualTo(transaction1.getCheckpointState(middleCheckpoint));
@@ -207,9 +218,9 @@ class MapDbDatabaseTest {
     transaction.putBlockState(block1Root, state1);
     transaction.putBlockState(block2Root, state2);
 
-    database.insert(transaction.precommit());
+    commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(result.getBlock(genesisRoot)).isEqualTo(store.getBlock(genesisRoot));
     assertThat(result.getBlock(block1Root)).isEqualTo(block1);
     assertThat(result.getBlock(block2Root)).isEqualTo(block2);
@@ -240,11 +251,11 @@ class MapDbDatabaseTest {
     transaction.putBlockState(block2Root, state2);
     transaction.putBlockState(unfinalizedBlockRoot, unfinalizedState);
 
-    database.insert(transaction.precommit());
+    commit(transaction);
 
     finalizeEpoch(UnsignedLong.ONE, block2Root);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(result.getBlock(block1Root)).isNull();
     assertThat(result.getBlock(block2Root)).isNull();
     assertThat(result.getBlock(unfinalizedBlockRoot)).isEqualTo(unfinalizedBlock);
@@ -345,7 +356,7 @@ class MapDbDatabaseTest {
   }
 
   private void assertOnlyHotBlocks(final BeaconBlock... blocks) {
-    final Store memoryStore = database.createMemoryStore();
+    final Store memoryStore = database.createMemoryStore(immediateTransactionCommitter);
     assertThat(memoryStore.getBlockRoots())
         .hasSameElementsAs(
             Stream.of(blocks).map(block -> block.signing_root("signature")).collect(toList()));
@@ -356,13 +367,13 @@ class MapDbDatabaseTest {
     for (BeaconBlock block : blocks) {
       transaction.putBlock(block.signing_root("signature"), block);
     }
-    database.insert(transaction.precommit());
+    commit(transaction);
   }
 
   private void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
-    final Transaction transaction2 = store.startTransaction();
-    transaction2.setFinalizedCheckpoint(new Checkpoint(epoch, root));
-    database.insert(transaction2.precommit());
+    final Transaction transaction = store.startTransaction();
+    transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
+    commit(transaction);
   }
 
   private BeaconBlock blockAtSlot(final long slot) {

@@ -50,7 +50,6 @@ import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
@@ -115,7 +114,7 @@ public class BeaconChainController {
   }
 
   public void initStorage() {
-    this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
+    this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus);
   }
 
   public void initMetrics() {
@@ -273,7 +272,7 @@ public class BeaconChainController {
     if (chainStorageClient.getStore() != null) {
       final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
       on_tick(transaction, currentTime);
-      chainStorageClient.commit(transaction).join();
+      transaction.commit().join();
       final UnsignedLong nextSlotStartTime =
           chainStorageClient
               .getGenesisTime()

@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomB
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -49,7 +50,8 @@ class StoreTest {
           new HashMap<>(),
           new HashMap<>(),
           new HashMap<>(),
-          new HashMap<>());
+          new HashMap<>(),
+          storeEvent -> CompletableFuture.completedFuture(null));
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test

@@ -39,7 +39,7 @@ public class BeaconBlocksByRangeIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    storageClient1 = new ChainStorageClient(eventBus1);
+    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()

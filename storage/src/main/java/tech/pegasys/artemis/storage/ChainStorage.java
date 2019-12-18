@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.storage;
 
-import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,20 +22,6 @@ import org.apache.logging.log4j.Logger;
 /** ChainStorage Interface class */
 public interface ChainStorage {
   Logger LOG = LogManager.getLogger();
-  /**
-   * Instantiate the ChainStorage
-   *
-   * @param type
-   * @param eventBus
-   * @return
-   */
-  static <T> T Create(Class<T> type, EventBus eventBus) {
-    try {
-      return type.getDeclaredConstructor(EventBus.class).newInstance(eventBus);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
 
   /**
    * Add item to Queue

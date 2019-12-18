@@ -279,7 +279,7 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public Store createMemoryStore() {
+  public Store createMemoryStore(final TransactionCommitter transactionCommitter) {
     return new Store(
         time.get(),
         genesisTime.get(),
@@ -289,7 +289,8 @@ public class MapDbDatabase implements Database {
         hotBlocksByRoot,
         hotStatesByRoot,
         checkpointStates,
-        latestMessages);
+        latestMessages,
+        transactionCommitter);
   }
 
   @Override

@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.util.Waiter.waitFor;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -44,7 +45,7 @@ public class BeaconBlocksByRootIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    storageClient1 = new ChainStorageClient(eventBus1);
+    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -109,12 +110,12 @@ public class BeaconBlocksByRootIntegrationTest {
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
-  private BeaconBlock addBlock() {
+  private BeaconBlock addBlock() throws Exception {
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(seed, seed++);
     final Bytes32 blockRoot = block.hash_tree_root();
     final Transaction transaction = storageClient1.getStore().startTransaction();
     transaction.putBlock(blockRoot, block);
-    transaction.commit();
+    transaction.commit().get(5, TimeUnit.SECONDS);
     return block;
   }
 

@@ -31,6 +31,6 @@ public class BlockImporter {
   public void importBlock(BeaconBlock block) throws StateTransitionException {
     Store.Transaction transaction = storageClient.getStore().startTransaction();
     on_block(transaction, block, stateTransition);
-    storageClient.commit(transaction).join();
+    transaction.commit().join();
   }
 }
