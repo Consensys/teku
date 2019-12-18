@@ -34,7 +34,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 public class BlockGossipManagerTest {
 
   private final EventBus eventBus = new EventBus();
-  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 

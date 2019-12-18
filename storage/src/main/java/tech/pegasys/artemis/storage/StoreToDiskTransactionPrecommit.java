@@ -23,17 +23,17 @@ import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.async.AsyncEventTracker;
 
-public class TransactionCommitter {
+public class StoreToDiskTransactionPrecommit implements TransactionPrecommit {
   private final AsyncEventTracker<Long, Optional<RuntimeException>> tracker;
 
-  public TransactionCommitter(final EventBus eventBus) {
+  public StoreToDiskTransactionPrecommit(final EventBus eventBus) {
     this.tracker = new AsyncEventTracker<>(eventBus);
     eventBus.register(this);
   }
 
+  @Override
   @CheckReturnValue
-  public CompletableFuture<Void> commit(final Store.Transaction transaction) {
-    final StoreDiskUpdateEvent updateEvent = transaction.precommit();
+  public CompletableFuture<Void> precommit(final StoreDiskUpdateEvent updateEvent) {
     return tracker
         .sendRequest(updateEvent.getTransactionId(), updateEvent)
         .thenApply(
@@ -41,7 +41,6 @@ public class TransactionCommitter {
               if (error.isPresent()) {
                 throw error.get();
               }
-              transaction.commit();
               return null;
             });
   }

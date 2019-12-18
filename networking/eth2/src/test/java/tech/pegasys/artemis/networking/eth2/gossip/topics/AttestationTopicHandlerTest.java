@@ -37,7 +37,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 public class AttestationTopicHandlerTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
-  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final AttestationTopicHandler topicHandler =
       new AttestationTopicHandler(eventBus, storageClient, 1);
 

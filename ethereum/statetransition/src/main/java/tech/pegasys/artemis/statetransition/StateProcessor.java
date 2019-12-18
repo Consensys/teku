@@ -148,12 +148,10 @@ public class StateProcessor {
   @SuppressWarnings("unused")
   private void onBlock(BeaconBlock block) {
     try {
-      Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      Store.Transaction transaction = chainStorageClient.startStoreTransaction();
       final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-      chainStorageClient.commit(
-          transaction,
-          () -> postBlockProcessingRecord(record),
-          "Failed to persist block storage result");
+      transaction.commit(
+          () -> postBlockProcessingRecord(record), "Failed to persist block storage result");
     } catch (StateTransitionException e) {
       //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));
       STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
@@ -185,9 +183,9 @@ public class StateProcessor {
 
   private void onAttestation(Attestation attestation) {
     try {
-      final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
+      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
       on_attestation(transaction, attestation, stateTransition);
-      chainStorageClient.commit(transaction, () -> {}, "Failed to persist attestation result");
+      transaction.commit(() -> {}, "Failed to persist attestation result");
     } catch (SlotProcessingException | EpochProcessingException e) {
       STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
     }
