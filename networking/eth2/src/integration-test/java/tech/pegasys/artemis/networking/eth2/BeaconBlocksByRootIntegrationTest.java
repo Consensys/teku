@@ -44,7 +44,7 @@ public class BeaconBlocksByRootIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    storageClient1 = new ChainStorageClient(eventBus1);
+    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory
             .builder()
@@ -112,9 +112,9 @@ public class BeaconBlocksByRootIntegrationTest {
   private BeaconBlock addBlock() {
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(seed, seed++);
     final Bytes32 blockRoot = block.hash_tree_root();
-    final Transaction transaction = storageClient1.getStore().startTransaction();
+    final Transaction transaction = storageClient1.startStoreTransaction();
     transaction.putBlock(blockRoot, block);
-    transaction.commit();
+    assertThat(transaction.commit()).isCompleted();
     return block;
   }
 

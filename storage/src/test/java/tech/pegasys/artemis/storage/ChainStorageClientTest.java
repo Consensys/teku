@@ -34,7 +34,7 @@ class ChainStorageClientTest {
   private static final Bytes32 GENESIS_BLOCK_ROOT = GENESIS_BLOCK.signing_root("signature");
   private final EventBus eventBus = mock(EventBus.class);
   private final Store store = mock(Store.class);
-  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private int seed = 428942;
 
   @BeforeAll

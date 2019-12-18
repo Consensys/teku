@@ -36,7 +36,8 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 class AttestationAggregatorTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
-  private final ChainStorageClient storageClient = new ChainStorageClient(mock(EventBus.class));
+  private final ChainStorageClient storageClient =
+      ChainStorageClient.memoryOnlyClient(mock(EventBus.class));
   private AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
   private AttestationAggregator aggregator;
 

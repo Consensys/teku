@@ -24,7 +24,8 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 class GenesisTimeHandlerTest {
   private final RequestParams requestParams = Mockito.mock(RequestParams.class);
-  private final ChainStorageClient storageClient = new ChainStorageClient(new EventBus());
+  private final ChainStorageClient storageClient =
+      ChainStorageClient.memoryOnlyClient(new EventBus());
   private final GenesisTimeHandler handler = new GenesisTimeHandler(storageClient);
 
   @Test
