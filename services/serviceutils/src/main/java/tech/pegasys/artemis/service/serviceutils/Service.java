@@ -17,6 +17,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class Service {
+  private static final CompletableFuture<Void> FALLBACK_STOPPED_FUTURE =
+      CompletableFuture.completedFuture(null);
+
   enum State {
     IDLE,
     RUNNING,
@@ -36,13 +39,12 @@ public abstract class Service {
   protected abstract CompletableFuture<?> doStart();
 
   public CompletableFuture<?> stop() {
-    if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
-      return CompletableFuture.failedFuture(
-          new IllegalStateException(
-              "Illegal attempt to stop service in state: " + state.get().name()));
+    if (state.compareAndSet(State.RUNNING, State.STOPPED)) {
+      return doStop();
+    } else {
+      // Return a successful future if there's nothing to do at this point
+      return FALLBACK_STOPPED_FUTURE;
     }
-
-    return doStop();
   }
 
   protected abstract CompletableFuture<?> doStop();
