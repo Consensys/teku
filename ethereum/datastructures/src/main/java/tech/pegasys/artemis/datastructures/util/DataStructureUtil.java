@@ -167,6 +167,16 @@ public final class DataStructureUtil {
     return new BeaconBlock(slot, previous_root, state_root, body, signature);
   }
 
+  public static BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot, int seed) {
+    UnsignedLong slot = UnsignedLong.valueOf(slotNum);
+
+    Bytes32 state_root = randomBytes32(seed);
+    BeaconBlockBody body = randomBeaconBlockBody(seed++);
+    BLSSignature signature = BLSSignature.random(seed++);
+
+    return new BeaconBlock(slot, parentRoot, state_root, body, signature);
+  }
+
   public static BeaconBlockHeader randomBeaconBlockHeader(int seed) {
     return new BeaconBlockHeader(
         randomUnsignedLong(seed++),

@@ -201,6 +201,20 @@ public class ChainStorageClient implements ChainStorage {
         ALogger.Color.BLUE);
   }
 
+  public Optional<BeaconBlock> getBlockByRoot(final Bytes32 root) {
+    if (store == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(store.getBlock(root));
+  }
+
+  public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(store.getBlockState(blockRoot));
+  }
+
   public Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
     return getBlockRootBySlot(slot)
         .map(blockRoot -> store.getBlock(blockRoot))

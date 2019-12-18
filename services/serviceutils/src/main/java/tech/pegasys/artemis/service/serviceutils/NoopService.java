@@ -11,19 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.service.serviceutils;
 
-import java.util.List;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
+import java.util.concurrent.CompletableFuture;
 
-public class ProcessedBlockEvent {
-  private final List<Attestation> attestationList;
+public class NoopService extends Service {
 
-  public ProcessedBlockEvent(List<Attestation> attestationList) {
-    this.attestationList = attestationList;
+  @Override
+  protected CompletableFuture<?> doStart() {
+    return CompletableFuture.completedFuture(null);
   }
 
-  public List<Attestation> getAttestationList() {
-    return attestationList;
+  @Override
+  protected CompletableFuture<?> doStop() {
+    return CompletableFuture.completedFuture(null);
   }
 }

@@ -72,11 +72,12 @@ import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -220,12 +221,12 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onProcessedBlockEvent(ProcessedBlockEvent event) {
+  public void onBlockImported(BlockImportedEvent event) {
     event
-        .getAttestationList()
-        .forEach(
-            attestation ->
-                blockAttestationsPool.addAggregateAttestationProcessedInBlock(attestation));
+        .getBlock()
+        .getBody()
+        .getAttestations()
+        .forEach(blockAttestationsPool::addAggregateAttestationProcessedInBlock);
   }
 
   @Subscribe
@@ -332,7 +333,7 @@ public class ValidatorCoordinator {
           blockCreator.createNewBlock(
               signer, newSlot, newState, parentRoot, attestations, slashingsInBlock, deposits);
 
-      this.eventBus.post(newBlock);
+      this.eventBus.post(new BlockProposedEvent(newBlock));
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
 
       if (validators.get(proposer).isNaughty()) {
