@@ -22,7 +22,6 @@ import static tech.pegasys.artemis.util.Waiter.waitFor;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -110,12 +109,12 @@ public class BeaconBlocksByRootIntegrationTest {
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
-  private BeaconBlock addBlock() throws Exception {
+  private BeaconBlock addBlock() {
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(seed, seed++);
     final Bytes32 blockRoot = block.hash_tree_root();
     final Transaction transaction = storageClient1.startStoreTransaction();
     transaction.putBlock(blockRoot, block);
-    transaction.commit().get(5, TimeUnit.SECONDS);
+    assertThat(transaction.commit()).isCompleted();
     return block;
   }
 
