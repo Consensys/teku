@@ -43,6 +43,8 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.service.serviceutils.NoopService;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockImporter;
@@ -55,7 +57,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
-import tech.pegasys.artemis.sync.SyncManager;
+import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
@@ -78,7 +80,7 @@ public class BeaconChainController {
   private BeaconRestApi beaconRestAPI;
   private AttestationAggregator attestationAggregator;
   private BlockAttestationsPool blockAttestationsPool;
-  private SyncManager syncManager;
+  private Service syncService;
   private boolean testMode;
 
   public BeaconChainController(
@@ -194,11 +196,15 @@ public class BeaconChainController {
   public void initSyncManager() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
-      return;
+      syncService = new NoopService();
+    } else {
+      syncService =
+          new SyncService(
+              eventBus,
+              (Eth2Network) p2pNetwork,
+              chainStorageClient,
+              new BlockImporter(chainStorageClient, eventBus));
     }
-    syncManager =
-        new SyncManager(
-            (Eth2Network) p2pNetwork, chainStorageClient, new BlockImporter(chainStorageClient));
   }
 
   public void start() {
@@ -215,9 +221,7 @@ public class BeaconChainController {
       generateTestModeGenesis();
     }
 
-    if ("jvmlibp2p".equals(config.getNetworkMode())) {
-      this.syncManager.sync();
-    }
+    syncService.start();
   }
 
   private void generateTestModeGenesis() {
@@ -230,6 +234,7 @@ public class BeaconChainController {
 
   public void stop() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.stop()");
+    syncService.stop();
     if (!Objects.isNull(p2pNetwork)) {
       this.p2pNetwork.stop();
     }

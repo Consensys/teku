@@ -3,6 +3,7 @@ dependencies {
     implementation project(':ethereum:statetransition')
     implementation project(':networking:p2p')
     implementation project(':networking:eth2')
+    implementation project(':services:serviceutils')
     implementation project(':storage')
     implementation project(':util')
     implementation project(':data')

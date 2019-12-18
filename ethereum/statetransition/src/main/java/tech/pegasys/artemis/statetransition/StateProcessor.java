@@ -18,7 +18,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
@@ -30,11 +29,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -43,10 +42,10 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.metrics.EpochMetrics;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -56,11 +55,14 @@ import tech.pegasys.artemis.util.config.Constants;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final EventBus eventBus;
   private final StateTransition stateTransition;
-  private ChainStorageClient chainStorageClient;
-  private ArtemisConfiguration config;
-  private List<DepositWithIndex> deposits;
+  private final BlockImporter blockImporter;
+  private final ChainStorageClient chainStorageClient;
+  private final ArtemisConfiguration config;
+  private final List<DepositWithIndex> deposits = new ArrayList<>();
 
   private boolean genesisReady = false;
 
@@ -74,6 +76,8 @@ public class StateProcessor {
     this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
     this.chainStorageClient = chainStorageClient;
     this.eventBus.register(this);
+
+    this.blockImporter = new BlockImporter(chainStorageClient, eventBus);
   }
 
   public void eth2Genesis(GenesisEvent genesisEvent) {
@@ -97,7 +101,6 @@ public class StateProcessor {
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     STDOUT.log(Level.DEBUG, "New deposit received");
-    if (deposits == null) deposits = new ArrayList<>();
     deposits.add(DepositUtil.convertDepositEventToOperationDeposit(event));
 
     UnsignedLong eth1_timestamp = null;
@@ -146,39 +149,13 @@ public class StateProcessor {
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBlock(BeaconBlock block) {
+  private void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
     try {
-      Store.Transaction transaction = chainStorageClient.startStoreTransaction();
-      final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-      transaction.commit(
-          () -> postBlockProcessingRecord(record), "Failed to persist block storage result");
+      LOG.trace("Import proposed block: {}", blockProposedEvent.getBlock());
+      blockImporter.importBlock(blockProposedEvent.getBlock());
     } catch (StateTransitionException e) {
-      //  this.eventBus.post(new BlockProcessingRecord(preState, block, new BeaconState()));
-      STDOUT.log(Level.WARN, "Exception in onBlock: " + e.toString());
+      LOG.error("Failed to import proposed block: " + blockProposedEvent, e);
     }
-  }
-
-  private void postBlockProcessingRecord(final BlockProcessingRecord record) {
-    final BeaconBlock block = record.getBlock();
-    // Add attestations that were processed in the block to processed attestations
-    // storage
-    List<Long> numberOfAttestersInAttestations = new ArrayList<>();
-    block
-        .getBody()
-        .getAttestations()
-        .forEach(
-            attestation ->
-                numberOfAttestersInAttestations.add(
-                    IntStream.range(0, attestation.getAggregation_bits().getCurrentSize())
-                        .filter(i -> attestation.getAggregation_bits().getBit(i) == 1)
-                        .count()));
-
-    this.eventBus.post(new ProcessedBlockEvent(block.getBody().getAttestations()));
-    STDOUT.log(Level.DEBUG, "Number of attestations: " + block.getBody().getAttestations().size());
-    STDOUT.log(
-        Level.DEBUG, "Number of attesters in attestations: " + numberOfAttestersInAttestations);
-
-    this.eventBus.post(record);
   }
 
   private void onAttestation(Attestation attestation) {

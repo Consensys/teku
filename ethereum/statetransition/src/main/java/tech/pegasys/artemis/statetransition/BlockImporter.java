@@ -15,22 +15,54 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
+import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
 public class BlockImporter {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final ChainStorageClient storageClient;
+  private final EventBus eventBus;
   private final StateTransition stateTransition = new StateTransition(false);
 
-  public BlockImporter(ChainStorageClient storageClient) {
+  public BlockImporter(ChainStorageClient storageClient, EventBus eventBus) {
     this.storageClient = storageClient;
+    this.eventBus = eventBus;
+  }
+
+  /**
+   * @param block The block to check
+   * @return {@code true} If this block is from the future according to our node's clock
+   */
+  public boolean isFutureBlock(BeaconBlock block) {
+    if (storageClient.isPreGenesis()) {
+      return true;
+    }
+    final UnsignedLong genesisTime = storageClient.getStore().getGenesisTime();
+    return ForkChoiceUtil.isFutureBlock(block, genesisTime, storageClient.getStore().getTime());
+  }
+
+  /**
+   * @param block The block to check.
+   * @return {@code true} If block is attached to the local chain
+   */
+  public boolean isBlockAttached(BeaconBlock block) {
+    return storageClient.getBlockState(block.getParent_root()).isPresent();
   }
 
   public void importBlock(BeaconBlock block) throws StateTransitionException {
+    LOG.trace("Import block at slot {}: {}", block.getSlot(), block);
     Store.Transaction transaction = storageClient.startStoreTransaction();
-    on_block(transaction, block, stateTransition);
+    final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
     transaction.commit().join();
+    eventBus.post(new BlockImportedEvent(block));
+    eventBus.post(record);
   }
 }
