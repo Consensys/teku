@@ -13,40 +13,32 @@
 
 package tech.pegasys.artemis.storage;
 
+import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.util.async.AsyncEventTracker;
 
 public class HistoricalChainData {
-  private final ConcurrentMap<UnsignedLong, CompletableFuture<Optional<BeaconBlock>>>
-      blockBySlotRequests = new ConcurrentHashMap<>();
-  private final EventBus eventBus;
+  private final AsyncEventTracker<UnsignedLong, Optional<BeaconBlock>> eventTracker;
 
   public HistoricalChainData(final EventBus eventBus) {
-    this.eventBus = eventBus;
+    this.eventTracker = new AsyncEventTracker<>(eventBus);
     eventBus.register(this);
   }
 
   public CompletableFuture<Optional<BeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
-    final CompletableFuture<Optional<BeaconBlock>> future =
-        blockBySlotRequests.computeIfAbsent(slot, key -> new CompletableFuture<>());
-    eventBus.post(new GetFinalizedBlockAtSlotRequest(slot));
-    return future;
+    return eventTracker.sendRequest(slot, new GetFinalizedBlockAtSlotRequest(slot));
   }
 
   @Subscribe
+  @AllowConcurrentEvents
   public void onResponse(final GetFinalizedBlockAtSlotResponse response) {
-    final CompletableFuture<Optional<BeaconBlock>> future =
-        blockBySlotRequests.remove(response.getSlot());
-    if (future != null) {
-      future.complete(response.getBlock());
-    }
+    eventTracker.onResponse(response.getSlot(), response.getBlock());
   }
 }
