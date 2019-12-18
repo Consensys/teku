@@ -13,18 +13,21 @@
 
 package tech.pegasys.artemis.sync;
 
+import static tech.pegasys.artemis.util.async.FutureUtil.asyncFinally;
+import static tech.pegasys.artemis.util.async.FutureUtil.logErrors;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class SyncManager {
-
   private final Eth2Network network;
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
@@ -45,7 +48,11 @@ public class SyncManager {
     if (!syncActive.compareAndSet(false, true)) {
       return CompletableFuture.failedFuture(new RuntimeException("Sync already active"));
     }
-    return executeSync().thenRun(() -> syncActive.set(false));
+    return startSync();
+  }
+
+  private CompletableFuture<Void> startSync() {
+    return asyncFinally(executeSync(), () -> syncActive.set(false));
   }
 
   private CompletableFuture<Void> executeSync() {
@@ -80,8 +87,8 @@ public class SyncManager {
 
   private void onNewPeer(Eth2Peer peer) {
     if (isPeerSyncSuitable(peer)) {
-      if (!syncActive.get()) {
-        executeSync();
+      if (syncActive.compareAndSet(false, true)) {
+        logErrors(Level.ERROR, "Sync failed", startSync());
       }
     }
   }
