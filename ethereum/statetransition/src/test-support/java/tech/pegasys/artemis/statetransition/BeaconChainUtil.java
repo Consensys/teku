@@ -30,6 +30,7 @@ import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -73,7 +74,7 @@ public class BeaconChainUtil {
     initializeStorage(chainStorageClient, validatorKeys);
   }
 
-  public void setSlot(final UnsignedLong currentSlot) {
+  public StoreDiskUpdateEvent setSlot(final UnsignedLong currentSlot) {
     if (storageClient.isPreGenesis()) {
       throw new IllegalStateException("Cannot set current slot before genesis");
     }
@@ -81,7 +82,7 @@ public class BeaconChainUtil {
     final UnsignedLong time = storageClient.getGenesisTime().plus(currentSlot.times(secPerSlot));
     final Transaction tx = storageClient.getStore().startTransaction();
     tx.setTime(time);
-    tx.commit();
+    return tx.commit();
   }
 
   public BeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {
