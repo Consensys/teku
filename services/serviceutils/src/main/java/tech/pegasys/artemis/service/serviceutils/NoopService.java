@@ -13,17 +13,17 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class NoopService extends Service {
 
   @Override
-  protected GoodFuture<?> doStart() {
-    return GoodFuture.completedFuture(null);
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.completedFuture(null);
   }
 
   @Override
-  protected GoodFuture<?> doStop() {
-    return GoodFuture.completedFuture(null);
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.completedFuture(null);
   }
 }

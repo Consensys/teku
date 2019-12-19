@@ -27,7 +27,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
   private final P2PNetwork<?> network;
@@ -53,7 +53,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   }
 
   @Override
-  public GoodFuture<?> start() {
+  public SafeFuture<?> start() {
     return super.start().thenAccept(r -> startup());
   }
 

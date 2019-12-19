@@ -29,7 +29,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ErrorConditionsIntegrationTest {
 
@@ -47,7 +47,7 @@ public class ErrorConditionsIntegrationTest {
 
     final Eth2Peer peer = network1.getPeer(network2.getNodeId()).orElseThrow();
 
-    final GoodFuture<StatusMessage> response =
+    final SafeFuture<StatusMessage> response =
         peer.sendRequest(BeaconChainMethods.STATUS, new InvalidStatusMessage())
             .thenCompose(ResponseStream::expectSingleResponse);
 

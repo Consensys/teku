@@ -32,13 +32,13 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private final RpcMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
-  private final GoodFuture<PeerStatus> initialStatus = new GoodFuture<>();
+  private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private AtomicBoolean chainValidated = new AtomicBoolean(false);
 
   public Eth2Peer(
@@ -75,7 +75,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     chainValidated.set(true);
   }
 
-  public GoodFuture<PeerStatus> sendStatus() {
+  public SafeFuture<PeerStatus> sendStatus() {
     return sendRequest(BeaconChainMethods.STATUS, statusMessageFactory.createStatusMessage())
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
@@ -86,12 +86,12 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
             });
   }
 
-  public GoodFuture<Void> sendGoodbye(final UnsignedLong reason) {
+  public SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
     return sendRequest(BeaconChainMethods.GOODBYE, new GoodbyeMessage(reason))
         .thenCompose(ResponseStream::expectNoResponse);
   }
 
-  public GoodFuture<Void> requestBlocksByRoot(
+  public SafeFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final ResponseListener<BeaconBlock> listener) {
     return requestStream(
         BeaconChainMethods.BEACON_BLOCKS_BY_ROOT,
@@ -99,7 +99,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         listener);
   }
 
-  public GoodFuture<BeaconBlock> requestBlockBySlot(
+  public SafeFuture<BeaconBlock> requestBlockBySlot(
       final Bytes32 headBlockRoot, final UnsignedLong slot) {
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
@@ -108,7 +108,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         .thenCompose(ResponseStream::expectSingleResponse);
   }
 
-  public GoodFuture<Void> requestBlocksByRange(
+  public SafeFuture<Void> requestBlocksByRange(
       final Bytes32 headBlockRoot,
       final UnsignedLong startSlot,
       final UnsignedLong count,
@@ -120,13 +120,13 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         listener);
   }
 
-  private <I extends RpcRequest, O> GoodFuture<Void> requestStream(
+  private <I extends RpcRequest, O> SafeFuture<Void> requestStream(
       final RpcMethod<I, O> method, I request, final ResponseStream.ResponseListener<O> listener) {
     return sendRequest(method, request)
         .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
   }
 
-  public <I extends RpcRequest, O> GoodFuture<ResponseStream<O>> sendRequest(
+  public <I extends RpcRequest, O> SafeFuture<ResponseStream<O>> sendRequest(
       final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, this.getConnection(), request);
   }

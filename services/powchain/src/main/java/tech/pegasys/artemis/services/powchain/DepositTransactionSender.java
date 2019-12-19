@@ -24,7 +24,7 @@ import org.web3j.tx.response.PollingTransactionReceiptProcessor;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -49,7 +49,7 @@ public class DepositTransactionSender {
             new DefaultGasProvider());
   }
 
-  public GoodFuture<TransactionReceipt> sendDepositTransaction(
+  public SafeFuture<TransactionReceipt> sendDepositTransaction(
       BLSKeyPair validatorKeyPair,
       final BLSPublicKey withdrawalPublicKey,
       final UnsignedLong amountInGwei) {
@@ -59,8 +59,8 @@ public class DepositTransactionSender {
     return sendDepositTransaction(depositData);
   }
 
-  private GoodFuture<TransactionReceipt> sendDepositTransaction(final DepositData depositData) {
-    return GoodFuture.of(
+  private SafeFuture<TransactionReceipt> sendDepositTransaction(final DepositData depositData) {
+    return SafeFuture.of(
         depositContract
             .deposit(
                 depositData.getPubkey().toBytesCompressed().toArray(),

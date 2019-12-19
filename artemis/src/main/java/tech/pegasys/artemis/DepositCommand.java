@@ -39,7 +39,7 @@ import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
@@ -86,7 +86,7 @@ public class DepositCommand implements Runnable {
           String outputFile) {
     try (params) {
       final DepositTransactionSender sender = params.createTransactionSender();
-      final List<GoodFuture<TransactionReceipt>> futures = new ArrayList<>();
+      final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
 
       final PrintStream keyWriter;
       if (outputFile == null || outputFile.isBlank()) {
@@ -111,7 +111,7 @@ public class DepositCommand implements Runnable {
               sendDeposit(sender, validatorKey, withdrawalKey.getPublicKey(), params.amount));
         }
       }
-      GoodFuture.allOf(futures.toArray(GoodFuture[]::new)).get(2, TimeUnit.MINUTES);
+      SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
       STDOUT.log(
           Level.FATAL,
@@ -169,7 +169,7 @@ public class DepositCommand implements Runnable {
     CommandLine.usage(this, System.out);
   }
 
-  private GoodFuture<TransactionReceipt> sendDeposit(
+  private SafeFuture<TransactionReceipt> sendDeposit(
       final DepositTransactionSender sender,
       final BLSKeyPair validatorKey,
       final BLSPublicKey withdrawalPublicKey,

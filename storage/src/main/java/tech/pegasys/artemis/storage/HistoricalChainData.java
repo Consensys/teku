@@ -22,7 +22,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.AsyncEventTracker;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class HistoricalChainData {
   private final AsyncEventTracker<UnsignedLong, Optional<BeaconBlock>> eventTracker;
@@ -32,7 +32,7 @@ public class HistoricalChainData {
     eventBus.register(this);
   }
 
-  public GoodFuture<Optional<BeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
     return eventTracker.sendRequest(slot, new GetFinalizedBlockAtSlotRequest(slot));
   }
 

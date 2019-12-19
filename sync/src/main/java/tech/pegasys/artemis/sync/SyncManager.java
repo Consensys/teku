@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.artemis.util.async.GoodFuture.completedFuture;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -26,7 +26,7 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class SyncManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -53,14 +53,14 @@ public class SyncManager extends Service {
   }
 
   @Override
-  protected GoodFuture<?> doStart() {
+  protected SafeFuture<?> doStart() {
     peerConnectSubscriptionId = network.subscribeConnect(this::onNewPeer);
     startOrScheduleSync();
     return completedFuture(null);
   }
 
   @Override
-  protected GoodFuture<?> doStop() {
+  protected SafeFuture<?> doStop() {
     network.unsubscribeConnect(peerConnectSubscriptionId);
     synchronized (this) {
       syncQueued = false;
@@ -105,11 +105,11 @@ public class SyncManager extends Service {
     return syncQueued;
   }
 
-  private GoodFuture<Void> executeSync() {
+  private SafeFuture<Void> executeSync() {
     return findBestSyncPeer().map(this::syncToPeer).orElseGet(() -> completedFuture(null));
   }
 
-  private GoodFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
+  private SafeFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
     return peerSync
         .sync(syncPeer)
         .thenCompose(

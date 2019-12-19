@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GossipHandlerTest {
   private final Topic topic = new Topic("Testing");
@@ -40,14 +40,14 @@ public class GossipHandlerTest {
   @BeforeEach
   public void setup() {
     when(topicHandler.handleMessage(any())).thenReturn(true);
-    when(publisher.publish(any(), any())).thenReturn(GoodFuture.completedFuture(null));
+    when(publisher.publish(any(), any())).thenReturn(SafeFuture.completedFuture(null));
   }
 
   @Test
   public void apply_valid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    final GoodFuture<Boolean> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(true);
   }
@@ -57,7 +57,7 @@ public class GossipHandlerTest {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
     when(topicHandler.handleMessage(any())).thenReturn(false);
-    final GoodFuture<Boolean> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
   }
@@ -66,7 +66,7 @@ public class GossipHandlerTest {
   public void apply_exceedsMaxSize() {
     final Bytes data = Bytes.wrap(new byte[GossipHandler.GOSSIP_MAX_SIZE + 1]);
     final MockMessageApi message = new MockMessageApi(data, topic);
-    final GoodFuture<Boolean> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
     verify(topicHandler, never()).handleMessage(any());
@@ -79,7 +79,7 @@ public class GossipHandlerTest {
     final MockMessageApi message = new MockMessageApi(data, topic);
 
     gossipHandler.apply(message);
-    final GoodFuture<Boolean> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
     verify(topicHandler).handleMessage(any());
@@ -130,7 +130,7 @@ public class GossipHandlerTest {
 
     gossipHandler.gossip(data);
     gossipHandler.apply(message);
-    final GoodFuture<Boolean> result = gossipHandler.apply(message);
+    final SafeFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
     verify(topicHandler, never()).handleMessage(any());

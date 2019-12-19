@@ -30,7 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 class PendingBlocks extends Service {
@@ -65,9 +65,9 @@ class PendingBlocks extends Service {
   }
 
   @Override
-  protected GoodFuture<?> doStart() {
+  protected SafeFuture<?> doStart() {
     eventBus.register(this);
-    return GoodFuture.completedFuture(null);
+    return SafeFuture.completedFuture(null);
   }
 
   public void add(BeaconBlock block) {
@@ -174,8 +174,8 @@ class PendingBlocks extends Service {
   }
 
   @Override
-  protected GoodFuture<?> doStop() {
+  protected SafeFuture<?> doStop() {
     eventBus.unregister(this);
-    return GoodFuture.completedFuture(null);
+    return SafeFuture.completedFuture(null);
   }
 }

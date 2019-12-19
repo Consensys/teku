@@ -28,7 +28,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -38,7 +38,7 @@ public class PeerChainValidator {
   private final Eth2Peer peer;
   private final AtomicBoolean hasRun = new AtomicBoolean(false);
   private final PeerStatus status;
-  private GoodFuture<Boolean> result;
+  private SafeFuture<Boolean> result;
 
   private PeerChainValidator(
       final ChainStorageClient storageClient,
@@ -59,14 +59,14 @@ public class PeerChainValidator {
     return new PeerChainValidator(storageClient, historicalChainData, peer, status);
   }
 
-  public GoodFuture<Boolean> run() {
+  public SafeFuture<Boolean> run() {
     if (hasRun.compareAndSet(false, true)) {
       result = executeCheck();
     }
     return result;
   }
 
-  private GoodFuture<Boolean> executeCheck() {
+  private SafeFuture<Boolean> executeCheck() {
     LOG.trace("Validate chain of peer: {}", peer);
     return checkRemoteChain()
         .thenApply(
@@ -89,7 +89,7 @@ public class PeerChainValidator {
             });
   }
 
-  private GoodFuture<Boolean> checkRemoteChain() {
+  private SafeFuture<Boolean> checkRemoteChain() {
     // Check fork compatibility
     Bytes4 expectedFork = storageClient.getForkAtSlot(status.getHeadSlot());
     if (!Objects.equals(expectedFork, status.getHeadForkVersion())) {
@@ -98,18 +98,18 @@ public class PeerChainValidator {
           status.getHeadForkVersion(),
           expectedFork,
           peer);
-      return GoodFuture.completedFuture(false);
+      return SafeFuture.completedFuture(false);
     }
 
     // Shortcut finalized block checks if our node or our peer has not reached genesis
     if (storageClient.isPreGenesis()) {
       // If we haven't reached genesis, accept our peer at this point
       LOG.trace("Validating peer pre-genesis, skip finalized block checks for peer {}", peer);
-      return GoodFuture.completedFuture(true);
+      return SafeFuture.completedFuture(true);
     } else if (PeerStatus.isPreGenesisStatus(status, expectedFork)) {
       // Our peer hasn't reached genesis, accept them for now
       LOG.trace("Peer has not reached genesis, skip finalized block checks for peer {}", peer);
-      return GoodFuture.completedFuture(true);
+      return SafeFuture.completedFuture(true);
     }
 
     // Check whether finalized checkpoints are compatible
@@ -128,13 +128,13 @@ public class PeerChainValidator {
     }
   }
 
-  private GoodFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(Checkpoint finalizedCheckpoint) {
+  private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(Checkpoint finalizedCheckpoint) {
     final boolean chainsAreConsistent =
         Objects.equals(finalizedCheckpoint.getRoot(), status.getFinalizedRoot());
-    return GoodFuture.completedFuture(chainsAreConsistent);
+    return SafeFuture.completedFuture(chainsAreConsistent);
   }
 
-  private GoodFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical() {
+  private SafeFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical() {
     final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
     final UnsignedLong remoteFinalizedSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
     return historicalChainData
@@ -143,7 +143,7 @@ public class PeerChainValidator {
         .thenApply((block) -> validateBlockRootsMatch(block, status.getFinalizedRoot()));
   }
 
-  private GoodFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
+  private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint) {
     final UnsignedLong finalizedEpochSlot =
         compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());

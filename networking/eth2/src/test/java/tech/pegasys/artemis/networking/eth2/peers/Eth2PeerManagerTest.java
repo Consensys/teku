@@ -28,7 +28,7 @@ import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2PeerManagerTest {
 
@@ -40,7 +40,7 @@ public class Eth2PeerManagerTest {
 
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final PeerValidatorFactory peerValidatorFactory = (peer, status) -> peerChainValidator;
-  private final GoodFuture<Boolean> peerValidationResult = new GoodFuture<>();
+  private final SafeFuture<Boolean> peerValidationResult = new SafeFuture<>();
 
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(

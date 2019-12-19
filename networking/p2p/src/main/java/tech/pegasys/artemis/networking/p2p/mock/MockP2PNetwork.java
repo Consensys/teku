@@ -22,7 +22,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class MockP2PNetwork implements P2PNetwork<Peer> {
   private final int port = 6000;
@@ -33,8 +33,8 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public GoodFuture<?> connect(String peer) {
-    return GoodFuture.failedFuture(new UnsupportedOperationException());
+  public SafeFuture<?> connect(String peer) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 
   @Override
@@ -77,8 +77,8 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   public void stop() {}
 
   @Override
-  public GoodFuture<?> start() {
-    return GoodFuture.completedFuture(null);
+  public SafeFuture<?> start() {
+    return SafeFuture.completedFuture(null);
   }
 
   @Override

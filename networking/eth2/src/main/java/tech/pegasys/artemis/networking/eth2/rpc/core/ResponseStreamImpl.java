@@ -17,16 +17,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Preconditions;
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
-  private final GoodFuture<Void> completionFuture = new GoodFuture<>();
+  private final SafeFuture<Void> completionFuture = new SafeFuture<>();
   private int receivedResponseCount = 0;
   private ResponseListener<O> responseListener;
 
   @Override
-  public GoodFuture<O> expectSingleResponse() {
+  public SafeFuture<O> expectSingleResponse() {
     final AtomicReference<O> firstResponse = new AtomicReference<>();
     return expectMultipleResponses(
             response -> {
@@ -44,7 +44,7 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
   }
 
   @Override
-  public GoodFuture<Void> expectNoResponse() {
+  public SafeFuture<Void> expectNoResponse() {
     return expectMultipleResponses(
         data -> {
           throw new IllegalStateException("Received response when none expected");
@@ -52,7 +52,7 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
   }
 
   @Override
-  public GoodFuture<Void> expectMultipleResponses(final ResponseListener<O> listener) {
+  public SafeFuture<Void> expectMultipleResponses(final ResponseListener<O> listener) {
     Preconditions.checkArgument(
         responseListener == null, "Multiple calls to 'expect' methods not allowed");
     responseListener = listener;

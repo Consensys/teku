@@ -32,7 +32,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @ExtendWith(TempDirectoryExtension.class)
@@ -50,7 +50,7 @@ class MapDbDatabaseTest {
   private final TransactionPrecommit databaseTransactionPrecommit =
       updateEvent -> {
         database.insert(updateEvent);
-        return GoodFuture.completedFuture(null);
+        return SafeFuture.completedFuture(null);
       };
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
 

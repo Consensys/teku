@@ -18,7 +18,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class SyncService extends Service {
 
@@ -36,12 +36,12 @@ public class SyncService extends Service {
   }
 
   @Override
-  protected GoodFuture<?> doStart() {
-    return GoodFuture.allOf(syncManager.start(), blockPropagationManager.start());
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.allOf(syncManager.start(), blockPropagationManager.start());
   }
 
   @Override
-  protected GoodFuture<?> doStop() {
-    return GoodFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
   }
 }

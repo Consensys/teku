@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 class EventBusExceptionHandlerTest {
 
@@ -40,8 +40,8 @@ class EventBusExceptionHandlerTest {
 
   private EventBus bus;
 
-  private final GoodFuture<Level> logLevelFuture = new GoodFuture<>();
-  private final GoodFuture<Throwable> exceptionFuture = new GoodFuture<>();
+  private final SafeFuture<Level> logLevelFuture = new SafeFuture<>();
+  private final SafeFuture<Throwable> exceptionFuture = new SafeFuture<>();
 
   @BeforeAll
   static void setupExecutor() {

@@ -19,7 +19,7 @@ import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   enum State {
@@ -34,7 +34,7 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
    * @param peer Peer to connect to.
    * @return Future of the established PeerConnection
    */
-  GoodFuture<?> connect(String peer);
+  SafeFuture<?> connect(String peer);
 
   long subscribeConnect(PeerConnectedSubscriber<T> subscriber);
 
@@ -55,7 +55,7 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
    *
    * @return
    */
-  GoodFuture<?> start();
+  SafeFuture<?> start();
 
   /** Stops the P2P network layer. */
   void stop();

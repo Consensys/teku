@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
-import static tech.pegasys.artemis.util.async.GoodFuture.reportExceptions;
+import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

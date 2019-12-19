@@ -35,7 +35,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMessageHandler.Controlle
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     implements Protocol<Controller<TRequest, ResponseStream<TResponse>>> {
@@ -58,9 +58,9 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @SuppressWarnings("unchecked")
-  public GoodFuture<ResponseStream<TResponse>> invokeRemote(
+  public SafeFuture<ResponseStream<TResponse>> invokeRemote(
       Connection connection, TRequest request) {
-    return GoodFuture.of(
+    return SafeFuture.of(
             connection
                 .getMuxerSession()
                 .createStream(
@@ -105,7 +105,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
 
   @NotNull
   @Override
-  public GoodFuture<AbstractHandler> initChannel(P2PAbstractChannel channel, String s) {
+  public SafeFuture<AbstractHandler> initChannel(P2PAbstractChannel channel, String s) {
     // TODO timeout handlers
     AbstractHandler handler;
     if (channel.isInitiator()) {
@@ -118,13 +118,13 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
   }
 
   interface Controller<TRequest, TResponse> {
-    GoodFuture<TResponse> invoke(TRequest request);
+    SafeFuture<TResponse> invoke(TRequest request);
   }
 
   private abstract class AbstractHandler extends SimpleChannelInboundHandler<ByteBuf>
       implements Controller<TRequest, ResponseStream<TResponse>> {
 
-    protected final GoodFuture<AbstractHandler> activeFuture = new GoodFuture<>();
+    protected final SafeFuture<AbstractHandler> activeFuture = new SafeFuture<>();
   }
 
   private class ResponderHandler extends AbstractHandler {
@@ -138,7 +138,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     }
 
     @Override
-    public GoodFuture<ResponseStream<TResponse>> invoke(TRequest tRequest) {
+    public SafeFuture<ResponseStream<TResponse>> invoke(TRequest tRequest) {
       throw new IllegalStateException("This method shouldn't be called for Responder");
     }
 
@@ -166,7 +166,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
 
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
-    public GoodFuture<ResponseStream<TResponse>> invoke(TRequest request) {
+    public SafeFuture<ResponseStream<TResponse>> invoke(TRequest request) {
       maximumResponseChunks = request.getMaximumRequestChunks();
       final ByteBuf reqByteBuf = ctx.alloc().buffer();
       final Bytes encoded = rpcEncoder.encodeRequest(request);
@@ -183,7 +183,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
                   ctx.channel().disconnect();
                 }
               });
-      return GoodFuture.completedFuture(responseStream);
+      return SafeFuture.completedFuture(responseStream);
     }
 
     @Override

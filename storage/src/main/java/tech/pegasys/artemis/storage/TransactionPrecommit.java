@@ -16,12 +16,12 @@ package tech.pegasys.artemis.storage;
 import com.google.common.eventbus.EventBus;
 import javax.annotation.CheckReturnValue;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface TransactionPrecommit {
 
   static TransactionPrecommit memoryOnly() {
-    return event -> GoodFuture.completedFuture(null);
+    return event -> SafeFuture.completedFuture(null);
   }
 
   static TransactionPrecommit storageEnabled(final EventBus eventBus) {
@@ -29,5 +29,5 @@ public interface TransactionPrecommit {
   }
 
   @CheckReturnValue
-  GoodFuture<Void> precommit(StoreDiskUpdateEvent updateEvent);
+  SafeFuture<Void> precommit(StoreDiskUpdateEvent updateEvent);
 }

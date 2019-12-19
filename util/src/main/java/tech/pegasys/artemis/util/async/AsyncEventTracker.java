@@ -19,21 +19,21 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 public class AsyncEventTracker<K, V> {
-  private final ConcurrentMap<K, GoodFuture<V>> requests = new ConcurrentHashMap<>();
+  private final ConcurrentMap<K, SafeFuture<V>> requests = new ConcurrentHashMap<>();
   private final EventBus eventBus;
 
   public AsyncEventTracker(final EventBus eventBus) {
     this.eventBus = eventBus;
   }
 
-  public GoodFuture<V> sendRequest(final K key, final Object eventToSend) {
-    final GoodFuture<V> future = requests.computeIfAbsent(key, k -> new GoodFuture<>());
+  public SafeFuture<V> sendRequest(final K key, final Object eventToSend) {
+    final SafeFuture<V> future = requests.computeIfAbsent(key, k -> new SafeFuture<>());
     eventBus.post(eventToSend);
     return future.orTimeout(5, TimeUnit.SECONDS);
   }
 
   public void onResponse(final K key, final V value) {
-    final GoodFuture<V> future = requests.remove(key);
+    final SafeFuture<V> future = requests.remove(key);
     if (future != null) {
       future.complete(value);
     }

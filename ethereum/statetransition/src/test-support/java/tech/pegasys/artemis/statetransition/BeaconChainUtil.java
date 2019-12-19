@@ -31,7 +31,7 @@ import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -100,7 +100,7 @@ public class BeaconChainUtil {
     final Transaction transaction = storageClient.startStoreTransaction();
     final BlockProcessingRecord record =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
-    final GoodFuture<Void> result = transaction.commit();
+    final SafeFuture<Void> result = transaction.commit();
     if (!result.isDone() || result.isCompletedExceptionally()) {
       throw new IllegalStateException(
           "Transaction did not commit immediately. Are you using a disk storage backed ChainStorageClient without having storage running?");

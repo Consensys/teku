@@ -37,7 +37,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Store implements ReadOnlyStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -302,7 +302,7 @@ public class Store implements ReadOnlyStore {
     }
 
     @CheckReturnValue
-    public GoodFuture<Void> commit() {
+    public SafeFuture<Void> commit() {
       final StoreDiskUpdateEvent updateEvent =
           new StoreDiskUpdateEvent(
               id,

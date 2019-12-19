@@ -13,14 +13,14 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface ResponseStream<O> {
-  GoodFuture<O> expectSingleResponse();
+  SafeFuture<O> expectSingleResponse();
 
-  GoodFuture<Void> expectNoResponse();
+  SafeFuture<Void> expectNoResponse();
 
-  GoodFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
+  SafeFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
 
   @FunctionalInterface
   interface ResponseListener<O> {

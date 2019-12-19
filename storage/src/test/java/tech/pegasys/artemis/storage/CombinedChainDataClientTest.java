@@ -16,7 +16,7 @@ package tech.pegasys.artemis.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.util.async.GoodFuture.completedFuture;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;

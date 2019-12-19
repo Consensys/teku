@@ -21,7 +21,7 @@ import javax.annotation.CheckReturnValue;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.async.AsyncEventTracker;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class StoreToDiskTransactionPrecommit implements TransactionPrecommit {
   private final AsyncEventTracker<Long, Optional<RuntimeException>> tracker;
@@ -33,7 +33,7 @@ public class StoreToDiskTransactionPrecommit implements TransactionPrecommit {
 
   @Override
   @CheckReturnValue
-  public GoodFuture<Void> precommit(final StoreDiskUpdateEvent updateEvent) {
+  public SafeFuture<Void> precommit(final StoreDiskUpdateEvent updateEvent) {
     return tracker
         .sendRequest(updateEvent.getTransactionId(), updateEvent)
         .thenApply(

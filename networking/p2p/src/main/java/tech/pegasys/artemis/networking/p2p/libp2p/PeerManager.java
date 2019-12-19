@@ -15,7 +15,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
-import static tech.pegasys.artemis.util.async.GoodFuture.reportExceptions;
+import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.Connection;
@@ -37,7 +37,7 @@ import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
@@ -76,9 +76,9 @@ public class PeerManager implements ConnectionHandler {
     connectSubscribers.unsubscribe(subscriptionId);
   }
 
-  public GoodFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
+  public SafeFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
     STDOUT.log(Level.DEBUG, "Connecting to " + peer);
-    return GoodFuture.of(network.connect(peer))
+    return SafeFuture.of(network.connect(peer))
         .whenComplete(
             (conn, throwable) -> {
               if (throwable != null) {

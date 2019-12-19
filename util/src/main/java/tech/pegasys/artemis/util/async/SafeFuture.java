@@ -23,7 +23,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class GoodFuture<T> extends CompletableFuture<T> {
+public class SafeFuture<T> extends CompletableFuture<T> {
   private static final Logger LOG = LogManager.getLogger();
 
   public static void reportExceptions(final CompletionStage<?> future) {
@@ -39,45 +39,45 @@ public class GoodFuture<T> extends CompletableFuture<T> {
     return value -> reportExceptions(action.apply(value));
   }
 
-  public static <U> GoodFuture<U> completedFuture(U value) {
-    GoodFuture<U> f = new GoodFuture<>();
-    f.complete(value);
-    return f;
+  public static <U> SafeFuture<U> completedFuture(U value) {
+    SafeFuture<U> future = new SafeFuture<>();
+    future.complete(value);
+    return future;
   }
 
-  public static <U> GoodFuture<U> failedFuture(Throwable ex) {
-    GoodFuture<U> f = new GoodFuture<>();
-    f.completeExceptionally(ex);
-    return f;
+  public static <U> SafeFuture<U> failedFuture(Throwable ex) {
+    SafeFuture<U> future = new SafeFuture<>();
+    future.completeExceptionally(ex);
+    return future;
   }
 
-  public static <U> GoodFuture<U> of(final CompletionStage<U> stage) {
-    if (stage instanceof GoodFuture) {
-      return (GoodFuture<U>) stage;
+  public static <U> SafeFuture<U> of(final CompletionStage<U> stage) {
+    if (stage instanceof SafeFuture) {
+      return (SafeFuture<U>) stage;
     }
-    final GoodFuture<U> goodFuture = new GoodFuture<>();
+    final SafeFuture<U> safeFuture = new SafeFuture<>();
     stage.whenComplete(
         (result, error) -> {
           if (error != null) {
-            goodFuture.completeExceptionally(error);
+            safeFuture.completeExceptionally(error);
           } else {
-            goodFuture.complete(result);
+            safeFuture.complete(result);
           }
         });
-    return goodFuture;
+    return safeFuture;
   }
 
-  public static <U> GoodFuture<Void> allOf(final GoodFuture<?>... futures) {
+  public static <U> SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
     return of(CompletableFuture.allOf(futures));
   }
 
-  public static GoodFuture<Object> anyOf(final GoodFuture<?>... futures) {
+  public static SafeFuture<Object> anyOf(final SafeFuture<?>... futures) {
     return of(CompletableFuture.anyOf(futures));
   }
 
   @Override
-  public <U> GoodFuture<U> newIncompleteFuture() {
-    return new GoodFuture<>();
+  public <U> SafeFuture<U> newIncompleteFuture() {
+    return new SafeFuture<>();
   }
 
   public void reportExceptions() {
@@ -106,51 +106,51 @@ public class GoodFuture<T> extends CompletableFuture<T> {
 
   @SuppressWarnings("unchecked")
   @Override
-  public <U> GoodFuture<U> thenApply(final Function<? super T, ? extends U> fn) {
-    return (GoodFuture<U>) super.thenApply(fn);
+  public <U> SafeFuture<U> thenApply(final Function<? super T, ? extends U> fn) {
+    return (SafeFuture<U>) super.thenApply(fn);
   }
 
   @Override
-  public GoodFuture<Void> thenRun(final Runnable action) {
-    return (GoodFuture<Void>) super.thenRun(action);
+  public SafeFuture<Void> thenRun(final Runnable action) {
+    return (SafeFuture<Void>) super.thenRun(action);
   }
 
   @Override
-  public GoodFuture<Void> thenAccept(final Consumer<? super T> action) {
-    return (GoodFuture<Void>) super.thenAccept(action);
+  public SafeFuture<Void> thenAccept(final Consumer<? super T> action) {
+    return (SafeFuture<Void>) super.thenAccept(action);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <U, V> GoodFuture<V> thenCombine(
+  public <U, V> SafeFuture<V> thenCombine(
       final CompletionStage<? extends U> other,
       final BiFunction<? super T, ? super U, ? extends V> fn) {
-    return (GoodFuture<V>) super.thenCombine(other, fn);
+    return (SafeFuture<V>) super.thenCombine(other, fn);
   }
 
   @Override
-  public <U> GoodFuture<U> thenCompose(final Function<? super T, ? extends CompletionStage<U>> fn) {
-    return (GoodFuture<U>) super.thenCompose(fn);
+  public <U> SafeFuture<U> thenCompose(final Function<? super T, ? extends CompletionStage<U>> fn) {
+    return (SafeFuture<U>) super.thenCompose(fn);
   }
 
   @Override
-  public GoodFuture<T> exceptionally(final Function<Throwable, ? extends T> fn) {
-    return (GoodFuture<T>) super.exceptionally(fn);
+  public SafeFuture<T> exceptionally(final Function<Throwable, ? extends T> fn) {
+    return (SafeFuture<T>) super.exceptionally(fn);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <U> GoodFuture<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn) {
-    return (GoodFuture<U>) super.handle(fn);
+  public <U> SafeFuture<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn) {
+    return (SafeFuture<U>) super.handle(fn);
   }
 
   @Override
-  public GoodFuture<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action) {
-    return (GoodFuture<T>) super.whenComplete(action);
+  public SafeFuture<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action) {
+    return (SafeFuture<T>) super.whenComplete(action);
   }
 
   @Override
-  public GoodFuture<T> orTimeout(final long timeout, final TimeUnit unit) {
-    return (GoodFuture<T>) super.orTimeout(timeout, unit);
+  public SafeFuture<T> orTimeout(final long timeout, final TimeUnit unit) {
+    return (SafeFuture<T>) super.orTimeout(timeout, unit);
   }
 }

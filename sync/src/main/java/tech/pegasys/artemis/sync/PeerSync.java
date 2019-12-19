@@ -28,7 +28,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerSync {
 
@@ -43,7 +43,7 @@ public class PeerSync {
     this.blockImporter = blockImporter;
   }
 
-  public GoodFuture<PeerSyncResult> sync(final Eth2Peer peer) {
+  public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
     return executeSync(peer, compute_start_slot_at_epoch(storageClient.getFinalizedEpoch()));
   }
 
@@ -51,10 +51,10 @@ public class PeerSync {
     stopped.set(true);
   }
 
-  private GoodFuture<PeerSyncResult> executeSync(
+  private SafeFuture<PeerSyncResult> executeSync(
       final Eth2Peer peer, final UnsignedLong latestRequestedSlot) {
     if (stopped.get()) {
-      return GoodFuture.completedFuture(PeerSyncResult.CANCELLED);
+      return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
     final UnsignedLong advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
     final Bytes32 advertisedHeadRoot = peer.getStatus().getHeadRoot();
@@ -66,12 +66,12 @@ public class PeerSync {
         .thenCompose(
             res -> {
               if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch) >= 0) {
-                return GoodFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
+                return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
               } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
                 return executeSync(peer, latestRequestedSlot.plus(count));
               } else {
                 disconnectFromPeer(peer);
-                return GoodFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
+                return SafeFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
               }
             })
         .exceptionally(

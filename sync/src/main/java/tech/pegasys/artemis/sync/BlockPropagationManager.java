@@ -26,7 +26,7 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BlockPropagationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -61,7 +61,7 @@ public class BlockPropagationManager extends Service {
   }
 
   @Override
-  public GoodFuture<?> doStart() {
+  public SafeFuture<?> doStart() {
     this.eventBus.register(this);
     return this.pendingBlocks.start();
   }
@@ -127,8 +127,8 @@ public class BlockPropagationManager extends Service {
   }
 
   @Override
-  protected GoodFuture<?> doStop() {
-    final GoodFuture<?> shutdownFuture = pendingBlocks.stop();
+  protected SafeFuture<?> doStop() {
+    final SafeFuture<?> shutdownFuture = pendingBlocks.stop();
     eventBus.unregister(this);
     return shutdownFuture;
   }

@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.service.serviceutils;
 
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.artemis.util.async.GoodFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class Service {
-  private static final GoodFuture<Void> FALLBACK_STOPPED_FUTURE = GoodFuture.completedFuture(null);
+  private static final SafeFuture<Void> FALLBACK_STOPPED_FUTURE = SafeFuture.completedFuture(null);
 
   enum State {
     IDLE,
@@ -27,17 +27,17 @@ public abstract class Service {
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
-  public GoodFuture<?> start() {
+  public SafeFuture<?> start() {
     if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
-      return GoodFuture.failedFuture(
+      return SafeFuture.failedFuture(
           new IllegalStateException("Attempt to start an already started service."));
     }
     return doStart();
   }
 
-  protected abstract GoodFuture<?> doStart();
+  protected abstract SafeFuture<?> doStart();
 
-  public GoodFuture<?> stop() {
+  public SafeFuture<?> stop() {
     if (state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return doStop();
     } else {
@@ -46,5 +46,5 @@ public abstract class Service {
     }
   }
 
-  protected abstract GoodFuture<?> doStop();
+  protected abstract SafeFuture<?> doStop();
 }
