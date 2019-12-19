@@ -65,6 +65,7 @@ public class SyncManager extends Service {
     synchronized (this) {
       syncQueued = false;
     }
+    peerSync.stop();
     return completedFuture(null);
   }
 

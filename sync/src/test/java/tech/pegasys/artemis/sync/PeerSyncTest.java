@@ -19,10 +19,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -113,6 +116,46 @@ public class PeerSyncTest {
     assertThat(syncFuture).isCompleted();
     PeerSyncResult result = syncFuture.join();
     assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
+  }
+
+  @Test
+  void sync_stoppedBeforeBlockImport() throws StateTransitionException {
+    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
+
+    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(PEER_HEAD_BLOCK_ROOT),
+            any(),
+            any(),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    // Respond with blocks and check they're passed to the block importer.
+    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
+        responseListenerArgumentCaptor.getValue();
+
+    // Stop the sync, no further blocks should be imported
+    peerSync.stop();
+
+    try {
+      responseListener.onResponse(BLOCK);
+      fail("Should have thrown an error to indicate the sync was stopped");
+    } catch (final CancellationException e) {
+      // RpcMessageHandler will consider the request complete if there's an error processing a
+      // response
+      requestFuture.completeExceptionally(e);
+    }
+
+    // Should not disconnect the peer as it wasn't their fault
+    verify(peer, never()).sendGoodbye(any());
+    verifyNoInteractions(blockImporter);
+    assertThat(syncFuture).isCompleted();
+    PeerSyncResult result = syncFuture.join();
+    assertThat(result).isEqualByComparingTo(PeerSyncResult.CANCELLED);
   }
 
   @Test

@@ -37,6 +37,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class SyncManagerTest {
 
+  private static final long SUBSCRIPTION_ID = 3423;
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private Eth2Network network = mock(Eth2Network.class);
   private final PeerSync peerSync = mock(PeerSync.class);
@@ -60,6 +61,7 @@ public class SyncManagerTest {
 
   @BeforeEach
   public void setUp() {
+    when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
@@ -175,5 +177,16 @@ public class SyncManagerTest {
     syncFuture2.complete(PeerSyncResult.SUCCESSFUL_SYNC);
     assertThat(syncManager.isSyncActive()).isFalse();
     assertThat(syncManager.isSyncQueued()).isFalse();
+  }
+
+  @Test
+  void stop_shouldStopPeerSyncAndRemoveListener() {
+    assertThat(syncManager.start()).isCompleted();
+
+    assertThat(syncManager.stop()).isCompleted();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    verify(peerSync).stop();
+    verify(network).unsubscribeConnect(SUBSCRIPTION_ID);
   }
 }
