@@ -15,21 +15,21 @@ package tech.pegasys.artemis.networking.p2p.libp2p.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class GossipHandlerTest {
   private final Topic topic = new Topic("Testing");
@@ -39,15 +39,15 @@ public class GossipHandlerTest {
 
   @BeforeEach
   public void setup() {
-    doReturn(true).when(topicHandler).handleMessage(any());
-    doReturn(CompletableFuture.completedFuture(null)).when(publisher).publish(any(), any());
+    when(topicHandler.handleMessage(any())).thenReturn(true);
+    when(publisher.publish(any(), any())).thenReturn(GoodFuture.completedFuture(null));
   }
 
   @Test
   public void apply_valid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    final CompletableFuture<Boolean> result = gossipHandler.apply(message);
+    final GoodFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(true);
   }
@@ -56,8 +56,8 @@ public class GossipHandlerTest {
   public void apply_invalid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    doReturn(false).when(topicHandler).handleMessage(any());
-    final CompletableFuture<Boolean> result = gossipHandler.apply(message);
+    when(topicHandler.handleMessage(any())).thenReturn(false);
+    final GoodFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
   }
@@ -66,7 +66,7 @@ public class GossipHandlerTest {
   public void apply_exceedsMaxSize() {
     final Bytes data = Bytes.wrap(new byte[GossipHandler.GOSSIP_MAX_SIZE + 1]);
     final MockMessageApi message = new MockMessageApi(data, topic);
-    final CompletableFuture<Boolean> result = gossipHandler.apply(message);
+    final GoodFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
     verify(topicHandler, never()).handleMessage(any());
@@ -78,7 +78,7 @@ public class GossipHandlerTest {
     final MockMessageApi message = new MockMessageApi(data, topic);
 
     gossipHandler.apply(message);
-    final CompletableFuture<Boolean> result = gossipHandler.apply(message);
+    final GoodFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
     verify(topicHandler).handleMessage(any());
@@ -127,7 +127,7 @@ public class GossipHandlerTest {
 
     gossipHandler.gossip(data);
     gossipHandler.apply(message);
-    final CompletableFuture<Boolean> result = gossipHandler.apply(message);
+    final GoodFuture<Boolean> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(false);
     verify(topicHandler, never()).handleMessage(any());

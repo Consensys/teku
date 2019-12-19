@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.GoodFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
@@ -247,10 +248,11 @@ public class ValidatorCoordinator {
       if (!isGenesis(slot) && isEpochStart(slot)) {
         UnsignedLong epoch = compute_epoch_at_slot(slot);
         // NOTE: we get commmittee assignments for NEXT epoch
-        CompletableFuture.runAsync(
-            () ->
-                committeeAssignmentManager.updateCommiteeAssignments(
-                    headState, epoch.plus(UnsignedLong.ONE), eventBus));
+        reportExceptions(
+            CompletableFuture.runAsync(
+                () ->
+                    committeeAssignmentManager.updateCommiteeAssignments(
+                        headState, epoch.plus(UnsignedLong.ONE), eventBus)));
       }
 
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
@@ -498,7 +500,7 @@ public class ValidatorCoordinator {
       List<AttesterInformation> attesterInformations,
       BeaconState state,
       AttestationData genericAttestationData) {
-    CompletableFuture.runAsync(
+    reportExceptions(CompletableFuture.runAsync(
         () ->
             attesterInformations
                 .parallelStream()
@@ -509,7 +511,7 @@ public class ValidatorCoordinator {
                             attesterInfo.getPublicKey(),
                             attesterInfo.getIndexIntoCommitee(),
                             attesterInfo.getCommittee(),
-                            genericAttestationData)));
+                            genericAttestationData))));
   }
 
   @VisibleForTesting

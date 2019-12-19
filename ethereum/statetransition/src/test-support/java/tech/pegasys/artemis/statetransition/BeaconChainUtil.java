@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSI
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -32,6 +31,7 @@ import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.async.GoodFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -74,7 +74,7 @@ public class BeaconChainUtil {
     initializeStorage(chainStorageClient, validatorKeys);
   }
 
-  public CompletableFuture<Void> setSlot(final UnsignedLong currentSlot) {
+  public GoodFuture<Void> setSlot(final UnsignedLong currentSlot) {
     if (storageClient.isPreGenesis()) {
       throw new IllegalStateException("Cannot set current slot before genesis");
     }
@@ -100,7 +100,7 @@ public class BeaconChainUtil {
     final Transaction transaction = storageClient.startStoreTransaction();
     final BlockProcessingRecord record =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
-    final CompletableFuture<Void> result = transaction.commit();
+    final GoodFuture<Void> result = transaction.commit();
     if (!result.isDone() || result.isCompletedExceptionally()) {
       throw new IllegalStateException(
           "Transaction did not commit immediately. Are you using a disk storage backed ChainStorageClient without having storage running?");

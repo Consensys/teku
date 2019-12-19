@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.TempDirectory;
@@ -34,6 +33,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.util.async.GoodFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @ExtendWith(TempDirectoryExtension.class)
@@ -51,7 +51,7 @@ class MapDbDatabaseTest {
   private final TransactionPrecommit databaseTransactionPrecommit =
       updateEvent -> {
         database.insert(updateEvent);
-        return CompletableFuture.completedFuture(null);
+        return GoodFuture.completedFuture(null);
       };
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
 

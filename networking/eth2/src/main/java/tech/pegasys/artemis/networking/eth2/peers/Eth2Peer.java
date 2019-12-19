@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -33,12 +32,13 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private final RpcMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
-  private final CompletableFuture<PeerStatus> initialStatus = new CompletableFuture<>();
+  private final GoodFuture<PeerStatus> initialStatus = new GoodFuture<>();
   private AtomicBoolean chainValidated = new AtomicBoolean(false);
 
   public Eth2Peer(
@@ -56,7 +56,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
-    initialStatus.thenAccept(subscriber::onInitialStatus);
+    initialStatus.finish(subscriber::onInitialStatus);
   }
 
   public PeerStatus getStatus() {
@@ -75,7 +75,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     chainValidated.set(true);
   }
 
-  public CompletableFuture<PeerStatus> sendStatus() {
+  public GoodFuture<PeerStatus> sendStatus() {
     return sendRequest(BeaconChainMethods.STATUS, statusMessageFactory.createStatusMessage())
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
@@ -86,12 +86,12 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
             });
   }
 
-  public CompletableFuture<Void> sendGoodbye(final UnsignedLong reason) {
+  public GoodFuture<Void> sendGoodbye(final UnsignedLong reason) {
     return sendRequest(BeaconChainMethods.GOODBYE, new GoodbyeMessage(reason))
         .thenCompose(ResponseStream::expectNoResponse);
   }
 
-  public CompletableFuture<Void> requestBlocksByRoot(
+  public GoodFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final ResponseListener<BeaconBlock> listener) {
     return requestStream(
         BeaconChainMethods.BEACON_BLOCKS_BY_ROOT,
@@ -99,7 +99,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         listener);
   }
 
-  public CompletableFuture<BeaconBlock> requestBlockBySlot(
+  public GoodFuture<BeaconBlock> requestBlockBySlot(
       final Bytes32 headBlockRoot, final UnsignedLong slot) {
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
@@ -108,7 +108,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         .thenCompose(ResponseStream::expectSingleResponse);
   }
 
-  public CompletableFuture<Void> requestBlocksByRange(
+  public GoodFuture<Void> requestBlocksByRange(
       final Bytes32 headBlockRoot,
       final UnsignedLong startSlot,
       final UnsignedLong count,
@@ -120,13 +120,13 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         listener);
   }
 
-  private <I extends RpcRequest, O> CompletableFuture<Void> requestStream(
+  private <I extends RpcRequest, O> GoodFuture<Void> requestStream(
       final RpcMethod<I, O> method, I request, final ResponseStream.ResponseListener<O> listener) {
     return sendRequest(method, request)
         .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
   }
 
-  public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> sendRequest(
+  public <I extends RpcRequest, O> GoodFuture<ResponseStream<O>> sendRequest(
       final RpcMethod<I, O> method, I request) {
     return rpcMethods.invoke(method, this.getConnection(), request);
   }

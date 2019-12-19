@@ -23,7 +23,6 @@ import io.libp2p.core.multistream.ProtocolMatcher;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +35,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMessageHandler.Controlle
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     implements Protocol<Controller<TRequest, ResponseStream<TResponse>>> {
@@ -58,13 +58,15 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @SuppressWarnings("unchecked")
-  public CompletableFuture<ResponseStream<TResponse>> invokeRemote(
+  public GoodFuture<ResponseStream<TResponse>> invokeRemote(
       Connection connection, TRequest request) {
-    return connection
-        .getMuxerSession()
-        .createStream(
-            Multistream.create(this.toInitiator(method.getMultistreamId())).toStreamHandler())
-        .getControler()
+    return GoodFuture.of(
+            connection
+                .getMuxerSession()
+                .createStream(
+                    Multistream.create(this.toInitiator(method.getMultistreamId()))
+                        .toStreamHandler())
+                .getControler())
         .thenCompose(ctr -> ctr.invoke(request));
   }
 
@@ -103,7 +105,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
 
   @NotNull
   @Override
-  public CompletableFuture<AbstractHandler> initChannel(P2PAbstractChannel channel, String s) {
+  public GoodFuture<AbstractHandler> initChannel(P2PAbstractChannel channel, String s) {
     // TODO timeout handlers
     AbstractHandler handler;
     if (channel.isInitiator()) {
@@ -116,13 +118,13 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
   }
 
   interface Controller<TRequest, TResponse> {
-    CompletableFuture<TResponse> invoke(TRequest request);
+    GoodFuture<TResponse> invoke(TRequest request);
   }
 
   private abstract class AbstractHandler extends SimpleChannelInboundHandler<ByteBuf>
       implements Controller<TRequest, ResponseStream<TResponse>> {
 
-    protected final CompletableFuture<AbstractHandler> activeFuture = new CompletableFuture<>();
+    protected final GoodFuture<AbstractHandler> activeFuture = new GoodFuture<>();
   }
 
   private class ResponderHandler extends AbstractHandler {
@@ -136,7 +138,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     }
 
     @Override
-    public CompletableFuture<ResponseStream<TResponse>> invoke(TRequest tRequest) {
+    public GoodFuture<ResponseStream<TResponse>> invoke(TRequest tRequest) {
       throw new IllegalStateException("This method shouldn't be called for Responder");
     }
 
@@ -163,7 +165,8 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     private ResponseRpcDecoder<TResponse> responseHandler;
 
     @Override
-    public CompletableFuture<ResponseStream<TResponse>> invoke(TRequest request) {
+    @SuppressWarnings("FutureReturnValueIgnored")
+    public GoodFuture<ResponseStream<TResponse>> invoke(TRequest request) {
       maximumResponseChunks = request.getMaximumRequestChunks();
       final ByteBuf reqByteBuf = ctx.alloc().buffer();
       final Bytes encoded = rpcEncoder.encodeRequest(request);
@@ -180,10 +183,11 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
                   ctx.channel().disconnect();
                 }
               });
-      return CompletableFuture.completedFuture(responseStream);
+      return GoodFuture.completedFuture(responseStream);
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf)
         throws IllegalArgumentException {
       if (responseHandler == null) {
@@ -219,6 +223,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
       LOG.error("Unhandled error while processes req/response", cause);
       final IllegalStateException exception = new IllegalStateException("Channel exception", cause);
@@ -228,6 +233,7 @@ public class RpcMessageHandler<TRequest extends RpcRequest, TResponse>
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
       final IllegalStateException exception = new IllegalStateException("Stream closed.");
       // This is an error if we haven't already sent the request...

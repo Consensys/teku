@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -31,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.util.async.GoodFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 class PendingBlocks extends Service {
@@ -65,9 +65,9 @@ class PendingBlocks extends Service {
   }
 
   @Override
-  protected CompletableFuture<?> doStart() {
+  protected GoodFuture<?> doStart() {
     eventBus.register(this);
-    return CompletableFuture.completedFuture(null);
+    return GoodFuture.completedFuture(null);
   }
 
   public void add(BeaconBlock block) {
@@ -174,8 +174,8 @@ class PendingBlocks extends Service {
   }
 
   @Override
-  protected CompletableFuture<?> doStop() {
+  protected GoodFuture<?> doStop() {
     eventBus.unregister(this);
-    return CompletableFuture.completedFuture(null);
+    return GoodFuture.completedFuture(null);
   }
 }

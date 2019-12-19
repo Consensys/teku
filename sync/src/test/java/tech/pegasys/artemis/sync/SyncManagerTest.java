@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +33,7 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class SyncManagerTest {
 
@@ -62,7 +62,7 @@ public class SyncManagerTest {
   public void setUp() {
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
-    when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
+    when(peer.sendGoodbye(any())).thenReturn(new GoodFuture<>());
   }
 
   @Test
@@ -91,7 +91,7 @@ public class SyncManagerTest {
   void sync_existingPeers() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
 
-    final CompletableFuture<PeerSyncResult> syncFuture = new CompletableFuture<>();
+    final GoodFuture<PeerSyncResult> syncFuture = new GoodFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);
 
     assertThat(syncManager.start()).isCompleted();
@@ -112,7 +112,7 @@ public class SyncManagerTest {
   void sync_retrySyncIfNotSuccessful() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
 
-    final CompletableFuture<PeerSyncResult> syncFuture = new CompletableFuture<>();
+    final GoodFuture<PeerSyncResult> syncFuture = new GoodFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);
 
     assertThat(syncManager.start()).isCompleted();
@@ -125,7 +125,7 @@ public class SyncManagerTest {
     final Eth2Peer peer2 = mock(Eth2Peer.class);
     when(peer2.getStatus()).thenReturn(PEER_STATUS);
     when(network.streamPeers()).thenReturn(Stream.of(peer2));
-    when(peerSync.sync(peer2)).thenReturn(new CompletableFuture<>());
+    when(peerSync.sync(peer2)).thenReturn(new GoodFuture<>());
     syncFuture.complete(PeerSyncResult.FAULTY_ADVERTISEMENT);
 
     verify(peerSync).sync(peer2);
@@ -143,8 +143,8 @@ public class SyncManagerTest {
     verify(network).subscribeConnect(onConnectionListener.capture());
     final PeerConnectedSubscriber<Eth2Peer> subscriber = onConnectionListener.getValue();
 
-    final CompletableFuture<PeerSyncResult> syncFuture1 = new CompletableFuture<>();
-    final CompletableFuture<PeerSyncResult> syncFuture2 = new CompletableFuture<>();
+    final GoodFuture<PeerSyncResult> syncFuture1 = new GoodFuture<>();
+    final GoodFuture<PeerSyncResult> syncFuture2 = new GoodFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture1).thenReturn(syncFuture2);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));

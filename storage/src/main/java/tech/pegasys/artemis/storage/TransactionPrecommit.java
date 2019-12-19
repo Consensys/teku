@@ -14,14 +14,14 @@
 package tech.pegasys.artemis.storage;
 
 import com.google.common.eventbus.EventBus;
-import java.util.concurrent.CompletableFuture;
 import javax.annotation.CheckReturnValue;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public interface TransactionPrecommit {
 
   static TransactionPrecommit memoryOnly() {
-    return event -> CompletableFuture.completedFuture(null);
+    return event -> GoodFuture.completedFuture(null);
   }
 
   static TransactionPrecommit storageEnabled(final EventBus eventBus) {
@@ -29,5 +29,5 @@ public interface TransactionPrecommit {
   }
 
   @CheckReturnValue
-  CompletableFuture<Void> precommit(StoreDiskUpdateEvent updateEvent);
+  GoodFuture<Void> precommit(StoreDiskUpdateEvent updateEvent);
 }

@@ -13,19 +13,20 @@
 
 package tech.pegasys.artemis.sync;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
+
+import static tech.pegasys.artemis.util.async.GoodFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class SyncManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -45,14 +46,14 @@ public class SyncManager extends Service {
   }
 
   @Override
-  protected CompletableFuture<?> doStart() {
+  protected GoodFuture<?> doStart() {
     peerConnectSubscriptionId = network.subscribeConnect(this::onNewPeer);
     startOrScheduleSync();
     return completedFuture(null);
   }
 
   @Override
-  protected CompletableFuture<?> doStop() {
+  protected GoodFuture<?> doStop() {
     network.unsubscribeConnect(peerConnectSubscriptionId);
     synchronized (this) {
       syncQueued = false;
@@ -96,11 +97,11 @@ public class SyncManager extends Service {
     return syncQueued;
   }
 
-  private CompletableFuture<Void> executeSync() {
+  private GoodFuture<Void> executeSync() {
     return findBestSyncPeer().map(this::syncToPeer).orElseGet(() -> completedFuture(null));
   }
 
-  private CompletableFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
+  private GoodFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
     return peerSync
         .sync(syncPeer)
         .thenCompose(

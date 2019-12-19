@@ -24,16 +24,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.artemis.util.async.GoodFuture;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 
 public class GossipHandler implements Function<MessageApi, CompletableFuture<Boolean>> {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static CompletableFuture<Boolean> VALIDATION_FAILED =
-      CompletableFuture.completedFuture(false);
-  private static CompletableFuture<Boolean> VALIDATION_SUCCEEDED =
-      CompletableFuture.completedFuture(true);
+  private static GoodFuture<Boolean> VALIDATION_FAILED = GoodFuture.completedFuture(false);
+  private static GoodFuture<Boolean> VALIDATION_SUCCEEDED = GoodFuture.completedFuture(true);
   static final int GOSSIP_MAX_SIZE = 1048576;
   private static final int MAX_SENT_MESSAGES = 2048;
 
@@ -51,7 +50,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Boo
   }
 
   @Override
-  public CompletableFuture<Boolean> apply(final MessageApi message) {
+  public GoodFuture<Boolean> apply(final MessageApi message) {
     final int messageSize = message.getData().capacity();
     if (messageSize > GOSSIP_MAX_SIZE) {
       LOG.trace(
@@ -79,15 +78,9 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Boo
     }
 
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
-    publisher
-        .publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic)
-        .whenComplete(
-            (res, err) -> {
-              if (err != null) {
-                LOG.debug("Failed to gossip message on " + topic, err);
-                return;
-              }
-              LOG.trace("Successfully gossiped message on {}", topic);
-            });
+    GoodFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
+        .finish(
+            () -> LOG.trace("Successfully gossiped message on {}", topic),
+            err -> LOG.debug("Failed to gossip message on " + topic, err));
   }
 }

@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.eth2;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
@@ -28,6 +27,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
   private final P2PNetwork<?> network;
@@ -53,7 +53,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   }
 
   @Override
-  public CompletableFuture<?> start() {
+  public GoodFuture<?> start() {
     return super.start().thenAccept(r -> startup());
   }
 

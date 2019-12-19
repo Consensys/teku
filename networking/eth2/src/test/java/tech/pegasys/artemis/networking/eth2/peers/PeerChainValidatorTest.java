@@ -23,7 +23,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +35,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.async.GoodFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerChainValidatorTest {
@@ -94,7 +94,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     finalizedCheckpointsMatch();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
   }
 
@@ -104,7 +104,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsAheadOnSameChain();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
   }
 
@@ -114,7 +114,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsBehindOnSameChain();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
   }
 
@@ -124,7 +124,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsBehindOnDifferentChain();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
   }
 
@@ -134,7 +134,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsAheadOnDifferentChain();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
   }
 
@@ -144,7 +144,7 @@ public class PeerChainValidatorTest {
     forksMatch();
     remoteChainIsAheadAndUnresponsive();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainRejected(result, GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK);
   }
 
@@ -156,7 +156,7 @@ public class PeerChainValidatorTest {
     when(storageClient.isPreGenesis()).thenReturn(true);
     when(storageClient.getStore()).thenReturn(null);
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
@@ -174,7 +174,7 @@ public class PeerChainValidatorTest {
     // Setup mocks
     forksMatch();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainVerified(result);
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
@@ -187,7 +187,7 @@ public class PeerChainValidatorTest {
     // Setup mocks
     forksDontMatch();
 
-    final CompletableFuture<Boolean> result = peerChainValidator.run();
+    final GoodFuture<Boolean> result = peerChainValidator.run();
     assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
     // Verify other checks were skipped when fork mismatch was detected
     verify(peer, never()).requestBlockBySlot(any(), any());
@@ -196,13 +196,13 @@ public class PeerChainValidatorTest {
   }
 
   private void assertPeerChainRejected(
-      final CompletableFuture<Boolean> result, UnsignedLong goodbyeReason) {
+      final GoodFuture<Boolean> result, UnsignedLong goodbyeReason) {
     assertThat(result).isCompletedWithValue(false);
     verify(peer, never()).markChainValidated();
     verify(peer).sendGoodbye(goodbyeReason);
   }
 
-  private void assertPeerChainVerified(final CompletableFuture<Boolean> result) {
+  private void assertPeerChainVerified(final GoodFuture<Boolean> result) {
     assertThat(result).isCompletedWithValue(true);
     verify(peer).markChainValidated();
     verify(peer, never()).sendGoodbye(any());
@@ -222,10 +222,9 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnSameChain() {
-    final CompletableFuture<BeaconBlock> blockFuture =
-        CompletableFuture.completedFuture(earlierBlock);
-    final CompletableFuture<Optional<BeaconBlock>> optionalBlockFuture =
-        CompletableFuture.completedFuture(Optional.of(earlierBlock));
+    final GoodFuture<BeaconBlock> blockFuture = GoodFuture.completedFuture(earlierBlock);
+    final GoodFuture<Optional<BeaconBlock>> optionalBlockFuture =
+        GoodFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
     when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
@@ -235,10 +234,10 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
-    final CompletableFuture<BeaconBlock> blockFuture =
-        CompletableFuture.completedFuture(randomBlock(earlierBlockSlot));
-    final CompletableFuture<Optional<BeaconBlock>> optionalBlockFuture =
-        CompletableFuture.completedFuture(Optional.of(earlierBlock));
+    final GoodFuture<BeaconBlock> blockFuture =
+        GoodFuture.completedFuture(randomBlock(earlierBlockSlot));
+    final GoodFuture<Optional<BeaconBlock>> optionalBlockFuture =
+        GoodFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
     when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
@@ -248,10 +247,9 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadAndUnresponsive() {
-    final CompletableFuture<BeaconBlock> blockFuture =
-        CompletableFuture.failedFuture(new NullPointerException());
-    final CompletableFuture<Optional<BeaconBlock>> optionalBlockFuture =
-        CompletableFuture.completedFuture(Optional.of(earlierBlock));
+    final GoodFuture<BeaconBlock> blockFuture = GoodFuture.failedFuture(new NullPointerException());
+    final GoodFuture<Optional<BeaconBlock>> optionalBlockFuture =
+        GoodFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
     when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
@@ -261,8 +259,8 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsBehindOnSameChain() {
-    CompletableFuture<Optional<BeaconBlock>> blockResult =
-        CompletableFuture.completedFuture(Optional.of(remoteFinalizedBlock));
+    GoodFuture<Optional<BeaconBlock>> blockResult =
+        GoodFuture.completedFuture(Optional.of(remoteFinalizedBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
     when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
@@ -270,8 +268,8 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsBehindOnDifferentChain() {
-    CompletableFuture<Optional<BeaconBlock>> blockResult =
-        CompletableFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
+    GoodFuture<Optional<BeaconBlock>> blockResult =
+        GoodFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
     when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))

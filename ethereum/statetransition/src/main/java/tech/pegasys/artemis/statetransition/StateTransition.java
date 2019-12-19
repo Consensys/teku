@@ -25,6 +25,7 @@ import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_rewards_and_penalties;
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.GoodFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -194,7 +195,7 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
           STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
-          CompletableFuture.runAsync(() -> recordMetrics(BeaconStateWithCache.deepCopy(state)));
+          reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(BeaconStateWithCache.deepCopy(state))));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }

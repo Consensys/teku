@@ -19,7 +19,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +27,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessag
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class Eth2PeerManagerTest {
 
@@ -37,7 +37,7 @@ public class Eth2PeerManagerTest {
 
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final PeerValidatorFactory peerValidatorFactory = (peer, status) -> peerChainValidator;
-  private final CompletableFuture<Boolean> peerValidationResult = new CompletableFuture<>();
+  private final GoodFuture<Boolean> peerValidationResult = new GoodFuture<>();
 
   private final Eth2PeerManager peerManager =
       new Eth2PeerManager(storageClient, new NoOpMetricsSystem(), peerValidatorFactory);

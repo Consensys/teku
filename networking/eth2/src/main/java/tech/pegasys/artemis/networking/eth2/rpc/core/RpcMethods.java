@@ -18,9 +18,9 @@ import io.libp2p.core.Connection;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.artemis.util.async.GoodFuture;
 
 public class RpcMethods {
 
@@ -38,7 +38,7 @@ public class RpcMethods {
     return builder.build();
   }
 
-  public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> invoke(
+  public <I extends RpcRequest, O> GoodFuture<ResponseStream<O>> invoke(
       final RpcMethod<I, O> method, final Connection connection, final I request) {
     return getHandler(method).invokeRemote(connection, request);
   }

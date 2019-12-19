@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
+import static tech.pegasys.artemis.util.async.GoodFuture.reportExceptions;
+
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -73,14 +75,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     if (peer.connectionInitiatedLocally()) {
-      eth2Peer.sendStatus();
+      reportExceptions(eth2Peer.sendStatus());
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->
             peerValidatorFactory
                 .create(eth2Peer, status)
                 .run()
-                .thenAccept(
+                .finish(
                     peerIsValid -> {
                       if (peerIsValid) {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
