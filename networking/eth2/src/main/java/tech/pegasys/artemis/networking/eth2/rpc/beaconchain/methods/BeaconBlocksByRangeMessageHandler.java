@@ -58,7 +58,8 @@ public class BeaconBlocksByRangeMessageHandler
     }
     sendMatchingBlocks(message, callback)
         .thenAccept(success -> callback.completeSuccessfully())
-        .exceptionally(
+        .finish(
+            callback::completeSuccessfully,
             error -> {
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
@@ -68,7 +69,6 @@ public class BeaconBlocksByRangeMessageHandler
                 LOG.error("Failed to process blocks by range request", error);
                 callback.completeWithError(RpcException.SERVER_ERROR);
               }
-              return null;
             });
   }
 

@@ -83,8 +83,8 @@ public class SyncManager extends Service {
               LOG.error("Error during sync", error);
               return null;
             })
-        .thenAccept(
-            complete -> {
+        .finish(
+            () -> {
               synchronized (SyncManager.this) {
                 syncActive = false;
                 if (syncQueued) {

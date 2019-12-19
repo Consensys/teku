@@ -112,7 +112,7 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
-    peer.sendGoodbye(REASON_FAULT_ERROR);
+    peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
   }
 
   public static class BadBlockException extends InvalidResponseException {

@@ -84,6 +84,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     reportExceptions(this);
   }
 
+  public void finish(final Runnable onSuccess) {
+    finish(complete -> onSuccess.run());
+  }
+
   public void finish(final Consumer<T> onSuccess) {
     reportExceptions(thenAccept(onSuccess));
   }
