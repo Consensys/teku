@@ -166,8 +166,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public void subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
-    peerManager.subscribeConnect(subscriber);
+  public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    return peerManager.subscribeConnect(subscriber);
+  }
+
+  @Override
+  public void unsubscribeConnect(final long subscriptionId) {
+    peerManager.unsubscribeConnect(subscriptionId);
   }
 
   @Override

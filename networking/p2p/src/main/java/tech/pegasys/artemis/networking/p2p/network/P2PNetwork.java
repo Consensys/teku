@@ -36,7 +36,9 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
    */
   CompletableFuture<?> connect(String peer);
 
-  void subscribeConnect(final PeerConnectedSubscriber<T> subscriber);
+  long subscribeConnect(PeerConnectedSubscriber<T> subscriber);
+
+  void unsubscribeConnect(long subscriptionId);
 
   Optional<T> getPeer(NodeId id);
 

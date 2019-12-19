@@ -66,8 +66,12 @@ public class PeerManager implements ConnectionHandler {
     connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
   }
 
-  public void subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
-    connectSubscribers.subscribe(subscriber);
+  public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    return connectSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeConnect(final long subscriptionId) {
+    connectSubscribers.unsubscribe(subscriptionId);
   }
 
   public CompletableFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
