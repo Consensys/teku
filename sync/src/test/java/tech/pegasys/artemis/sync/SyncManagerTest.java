@@ -145,7 +145,7 @@ public class SyncManagerTest {
 
     final CompletableFuture<PeerSyncResult> syncFuture1 = new CompletableFuture<>();
     final CompletableFuture<PeerSyncResult> syncFuture2 = new CompletableFuture<>();
-    when(peerSync.sync(peer)).thenReturn(syncFuture1).thenReturn(syncFuture2);
+    when(peerSync.sync(peer)).thenReturn(syncFuture1);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
     subscriber.onConnected(peer);
