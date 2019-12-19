@@ -98,4 +98,8 @@ public class CombinedChainDataClient {
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     return finalizedSlot.compareTo(slot) >= 0;
   }
+
+  public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
+    return recentChainData.getBlockState(blockRoot);
+  }
 }
