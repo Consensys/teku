@@ -79,12 +79,12 @@ public class BeaconBlocksByRangeIntegrationTest {
   }
 
   @Test
-  public void shouldSendEmptyResponseWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
+  public void shouldRespondWithBlocksWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
     beaconChainUtil.initializeStorage();
     final BeaconBlock nonCanonicalBlock = beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
     storageClient1.updateBestBlock(nonCanonicalBlock.getParent_root(), UnsignedLong.ZERO);
     final List<BeaconBlock> response = requestBlocks(nonCanonicalBlock.signing_root("signature"));
-    assertThat(response).isEmpty();
+    assertThat(response).containsExactly(nonCanonicalBlock);
   }
 
   @Test
