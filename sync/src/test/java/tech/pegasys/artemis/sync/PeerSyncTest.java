@@ -73,7 +73,7 @@ public class PeerSyncTest {
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
-    peerSync = new PeerSync(peer, storageClient, blockImporter);
+    peerSync = new PeerSync(storageClient, blockImporter);
   }
 
   @Test
@@ -81,7 +81,7 @@ public class PeerSyncTest {
     final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync();
+    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -120,7 +120,7 @@ public class PeerSyncTest {
     final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync();
+    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -166,7 +166,7 @@ public class PeerSyncTest {
                 peerHeadSlot));
 
     when(peer.getStatus()).thenReturn(peer_status);
-    peerSync = new PeerSync(peer, storageClient, blockImporter);
+    peerSync = new PeerSync(storageClient, blockImporter);
 
     final CompletableFuture<Void> requestFuture1 = new CompletableFuture<>();
     final CompletableFuture<Void> requestFuture2 = new CompletableFuture<>();
@@ -174,7 +174,7 @@ public class PeerSyncTest {
         .thenReturn(requestFuture1)
         .thenReturn(requestFuture2);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync();
+    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)

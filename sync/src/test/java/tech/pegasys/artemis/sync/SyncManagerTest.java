@@ -15,10 +15,9 @@ package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
@@ -47,7 +46,8 @@ public class SyncManagerTest {
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private Eth2Network network = mock(Eth2Network.class);
   private BlockImporter blockImporter = mock(BlockImporter.class);
-  private SyncManager syncManager = new SyncManager(network, storageClient, blockImporter);
+  private final PeerSync peerSync = mock(PeerSync.class);
+  private SyncManager syncManager = new SyncManager(network, storageClient, peerSync);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
@@ -77,59 +77,102 @@ public class SyncManagerTest {
   }
 
   @Test
-  void sync_noPeers() throws Exception {
+  void sync_noPeers() {
     when(network.streamPeers()).thenReturn(Stream.empty());
     // Should be immediately completed as there is nothing to do.
-    assertThat(syncManager.sync()).isCompleted();
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    verifyNoInteractions(peerSync);
   }
 
   @Test
-  void sync_correct() throws StateTransitionException {
+  void sync_existingPeers() throws StateTransitionException {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
 
-    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
+    final CompletableFuture<PeerSyncResult> syncFuture = new CompletableFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
 
-    final CompletableFuture<Void> syncFuture = syncManager.sync();
-    assertThat(syncFuture).isNotDone();
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
 
-    verify(peer)
-        .requestBlocksByRange(
-            eq(PEER_HEAD_BLOCK_ROOT),
-            any(),
-            any(),
-            eq(UnsignedLong.ONE),
-            responseListenerArgumentCaptor.capture());
+    verify(peerSync).sync(peer);
 
-    // Respond with blocks and check they're passed to the block importer.
-    final ResponseListener<BeaconBlock> responseListener =
-        responseListenerArgumentCaptor.getValue();
-    responseListener.onResponse(BLOCK);
-    verify(blockImporter).importBlock(BLOCK);
-    assertThat(syncFuture).isNotDone();
-
-    // Now that we've imported the block, our finalized epoch has updated.
-    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_HEAD_SLOT);
-
-    // Signal the request for data from the peer is complete.
-    requestFuture.complete(null);
+    // Signal the peer sync is complete
+    syncFuture.complete(PeerSyncResult.SUCCESSFUL_SYNC);
 
     // Check that the sync is done and the peer was not disconnected.
-    assertThat(syncFuture).isDone();
-    verify(peer, never()).sendGoodbye(any());
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+  }
+
+  @Test
+  void sync_retrySyncIfNotSuccessful() throws StateTransitionException {
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+
+    final CompletableFuture<PeerSyncResult> syncFuture = new CompletableFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    verify(peerSync).sync(peer);
+
+    // The sync didn't complete correctly so we should start a new one with a new peer
+    final Eth2Peer peer2 = mock(Eth2Peer.class);
+    when(peer2.getStatus()).thenReturn(PEER_STATUS);
+    when(network.streamPeers()).thenReturn(Stream.of(peer2));
+    when(peerSync.sync(peer2)).thenReturn(new CompletableFuture<>());
+    syncFuture.complete(PeerSyncResult.FAULTY_ADVERTISEMENT);
+
+    verify(peerSync).sync(peer2);
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
   }
 
   @Test
   void sync_newPeer() {
+    assertThat(syncManager.start()).isCompleted();
+    // No peers initially so sync doesn't start.
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
     verify(network).subscribeConnect(onConnectionListener.capture());
     final PeerConnectedSubscriber<Eth2Peer> subscriber = onConnectionListener.getValue();
 
-    final CompletableFuture<Void> requestFuture = CompletableFuture.completedFuture(null);
+    final CompletableFuture<PeerSyncResult> syncFuture1 = new CompletableFuture<>();
+    final CompletableFuture<PeerSyncResult> syncFuture2 = new CompletableFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture1).thenReturn(syncFuture2);
+
     when(network.streamPeers()).thenReturn(Stream.of(peer));
-    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
     subscriber.onConnected(peer);
 
-    verify(peer)
-        .requestBlocksByRange(eq(PEER_HEAD_BLOCK_ROOT), any(), any(), eq(UnsignedLong.ONE), any());
+    // Sync is activated by first peer joining.
+    verify(peerSync).sync(peer);
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    // Second peer connecting causes another sync to be scheduled.
+    final Eth2Peer peer2 = mock(Eth2Peer.class);
+    when(peer2.getStatus()).thenReturn(PEER_STATUS);
+    when(network.streamPeers()).thenReturn(Stream.of(peer2));
+    when(peerSync.sync(peer2)).thenReturn(syncFuture2);
+
+    subscriber.onConnected(peer2);
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isTrue();
+
+    // First sync completes and should kick off the second sync.
+    syncFuture1.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+    verify(peerSync).sync(peer2);
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    // Stop syncing when second sync completes.
+    syncFuture2.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
   }
 }
