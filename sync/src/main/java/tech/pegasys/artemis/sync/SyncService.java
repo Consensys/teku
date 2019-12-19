@@ -30,8 +30,7 @@ public class SyncService extends Service {
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    this.syncManager =
-        new SyncManager(network, storageClient, new PeerSync(storageClient, blockImporter));
+    this.syncManager = SyncManager.create(network, storageClient, blockImporter);
     this.blockPropagationManager =
         BlockPropagationManager.create(eventBus, storageClient, blockImporter);
   }
