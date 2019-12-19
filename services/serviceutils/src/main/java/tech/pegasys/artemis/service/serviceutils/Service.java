@@ -47,5 +47,9 @@ public abstract class Service {
     }
   }
 
+  protected boolean isRunning() {
+    return state.get() == State.RUNNING;
+  }
+
   protected abstract CompletableFuture<?> doStop();
 }
