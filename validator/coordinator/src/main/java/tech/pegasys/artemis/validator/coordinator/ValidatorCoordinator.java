@@ -500,18 +500,19 @@ public class ValidatorCoordinator {
       List<AttesterInformation> attesterInformations,
       BeaconState state,
       AttestationData genericAttestationData) {
-    reportExceptions(CompletableFuture.runAsync(
-        () ->
-            attesterInformations
-                .parallelStream()
-                .forEach(
-                    attesterInfo ->
-                        produceAttestations(
-                            state,
-                            attesterInfo.getPublicKey(),
-                            attesterInfo.getIndexIntoCommitee(),
-                            attesterInfo.getCommittee(),
-                            genericAttestationData))));
+    reportExceptions(
+        CompletableFuture.runAsync(
+            () ->
+                attesterInformations
+                    .parallelStream()
+                    .forEach(
+                        attesterInfo ->
+                            produceAttestations(
+                                state,
+                                attesterInfo.getPublicKey(),
+                                attesterInfo.getIndexIntoCommitee(),
+                                attesterInfo.getCommittee(),
+                                genericAttestationData))));
   }
 
   @VisibleForTesting

@@ -195,7 +195,9 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
           STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
-          reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(BeaconStateWithCache.deepCopy(state))));
+          reportExceptions(
+              CompletableFuture.runAsync(
+                  () -> recordMetrics(BeaconStateWithCache.deepCopy(state))));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }

@@ -86,6 +86,7 @@ public class PeerChainValidatorTest {
     when(storageClient.getStore()).thenReturn(store);
     when(peer.hasStatus()).thenReturn(true);
     when(peer.getStatus()).thenReturn(remoteStatus);
+    when(peer.sendGoodbye(any())).thenReturn(GoodFuture.completedFuture(null));
   }
 
   @Test

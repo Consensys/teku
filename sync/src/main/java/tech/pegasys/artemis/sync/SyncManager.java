@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.sync;
 
-
 import static tech.pegasys.artemis.util.async.GoodFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -75,7 +74,7 @@ public class SyncManager extends Service {
               LOG.error("Error during sync", error);
               return null;
             })
-        .thenAccept(
+        .finish(
             complete -> {
               synchronized (SyncManager.this) {
                 syncActive = false;

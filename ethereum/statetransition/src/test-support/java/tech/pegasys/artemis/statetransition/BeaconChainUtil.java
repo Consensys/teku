@@ -74,7 +74,7 @@ public class BeaconChainUtil {
     initializeStorage(chainStorageClient, validatorKeys);
   }
 
-  public GoodFuture<Void> setSlot(final UnsignedLong currentSlot) {
+  public void setSlot(final UnsignedLong currentSlot) {
     if (storageClient.isPreGenesis()) {
       throw new IllegalStateException("Cannot set current slot before genesis");
     }
@@ -82,7 +82,7 @@ public class BeaconChainUtil {
     final UnsignedLong time = storageClient.getGenesisTime().plus(currentSlot.times(secPerSlot));
     final Transaction tx = storageClient.startStoreTransaction();
     tx.setTime(time);
-    return tx.commit();
+    tx.commit().join();
   }
 
   public BeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {

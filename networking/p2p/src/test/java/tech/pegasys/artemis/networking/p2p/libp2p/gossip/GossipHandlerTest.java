@@ -73,6 +73,7 @@ public class GossipHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void apply_duplicate() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
@@ -110,6 +111,7 @@ public class GossipHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void gossip_afterDuplicateApply() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
@@ -121,6 +123,7 @@ public class GossipHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void apply_afterDuplicateGossip() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
