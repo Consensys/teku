@@ -27,25 +27,18 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
-import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.statetransition.BlockImporter;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class SyncManagerTest {
 
-  private static final BeaconBlock BLOCK = DataStructureUtil.randomBeaconBlock(1, 100);
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private Eth2Network network = mock(Eth2Network.class);
-  private BlockImporter blockImporter = mock(BlockImporter.class);
   private final PeerSync peerSync = mock(PeerSync.class);
   private SyncManager syncManager = new SyncManager(network, storageClient, peerSync);
   private final Eth2Peer peer = mock(Eth2Peer.class);
@@ -60,10 +53,6 @@ public class SyncManagerTest {
               PEER_FINALIZED_EPOCH,
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
-
-  @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<ResponseListener<BeaconBlock>> responseListenerArgumentCaptor =
-      ArgumentCaptor.forClass(ResponseListener.class);
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> onConnectionListener =
@@ -87,7 +76,19 @@ public class SyncManagerTest {
   }
 
   @Test
-  void sync_existingPeers() throws StateTransitionException {
+  void sync_noSuitablePeers() {
+    // We're already in sync with the peer
+    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_STATUS.getFinalizedEpoch());
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+    // Should be immediately completed as there is nothing to do.
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    verifyNoInteractions(peerSync);
+  }
+
+  @Test
+  void sync_existingPeers() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
 
     final CompletableFuture<PeerSyncResult> syncFuture = new CompletableFuture<>();
@@ -108,7 +109,7 @@ public class SyncManagerTest {
   }
 
   @Test
-  void sync_retrySyncIfNotSuccessful() throws StateTransitionException {
+  void sync_retrySyncIfNotSuccessful() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
 
     final CompletableFuture<PeerSyncResult> syncFuture = new CompletableFuture<>();
