@@ -101,10 +101,6 @@ public class BeaconBlocksByRangeMessageHandler
   }
 
   private CompletableFuture<RequestState> sendNextBlock(final RequestState requestState) {
-    LOG.trace(
-        "Requesting block at slot {} for head block root {}",
-        requestState.currentSlot,
-        requestState.headBlockRoot);
     return storageClient
         .getBlockAtSlot(requestState.currentSlot, requestState.headBlockRoot)
         .thenCompose(
@@ -122,7 +118,6 @@ public class BeaconBlocksByRangeMessageHandler
                         requestState.callback.respond(block);
                       });
               if (requestState.isComplete()) {
-                LOG.trace("Request is complete {}", requestState);
                 return completedFuture(requestState);
               }
               requestState.incrementCurrentSlot();
