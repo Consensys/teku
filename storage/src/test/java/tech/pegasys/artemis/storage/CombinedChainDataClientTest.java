@@ -46,30 +46,31 @@ class CombinedChainDataClientTest {
   }
 
   @Test
-  public void getBlockBySlot_shouldReturnEmptyWhenRecentDataHasNoStore() {
+  public void getBlockAtSlotExact_shouldReturnEmptyWhenRecentDataHasNoStore() {
     when(recentChainData.getStore()).thenReturn(null);
-    assertThat(client.getBlockAtSlot(UnsignedLong.ONE, Bytes32.ZERO))
+    assertThat(client.getBlockAtSlotExact(UnsignedLong.ONE, Bytes32.ZERO))
         .isCompletedWithValue(Optional.empty());
   }
 
   @Test
-  public void getBlockBySlot_returnEmptyWhenHeadRootUnknown() {
+  public void getBlockAtSlotExact_returnEmptyWhenHeadRootUnknown() {
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(null);
-    assertThat(client.getBlockAtSlot(UnsignedLong.ONE, Bytes32.ZERO))
+    assertThat(client.getBlockAtSlotExact(UnsignedLong.ONE, Bytes32.ZERO))
         .isCompletedWithValue(Optional.empty());
   }
 
   @Test
-  public void getBlockBySlot_returnEmptyWhenHeadRootUnknownAndSlotFinalized() {
+  public void getBlockAtSlotExact_returnEmptyWhenHeadRootUnknownAndSlotFinalized() {
     final UnsignedLong slot = UnsignedLong.ONE;
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(null);
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
 
-    assertThat(client.getBlockAtSlot(slot, Bytes32.ZERO)).isCompletedWithValue(Optional.empty());
+    assertThat(client.getBlockAtSlotExact(slot, Bytes32.ZERO))
+        .isCompletedWithValue(Optional.empty());
   }
 
   @Test
-  public void getBlockBySlot_returnBlockFromHistoricalDataWhenHeadRootKnownAndSlotFinalized() {
+  public void getBlockAtSlotExact_returnBlockFromHistoricalDataWhenHeadRootKnownAndSlotFinalized() {
     final UnsignedLong slot = UnsignedLong.ONE;
     final BeaconBlock block = block(slot);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
@@ -77,34 +78,60 @@ class CombinedChainDataClientTest {
     when(historicalChainData.getFinalizedBlockAtSlot(slot))
         .thenReturn(completedFuture(Optional.of(block)));
 
-    assertThat(client.getBlockAtSlot(slot, Bytes32.ZERO)).isCompletedWithValue(Optional.of(block));
+    assertThat(client.getBlockAtSlotExact(slot, Bytes32.ZERO))
+        .isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockBySlot_returnEmptyWhenFinalizedSlotDidNotHaveABlock() {}
+  public void getBlockAtSlotExact_returnEmptyWhenFinalizedSlotDidNotHaveABlock() {
+    final UnsignedLong slot = UnsignedLong.ONE;
+    final BeaconBlock block = block(UnsignedLong.ZERO);
+    when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
+    when(historicalChainData.getFinalizedBlockAtSlot(slot))
+        .thenReturn(completedFuture(Optional.of(block)));
+
+    assertThat(client.getBlockAtSlotExact(slot, Bytes32.ZERO))
+        .isCompletedWithValue(Optional.empty());
+  }
 
   @Test
-  public void getBlockBySlot_returnBlockInHeadSlot() {
+  public void getBlockInEffectAtSlot_returnPrecedingBlockWhenFinalizedSlotDidNotHaveABlock() {
+    final UnsignedLong slot = UnsignedLong.ONE;
+    final BeaconBlock block = block(UnsignedLong.ZERO);
+    when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
+    when(historicalChainData.getFinalizedBlockAtSlot(slot))
+        .thenReturn(completedFuture(Optional.of(block)));
+
+    assertThat(client.getBlockInEffectAtSlot(slot, Bytes32.ZERO))
+        .isCompletedWithValue(Optional.of(block));
+  }
+
+  @Test
+  public void getBlockAtSlotExact_returnBlockInHeadSlot() {
     final UnsignedLong slot = UnsignedLong.ONE;
     final BeaconBlock block = block(slot);
     final Bytes32 headBlockRoot = Bytes32.ZERO;
     when(store.getBlockState(headBlockRoot)).thenReturn(beaconState(slot));
     when(store.getBlock(headBlockRoot)).thenReturn(block);
 
-    assertThat(client.getBlockAtSlot(slot, headBlockRoot)).isCompletedWithValue(Optional.of(block));
+    assertThat(client.getBlockAtSlotExact(slot, headBlockRoot))
+        .isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockBySlot_slotAfterHeadRootReturnsEmpty() {
+  public void getBlockAtSlotExact_slotAfterHeadRootReturnsEmpty() {
     final UnsignedLong slot = UnsignedLong.ONE;
     final Bytes32 headBlockRoot = Bytes32.ZERO;
     when(store.getBlockState(headBlockRoot)).thenReturn(beaconState(UnsignedLong.ZERO));
 
-    assertThat(client.getBlockAtSlot(slot, headBlockRoot)).isCompletedWithValue(Optional.empty());
+    assertThat(client.getBlockAtSlotExact(slot, headBlockRoot))
+        .isCompletedWithValue(Optional.empty());
   }
 
   @Test
-  public void getBlockBySlot_returnCorrectBlockFromHistoricalWindow() {
+  public void getBlockAtSlotExact_returnCorrectBlockFromHistoricalWindow() {
     // We've wrapped around a lot of times and are 5 slots into the next "loop"
     final int historicalIndex = 5;
     final UnsignedLong requestedSlot =
@@ -123,12 +150,12 @@ class CombinedChainDataClientTest {
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
     when(store.getBlock(blockRoot)).thenReturn(block);
 
-    assertThat(client.getBlockAtSlot(requestedSlot, headBlockRoot))
+    assertThat(client.getBlockAtSlotExact(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockBySlot_returnCorrectBlockFromBeforeBestStateHistoricalWindow() {
+  public void getBlockAtSlotExact_returnCorrectBlockFromBeforeBestStateHistoricalWindow() {
     // We've wrapped around a lot of times and are 5 slots into the next "loop"
     final int historicalIndex = 5;
     final UnsignedLong requestedSlot =
@@ -156,12 +183,12 @@ class CombinedChainDataClientTest {
     when(store.getBlockState(olderBlockRoot)).thenReturn(olderState);
     when(store.getBlock(blockRoot)).thenReturn(block);
 
-    assertThat(client.getBlockAtSlot(requestedSlot, headBlockRoot))
+    assertThat(client.getBlockAtSlotExact(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockBySlot_returnPreviousBlockWhenSlotWasEmpty() {
+  public void getBlockAtSlotExact_returnPreviousBlockWhenSlotWasEmpty() {
     // We've wrapped around a lot of times and are 5 slots into the next "loop"
     final int historicalIndex = 5;
     final UnsignedLong requestedSlot = UnsignedLong.valueOf(historicalIndex);
@@ -178,7 +205,29 @@ class CombinedChainDataClientTest {
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
     when(store.getBlock(blockRoot)).thenReturn(block);
 
-    assertThat(client.getBlockAtSlot(requestedSlot, headBlockRoot))
+    assertThat(client.getBlockAtSlotExact(requestedSlot, headBlockRoot))
+        .isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void getBlockInEffectAtSlot_returnPreviousBlockWhenSlotWasEmpty() {
+    // We've wrapped around a lot of times and are 5 slots into the next "loop"
+    final int historicalIndex = 5;
+    final UnsignedLong requestedSlot = UnsignedLong.valueOf(historicalIndex);
+    // Avoid the simple case where the requested slot is the head block slot
+    final UnsignedLong headSlot = requestedSlot.plus(UnsignedLong.ONE);
+
+    // Block is actually from the block before the requested slot
+    final BeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
+    final Bytes32 blockRoot = block.signing_root("signature");
+    final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
+    final BeaconState bestState = beaconState(headSlot);
+    // At the start of the chain, the slot number is the index into historical roots
+    bestState.getBlock_roots().set(historicalIndex, blockRoot);
+    when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
+    when(store.getBlock(blockRoot)).thenReturn(block);
+
+    assertThat(client.getBlockInEffectAtSlot(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
   }
 

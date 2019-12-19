@@ -66,7 +66,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
         new BeaconBlocksByRangeRequestMessage(headBlockRoot, UnsignedLong.ZERO, ONE, ONE),
         listener);
 
-    verify(storageClient, never()).getBlockAtSlot(any(), any());
+    verify(storageClient, never()).getBlockAtSlotExact(any(), any());
     verifyNoBlocksReturned();
   }
 
@@ -79,7 +79,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Series of empty blocks leading up to our best slot.
     withCanonicalHeadBlock(headBlock, UnsignedLong.valueOf(20));
 
-    when(storageClient.getBlockAtSlot(any(), any())).thenReturn(completedFuture(Optional.empty()));
+    when(storageClient.getBlockAtSlotExact(any(), any()))
+        .thenReturn(completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(
         peer,
@@ -105,7 +106,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     BLOCKS.forEach(
         block ->
-            when(storageClient.getBlockAtSlot(block.getSlot(), headBlockRoot))
+            when(storageClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
                 .thenReturn(completedFuture(Optional.of(block))));
 
     handler.onIncomingMessage(
@@ -132,7 +133,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     BLOCKS.forEach(
         block ->
-            when(storageClient.getBlockAtSlot(block.getSlot(), headBlockRoot))
+            when(storageClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
                 .thenReturn(completedFuture(Optional.of(block))));
 
     handler.onIncomingMessage(
@@ -232,9 +233,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
         listener);
 
     verifyNoBlocksReturned();
-    verify(storageClient).getBlockAtSlot(UnsignedLong.valueOf(15), headBlockRoot);
-    verify(storageClient).getBlockAtSlot(UnsignedLong.valueOf(20), headBlockRoot);
-    verify(storageClient, never()).getBlockAtSlot(greaterThan(bestSlot), any());
+    verify(storageClient).getBlockAtSlotExact(UnsignedLong.valueOf(15), headBlockRoot);
+    verify(storageClient).getBlockAtSlotExact(UnsignedLong.valueOf(20), headBlockRoot);
+    verify(storageClient, never()).getBlockAtSlotExact(greaterThan(bestSlot), any());
   }
 
   @Test
@@ -285,12 +286,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   private void withBlockAtSlot(final int slot, final Bytes32 headBlockRoot) {
-    when(storageClient.getBlockAtSlot(UnsignedLong.valueOf(slot), headBlockRoot))
+    when(storageClient.getBlockAtSlotExact(UnsignedLong.valueOf(slot), headBlockRoot))
         .thenReturn(completedFuture(Optional.of(BLOCKS.get(slot))));
   }
 
   private void withEmptySlot(final int slot, final Bytes32 headBlockRoot) {
-    when(storageClient.getBlockAtSlot(UnsignedLong.valueOf(slot), headBlockRoot))
+    when(storageClient.getBlockAtSlotExact(UnsignedLong.valueOf(slot), headBlockRoot))
         .thenReturn(completedFuture(Optional.empty()));
   }
 

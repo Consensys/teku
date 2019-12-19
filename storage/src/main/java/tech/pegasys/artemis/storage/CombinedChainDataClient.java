@@ -43,13 +43,37 @@ public class CombinedChainDataClient {
     this.historicalChainData = historicalChainData;
   }
 
-  public CompletableFuture<Optional<BeaconBlock>> getBlockAtSlot(
+  /**
+   * Returns the block proposed for the requested slot on the chain identified by <code>
+   * headBlockRoot</code>. If the slot was empty, no block is returned.
+   *
+   * @param slot the slot to get the block for
+   * @param headBlockRoot the block root of the head of the chain
+   * @return the block at the requested slot or empty if the slot was empty
+   */
+  public CompletableFuture<Optional<BeaconBlock>> getBlockAtSlotExact(
+      final UnsignedLong slot, final Bytes32 headBlockRoot) {
+    return getBlockInEffectAtSlot(slot, headBlockRoot)
+        .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
+  }
+
+  /**
+   * Returns the block which was proposed in or most recently before the requested slot on the chain
+   * specified by <code>headBlockRoot</code>. If the slot was empty, the block at the last filled
+   * slot is returned.
+   *
+   * @param slot the slot to get the effective block for
+   * @param headBlockRoot the block root of the head of the chain
+   * @return the block at slot or the closest previous slot if empty
+   */
+  public CompletableFuture<Optional<BeaconBlock>> getBlockInEffectAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
     final Store store = recentChainData.getStore();
     if (store == null) {
       LOG.trace("No block at slot {} because the store is not set", slot);
       return BLOCK_NOT_AVAILABLE;
     }
+
     final BeaconState headState = store.getBlockState(headBlockRoot);
     if (headState == null) {
       LOG.trace("No block at slot {} because head block root {} is unknown", slot, headBlockRoot);

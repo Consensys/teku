@@ -17,6 +17,7 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
@@ -59,9 +60,10 @@ public class BeaconBlocksByRangeMessageHandler
         .thenAccept(success -> callback.completeSuccessfully())
         .exceptionally(
             error -> {
-              if (error instanceof RpcException) {
-                LOG.trace("Rejecting beacon blocks by range request", error);
-                callback.completeWithError((RpcException) error);
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof RpcException) {
+                LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
+                callback.completeWithError((RpcException) rootCause);
               } else {
                 LOG.error("Failed to process blocks by range request", error);
                 callback.completeWithError(RpcException.SERVER_ERROR);
@@ -81,12 +83,10 @@ public class BeaconBlocksByRangeMessageHandler
 
   private CompletableFuture<RequestState> sendNextBlock(final RequestState requestState) {
     return storageClient
-        .getBlockAtSlot(requestState.currentSlot, requestState.headBlockRoot)
+        .getBlockAtSlotExact(requestState.currentSlot, requestState.headBlockRoot)
         .thenCompose(
             maybeBlock -> {
-              maybeBlock
-                  .filter(block -> block.getSlot().equals(requestState.currentSlot))
-                  .ifPresent(requestState::sendBlock);
+              maybeBlock.ifPresent(requestState::sendBlock);
               if (requestState.isComplete()) {
                 return completedFuture(requestState);
               }
