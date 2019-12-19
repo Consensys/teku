@@ -16,17 +16,13 @@ package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.concurrent.CompletableFuture.failedFuture;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
@@ -77,27 +73,10 @@ public class BeaconBlocksByRangeMessageHandler
   private CompletableFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<BeaconBlock> callback) {
-    final Optional<BeaconState> headState =
-        storageClient.getNonfinalizedBlockState(message.getHeadBlockRoot());
-    if (headState.isEmpty()) {
-      LOG.trace("Not sending blocks by range because head block state is unknown");
-      return completedFuture(null);
-    }
-    final UnsignedLong bestSlot = headState.get().getSlot();
-    if (bestSlot == null) {
-      LOG.error("No best slot present despite having at least one canonical block");
-      return failedFuture(RpcException.SERVER_ERROR);
-    }
-
-    final RequestState requestState =
-        new RequestState(
-            message.getHeadBlockRoot(),
-            message.getStartSlot(),
-            message.getStep(),
-            message.getCount(),
-            bestSlot,
-            callback);
-    return sendNextBlock(requestState);
+    return storageClient
+        .getNonfinalizedBlockState(message.getHeadBlockRoot())
+        .map(headState -> sendNextBlock(new RequestState(message, headState.getSlot(), callback)))
+        .orElseGet(() -> completedFuture(null));
   }
 
   private CompletableFuture<RequestState> sendNextBlock(final RequestState requestState) {
@@ -107,16 +86,7 @@ public class BeaconBlocksByRangeMessageHandler
             maybeBlock -> {
               maybeBlock
                   .filter(block -> block.getSlot().equals(requestState.currentSlot))
-                  .ifPresent(
-                      block -> {
-                        LOG.trace(
-                            "Responding with block slot {} for slot {}. Remaining {}",
-                            block.getSlot(),
-                            requestState.currentSlot,
-                            requestState.remainingBlocks);
-                        requestState.decrementRemainingBlocks();
-                        requestState.callback.respond(block);
-                      });
+                  .ifPresent(requestState::sendBlock);
               if (requestState.isComplete()) {
                 return completedFuture(requestState);
               }
@@ -134,25 +104,22 @@ public class BeaconBlocksByRangeMessageHandler
     private UnsignedLong remainingBlocks;
 
     public RequestState(
-        final Bytes32 headBlockRoot,
-        final UnsignedLong currentSlot,
-        final UnsignedLong step,
-        final UnsignedLong remainingBlocks,
+        final BeaconBlocksByRangeRequestMessage message,
         final UnsignedLong headSlot,
         final ResponseCallback<BeaconBlock> callback) {
-      this.headBlockRoot = headBlockRoot;
-      this.currentSlot = currentSlot;
-      this.remainingBlocks = remainingBlocks;
+      this.headBlockRoot = message.getHeadBlockRoot();
+      this.currentSlot = message.getStartSlot();
+      this.remainingBlocks = message.getCount();
+      this.step = message.getStep();
       this.headSlot = headSlot;
-      this.step = step;
       this.callback = callback;
     }
 
-    boolean needsMoreBlocks() {
+    private boolean needsMoreBlocks() {
       return !remainingBlocks.equals(ZERO);
     }
 
-    boolean hasReachedHeadSlot() {
+    private boolean hasReachedHeadSlot() {
       return currentSlot.compareTo(headSlot) >= 0;
     }
 
@@ -160,23 +127,13 @@ public class BeaconBlocksByRangeMessageHandler
       return !needsMoreBlocks() || hasReachedHeadSlot();
     }
 
-    void decrementRemainingBlocks() {
+    void sendBlock(final BeaconBlock block) {
       remainingBlocks = remainingBlocks.minus(ONE);
+      callback.respond(block);
     }
 
     void incrementCurrentSlot() {
       currentSlot = currentSlot.plus(step);
-    }
-
-    @Override
-    public String toString() {
-      return MoreObjects.toStringHelper(this)
-          .add("headSlot", headSlot)
-          .add("callback", callback)
-          .add("headBlockRoot", headBlockRoot)
-          .add("currentSlot", currentSlot)
-          .add("remainingBlocks", remainingBlocks)
-          .toString();
     }
   }
 }
