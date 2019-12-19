@@ -40,7 +40,12 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public void subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+  public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    return 0;
+  }
+
+  @Override
+  public void unsubscribeConnect(final long subscriptionId) {
     // Nothing to do
   }
 

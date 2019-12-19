@@ -94,8 +94,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     }));
   }
 
-  public void subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
-    connectSubscribers.subscribe(subscriber);
+  public long subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
+    return connectSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeConnect(final long subscriptionId) {
+    connectSubscribers.unsubscribe(subscriptionId);
   }
 
   @Override

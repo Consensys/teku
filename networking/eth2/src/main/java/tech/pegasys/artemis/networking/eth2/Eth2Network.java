@@ -93,7 +93,12 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   }
 
   @Override
-  public void subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
-    peerManager.subscribeConnect(subscriber);
+  public long subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
+    return peerManager.subscribeConnect(subscriber);
+  }
+
+  @Override
+  public void unsubscribeConnect(final long subscriptionId) {
+    peerManager.unsubscribeConnect(subscriptionId);
   }
 }
