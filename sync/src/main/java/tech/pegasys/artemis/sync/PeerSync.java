@@ -19,6 +19,8 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_BLOCK_BY_RANGE_REQU
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
@@ -32,6 +34,7 @@ public class PeerSync {
 
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
+  private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
 
@@ -44,8 +47,15 @@ public class PeerSync {
     return executeSync(peer, compute_start_slot_at_epoch(storageClient.getFinalizedEpoch()));
   }
 
+  public void stop() {
+    stopped.set(true);
+  }
+
   private GoodFuture<PeerSyncResult> executeSync(
       final Eth2Peer peer, final UnsignedLong latestRequestedSlot) {
+    if (stopped.get()) {
+      return GoodFuture.completedFuture(PeerSyncResult.CANCELLED);
+    }
     final UnsignedLong advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
     final Bytes32 advertisedHeadRoot = peer.getStatus().getHeadRoot();
     final UnsignedLong advertisedFinalizedEpoch = peer.getStatus().getFinalizedEpoch();
@@ -71,6 +81,9 @@ public class PeerSync {
                 disconnectFromPeer(peer);
                 return PeerSyncResult.BAD_BLOCK;
               }
+              if (rootException instanceof CancellationException) {
+                return PeerSyncResult.CANCELLED;
+              }
               if (err instanceof RuntimeException) {
                 throw (RuntimeException) err;
               } else {
@@ -89,6 +102,9 @@ public class PeerSync {
 
   private void blockResponseListener(BeaconBlock block) {
     try {
+      if (stopped.get()) {
+        throw new CancellationException("Peer sync was cancelled");
+      }
       blockImporter.importBlock(block);
     } catch (StateTransitionException e) {
       throw new BadBlockException("State transition error", e);
@@ -96,7 +112,7 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
-    peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
+    peer.sendGoodbye(REASON_FAULT_ERROR);
   }
 
   public static class BadBlockException extends InvalidResponseException {

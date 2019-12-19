@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
+import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.GoodFuture;
 
@@ -37,11 +38,18 @@ public class SyncManager extends Service {
   private boolean syncQueued = false;
   private volatile long peerConnectSubscriptionId;
 
-  public SyncManager(
+  SyncManager(
       final Eth2Network network, final ChainStorageClient storageClient, final PeerSync peerSync) {
     this.network = network;
     this.storageClient = storageClient;
     this.peerSync = peerSync;
+  }
+
+  public static SyncManager create(
+      final Eth2Network network,
+      final ChainStorageClient storageClient,
+      final BlockImporter blockImporter) {
+    return new SyncManager(network, storageClient, new PeerSync(storageClient, blockImporter));
   }
 
   @Override
@@ -57,6 +65,7 @@ public class SyncManager extends Service {
     synchronized (this) {
       syncQueued = false;
     }
+    peerSync.stop();
     return completedFuture(null);
   }
 
@@ -74,7 +83,7 @@ public class SyncManager extends Service {
               LOG.error("Error during sync", error);
               return null;
             })
-        .finish(
+        .thenAccept(
             complete -> {
               synchronized (SyncManager.this) {
                 syncActive = false;

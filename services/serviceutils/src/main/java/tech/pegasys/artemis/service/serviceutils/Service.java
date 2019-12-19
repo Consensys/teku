@@ -46,9 +46,5 @@ public abstract class Service {
     }
   }
 
-  protected boolean isRunning() {
-    return state.get() == State.RUNNING;
-  }
-
   protected abstract GoodFuture<?> doStop();
 }

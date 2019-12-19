@@ -65,7 +65,7 @@ public class PeerManager implements ConnectionHandler {
   public void handleConnection(@NotNull final Connection connection) {
     Peer peer = new LibP2PPeer(connection);
     onConnectedPeer(peer);
-    reportExceptions(connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer)));
+    connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
   }
 
   public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
