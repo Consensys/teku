@@ -81,7 +81,8 @@ public class PeerSync {
         .exceptionally(
             err -> {
               Throwable rootException = Throwables.getRootCause(err);
-              if (rootException instanceof StateTransitionException) {
+              if (rootException instanceof StateTransitionException
+                  || rootException instanceof BadBlockException) {
                 LOG.debug("Disconnecting from peer with invalid block: {}", peer);
                 disconnectFromPeer(peer);
                 return PeerSyncResult.BAD_BLOCK;
@@ -117,6 +118,10 @@ public class PeerSync {
       return;
     } else if (result.getFailureReason() == FailureReason.FAILED_STATE_TRANSITION) {
       final String message = "State transition error while processing block: " + block;
+      LOG.warn(message);
+      throw new BadBlockException(message, result.getFailureCause().orElse(null));
+    } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
+      final String message = "Received block with unknown parent: " + block;
       LOG.warn(message);
       throw new BadBlockException(message, result.getFailureCause().orElse(null));
     } else {

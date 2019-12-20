@@ -86,7 +86,7 @@ public class PeerSyncTest {
   }
 
   @Test
-  void sync_badBlock() {
+  void sync_badBlock_stateTransitionError() {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -108,6 +108,46 @@ public class PeerSyncTest {
     // Importing the returned block fails
     final BlockImportResult importResult =
         BlockImportResult.failedStateTransition(new StateTransitionException(null));
+    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult);
+    // Probably want to have a specific exception type to indicate bad data.
+    try {
+      responseListener.onResponse(BLOCK);
+      fail("Should have thrown an error to indicate the response was bad");
+    } catch (final PeerSync.BadBlockException e) {
+      // RpcMessageHandler will consider the request complete if there's an error processing a
+      // response
+      requestFuture.completeExceptionally(e);
+    }
+
+    // Should disconnect the peer and consider the sync complete.
+    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+    assertThat(syncFuture).isCompleted();
+    PeerSyncResult result = syncFuture.join();
+    assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
+  }
+
+  @Test
+  void sync_badBlock_unknownParent() {
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(PEER_HEAD_BLOCK_ROOT),
+            any(),
+            any(),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    // Respond with blocks and check they're passed to the block importer.
+    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
+        responseListenerArgumentCaptor.getValue();
+
+    // Importing the returned block fails
+    final BlockImportResult importResult = BlockImportResult.FAILED_UNKNOWN_PARENT;
     when(blockImporter.importBlock(BLOCK)).thenReturn(importResult);
     // Probably want to have a specific exception type to indicate bad data.
     try {
