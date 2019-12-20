@@ -86,7 +86,13 @@ public class BlockPropagationManager extends Service {
     final BeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.signing_root("signature");
     pendingBlocks.remove(block);
-    pendingBlocks.childrenOf(blockRoot).forEach(child -> importBlock(block, false, true));
+    pendingBlocks
+        .childrenOf(blockRoot)
+        .forEach(
+            child -> {
+              pendingBlocks.remove(child);
+              importBlock(child, false, true);
+            });
   }
 
   @Subscribe
