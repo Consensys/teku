@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_BLOCK_BY_RANGE_REQU
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +32,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerSync {
   private static final Logger LOG = LogManager.getLogger();
@@ -47,7 +47,7 @@ public class PeerSync {
     this.blockImporter = blockImporter;
   }
 
-  public CompletableFuture<PeerSyncResult> sync(final Eth2Peer peer) {
+  public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
     return executeSync(peer, compute_start_slot_at_epoch(storageClient.getFinalizedEpoch()));
   }
 
@@ -55,10 +55,10 @@ public class PeerSync {
     stopped.set(true);
   }
 
-  private CompletableFuture<PeerSyncResult> executeSync(
+  private SafeFuture<PeerSyncResult> executeSync(
       final Eth2Peer peer, final UnsignedLong latestRequestedSlot) {
     if (stopped.get()) {
-      return CompletableFuture.completedFuture(PeerSyncResult.CANCELLED);
+      return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
     final UnsignedLong advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
     final Bytes32 advertisedHeadRoot = peer.getStatus().getHeadRoot();
@@ -70,12 +70,12 @@ public class PeerSync {
         .thenCompose(
             res -> {
               if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch) >= 0) {
-                return CompletableFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
+                return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
               } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
                 return executeSync(peer, latestRequestedSlot.plus(count));
               } else {
                 disconnectFromPeer(peer);
-                return CompletableFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
+                return SafeFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
               }
             })
         .exceptionally(
@@ -128,7 +128,7 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
-    peer.sendGoodbye(REASON_FAULT_ERROR);
+    peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
   }
 
   public static class BadBlockException extends InvalidResponseException {

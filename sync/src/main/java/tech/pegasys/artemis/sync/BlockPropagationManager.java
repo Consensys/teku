@@ -15,7 +15,6 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,6 +27,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BlockPropagationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -62,7 +62,7 @@ public class BlockPropagationManager extends Service {
   }
 
   @Override
-  public CompletableFuture<?> doStart() {
+  public SafeFuture<?> doStart() {
     this.eventBus.register(this);
     return this.pendingBlocks.start();
   }
@@ -133,8 +133,8 @@ public class BlockPropagationManager extends Service {
   }
 
   @Override
-  protected CompletableFuture<?> doStop() {
-    final CompletableFuture<?> shutdownFuture = pendingBlocks.stop();
+  protected SafeFuture<?> doStop() {
+    final SafeFuture<?> shutdownFuture = pendingBlocks.stop();
     eventBus.unregister(this);
     return shutdownFuture;
   }

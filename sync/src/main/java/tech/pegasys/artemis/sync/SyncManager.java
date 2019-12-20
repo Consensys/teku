@@ -13,13 +13,12 @@
 
 package tech.pegasys.artemis.sync;
 
-import static java.util.concurrent.CompletableFuture.completedFuture;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -27,6 +26,7 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class SyncManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -53,14 +53,14 @@ public class SyncManager extends Service {
   }
 
   @Override
-  protected CompletableFuture<?> doStart() {
+  protected SafeFuture<?> doStart() {
     peerConnectSubscriptionId = network.subscribeConnect(this::onNewPeer);
     startOrScheduleSync();
     return completedFuture(null);
   }
 
   @Override
-  protected CompletableFuture<?> doStop() {
+  protected SafeFuture<?> doStop() {
     network.unsubscribeConnect(peerConnectSubscriptionId);
     synchronized (this) {
       syncQueued = false;
@@ -83,8 +83,8 @@ public class SyncManager extends Service {
               LOG.error("Error during sync", error);
               return null;
             })
-        .thenAccept(
-            complete -> {
+        .finish(
+            () -> {
               synchronized (SyncManager.this) {
                 syncActive = false;
                 if (syncQueued) {
@@ -105,11 +105,11 @@ public class SyncManager extends Service {
     return syncQueued;
   }
 
-  private CompletableFuture<Void> executeSync() {
+  private SafeFuture<Void> executeSync() {
     return findBestSyncPeer().map(this::syncToPeer).orElseGet(() -> completedFuture(null));
   }
 
-  private CompletableFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
+  private SafeFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
     return peerSync
         .sync(syncPeer)
         .thenCompose(

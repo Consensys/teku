@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +43,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.sync.PeerSync.FailedImportException;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerSyncTest {
@@ -77,7 +77,7 @@ public class PeerSyncTest {
   public void setUp() {
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
-    when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
+    when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
     when(blockImporter.importBlock(BLOCK))
@@ -87,10 +87,10 @@ public class PeerSyncTest {
 
   @Test
   void sync_badBlock() {
-    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -128,10 +128,10 @@ public class PeerSyncTest {
 
   @Test
   void sync_unableToImport() {
-    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -168,10 +168,10 @@ public class PeerSyncTest {
 
   @Test
   void sync_stoppedBeforeBlockImport() throws StateTransitionException {
-    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -208,10 +208,10 @@ public class PeerSyncTest {
 
   @Test
   void sync_badAdvertisedFinalizedEpoch() throws StateTransitionException {
-    final CompletableFuture<Void> requestFuture = new CompletableFuture<>();
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -259,13 +259,13 @@ public class PeerSyncTest {
     when(peer.getStatus()).thenReturn(peer_status);
     peerSync = new PeerSync(storageClient, blockImporter);
 
-    final CompletableFuture<Void> requestFuture1 = new CompletableFuture<>();
-    final CompletableFuture<Void> requestFuture2 = new CompletableFuture<>();
+    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
+    final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any()))
         .thenReturn(requestFuture1)
         .thenReturn(requestFuture2);
 
-    final CompletableFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer)

@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -38,6 +37,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Store implements ReadOnlyStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -302,7 +302,7 @@ public class Store implements ReadOnlyStore {
     }
 
     @CheckReturnValue
-    public CompletableFuture<Void> commit() {
+    public SafeFuture<Void> commit() {
       final StoreDiskUpdateEvent updateEvent =
           new StoreDiskUpdateEvent(
               id,
@@ -343,15 +343,7 @@ public class Store implements ReadOnlyStore {
     }
 
     public void commit(final Runnable onSuccess, final Consumer<Throwable> onError) {
-      commit()
-          .whenComplete(
-              (result, error) -> {
-                if (error != null) {
-                  onError.accept(error);
-                } else {
-                  onSuccess.run();
-                }
-              });
+      commit().finish(onSuccess, onError);
     }
 
     @Override

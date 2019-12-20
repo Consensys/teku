@@ -11,19 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.service.serviceutils;
+package tech.pegasys.artemis.util.async;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import java.util.concurrent.Future;
 
-public class NoopService extends Service {
-
-  @Override
-  protected SafeFuture<?> doStart() {
-    return SafeFuture.completedFuture(null);
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.completedFuture(null);
-  }
+public class FutureUtil {
+  public static <T> void ignoreFuture(final Future<T> future) {}
 }

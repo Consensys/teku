@@ -15,7 +15,6 @@ package tech.pegasys.artemis.services.powchain;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
-import java.util.concurrent.CompletableFuture;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -25,6 +24,7 @@ import org.web3j.tx.response.PollingTransactionReceiptProcessor;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -49,7 +49,7 @@ public class DepositTransactionSender {
             new DefaultGasProvider());
   }
 
-  public CompletableFuture<TransactionReceipt> sendDepositTransaction(
+  public SafeFuture<TransactionReceipt> sendDepositTransaction(
       BLSKeyPair validatorKeyPair,
       final BLSPublicKey withdrawalPublicKey,
       final UnsignedLong amountInGwei) {
@@ -59,15 +59,15 @@ public class DepositTransactionSender {
     return sendDepositTransaction(depositData);
   }
 
-  private CompletableFuture<TransactionReceipt> sendDepositTransaction(
-      final DepositData depositData) {
-    return depositContract
-        .deposit(
-            depositData.getPubkey().toBytesCompressed().toArray(),
-            depositData.getWithdrawal_credentials().toArray(),
-            depositData.getSignature().getSignature().toBytesCompressed().toArray(),
-            depositData.hash_tree_root().toArray(),
-            new BigInteger(depositData.getAmount() + "000000000"))
-        .sendAsync();
+  private SafeFuture<TransactionReceipt> sendDepositTransaction(final DepositData depositData) {
+    return SafeFuture.of(
+        depositContract
+            .deposit(
+                depositData.getPubkey().toBytesCompressed().toArray(),
+                depositData.getWithdrawal_credentials().toArray(),
+                depositData.getSignature().getSignature().toBytesCompressed().toArray(),
+                depositData.hash_tree_root().toArray(),
+                new BigInteger(depositData.getAmount() + "000000000"))
+            .sendAsync());
   }
 }

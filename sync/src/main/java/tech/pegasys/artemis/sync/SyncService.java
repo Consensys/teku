@@ -14,11 +14,11 @@
 package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
-import java.util.concurrent.CompletableFuture;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class SyncService extends Service {
 
@@ -36,12 +36,12 @@ public class SyncService extends Service {
   }
 
   @Override
-  protected CompletableFuture<?> doStart() {
-    return CompletableFuture.allOf(syncManager.start(), blockPropagationManager.start());
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.allOf(syncManager.start(), blockPropagationManager.start());
   }
 
   @Override
-  protected CompletableFuture<?> doStop() {
-    return CompletableFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
   }
 }

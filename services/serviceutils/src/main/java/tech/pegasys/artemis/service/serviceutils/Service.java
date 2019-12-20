@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public abstract class Service {
-  private static final CompletableFuture<Void> FALLBACK_STOPPED_FUTURE =
-      CompletableFuture.completedFuture(null);
+  private static final SafeFuture<Void> FALLBACK_STOPPED_FUTURE = SafeFuture.completedFuture(null);
 
   enum State {
     IDLE,
@@ -28,17 +27,17 @@ public abstract class Service {
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
-  public CompletableFuture<?> start() {
+  public SafeFuture<?> start() {
     if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
-      return CompletableFuture.failedFuture(
+      return SafeFuture.failedFuture(
           new IllegalStateException("Attempt to start an already started service."));
     }
     return doStart();
   }
 
-  protected abstract CompletableFuture<?> doStart();
+  protected abstract SafeFuture<?> doStart();
 
-  public CompletableFuture<?> stop() {
+  public SafeFuture<?> stop() {
     if (state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return doStop();
     } else {
@@ -47,9 +46,5 @@ public abstract class Service {
     }
   }
 
-  protected boolean isRunning() {
-    return state.get() == State.RUNNING;
-  }
-
-  protected abstract CompletableFuture<?> doStop();
+  protected abstract SafeFuture<?> doStop();
 }
