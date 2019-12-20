@@ -14,25 +14,25 @@
 package tech.pegasys.artemis.storage;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class CombinedChainDataClient {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final CompletableFuture<Optional<BeaconBlock>> BLOCK_NOT_AVAILABLE =
+  private static final SafeFuture<Optional<BeaconBlock>> BLOCK_NOT_AVAILABLE =
       completedFuture(Optional.empty());
   private final ChainStorageClient recentChainData;
   private final HistoricalChainData historicalChainData;
@@ -51,7 +51,7 @@ public class CombinedChainDataClient {
    * @param headBlockRoot the block root of the head of the chain
    * @return the block at the requested slot or empty if the slot was empty
    */
-  public CompletableFuture<Optional<BeaconBlock>> getBlockAtSlotExact(
+  public SafeFuture<Optional<BeaconBlock>> getBlockAtSlotExact(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
     return getBlockInEffectAtSlot(slot, headBlockRoot)
         .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
@@ -66,7 +66,7 @@ public class CombinedChainDataClient {
    * @param headBlockRoot the block root of the head of the chain
    * @return the block at slot or the closest previous slot if empty
    */
-  public CompletableFuture<Optional<BeaconBlock>> getBlockInEffectAtSlot(
+  public SafeFuture<Optional<BeaconBlock>> getBlockInEffectAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
     final Store store = recentChainData.getStore();
     if (store == null) {
@@ -98,7 +98,7 @@ public class CombinedChainDataClient {
     return getBlockAtSlotFormHistoricalBlockRoots(slot, store, headState);
   }
 
-  private CompletableFuture<Optional<BeaconBlock>> getBlockAtSlotFormHistoricalBlockRoots(
+  private SafeFuture<Optional<BeaconBlock>> getBlockAtSlotFormHistoricalBlockRoots(
       final UnsignedLong slot, final Store store, final BeaconState headState) {
     final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
     BeaconState state = headState;

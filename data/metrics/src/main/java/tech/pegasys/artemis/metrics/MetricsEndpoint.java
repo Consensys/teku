@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.metrics;
 
 import static java.util.stream.Collectors.toSet;
+import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import com.google.common.collect.ImmutableMap;
 import io.vertx.core.Vertx;
@@ -54,11 +55,11 @@ public class MetricsEndpoint {
   }
 
   public void start() {
-    metricsService.ifPresent(MetricsService::start);
+    metricsService.ifPresent(reportExceptions(MetricsService::start));
   }
 
   public void stop() {
-    metricsService.ifPresent(MetricsService::stop);
+    metricsService.ifPresent(reportExceptions(MetricsService::stop));
   }
 
   public MetricsSystem getMetricsSystem() {

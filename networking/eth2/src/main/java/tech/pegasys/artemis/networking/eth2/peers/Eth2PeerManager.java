@@ -79,14 +79,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     if (peer.connectionInitiatedLocally()) {
-      eth2Peer.sendStatus();
+      eth2Peer.sendStatus().reportExceptions();
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->
             peerValidatorFactory
                 .create(eth2Peer, status)
                 .run()
-                .thenAccept(
+                .finish(
                     peerIsValid -> {
                       if (peerIsValid) {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));

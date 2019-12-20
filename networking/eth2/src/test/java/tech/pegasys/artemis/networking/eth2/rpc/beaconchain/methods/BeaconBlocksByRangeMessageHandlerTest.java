@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -22,6 +21,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
