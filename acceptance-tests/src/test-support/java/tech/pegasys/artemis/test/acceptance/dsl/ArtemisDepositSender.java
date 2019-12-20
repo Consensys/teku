@@ -27,7 +27,7 @@ public class ArtemisDepositSender extends Node {
     super(network, ArtemisNode.ARTEMIS_DOCKER_IMAGE, LOG);
   }
 
-  public void sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
+  public String sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
     container.setCommand(
         "validator",
         "generate",
@@ -39,8 +39,11 @@ public class ArtemisDepositSender extends Node {
         eth1Node.getRichBenefactorKey(),
         "--node-url",
         eth1Node.getInternalJsonRpcUrl());
+    final StringBuilder validatorKeys = new StringBuilder();
+    container.withLogConsumer(outputFrame -> validatorKeys.append(outputFrame.getUtf8String()));
     container.start();
     Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse());
     container.stop();
+    return validatorKeys.toString();
   }
 }
