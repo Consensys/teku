@@ -37,8 +37,9 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class SyncManagerTest {
@@ -74,6 +75,8 @@ public class SyncManagerTest {
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
+    // Setup block import to succeed by default
+    when(blockImporter.importBlock(BLOCK)).thenReturn(BlockImportResult.SUCCESSFUL_RESULT);
   }
 
   @Test

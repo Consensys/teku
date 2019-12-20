@@ -11,18 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.statetransition.blockimport;
 
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.statetransition.StateTransition;
+import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
-import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
+import tech.pegasys.artemis.statetransition.util.exceptions.FutureBlockException;
+import tech.pegasys.artemis.statetransition.util.exceptions.InvalidBlockAncestryException;
+import tech.pegasys.artemis.statetransition.util.exceptions.UnknownParentBlockException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
@@ -37,32 +40,24 @@ public class BlockImporter {
     this.eventBus = eventBus;
   }
 
-  /**
-   * @param block The block to check
-   * @return {@code true} If this block is from the future according to our node's clock
-   */
-  public boolean isFutureBlock(BeaconBlock block) {
-    if (storageClient.isPreGenesis()) {
-      return true;
-    }
-    final UnsignedLong genesisTime = storageClient.getStore().getGenesisTime();
-    return ForkChoiceUtil.isFutureBlock(block, genesisTime, storageClient.getStore().getTime());
-  }
-
-  /**
-   * @param block The block to check.
-   * @return {@code true} If block is attached to the local chain
-   */
-  public boolean isBlockAttached(BeaconBlock block) {
-    return storageClient.getBlockState(block.getParent_root()).isPresent();
-  }
-
-  public void importBlock(BeaconBlock block) throws StateTransitionException {
+  public BlockImportResult importBlock(BeaconBlock block) {
     LOG.trace("Import block at slot {}: {}", block.getSlot(), block);
     Store.Transaction transaction = storageClient.startStoreTransaction();
-    final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-    transaction.commit().join();
-    eventBus.post(new BlockImportedEvent(block));
-    eventBus.post(record);
+    try {
+      final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
+      transaction.commit().join();
+      eventBus.post(new BlockImportedEvent(block));
+      eventBus.post(record);
+    } catch (UnknownParentBlockException e) {
+      return BlockImportResult.create(e);
+    } catch (FutureBlockException e) {
+      return BlockImportResult.create(e);
+    } catch (InvalidBlockAncestryException e) {
+      return BlockImportResult.create(e);
+    } catch (StateTransitionException e) {
+      return BlockImportResult.create(e);
+    }
+
+    return BlockImportResult.SUCCESSFUL_RESULT;
   }
 }

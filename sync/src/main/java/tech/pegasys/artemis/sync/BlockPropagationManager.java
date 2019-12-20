@@ -22,8 +22,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.statetransition.BlockImporter;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -75,13 +76,7 @@ public class BlockPropagationManager extends Service {
       return;
     }
 
-    if (!blockImporter.isBlockAttached(block)) {
-      pendingBlocks.add(block);
-    } else if (blockImporter.isFutureBlock(block)) {
-      futureBlocks.add(block);
-    } else {
-      importBlock(block);
-    }
+    importBlock(block, true, true);
   }
 
   @Subscribe
@@ -91,22 +86,12 @@ public class BlockPropagationManager extends Service {
     final BeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.signing_root("signature");
     pendingBlocks.remove(block);
-    pendingBlocks
-        .childrenOf(blockRoot)
-        .forEach(
-            child -> {
-              pendingBlocks.remove(child);
-              if (blockImporter.isFutureBlock(child)) {
-                futureBlocks.add(child);
-              } else {
-                importBlock(child);
-              }
-            });
+    pendingBlocks.childrenOf(blockRoot).forEach(child -> importBlock(block, false, true));
   }
 
   @Subscribe
   void onSlot(final SlotEvent slotEvent) {
-    futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
+    futureBlocks.prune(slotEvent.getSlot()).forEach(block -> importBlock(block, false, false));
   }
 
   private boolean blockIsKnown(final BeaconBlock block) {
@@ -118,11 +103,26 @@ public class BlockPropagationManager extends Service {
     return block.signing_root("signature");
   }
 
-  private void importBlock(final BeaconBlock block) {
-    try {
-      blockImporter.importBlock(block);
-    } catch (StateTransitionException e) {
-      LOG.debug("Unable to import propagated block " + block, e);
+  private void importBlock(
+      final BeaconBlock block, final boolean mayBePending, final boolean mayBeFromFuture) {
+    final BlockImportResult result = blockImporter.importBlock(block);
+    if (result.isSuccessful()) {
+      LOG.trace("Imported gossiped block: {}", block);
+    } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
+      if (!mayBePending) {
+        LOG.error("Encountered unexpected pending block", result.getFailureCause());
+        return;
+      }
+      pendingBlocks.add(block);
+    } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+      if (!mayBeFromFuture) {
+        LOG.error("Encountered unexpected future block", result.getFailureCause());
+        return;
+      }
+      futureBlocks.add(block);
+    } else {
+      LOG.trace(
+          "Unable to import gossiped block for reason {}: {}", result.getFailureReason(), block);
     }
   }
 

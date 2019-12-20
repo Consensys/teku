@@ -42,6 +42,8 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.metrics.EpochMetrics;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
@@ -150,11 +152,12 @@ public class StateProcessor {
   @Subscribe
   @SuppressWarnings("unused")
   private void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
-    try {
-      LOG.trace("Import proposed block: {}", blockProposedEvent.getBlock());
-      blockImporter.importBlock(blockProposedEvent.getBlock());
-    } catch (StateTransitionException e) {
-      LOG.error("Failed to import proposed block: " + blockProposedEvent, e);
+    LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
+    final BlockImportResult result = blockImporter.importBlock(blockProposedEvent.getBlock());
+    if (result.isSuccessful()) {
+      LOG.trace("Successfully imported proposed block: {}", blockProposedEvent.getBlock());
+    } else {
+      LOG.error("Failed to import proposed block: " + blockProposedEvent, result.getFailureCause());
     }
   }
 

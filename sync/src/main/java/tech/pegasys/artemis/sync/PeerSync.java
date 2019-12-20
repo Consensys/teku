@@ -24,8 +24,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
-import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class PeerSync {
@@ -101,10 +103,11 @@ public class PeerSync {
   }
 
   private void blockResponseListener(BeaconBlock block) {
-    try {
-      blockImporter.importBlock(block);
-    } catch (StateTransitionException e) {
-      throw new BadBlockException("State transition error", e);
+    final BlockImportResult result = blockImporter.importBlock(block);
+    if (result.isSuccessful()) {
+      return;
+    } else if (result.getFailureReason() == FailureReason.FAILED_STATE_TRANSITION) {
+      throw new BadBlockException("State transition error", result.getFailureCause());
     }
   }
 

@@ -17,7 +17,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.concurrent.CompletableFuture;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.statetransition.BlockImporter;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class SyncService extends Service {

@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,8 +35,9 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
-import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -73,6 +73,8 @@ public class PeerSyncTest {
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
+    // By default set up block import to succeed
+    when(blockImporter.importBlock(BLOCK)).thenReturn(BlockImportResult.SUCCESSFUL_RESULT);
     peerSync = new PeerSync(peer, storageClient, blockImporter);
   }
 
@@ -97,7 +99,9 @@ public class PeerSyncTest {
         responseListenerArgumentCaptor.getValue();
 
     // Importing the returned block fails
-    doThrow(new StateTransitionException("Bad block")).when(blockImporter).importBlock(BLOCK);
+    final BlockImportResult importResult =
+        BlockImportResult.create(new StateTransitionException("Bad block"));
+    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult);
     // Probably want to have a specific exception type to indicate bad data.
     try {
       responseListener.onResponse(BLOCK);
