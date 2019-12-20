@@ -57,7 +57,6 @@ public class BeaconBlocksByRangeMessageHandler
       return;
     }
     sendMatchingBlocks(message, callback)
-        .thenAccept(success -> callback.completeSuccessfully())
         .finish(
             callback::completeSuccessfully,
             error -> {
