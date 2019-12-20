@@ -97,15 +97,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   public void finish(final Consumer<T> onSuccess, final Consumer<Throwable> onError) {
-    reportExceptions(
-        whenComplete(
+    whenComplete(
             (result, error) -> {
               if (error != null) {
                 onError.accept(error);
               } else {
                 onSuccess.accept(result);
               }
-            }));
+            })
+        .reportExceptions();
   }
 
   @SuppressWarnings("unchecked")

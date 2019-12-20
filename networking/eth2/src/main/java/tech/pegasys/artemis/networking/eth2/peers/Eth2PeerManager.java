@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
-import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
-
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -81,7 +79,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     if (peer.connectionInitiatedLocally()) {
-      reportExceptions(eth2Peer.sendStatus());
+      eth2Peer.sendStatus().reportExceptions();
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->

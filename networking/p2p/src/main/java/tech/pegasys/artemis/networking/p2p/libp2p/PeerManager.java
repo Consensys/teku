@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
-import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.Connection;
@@ -65,7 +64,7 @@ public class PeerManager implements ConnectionHandler {
   public void handleConnection(@NotNull final Connection connection) {
     Peer peer = new LibP2PPeer(connection);
     onConnectedPeer(peer);
-    reportExceptions(connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer)));
+    SafeFuture.of(connection.closeFuture()).finish(() -> onDisconnectedPeer(peer));
   }
 
   public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
@@ -96,17 +95,16 @@ public class PeerManager implements ConnectionHandler {
                     "Connection to peer: "
                         + conn.getSecureSession().getRemoteId()
                         + " was successful");
-                reportExceptions(
-                    conn.closeFuture()
-                        .thenAccept(
-                            ignore -> {
-                              LOG.debug("Connection to {} closed. Will retry shortly", peer);
-                              ignoreFuture(
-                                  scheduler.schedule(
-                                      () -> connect(peer, network).reportExceptions(),
-                                      RECONNECT_TIMEOUT,
-                                      TimeUnit.MILLISECONDS));
-                            }));
+                SafeFuture.of(conn.closeFuture())
+                    .finish(
+                        () -> {
+                          LOG.debug("Connection to {} closed. Will retry shortly", peer);
+                          ignoreFuture(
+                              scheduler.schedule(
+                                  () -> connect(peer, network).reportExceptions(),
+                                  RECONNECT_TIMEOUT,
+                                  TimeUnit.MILLISECONDS));
+                        });
               }
             });
   }
