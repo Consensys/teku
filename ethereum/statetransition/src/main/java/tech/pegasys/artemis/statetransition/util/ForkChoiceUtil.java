@@ -298,19 +298,19 @@ public class ForkChoiceUtil {
   private static void assertBlockDescendsFromLatestFinalizedBlock(
       final BeaconBlock block, final ReadOnlyStore store) throws InvalidBlockAncestryException {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
-    final UnsignedLong finalizedSlot = store.getBlock(finalizedCheckpoint.getRoot()).getSlot();
-    final Bytes32 ancestorAtFinalizedSlot =
-        get_ancestor(store, block.getParent_root(), finalizedSlot);
-
-    // Make sure this block descends from the finalized block
-    if (!ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot())) {
-      throw new InvalidBlockAncestryException(block, finalizedCheckpoint);
-    }
 
     // Make sure this block's slot is after the latest finalized slot
     final UnsignedLong finalizedEpochStartSlot =
         compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());
     if (block.getSlot().compareTo(finalizedEpochStartSlot) <= 0) {
+      throw new InvalidBlockAncestryException(block, finalizedCheckpoint);
+    }
+
+    // Make sure this block descends from the finalized block
+    final UnsignedLong finalizedSlot = store.getBlock(finalizedCheckpoint.getRoot()).getSlot();
+    final Bytes32 ancestorAtFinalizedSlot =
+      get_ancestor(store, block.getParent_root(), finalizedSlot);
+    if (!ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot())) {
       throw new InvalidBlockAncestryException(block, finalizedCheckpoint);
     }
   }
