@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition.blockimport;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
+import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
@@ -36,6 +37,7 @@ public class BlockImporter {
     this.eventBus = eventBus;
   }
 
+  @CheckReturnValue
   public BlockImportResult importBlock(BeaconBlock block) {
     LOG.trace("Import block at slot {}: {}", block.getSlot(), block);
     Store.Transaction transaction = storageClient.startStoreTransaction();

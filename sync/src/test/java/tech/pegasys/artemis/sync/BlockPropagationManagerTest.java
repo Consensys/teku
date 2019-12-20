@@ -149,7 +149,7 @@ public class BlockPropagationManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
-    blockImporter.importBlock(blocks.get(0));
+    assertThat(blockImporter.importBlock(blocks.get(0)).isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactlyElementsOf(blocks);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
@@ -175,7 +175,7 @@ public class BlockPropagationManagerTest {
 
     // Import next block, causing next block to be queued for import
     final BeaconBlock firstBlock = blocks.get(0);
-    blockImporter.importBlock(firstBlock);
+    assertThat(blockImporter.importBlock(firstBlock).isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactly(firstBlock);
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(1);

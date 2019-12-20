@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
@@ -225,6 +226,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
+  @CheckReturnValue
   public static BlockImportResult on_block(
       Store.Transaction store, BeaconBlock block, StateTransition st) {
     final BeaconState preState = store.getBlockState(block.getParent_root());
