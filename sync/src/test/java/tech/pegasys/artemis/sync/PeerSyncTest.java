@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +43,6 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.sync.PeerSync.FailedImportException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -86,48 +86,29 @@ public class PeerSyncTest {
   }
 
   @Test
-  void sync_badBlock_stateTransitionError() {
-    final SafeFuture<Void> requestFuture = new SafeFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
-
-    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
-    assertThat(syncFuture).isNotDone();
-
-    verify(peer)
-        .requestBlocksByRange(
-            eq(PEER_HEAD_BLOCK_ROOT),
-            any(),
-            any(),
-            eq(UnsignedLong.ONE),
-            responseListenerArgumentCaptor.capture());
-
-    // Respond with blocks and check they're passed to the block importer.
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
-        responseListenerArgumentCaptor.getValue();
-
-    // Importing the returned block fails
+  void sync_failedImport_stateTransitionError() {
     final BlockImportResult importResult =
         BlockImportResult.failedStateTransition(new StateTransitionException(null));
-    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult);
-    // Probably want to have a specific exception type to indicate bad data.
-    try {
-      responseListener.onResponse(BLOCK);
-      fail("Should have thrown an error to indicate the response was bad");
-    } catch (final PeerSync.BadBlockException e) {
-      // RpcMessageHandler will consider the request complete if there's an error processing a
-      // response
-      requestFuture.completeExceptionally(e);
-    }
-
-    // Should disconnect the peer and consider the sync complete.
-    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
-    assertThat(syncFuture).isCompleted();
-    PeerSyncResult result = syncFuture.join();
-    assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
+    testFailedBlockImport(() -> importResult, true);
   }
 
   @Test
-  void sync_badBlock_unknownParent() {
+  void sync_failedImport_unknownParent() {
+    testFailedBlockImport(() -> BlockImportResult.FAILED_UNKNOWN_PARENT, true);
+  }
+
+  @Test
+  void sync_failedImport_unknownAncestry() {
+    testFailedBlockImport(() -> BlockImportResult.FAILED_INVALID_ANCESTRY, false);
+  }
+
+  @Test
+  void sync_failedImport_unknownBlockIsFromFuture() {
+    testFailedBlockImport(() -> BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE, false);
+  }
+
+  void testFailedBlockImport(
+      final Supplier<BlockImportResult> importResult, final boolean shouldDisconnect) {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -147,67 +128,30 @@ public class PeerSyncTest {
         responseListenerArgumentCaptor.getValue();
 
     // Importing the returned block fails
-    final BlockImportResult importResult = BlockImportResult.FAILED_UNKNOWN_PARENT;
-    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult);
+    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult.get());
     // Probably want to have a specific exception type to indicate bad data.
     try {
       responseListener.onResponse(BLOCK);
       fail("Should have thrown an error to indicate the response was bad");
-    } catch (final PeerSync.BadBlockException e) {
+    } catch (final FailedBlockImportException e) {
       // RpcMessageHandler will consider the request complete if there's an error processing a
       // response
       requestFuture.completeExceptionally(e);
     }
 
-    // Should disconnect the peer and consider the sync complete.
-    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
     assertThat(syncFuture).isCompleted();
     PeerSyncResult result = syncFuture.join();
-    assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
-  }
-
-  @Test
-  void sync_unableToImport() {
-    final SafeFuture<Void> requestFuture = new SafeFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
-
-    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
-    assertThat(syncFuture).isNotDone();
-
-    verify(peer)
-        .requestBlocksByRange(
-            eq(PEER_HEAD_BLOCK_ROOT),
-            any(),
-            any(),
-            eq(UnsignedLong.ONE),
-            responseListenerArgumentCaptor.capture());
-
-    // Respond with blocks and check they're passed to the block importer.
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
-        responseListenerArgumentCaptor.getValue();
-
-    // Importing the returned block fails
-    final BlockImportResult importResult = BlockImportResult.FAILED_INVALID_ANCESTRY;
-    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult);
-    // Probably want to have a specific exception type to indicate bad data.
-    try {
-      responseListener.onResponse(BLOCK);
-      fail("Should have thrown an error to indicate the response was bad");
-    } catch (final FailedImportException e) {
-      // RpcMessageHandler will consider the request complete if there's an error processing a
-      // response
-      requestFuture.completeExceptionally(e);
+    if (shouldDisconnect) {
+      verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+      assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
+    } else {
+      verify(peer, never()).sendGoodbye(any());
+      assertThat(result).isEqualByComparingTo(PeerSyncResult.IMPORT_FAILED);
     }
-
-    // Should disconnect the peer and consider the sync complete.
-    verify(peer, never()).sendGoodbye(any());
-    assertThat(syncFuture).isCompleted();
-    PeerSyncResult result = syncFuture.join();
-    assertThat(result).isEqualByComparingTo(PeerSyncResult.IMPORT_FAILED);
   }
 
   @Test
-  void sync_stoppedBeforeBlockImport() throws StateTransitionException {
+  void sync_stoppedBeforeBlockImport() {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -247,7 +191,7 @@ public class PeerSyncTest {
   }
 
   @Test
-  void sync_badAdvertisedFinalizedEpoch() throws StateTransitionException {
+  void sync_badAdvertisedFinalizedEpoch() {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -284,7 +228,7 @@ public class PeerSyncTest {
   }
 
   @Test
-  void sync_longSyncWithTwoRequests() throws StateTransitionException {
+  void sync_longSyncWithTwoRequests() {
     UnsignedLong peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(UnsignedLong.ONE);
 
     final PeerStatus peer_status =

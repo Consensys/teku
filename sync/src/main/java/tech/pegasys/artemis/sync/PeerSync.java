@@ -26,8 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
@@ -81,14 +79,20 @@ public class PeerSync {
         .exceptionally(
             err -> {
               Throwable rootException = Throwables.getRootCause(err);
-              if (rootException instanceof StateTransitionException
-                  || rootException instanceof BadBlockException) {
-                LOG.debug("Disconnecting from peer with invalid block: {}", peer);
-                disconnectFromPeer(peer);
-                return PeerSyncResult.BAD_BLOCK;
-              }
-              if (rootException instanceof FailedImportException) {
-                return PeerSyncResult.IMPORT_FAILED;
+              if (rootException instanceof FailedBlockImportException) {
+                final FailedBlockImportException importException =
+                    (FailedBlockImportException) rootException;
+                final FailureReason reason = importException.getResult().getFailureReason();
+                final BeaconBlock block = importException.getBlock();
+                LOG.warn("Failed to import block from peer {}: {}", block, peer);
+                if (reason == FailureReason.FAILED_STATE_TRANSITION
+                    || reason == FailureReason.UNKNOWN_PARENT) {
+                  LOG.debug("Disconnecting from peer ({}) who sent invalid block: {}", peer, block);
+                  disconnectFromPeer(peer);
+                  return PeerSyncResult.BAD_BLOCK;
+                } else {
+                  return PeerSyncResult.IMPORT_FAILED;
+                }
               }
               if (rootException instanceof CancellationException) {
                 return PeerSyncResult.CANCELLED;
@@ -114,37 +118,12 @@ public class PeerSync {
       throw new CancellationException("Peer sync was cancelled");
     }
     final BlockImportResult result = blockImporter.importBlock(block);
-    if (result.isSuccessful()) {
-      return;
-    } else if (result.getFailureReason() == FailureReason.FAILED_STATE_TRANSITION) {
-      final String message = "State transition error while processing block: " + block;
-      LOG.warn(message);
-      throw new BadBlockException(message, result.getFailureCause().orElse(null));
-    } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
-      final String message = "Received block with unknown parent: " + block;
-      LOG.warn(message);
-      throw new BadBlockException(message, result.getFailureCause().orElse(null));
-    } else {
-      final String message =
-          "Unable to import block due to error " + result.getFailureReason() + ": " + block;
-      LOG.warn(message);
-      throw new FailedImportException(message);
+    if (!result.isSuccessful()) {
+      throw new FailedBlockImportException(block, result);
     }
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
     peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
-  }
-
-  public static class BadBlockException extends InvalidResponseException {
-    public BadBlockException(String message, Throwable cause) {
-      super(message, cause);
-    }
-  }
-
-  public static class FailedImportException extends RuntimeException {
-    public FailedImportException(final String message) {
-      super(message);
-    }
   }
 }
