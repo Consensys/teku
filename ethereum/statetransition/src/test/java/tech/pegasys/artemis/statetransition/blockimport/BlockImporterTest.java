@@ -58,7 +58,14 @@ public class BlockImporterTest {
     localChain.setSlot(block.getSlot());
 
     final BlockImportResult result = blockImporter.importBlock(block);
-    assertThat(result).isEqualTo(BlockImportResult.SUCCESSFUL_RESULT);
+    assertSuccessfulResult(result);
+  }
+
+  private void assertSuccessfulResult(final BlockImportResult result) {
+    assertThat(result.isSuccessful()).isTrue();
+    assertThat(result.getFailureReason()).isNull();
+    assertThat(result.getFailureCause()).isEmpty();
+    assertThat(result.getBlockProcessingRecord()).isNotNull();
   }
 
   @Test
@@ -116,6 +123,5 @@ public class BlockImporterTest {
       final BlockImportResult result, final BlockImportResult.FailureReason expectedReason) {
     assertThat(result.isSuccessful()).isFalse();
     assertThat(result.getFailureReason()).isEqualTo(expectedReason);
-    assertThat(result.getFailureCause()).isNotNull();
   }
 }

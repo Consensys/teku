@@ -13,28 +13,24 @@
 
 package tech.pegasys.artemis.statetransition.blockimport;
 
+import java.util.Optional;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.util.exceptions.FutureBlockException;
-import tech.pegasys.artemis.statetransition.util.exceptions.InvalidBlockAncestryException;
-import tech.pegasys.artemis.statetransition.util.exceptions.UnknownParentBlockException;
 
 public interface BlockImportResult {
-  BlockImportResult SUCCESSFUL_RESULT = new SuccessfulBlockImportResult();
+  BlockImportResult FAILED_BLOCK_IS_FROM_FUTURE =
+      new FailedBlockImportResult(FailureReason.BLOCK_IS_FROM_FUTURE, Optional.empty());
+  BlockImportResult FAILED_UNKNOWN_PARENT =
+      new FailedBlockImportResult(FailureReason.UNKNOWN_PARENT, Optional.empty());
+  BlockImportResult FAILED_INVALID_ANCESTRY =
+      new FailedBlockImportResult(FailureReason.INVALID_ANCESTRY, Optional.empty());
 
-  static BlockImportResult create(FutureBlockException exception) {
-    return new FailedBlockImportResult(FailureReason.BLOCK_IS_FROM_FUTURE, exception);
+  static BlockImportResult failedStateTransition(final StateTransitionException cause) {
+    return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
   }
 
-  static BlockImportResult create(UnknownParentBlockException exception) {
-    return new FailedBlockImportResult(FailureReason.UNKNOWN_PARENT, exception);
-  }
-
-  static BlockImportResult create(InvalidBlockAncestryException exception) {
-    return new FailedBlockImportResult(FailureReason.INVALID_ANCESTRY, exception);
-  }
-
-  static BlockImportResult create(StateTransitionException exception) {
-    return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, exception);
+  static BlockImportResult successful(final BlockProcessingRecord record) {
+    return new SuccessfulBlockImportResult(record);
   }
 
   enum FailureReason {
@@ -46,7 +42,15 @@ public interface BlockImportResult {
 
   boolean isSuccessful();
 
+  /** @return If successful, returns a {@code BlockProcessingRecord}, otherwise returns null. */
+  BlockProcessingRecord getBlockProcessingRecord();
+
+  /** @return If failed, returns a non-null failure reason, otherwise returns null. */
   FailureReason getFailureReason();
 
-  Throwable getFailureCause();
+  /**
+   * @return If failed, may return a {@code Throwable} cause. If successful, this value is always
+   *     empty.
+   */
+  Optional<Throwable> getFailureCause();
 }

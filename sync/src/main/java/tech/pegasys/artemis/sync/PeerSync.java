@@ -107,7 +107,7 @@ public class PeerSync {
     if (result.isSuccessful()) {
       return;
     } else if (result.getFailureReason() == FailureReason.FAILED_STATE_TRANSITION) {
-      throw new BadBlockException("State transition error", result.getFailureCause());
+      throw new BadBlockException("State transition error", result.getFailureCause().orElse(null));
     }
   }
 

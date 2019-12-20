@@ -28,6 +28,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,9 +41,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.util.exceptions.FutureBlockException;
-import tech.pegasys.artemis.statetransition.util.exceptions.InvalidBlockAncestryException;
-import tech.pegasys.artemis.statetransition.util.exceptions.UnknownParentBlockException;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
 
@@ -226,12 +225,16 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
-  public static BlockProcessingRecord on_block(
-      Store.Transaction store, BeaconBlock block, StateTransition st)
-      throws StateTransitionException, UnknownParentBlockException, InvalidBlockAncestryException,
-          FutureBlockException {
+  public static BlockImportResult on_block(
+      Store.Transaction store, BeaconBlock block, StateTransition st) {
     final BeaconState preState = store.getBlockState(block.getParent_root());
-    checkOnBlockPreconditions(block, preState, store);
+
+    // Return early if precondition checks fail;
+    final Optional<BlockImportResult> maybeFailure =
+        checkOnBlockPreconditions(block, preState, store);
+    if (maybeFailure.isPresent()) {
+      return maybeFailure.get();
+    }
 
     // Add new block to the store
     store.putBlock(block.signing_root("signature"), block);
@@ -241,7 +244,11 @@ public class ForkChoiceUtil {
         BeaconStateWithCache.deepCopy(BeaconStateWithCache.fromBeaconState(preState));
 
     // Check the block is valid and compute the post-state
-    state = st.initiate(state, block, true);
+    try {
+      state = st.initiate(state, block, true);
+    } catch (StateTransitionException e) {
+      return BlockImportResult.failedStateTransition(e);
+    }
 
     // Add new state for this block to the store
     store.putBlockState(block.signing_root("signature"), state);
@@ -266,53 +273,57 @@ public class ForkChoiceUtil {
         > 0) {
       store.setFinalizedCheckpoint(state.getFinalized_checkpoint());
     }
-    return new BlockProcessingRecord(preState, block, state);
+
+    final BlockProcessingRecord record = new BlockProcessingRecord(preState, block, state);
+    return BlockImportResult.successful(record);
   }
 
-  private static void checkOnBlockPreconditions(
-      final BeaconBlock block, final BeaconState preState, final ReadOnlyStore store)
-      throws InvalidBlockAncestryException, FutureBlockException, UnknownParentBlockException {
+  private static Optional<BlockImportResult> checkOnBlockPreconditions(
+      final BeaconBlock block, final BeaconState preState, final ReadOnlyStore store) {
     if (preState == null) {
-      throw new UnknownParentBlockException(block);
+      return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
-    assertBlockIsNotFromFuture(block, preState, store);
-    assertBlockDescendsFromLatestFinalizedBlock(block, store);
+    if (blockIsFromFuture(block, preState, store)) {
+      return Optional.of(BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE);
+    }
+    if (!blockDescendsFromLatestFinalizedBlock(block, store)) {
+      return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
+    }
+    return Optional.empty();
   }
 
-  private static void assertBlockIsNotFromFuture(
-      BeaconBlock block, final BeaconState preState, ReadOnlyStore store)
-      throws FutureBlockException {
+  private static boolean blockIsFromFuture(
+      BeaconBlock block, final BeaconState preState, ReadOnlyStore store) {
     final UnsignedLong genesisTime = preState.getGenesis_time();
     final UnsignedLong now = store.getTime();
     final UnsignedLong blockTime = getBlockTime(block, genesisTime);
-    final boolean isFromFuture = now.compareTo(blockTime) < 0;
-    if (isFromFuture) {
-      throw new FutureBlockException(block);
-    }
+    return now.compareTo(blockTime) < 0;
   }
 
   private static UnsignedLong getBlockTime(BeaconBlock block, UnsignedLong genesisTime) {
     return genesisTime.plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
   }
 
-  private static void assertBlockDescendsFromLatestFinalizedBlock(
-      final BeaconBlock block, final ReadOnlyStore store) throws InvalidBlockAncestryException {
+  private static boolean blockDescendsFromLatestFinalizedBlock(
+      final BeaconBlock block, final ReadOnlyStore store) {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
 
     // Make sure this block's slot is after the latest finalized slot
     final UnsignedLong finalizedEpochStartSlot =
         compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());
     if (block.getSlot().compareTo(finalizedEpochStartSlot) <= 0) {
-      throw new InvalidBlockAncestryException(block, finalizedCheckpoint);
+      return false;
     }
 
     // Make sure this block descends from the finalized block
     final UnsignedLong finalizedSlot = store.getBlock(finalizedCheckpoint.getRoot()).getSlot();
     final Bytes32 ancestorAtFinalizedSlot =
-      get_ancestor(store, block.getParent_root(), finalizedSlot);
+        get_ancestor(store, block.getParent_root(), finalizedSlot);
     if (!ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot())) {
-      throw new InvalidBlockAncestryException(block, finalizedCheckpoint);
+      return false;
     }
+
+    return true;
   }
 
   /**

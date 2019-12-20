@@ -157,7 +157,12 @@ public class StateProcessor {
     if (result.isSuccessful()) {
       LOG.trace("Successfully imported proposed block: {}", blockProposedEvent.getBlock());
     } else {
-      LOG.error("Failed to import proposed block: " + blockProposedEvent, result.getFailureCause());
+      LOG.error(
+          "Failed to import proposed block for reason + "
+              + result.getFailureReason()
+              + ": "
+              + blockProposedEvent,
+          result.getFailureCause().orElse(null));
     }
   }
 

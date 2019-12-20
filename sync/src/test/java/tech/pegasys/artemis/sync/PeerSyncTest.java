@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -74,7 +75,9 @@ public class PeerSyncTest {
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
     // By default set up block import to succeed
-    when(blockImporter.importBlock(BLOCK)).thenReturn(BlockImportResult.SUCCESSFUL_RESULT);
+    final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
+    when(blockImporter.importBlock(BLOCK))
+        .thenReturn(BlockImportResult.successful(processingRecord));
     peerSync = new PeerSync(peer, storageClient, blockImporter);
   }
 
@@ -100,7 +103,7 @@ public class PeerSyncTest {
 
     // Importing the returned block fails
     final BlockImportResult importResult =
-        BlockImportResult.create(new StateTransitionException("Bad block"));
+        BlockImportResult.failedStateTransition(new StateTransitionException(null));
     when(blockImporter.importBlock(BLOCK)).thenReturn(importResult);
     // Probably want to have a specific exception type to indicate bad data.
     try {

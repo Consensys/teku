@@ -13,11 +13,14 @@
 
 package tech.pegasys.artemis.statetransition.blockimport;
 
+import java.util.Optional;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
+
 public class FailedBlockImportResult implements BlockImportResult {
   private final FailureReason failureReason;
-  private final Throwable cause;
+  private final Optional<Throwable> cause;
 
-  FailedBlockImportResult(final FailureReason failureReason, final Throwable cause) {
+  FailedBlockImportResult(final FailureReason failureReason, final Optional<Throwable> cause) {
     this.failureReason = failureReason;
     this.cause = cause;
   }
@@ -28,12 +31,17 @@ public class FailedBlockImportResult implements BlockImportResult {
   }
 
   @Override
+  public BlockProcessingRecord getBlockProcessingRecord() {
+    return null;
+  }
+
+  @Override
   public FailureReason getFailureReason() {
     return failureReason;
   }
 
   @Override
-  public Throwable getFailureCause() {
+  public Optional<Throwable> getFailureCause() {
     return cause;
   }
 }

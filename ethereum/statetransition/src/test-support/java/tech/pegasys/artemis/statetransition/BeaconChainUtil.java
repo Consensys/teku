@@ -27,6 +27,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.Signer;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -98,15 +99,24 @@ public class BeaconChainUtil {
     final BeaconBlock block = createBlockAtSlot(slot, true, attestations);
     setSlot(slot);
     final Transaction transaction = storageClient.startStoreTransaction();
-    final BlockProcessingRecord record =
+    final BlockImportResult importResult =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
+    if (!importResult.isSuccessful()) {
+      throw new IllegalStateException(
+          "Produced an invalid block ( reason "
+              + importResult.getFailureReason().name()
+              + ") at slot "
+              + slot
+              + ": "
+              + block);
+    }
     final CompletableFuture<Void> result = transaction.commit();
     if (!result.isDone() || result.isCompletedExceptionally()) {
       throw new IllegalStateException(
           "Transaction did not commit immediately. Are you using a disk storage backed ChainStorageClient without having storage running?");
     }
     storageClient.updateBestBlock(block.signing_root("signature"), block.getSlot());
-    return record;
+    return importResult.getBlockProcessingRecord();
   }
 
   public BlockProcessingRecord createAndImportBlockAtSlot(final UnsignedLong slot)

@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Fork;
@@ -76,7 +77,9 @@ public class SyncManagerTest {
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.sendGoodbye(any())).thenReturn(new CompletableFuture<>());
     // Setup block import to succeed by default
-    when(blockImporter.importBlock(BLOCK)).thenReturn(BlockImportResult.SUCCESSFUL_RESULT);
+    final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
+    when(blockImporter.importBlock(BLOCK))
+        .thenReturn(BlockImportResult.successful(processingRecord));
   }
 
   @Test

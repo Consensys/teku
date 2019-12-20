@@ -21,11 +21,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
-import tech.pegasys.artemis.statetransition.util.exceptions.FutureBlockException;
-import tech.pegasys.artemis.statetransition.util.exceptions.InvalidBlockAncestryException;
-import tech.pegasys.artemis.statetransition.util.exceptions.UnknownParentBlockException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
@@ -43,21 +39,16 @@ public class BlockImporter {
   public BlockImportResult importBlock(BeaconBlock block) {
     LOG.trace("Import block at slot {}: {}", block.getSlot(), block);
     Store.Transaction transaction = storageClient.startStoreTransaction();
-    try {
-      final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
-      transaction.commit().join();
-      eventBus.post(new BlockImportedEvent(block));
-      eventBus.post(record);
-    } catch (UnknownParentBlockException e) {
-      return BlockImportResult.create(e);
-    } catch (FutureBlockException e) {
-      return BlockImportResult.create(e);
-    } catch (InvalidBlockAncestryException e) {
-      return BlockImportResult.create(e);
-    } catch (StateTransitionException e) {
-      return BlockImportResult.create(e);
+    final BlockImportResult result = on_block(transaction, block, stateTransition);
+    if (!result.isSuccessful()) {
+      return result;
     }
 
-    return BlockImportResult.SUCCESSFUL_RESULT;
+    final BlockProcessingRecord record = result.getBlockProcessingRecord();
+    transaction.commit().join();
+    eventBus.post(new BlockImportedEvent(block));
+    eventBus.post(record);
+
+    return result;
   }
 }
