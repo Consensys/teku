@@ -28,6 +28,7 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.events.Subscribers;
 
@@ -43,6 +44,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final PeerValidatorFactory peerValidatorFactory;
 
   Eth2PeerManager(
+      final CombinedChainDataClient combinedChainDataClient,
       final ChainStorageClient storageClient,
       final MetricsSystem metricsSystem,
       final PeerValidatorFactory peerValidatorFactory) {
@@ -50,7 +52,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.createRpcMethods(
-            this, storageClient, metricsSystem, statusMessageFactory);
+            this, combinedChainDataClient, storageClient, metricsSystem, statusMessageFactory);
   }
 
   public static Eth2PeerManager create(
@@ -60,7 +62,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
             PeerChainValidator.create(storageClient, historicalChainData, peer, status);
-    return new Eth2PeerManager(storageClient, metricsSystem, peerValidatorFactory);
+    return new Eth2PeerManager(
+        new CombinedChainDataClient(storageClient, historicalChainData),
+        storageClient,
+        metricsSystem,
+        peerValidatorFactory);
   }
 
   @Override
@@ -88,8 +94,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     }));
   }
 
-  public void subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
-    connectSubscribers.subscribe(subscriber);
+  public long subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
+    return connectSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeConnect(final long subscriptionId) {
+    connectSubscribers.unsubscribe(subscriptionId);
   }
 
   @Override

@@ -19,7 +19,9 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_BLOCK_BY_RANGE_REQU
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
@@ -34,41 +36,41 @@ public class PeerSync {
 
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
-  private final Eth2Peer peer;
-  private final UnsignedLong advertisedFinalizedEpoch;
-  private final UnsignedLong advertisedHeadBlockSlot;
-  private final Bytes32 advertisedHeadBlockRoot;
+  private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
 
-  private volatile UnsignedLong latestRequestedSlot;
-
-  public PeerSync(
-      final Eth2Peer peer,
-      final ChainStorageClient storageClient,
-      final BlockImporter blockImporter) {
-    this.peer = peer;
+  public PeerSync(final ChainStorageClient storageClient, final BlockImporter blockImporter) {
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
-
-    this.advertisedFinalizedEpoch = peer.getStatus().getFinalizedEpoch();
-    this.advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
-    this.advertisedHeadBlockRoot = peer.getStatus().getHeadRoot();
-    this.latestRequestedSlot = compute_start_slot_at_epoch(storageClient.getFinalizedEpoch());
   }
 
-  public CompletableFuture<PeerSyncResult> sync() {
-    return executeSync();
+  public CompletableFuture<PeerSyncResult> sync(final Eth2Peer peer) {
+    return executeSync(peer, compute_start_slot_at_epoch(storageClient.getFinalizedEpoch()));
   }
 
-  private CompletableFuture<PeerSyncResult> executeSync() {
-    return requestSyncBlocks(peer)
+  public void stop() {
+    stopped.set(true);
+  }
+
+  private CompletableFuture<PeerSyncResult> executeSync(
+      final Eth2Peer peer, final UnsignedLong latestRequestedSlot) {
+    if (stopped.get()) {
+      return CompletableFuture.completedFuture(PeerSyncResult.CANCELLED);
+    }
+    final UnsignedLong advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
+    final Bytes32 advertisedHeadRoot = peer.getStatus().getHeadRoot();
+    final UnsignedLong advertisedFinalizedEpoch = peer.getStatus().getFinalizedEpoch();
+    final UnsignedLong count =
+        calculateNumberOfBlocksToRequest(latestRequestedSlot, advertisedHeadBlockSlot);
+    return peer.requestBlocksByRange(
+            advertisedHeadRoot, latestRequestedSlot, count, STEP, this::blockResponseListener)
         .thenCompose(
             res -> {
               if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch) >= 0) {
                 return CompletableFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
               } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
-                return executeSync();
+                return executeSync(peer, latestRequestedSlot.plus(count));
               } else {
                 disconnectFromPeer(peer);
                 return CompletableFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
@@ -81,6 +83,9 @@ public class PeerSync {
                 disconnectFromPeer(peer);
                 return PeerSyncResult.BAD_BLOCK;
               }
+              if (rootException instanceof CancellationException) {
+                return PeerSyncResult.CANCELLED;
+              }
               if (err instanceof RuntimeException) {
                 throw (RuntimeException) err;
               } else {
@@ -89,20 +94,18 @@ public class PeerSync {
             });
   }
 
-  private CompletableFuture<Void> requestSyncBlocks(Eth2Peer peer) {
-    UnsignedLong diff = advertisedHeadBlockSlot.minus(latestRequestedSlot);
-    UnsignedLong count =
-        diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
-            ? MAX_BLOCK_BY_RANGE_REQUEST_SIZE
-            : diff;
-    CompletableFuture<Void> future =
-        peer.requestBlocksByRange(
-            advertisedHeadBlockRoot, latestRequestedSlot, count, STEP, this::blockResponseListener);
-    latestRequestedSlot = latestRequestedSlot.plus(count);
-    return future;
+  private UnsignedLong calculateNumberOfBlocksToRequest(
+      final UnsignedLong latestRequestedSlot, final UnsignedLong advertisedHeadBlockSlot) {
+    final UnsignedLong diff = advertisedHeadBlockSlot.minus(latestRequestedSlot);
+    return diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
+        ? MAX_BLOCK_BY_RANGE_REQUEST_SIZE
+        : diff;
   }
 
   private void blockResponseListener(BeaconBlock block) {
+    if (stopped.get()) {
+      throw new CancellationException("Peer sync was cancelled");
+    }
     final BlockImportResult result = blockImporter.importBlock(block);
     if (result.isSuccessful()) {
       return;

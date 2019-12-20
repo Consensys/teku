@@ -30,6 +30,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
 
 public class BeaconChainMethods {
   public static final RpcMethod<StatusMessage, StatusMessage> STATUS =
@@ -61,6 +62,7 @@ public class BeaconChainMethods {
 
   public static RpcMethods createRpcMethods(
       PeerLookup peerLookup,
+      final CombinedChainDataClient combinedChainDataClient,
       final ChainStorageClient chainStorageClient,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory) {
@@ -69,7 +71,7 @@ public class BeaconChainMethods {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
         new BeaconBlocksByRootMessageHandler(chainStorageClient);
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
-        new BeaconBlocksByRangeMessageHandler(chainStorageClient);
+        new BeaconBlocksByRangeMessageHandler(combinedChainDataClient);
     return new RpcMethods(
         new RpcMessageHandler<>(STATUS, peerLookup, statusHandler),
         new RpcMessageHandler<>(GOODBYE, peerLookup, goodbyeHandler).setCloseNotification(),

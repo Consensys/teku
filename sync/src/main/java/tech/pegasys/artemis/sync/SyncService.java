@@ -30,20 +30,18 @@ public class SyncService extends Service {
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    this.syncManager = new SyncManager(network, storageClient, blockImporter);
+    this.syncManager = SyncManager.create(network, storageClient, blockImporter);
     this.blockPropagationManager =
         BlockPropagationManager.create(eventBus, storageClient, blockImporter);
   }
 
   @Override
   protected CompletableFuture<?> doStart() {
-    final CompletableFuture<?> propagationManagerFuture = blockPropagationManager.start();
-    syncManager.sync();
-    return propagationManagerFuture;
+    return CompletableFuture.allOf(syncManager.start(), blockPropagationManager.start());
   }
 
   @Override
   protected CompletableFuture<?> doStop() {
-    return blockPropagationManager.stop();
+    return CompletableFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
   }
 }

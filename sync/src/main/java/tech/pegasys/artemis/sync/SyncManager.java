@@ -13,60 +13,111 @@
 
 package tech.pegasys.artemis.sync;
 
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class SyncManager {
-
+public class SyncManager extends Service {
+  private static final Logger LOG = LogManager.getLogger();
   private final Eth2Network network;
   private final ChainStorageClient storageClient;
-  private final BlockImporter blockImporter;
+  private final PeerSync peerSync;
 
-  private final AtomicBoolean syncActive = new AtomicBoolean(false);
+  private boolean syncActive = false;
+  private boolean syncQueued = false;
+  private volatile long peerConnectSubscriptionId;
 
-  public SyncManager(
+  SyncManager(
+      final Eth2Network network, final ChainStorageClient storageClient, final PeerSync peerSync) {
+    this.network = network;
+    this.storageClient = storageClient;
+    this.peerSync = peerSync;
+  }
+
+  public static SyncManager create(
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    this.network = network;
-    this.storageClient = storageClient;
-    this.blockImporter = blockImporter;
-    network.subscribeConnect(this::onNewPeer);
+    return new SyncManager(network, storageClient, new PeerSync(storageClient, blockImporter));
   }
 
-  public CompletableFuture<Void> sync() {
-    if (!syncActive.compareAndSet(false, true)) {
-      return CompletableFuture.failedFuture(new RuntimeException("Sync already active"));
+  @Override
+  protected CompletableFuture<?> doStart() {
+    peerConnectSubscriptionId = network.subscribeConnect(this::onNewPeer);
+    startOrScheduleSync();
+    return completedFuture(null);
+  }
+
+  @Override
+  protected CompletableFuture<?> doStop() {
+    network.unsubscribeConnect(peerConnectSubscriptionId);
+    synchronized (this) {
+      syncQueued = false;
     }
-    return executeSync().thenRun(() -> syncActive.set(false));
+    peerSync.stop();
+    return completedFuture(null);
+  }
+
+  private void startOrScheduleSync() {
+    synchronized (this) {
+      if (syncActive) {
+        syncQueued = true;
+        return;
+      }
+      syncActive = true;
+    }
+    executeSync()
+        .exceptionally(
+            error -> {
+              LOG.error("Error during sync", error);
+              return null;
+            })
+        .thenAccept(
+            complete -> {
+              synchronized (SyncManager.this) {
+                syncActive = false;
+                if (syncQueued) {
+                  syncQueued = false;
+                  startOrScheduleSync();
+                }
+              }
+            });
+  }
+
+  @VisibleForTesting
+  synchronized boolean isSyncActive() {
+    return syncActive;
+  }
+
+  @VisibleForTesting
+  synchronized boolean isSyncQueued() {
+    return syncQueued;
   }
 
   private CompletableFuture<Void> executeSync() {
-    Optional<Eth2Peer> possibleSyncPeer = findBestSyncPeer();
+    return findBestSyncPeer().map(this::syncToPeer).orElseGet(() -> completedFuture(null));
+  }
 
-    // If there are no peers ahead of us, return
-    if (possibleSyncPeer.isEmpty()) {
-      return CompletableFuture.completedFuture(null);
-    }
-
-    Eth2Peer syncPeer = possibleSyncPeer.get();
-    PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockImporter);
-
+  private CompletableFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
     return peerSync
-        .sync()
+        .sync(syncPeer)
         .thenCompose(
             result -> {
               if (result != PeerSyncResult.SUCCESSFUL_SYNC) {
                 return executeSync();
               } else {
-                return CompletableFuture.completedFuture(null);
+                return completedFuture(null);
               }
             });
   }
@@ -80,9 +131,7 @@ public class SyncManager {
 
   private void onNewPeer(Eth2Peer peer) {
     if (isPeerSyncSuitable(peer)) {
-      if (!syncActive.get()) {
-        executeSync();
-      }
+      startOrScheduleSync();
     }
   }
 
