@@ -20,7 +20,7 @@ import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
 import tech.pegasys.artemis.test.acceptance.dsl.BesuNode;
 
 @Disabled("Genesis generation does not yet match")
-public class SyncAcceptanceTest extends AcceptanceTestBase {
+public class GenesisEventAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldCreateTheSameGenesisState() throws Exception {
