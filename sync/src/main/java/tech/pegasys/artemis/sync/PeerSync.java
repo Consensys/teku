@@ -22,6 +22,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
@@ -33,7 +35,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class PeerSync {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -80,8 +82,12 @@ public class PeerSync {
             err -> {
               Throwable rootException = Throwables.getRootCause(err);
               if (rootException instanceof StateTransitionException) {
+                LOG.debug("Disconnecting from peer with invalid block: {}", peer);
                 disconnectFromPeer(peer);
                 return PeerSyncResult.BAD_BLOCK;
+              }
+              if (rootException instanceof FailedImportException) {
+                return PeerSyncResult.IMPORT_FAILED;
               }
               if (rootException instanceof CancellationException) {
                 return PeerSyncResult.CANCELLED;
@@ -110,7 +116,14 @@ public class PeerSync {
     if (result.isSuccessful()) {
       return;
     } else if (result.getFailureReason() == FailureReason.FAILED_STATE_TRANSITION) {
-      throw new BadBlockException("State transition error", result.getFailureCause().orElse(null));
+      final String message = "State transition error while processing block: " + block;
+      LOG.warn(message);
+      throw new BadBlockException(message, result.getFailureCause().orElse(null));
+    } else {
+      final String message =
+          "Unable to import block due to error " + result.getFailureReason() + ": " + block;
+      LOG.warn(message);
+      throw new FailedImportException(message);
     }
   }
 
@@ -121,6 +134,12 @@ public class PeerSync {
   public static class BadBlockException extends InvalidResponseException {
     public BadBlockException(String message, Throwable cause) {
       super(message, cause);
+    }
+  }
+
+  public static class FailedImportException extends RuntimeException {
+    public FailedImportException(final String message) {
+      super(message);
     }
   }
 }
