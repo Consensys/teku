@@ -44,6 +44,7 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void completeSuccessfully() {
     ctx.channel().disconnect();
     if (closeNotification) {
@@ -52,12 +53,14 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public void completeWithError(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
     writeResponse(ctx, rpcEncoder.encodeErrorResponse(error));
     ctx.channel().disconnect();
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void writeResponse(final ChannelHandlerContext ctx, final Bytes encoded) {
     ByteBuf respBuf = ctx.alloc().buffer();
     respBuf.writeBytes(encoded.toArrayUnsafe());

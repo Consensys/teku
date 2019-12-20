@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.util;
 
 import java.time.Duration;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.awaitility.Awaitility;
@@ -50,7 +50,7 @@ public class Waiter {
     return nextInterval.compareTo(MAX_POLL_INTERVAL) <= 0 ? nextInterval : MAX_POLL_INTERVAL;
   }
 
-  public static <T> T waitFor(final CompletableFuture<T> future)
+  public static <T> T waitFor(final Future<T> future)
       throws InterruptedException, ExecutionException, TimeoutException {
     return future.get(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
   }

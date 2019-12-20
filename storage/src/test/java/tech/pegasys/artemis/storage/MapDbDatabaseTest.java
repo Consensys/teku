@@ -15,12 +15,10 @@ package tech.pegasys.artemis.storage;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.TempDirectory;
@@ -34,6 +32,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @ExtendWith(TempDirectoryExtension.class)
@@ -51,7 +50,7 @@ class MapDbDatabaseTest {
   private final TransactionPrecommit databaseTransactionPrecommit =
       updateEvent -> {
         database.insert(updateEvent);
-        return CompletableFuture.completedFuture(null);
+        return SafeFuture.completedFuture(null);
       };
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
 
@@ -85,7 +84,7 @@ class MapDbDatabaseTest {
   }
 
   private void commit(final Transaction transaction) {
-    transaction.commit().exceptionally(error -> fail("Error while committing", error));
+    assertThat(transaction.commit()).isCompleted();
   }
 
   @Test

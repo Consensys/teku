@@ -63,12 +63,12 @@ public class BlockPropagationManagerTest {
   public void setup() {
     localChain.initializeStorage();
     remoteChain.initializeStorage();
-    blockPropagationManager.start();
+    assertThat(blockPropagationManager.start()).isCompleted();
   }
 
   @AfterEach
   public void cleanup() throws Exception {
-    blockPropagationManager.stop();
+    assertThat(blockPropagationManager.stop()).isCompleted();
     importedBlocks.close();
   }
 

@@ -13,14 +13,14 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import java.util.concurrent.CompletableFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface ResponseStream<O> {
-  CompletableFuture<O> expectSingleResponse();
+  SafeFuture<O> expectSingleResponse();
 
-  CompletableFuture<Void> expectNoResponse();
+  SafeFuture<Void> expectNoResponse();
 
-  CompletableFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
+  SafeFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
 
   @FunctionalInterface
   interface ResponseListener<O> {

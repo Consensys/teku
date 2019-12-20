@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.mock;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
@@ -23,6 +22,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class MockP2PNetwork implements P2PNetwork<Peer> {
   private final int port = 6000;
@@ -33,10 +33,8 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public CompletableFuture<?> connect(String peer) {
-    final CompletableFuture<?> connectFuture = new CompletableFuture<>();
-    connectFuture.completeExceptionally(new UnsupportedOperationException());
-    return connectFuture;
+  public SafeFuture<?> connect(String peer) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 
   @Override
@@ -79,8 +77,8 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   public void stop() {}
 
   @Override
-  public CompletableFuture<?> start() {
-    return CompletableFuture.completedFuture(null);
+  public SafeFuture<?> start() {
+    return SafeFuture.completedFuture(null);
   }
 
   @Override

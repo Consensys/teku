@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlock;
@@ -52,7 +53,6 @@ class StoreTest {
           new HashMap<>(),
           new HashMap<>());
 
-  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
   public void shouldApplyChangesWhenTransactionCommits() {
     final Transaction transaction = store.startTransaction(transactionPrecommit);
@@ -91,7 +91,7 @@ class StoreTest {
     assertEquals(time, transaction.getTime());
     assertEquals(genesisTime, transaction.getGenesisTime());
 
-    transaction.commit();
+    assertThat(transaction.commit()).isCompleted();
 
     assertEquals(block, store.getBlock(blockRoot));
     assertEquals(state, store.getBlockState(blockRoot));

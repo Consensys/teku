@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
+import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -83,8 +84,8 @@ public class GossipMessageHandlerIntegrationTest {
     chainUtil.initializeStorage(storageClient3);
 
     // Connect networks 1 -> 2 -> 3
-    network1.connect(network2.getNodeAddress());
-    network2.connect(network3.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(network2.connect(network3.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -148,8 +149,8 @@ public class GossipMessageHandlerIntegrationTest {
     chainUtil.initializeStorage(storageClient3);
 
     // Connect networks 1 -> 2 -> 3
-    network1.connect(network2.getNodeAddress());
-    network2.connect(network3.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(network2.connect(network3.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -202,7 +203,7 @@ public class GossipMessageHandlerIntegrationTest {
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
-    network1.connect(network2.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -249,7 +250,7 @@ public class GossipMessageHandlerIntegrationTest {
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
-    network1.connect(network2.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -305,7 +306,7 @@ public class GossipMessageHandlerIntegrationTest {
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
-    network1.connect(network2.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {

@@ -35,13 +35,13 @@ public class PendingBlocksTest {
   @BeforeEach
   public void setup() {
     // Set up slot
-    pendingBlocks.start();
+    assertThat(pendingBlocks.start()).isCompleted();
     eventBus.post(new SlotEvent(currentSlot));
   }
 
   @AfterEach
   public void cleanup() {
-    pendingBlocks.stop();
+    assertThat(pendingBlocks.stop()).isCompleted();
   }
 
   @Test
