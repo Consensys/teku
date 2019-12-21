@@ -71,8 +71,7 @@ public class Eth2NetworkFactory {
   protected Eth2Network buildAndStartNetwork() throws Exception {
     int attempt = 1;
     while (true) {
-      final NetworkConfig config = generateConfig();
-      final Eth2Network network = buildNetwork(config);
+      final Eth2Network network = buildNetwork();
       try {
         network.start().get(30, TimeUnit.SECONDS);
         networks.add(network);
@@ -105,6 +104,21 @@ public class Eth2NetworkFactory {
   protected EventBus eventBus;
   protected ChainStorageClient chainStorageClient;
 
+  public Eth2NetworkFactory eventBus(EventBus eventBus) {
+    this.eventBus = eventBus;
+    return this;
+  }
+
+  public Eth2NetworkFactory peer(Eth2Network peer) {
+    this.multiaddrpeers.add(peer);
+    return this;
+  }
+
+  public Eth2NetworkFactory chainStorageClient(ChainStorageClient chainStorageClient) {
+    this.chainStorageClient = chainStorageClient;
+    return this;
+  }
+
   private void setDefaults() {
     if (eventBus == null) {
       eventBus = new EventBus();
@@ -114,7 +128,12 @@ public class Eth2NetworkFactory {
     }
   }
 
-  protected Eth2Network buildNetwork(final NetworkConfig config) {
+  public Eth2Network buildNetwork() {
+    final NetworkConfig config = generateConfig();
+    return buildNetwork(config);
+  }
+
+  public Eth2Network buildNetwork(final NetworkConfig config) {
     {
       setDefaults();
 

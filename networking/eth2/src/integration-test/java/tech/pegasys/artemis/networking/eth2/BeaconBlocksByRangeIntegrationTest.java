@@ -41,13 +41,9 @@ public class BeaconBlocksByRangeIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     storageClient1 = new ChainStorageClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory
-            .builder()
-            .eventBus(eventBus1)
-            .chainStorageClient(storageClient1)
-            .startNetwork();
+        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
 
-    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
+    final Eth2Network network2 = networkFactory.peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     beaconChainUtil = BeaconChainUtil.create(1, storageClient1);
   }

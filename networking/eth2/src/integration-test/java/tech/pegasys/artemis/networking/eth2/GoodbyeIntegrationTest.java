@@ -32,8 +32,8 @@ public class GoodbyeIntegrationTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    network1 = networkFactory.builder().startNetwork();
-    network2 = networkFactory.builder().peer(network1).startNetwork();
+    network1 = networkFactory.startNetwork();
+    network2 = networkFactory.peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
   }
