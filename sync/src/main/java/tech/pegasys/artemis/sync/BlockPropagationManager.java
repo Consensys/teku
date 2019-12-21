@@ -76,7 +76,7 @@ public class BlockPropagationManager extends Service {
       return;
     }
 
-    importBlock(block, true, true);
+    importBlock(block);
   }
 
   @Subscribe
@@ -91,13 +91,13 @@ public class BlockPropagationManager extends Service {
         .forEach(
             child -> {
               pendingBlocks.remove(child);
-              importBlock(child, false, true);
+              importBlock(child);
             });
   }
 
   @Subscribe
   void onSlot(final SlotEvent slotEvent) {
-    futureBlocks.prune(slotEvent.getSlot()).forEach(block -> importBlock(block, false, false));
+    futureBlocks.prune(slotEvent.getSlot()).forEach(block -> importBlock(block));
   }
 
   private boolean blockIsKnown(final BeaconBlock block) {
@@ -109,22 +109,13 @@ public class BlockPropagationManager extends Service {
     return block.signing_root("signature");
   }
 
-  private void importBlock(
-      final BeaconBlock block, final boolean mayBePending, final boolean mayBeFromFuture) {
+  private void importBlock(final BeaconBlock block) {
     final BlockImportResult result = blockImporter.importBlock(block);
     if (result.isSuccessful()) {
       LOG.trace("Imported gossiped block: {}", block);
     } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
-      if (!mayBePending) {
-        LOG.error("Encountered unexpected pending block", result.getFailureCause());
-        return;
-      }
       pendingBlocks.add(block);
     } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-      if (!mayBeFromFuture) {
-        LOG.error("Encountered unexpected future block", result.getFailureCause());
-        return;
-      }
       futureBlocks.add(block);
     } else {
       LOG.trace(
