@@ -46,7 +46,12 @@ public class PeerSync {
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
-    return executeSync(peer, compute_start_slot_at_epoch(storageClient.getFinalizedEpoch()));
+    // Begin requesting blocks at our first non-finalized slot
+    final UnsignedLong finalizedEpoch = storageClient.getFinalizedEpoch();
+    final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
+
+    return executeSync(peer, firstNonFinalSlot);
   }
 
   public void stop() {
