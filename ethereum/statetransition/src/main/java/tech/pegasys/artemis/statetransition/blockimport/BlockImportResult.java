@@ -23,7 +23,8 @@ public interface BlockImportResult {
   BlockImportResult FAILED_UNKNOWN_PARENT =
       new FailedBlockImportResult(FailureReason.UNKNOWN_PARENT, Optional.empty());
   BlockImportResult FAILED_INVALID_ANCESTRY =
-      new FailedBlockImportResult(FailureReason.INVALID_ANCESTRY, Optional.empty());
+      new FailedBlockImportResult(
+          FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED, Optional.empty());
 
   static BlockImportResult failedStateTransition(final StateTransitionException cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
@@ -36,7 +37,7 @@ public interface BlockImportResult {
   enum FailureReason {
     UNKNOWN_PARENT,
     BLOCK_IS_FROM_FUTURE,
-    INVALID_ANCESTRY,
+    DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
     FAILED_STATE_TRANSITION
   }
 

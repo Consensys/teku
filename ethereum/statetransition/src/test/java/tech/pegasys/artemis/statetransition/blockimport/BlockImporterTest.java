@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +60,53 @@ public class BlockImporterTest {
 
     final BlockImportResult result = blockImporter.importBlock(block);
     assertSuccessfulResult(result);
+  }
+
+  @Test
+  public void importBlock_alreadyInChain() throws Exception {
+    final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
+    localChain.setSlot(block.getSlot());
+
+    blockImporter.importBlock(block);
+    BlockImportResult result = blockImporter.importBlock(block);
+    assertSuccessfulResult(result);
+  }
+
+  @Test
+  public void importBlock_latestFinalizedBlock() throws Exception {
+    final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
+    localChain.setSlot(block.getSlot());
+    blockImporter.importBlock(block);
+    final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
+    final Checkpoint finalized = new Checkpoint(bestEpoch, block.signing_root("signature"));
+    final Transaction tx = localStorage.startStoreTransaction();
+    tx.setFinalizedCheckpoint(finalized);
+    tx.commit();
+
+    final BlockImportResult result = blockImporter.importBlock(block);
+    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
+  }
+
+  @Test
+  public void importBlock_knownBlockOlderThanLatestFinalized() throws Exception {
+    final List<BeaconBlock> blocks = new ArrayList<>();
+    UnsignedLong currentSlot = localStorage.getBestSlot();
+    for (int i = 0; i < 3; i++) {
+      currentSlot = currentSlot.plus(UnsignedLong.ONE);
+      final BeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
+      blocks.add(block);
+    }
+
+    // Update finalized epoch
+    final Transaction tx = localStorage.startStoreTransaction();
+    final Bytes32 bestRoot = localStorage.getBestBlockRoot();
+    final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
+    final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
+    tx.setFinalizedCheckpoint(finalized);
+    tx.commit().join();
+
+    final BlockImportResult result = blockImporter.importBlock(blocks.get(1));
+    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
   }
 
   private void assertSuccessfulResult(final BlockImportResult result) {
@@ -106,7 +154,7 @@ public class BlockImporterTest {
     final BeaconBlock block = otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE).getBlock();
 
     final BlockImportResult result = blockImporter.importBlock(block);
-    assertImportFailed(result, FailureReason.INVALID_ANCESTRY);
+    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
   }
 
   @Test
