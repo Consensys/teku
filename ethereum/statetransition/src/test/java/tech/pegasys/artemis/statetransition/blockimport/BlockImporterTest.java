@@ -32,6 +32,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
@@ -67,31 +68,18 @@ public class BlockImporterTest {
     final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
     localChain.setSlot(block.getSlot());
 
-    blockImporter.importBlock(block);
+    assertThat(blockImporter.importBlock(block).isSuccessful()).isTrue();
     BlockImportResult result = blockImporter.importBlock(block);
     assertSuccessfulResult(result);
   }
 
   @Test
   public void importBlock_latestFinalizedBlock() throws Exception {
-    final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
-    localChain.setSlot(block.getSlot());
-    blockImporter.importBlock(block);
-    final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
-    final Checkpoint finalized = new Checkpoint(bestEpoch, block.signing_root("signature"));
-    final Transaction tx = localStorage.startStoreTransaction();
-    tx.setFinalizedCheckpoint(finalized);
-    tx.commit();
+    Constants.SLOTS_PER_EPOCH = 6;
 
-    final BlockImportResult result = blockImporter.importBlock(block);
-    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
-  }
-
-  @Test
-  public void importBlock_knownBlockOlderThanLatestFinalized() throws Exception {
     final List<BeaconBlock> blocks = new ArrayList<>();
     UnsignedLong currentSlot = localStorage.getBestSlot();
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
       currentSlot = currentSlot.plus(UnsignedLong.ONE);
       final BeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
       blocks.add(block);
@@ -101,6 +89,32 @@ public class BlockImporterTest {
     final Transaction tx = localStorage.startStoreTransaction();
     final Bytes32 bestRoot = localStorage.getBestBlockRoot();
     final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
+    assertThat(bestEpoch.longValue()).isEqualTo(Constants.GENESIS_EPOCH + 1L);
+    final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
+    tx.setFinalizedCheckpoint(finalized);
+    tx.commit().join();
+
+    final BlockImportResult result = blockImporter.importBlock(blocks.get(blocks.size() - 1));
+    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
+  }
+
+  @Test
+  public void importBlock_knownBlockOlderThanLatestFinalized() throws Exception {
+    Constants.SLOTS_PER_EPOCH = 6;
+
+    final List<BeaconBlock> blocks = new ArrayList<>();
+    UnsignedLong currentSlot = localStorage.getBestSlot();
+    for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
+      currentSlot = currentSlot.plus(UnsignedLong.ONE);
+      final BeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
+      blocks.add(block);
+    }
+
+    // Update finalized epoch
+    final Transaction tx = localStorage.startStoreTransaction();
+    final Bytes32 bestRoot = localStorage.getBestBlockRoot();
+    final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
+    assertThat(bestEpoch.longValue()).isEqualTo(Constants.GENESIS_EPOCH + 1L);
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
