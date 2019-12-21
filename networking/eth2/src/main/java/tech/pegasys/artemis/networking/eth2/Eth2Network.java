@@ -19,12 +19,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManager;
+import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManagerBuilder;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -40,18 +42,21 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
 
+  private final NetworkConfig discoveryNetworkConfig;
   private Eth2DiscoveryManager eth2DiscoveryManager;
 
   public Eth2Network(
       final P2PNetwork network,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
-      final ChainStorageClient chainStorageClient) {
+      final ChainStorageClient chainStorageClient,
+      final NetworkConfig discoveryNetworkConfig) {
     super(network);
     this.network = network;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
+    this.discoveryNetworkConfig = discoveryNetworkConfig;
   }
 
   @Override
@@ -64,7 +69,18 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
     blockGossipManager = new BlockGossipManager(network, eventBus, chainStorageClient);
     attestationGossipManager = new AttestationGossipManager(network, eventBus, chainStorageClient);
     aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);
-    eth2DiscoveryManager = new Eth2DiscoveryManager(network, eventBus);
+
+    Eth2DiscoveryManagerBuilder discoveryManagerBuilder = new Eth2DiscoveryManagerBuilder();
+    eth2DiscoveryManager =
+        discoveryManagerBuilder
+            .eventBus(Optional.of(eventBus))
+            .network(Optional.of(network))
+            .networkInterface(discoveryNetworkConfig.getNetworkInterface())
+            .port(discoveryNetworkConfig.getListenPort())
+            .privateKey(discoveryNetworkConfig.getPrivateKey())
+            .peers(discoveryNetworkConfig.getPeers())
+            .build();
+
     eth2DiscoveryManager.start();
   }
 

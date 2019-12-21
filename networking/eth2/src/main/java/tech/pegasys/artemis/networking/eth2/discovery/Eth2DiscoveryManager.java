@@ -18,6 +18,7 @@ import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -57,12 +59,11 @@ public class Eth2DiscoveryManager {
 
   private static final Logger logger = LogManager.getLogger(Eth2DiscoveryManager.class);
 
-  static final int SEED = 123456789;
-  Random rnd = new Random(SEED);
+  private Random rnd = new Random();
 
-  public static final NodeRecordFactory NODE_RECORD_FACTORY =
+  private static final NodeRecordFactory NODE_RECORD_FACTORY =
       new NodeRecordFactory(new IdentitySchemaV4Interpreter());
-  public static final SerializerFactory TEST_SERIALIZER =
+  private static final SerializerFactory TEST_SERIALIZER =
       new NodeSerializerFactory(NODE_RECORD_FACTORY);
 
   public static enum State {
@@ -75,7 +76,18 @@ public class Eth2DiscoveryManager {
   DiscoveryManager dm;
   private NodeTable nodeTable;
 
+  // core parameters for discovery service
+  private String networkInterface;
+  private int port;
+
+  // configuration of discovery service
+  private List<String> peers; // for setting boot nodes
+  private Optional<PrivKey> privateKey; // for generating ENR records
+
+  // the network to potentially affect with discovered peers
   private Optional<P2PNetwork> network = Optional.empty();
+
+  // event bus by which to signal other services
   private Optional<EventBus> eventBus = Optional.empty();
 
   public Eth2DiscoveryManager() {
@@ -140,6 +152,7 @@ public class Eth2DiscoveryManager {
   }
 
   public void setNetwork(P2PNetwork network) {
+    assert network != null;
     this.network = Optional.of(network);
   }
 
@@ -148,6 +161,7 @@ public class Eth2DiscoveryManager {
   }
 
   public void setEventBus(EventBus eventBus) {
+    assert eventBus != null;
     this.eventBus = Optional.of(eventBus);
     if (state.get().equals(State.RUNNING)) {
       this.eventBus.ifPresent(
@@ -161,28 +175,33 @@ public class Eth2DiscoveryManager {
     return eventBus;
   }
 
-  private void setupDiscoveryManager() {
-
-    final String remoteHostEnr =
-        "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
+  private NodeRecord setupRemoteNode(final String remoteHostEnr) {
 
     NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
     remoteNodeRecord.verify();
+    logger.info("remoteNodeRecord:" + remoteNodeRecord);
+
+    // the following two lines to be removed when discovery master is next updated
     logger.info("remoteEnr:" + remoteNodeRecord.asBase64());
     logger.info("remoteNodeId:" + remoteNodeRecord.getNodeId());
-    logger.info("remoteNodeRecord:" + remoteNodeRecord);
+
+    return remoteNodeRecord;
+  }
+
+  private void setupDiscoveryManager() {
 
     final Pair<NodeRecord, byte[]> localNodeInfo;
     try {
-      localNodeInfo = createLocalNodeRecord(9002);
+      localNodeInfo = createLocalNodeRecord(getPort());
     } catch (Exception e) {
       logger.error("Cannot start server on desired address/port. Stopping.");
       return;
     }
     NodeRecord localNodeRecord = localNodeInfo.getValue0();
+    logger.info("localNodeRecord:" + localNodeRecord);
+    // the following two lines to be removed when discovery master is next updated
     logger.info("localNodeEnr:" + localNodeRecord.asBase64());
     logger.info("localNodeId:" + localNodeRecord.getNodeId());
-    logger.info("localNodeRecord:" + localNodeRecord);
 
     byte[] localPrivKey = localNodeInfo.getValue1();
 
@@ -193,7 +212,13 @@ public class Eth2DiscoveryManager {
             database0,
             TEST_SERIALIZER,
             (oldSeq) -> localNodeRecord,
-            () -> Collections.singletonList(remoteNodeRecord));
+            () -> {
+              if (peers != null && peers.size() > 0) {
+                return peers.stream().map(this::setupRemoteNode).collect(Collectors.toList());
+              } else {
+                return Collections.emptyList();
+              }
+            }); // Collections.singletonList(remoteNodeRecord)
     NodeBucketStorage nodeBucketStorage0 =
         nodeTableStorageFactory.createBucketStorage(database0, TEST_SERIALIZER, localNodeRecord);
 
@@ -273,7 +298,8 @@ public class Eth2DiscoveryManager {
     rnd.nextBytes(privKey1);
 
     Bytes localAddressBytes =
-        Bytes.wrap(InetAddress.getByName("172.18.0.240").getAddress()); // 172.18.0.2 // 127.0.0.1
+        Bytes.wrap(
+            InetAddress.getByName(getNetworkInterface()).getAddress()); // 172.18.0.2 // 127.0.0.1
     Bytes localIp1 =
         Bytes.concatenate(Bytes.wrap(new byte[4 - localAddressBytes.size()]), localAddressBytes);
     NodeRecord nodeRecord1 =
@@ -289,5 +315,42 @@ public class Eth2DiscoveryManager {
     nodeRecord1.sign(Bytes.wrap(privKey1));
     nodeRecord1.verify();
     return new Pair(nodeRecord1, privKey1);
+  }
+
+  void setRnd(long seed) {
+    this.rnd = new Random(seed);
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  public List<String> getPeers() {
+    return peers;
+  }
+
+  public void setPeers(List<String> peers) {
+    this.peers = peers;
+  }
+
+  public String getNetworkInterface() {
+    return networkInterface;
+  }
+
+  public void setNetworkInterface(String networkInterface) {
+    this.networkInterface = networkInterface;
+  }
+
+  public Optional<PrivKey> getPrivateKey() {
+    return privateKey;
+  }
+
+  public void setPrivateKey(PrivKey privateKey) {
+    assert privateKey != null;
+    this.privateKey = Optional.of(privateKey);
   }
 }

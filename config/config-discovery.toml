@@ -1,0 +1,53 @@
+[node]
+# networkMode options:
+# "mock": use MockP2PNetwork
+# "jvmlibp2p" : use JvmLibP2PNetwork
+networkMode = "mock"
+networkInterface = "0.0.0.0"
+port = 9000
+discovery = "static"
+bootnodes = ""
+advertisedPort = 9000
+naughtinessPercentage = 0
+constants = "minimal"
+
+[interop]
+# when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
+genesisTime = 0
+ownedValidatorStartIndex = 0
+ownedValidatorCount = 64
+startState = ""
+#this.privKey.bytes().toHexString() who's corresponding sha2(publicKey) == 16Uiu2HAm8cQB9DcwMtaSVuHNiJEPSq9mXM6FHho7c55M6XN2P3EQ
+privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A8F53B52EDF"
+
+[validator]
+#validatorsKeyFile = "keys.yaml"
+
+[deposit]
+# normal, test, simulation
+# "test" pre-production
+# "simulation" to run a simulation of deposits with ganache-cli, if a inputFile is included the file will replay the deposits
+# "normal" production, must include contractAddr and nodeUrl
+mode = "test"
+inputFile = "" #"validator_test_data.json"
+numValidators = 64
+numNodes = 1
+contractAddr = "0x77f7bED277449F51505a4C54550B074030d989bC"
+nodeUrl = "http://localhost:8545"
+
+[output]
+logPath = "."
+logFile = "artemis.log"
+transitionRecordDir = "/tmp/artemis"
+
+[metrics]
+enabled = false
+port = 8008
+metricsNetworkInterface = "127.0.0.1"
+#metricsCategories = [ "BEACONCHAIN", "JVM", "PROCESS" ]
+
+[database]
+startFromDisk = false
+
+[beaconrestapi]
+portNumber = 5051

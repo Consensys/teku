@@ -42,6 +42,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfigBuilder;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
@@ -163,13 +164,28 @@ public class BeaconChainController {
               true,
               true,
               true);
+
+      NetworkConfigBuilder networkConfigBuilder = new NetworkConfigBuilder();
+      Bytes discoveryPkBytes = Bytes.fromHexString(config.getDiscoveryPrivateKey());
+      PrivKey discoveryPk = KeyKt.unmarshalPrivateKey(discoveryPkBytes.toArrayUnsafe());
+      NetworkConfig discoveryNetworkConfig =
+          networkConfigBuilder
+              .privateKey(Optional.of(discoveryPk))
+              .networkInterface(config.getDiscoveryInterface())
+              .advertisedPort(config.getDiscoveryPort())
+              .listenPort(config.getDiscoveryPort())
+              .peers(config.getDiscoveryBootPeers())
+              .build();
+
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
               .config(p2pConfig)
               .eventBus(eventBus)
               .chainStorageClient(chainStorageClient)
               .metricsSystem(metricsSystem)
+              .discovery(discoveryNetworkConfig)
               .build();
+
       this.networkTask = () -> this.p2pNetwork.start();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());

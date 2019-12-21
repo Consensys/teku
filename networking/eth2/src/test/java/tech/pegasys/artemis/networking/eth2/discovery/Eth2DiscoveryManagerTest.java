@@ -100,7 +100,7 @@ class Eth2DiscoveryManagerTest {
   void nodeTableIntegrationTest() throws Exception {
     final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
 
-    Eth2Network network1 = networkFactory.builder().startNetwork();
+    Eth2Network network1 = networkFactory.startNetwork();
 
     Eth2DiscoveryManager dm = new Eth2DiscoveryManager(network1, eventBus);
 

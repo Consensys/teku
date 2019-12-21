@@ -47,8 +47,15 @@ public class ArtemisConfiguration {
         9000,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
-    builder.addString("node.discovery", "", "static or discv5", null);
-    builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
+
+    // disv5 config
+    builder.addBoolean("discovery.enabled", false, "discv5 enabled", null);
+    builder.addString("discovery.networkInterface", "0.0.0.0", "discv5 network interface", null);
+    builder.addInteger("discovery.port", 9001, "discv5 port", PropertyValidator.inRange(0, 65535));
+    builder.addString("discovery.privateKey", "", "discv5 privatekey for ENR generation", null);
+    builder.addListOfString(
+        "discovery.peers", Collections.emptyList(), "discv5 list of boot peer ENRs", null);
+
     builder.addInteger(
         "node.naughtinessPercentage",
         0,
@@ -184,12 +191,25 @@ public class ArtemisConfiguration {
     return config.getInteger("node.port");
   }
 
-  public String getDiscovery() {
-    return config.getString("node.discovery");
+  // discv5 config
+  public Boolean getDiscoveryEnabled() {
+    return config.getBoolean("discovery.enabled");
   }
 
-  public String getBootnodes() {
-    return config.getString("node.bootnodes");
+  public String getDiscoveryInterface() {
+    return config.getString("discovery.networkInterface");
+  }
+
+  public int getDiscoveryPort() {
+    return config.getInteger("discovery.port");
+  }
+
+  public List<String> getDiscoveryBootPeers() {
+    return config.getListOfString("discovery.peers");
+  }
+
+  public String getDiscoveryPrivateKey() {
+    return config.getString("discovery.privateKey");
   }
 
   /** @return the port this node will advertise as its own */
