@@ -241,14 +241,13 @@ public class Eth2DiscoveryManager {
 
               network.ifPresent(
                   n -> {
-                    SafeFuture.of(
-                            n.connect(
-                                "/ip4/"
-                                    + byAddress.getHostAddress()
-                                    + "/tcp/"
-                                    + (int) node.getNode().get(UDP_V4)
-                                    + "/p2p/"
-                                    + Base58.INSTANCE.encode(node.getNode().getNodeId().toArray())))
+                    n.connect(
+                            "/ip4/"
+                                + byAddress.getHostAddress()
+                                + "/tcp/"
+                                + (int) node.getNode().get(UDP_V4)
+                                + "/p2p/"
+                                + Base58.INSTANCE.encode(node.getNode().getNodeId().toArray()))
                         .reportExceptions();
                   });
             } catch (UnknownHostException e) {
