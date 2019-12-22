@@ -53,6 +53,7 @@ import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
 public class Eth2DiscoveryManager {
@@ -85,7 +86,7 @@ public class Eth2DiscoveryManager {
   private Optional<PrivKey> privateKey; // for generating ENR records
 
   // the network to potentially affect with discovered peers
-  private Optional<P2PNetwork> network = Optional.empty();
+  private Optional<P2PNetwork<?>> network = Optional.empty();
 
   // event bus by which to signal other services
   private Optional<EventBus> eventBus = Optional.empty();
@@ -94,7 +95,7 @@ public class Eth2DiscoveryManager {
     setupDiscoveryManager();
   }
 
-  public Eth2DiscoveryManager(P2PNetwork network, final EventBus eventBus) {
+  public Eth2DiscoveryManager(P2PNetwork<?> network, final EventBus eventBus) {
     this.network = Optional.of(network);
     this.eventBus = Optional.of(eventBus);
     setupDiscoveryManager();
@@ -107,11 +108,11 @@ public class Eth2DiscoveryManager {
   @Subscribe
   public void onDiscoveryRequest(final DiscoveryRequest request) {
     if (request.numPeersToFind == 0) {
-      this.stop();
+      SafeFuture.of(this.stop()).reportExceptions();
       return;
     }
     if (getState().equals(State.STOPPED)) {
-      this.start();
+      SafeFuture.of(this.start()).reportExceptions();
     }
   }
 
@@ -151,12 +152,12 @@ public class Eth2DiscoveryManager {
     return state.get();
   }
 
-  public void setNetwork(P2PNetwork network) {
+  public void setNetwork(P2PNetwork<?> network) {
     assert network != null;
     this.network = Optional.of(network);
   }
 
-  public Optional<P2PNetwork> getNetwork() {
+  public Optional<P2PNetwork<?>> getNetwork() {
     return network;
   }
 
@@ -240,13 +241,15 @@ public class Eth2DiscoveryManager {
 
               network.ifPresent(
                   n -> {
-                    n.connect(
-                        "/ip4/"
-                            + byAddress.getHostAddress()
-                            + "/tcp/"
-                            + (int) node.getNode().get(UDP_V4)
-                            + "/p2p/"
-                            + Base58.INSTANCE.encode(node.getNode().getNodeId().toArray()));
+                    SafeFuture.of(
+                            n.connect(
+                                "/ip4/"
+                                    + byAddress.getHostAddress()
+                                    + "/tcp/"
+                                    + (int) node.getNode().get(UDP_V4)
+                                    + "/p2p/"
+                                    + Base58.INSTANCE.encode(node.getNode().getNodeId().toArray())))
+                        .reportExceptions();
                   });
             } catch (UnknownHostException e) {
               logger.error("Got unknown host exception for Peer Response");

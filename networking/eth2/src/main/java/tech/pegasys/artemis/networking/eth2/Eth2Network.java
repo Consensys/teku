@@ -82,7 +82,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
             .peers(discoveryNetworkConfig.getPeers())
             .build();
 
-    eth2DiscoveryManager.start();
+    SafeFuture.of(eth2DiscoveryManager.start()).reportExceptions();
   }
 
   @Override
@@ -93,7 +93,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
-    eth2DiscoveryManager.stop();
+    SafeFuture.of(eth2DiscoveryManager.stop()).reportExceptions();
     super.stop();
   }
 

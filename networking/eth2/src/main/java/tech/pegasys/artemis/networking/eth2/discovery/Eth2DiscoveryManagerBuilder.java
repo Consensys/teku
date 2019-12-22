@@ -28,7 +28,7 @@ public final class Eth2DiscoveryManagerBuilder {
   private List<String> peers; // for setting boot nodes
   private Optional<PrivKey> privateKey; // for generating ENR records
   // the network to potentially affect with discovered peers
-  private Optional<P2PNetwork> network = Optional.empty();
+  private Optional<P2PNetwork<?>> network = Optional.empty();
   // event bus by which to signal other services
   private Optional<EventBus> eventBus = Optional.empty();
 
@@ -54,7 +54,7 @@ public final class Eth2DiscoveryManagerBuilder {
     return this;
   }
 
-  public Eth2DiscoveryManagerBuilder network(Optional<P2PNetwork> network) {
+  public Eth2DiscoveryManagerBuilder network(Optional<P2PNetwork<?>> network) {
     this.network = network;
     return this;
   }
