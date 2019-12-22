@@ -74,7 +74,6 @@ public class Eth2NetworkFactory {
       final Eth2Network network = buildNetwork();
       try {
         network.start().get(30, TimeUnit.SECONDS);
-        networks.add(network);
         Waiter.waitFor(() -> assertThat(network.getPeerCount()).isEqualTo(multiaddrpeers.size()));
         return network;
       } catch (ExecutionException e) {
