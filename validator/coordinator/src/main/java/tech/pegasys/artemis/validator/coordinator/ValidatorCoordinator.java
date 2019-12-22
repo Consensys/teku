@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
@@ -72,11 +73,12 @@ import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedBlockEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -220,12 +222,12 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onProcessedBlockEvent(ProcessedBlockEvent event) {
+  public void onBlockImported(BlockImportedEvent event) {
     event
-        .getAttestationList()
-        .forEach(
-            attestation ->
-                blockAttestationsPool.addAggregateAttestationProcessedInBlock(attestation));
+        .getBlock()
+        .getBody()
+        .getAttestations()
+        .forEach(blockAttestationsPool::addAggregateAttestationProcessedInBlock);
   }
 
   @Subscribe
@@ -246,10 +248,11 @@ public class ValidatorCoordinator {
       if (!isGenesis(slot) && isEpochStart(slot)) {
         UnsignedLong epoch = compute_epoch_at_slot(slot);
         // NOTE: we get commmittee assignments for NEXT epoch
-        CompletableFuture.runAsync(
-            () ->
-                committeeAssignmentManager.updateCommiteeAssignments(
-                    headState, epoch.plus(UnsignedLong.ONE), eventBus));
+        reportExceptions(
+            CompletableFuture.runAsync(
+                () ->
+                    committeeAssignmentManager.updateCommiteeAssignments(
+                        headState, epoch.plus(UnsignedLong.ONE), eventBus)));
       }
 
       // Get attester information to prepare AttestationAggregator for new slot's aggregation
@@ -332,7 +335,7 @@ public class ValidatorCoordinator {
           blockCreator.createNewBlock(
               signer, newSlot, newState, parentRoot, attestations, slashingsInBlock, deposits);
 
-      this.eventBus.post(newBlock);
+      this.eventBus.post(new BlockProposedEvent(newBlock));
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
 
       if (validators.get(proposer).isNaughty()) {
@@ -497,18 +500,19 @@ public class ValidatorCoordinator {
       List<AttesterInformation> attesterInformations,
       BeaconState state,
       AttestationData genericAttestationData) {
-    CompletableFuture.runAsync(
-        () ->
-            attesterInformations
-                .parallelStream()
-                .forEach(
-                    attesterInfo ->
-                        produceAttestations(
-                            state,
-                            attesterInfo.getPublicKey(),
-                            attesterInfo.getIndexIntoCommitee(),
-                            attesterInfo.getCommittee(),
-                            genericAttestationData)));
+    reportExceptions(
+        CompletableFuture.runAsync(
+            () ->
+                attesterInformations
+                    .parallelStream()
+                    .forEach(
+                        attesterInfo ->
+                            produceAttestations(
+                                state,
+                                attesterInfo.getPublicKey(),
+                                attesterInfo.getIndexIntoCommitee(),
+                                attesterInfo.getCommittee(),
+                                genericAttestationData))));
   }
 
   @VisibleForTesting

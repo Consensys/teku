@@ -14,14 +14,15 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,9 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,6 +47,9 @@ public class PeerManager implements ConnectionHandler {
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final List<PeerHandler> peerHandlers;
+
+  private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
+      Subscribers.create(true);
 
   public PeerManager(
       final ScheduledExecutorService scheduler,
@@ -57,35 +64,46 @@ public class PeerManager implements ConnectionHandler {
   public void handleConnection(@NotNull final Connection connection) {
     Peer peer = new LibP2PPeer(connection);
     onConnectedPeer(peer);
-    connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
+    SafeFuture.of(connection.closeFuture()).finish(() -> onDisconnectedPeer(peer));
   }
 
-  public CompletableFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
+  public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    return connectSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeConnect(final long subscriptionId) {
+    connectSubscribers.unsubscribe(subscriptionId);
+  }
+
+  public SafeFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
     STDOUT.log(Level.DEBUG, "Connecting to " + peer);
-    return network
-        .connect(peer)
+    return SafeFuture.of(network.connect(peer))
         .whenComplete(
             (conn, throwable) -> {
               if (throwable != null) {
                 STDOUT.log(
                     Level.DEBUG,
                     "Connection to " + peer + " failed. Will retry shortly: " + throwable);
-                scheduler.schedule(
-                    () -> connect(peer, network), RECONNECT_TIMEOUT, TimeUnit.MILLISECONDS);
+                ignoreFuture(
+                    scheduler.schedule(
+                        () -> connect(peer, network).reportExceptions(),
+                        RECONNECT_TIMEOUT,
+                        TimeUnit.MILLISECONDS));
               } else {
                 STDOUT.log(
                     Level.DEBUG,
                     "Connection to peer: "
                         + conn.getSecureSession().getRemoteId()
                         + " was successful");
-                conn.closeFuture()
-                    .thenAccept(
-                        ignore -> {
+                SafeFuture.of(conn.closeFuture())
+                    .finish(
+                        () -> {
                           LOG.debug("Connection to {} closed. Will retry shortly", peer);
-                          scheduler.schedule(
-                              () -> connect(peer, network),
-                              RECONNECT_TIMEOUT,
-                              TimeUnit.MILLISECONDS);
+                          ignoreFuture(
+                              scheduler.schedule(
+                                  () -> connect(peer, network).reportExceptions(),
+                                  RECONNECT_TIMEOUT,
+                                  TimeUnit.MILLISECONDS));
                         });
               }
             });
@@ -95,11 +113,13 @@ public class PeerManager implements ConnectionHandler {
     return Optional.ofNullable(connectedPeerMap.get(id));
   }
 
-  private void onConnectedPeer(Peer peer) {
+  @VisibleForTesting
+  void onConnectedPeer(Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
       STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
+      connectSubscribers.forEach(c -> c.onConnected(peer));
     }
   }
 

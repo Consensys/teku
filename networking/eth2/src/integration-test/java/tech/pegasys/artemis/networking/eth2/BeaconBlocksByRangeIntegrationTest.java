@@ -39,7 +39,7 @@ public class BeaconBlocksByRangeIntegrationTest {
   @BeforeEach
   public void setUp() throws Exception {
     final EventBus eventBus1 = new EventBus();
-    storageClient1 = new ChainStorageClient(eventBus1);
+    storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
 
@@ -75,12 +75,12 @@ public class BeaconBlocksByRangeIntegrationTest {
   }
 
   @Test
-  public void shouldSendEmptyResponseWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
+  public void shouldRespondWithBlocksWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
     beaconChainUtil.initializeStorage();
     final BeaconBlock nonCanonicalBlock = beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
     storageClient1.updateBestBlock(nonCanonicalBlock.getParent_root(), UnsignedLong.ZERO);
     final List<BeaconBlock> response = requestBlocks(nonCanonicalBlock.signing_root("signature"));
-    assertThat(response).isEmpty();
+    assertThat(response).containsExactly(nonCanonicalBlock);
   }
 
   @Test

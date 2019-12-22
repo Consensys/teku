@@ -11,19 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.storage.events;
 
-import java.util.List;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
+import java.util.Optional;
 
-public class ProcessedBlockEvent {
-  private final List<Attestation> attestationList;
+public class StoreDiskUpdateCompleteEvent {
+  private final long transactionId;
+  private final Optional<RuntimeException> error;
 
-  public ProcessedBlockEvent(List<Attestation> attestationList) {
-    this.attestationList = attestationList;
+  public StoreDiskUpdateCompleteEvent(
+      final long transactionId, final Optional<RuntimeException> error) {
+    this.transactionId = transactionId;
+    this.error = error;
   }
 
-  public List<Attestation> getAttestationList() {
-    return attestationList;
+  public long getTransactionId() {
+    return transactionId;
+  }
+
+  public Optional<RuntimeException> getError() {
+    return error;
   }
 }

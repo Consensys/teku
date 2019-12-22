@@ -44,6 +44,8 @@ import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfigBuilder;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.service.serviceutils.NoopService;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockImporter;
@@ -51,13 +53,12 @@ import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
-import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
-import tech.pegasys.artemis.sync.SyncManager;
+import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
@@ -71,7 +72,7 @@ public class BeaconChainController {
   private EventBus eventBus;
   private Timer timer;
   private ChainStorageClient chainStorageClient;
-  private P2PNetwork p2pNetwork;
+  private P2PNetwork<?> p2pNetwork;
   private final MetricsSystem metricsSystem;
   private SettableGauge currentSlotGauge;
   private SettableGauge currentEpochGauge;
@@ -80,7 +81,7 @@ public class BeaconChainController {
   private BeaconRestApi beaconRestAPI;
   private AttestationAggregator attestationAggregator;
   private BlockAttestationsPool blockAttestationsPool;
-  private SyncManager syncManager;
+  private Service syncService;
   private boolean testMode;
 
   public BeaconChainController(
@@ -116,7 +117,7 @@ public class BeaconChainController {
   }
 
   public void initStorage() {
-    this.chainStorageClient = ChainStorage.Create(ChainStorageClient.class, eventBus);
+    this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus);
   }
 
   public void initMetrics() {
@@ -150,7 +151,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initP2PNetwork()");
     if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
-      this.networkTask = () -> this.p2pNetwork.start();
+      this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
       PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
@@ -185,8 +186,7 @@ public class BeaconChainController {
               .metricsSystem(metricsSystem)
               .discovery(discoveryNetworkConfig)
               .build();
-
-      this.networkTask = () -> this.p2pNetwork.start();
+      this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
@@ -211,13 +211,15 @@ public class BeaconChainController {
   public void initSyncManager() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
-      return;
+      syncService = new NoopService();
+    } else {
+      syncService =
+          new SyncService(
+              eventBus,
+              (Eth2Network) p2pNetwork,
+              chainStorageClient,
+              new BlockImporter(chainStorageClient, eventBus));
     }
-    syncManager =
-        new SyncManager(
-            (Eth2Network) p2pNetwork,
-            chainStorageClient,
-            new BlockImporter(chainStorageClient, eventBus));
   }
 
   public void start() {
@@ -234,9 +236,7 @@ public class BeaconChainController {
       generateTestModeGenesis();
     }
 
-    if ("jvmlibp2p".equals(config.getNetworkMode())) {
-      this.syncManager.sync();
-    }
+    syncService.start().reportExceptions();
   }
 
   private void generateTestModeGenesis() {
@@ -249,6 +249,7 @@ public class BeaconChainController {
 
   public void stop() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.stop()");
+    syncService.stop().reportExceptions();
     if (!Objects.isNull(p2pNetwork)) {
       this.p2pNetwork.stop();
     }
@@ -287,48 +288,49 @@ public class BeaconChainController {
     if (!testMode && !stateProcessor.isGenesisReady()) {
       return;
     }
-    try {
-      final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
-      if (chainStorageClient.getStore() != null) {
-        final Store.Transaction transaction = chainStorageClient.getStore().startTransaction();
-        on_tick(transaction, currentTime);
-        eventBus.post(transaction.commit());
-        if (chainStorageClient
-                .getStore()
-                .getTime()
-                .compareTo(
-                    chainStorageClient
-                        .getGenesisTime()
-                        .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-            >= 0) {
-          this.eventBus.post(new SlotEvent(nodeSlot));
-          this.currentSlotGauge.set(nodeSlot.longValue());
-          this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
-          STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
-          STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
-          Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-          Bytes32 headBlockRoot = this.stateProcessor.processHead();
-          // Logging
-          STDOUT.log(
-              Level.INFO,
-              "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
-          STDOUT.log(
-              Level.INFO,
-              "Justified epoch:"
-                  + "                       "
-                  + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
-          STDOUT.log(
-              Level.INFO,
-              "Finalized epoch:"
-                  + "                       "
-                  + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
-
-          this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
-          Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
-          this.eventBus.post(new BroadcastAggregatesEvent());
-          nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
-        }
+    final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
+    if (chainStorageClient.getStore() != null) {
+      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
+      on_tick(transaction, currentTime);
+      transaction.commit().join();
+      final UnsignedLong nextSlotStartTime =
+          chainStorageClient
+              .getGenesisTime()
+              .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+      if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
+        processSlot();
       }
+    }
+  }
+
+  private void processSlot() {
+    try {
+      this.eventBus.post(new SlotEvent(nodeSlot));
+      this.currentSlotGauge.set(nodeSlot.longValue());
+      this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
+      STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
+      STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
+      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
+      Bytes32 headBlockRoot = this.stateProcessor.processHead();
+      // Logging
+      STDOUT.log(
+          Level.INFO,
+          "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
+      STDOUT.log(
+          Level.INFO,
+          "Justified epoch:"
+              + "                       "
+              + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
+      STDOUT.log(
+          Level.INFO,
+          "Finalized epoch:"
+              + "                       "
+              + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
+
+      this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
+      Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
+      this.eventBus.post(new BroadcastAggregatesEvent());
+      nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
     } catch (InterruptedException e) {
       STDOUT.log(Level.FATAL, "onTick: " + e.toString());
     }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlock;
@@ -39,6 +40,7 @@ class StoreTest {
   private static final Checkpoint INITIAL_FINALIZED_CHECKPOINT = new Checkpoint();
   private UnsignedLong INITIAL_GENESIS_TIME = UnsignedLong.ZERO;
   private UnsignedLong INITIAL_TIME = UnsignedLong.ONE;
+  private final TransactionPrecommit transactionPrecommit = TransactionPrecommit.memoryOnly();
   private final Store store =
       new Store(
           INITIAL_TIME,
@@ -51,10 +53,9 @@ class StoreTest {
           new HashMap<>(),
           new HashMap<>());
 
-  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Test
   public void shouldApplyChangesWhenTransactionCommits() {
-    final Transaction transaction = store.startTransaction();
+    final Transaction transaction = store.startTransaction(transactionPrecommit);
     final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
@@ -90,7 +91,7 @@ class StoreTest {
     assertEquals(time, transaction.getTime());
     assertEquals(genesisTime, transaction.getGenesisTime());
 
-    transaction.commit();
+    assertThat(transaction.commit()).isCompleted();
 
     assertEquals(block, store.getBlock(blockRoot));
     assertEquals(state, store.getBlockState(blockRoot));

@@ -26,29 +26,47 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final StatusMessageFactory statusMessageFactory;
-  private final ChainStorageClient storageClient;
-  private final HistoricalChainData historicalChainData;
 
-  private ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final Subscribers<PeerConnectedSubscriber<Eth2Peer>> connectSubscribers =
+      Subscribers.create(true);
+  private final ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
   private final RpcMethods rpcMethods;
+  private final PeerValidatorFactory peerValidatorFactory;
 
-  public Eth2PeerManager(
+  Eth2PeerManager(
+      final CombinedChainDataClient combinedChainDataClient,
+      final ChainStorageClient storageClient,
+      final MetricsSystem metricsSystem,
+      final PeerValidatorFactory peerValidatorFactory) {
+    statusMessageFactory = new StatusMessageFactory(storageClient);
+    this.peerValidatorFactory = peerValidatorFactory;
+    this.rpcMethods =
+        BeaconChainMethods.createRpcMethods(
+            this, combinedChainDataClient, storageClient, metricsSystem, statusMessageFactory);
+  }
+
+  public static Eth2PeerManager create(
       final ChainStorageClient storageClient,
       final HistoricalChainData historicalChainData,
       final MetricsSystem metricsSystem) {
-    this.storageClient = storageClient;
-    this.historicalChainData = historicalChainData;
-    statusMessageFactory = new StatusMessageFactory(storageClient);
-    this.rpcMethods =
-        BeaconChainMethods.createRpcMethods(
-            this, storageClient, metricsSystem, statusMessageFactory);
+    final PeerValidatorFactory peerValidatorFactory =
+        (peer, status) ->
+            PeerChainValidator.create(storageClient, historicalChainData, peer, status);
+    return new Eth2PeerManager(
+        new CombinedChainDataClient(storageClient, historicalChainData),
+        storageClient,
+        metricsSystem,
+        peerValidatorFactory);
   }
 
   @Override
@@ -61,11 +79,27 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     if (peer.connectionInitiatedLocally()) {
-      eth2Peer.sendStatus();
+      eth2Peer.sendStatus().reportExceptions();
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->
-            PeerChainValidator.create(storageClient, historicalChainData, eth2Peer, status).run());
+            peerValidatorFactory
+                .create(eth2Peer, status)
+                .run()
+                .finish(
+                    peerIsValid -> {
+                      if (peerIsValid) {
+                        connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
+                      }
+                    }));
+  }
+
+  public long subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
+    return connectSubscribers.subscribe(subscriber);
+  }
+
+  public void unsubscribeConnect(final long subscriptionId) {
+    connectSubscribers.unsubscribe(subscriptionId);
   }
 
   @Override
@@ -105,5 +139,9 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   private boolean peerIsReady(Eth2Peer peer) {
     return peer.isChainValidated();
+  }
+
+  interface PeerValidatorFactory {
+    PeerChainValidator create(final Eth2Peer peer, final PeerStatus status);
   }
 }

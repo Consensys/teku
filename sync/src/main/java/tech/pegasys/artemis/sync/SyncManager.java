@@ -13,59 +13,130 @@
 
 package tech.pegasys.artemis.sync;
 
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class SyncManager {
-
+public class SyncManager extends Service {
+  private static final Logger LOG = LogManager.getLogger();
   private final Eth2Network network;
   private final ChainStorageClient storageClient;
-  private final BlockImporter blockImporter;
+  private final PeerSync peerSync;
 
-  public SyncManager(
+  private boolean syncActive = false;
+  private boolean syncQueued = false;
+  private volatile long peerConnectSubscriptionId;
+
+  SyncManager(
+      final Eth2Network network, final ChainStorageClient storageClient, final PeerSync peerSync) {
+    this.network = network;
+    this.storageClient = storageClient;
+    this.peerSync = peerSync;
+  }
+
+  public static SyncManager create(
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    this.network = network;
-    this.storageClient = storageClient;
-    this.blockImporter = blockImporter;
+    return new SyncManager(network, storageClient, new PeerSync(storageClient, blockImporter));
   }
 
-  public CompletableFuture<Void> sync() {
-    return executeSync();
+  @Override
+  protected SafeFuture<?> doStart() {
+    peerConnectSubscriptionId = network.subscribeConnect(this::onNewPeer);
+    startOrScheduleSync();
+    return completedFuture(null);
   }
 
-  private CompletableFuture<Void> executeSync() {
-    Optional<Eth2Peer> possibleSyncPeer = findBestSyncPeer();
-
-    // If there are no peers ahead of us, return
-    if (possibleSyncPeer.isEmpty()) {
-      return CompletableFuture.completedFuture(null);
+  @Override
+  protected SafeFuture<?> doStop() {
+    network.unsubscribeConnect(peerConnectSubscriptionId);
+    synchronized (this) {
+      syncQueued = false;
     }
+    peerSync.stop();
+    return completedFuture(null);
+  }
 
-    Eth2Peer syncPeer = possibleSyncPeer.get();
-    PeerSync peerSync = new PeerSync(syncPeer, storageClient, blockImporter);
+  private void startOrScheduleSync() {
+    synchronized (this) {
+      if (syncActive) {
+        syncQueued = true;
+        return;
+      }
+      syncActive = true;
+    }
+    executeSync()
+        .exceptionally(
+            error -> {
+              LOG.error("Error during sync", error);
+              return null;
+            })
+        .finish(
+            () -> {
+              synchronized (SyncManager.this) {
+                syncActive = false;
+                if (syncQueued) {
+                  syncQueued = false;
+                  startOrScheduleSync();
+                }
+              }
+            });
+  }
 
+  @VisibleForTesting
+  synchronized boolean isSyncActive() {
+    return syncActive;
+  }
+
+  @VisibleForTesting
+  synchronized boolean isSyncQueued() {
+    return syncQueued;
+  }
+
+  private SafeFuture<Void> executeSync() {
+    return findBestSyncPeer().map(this::syncToPeer).orElseGet(() -> completedFuture(null));
+  }
+
+  private SafeFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
     return peerSync
-        .sync()
+        .sync(syncPeer)
         .thenCompose(
-            result ->
-                result != PeerSyncResult.SUCCESSFUL_SYNC
-                    ? executeSync()
-                    : CompletableFuture.completedFuture(null));
+            result -> {
+              if (result != PeerSyncResult.SUCCESSFUL_SYNC) {
+                return executeSync();
+              } else {
+                return completedFuture(null);
+              }
+            });
   }
 
   private Optional<Eth2Peer> findBestSyncPeer() {
-    UnsignedLong ourFinalizedEpoch = storageClient.getFinalizedEpoch();
     return network
         .streamPeers()
-        .filter(peer -> peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0)
+        .filter(this::isPeerSyncSuitable)
         .max(Comparator.comparing(p -> p.getStatus().getFinalizedEpoch()));
+  }
+
+  private void onNewPeer(Eth2Peer peer) {
+    if (isPeerSyncSuitable(peer)) {
+      startOrScheduleSync();
+    }
+  }
+
+  private boolean isPeerSyncSuitable(Eth2Peer peer) {
+    UnsignedLong ourFinalizedEpoch = storageClient.getFinalizedEpoch();
+    return peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0;
   }
 }

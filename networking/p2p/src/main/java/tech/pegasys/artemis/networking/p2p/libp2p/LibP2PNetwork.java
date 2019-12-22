@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import identify.pb.IdentifyOuterClass;
@@ -37,7 +38,6 @@ import io.netty.handler.logging.LogLevel;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,9 +54,11 @@ import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
-public class LibP2PNetwork implements P2PNetwork {
+public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final PrivKey privKey;
   private final NetworkConfig config;
   private final NodeId nodeId;
@@ -140,18 +142,18 @@ public class LibP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public CompletableFuture<?> start() {
+  public SafeFuture<?> start() {
     if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
-      return CompletableFuture.failedFuture(new IllegalStateException("Network already started"));
+      return SafeFuture.failedFuture(new IllegalStateException("Network already started"));
     }
     STDOUT.log(Level.INFO, "Starting libp2p network...");
-    return host.start()
+    return SafeFuture.of(host.start())
         .thenApply(
             i -> {
               STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
             })
-        .thenRun(() -> config.getPeers().forEach(this::connect));
+        .thenRun(() -> config.getPeers().forEach(reportExceptions(this::connect)));
   }
 
   @Override
@@ -160,8 +162,18 @@ public class LibP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public CompletableFuture<?> connect(final String peer) {
+  public SafeFuture<?> connect(final String peer) {
     return peerManager.connect(new Multiaddr(peer), host.getNetwork());
+  }
+
+  @Override
+  public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+    return peerManager.subscribeConnect(subscriber);
+  }
+
+  @Override
+  public void unsubscribeConnect(final long subscriptionId) {
+    peerManager.unsubscribeConnect(subscriptionId);
   }
 
   @Override
@@ -170,7 +182,7 @@ public class LibP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public Stream<? extends Peer> streamPeers() {
+  public Stream<Peer> streamPeers() {
     return peerManager.streamPeers();
   }
 
@@ -185,7 +197,7 @@ public class LibP2PNetwork implements P2PNetwork {
       return;
     }
     STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
-    host.stop();
+    reportExceptions(host.stop());
     scheduler.shutdownNow();
   }
 

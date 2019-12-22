@@ -13,17 +13,23 @@
 
 package tech.pegasys.artemis.storage;
 
+import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.io.File;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
+  private static final Logger LOG = LogManager.getLogger();
   private final Database database;
   private final EventBus eventBus;
 
@@ -38,11 +44,24 @@ public class ChainStorageServer {
   }
 
   @Subscribe
-  public void onStoreDiskUpdate(StoreDiskUpdateEvent storeDiskUpdateEvent) {
-    database.insert(storeDiskUpdateEvent);
+  public void onStoreDiskUpdate(final StoreDiskUpdateEvent event) {
+    try {
+      database.insert(event);
+
+      eventBus.post(new StoreDiskUpdateCompleteEvent(event.getTransactionId(), Optional.empty()));
+    } catch (final RuntimeException e) {
+      LOG.debug("Transaction " + event.getTransactionId() + " failed", e);
+      eventBus.post(new StoreDiskUpdateCompleteEvent(event.getTransactionId(), Optional.of(e)));
+    }
   }
 
   @Subscribe
+  public void onStoreGenesis(final StoreGenesisDiskUpdateEvent event) {
+    database.storeGenesis(event.getStore());
+  }
+
+  @Subscribe
+  @AllowConcurrentEvents
   public void onGetBlockBySlotRequest(final GetFinalizedBlockAtSlotRequest request) {
     final Optional<BeaconBlock> block =
         database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getBlock);

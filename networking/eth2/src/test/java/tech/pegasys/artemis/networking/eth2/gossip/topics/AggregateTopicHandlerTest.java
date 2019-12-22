@@ -30,7 +30,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AggregateTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
-  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final AggregateTopicHandler topicHandler =
       new AggregateTopicHandler(eventBus, storageClient);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(12, storageClient);

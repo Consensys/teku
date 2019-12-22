@@ -13,34 +13,22 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class DelegatingP2PNetwork implements P2PNetwork {
-  private final P2PNetwork network;
+public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork<T> {
+  private final P2PNetwork<?> network;
 
-  public DelegatingP2PNetwork(final P2PNetwork network) {
+  public DelegatingP2PNetwork(final P2PNetwork<?> network) {
     this.network = network;
   }
 
   @Override
-  public CompletableFuture<?> connect(final String peer) {
+  public SafeFuture<?> connect(final String peer) {
     return network.connect(peer);
-  }
-
-  @Override
-  public Optional<? extends Peer> getPeer(final NodeId id) {
-    return network.getPeer(id);
-  }
-
-  @Override
-  public Stream<? extends Peer> streamPeers() {
-    return network.streamPeers();
   }
 
   @Override
@@ -59,7 +47,7 @@ public class DelegatingP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public CompletableFuture<?> start() {
+  public SafeFuture<?> start() {
     return network.start();
   }
 

@@ -23,6 +23,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
 public class StoreDiskUpdateEvent {
 
+  private final long transactionId;
   private final Optional<UnsignedLong> time;
   private final Optional<UnsignedLong> genesisTime;
   private final Optional<Checkpoint> justifiedCheckpoint;
@@ -34,6 +35,7 @@ public class StoreDiskUpdateEvent {
   private final Map<UnsignedLong, Checkpoint> latestMessages;
 
   public StoreDiskUpdateEvent(
+      final long transactionId,
       final Optional<UnsignedLong> time,
       final Optional<UnsignedLong> genesisTime,
       final Optional<Checkpoint> justifiedCheckpoint,
@@ -43,6 +45,7 @@ public class StoreDiskUpdateEvent {
       final Map<Bytes32, BeaconState> blockStates,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UnsignedLong, Checkpoint> latestMessages) {
+    this.transactionId = transactionId;
     this.time = time;
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -52,6 +55,10 @@ public class StoreDiskUpdateEvent {
     this.blockStates = blockStates;
     this.checkpointStates = checkpointStates;
     this.latestMessages = latestMessages;
+  }
+
+  public long getTransactionId() {
+    return transactionId;
   }
 
   public Optional<UnsignedLong> getTime() {

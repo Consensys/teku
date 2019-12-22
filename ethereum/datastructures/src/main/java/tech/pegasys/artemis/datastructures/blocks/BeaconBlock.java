@@ -206,6 +206,7 @@ public final class BeaconBlock
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
+        .add("root", signing_root("signature"))
         .add("slot", slot)
         .add("parent_root", parent_root)
         .add("state_root", state_root)

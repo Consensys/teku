@@ -17,11 +17,11 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockGossipManager {
@@ -40,8 +40,9 @@ public class BlockGossipManager {
   }
 
   @Subscribe
-  public void onNewBlock(final BeaconBlock block) {
-    final Bytes data = SimpleOffsetSerializer.serialize(block);
+  @SuppressWarnings("unused")
+  void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
+    final Bytes data = SimpleOffsetSerializer.serialize(blockProposedEvent.getBlock());
     channel.gossip(data);
   }
 

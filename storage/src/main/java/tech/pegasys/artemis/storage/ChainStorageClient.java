@@ -21,6 +21,8 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -28,14 +30,16 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage {
-
-  protected EventBus eventBus;
+  private static final Logger LOG = LogManager.getLogger();
+  protected final EventBus eventBus;
+  private final TransactionPrecommit transactionPrecommit;
 
   private final Bytes4 genesisFork = Fork.VERSION_ZERO;
   private volatile Store store;
@@ -46,8 +50,17 @@ public class ChainStorageClient implements ChainStorage {
   // Time
   private volatile UnsignedLong genesisTime;
 
-  public ChainStorageClient(EventBus eventBus) {
+  public static ChainStorageClient memoryOnlyClient(final EventBus eventBus) {
+    return new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+  }
+
+  public static ChainStorageClient storageBackedClient(final EventBus eventBus) {
+    return new ChainStorageClient(eventBus, TransactionPrecommit.storageEnabled(eventBus));
+  }
+
+  private ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
     this.eventBus = eventBus;
+    this.transactionPrecommit = transactionPrecommit;
     this.eventBus.register(this);
   }
 
@@ -55,6 +68,7 @@ public class ChainStorageClient implements ChainStorage {
     setGenesisTime(initialState.getGenesis_time());
     final Store store = Store.get_genesis_store(initialState);
     setStore(store);
+    eventBus.post(new StoreGenesisDiskUpdateEvent(store));
 
     // The genesis state is by definition finalised so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
@@ -92,6 +106,10 @@ public class ChainStorageClient implements ChainStorage {
 
   public Store getStore() {
     return store;
+  }
+
+  public Store.Transaction startStoreTransaction() {
+    return store.startTransaction(transactionPrecommit);
   }
 
   // NETWORKING RELATED INFORMATION METHODS:
@@ -181,6 +199,20 @@ public class ChainStorageClient implements ChainStorage {
             + attestation.getAggregate().getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.BLUE);
+  }
+
+  public Optional<BeaconBlock> getBlockByRoot(final Bytes32 root) {
+    if (store == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(store.getBlock(root));
+  }
+
+  public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return Optional.empty();
+    }
+    return Optional.ofNullable(store.getBlockState(blockRoot));
   }
 
   public Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {

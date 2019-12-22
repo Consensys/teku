@@ -20,8 +20,10 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
@@ -42,18 +44,14 @@ public class BeaconNode {
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
-          r -> {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            return t;
-          });
+          new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
   private final ServiceController serviceController = new ServiceController();
   private final ServiceConfig serviceConfig;
   private EventBus eventBus;
   private MetricsEndpoint metricsEndpoint;
 
-  BeaconNode(Level loggingLevel, ArtemisConfiguration config) {
+  BeaconNode(Optional<Level> loggingLevel, ArtemisConfiguration config) {
     System.setProperty("logPath", config.getLogPath());
     System.setProperty("rollingFile", config.getLogFile());
 
@@ -70,8 +68,11 @@ public class BeaconNode {
     }
 
     // set log level per CLI flags
-    System.out.println("Setting logging level to " + loggingLevel.name());
-    Configurator.setAllLevels("", loggingLevel);
+    loggingLevel.ifPresent(
+        level -> {
+          System.out.println("Setting logging level to " + level.name());
+          Configurator.setAllLevels("", level);
+        });
   }
 
   public void start() {

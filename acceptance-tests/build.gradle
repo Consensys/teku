@@ -3,6 +3,7 @@ dependencies {
   testSupportImplementation project(path: ':data:provider')
   testSupportImplementation 'com.google.code.gson:gson'
   testSupportImplementation 'com.squareup.okhttp3:okhttp'
+  testSupportImplementation 'io.libp2p:jvm-libp2p-minimal'
   testSupportImplementation 'org.apache.tuweni:tuweni-toml'
   testSupportImplementation 'org.assertj:assertj-core'
   testSupportImplementation 'org.junit.jupiter:junit-jupiter-api'

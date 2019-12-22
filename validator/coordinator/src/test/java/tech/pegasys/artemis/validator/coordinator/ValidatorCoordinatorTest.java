@@ -29,11 +29,11 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -66,7 +66,7 @@ public class ValidatorCoordinatorTest {
         .thenReturn(createAttestations());
 
     eventBus = spy(new EventBus());
-    storageClient = new ChainStorageClient(eventBus);
+    storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
@@ -119,11 +119,11 @@ public class ValidatorCoordinatorTest {
   private Object blockWithSlot(final UnsignedLong slotNumber) {
     return argThat(
         argument -> {
-          if (!(argument instanceof BeaconBlock)) {
+          if (!(argument instanceof BlockProposedEvent)) {
             return false;
           }
-          final BeaconBlock block = (BeaconBlock) argument;
-          return block.getSlot().equals(slotNumber);
+          final BlockProposedEvent block = (BlockProposedEvent) argument;
+          return block.getBlock().getSlot().equals(slotNumber);
         });
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
+import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -30,6 +31,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -49,7 +51,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(12, storageClient1);
@@ -57,21 +59,21 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Setup network 3
     final EventBus eventBus3 = new EventBus();
-    final ChainStorageClient storageClient3 = new ChainStorageClient(eventBus3);
+    final ChainStorageClient storageClient3 = ChainStorageClient.memoryOnlyClient(eventBus3);
     final Eth2Network network3 =
         networkFactory.eventBus(eventBus3).chainStorageClient(storageClient3).startNetwork();
     chainUtil.initializeStorage(storageClient3);
 
     // Connect networks 1 -> 2 -> 3
-    network1.connect(network2.getNodeAddress());
-    network2.connect(network3.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(network2.connect(network3.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -84,11 +86,11 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate block from network 1
     final BeaconBlock newBlock = chainUtil.createBlockAtSlot(UnsignedLong.valueOf(2L));
-    eventBus1.post(newBlock);
+    eventBus1.post(new BlockProposedEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
-    final BeaconBlockCollector network2Blocks = new BeaconBlockCollector(eventBus2);
-    final BeaconBlockCollector network3Blocks = new BeaconBlockCollector(eventBus3);
+    final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(eventBus2);
+    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(eventBus3);
 
     // Verify the expected block was gossiped across the network
     Waiter.waitFor(
@@ -102,7 +104,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipInvalidBlocks() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(12, storageClient1);
@@ -110,21 +112,21 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Setup network 3
     final EventBus eventBus3 = new EventBus();
-    final ChainStorageClient storageClient3 = new ChainStorageClient(eventBus3);
+    final ChainStorageClient storageClient3 = ChainStorageClient.memoryOnlyClient(eventBus3);
     final Eth2Network network3 =
         networkFactory.eventBus(eventBus3).chainStorageClient(storageClient3).startNetwork();
     chainUtil.initializeStorage(storageClient3);
 
     // Connect networks 1 -> 2 -> 3
-    network1.connect(network2.getNodeAddress());
-    network2.connect(network3.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(network2.connect(network3.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -138,11 +140,11 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate block from network 1
     final BeaconBlock newBlock =
         chainUtil.createBlockAtSlotFromInvalidProposer(UnsignedLong.valueOf(2L));
-    eventBus1.post(newBlock);
+    eventBus1.post(new BlockProposedEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
-    final BeaconBlockCollector network2Blocks = new BeaconBlockCollector(eventBus2);
-    final BeaconBlockCollector network3Blocks = new BeaconBlockCollector(eventBus3);
+    final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(eventBus2);
+    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(eventBus3);
 
     // Wait for blocks to propagate
     ensureConditionRemainsMet(() -> assertThat(network2Blocks.getBlocks()).isEmpty(), 10000);
@@ -153,7 +155,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
     List<BLSKeyPair> blsKeyPairList =
@@ -163,13 +165,13 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
-    network1.connect(network2.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -192,7 +194,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
     List<BLSKeyPair> blsKeyPairList =
@@ -202,13 +204,13 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
-    network1.connect(network2.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -240,7 +242,7 @@ public class GossipMessageHandlerIntegrationTest {
   public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
     // Setup network 1
     final EventBus eventBus1 = new EventBus();
-    final ChainStorageClient storageClient1 = new ChainStorageClient(eventBus1);
+    final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
         networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
     List<BLSKeyPair> blsKeyPairList =
@@ -250,13 +252,13 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Setup network 2
     final EventBus eventBus2 = new EventBus();
-    final ChainStorageClient storageClient2 = new ChainStorageClient(eventBus2);
+    final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
         networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
-    network1.connect(network2.getNodeAddress());
+    waitFor(network1.connect(network2.getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -297,23 +299,6 @@ public class GossipMessageHandlerIntegrationTest {
 
     ensureConditionRemainsMet(
         () -> assertThat(network2AttestationsAfterDeregistration.getAttestations()).isEmpty());
-  }
-
-  private static class BeaconBlockCollector {
-    private final Collection<BeaconBlock> blocks = new ConcurrentLinkedQueue<>();
-
-    public BeaconBlockCollector(final EventBus eventBus) {
-      eventBus.register(this);
-    }
-
-    @Subscribe
-    public void onBeaconBlock(final BeaconBlock block) {
-      blocks.add(block);
-    }
-
-    public Collection<BeaconBlock> getBlocks() {
-      return blocks;
-    }
   }
 
   private static class AttestationCollector {

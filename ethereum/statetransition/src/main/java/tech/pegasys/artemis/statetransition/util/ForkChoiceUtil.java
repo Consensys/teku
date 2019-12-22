@@ -216,6 +216,16 @@ public class ForkChoiceUtil {
     }
   }
 
+  public static boolean isFutureBlock(
+      BeaconBlock block, UnsignedLong genesisTime, UnsignedLong now) {
+    final UnsignedLong blockTime = getBlockTime(block, genesisTime);
+    return now.compareTo(blockTime) < 0;
+  }
+
+  private static UnsignedLong getBlockTime(BeaconBlock block, UnsignedLong genesisTime) {
+    return genesisTime.plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+  }
+
   /**
    * @param store
    * @param block
@@ -236,13 +246,8 @@ public class ForkChoiceUtil {
 
     // Blocks cannot be in the future. If they are, their consideration must be delayed until the
     // are in the past.
-    UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     checkArgument(
-        unixTimeStamp.compareTo(
-                state
-                    .getGenesis_time()
-                    .plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-            >= 0,
+        !isFutureBlock(block, state.getGenesis_time(), store.getTime()),
         "on_block: Blocks cannot be in the future.");
 
     // Add new block to the store

@@ -14,13 +14,14 @@
 package tech.pegasys.artemis.networking.p2p.network;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public interface P2PNetwork extends GossipNetwork {
+public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   enum State {
     IDLE,
     RUNNING,
@@ -33,11 +34,15 @@ public interface P2PNetwork extends GossipNetwork {
    * @param peer Peer to connect to.
    * @return Future of the established PeerConnection
    */
-  CompletableFuture<?> connect(String peer);
+  SafeFuture<?> connect(String peer);
 
-  Optional<? extends Peer> getPeer(NodeId id);
+  long subscribeConnect(PeerConnectedSubscriber<T> subscriber);
 
-  Stream<? extends Peer> streamPeers();
+  void unsubscribeConnect(long subscriptionId);
+
+  Optional<T> getPeer(NodeId id);
+
+  Stream<T> streamPeers();
 
   long getPeerCount();
 
@@ -50,7 +55,7 @@ public interface P2PNetwork extends GossipNetwork {
    *
    * @return
    */
-  CompletableFuture<?> start();
+  SafeFuture<?> start();
 
   /** Stops the P2P network layer. */
   void stop();

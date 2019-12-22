@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.eth2;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManager;
@@ -29,10 +28,12 @@ import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
-  private final P2PNetwork network;
+public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
+  private final P2PNetwork<?> network;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
   private final ChainStorageClient chainStorageClient;
@@ -46,7 +47,7 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
   private Eth2DiscoveryManager eth2DiscoveryManager;
 
   public Eth2Network(
-      final P2PNetwork network,
+      final P2PNetwork<?> network,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient,
@@ -60,7 +61,7 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
   }
 
   @Override
-  public CompletableFuture<?> start() {
+  public SafeFuture<?> start() {
     return super.start().thenAccept(r -> startup());
   }
 
@@ -111,5 +112,15 @@ public class Eth2Network extends DelegatingP2PNetwork implements P2PNetwork {
     // TODO - look into keep separate collections for pending peers / validated peers so
     // we don't have to iterate over the peer list to get this count.
     return streamPeers().count();
+  }
+
+  @Override
+  public long subscribeConnect(final PeerConnectedSubscriber<Eth2Peer> subscriber) {
+    return peerManager.subscribeConnect(subscriber);
+  }
+
+  @Override
+  public void unsubscribeConnect(final long subscriptionId) {
+    peerManager.unsubscribeConnect(subscriptionId);
   }
 }

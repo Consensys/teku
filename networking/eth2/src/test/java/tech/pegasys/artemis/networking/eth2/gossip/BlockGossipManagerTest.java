@@ -29,12 +29,13 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockGossipManagerTest {
 
   private final EventBus eventBus = new EventBus();
-  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final TopicChannel topicChannel = mock(TopicChannel.class);
 
@@ -45,11 +46,11 @@ public class BlockGossipManagerTest {
   }
 
   @Test
-  public void onNewBlock() {
+  public void onBlockProposed() {
     // Should gossip new blocks received from event bus
     BeaconBlock block = DataStructureUtil.randomBeaconBlock(1, 100);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
-    eventBus.post(block);
+    eventBus.post(new BlockProposedEvent(block));
 
     verify(topicChannel).gossip(serialized);
   }

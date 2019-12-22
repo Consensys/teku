@@ -26,12 +26,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
-  private final ChainStorageClient storageClient = new ChainStorageClient(eventBus);
+  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
   private final BlockTopicHandler topicHandler = new BlockTopicHandler(eventBus, storageClient);
 
@@ -48,7 +49,7 @@ public class BlockTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(true);
-    verify(eventBus).post(block);
+    verify(eventBus).post(new GossipedBlockEvent(block));
   }
 
   @Test
@@ -58,7 +59,7 @@ public class BlockTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
-    verify(eventBus, never()).post(block);
+    verify(eventBus, never()).post(new GossipedBlockEvent(block));
   }
 
   @Test
@@ -77,6 +78,6 @@ public class BlockTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
-    verify(eventBus, never()).post(block);
+    verify(eventBus, never()).post(new GossipedBlockEvent(block));
   }
 }
