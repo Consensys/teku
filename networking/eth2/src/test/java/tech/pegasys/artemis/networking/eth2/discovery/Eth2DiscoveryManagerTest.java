@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
 class Eth2DiscoveryManagerTest {
@@ -77,7 +78,7 @@ class Eth2DiscoveryManagerTest {
   void testNetworkUsage() throws UnknownHostException {
     Eth2DiscoveryManager dm = new Eth2DiscoveryManager(mockNetwork, eventBus);
     eventBus.register(dm);
-    dm.start();
+    SafeFuture.of(dm.start()).reportExceptions();
 
     final String remoteHostEnr =
         "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
