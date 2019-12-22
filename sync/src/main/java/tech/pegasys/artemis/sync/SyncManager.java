@@ -24,7 +24,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.statetransition.BlockImporter;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 

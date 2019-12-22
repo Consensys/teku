@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
@@ -149,7 +149,7 @@ public class BlockPropagationManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
-    blockImporter.importBlock(blocks.get(0));
+    assertThat(blockImporter.importBlock(blocks.get(0)).isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactlyElementsOf(blocks);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
@@ -175,7 +175,7 @@ public class BlockPropagationManagerTest {
 
     // Import next block, causing next block to be queued for import
     final BeaconBlock firstBlock = blocks.get(0);
-    blockImporter.importBlock(firstBlock);
+    assertThat(blockImporter.importBlock(firstBlock).isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactly(firstBlock);
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(1);

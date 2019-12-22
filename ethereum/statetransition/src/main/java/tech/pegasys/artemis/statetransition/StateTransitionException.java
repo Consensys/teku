@@ -14,11 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 public class StateTransitionException extends Exception {
-  public StateTransitionException(String message) {
-    super(message);
-  }
-
-  public StateTransitionException(RuntimeException e) {
-    super(e.toString());
+  public StateTransitionException(Exception e) {
+    super(e);
   }
 }
