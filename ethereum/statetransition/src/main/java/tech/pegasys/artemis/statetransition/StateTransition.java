@@ -99,7 +99,7 @@ public class StateTransition {
         | EpochProcessingException
         | IllegalArgumentException e) {
       STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled, ALogger.Color.RED);
-      throw new StateTransitionException(e.toString());
+      throw new StateTransitionException(e);
     }
   }
 
