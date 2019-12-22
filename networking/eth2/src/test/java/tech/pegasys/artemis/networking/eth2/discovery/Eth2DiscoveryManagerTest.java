@@ -39,7 +39,7 @@ class Eth2DiscoveryManagerTest {
   private final EventBus eventBus = new EventBus();
 
   private final Eth2DiscoveryManager mockDiscoveryManager = mock(Eth2DiscoveryManager.class);
-  private final P2PNetwork mockNetwork = mock(P2PNetwork.class);
+  private final P2PNetwork<?> mockNetwork = mock(P2PNetwork.class);
 
   @Test
   void testDiscoveryMangerStartStop() throws ExecutionException, InterruptedException {
