@@ -42,12 +42,6 @@ public class Eth2NetworkFactory {
 
   protected final List<Eth2Network> networks = new ArrayList<>();
 
-  Eth2NetworkBuilder eth2NetworkBuilder;
-
-  public Eth2NetworkFactory() {
-    eth2NetworkBuilder = Eth2NetworkBuilder.create();
-  }
-
   public Eth2Network startNetwork() throws Exception {
 
     final Eth2Network network = buildAndStartNetwork();
@@ -135,6 +129,7 @@ public class Eth2NetworkFactory {
   public Eth2Network buildNetwork(final NetworkConfig config) {
     {
       setDefaults();
+      Eth2NetworkBuilder eth2NetworkBuilder = Eth2NetworkBuilder.create();
 
       eth2NetworkBuilder.config(config);
       eth2NetworkBuilder.eventBus(eventBus);
@@ -142,7 +137,13 @@ public class Eth2NetworkFactory {
       eth2NetworkBuilder.metricsSystem(METRICS_SYSTEM);
       eth2NetworkBuilder.discovery(generateConfig());
 
-      return eth2NetworkBuilder.build();
+      Eth2Network ret = eth2NetworkBuilder.build();
+
+      // clean up
+      eventBus = null;
+      chainStorageClient = null;
+
+      return ret;
     }
   }
 }

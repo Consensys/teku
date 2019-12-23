@@ -43,6 +43,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
@@ -59,6 +61,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
+
+  private final Logger logger = LogManager.getLogger(LibP2PNetwork.class);
   private final PrivKey privKey;
   private final NetworkConfig config;
   private final NodeId nodeId;
@@ -163,6 +167,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   @Override
   public SafeFuture<?> connect(final String peer) {
+    logger.info("Connecting to " + peer);
     return peerManager.connect(new Multiaddr(peer), host.getNetwork());
   }
 

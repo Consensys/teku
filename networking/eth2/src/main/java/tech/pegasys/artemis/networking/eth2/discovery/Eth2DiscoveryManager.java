@@ -83,7 +83,7 @@ public class Eth2DiscoveryManager {
 
   // configuration of discovery service
   private List<String> peers; // for setting boot nodes
-  private Optional<PrivKey> privateKey; // for generating ENR records
+  private Optional<PrivKey> privateKey = Optional.empty(); // for generating ENR records
 
   // the network to potentially affect with discovered peers
   private Optional<P2PNetwork<?>> network = Optional.empty();
@@ -95,7 +95,7 @@ public class Eth2DiscoveryManager {
     setupDiscoveryManager();
   }
 
-  public Eth2DiscoveryManager(P2PNetwork<?> network, final EventBus eventBus) {
+  public Eth2DiscoveryManager(final P2PNetwork<?> network, final EventBus eventBus) {
     this.network = Optional.of(network);
     this.eventBus = Optional.of(eventBus);
     setupDiscoveryManager();
@@ -121,7 +121,7 @@ public class Eth2DiscoveryManager {
    *
    * @return Future indicating failure or State.RUNNING
    */
-  public CompletableFuture<?> start() {
+  public CompletableFuture<State> start() {
     if (!state.compareAndSet(State.STOPPED, State.RUNNING)) {
       return CompletableFuture.failedFuture(new IllegalStateException("Network already started"));
     }
@@ -137,7 +137,7 @@ public class Eth2DiscoveryManager {
    *
    * @return Future indicating failure or State.STOPPED
    */
-  public CompletableFuture<?> stop() {
+  public CompletableFuture<State> stop() {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return CompletableFuture.failedFuture(new IllegalStateException("Network already stopped"));
     }
@@ -241,14 +241,16 @@ public class Eth2DiscoveryManager {
 
               network.ifPresent(
                   n -> {
-                    n.connect(
+                    String d = Base58.INSTANCE.encode(node.getNode().getNodeId().toArray());
+                    SafeFuture<?> connect =
+                        n.connect(
                             "/ip4/"
                                 + byAddress.getHostAddress()
                                 + "/tcp/"
-                                + (int) node.getNode().get(UDP_V4)
+                                + node.getNode().get(UDP_V4)
                                 + "/p2p/"
-                                + Base58.INSTANCE.encode(node.getNode().getNodeId().toArray()))
-                        .reportExceptions();
+                                + d);
+                    logger.debug("hree" + connect);
                   });
             } catch (UnknownHostException e) {
               logger.error("Got unknown host exception for Peer Response");

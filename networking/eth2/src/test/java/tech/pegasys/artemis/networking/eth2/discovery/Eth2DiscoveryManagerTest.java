@@ -21,8 +21,8 @@ import static org.mockito.Mockito.verify;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManager.State;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
 class Eth2DiscoveryManagerTest {
@@ -75,15 +75,26 @@ class Eth2DiscoveryManagerTest {
   }
 
   @Test
-  void testNetworkUsage() throws UnknownHostException {
+  void testNetworkUsage() throws Exception {
+    // mocked discovery manager
     Eth2DiscoveryManager dm = new Eth2DiscoveryManager(mockNetwork, eventBus);
+
+    // tested against real discovery manager
+    //    final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+    //    Eth2Network network1 = networkFactory.startNetwork();
+    //    Eth2DiscoveryManager dmReal = new Eth2DiscoveryManager(network1, eventBus);
+
     eventBus.register(dm);
-    SafeFuture.of(dm.start()).reportExceptions();
+    State state = dm.start().get(10, TimeUnit.SECONDS);
+    Assertions.assertEquals(
+        State.RUNNING, state, "Failed to start discovery manager with mock network");
+    //    doReturn(dmReal.getNodeTable()).when(dm).getNodeTable();
 
     final String remoteHostEnr =
         "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
     NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
-    dm.getNodeTable().save(NodeRecordInfo.createDefault(remoteNodeRecord));
+    NodeRecordInfo remoteNodeRecordInfo = NodeRecordInfo.createDefault(remoteNodeRecord);
+    dm.getNodeTable().save(remoteNodeRecordInfo);
     InetAddress byAddress =
         InetAddress.getByAddress(((Bytes) remoteNodeRecord.get(IP_V4)).toArray());
 
@@ -100,9 +111,7 @@ class Eth2DiscoveryManagerTest {
   @Test
   void nodeTableIntegrationTest() throws Exception {
     final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-
     Eth2Network network1 = networkFactory.startNetwork();
-
     Eth2DiscoveryManager dm = new Eth2DiscoveryManager(network1, eventBus);
 
     final String remoteHostEnr =
