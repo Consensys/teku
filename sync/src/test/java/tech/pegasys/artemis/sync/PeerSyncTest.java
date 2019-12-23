@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -26,10 +25,12 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
@@ -38,8 +39,9 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
-import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -76,11 +78,37 @@ public class PeerSyncTest {
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
+    // By default set up block import to succeed
+    final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
+    when(blockImporter.importBlock(BLOCK))
+        .thenReturn(BlockImportResult.successful(processingRecord));
     peerSync = new PeerSync(storageClient, blockImporter);
   }
 
   @Test
-  void sync_badBlock() throws StateTransitionException {
+  void sync_failedImport_stateTransitionError() {
+    final BlockImportResult importResult =
+        BlockImportResult.failedStateTransition(new StateTransitionException(null));
+    testFailedBlockImport(() -> importResult, true);
+  }
+
+  @Test
+  void sync_failedImport_unknownParent() {
+    testFailedBlockImport(() -> BlockImportResult.FAILED_UNKNOWN_PARENT, true);
+  }
+
+  @Test
+  void sync_failedImport_unknownAncestry() {
+    testFailedBlockImport(() -> BlockImportResult.FAILED_INVALID_ANCESTRY, false);
+  }
+
+  @Test
+  void sync_failedImport_unknownBlockIsFromFuture() {
+    testFailedBlockImport(() -> BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE, false);
+  }
+
+  void testFailedBlockImport(
+      final Supplier<BlockImportResult> importResult, final boolean shouldDisconnect) {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -100,26 +128,30 @@ public class PeerSyncTest {
         responseListenerArgumentCaptor.getValue();
 
     // Importing the returned block fails
-    doThrow(new StateTransitionException("Bad block")).when(blockImporter).importBlock(BLOCK);
+    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult.get());
     // Probably want to have a specific exception type to indicate bad data.
     try {
       responseListener.onResponse(BLOCK);
       fail("Should have thrown an error to indicate the response was bad");
-    } catch (final PeerSync.BadBlockException e) {
+    } catch (final FailedBlockImportException e) {
       // RpcMessageHandler will consider the request complete if there's an error processing a
       // response
       requestFuture.completeExceptionally(e);
     }
 
-    // Should disconnect the peer and consider the sync complete.
-    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
     assertThat(syncFuture).isCompleted();
     PeerSyncResult result = syncFuture.join();
-    assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
+    if (shouldDisconnect) {
+      verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+      assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
+    } else {
+      verify(peer, never()).sendGoodbye(any());
+      assertThat(result).isEqualByComparingTo(PeerSyncResult.IMPORT_FAILED);
+    }
   }
 
   @Test
-  void sync_stoppedBeforeBlockImport() throws StateTransitionException {
+  void sync_stoppedBeforeBlockImport() {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -159,7 +191,7 @@ public class PeerSyncTest {
   }
 
   @Test
-  void sync_badAdvertisedFinalizedEpoch() throws StateTransitionException {
+  void sync_badAdvertisedFinalizedEpoch() {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -196,7 +228,7 @@ public class PeerSyncTest {
   }
 
   @Test
-  void sync_longSyncWithTwoRequests() throws StateTransitionException {
+  void sync_longSyncWithTwoRequests() {
     UnsignedLong peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(UnsignedLong.ONE);
 
     final PeerStatus peer_status =
