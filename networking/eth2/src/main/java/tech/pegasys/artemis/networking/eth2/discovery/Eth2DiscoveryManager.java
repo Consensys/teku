@@ -242,15 +242,26 @@ public class Eth2DiscoveryManager {
               network.ifPresent(
                   n -> {
                     String d = Base58.INSTANCE.encode(node.getNode().getNodeId().toArray());
-                    SafeFuture<?> connect =
-                        n.connect(
-                            "/ip4/"
-                                + byAddress.getHostAddress()
-                                + "/tcp/"
-                                + node.getNode().get(UDP_V4)
-                                + "/p2p/"
-                                + d);
-                    logger.debug("hree" + connect);
+                    String connectString =
+                        "/ip4/"
+                            + byAddress.getHostAddress()
+                            + "/tcp/"
+                            + node.getNode().get(UDP_V4)
+                            + "/p2p/"
+                            + d;
+                    SafeFuture<?> connect = n.connect(connectString);
+                    if (connect != null) {
+                      connect.finish(
+                          r -> {
+                            logger.info("discv5 connected to:" + connectString);
+                          },
+                          t -> {
+                            logger.error("discv5 connect failed: " + t.toString());
+                          });
+                    } else {
+                      logger.error(
+                          "connect failed with null, is this a mock? If so, the repo check expects a safe future to be handled, before being able to to test the mock");
+                    }
                   });
             } catch (UnknownHostException e) {
               logger.error("Got unknown host exception for Peer Response");
