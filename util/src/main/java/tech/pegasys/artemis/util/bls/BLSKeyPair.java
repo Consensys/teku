@@ -15,10 +15,9 @@ package tech.pegasys.artemis.util.bls;
 
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 
-public class BLSKeyPair {
+public final class BLSKeyPair {
 
-  private BLSPublicKey publicKey;
-  private BLSSecretKey secretKey;
+  private final KeyPair keyPair;
 
   public static BLSKeyPair random() {
     return new BLSKeyPair(KeyPair.random());
@@ -29,15 +28,14 @@ public class BLSKeyPair {
   }
 
   public BLSKeyPair(KeyPair keyPair) {
-    this.publicKey = new BLSPublicKey(keyPair.publicKey());
-    this.secretKey = new BLSSecretKey(keyPair.secretKey());
+    this.keyPair = keyPair;
   }
 
   public BLSPublicKey getPublicKey() {
-    return publicKey;
+    return new BLSPublicKey(keyPair.publicKey());
   }
 
   public BLSSecretKey getSecretKey() {
-    return secretKey;
+    return new BLSSecretKey(keyPair.secretKey());
   }
 }

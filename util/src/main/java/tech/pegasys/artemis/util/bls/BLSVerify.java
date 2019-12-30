@@ -16,23 +16,11 @@ package tech.pegasys.artemis.util.bls;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
+/** Stub to allow every to compile. TODO - remove */
 public class BLSVerify {
 
-  /**
-   * The bls_verify() function as defined in the Eth2 specification
-   *
-   * @param pubkey the compressed public key
-   * @param messageHash the message digest signed
-   * @param signature the signature
-   * @param domain the domain parameter defined by the spec
-   * @return true if the signature is valid over these parameters, false if not
-   */
   public static boolean bls_verify(
       BLSPublicKey pubkey, Bytes32 messageHash, BLSSignature signature, Bytes domain) {
-    try {
-      return signature.checkSignature(pubkey, Bytes.wrap(messageHash), domain);
-    } catch (RuntimeException e) {
-      return false;
-    }
+    return true;
   }
 }

@@ -18,12 +18,8 @@ import static java.util.Objects.isNull;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.util.mikuli.BLS12381;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.Signature;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
@@ -31,38 +27,21 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  public static final int BLS_SIGNATURE_SIZE = 96;
+  private static final int BLS_SIGNATURE_SIZE = 96;
 
   /**
-   * Create a signature by signing the given message and domain with the given private key
+   * Create a random, but valid, signature.
    *
-   * @param keyPair the public and private key
-   * @param message ***This will change to the digest of the message***
-   * @param domain the signature domain as per the Eth2 spec
-   * @return the resulting signature
-   */
-  public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, Bytes domain) {
-    return new BLSSignature(
-        BLS12381
-            .sign(
-                new KeyPair(
-                    keyPair.getSecretKey().getSecretKey(), keyPair.getPublicKey().getPublicKey()),
-                message,
-                domain)
-            .signature());
-  }
-
-  /**
-   * Create a random, but valid, signature
+   * <p>TODO: track down all usages of this and insert a seed value. Then delete this method.
    *
    * @return a random signature
    */
   public static BLSSignature random() {
-    return new BLSSignature(Signature.random());
+    return new BLSSignature(Signature.random(1));
   }
 
   /**
-   * Creates a random, but valid, signature
+   * Creates a random, but valid, signature based on a seed.
    *
    * @param entropy to seed the key pair generation
    * @return the signature
@@ -72,7 +51,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
   }
 
   /**
-   * Creates an empty signature (all zero bytes)
+   * Creates an empty signature (all zero bytes).
    *
    * @return the empty signature as per the Eth2 spec
    */
@@ -80,16 +59,9 @@ public class BLSSignature implements SimpleOffsetSerializable {
     return BLSSignature.fromBytes(Bytes.wrap(new byte[BLS_SIGNATURE_SIZE]));
   }
 
-  /**
-   * Aggregates a list of signatures into a single signature using BLS magic.
-   *
-   * @param signatures the list of signatures to be aggregated
-   * @return the aggregated signature
-   */
-  static BLSSignature aggregate(List<BLSSignature> signatures) {
-    List<Signature> signatureObjects =
-        signatures.stream().map(x -> x.signature).collect(Collectors.toList());
-    return new BLSSignature(Signature.aggregate(signatureObjects));
+  // Temporary stub to get things to compile. TODO: remove in favour of BLS.sign()
+  public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, Bytes domain) {
+    return BLS.sign(keyPair.getSecretKey(), message);
   }
 
   @Override
@@ -121,39 +93,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
   }
 
   /**
-   * Verify the signature against the given public key, message and domain
-   *
-   * @param publicKey the public key of the key pair that signed the message
-   * @param message the message
-   * @param domain the domain as specified in the Eth2 spec
-   * @return true if the signature is valid, false if it is not
-   */
-  boolean checkSignature(BLSPublicKey publicKey, Bytes message, Bytes domain) {
-    return BLS12381.verify(publicKey.getPublicKey(), signature, message, domain);
-  }
-
-  /**
-   * Verify the aggregate signature against the given list of public keys, list of messages and
-   * domain
-   *
-   * @param publicKeys the list of public keys signed the messages
-   * @param messages the messages to be authenticated
-   * @param domain the domain as specified in the Eth2 spec
-   * @return true if the signature is valid, false if it is not
-   */
-  boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, Bytes domain) {
-    checkArgument(
-        publicKeys.size() == messages.size(),
-        "Differing numbers of public keys and messages: %s and %s",
-        publicKeys.size(),
-        messages.size());
-    List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(x -> x.getPublicKey()).collect(Collectors.toList());
-    return BLS12381.verifyMultiple(publicKeyObjects, signature, messages, domain);
-  }
-
-  /**
-   * Returns the SSZ serialisation of the <em>compressed</em> form of the signature
+   * Returns the SSZ serialisation of the <em>compressed</em> form of the signature.
    *
    * @return the serialisation of the compressed form of the signature.
    */

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.mikuli.G1Point.isInGroup;
 
+import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
@@ -49,13 +50,13 @@ class G1PointTest {
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSamePoint() {
-    G1Point point = G1Point.random();
+    G1Point point = G1Point.random(65L);
     assertEquals(point, point);
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalPoints() {
-    G1Point point = G1Point.random();
+    G1Point point = G1Point.random(129L);
     G1Point copyOfPoint = new G1Point(point.ecpPoint());
     assertEquals(point, copyOfPoint);
   }
@@ -75,15 +76,41 @@ class G1PointTest {
   }
 
   @Test
+  void succeedsWhenPointIsImmutableUnderNeg() {
+    G1Point expected = G1Point.random(42L);
+    G1Point actual = expected;
+    actual.neg(); // Should not change the value of actual
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void succeedsWhenPointIsImmutableUnderAdd() {
+    G1Point expected = G1Point.random(42L);
+    G1Point actual = expected;
+    G1Point test = G1Point.random(43L);
+    actual.add(test); // Should not change the value of actual
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void succeedsWhenPointIsImmutableUnderMul() {
+    G1Point expected = G1Point.random(42L);
+    G1Point actual = expected;
+    Scalar test = new Scalar(new BIG(2));
+    actual.mul(test); // Should not change the value of actual
+    assertEquals(expected, actual);
+  }
+
+  @Test
   void succeedsWhenSerialiseDeserialiseRoundTripWorks() {
-    G1Point point1 = G1Point.random();
+    G1Point point1 = G1Point.random(257L);
     G1Point point2 = G1Point.fromBytes(point1.toBytes());
     assertEquals(point1, point2);
   }
 
   @Test
   void succeedsWhenSerialiseDeserialiseCompressedRoundTripWorks() {
-    G1Point point1 = G1Point.random();
+    G1Point point1 = G1Point.random(513L);
     G1Point point2 = G1Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
   }
@@ -236,7 +263,7 @@ class G1PointTest {
   @Test
   void succeedsWhenTheSamePointsHaveTheSameHashcodes() {
     // Arrive at the same point in two different ways
-    G1Point point1 = G1Point.random();
+    G1Point point1 = G1Point.random(1025L);
     G1Point point2 = new G1Point(point1.ecpPoint());
     point2.add(point2);
     point1.ecpPoint().dbl();

@@ -35,15 +35,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 public final class G2Point implements Group<G2Point> {
 
   /**
-   * Generate a random point on the curve
-   *
-   * @return a random point on the curve.
-   */
-  public static G2Point random() {
-    return random(new Random());
-  }
-
-  /**
    * Generate a random point on the curve from a seed value. The same seed value gives the same
    * point.
    *
@@ -75,23 +66,20 @@ public final class G2Point implements Group<G2Point> {
    * Hashes to the G2 curve as described in the Eth2 spec
    *
    * @param message the message to be hashed. This is usually the 32 byte message digest.
-   * @param domainBytes the signature domain as defined in the Eth2 spec. Should be 8 bytes.
    * @return a point from the G2 group representing the message hash
    */
   @VisibleForTesting
-  public static G2Point hashToG2(Bytes message, Bytes domainBytes) {
+  public static G2Point hashToG2(Bytes message) {
     Security.addProvider(new BouncyCastleProvider());
     Bytes padding = Bytes.wrap(new byte[16]);
 
     byte[] xReBytes =
         Bytes.concatenate(
-                padding,
-                Hash.sha2_256(Bytes.concatenate(message, domainBytes, Bytes.fromHexString("0x01"))))
+                padding, Hash.sha2_256(Bytes.concatenate(message, Bytes.fromHexString("0x01"))))
             .toArray();
     byte[] xImBytes =
         Bytes.concatenate(
-                padding,
-                Hash.sha2_256(Bytes.concatenate(message, domainBytes, Bytes.fromHexString("0x02"))))
+                padding, Hash.sha2_256(Bytes.concatenate(message, Bytes.fromHexString("0x02"))))
             .toArray();
 
     BIG xRe = BIG.fromBytes(xReBytes);
@@ -106,6 +94,11 @@ public final class G2Point implements Group<G2Point> {
     }
 
     return new G2Point(scaleWithCofactor(normaliseY(point)));
+  }
+
+  /** Dummy to allow things to compile. TODO: remove */
+  public static G2Point hashToG2(Bytes message, Bytes domain) {
+    return hashToG2(message);
   }
 
   /**
@@ -185,17 +178,14 @@ public final class G2Point implements Group<G2Point> {
 
   @Override
   public G2Point add(G2Point other) {
-    ECP2 sum = new ECP2();
-    sum.add(point);
-    sum.add(other.point);
-    sum.affine();
-    return new G2Point(sum);
+    ECP2 newPoint = new ECP2(point);
+    newPoint.add(other.point);
+    return new G2Point(newPoint);
   }
 
   @Override
   public G2Point mul(Scalar scalar) {
-    ECP2 newPoint = point.mul(scalar.value());
-    return new G2Point(newPoint);
+    return new G2Point(point.mul(scalar.value()));
   }
 
   Bytes toBytes() {
@@ -210,6 +200,9 @@ public final class G2Point implements Group<G2Point> {
    * <p>In compresssed form we (a) pass only the X coordinate, and (b) include flags in the higher
    * order bits per the Eth2 BLS spec. We also take care about encoding the real and imaginary parts
    * in the correct order: [Im, Re]
+   *
+   * <p>The standard follows the ZCash format for serialisation documented here:
+   * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
    *
    * @return the serialised compressed form of the point
    */
@@ -240,7 +233,10 @@ public final class G2Point implements Group<G2Point> {
   }
 
   /**
-   * Deserialise the point from compressed form as per the Eth2 spec
+   * Deserialise the point from compressed form.
+   *
+   * <p>The standard follows the ZCash format for serialisation documented here:
+   * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
    *
    * @param bytes the compressed serialised form of the point
    * @return the point
@@ -278,7 +274,7 @@ public final class G2Point implements Group<G2Point> {
       }
     }
 
-    // Per the spec, we must check that x < q (the curve modulus) for this serialisation to be valid
+    // We must check that x < q (the curve modulus) for this serialisation to be valid
     // We raise an exception (that should be caught) if this check fails: somebody might feed us
     // faulty input.
     BIG xImBig = BIG.fromBytes(xImBytes);
@@ -311,7 +307,16 @@ public final class G2Point implements Group<G2Point> {
     return new G2Point(point);
   }
 
-  // Verify that the given point is in the correct subgroup for G2 by multiplying by the group order
+  /**
+   * Verify that the given point is in the correct subgroup for G2 by multiplying by the group
+   * order.
+   *
+   * <p>There is a potentially more efficient way to do this described in
+   * https://eprint.iacr.org/2019/814.pdf
+   *
+   * @param point The elliptic curve point
+   * @return True if the point is in G2; false otherwise
+   */
   static boolean isInGroup(ECP2 point) {
     ECP2 orderCheck = point.mul(new BIG(ROM.CURVE_Order));
     return orderCheck.is_infinity();

@@ -31,15 +31,6 @@ import org.apache.tuweni.bytes.Bytes;
 public final class G1Point implements Group<G1Point> {
 
   /**
-   * Generate a random point on the curve
-   *
-   * @return a random point on the curve.
-   */
-  public static G1Point random() {
-    return random(new Random());
-  }
-
-  /**
    * Generate a random point on the curve from a seed value. The same seed value gives the same
    * point.
    *
@@ -65,17 +56,20 @@ public final class G1Point implements Group<G1Point> {
     return new G1Point(scaleWithCofactor(point));
   }
 
-  /**
-   * Deserialise the point from compressed form as per the Eth2 spec
-   *
-   * @param bytes the compressed serialised form of the point
-   * @return the point
-   */
   static G1Point fromBytes(Bytes bytes) {
     checkArgument(bytes.size() == 49, "Expected 49 bytes, received %s.", bytes.size());
     return new G1Point(ECP.fromBytes(bytes.toArrayUnsafe()));
   }
 
+  /**
+   * Deserialise the point from compressed form.
+   *
+   * <p>The standard follows the ZCash format for serialisation documented here:
+   * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
+   *
+   * @param bytes the compressed serialised form of the point
+   * @return the point
+   */
   public static G1Point fromBytesCompressed(Bytes bytes) {
     checkArgument(
         bytes.size() == fpPointSize,
@@ -104,7 +98,7 @@ public final class G1Point implements Group<G1Point> {
       }
     }
 
-    // Per the spec, we must check that x < q (the curve modulus) for this serialisation to be valid
+    // We must check that x < q (the curve modulus) for this serialisation to be valid
     // We raise an exception (that should be caught) if this check fails: somebody might feed us
     // faulty input.
     BIG xBig = BIG.fromBytes(xBytes);
@@ -141,7 +135,7 @@ public final class G1Point implements Group<G1Point> {
    * @param point the point to be scaled
    * @return a scaled point
    */
-  static ECP scaleWithCofactor(ECP point) {
+  private static ECP scaleWithCofactor(ECP point) {
 
     // The G1 cofactor
     String cofactorHex =
@@ -172,16 +166,19 @@ public final class G1Point implements Group<G1Point> {
 
   @Override
   public G1Point add(G1Point other) {
-    ECP sum = new ECP();
-    sum.add(point);
-    sum.add(other.point);
-    sum.affine();
-    return new G1Point(sum);
+    ECP newPoint = new ECP(point);
+    newPoint.add(other.point);
+    return new G1Point(newPoint);
   }
 
   @Override
   public G1Point mul(Scalar scalar) {
-    ECP newPoint = point.mul(scalar.value());
+    return new G1Point(point.mul(scalar.value()));
+  }
+
+  public G1Point neg() {
+    ECP newPoint = new ECP(point);
+    newPoint.neg();
     return new G1Point(newPoint);
   }
 
@@ -196,10 +193,13 @@ public final class G1Point implements Group<G1Point> {
   }
 
   /**
-   * Serialise the point into compressed form
+   * Serialise the point into compressed form.
    *
    * <p>In compresssed form we (a) pass only the X coordinate, and (b) include flags in the higher
    * order bits per the Eth2 BLS spec.
+   *
+   * <p>The standard follows the ZCash format for serialisation documented here:
+   * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
    *
    * @return the serialised compressed form of the point
    */
@@ -220,7 +220,16 @@ public final class G1Point implements Group<G1Point> {
     return Bytes.wrap(xBytes);
   }
 
-  // Verify that the given point is in the correct subgroup for G2 by multiplying by the group order
+  /**
+   * Verify that the given point is in the correct subgroup for G2 by multiplying by the group
+   * order.
+   *
+   * <p>There is a potentially more efficient way to do this described in
+   * https://eprint.iacr.org/2019/814.pdf
+   *
+   * @param point The elliptic curve point
+   * @return True if the point is in G2; false otherwise
+   */
   static boolean isInGroup(ECP point) {
     ECP orderCheck = point.mul(new BIG(ROM.CURVE_Order));
     return orderCheck.is_infinity();

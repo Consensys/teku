@@ -11,19 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.artemis.util.mikuli;
 
-import tech.pegasys.artemis.util.mikuli.SecretKey;
+import static org.junit.jupiter.api.Assertions.*;
 
-public final class BLSSecretKey {
+import org.junit.jupiter.api.Test;
 
-  private SecretKey secretKey;
+class AtePairingTest {
 
-  BLSSecretKey(SecretKey secretKey) {
-    this.secretKey = secretKey;
-  }
+  @Test
+  void pairAndPair2AreEquivalent() {
+    G1Point p1 = G1Point.random(1L);
+    G2Point q2 = G2Point.random(2L);
+    G1Point r1 = G1Point.random(3L);
+    G2Point s2 = G2Point.random(4L);
 
-  public SecretKey getSecretKey() {
-    return secretKey;
+    GTPoint expected = AtePairing.pair(p1, q2).mul(AtePairing.pair(r1, s2));
+    GTPoint actual = AtePairing.pair2(p1, q2, r1, s2);
+
+    assertEquals(expected, actual);
   }
 }

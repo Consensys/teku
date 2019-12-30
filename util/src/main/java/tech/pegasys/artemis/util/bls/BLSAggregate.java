@@ -15,31 +15,14 @@ package tech.pegasys.artemis.util.bls;
 
 import java.util.List;
 
+/** Stub to allow every to compile. TODO - remove */
 public class BLSAggregate {
 
-  /**
-   * The bls_aggregate_pubkeys() function as defined in the Eth2 specification
-   *
-   * @param pubKeys the list of compressed public keys
-   * @return the aggregated public key
-   */
   public static BLSPublicKey bls_aggregate_pubkeys(List<BLSPublicKey> pubKeys) {
-    return BLSPublicKey.aggregate(pubKeys);
+    return BLSPublicKey.random(0);
   }
 
-  /**
-   * The bls_aggregate_signatures() function as defined in the Eth2 specification
-   *
-   * @param signatures the list of signature objects
-   * @return the aggregated signature
-   */
   public static BLSSignature bls_aggregate_signatures(List<BLSSignature> signatures) {
-    try {
-      return BLSSignature.aggregate(signatures);
-    } catch (RuntimeException e) {
-      // TODO: once we stop using random (unseeded signatures) keypairs,
-      // then the signatures will be predictable and the resulting state can be precomputed
-      return BLSSignature.random();
-    }
+    return BLSSignature.random(0);
   }
 }
