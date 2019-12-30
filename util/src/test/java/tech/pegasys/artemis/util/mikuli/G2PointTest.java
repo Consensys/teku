@@ -55,13 +55,13 @@ class G2PointTest {
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSamePoint() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(42L);
     assertEquals(point, point);
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalPoints() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(117L);
     G2Point copyOfPoint = new G2Point(point.ecp2Point());
     assertEquals(point, copyOfPoint);
   }
@@ -81,15 +81,33 @@ class G2PointTest {
   }
 
   @Test
+  void succeedsWhenPointIsImmutableUnderAdd() {
+    G2Point expected = G2Point.random(42L);
+    G2Point actual = expected;
+    G2Point test = G2Point.random(43L);
+    actual.add(test); // Should not change the value of actual
+    assertEquals(expected, actual);
+  }
+
+  @Test
+  void succeedsWhenPointIsImmutableUnderMul() {
+    G2Point expected = G2Point.random(42L);
+    G2Point actual = expected;
+    Scalar test = new Scalar(new BIG(2));
+    actual.mul(test); // Should not change the value of actual
+    assertEquals(expected, actual);
+  }
+
+  @Test
   void succeedsWhenSerialiseDeserialiseRoundTripWorks() {
-    G2Point point1 = G2Point.random();
+    G2Point point1 = G2Point.random(257L);
     G2Point point2 = G2Point.fromBytes(point1.toBytes());
     assertEquals(point1, point2);
   }
 
   @Test
   void succeedsWhenSerialiseDeserialiseCompressedRoundTripWorks() {
-    G2Point point1 = G2Point.random();
+    G2Point point1 = G2Point.random(513L);
     G2Point point2 = G2Point.fromBytesCompressed(point1.toBytesCompressed());
     assertEquals(point1, point2);
   }
@@ -97,7 +115,7 @@ class G2PointTest {
   // Sanity check for the scaleTestReference1() reference test function
   @Test
   void succeedsWhenScalingReferenceTestCorrectlyMultipliesByOne() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(7L);
     long[] factor = {0x0000000000000001L};
     G2Point scaledPoint = scaleTestReference1(point, factor);
     assertEquals(point, scaledPoint);
@@ -106,7 +124,7 @@ class G2PointTest {
   // Sanity check for the scale() reference test function
   @Test
   void succeedsWhenScalingReferenceTestCorrectlyMultipliesByLong() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(97L);
     long[] factor = {0xcf1c38e31c7238e5L};
 
     // Scale point using our routine
@@ -122,7 +140,7 @@ class G2PointTest {
   // Sanity check for the scale() reference test function
   @Test
   void succeedsWhenScalingReferenceTestCorrectlyMultipliesByArrayOfLong() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(1025L);
     long[] factor = {0xf0f0f0f0f0f0f0f0L, 0x0f0f0f0f0f0f0f0fL, 0xaa00aa00aa00aa00L};
     long[] factorRev = {0xaa00aa00aa00aa00L, 0x0f0f0f0f0f0f0f0fL, 0xf0f0f0f0f0f0f0f0L};
 
@@ -139,7 +157,7 @@ class G2PointTest {
   // Sanity check for the scale() reference test functions
   @Test
   void succeedsWhenScalingReferenceTestsAgreeForLong() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(2049L);
     long[] factor = {0xcf1c38e31c7238e5L};
 
     // Scale point using our long multiplication routine
@@ -154,7 +172,7 @@ class G2PointTest {
   // Sanity check for the scale() reference test functions
   @Test
   void succeedsWhenScalingReferenceTestsAgreeForCofactor() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(4097L);
 
     // Scale point using our long multiplication routine
     G2Point scaledPoint1 = scaleTestReference1(point, cofactor);
@@ -167,7 +185,7 @@ class G2PointTest {
 
   @Test
   void succeedsWhenScalingByCofactorAgreesWithTheReferenceTest() {
-    G2Point point = G2Point.random();
+    G2Point point = G2Point.random(8193L);
 
     // Scale point using scale2()
     G2Point scaledPoint1 = scaleTestReference2(point, cofactor);
@@ -439,7 +457,7 @@ class G2PointTest {
   @Test
   void succeedsWhenTheSamePointsHaveTheSameHashcodes() {
     // Arrive at the same point in two different ways
-    G2Point point1 = G2Point.random();
+    G2Point point1 = G2Point.random(23L);
     G2Point point2 = new G2Point(point1.ecp2Point());
     point2.add(point2);
     point1.ecp2Point().dbl();

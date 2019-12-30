@@ -26,8 +26,9 @@ import org.apache.tuweni.bytes.Bytes;
 /** This class represents a Signature on G2 */
 public final class Signature {
 
-  public static final int COMPRESSED_SIG_SIZE = 96;
-  public static final int UNCOMPRESSED_SIG_SIZE = 192;
+  private static final int COMPRESSED_SIG_SIZE = 96;
+  private static final int UNCOMPRESSED_SIG_SIZE = 192;
+  private static final G1Point g1GeneratorNeg = KeyPair.g1Generator.neg();
 
   /**
    * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
@@ -36,7 +37,7 @@ public final class Signature {
    * @param signatures The list of signatures to aggregate
    * @return Signature
    */
-  public static Signature aggregate(List<Signature> signatures) {
+  static Signature aggregate(List<Signature> signatures) {
     if (signatures.isEmpty()) {
       return new Signature(new G2Point());
     }
@@ -72,26 +73,13 @@ public final class Signature {
   /**
    * Create a random signature for testing
    *
-   * @return a random, valid signature
-   */
-  public static Signature random() {
-    KeyPair keyPair = KeyPair.random();
-    byte[] message = "Hello, world!".getBytes(UTF_8);
-    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, Bytes.ofUnsignedLong(48L));
-    return sigAndPubKey.signature();
-  }
-
-  /**
-   * Create a random signature for testing
-   *
    * @param entropy to seed the key pair generation
    * @return a random, valid signature
    */
   public static Signature random(int entropy) {
     KeyPair keyPair = KeyPair.random(entropy);
     byte[] message = "Hello, world!".getBytes(UTF_8);
-    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, Bytes.ofUnsignedLong(48L));
-    return sigAndPubKey.signature();
+    return BLS12381.sign(keyPair.secretKey(), Bytes.wrap(message));
   }
 
   // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
@@ -100,7 +88,7 @@ public final class Signature {
   private final Supplier<G2Point> point;
 
   /**
-   * Construct signature from a given G2 point
+   * Construct signature from a given G2 point.
    *
    * @param point the G2 point corresponding to the signature
    */
@@ -109,13 +97,18 @@ public final class Signature {
     this.point = () -> point;
   }
 
+  /**
+   * Construct signature from provided Bytes.
+   *
+   * @param rawData Bytes that may or may not correspond to a G2 point
+   */
   Signature(Bytes rawData) {
     this.rawData = rawData;
     this.point = Suppliers.memoize(() -> parseSignatureBytes(this.rawData));
   }
 
   /**
-   * Construct a copy of a signature
+   * Construct a copy of a signature.
    *
    * @param signature the signature to be copied
    */
@@ -140,12 +133,28 @@ public final class Signature {
   }
 
   /**
+   * Verify that this signature is correct for the give public key and G2Point.
+   *
+   * @param publicKey The public key, not null
+   * @param hashInGroup2 The G2 point corresponding to the message data to verify, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  boolean verify(PublicKey publicKey, G2Point hashInGroup2) {
+    try {
+      GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInGroup2, g1GeneratorNeg, point.get());
+      return e.isunity();
+    } catch (RuntimeException e) {
+      return false;
+    }
+  }
+
+  /**
    * Combines this signature with another signature, creating a new signature.
    *
    * @param signature the signature to combine with
    * @return a new signature as combination of both signatures
    */
-  public Signature combine(Signature signature) {
+  private Signature combine(Signature signature) {
     return new Signature(point.get().add(signature.point.get()));
   }
 

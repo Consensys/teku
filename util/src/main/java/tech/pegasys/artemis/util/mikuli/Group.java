@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
-/** Group is an interface that define the allowed mathematical operators */
+/** Group is an interface that defines the necessary mathematical operators */
 interface Group<G> {
 
   G add(G g);
