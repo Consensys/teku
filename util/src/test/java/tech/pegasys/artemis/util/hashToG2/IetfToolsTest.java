@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Expand;
 import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Extract;
 import static tech.pegasys.artemis.util.hashToG2.IetfTools.HMAC_SHA256;

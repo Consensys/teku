@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static tech.pegasys.artemis.util.hashToG2.Chains.expChain;
 import static tech.pegasys.artemis.util.hashToG2.Chains.mxChain;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
@@ -88,6 +88,4 @@ class ChainsTest {
   void h2ChainTest() {
     // TODO
   }
-
-
 }
