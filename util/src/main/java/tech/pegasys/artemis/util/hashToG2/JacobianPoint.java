@@ -158,6 +158,20 @@ final class JacobianPoint {
   }
 
   /**
+   * Calculate the point multiplied by (2 ^ n)
+   *
+   * @param n the number of times to double the point
+   * @return the element to the multiplied by (2 ^ n)
+   */
+  JacobianPoint dbls(int n) {
+    JacobianPoint result = new JacobianPoint(this);
+    while (n-- > 0) {
+      result = result.dbl();
+    }
+    return result;
+  }
+
+  /**
    * Create the equivalent point in Milagro's ECP2 format.
    *
    * <p>Converts the point from Jacobian representation to the normal affine representation in the

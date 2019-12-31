@@ -59,7 +59,7 @@ public class Util {
   /**
    * Negate a field point (convenience method)
    *
-   * @param a the foeld point to negate
+   * @param a the field point to negate
    * @return the negated field point
    */
   static FP negate(FP a) {
@@ -71,7 +71,7 @@ public class Util {
   /**
    * Big-endian conversion of byte array into a BIG, modulo the field modulus.
    *
-   * <p>As defined at https://tools.ietf.org/html/rfc3447#section-4.2
+   * <p>Based on https://tools.ietf.org/html/rfc3447#section-4.2
    *
    * @param b octet string to be converted
    * @return corresponding nonnegative integer
