@@ -19,115 +19,13 @@ import static tech.pegasys.artemis.util.hashToG2.Chains.mxChain;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Expand;
 import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Extract;
-import static tech.pegasys.artemis.util.hashToG2.Util.fpFromHex;
-import static tech.pegasys.artemis.util.hashToG2.Util.negate;
 import static tech.pegasys.artemis.util.hashToG2.Util.os2ip_modP;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.tuweni.bytes.Bytes;
 
-public class Helper {
-
-  // These are eighth-roots of unity
-  private static final FP RV1 =
-      fpFromHex(
-          "0x06af0e0437ff400b6831e36d6bd17ffe48395dabc2d3435e77f76e17009241c5ee67992f72ec05f4c81084fbede3cc09");
-  static final FP2Immutable[] ROOTS_OF_UNITY = {
-    new FP2Immutable(new FP(1), new FP(0)),
-    new FP2Immutable(new FP(0), new FP(1)),
-    new FP2Immutable(RV1, RV1),
-    new FP2Immutable(RV1, negate(RV1))
-  };
-
-  // 3-isogenous curve parameters
-  private static final FP2Immutable Ell2p_a = new FP2Immutable(new FP(0), new FP(240));
-  private static final FP2Immutable Ell2p_b = new FP2Immutable(new FP(1012), new FP(1012));
-
-  // Distinguished non-square in Fp2 for SWU map
-  private static final FP2Immutable xi_2 = new FP2Immutable(new FP(-2), new FP(-1));
-  private static final FP2Immutable xi_2Pow2 = xi_2.sqr();
-  private static final FP2Immutable xi_2Pow3 = xi_2Pow2.mul(xi_2);
-
-  // Eta values, used for computing sqrt(g(X1(t)))
-  private static final FP ev1 =
-      fpFromHex(
-          "0x0699be3b8c6870965e5bf892ad5d2cc7b0e85a117402dfd83b7f4a947e02d978498255a2aaec0ac627b5afbdf1bf1c90");
-  private static final FP ev2 =
-      fpFromHex(
-          "0x08157cd83046453f5dd0972b6e3949e4288020b5b8a9cc99ca07e27089a2ce2436d965026adad3ef7baba37f2183e9b5");
-  private static final FP ev3 =
-      fpFromHex(
-          "0x0ab1c2ffdd6c253ca155231eb3e71ba044fd562f6f72bc5bad5ec46a0b7a3b0247cf08ce6c6317f40edbc653a72dee17");
-  private static final FP ev4 =
-      fpFromHex(
-          "0x0aa404866706722864480885d68ad0ccac1967c7544b447873cc37e0181271e006df72162a3d3e0287bf597fbf7f8fc1");
-  private static final FP2Immutable[] etas = {
-    new FP2Immutable(ev1, ev2),
-    new FP2Immutable(negate(ev2), ev1),
-    new FP2Immutable(ev3, ev4),
-    new FP2Immutable(negate(ev4), ev3)
-  };
-
-  // Coefficients for the 3-isogeny map from Ell2' to Ell2
-  private static final FP2Immutable[] XNUM = {
-    new FP2Immutable(
-        "0x05c759507e8e333ebb5b7a9a47d7ed8532c52d39fd3a042a88b58423c50ae15d5c2638e343d9c71c6238aaaaaaaa97d6",
-        "0x05c759507e8e333ebb5b7a9a47d7ed8532c52d39fd3a042a88b58423c50ae15d5c2638e343d9c71c6238aaaaaaaa97d6"),
-    new FP2Immutable(
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "0x11560bf17baa99bc32126fced787c88f984f87adf7ae0c7f9a208c6b4f20a4181472aaa9cb8d555526a9ffffffffc71a"),
-    new FP2Immutable(
-        "0x11560bf17baa99bc32126fced787c88f984f87adf7ae0c7f9a208c6b4f20a4181472aaa9cb8d555526a9ffffffffc71e",
-        "0x08ab05f8bdd54cde190937e76bc3e447cc27c3d6fbd7063fcd104635a790520c0a395554e5c6aaaa9354ffffffffe38d"),
-    new FP2Immutable(
-        "0x171d6541fa38ccfaed6dea691f5fb614cb14b4e7f4e810aa22d6108f142b85757098e38d0f671c7188e2aaaaaaaa5ed1",
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-  };
-
-  private static final FP2Immutable[] XDEN = {
-    new FP2Immutable(
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa63"),
-    new FP2Immutable(
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c",
-        "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa9f"),
-    new FP2Immutable(
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-  };
-
-  private static final FP2Immutable[] YNUM = {
-    new FP2Immutable(
-        "0x1530477c7ab4113b59a4c18b076d11930f7da5d4a07f649bf54439d87d27e500fc8c25ebf8c92f6812cfc71c71c6d706",
-        "0x1530477c7ab4113b59a4c18b076d11930f7da5d4a07f649bf54439d87d27e500fc8c25ebf8c92f6812cfc71c71c6d706"),
-    new FP2Immutable(
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "0x05c759507e8e333ebb5b7a9a47d7ed8532c52d39fd3a042a88b58423c50ae15d5c2638e343d9c71c6238aaaaaaaa97be"),
-    new FP2Immutable(
-        "0x11560bf17baa99bc32126fced787c88f984f87adf7ae0c7f9a208c6b4f20a4181472aaa9cb8d555526a9ffffffffc71c",
-        "0x08ab05f8bdd54cde190937e76bc3e447cc27c3d6fbd7063fcd104635a790520c0a395554e5c6aaaa9354ffffffffe38f"),
-    new FP2Immutable(
-        "0x124c9ad43b6cf79bfbf7043de3811ad0761b0f37a1e26286b0e977c69aa274524e79097a56dc4bd9e1b371c71c718b10",
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-  };
-
-  private static final FP2Immutable[] YDEN = {
-    new FP2Immutable(
-        "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffa8fb",
-        "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffa8fb"),
-    new FP2Immutable(
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-        "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffa9d3"),
-    new FP2Immutable(
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000012",
-        "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa99"),
-    new FP2Immutable(
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001",
-        "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-  };
-
-  private static final FP2Immutable[][] map_coeffs = {XNUM, XDEN, YNUM, YDEN};
+class Helper {
 
   /**
    * Tests whether the given point lies on the BLS12-381 curve.
@@ -203,17 +101,17 @@ public class Helper {
     // First, compute X0(t), detecting and handling exceptional case
     FP2Immutable tPow2 = t.sqr();
     FP2Immutable tPow4 = tPow2.sqr();
-    FP2Immutable num_den_common = xi_2Pow2.mul(tPow4).add(xi_2.mul(tPow2));
-    FP2Immutable x0_num = Ell2p_b.mul(num_den_common.add(ONE));
-    FP2Immutable x0_den = Ell2p_a.neg().mul(num_den_common);
+    FP2Immutable num_den_common = Consts.xi_2Pow2.mul(tPow4).add(Consts.xi_2.mul(tPow2));
+    FP2Immutable x0_num = Consts.Ell2p_b.mul(num_den_common.add(ONE));
+    FP2Immutable x0_den = Consts.Ell2p_a.neg().mul(num_den_common);
     if (x0_den.iszilch()) {
-      x0_den = Ell2p_a.mul(xi_2);
+      x0_den = Consts.Ell2p_a.mul(Consts.xi_2);
     }
 
     // Compute num and den of g(X0(t))
     FP2Immutable gx0_den = x0_den.pow(3);
-    FP2Immutable gx0_num = Ell2p_b.mul(gx0_den);
-    gx0_num = gx0_num.add(Ell2p_a.mul(x0_num).mul(x0_den.pow(2)));
+    FP2Immutable gx0_num = Consts.Ell2p_b.mul(gx0_den);
+    gx0_num = gx0_num.add(Consts.Ell2p_a.mul(x0_num).mul(x0_den.pow(2)));
     gx0_num = gx0_num.add(x0_num.pow(3));
 
     // try taking sqrt of g(X0(t))
@@ -227,7 +125,7 @@ public class Helper {
     FP2Immutable sqrt_candidate = tmp2.mul(expChain(tmp1));
 
     // check if g(X0(t)) is square and return the sqrt if so
-    for (FP2Immutable fp2Immutable : ROOTS_OF_UNITY) {
+    for (FP2Immutable fp2Immutable : Consts.ROOTS_OF_UNITY) {
       FP2Immutable y0 = sqrt_candidate.mul(fp2Immutable);
       if (y0.sqr().mul(gx0_den).equals(gx0_num)) {
         // found sqrt(g(X0(t))). force sign of y to equal sign of t
@@ -239,14 +137,14 @@ public class Helper {
     }
 
     // if we've gotten here, then g(X0(t)) is not square. convert srqt_candidate to sqrt(g(X1(t)))
-    FP2Immutable x1_num = xi_2.mul(tPow2).mul(x0_num);
+    FP2Immutable x1_num = Consts.xi_2.mul(tPow2).mul(x0_num);
     FP2Immutable x1_den = x0_den;
     FP2Immutable tPow3 = tPow2.mul(t);
     FP2Immutable tPow6 = tPow3.sqr();
-    FP2Immutable gx1_num = xi_2Pow3.mul(tPow6).mul(gx0_num);
+    FP2Immutable gx1_num = Consts.xi_2Pow3.mul(tPow6).mul(gx0_num);
     FP2Immutable gx1_den = gx0_den;
     sqrt_candidate = sqrt_candidate.mul(tPow3);
-    for (FP2Immutable eta : etas) {
+    for (FP2Immutable eta : Consts.etas) {
       FP2Immutable y1 = eta.mul(sqrt_candidate);
       if (y1.sqr().mul(gx1_den).equals(gx1_num)) {
         // found sqrt(g(X1(t))). force sign of y to equal sign of t
@@ -287,8 +185,8 @@ public class Helper {
 
     // compute the numerator and denominator of the X and Y maps via Horner's rule
     FP2Immutable[] coeffs_z = new FP2Immutable[4];
-    for (int idx = 0; idx < map_coeffs.length; idx++) {
-      FP2Immutable[] coeffs = map_coeffs[idx];
+    for (int idx = 0; idx < Consts.map_coeffs.length; idx++) {
+      FP2Immutable[] coeffs = Consts.map_coeffs[idx];
       coeffs_z[0] = coeffs[coeffs.length - 1];
       for (int j = 1; j < coeffs.length; j++) {
         coeffs_z[j] = coeffs[coeffs.length - j - 1].mul(zpows[j]);

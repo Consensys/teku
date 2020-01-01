@@ -31,7 +31,7 @@ public class IetfTools {
    * @param key the key
    * @return Bytes of the HMAC SHA-256 of the text with key
    */
-  static Bytes HMAC_SHA256(byte[] text, byte[] key) {
+  public static Bytes HMAC_SHA256(byte[] text, byte[] key) {
 
     // SHA256 blocksize in bytes
     int blockSize = SHA256_BLOCK_SIZE;

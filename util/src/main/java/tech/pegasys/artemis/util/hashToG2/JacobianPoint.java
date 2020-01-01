@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import java.util.Objects;
-import org.apache.milagro.amcl.BLS381.ECP2;
 
 /**
  * The new hash-to-G2 algorithm initially generates points that are not on the curve. This prevents
@@ -35,9 +34,16 @@ final class JacobianPoint {
 
   /** Default constructor: creates the point at infinity (the identity). */
   JacobianPoint() {
-    this.x = new FP2Immutable(0);
-    this.y = new FP2Immutable(1);
-    this.z = new FP2Immutable(0);
+    this(new FP2Immutable(0), new FP2Immutable(1), new FP2Immutable(0));
+  }
+
+  /**
+   * Copy constructor.
+   *
+   * @param p the JacobianPoint to be copied
+   */
+  JacobianPoint(JacobianPoint p) {
+    this(p.x, p.y, p.z);
   }
 
   /**
@@ -51,17 +57,6 @@ final class JacobianPoint {
     this.x = x;
     this.y = y;
     this.z = z;
-  }
-
-  /**
-   * Copy constructor.
-   *
-   * @param p the JacobianPoint to be copied
-   */
-  JacobianPoint(JacobianPoint p) {
-    this.x = p.x;
-    this.y = p.y;
-    this.z = p.z;
   }
 
   /**
@@ -149,7 +144,7 @@ final class JacobianPoint {
   }
 
   /**
-   * Negate the point.
+   * Negate the point (in the elliptic curve arithmetic sense: y is negated).
    *
    * @return the negated point
    */
@@ -172,32 +167,29 @@ final class JacobianPoint {
   }
 
   /**
-   * Create the equivalent point in Milagro's ECP2 format.
+   * Returns tha affine representation of the point (z = 1).
    *
-   * <p>Converts the point from Jacobian representation to the normal affine representation in the
-   * form of a Milagro ECP2. Will return the point at infinity if the point is not on the curve.
-   *
-   * @return the ECP2 point corresponding to this point
+   * @return the affine representation
    */
-  ECP2 toAffine() {
+  JacobianPoint toAffine() {
     if (isInfinity()) {
-      return new ECP2();
+      return INFINITY;
     }
     FP2Immutable zInv = z.inverse();
     FP2Immutable z2Inv = zInv.sqr();
     FP2Immutable z3Inv = zInv.mul(z2Inv);
-    return new ECP2(x.mul(z2Inv).getFp2(), y.mul(z3Inv).getFp2());
+    return new JacobianPoint(x.mul(z2Inv), y.mul(z3Inv), FP2Immutable.ONE);
   }
 
-  public FP2Immutable getX() {
+  FP2Immutable getX() {
     return new FP2Immutable(x);
   }
 
-  public FP2Immutable getY() {
+  FP2Immutable getY() {
     return new FP2Immutable(y);
   }
 
-  public FP2Immutable getZ() {
+  FP2Immutable getZ() {
     return new FP2Immutable(z);
   }
 
@@ -207,6 +199,7 @@ final class JacobianPoint {
   }
 
   @Override
+  // Consider two Jacobian points to be equal iff their affine representations are equal.
   public boolean equals(Object obj) {
     if (Objects.isNull(obj)) {
       return false;
@@ -218,7 +211,9 @@ final class JacobianPoint {
       return false;
     }
     JacobianPoint other = (JacobianPoint) obj;
-    return x.equals(other.x) && y.equals(other.y) && z.equals(other.z);
+    JacobianPoint p1 = this.toAffine();
+    JacobianPoint p2 = other.toAffine();
+    return (p1.getX().equals(p2.getX()) && p1.getY().equals(p2.getY()));
   }
 
   @Override

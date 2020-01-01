@@ -47,7 +47,7 @@ public class BenchBLS {
 
   @Benchmark
   public void hashToCurve(Blackhole blackhole) {
-    G2Point result = hashToCurve.hashToG2(message, suite);
+    G2Point result = new G2Point(hashToCurve.hashToG2(message, suite));
     blackhole.consume(result);
   }
 }

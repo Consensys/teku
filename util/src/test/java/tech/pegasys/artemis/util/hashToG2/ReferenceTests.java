@@ -50,7 +50,7 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
  *   <li>The G2 point in compressed form
  * </ul>
  */
-public class hashToG2Test {
+class ReferenceTests {
 
   private static final Path pathToTests =
       Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "hashToG2TestVectors");
@@ -61,7 +61,7 @@ public class hashToG2Test {
   })
   void referenceTest(
       String fileName, int testNumber, Bytes message, Bytes suite, G2Point expected) {
-    G2Point actual = hashToCurve.hashToG2(message, suite);
+    G2Point actual = new G2Point(hashToCurve.hashToG2(message, suite));
     assertEquals(expected, actual);
   }
 
@@ -72,12 +72,12 @@ public class hashToG2Test {
     try (Stream<Path> walk = Files.walk(pathToTests)) {
 
       fileNames =
-          walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
+          walk.filter(Files::isRegularFile).map(Path::toString).collect(Collectors.toList());
 
       Iterator<String> fileNamesIterator = fileNames.iterator();
-      ArrayList<Arguments> argumentsList = new ArrayList<Arguments>();
+      ArrayList<Arguments> argumentsList = new ArrayList<>();
       while (fileNamesIterator.hasNext()) {
-        File file = new File(fileNamesIterator.next().toString());
+        File file = new File(fileNamesIterator.next());
         try {
           sc = new Scanner(file, UTF_8.name());
           int i = 0;

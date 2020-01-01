@@ -20,7 +20,7 @@ import org.apache.milagro.amcl.BLS381.FP;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
 
-public class Util {
+class Util {
 
   private static final int SIZE_OF_BIG = BIG.MODBYTES;
 

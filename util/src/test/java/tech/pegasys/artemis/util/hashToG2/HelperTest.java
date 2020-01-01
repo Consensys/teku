@@ -16,8 +16,6 @@ package tech.pegasys.artemis.util.hashToG2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
-import static tech.pegasys.artemis.util.hashToG2.Helper.ROOTS_OF_UNITY;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
@@ -25,71 +23,15 @@ import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
 import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
-import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 class HelperTest {
 
-  @Test
-  void rootsOfUnityTest() {
-    for (FP2Immutable root : ROOTS_OF_UNITY) {
-      assertEquals(ONE, root.sqr().sqr().sqr().reduce());
-    }
-  }
-
   /*
-   * These following tests use data generated from the reference implementation at
+   * These tests use data generated from the reference implementation at
    * https://github.com/algorand/bls_sigs_ref/tree/master/python-impl
    */
-
-  @Test
-  void jacobianPointAddTest() {
-    JacobianPoint a =
-        new JacobianPoint(
-            new FP2Immutable(new BIG(1), new BIG(2)),
-            new FP2Immutable(new BIG(3), new BIG(4)),
-            new FP2Immutable(new BIG(5), new BIG(6)));
-    JacobianPoint b =
-        new JacobianPoint(
-            new FP2Immutable(new BIG(7), new BIG(8)),
-            new FP2Immutable(new BIG(9), new BIG(10)),
-            new FP2Immutable(new BIG(11), new BIG(12)));
-    JacobianPoint expected =
-        new JacobianPoint(
-            new FP2Immutable(new BIG(0x2c8da9c0), new BIG(0x1baa7000)),
-            new FP2Immutable(
-                "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9fef0223dd9282b",
-                "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feee40646bef2b"),
-            new FP2Immutable(
-                "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffff3b3f",
-                "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffff959f"));
-    assertEquals(expected, a.add(b));
-  }
-
-  @Test
-  void jacobianPointDblTest() {
-    JacobianPoint a =
-        new JacobianPoint(
-            new FP2Immutable(new BIG(1), new BIG(2)),
-            new FP2Immutable(new BIG(3), new BIG(4)),
-            new FP2Immutable(new BIG(5), new BIG(6)));
-    JacobianPoint expected =
-        new JacobianPoint(
-            new FP2Immutable(
-                new BIG(0x0179),
-                bigFromHex(
-                    "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffa983")),
-            new FP2Immutable(
-                new BIG(0x15b5),
-                bigFromHex(
-                    "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffff8d5f")),
-            new FP2Immutable(
-                bigFromHex(
-                    "0x1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaa99"),
-                new BIG(0x4c)));
-    assertEquals(expected, a.dbl());
-  }
 
   @Test
   void isOnCurve() {

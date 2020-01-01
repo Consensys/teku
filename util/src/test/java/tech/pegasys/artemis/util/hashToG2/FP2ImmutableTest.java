@@ -27,7 +27,7 @@ import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.junit.jupiter.api.Test;
 
-public class FP2ImmutableTest {
+class FP2ImmutableTest {
 
   // The field modulus
   private static final BIG P = new BIG(ROM.Modulus);

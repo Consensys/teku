@@ -14,13 +14,18 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.util.hashToG2.Affine.affineToJacobian;
 import static tech.pegasys.artemis.util.hashToG2.Chains.expChain;
+import static tech.pegasys.artemis.util.hashToG2.Chains.h2Chain;
 import static tech.pegasys.artemis.util.hashToG2.Chains.mxChain;
+import static tech.pegasys.artemis.util.hashToG2.Chains.qChain;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.DBIG;
+import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +39,20 @@ class ChainsTest {
   private static final DBIGExtended EXPONENT =
       new DBIGExtended(BIG.mul(P.plus(THREE), P.minus(THREE))).fshr(4);
 
-  /* Raise this element to a DBIG exponent. Used for testing expChain */
+  // A test value - a point on the curve
+  private static JacobianPoint a =
+      new JacobianPoint(
+          new FP2Immutable(
+              "0x0c8977fab5175ac2f09e5f39e29d016f11c094ef10f237d2a5e23f482d0bfb4466688527cd31685bfe481725c31462cc",
+              "0x0b305838069012861bb63501841c91bd5bc7e1359d44cd196681fb14c03e544c22205bced326d490eb886aaa3ed52918"),
+          new FP2Immutable(
+              "0x172cf997b3501882861c07e852fadbf5753eb8a3e1d2ce375e6aed07cf9c1b5ff1cbf1124c6e3b0cf4607c683eafd1a4",
+              "0x0d9dacf241a753d55cff6d45b568b716a2ad68ba29d23f92dea6e7cf6ed54e96cdac4a2b95213f93439b946ebc63349c"),
+          new FP2Immutable(
+              "0x05594bb289f0ebfd8fa3f020c6e1eaf4c49b97d8ccaf3470a3a02da4b3e7104778105bd6c7e0caf97206c77a8b501d4d",
+              "0x0625151f905fad40eb0e2b9b0a46d9afe531256c6d5e39897a27d94700f037a761a741d11275180bd18e620289e02a16"));
+
+  // Raise this element to a DBIG exponent. Used for testing expChain
   private static FP2Immutable pow(FP2Immutable a, DBIG exponent) {
     FP2Immutable result = ONE;
     DBIGExtended exp = new DBIGExtended(exponent);
@@ -49,25 +67,29 @@ class ChainsTest {
     return result;
   }
 
+  // Multiply this point by a BIG multiplier. Used for testing mxChain
+  private static JacobianPoint multiply(JacobianPoint a, BIG multiplier) {
+    JacobianPoint result = new JacobianPoint();
+    BIG mul = new BIG(multiplier);
+    JacobianPoint tmp = a;
+    while (!mul.iszilch()) {
+      if (mul.parity() == 1) {
+        result = result.add(tmp);
+      }
+      tmp = tmp.dbl();
+      mul.shr(1);
+    }
+    return result;
+  }
+
   @Test
   void mxChainTest() {
-    JacobianPoint a =
-        new JacobianPoint(
-            new FP2Immutable(new BIG(1), new BIG(2)),
-            new FP2Immutable(new BIG(3), new BIG(4)),
-            new FP2Immutable(new BIG(5), new BIG(6)));
-    JacobianPoint expected =
-        new JacobianPoint(
-            new FP2Immutable(
-                "0x14eb89798ed67c7c0c9a7ab4627f64a9295fa5aa738b23bc41d7e57bc75e3cfec576007ea509a867a1746954aae2cca9",
-                "0x00d29230f0dd01305ad70a52ceed8ee8e88ee072b69d9a535065785228d324b339a8b3116461ecfaec453c303da68240"),
-            new FP2Immutable(
-                "0x0170b865e217be3a5ecd56a0470270453cbd51ad2c04e0ff053455380a5a6841e5b580ff5dddbdf664ddc25acfecba58",
-                "0x0020c819b3da9c3e6e856a5235a3bf28b2f1401340d3bd41deaad48d17cb1e100655dd7028f6cb1708dc239175f4205a"),
-            new FP2Immutable(
-                "0x00e34380275c83c4308fc707542a3ecefa0ca80aeffd3791bef2fc8fbfbbb970f41c34ed98454b5884f90a838eccb68a",
-                "0x05b84312465a31b1dbe87388923b6244befe2f355ebda12b88f133237cf2c13158f1253b9e2f09749beb4099338957a4"));
-    assertEquals(expected, mxChain(a));
+    assertEquals(
+        multiply(
+            a,
+            bigFromHex(
+                "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000d201000000010000")),
+        mxChain(a));
   }
 
   @Test
@@ -86,6 +108,24 @@ class ChainsTest {
 
   @Test
   void h2ChainTest() {
-    // TODO
+    JacobianPoint expected =
+        new JacobianPoint(
+            new FP2Immutable(
+                "0x05667cd7cca3aa4afd1eab7c5d58eaff50cf7133a82a89cfd817d8e1f39983f508dab273ce96aa5a037cf0a663265fdf",
+                "0x0dc15082d3ee743d825445309b0d89dda33f2920b2795d4342ca030f7646dadd8feb1c2e393bebab9a547452084300e8"),
+            new FP2Immutable(
+                "0x09ef50b2ffb6e79525120de47a8bd94a8c98727f920c8e7dca172c9c7890ab4b9b8e5c1e841f3317424f0f23a1873c92",
+                "0x1716460aac87706675029ca60faddbb824c32ea20fa01084dfd9e8f5ab72ec3531173771392ecdf6341ed170833ba0b6"),
+            new FP2Immutable(
+                "0x18e5e5ed7e189b76ce3d7ef939b4b503474c6faea2630b6bfd8b57fa7fb9159e1ef2fe24ddbf5def43e674becd8208be",
+                "0x1943ef4fc4220430051400749e851a0a5406476a4c1379120991c5e1e09e3236d17dd497fc81be46058e779f15e811ce"));
+    assertEquals(expected, h2Chain(a));
+  }
+
+  @Test
+  void qChainTest() {
+    // The generator point of G2
+    JacobianPoint g2Generator = affineToJacobian(ECP2.generator());
+    assertTrue(qChain(g2Generator).isInfinity());
   }
 }

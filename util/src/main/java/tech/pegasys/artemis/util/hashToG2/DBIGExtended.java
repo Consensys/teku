@@ -19,7 +19,7 @@ import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.DBIG;
 
 /** Extend Milagro's DBIG class to add a couple of useful methods. */
-public class DBIGExtended extends DBIG {
+class DBIGExtended extends DBIG {
 
   /**
    * Construct from a DBIG

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
+import static tech.pegasys.artemis.util.hashToG2.Affine.jacobianToAffine;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
@@ -20,8 +21,8 @@ import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
 import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
 
 import java.nio.charset.StandardCharsets;
+import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.mikuli.G2Point;
 
 /**
  * This package implements the new hash-to-curve method for Ethereum 2.0.
@@ -29,9 +30,9 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
  * <p>References:
  *
  * <ul>
- *   <li>WIP PR on the Eth2 specs repository: https://github.com/ethereum/eth2.0-specs/pull/1398
- *   <li>The draft standard: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-04
- *   <li>Reference implementations: https://github.com/kwantam/bls_sigs_ref/
+ *   <li>WIP PR on the Eth2 specs repository: https://github.com/ethereum/eth2.0-specs/pull/1532
+ *   <li>The draft standard: https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-05
+ *   <li>Reference implementations: https://github.com/algorand/bls_sigs_ref/
  *   <li>Interesting background: https://eprint.iacr.org/2019/403.pdf
  * </ul>
  *
@@ -40,28 +41,22 @@ import tech.pegasys.artemis.util.mikuli.G2Point;
  *
  * <p>Note that no attempt has been made to implement constant-time methods in this package. For the
  * purposes of hashing to G2 within Ethereum I believe that this is of no consequence, since all the
- * input information is publicly known in any case.
+ * input information is publicly known.
  */
 public class hashToCurve {
 
+  // The cipher suite is defined in the Eth2 specs
   private static final Bytes CIPHER_SUITE =
-      Bytes.wrap("BLS12381G2-SHA256-SSWU-RO".getBytes(StandardCharsets.UTF_8));
+      Bytes.wrap("BLS_SIG_BLS12381G2-SHA256-SSWU-RO-_POP_".getBytes(StandardCharsets.UTF_8));
 
   /**
-   * Hashes to the G2 curve as described in the new BLS standard
-   *
-   * <p>A draft is here:
-   * https://github.com/ethereum/eth2.0-specs/blob/7e66720c06fcb6fe661c8c06ceec4474fec7a244/specs/bls_signature.md#hash_to_g2
-   * (Check for updates!)
-   *
-   * <p>Reference code here:
-   * https://github.com/kwantam/bls_sigs_ref/blob/master/python-impl/opt_swu_g2.py
+   * Hashes to the G2 curve as described in the new BLS standard.
    *
    * @param message the message to be hashed. This is usually the 32 byte message digest
    * @param cipherSuite the salt value for HKDF_Extract
    * @return a point from the G2 group representing the message hash
    */
-  public static G2Point hashToG2(Bytes message, Bytes cipherSuite) {
+  public static ECP2 hashToG2(Bytes message, Bytes cipherSuite) {
 
     FP2Immutable u0 = hashToBase(message, (byte) 0, cipherSuite);
     FP2Immutable u1 = hashToBase(message, (byte) 1, cipherSuite);
@@ -77,18 +72,18 @@ public class hashToCurve {
 
     JacobianPoint q = clear_h2(p);
 
-    return new G2Point(q.toAffine());
+    return jacobianToAffine(q);
   }
 
   /**
    * The canonical entry point for hashing to G2.
    *
-   * <p>Uses the standard CIPHER suite as defined in the Ethereum 2.0 specification.
+   * <p>Uses the standard cipher suite as defined in the Ethereum 2.0 specification.
    *
    * @param message the message to be hashed. This is usually the 32 byte message digest
    * @return a point from the G2 group representing the message hash
    */
-  public static G2Point hashToG2(Bytes message) {
+  public static ECP2 hashToG2(Bytes message) {
     return hashToG2(message, CIPHER_SUITE);
   }
 }

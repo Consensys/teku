@@ -26,10 +26,10 @@ import org.apache.milagro.amcl.BLS381.FP2;
  * highly mutable. As a benefit, this class allows us to chain field operations nicely - this makes
  * dealing with Milagro much less tiresome.
  *
- * <p>However, this does involve many more memory copies. For now, the coding convenience outweighs
- * any performance concerns. We can optimise later if it is a problem.
+ * <p>The compiler seems to do a decent job of handling the continual wrapping and unwrapping in
+ * practice.
  */
-public final class FP2Immutable {
+final class FP2Immutable {
 
   static final FP2Immutable ZERO = new FP2Immutable(0);
   static final FP2Immutable ONE = new FP2Immutable(1);
