@@ -19,22 +19,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.Chains.qChain;
 import static tech.pegasys.artemis.util.hashToG2.hashToCurve.hashToG2;
 
+import java.util.ArrayList;
+import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class hashToCurveTest {
 
+  private static int nTest = 256;
+
   // Smoke test. Generate lots of hashes and make sure that they all land in G2.
-  @Test
-  void hashToG2Test() {
-    for (int i = 0; i < 256; i++) {
-      ECP2 point =
-          hashToG2(
-              Bytes.concatenate(
-                  Bytes.wrap("Hello, world!".getBytes(UTF_8)), Bytes.ofUnsignedInt(i)));
-      assertFalse(point.is_infinity());
-      assertTrue(qChain(new JacobianPoint(point)).isInfinity());
+  @ParameterizedTest(name = "hashToG2Test:{index}, i={0}")
+  @MethodSource("getIndices")
+  void hashToG2Test2(Integer i) {
+    ECP2 point =
+        hashToG2(
+            Bytes.concatenate(Bytes.wrap("Hello, world!".getBytes(UTF_8)), Bytes.ofUnsignedInt(i)));
+    assertFalse(point.is_infinity());
+    assertTrue(qChain(new JacobianPoint(point)).isInfinity());
+  }
+
+  public static Stream<Arguments> getIndices() {
+    ArrayList<Arguments> args = new ArrayList<>();
+    for (int i = 0; i < nTest; i++) {
+      args.add(Arguments.of(i));
     }
+    return args.stream();
   }
 }

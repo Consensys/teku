@@ -81,14 +81,38 @@ class ChainsTest {
     return result;
   }
 
-  @Test
-  void mxChainTest() {
-    assertEquals(
-        multiply(
-            a,
-            bigFromHex(
-                "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000d201000000010000")),
-        mxChain(a));
+  /**
+   * Multiply the point by the G2 group cofactor. This is borrowed from the G2Point class.
+   *
+   * <p>Since the group cofactor is extremely large, we do a long multiplication.
+   *
+   * @param point the point to be scaled
+   * @return a scaled point
+   */
+  private static ECP2 scaleWithCofactor(ECP2 point) {
+
+    // These are a representation of the G2 cofactor (a 512 bit number)
+    String upperHex =
+        "0x0000000000000000000000000000000005d543a95414e7f1091d50792876a202cd91de4547085abaa68a205b2e5a7ddf";
+    String lowerHex =
+        "0x00000000000000000000000000000000a628f1cb4d9e82ef21537e293a6691ae1616ec6e786f0c70cf1c38e31c7238e5";
+    String shiftHex =
+        "0x000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000";
+
+    BIG upper = bigFromHex(upperHex);
+    BIG lower = bigFromHex(lowerHex);
+    BIG shift = bigFromHex(shiftHex);
+
+    ECP2 sum = new ECP2(point);
+    sum = sum.mul(upper);
+    sum = sum.mul(shift);
+
+    ECP2 tmp = new ECP2(point);
+    tmp = tmp.mul(lower);
+
+    sum.add(tmp);
+
+    return sum;
   }
 
   @Test
@@ -106,19 +130,18 @@ class ChainsTest {
   }
 
   @Test
+  void mxChainTest() {
+    assertEquals(
+        multiply(
+            a,
+            bigFromHex(
+                "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000d201000000010000")),
+        mxChain(a));
+  }
+
+  @Test
   void h2ChainTest() {
-    JacobianPoint expected =
-        new JacobianPoint(
-            new FP2Immutable(
-                "0x05667cd7cca3aa4afd1eab7c5d58eaff50cf7133a82a89cfd817d8e1f39983f508dab273ce96aa5a037cf0a663265fdf",
-                "0x0dc15082d3ee743d825445309b0d89dda33f2920b2795d4342ca030f7646dadd8feb1c2e393bebab9a547452084300e8"),
-            new FP2Immutable(
-                "0x09ef50b2ffb6e79525120de47a8bd94a8c98727f920c8e7dca172c9c7890ab4b9b8e5c1e841f3317424f0f23a1873c92",
-                "0x1716460aac87706675029ca60faddbb824c32ea20fa01084dfd9e8f5ab72ec3531173771392ecdf6341ed170833ba0b6"),
-            new FP2Immutable(
-                "0x18e5e5ed7e189b76ce3d7ef939b4b503474c6faea2630b6bfd8b57fa7fb9159e1ef2fe24ddbf5def43e674becd8208be",
-                "0x1943ef4fc4220430051400749e851a0a5406476a4c1379120991c5e1e09e3236d17dd497fc81be46058e779f15e811ce"));
-    assertEquals(expected, h2Chain(a));
+    assertEquals(new JacobianPoint(scaleWithCofactor(a.toECP2())), h2Chain(a));
   }
 
   @Test
