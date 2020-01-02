@@ -185,7 +185,7 @@ class JacobianPointTest {
     // Do the same operations on the JacobianPoint
     pJ = pJ.dbl().dbl().add(pJ);
 
-    // Convert the Jacobian point to and ECP2 point and compare
+    // Convert the Jacobian point to an ECP2 point and compare
     // NB: ECP2 equals() method is broken somehow, so workaround with toString()
     assertEquals(pM.toString(), pJ.toECP2().toString());
   }
