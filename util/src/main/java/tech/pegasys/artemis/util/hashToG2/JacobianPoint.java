@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import java.util.Objects;
+import org.apache.milagro.amcl.BLS381.ECP2;
 
 /**
  * The new hash-to-G2 algorithm initially generates points that are not on the curve. This prevents
@@ -57,6 +58,24 @@ final class JacobianPoint {
     this.x = x;
     this.y = y;
     this.z = z;
+  }
+
+  /**
+   * Construct from a Milagro ECP2 point.
+   *
+   * <p>The ECP2 point does not need to be in affine form.
+   *
+   * @param p the ECP2 point to be converted
+   */
+  JacobianPoint(ECP2 p) {
+    ECP2 q = new ECP2(p);
+    if (!p.getz().isunity()) {
+      // This is quicker than converting directly between homogeneous and Jacobian coordinates
+      q.affine();
+    }
+    this.x = new FP2Immutable(q.getX());
+    this.y = new FP2Immutable(q.getY());
+    this.z = FP2Immutable.ONE;
   }
 
   /**
@@ -179,6 +198,19 @@ final class JacobianPoint {
     FP2Immutable z2Inv = zInv.sqr();
     FP2Immutable z3Inv = zInv.mul(z2Inv);
     return new JacobianPoint(x.mul(z2Inv), y.mul(z3Inv), FP2Immutable.ONE);
+  }
+
+  /**
+   * Convert the point to Milagro's ECP2 format.
+   *
+   * <p>There is no available method to construct an ECP2 directly from homogeneous x, y, z
+   * coordinates, which would be sweet, so we go via affine representation.
+   *
+   * @return Milagro ECP2 object representing the point
+   */
+  ECP2 toECP2() {
+    JacobianPoint q = this.toAffine();
+    return new ECP2(q.getX().getFp2(), q.getY().getFp2());
   }
 
   FP2Immutable getX() {

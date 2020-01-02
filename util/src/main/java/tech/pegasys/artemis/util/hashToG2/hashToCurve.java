@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.util.hashToG2;
 
-import static tech.pegasys.artemis.util.hashToG2.Affine.jacobianToAffine;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
@@ -72,7 +71,7 @@ public class hashToCurve {
 
     JacobianPoint q = clear_h2(p);
 
-    return jacobianToAffine(q);
+    return q.toECP2();
   }
 
   /**

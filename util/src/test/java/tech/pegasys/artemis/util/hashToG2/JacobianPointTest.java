@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
@@ -21,6 +22,8 @@ import static tech.pegasys.artemis.util.hashToG2.JacobianPoint.INFINITY;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
 import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.milagro.amcl.BLS381.ECP2;
+import org.apache.milagro.amcl.BLS381.FP2;
 import org.junit.jupiter.api.Test;
 
 class JacobianPointTest {
@@ -158,5 +161,32 @@ class JacobianPointTest {
     assertTrue(onCurveG2(b));
     assertNotEquals(a.add(b).getZ(), b.add(a).getZ());
     assertEquals(a.add(b), b.add(a));
+  }
+
+  @Test
+  void matchesMilagro() {
+    // This is primarily intended as a test of the roundtrip from ECP2 to JacobianPoint and back
+    // again, but is also fun.
+
+    // Create a Milagro ECP2 point on the curve
+    ECP2 pM = new ECP2(new FP2(2));
+    assertFalse(pM.is_infinity());
+
+    // Create the equivalent Jacobian point
+    JacobianPoint pJ = new JacobianPoint(pM);
+
+    // Do some operations on the ECP2 point (multiply by 5)
+    ECP2 qM = new ECP2(pM);
+    qM.dbl();
+    qM.dbl();
+    pM.add(qM);
+    pM.affine();
+
+    // Do the same operations on the JacobianPoint
+    pJ = pJ.dbl().dbl().add(pJ);
+
+    // Convert the Jacobian point to and ECP2 point and compare
+    // NB: ECP2 equals() method is broken somehow, so workaround with toString()
+    assertEquals(pM.toString(), pJ.toECP2().toString());
   }
 }

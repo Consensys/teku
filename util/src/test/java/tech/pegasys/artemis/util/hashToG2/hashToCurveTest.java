@@ -16,7 +16,6 @@ package tech.pegasys.artemis.util.hashToG2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.Affine.affineToJacobian;
 import static tech.pegasys.artemis.util.hashToG2.Chains.qChain;
 import static tech.pegasys.artemis.util.hashToG2.hashToCurve.hashToG2;
 
@@ -35,7 +34,7 @@ class hashToCurveTest {
               Bytes.concatenate(
                   Bytes.wrap("Hello, world!".getBytes(UTF_8)), Bytes.ofUnsignedInt(i)));
       assertFalse(point.is_infinity());
-      assertTrue(qChain(affineToJacobian(point)).isInfinity());
+      assertTrue(qChain(new JacobianPoint(point)).isInfinity());
     }
   }
 }

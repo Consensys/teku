@@ -15,7 +15,6 @@ package tech.pegasys.artemis.util.hashToG2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.Affine.affineToJacobian;
 import static tech.pegasys.artemis.util.hashToG2.Chains.expChain;
 import static tech.pegasys.artemis.util.hashToG2.Chains.h2Chain;
 import static tech.pegasys.artemis.util.hashToG2.Chains.mxChain;
@@ -125,7 +124,7 @@ class ChainsTest {
   @Test
   void qChainTest() {
     // The generator point of G2
-    JacobianPoint g2Generator = affineToJacobian(ECP2.generator());
+    JacobianPoint g2Generator = new JacobianPoint(ECP2.generator());
     assertTrue(qChain(g2Generator).isInfinity());
   }
 }
