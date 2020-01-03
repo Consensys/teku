@@ -186,7 +186,7 @@ final class JacobianPoint {
   }
 
   /**
-   * Returns tha affine representation of the point (z = 1).
+   * Returns the affine representation of the point (z = 1).
    *
    * @return the affine representation
    */
