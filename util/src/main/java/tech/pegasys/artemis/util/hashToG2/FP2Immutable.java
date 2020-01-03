@@ -172,6 +172,9 @@ final class FP2Immutable {
   /**
    * Calculate the sign of the field element.
    *
+   * <p>This is described in the "Notation" paragraph at the start of Section 2 of this paper:
+   * https://eprint.iacr.org/2019/403.pdf
+   *
    * @return -1 if x is the lexically larger of x and -1 * x, else returns 1
    */
   int sgn0() {
