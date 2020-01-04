@@ -219,7 +219,13 @@ class Helper {
    * hash maps to G2 on BLS curves," ePrint 2017/419 https://eprint.iacr.org/2017/419 NOTE: this
    * impl works for Jacobian projective coordinates without computing an inversion.
    *
-   * <p>This implementation avoids using the endomorphism because of US patent 7110538.
+   * <p>The current implementation is equivalent to multiplying by h_eff from
+   * https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-05#section-8.9.2 This is, in turn,
+   * equivalent to the more efficient method using the endomorphism described above. However, the
+   * endomorphism is protected in the US by patent 7110538 until the end of 2020. Once that patent
+   * has expired, the endomorphism can be implemented here. Commit
+   * 95335bd4b1db78bf06d6bf02c906f3973a2677f1 actually contains the endomorphism code, for
+   * reference.
    *
    * @param p the point to be transformed to the G2 group
    * @return a corresponding point in the G2 group
