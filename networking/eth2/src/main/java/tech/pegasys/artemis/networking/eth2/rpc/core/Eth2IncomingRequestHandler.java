@@ -31,7 +31,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final RpcEncoder rpcEncoder;
-  private boolean closeNotification;
+  private final boolean closeNotification;
 
   private final RequestRpcDecoder<TRequest> requestReader;
   private ResponseCallback<TResponse> callback;

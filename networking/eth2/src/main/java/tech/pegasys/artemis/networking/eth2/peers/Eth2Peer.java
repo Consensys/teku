@@ -128,14 +128,14 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   private <I extends RpcRequest, O> SafeFuture<Void> requestStream(
       final Eth2RpcMethod<I, O> method,
-      I request,
+      final I request,
       final ResponseStream.ResponseListener<O> listener) {
     return sendRequest(method, request)
         .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
   }
 
   public <I extends RpcRequest, O> SafeFuture<ResponseStream<O>> sendRequest(
-      final Eth2RpcMethod<I, O> method, I request) {
+      final Eth2RpcMethod<I, O> method, final I request) {
     Bytes payload = method.encodeRequest(request);
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());

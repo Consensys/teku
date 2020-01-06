@@ -35,11 +35,11 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 
 public class BeaconChainMethods {
-  public static final String STATUS = "/eth2/beacon_chain/req/status/1";
-  public static final String GOODBYE = "/eth2/beacon_chain/req/goodbye/1";
-  public static final String BEACON_BLOCKS_BY_ROOT =
+  private static final String STATUS = "/eth2/beacon_chain/req/status/1";
+  private static final String GOODBYE = "/eth2/beacon_chain/req/goodbye/1";
+  private static final String BEACON_BLOCKS_BY_ROOT =
       "/eth2/beacon_chain/req/beacon_blocks_by_root/1";
-  public static final String BEACON_BLOCKS_BY_RANGE =
+  private static final String BEACON_BLOCKS_BY_RANGE =
       "/eth2/beacon_chain/req/beacon_blocks_by_range/1";
 
   private final Eth2RpcMethod<StatusMessage, StatusMessage> status;
