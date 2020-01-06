@@ -33,16 +33,14 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void completeSuccessfully() {
     rpcStream.disconnect().reportExceptions();
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void completeWithError(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
-    rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error));
+    rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error)).reportExceptions();
     rpcStream.disconnect().reportExceptions();
   }
 }
