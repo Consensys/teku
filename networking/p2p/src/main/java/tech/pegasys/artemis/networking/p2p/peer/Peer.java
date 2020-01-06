@@ -26,6 +26,8 @@ public interface Peer {
 
   boolean isConnected();
 
+  void disconnect();
+
   SafeFuture<RpcStream> sendRequest(
       RpcMethod rpcMethod, Bytes initialPayload, RpcRequestHandler handler);
 

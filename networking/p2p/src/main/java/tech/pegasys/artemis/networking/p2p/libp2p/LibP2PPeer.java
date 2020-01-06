@@ -50,6 +50,12 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void disconnect() {
+    connection.getNettyChannel().close();
+  }
+
+  @Override
   public SafeFuture<RpcStream> sendRequest(
       RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
     RpcHandler rpcHandler = rpcHandlers.get(rpcMethod);

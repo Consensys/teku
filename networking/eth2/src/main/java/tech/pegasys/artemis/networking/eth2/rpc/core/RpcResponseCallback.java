@@ -20,14 +20,11 @@ import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
   private final RpcEncoder rpcEncoder;
-  private final boolean closeNotification;
   private final RpcStream rpcStream;
 
-  public RpcResponseCallback(
-      final RpcStream rpcStream, final RpcEncoder rpcEncoder, final boolean closeNotification) {
+  public RpcResponseCallback(final RpcStream rpcStream, final RpcEncoder rpcEncoder) {
     this.rpcStream = rpcStream;
     this.rpcEncoder = rpcEncoder;
-    this.closeNotification = closeNotification;
   }
 
   @Override
@@ -39,9 +36,6 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   @SuppressWarnings("FutureReturnValueIgnored")
   public void completeSuccessfully() {
     rpcStream.disconnect().reportExceptions();
-    if (closeNotification) {
-      rpcStream.closeStream().reportExceptions();
-    }
   }
 
   @Override

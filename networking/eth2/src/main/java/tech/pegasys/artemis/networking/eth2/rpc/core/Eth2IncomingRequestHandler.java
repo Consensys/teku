@@ -31,7 +31,6 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final PeerLookup peerLookup;
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final RpcEncoder rpcEncoder;
-  private final boolean closeNotification;
 
   private final RequestRpcDecoder<TRequest> requestReader;
   private ResponseCallback<TResponse> callback;
@@ -46,14 +45,13 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     this.rpcEncoder = new RpcEncoder(method.getEncoding());
 
     requestReader = method.createRequestDecoder();
-    closeNotification = method.getCloseNotification();
   }
 
   @Override
   public void onData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf bytes) {
     final Eth2Peer peer = peerLookup.getConnectedPeer(nodeId);
     if (callback == null) {
-      callback = new RpcResponseCallback<>(rpcStream, rpcEncoder, closeNotification);
+      callback = new RpcResponseCallback<>(rpcStream, rpcEncoder);
     }
     try {
       requestReader

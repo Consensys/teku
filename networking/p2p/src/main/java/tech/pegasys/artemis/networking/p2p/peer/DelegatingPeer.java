@@ -54,6 +54,11 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
+  public void disconnect() {
+    peer.disconnect();
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (o == this) {
       return true;
