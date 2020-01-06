@@ -21,11 +21,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcDataHandler;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 
 public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
-    implements RpcDataHandler {
+    implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth2RpcMethod<TRequest, TResponse> method;
@@ -60,6 +60,20 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     } catch (final InvalidResponseException e) {
       LOG.debug("Peer responded with invalid data", e);
       responseStream.completeWithError(e);
+    } catch (final RpcException e) {
+      LOG.debug("Request returned an error {}", e.getErrorMessage());
+      responseStream.completeWithError(e);
+    } catch (final Throwable t) {
+      LOG.error("Failed to handle response", t);
+      responseStream.completeWithError(t);
+    }
+  }
+
+  @Override
+  public void onRequestComplete() {
+    try {
+      responseHandler.close();
+      responseStream.completeSuccessfully();
     } catch (final RpcException e) {
       LOG.debug("Request returned an error {}", e.getErrorMessage());
       responseStream.completeWithError(e);

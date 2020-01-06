@@ -17,5 +17,5 @@ public interface RpcMethod {
 
   String getId();
 
-  RpcDataHandler createIncomingRequestHandler();
+  RpcRequestHandler createIncomingRequestHandler();
 }

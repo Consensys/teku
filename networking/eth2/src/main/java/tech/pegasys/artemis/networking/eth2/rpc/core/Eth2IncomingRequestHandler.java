@@ -20,11 +20,11 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcDataHandler;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 
 public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
-    implements RpcDataHandler {
+    implements RpcRequestHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth2RpcMethod<TRequest, TResponse> method;
@@ -62,6 +62,11 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     } catch (final RpcException e) {
       callback.completeWithError(e);
     }
+  }
+
+  @Override
+  public void onRequestComplete() {
+    // Nothing to do
   }
 
   private void invokeHandler(

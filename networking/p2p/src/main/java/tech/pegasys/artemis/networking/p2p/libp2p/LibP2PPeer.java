@@ -20,8 +20,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcDataHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -51,7 +51,7 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public SafeFuture<RpcStream> sendRequest(
-      RpcMethod rpcMethod, final Bytes initialPayload, final RpcDataHandler handler) {
+      RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
     RpcHandler rpcHandler = rpcHandlers.get(rpcMethod);
     if (rpcHandler == null) {
       throw new IllegalArgumentException("Unknown rpc method method invoked: " + rpcMethod.getId());

@@ -31,8 +31,8 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcDataHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -47,7 +47,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
   @SuppressWarnings("unchecked")
   public SafeFuture<RpcStream> sendRequest(
-      Connection connection, Bytes initialPayload, RpcDataHandler handler) {
+      Connection connection, Bytes initialPayload, RpcRequestHandler handler) {
     return SafeFuture.of(
             connection
                 .getMuxerSession()
@@ -56,7 +56,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
                 .getControler())
         .thenCompose(
             ctr -> {
-              ctr.setDataHandler(handler);
+              ctr.setRequestHandler(handler);
               return ctr.getRpcStream()
                   .writeBytes(initialPayload)
                   .thenApply(f -> ctr.getRpcStream());
@@ -83,7 +83,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     final NodeId nodeId = new LibP2PNodeId(connection.getSecureSession().getRemoteId());
     Controller controller = new Controller(nodeId);
     if (!channel.isInitiator()) {
-      controller.setDataHandler(rpcMethod.createIncomingRequestHandler());
+      controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
     }
     channel.getNettyChannel().pipeline().addLast(controller);
     return controller.activeFuture;
@@ -91,7 +91,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
   static class Controller extends SimpleChannelInboundHandler<ByteBuf> {
     private final NodeId nodeId;
-    private RpcDataHandler rpcDataHandler;
+    private RpcRequestHandler rpcRequestHandler;
     private RpcStream rpcStream;
     private List<ByteBuf> bufferedData = new ArrayList<>();
 
@@ -113,21 +113,21 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf msg) {
-      if (rpcDataHandler != null) {
-        rpcDataHandler.onData(nodeId, rpcStream, msg);
+      if (rpcRequestHandler != null) {
+        rpcRequestHandler.onData(nodeId, rpcStream, msg);
       } else {
         bufferedData.add(msg);
       }
     }
 
-    public void setDataHandler(RpcDataHandler dataHandler) {
-      if (rpcDataHandler != null) {
+    public void setRequestHandler(RpcRequestHandler rpcRequestHandler) {
+      if (this.rpcRequestHandler != null) {
         throw new IllegalStateException("Attempt to set an already set data handler");
       }
-      rpcDataHandler = dataHandler;
+      this.rpcRequestHandler = rpcRequestHandler;
       while (!bufferedData.isEmpty()) {
         ByteBuf currentBuffer = bufferedData.remove(0);
-        rpcDataHandler.onData(nodeId, rpcStream, currentBuffer);
+        this.rpcRequestHandler.onData(nodeId, rpcStream, currentBuffer);
       }
     }
 
@@ -137,6 +137,16 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       final IllegalStateException exception = new IllegalStateException("Channel exception", cause);
       activeFuture.completeExceptionally(exception);
       rpcStream.closeStream().reportExceptions();
+    }
+
+    @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
+    public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
+      // If handler is removed before channel is activated, update future
+      activeFuture.completeExceptionally(new IllegalStateException("Stream closed."));
+
+      ctx.channel().close();
+      rpcRequestHandler.onRequestComplete();
     }
   }
 }
