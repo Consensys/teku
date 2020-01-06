@@ -29,13 +29,12 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.GoodbyeMessa
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler;
 import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 
-public class BeaconChainMethods implements RpcMethods {
+public class BeaconChainMethods {
   public static final String STATUS = "/eth2/beacon_chain/req/status/1";
   public static final String GOODBYE = "/eth2/beacon_chain/req/goodbye/1";
   public static final String BEACON_BLOCKS_BY_ROOT =
@@ -132,7 +131,6 @@ public class BeaconChainMethods implements RpcMethods {
         peerLookup);
   }
 
-  @Override
   public Collection<RpcMethod> all() {
     return Collections.unmodifiableCollection(allMethods);
   }
