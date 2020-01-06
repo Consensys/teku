@@ -13,57 +13,34 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import io.libp2p.core.Connection;
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 
 class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
-  private final ChannelHandlerContext ctx;
   private final RpcEncoder rpcEncoder;
-  private final boolean closeNotification;
-  private final Connection connection;
+  private final RpcStream rpcStream;
 
-  public RpcResponseCallback(
-      final ChannelHandlerContext ctx,
-      final RpcEncoder rpcEncoder,
-      final boolean closeNotification,
-      final Connection connection) {
-    this.ctx = ctx;
+  public RpcResponseCallback(final RpcStream rpcStream, final RpcEncoder rpcEncoder) {
+    this.rpcStream = rpcStream;
     this.rpcEncoder = rpcEncoder;
-    this.closeNotification = closeNotification;
-    this.connection = connection;
   }
 
   @Override
   public void respond(final TResponse data) {
-    writeResponse(ctx, rpcEncoder.encodeSuccessfulResponse(data));
+    rpcStream.writeBytes(rpcEncoder.encodeSuccessfulResponse(data)).reportExceptions();
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void completeSuccessfully() {
-    ctx.channel().disconnect();
-    if (closeNotification) {
-      connection.getNettyChannel().close();
-    }
+    rpcStream.disconnect().reportExceptions();
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void completeWithError(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
-    writeResponse(ctx, rpcEncoder.encodeErrorResponse(error));
-    ctx.channel().disconnect();
-  }
-
-  @SuppressWarnings("FutureReturnValueIgnored")
-  private void writeResponse(final ChannelHandlerContext ctx, final Bytes encoded) {
-    ByteBuf respBuf = ctx.alloc().buffer();
-    respBuf.writeBytes(encoded.toArrayUnsafe());
-    ctx.writeAndFlush(respBuf);
+    rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error)).reportExceptions();
+    rpcStream.disconnect().reportExceptions();
   }
 }

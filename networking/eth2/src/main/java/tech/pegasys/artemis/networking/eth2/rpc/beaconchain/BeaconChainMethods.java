@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.beaconchain;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -25,57 +28,126 @@ import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.BeaconBlocks
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.GoodbyeMessageHandler;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMessageHandler;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
+import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 
 public class BeaconChainMethods {
-  public static final RpcMethod<StatusMessage, StatusMessage> STATUS =
-      new RpcMethod<>(
-          "/eth2/beacon_chain/req/status/1",
-          RpcEncoding.SSZ,
-          StatusMessage.class,
-          StatusMessage.class);
-  public static final RpcMethod<GoodbyeMessage, GoodbyeMessage> GOODBYE =
-      new RpcMethod<>(
-          "/eth2/beacon_chain/req/goodbye/1",
-          RpcEncoding.SSZ,
-          GoodbyeMessage.class,
-          GoodbyeMessage.class);
-  public static final RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock>
-      BEACON_BLOCKS_BY_ROOT =
-          new RpcMethod<>(
-              "/eth2/beacon_chain/req/beacon_blocks_by_root/1",
-              RpcEncoding.SSZ,
-              BeaconBlocksByRootRequestMessage.class,
-              BeaconBlock.class);
-  public static final RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock>
-      BEACON_BLOCKS_BY_RANGE =
-          new RpcMethod<>(
-              "/eth2/beacon_chain/req/beacon_blocks_by_range/1",
-              RpcEncoding.SSZ,
-              BeaconBlocksByRangeRequestMessage.class,
-              BeaconBlock.class);
+  private static final String STATUS = "/eth2/beacon_chain/req/status/1";
+  private static final String GOODBYE = "/eth2/beacon_chain/req/goodbye/1";
+  private static final String BEACON_BLOCKS_BY_ROOT =
+      "/eth2/beacon_chain/req/beacon_blocks_by_root/1";
+  private static final String BEACON_BLOCKS_BY_RANGE =
+      "/eth2/beacon_chain/req/beacon_blocks_by_range/1";
 
-  public static RpcMethods createRpcMethods(
-      PeerLookup peerLookup,
+  private final Eth2RpcMethod<StatusMessage, StatusMessage> status;
+  private final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye;
+  private final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksByRoot;
+  private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> beaconBlocksByRange;
+
+  private final Collection<Eth2RpcMethod<?, ?>> allMethods;
+
+  private BeaconChainMethods(
+      final Eth2RpcMethod<StatusMessage, StatusMessage> status,
+      final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye,
+      final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksByRoot,
+      final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> beaconBlocksByRange) {
+    this.status = status;
+    this.goodBye = goodBye;
+    this.beaconBlocksByRoot = beaconBlocksByRoot;
+    this.beaconBlocksByRange = beaconBlocksByRange;
+    allMethods = List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange);
+  }
+
+  public static BeaconChainMethods create(
+      final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
       final ChainStorageClient chainStorageClient,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory) {
+    return new BeaconChainMethods(
+        createStatus(statusMessageFactory, peerLookup),
+        createGoodBye(metricsSystem, peerLookup),
+        createBeaconBlocksByRoot(chainStorageClient, peerLookup),
+        createBeaconBlocksByRange(combinedChainDataClient, peerLookup));
+  }
+
+  private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
+      final StatusMessageFactory statusMessageFactory, final PeerLookup peerLookup) {
     final StatusMessageHandler statusHandler = new StatusMessageHandler(statusMessageFactory);
+    return new Eth2RpcMethod<>(
+        STATUS,
+        RpcEncoding.SSZ,
+        StatusMessage.class,
+        StatusMessage.class,
+        false,
+        statusHandler,
+        peerLookup);
+  }
+
+  private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
+      final MetricsSystem metricsSystem, final PeerLookup peerLookup) {
     final GoodbyeMessageHandler goodbyeHandler = new GoodbyeMessageHandler(metricsSystem);
+    return new Eth2RpcMethod<>(
+        GOODBYE,
+        RpcEncoding.SSZ,
+        GoodbyeMessage.class,
+        GoodbyeMessage.class,
+        true,
+        goodbyeHandler,
+        peerLookup);
+  }
+
+  private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock>
+      createBeaconBlocksByRoot(
+          final ChainStorageClient chainStorageClient, final PeerLookup peerLookup) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
         new BeaconBlocksByRootMessageHandler(chainStorageClient);
+    return new Eth2RpcMethod<>(
+        BEACON_BLOCKS_BY_ROOT,
+        RpcEncoding.SSZ,
+        BeaconBlocksByRootRequestMessage.class,
+        BeaconBlock.class,
+        false,
+        beaconBlocksByRootHandler,
+        peerLookup);
+  }
+
+  private static Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock>
+      createBeaconBlocksByRange(
+          final CombinedChainDataClient combinedChainDataClient, final PeerLookup peerLookup) {
+
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(combinedChainDataClient);
-    return new RpcMethods(
-        new RpcMessageHandler<>(STATUS, peerLookup, statusHandler),
-        new RpcMessageHandler<>(GOODBYE, peerLookup, goodbyeHandler).setCloseNotification(),
-        new RpcMessageHandler<>(BEACON_BLOCKS_BY_ROOT, peerLookup, beaconBlocksByRootHandler),
-        new RpcMessageHandler<>(BEACON_BLOCKS_BY_RANGE, peerLookup, beaconBlocksByRangeHandler));
+    return new Eth2RpcMethod<>(
+        BEACON_BLOCKS_BY_RANGE,
+        RpcEncoding.SSZ,
+        BeaconBlocksByRangeRequestMessage.class,
+        BeaconBlock.class,
+        false,
+        beaconBlocksByRangeHandler,
+        peerLookup);
+  }
+
+  public Collection<RpcMethod> all() {
+    return Collections.unmodifiableCollection(allMethods);
+  }
+
+  public Eth2RpcMethod<StatusMessage, StatusMessage> status() {
+    return status;
+  }
+
+  public Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye() {
+    return goodBye;
+  }
+
+  public Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksByRoot() {
+    return beaconBlocksByRoot;
+  }
+
+  public Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> beaconBlocksByRange() {
+    return beaconBlocksByRange;
   }
 }
