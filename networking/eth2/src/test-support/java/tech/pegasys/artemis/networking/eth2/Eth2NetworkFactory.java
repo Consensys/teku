@@ -34,7 +34,7 @@ import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.network.Protocol;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.Waiter;
@@ -61,7 +61,7 @@ public class Eth2NetworkFactory {
     protected List<Eth2Network> peers = new ArrayList<>();
     protected EventBus eventBus;
     protected ChainStorageClient chainStorageClient;
-    protected List<Protocol<?>> protocols = new ArrayList<>();
+    protected List<RpcMethod> rpcMethods = new ArrayList<>();
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
 
     public Eth2Network startNetwork() throws Exception {
@@ -104,13 +104,12 @@ public class Eth2NetworkFactory {
         final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(chainStorageClient, historicalChainData, METRICS_SYSTEM);
-        final Collection<? extends Protocol<?>> eth2Protocols =
-            eth2PeerManager.getRpcMethods().all();
+        final Collection<RpcMethod> eth2Protocols = eth2PeerManager.getBeaconChainMethods().all();
         // Configure eth2 handlers
-        this.protocols(eth2Protocols).peerHandler(eth2PeerManager);
+        this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
 
         final P2PNetwork<?> network =
-            new LibP2PNetwork(config, METRICS_SYSTEM, protocols, peerHandlers);
+            new LibP2PNetwork(config, METRICS_SYSTEM, rpcMethods, peerHandlers);
 
         return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
       }
@@ -153,9 +152,9 @@ public class Eth2NetworkFactory {
       return this;
     }
 
-    public Eth2P2PNetworkBuilder protocols(final Collection<? extends Protocol<?>> protocols) {
-      checkNotNull(protocols);
-      this.protocols.addAll(protocols);
+    public Eth2P2PNetworkBuilder rpcMethods(final Collection<RpcMethod> methods) {
+      checkNotNull(methods);
+      this.rpcMethods.addAll(methods);
       return this;
     }
 

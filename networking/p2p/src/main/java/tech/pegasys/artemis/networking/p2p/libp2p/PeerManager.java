@@ -22,6 +22,7 @@ import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,10 +33,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
@@ -44,6 +47,7 @@ public class PeerManager implements ConnectionHandler {
 
   private final ScheduledExecutorService scheduler;
   private static final long RECONNECT_TIMEOUT = 5000;
+  private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final List<PeerHandler> peerHandlers;
@@ -54,15 +58,17 @@ public class PeerManager implements ConnectionHandler {
   public PeerManager(
       final ScheduledExecutorService scheduler,
       final MetricsSystem metricsSystem,
-      final List<PeerHandler> peerHandlers) {
+      final List<PeerHandler> peerHandlers,
+      final Map<RpcMethod, RpcHandler> rpcHandlers) {
     this.scheduler = scheduler;
     this.peerHandlers = peerHandlers;
+    this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
   }
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new LibP2PPeer(connection);
+    Peer peer = new LibP2PPeer(connection, rpcHandlers);
     onConnectedPeer(peer);
     SafeFuture.of(connection.closeFuture()).finish(() -> onDisconnectedPeer(peer));
   }

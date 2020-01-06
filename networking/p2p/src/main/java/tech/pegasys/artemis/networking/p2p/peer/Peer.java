@@ -13,8 +13,12 @@
 
 package tech.pegasys.artemis.networking.p2p.peer;
 
-import io.libp2p.core.Connection;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface Peer {
 
@@ -22,7 +26,10 @@ public interface Peer {
 
   boolean isConnected();
 
-  Connection getConnection();
+  void disconnect();
+
+  SafeFuture<RpcStream> sendRequest(
+      RpcMethod rpcMethod, Bytes initialPayload, RpcRequestHandler handler);
 
   boolean connectionInitiatedLocally();
 

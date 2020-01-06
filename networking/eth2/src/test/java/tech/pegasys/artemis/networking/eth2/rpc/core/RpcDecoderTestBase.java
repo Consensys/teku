@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import com.google.protobuf.CodedOutputStream;
 import io.netty.buffer.ByteBuf;
@@ -29,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
@@ -46,15 +48,20 @@ public class RpcDecoderTestBase {
       Bytes.wrap(ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8));
   protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
       getLengthPrefix(ERROR_MESSAGE_DATA.size());
+  protected static PeerLookup peerLookup = mock(PeerLookup.class);
 
-  protected static final RpcMethod<
+  @SuppressWarnings("unchecked")
+  protected static final Eth2RpcMethod<
           BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>
       METHOD =
-          new RpcMethod<>(
+          new Eth2RpcMethod<>(
               "",
               RpcEncoding.SSZ,
               BeaconBlocksByRootRequestMessage.class,
-              BeaconBlocksByRootRequestMessage.class);
+              BeaconBlocksByRootRequestMessage.class,
+              false,
+              mock(LocalMessageHandler.class),
+              peerLookup);
 
   private final List<ByteBuf> allocatedBuffers = new ArrayList<>();
 
