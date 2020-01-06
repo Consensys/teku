@@ -155,6 +155,6 @@ public class Eth2PeerManagerTest {
   }
 
   private Eth2Peer createEth2Peer(final Peer peer) {
-    return new Eth2Peer(peer, peerManager.getRpcMethods(), statusMessageFactory);
+    return new Eth2Peer(peer, peerManager.getBeaconChainMethods(), statusMessageFactory);
   }
 }

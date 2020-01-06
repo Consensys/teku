@@ -29,14 +29,14 @@ public class ResponseRpcDecoder<T> {
   private final Class<T> dataType;
   private final RpcEncoding encoding;
 
-  protected ResponseRpcDecoder(final Consumer<T> callback, final RpcMethod<?, T> method) {
+  protected ResponseRpcDecoder(final Consumer<T> callback, final Eth2RpcMethod<?, T> method) {
     this.callback = callback;
     this.dataType = method.getResponseType();
     this.encoding = method.getEncoding();
   }
 
-  public void onDataReceived(final ByteBuf byteBuf) throws RpcException {
-    buffer.appendData(byteBuf);
+  public void onDataReceived(final ByteBuf bytes) throws RpcException {
+    buffer.appendData(bytes);
     try {
       buffer.consumeData(this::consumeData);
     } catch (final RpcException e) {

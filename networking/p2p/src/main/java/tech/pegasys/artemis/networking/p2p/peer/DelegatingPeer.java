@@ -13,8 +13,12 @@
 
 package tech.pegasys.artemis.networking.p2p.peer;
 
-import io.libp2p.core.Connection;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcDataHandler;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DelegatingPeer implements Peer {
   private final Peer peer;
@@ -34,8 +38,9 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
-  public Connection getConnection() {
-    return peer.getConnection();
+  public SafeFuture<RpcStream> sendRequest(
+      final RpcMethod rpcMethod, final Bytes initialPayload, final RpcDataHandler handler) {
+    return peer.sendRequest(rpcMethod, initialPayload, handler);
   }
 
   @Override

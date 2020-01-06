@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core;
+package tech.pegasys.artemis.networking.p2p.rpc;
 
-import java.util.Collection;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+public interface RpcMethod {
 
-public interface RpcMethods {
+  String getId();
 
-  Collection<RpcMethod> all();
+  RpcDataHandler createIncomingRequestHandler();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.rpc.core;
+package tech.pegasys.artemis.networking.p2p.rpc;
 
-import java.util.Collection;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public interface RpcMethods {
+public interface RpcStream {
 
-  Collection<RpcMethod> all();
+  SafeFuture<Void> writeBytes(Bytes bytes) throws StreamClosedException;
+
+  SafeFuture<Void> closeStream();
+
+  SafeFuture<Void> disconnect();
+
+  class StreamClosedException extends RuntimeException {}
 }
