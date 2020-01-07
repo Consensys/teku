@@ -47,8 +47,8 @@ import tech.pegasys.artemis.service.serviceutils.NoopService;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
-import tech.pegasys.artemis.statetransition.BlockImporter;
 import tech.pegasys.artemis.statetransition.StateProcessor;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -150,7 +150,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initP2PNetwork()");
     if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork(eventBus);
-      this.networkTask = () -> this.p2pNetwork.start();
+      this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
       PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
@@ -171,7 +171,7 @@ public class BeaconChainController {
               .chainStorageClient(chainStorageClient)
               .metricsSystem(metricsSystem)
               .build();
-      this.networkTask = () -> this.p2pNetwork.start();
+      this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
@@ -221,7 +221,7 @@ public class BeaconChainController {
       generateTestModeGenesis();
     }
 
-    syncService.start();
+    syncService.start().reportExceptions();
   }
 
   private void generateTestModeGenesis() {
@@ -234,7 +234,7 @@ public class BeaconChainController {
 
   public void stop() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.stop()");
-    syncService.stop();
+    syncService.stop().reportExceptions();
     if (!Objects.isNull(p2pNetwork)) {
       this.p2pNetwork.stop();
     }

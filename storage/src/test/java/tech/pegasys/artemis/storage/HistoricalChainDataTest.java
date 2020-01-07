@@ -20,12 +20,12 @@ import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 class HistoricalChainDataTest {
   private static final Optional<BeaconBlock> BLOCK =
@@ -40,7 +40,7 @@ class HistoricalChainDataTest {
 
   @Test
   public void shouldRetrieveBlockBySlot() {
-    final CompletableFuture<Optional<BeaconBlock>> result =
+    final SafeFuture<Optional<BeaconBlock>> result =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
     verify(eventBus).post(new GetFinalizedBlockAtSlotRequest(ONE));
     assertThat(result).isNotDone();
@@ -51,7 +51,7 @@ class HistoricalChainDataTest {
 
   @Test
   public void shouldResolveWithEmptyOptionalWhenBlockNotAvailable() {
-    final CompletableFuture<Optional<BeaconBlock>> result =
+    final SafeFuture<Optional<BeaconBlock>> result =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
 
     historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, Optional.empty()));
@@ -65,9 +65,9 @@ class HistoricalChainDataTest {
 
   @Test
   public void shouldResolveMultipleRequestsForTheSameSlotWithFirstAvailableData() {
-    final CompletableFuture<Optional<BeaconBlock>> result1 =
+    final SafeFuture<Optional<BeaconBlock>> result1 =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
-    final CompletableFuture<Optional<BeaconBlock>> result2 =
+    final SafeFuture<Optional<BeaconBlock>> result2 =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
 
     assertThat(result1).isNotDone();

@@ -15,11 +15,10 @@ package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static java.util.concurrent.CompletableFuture.completedFuture;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
-import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -29,6 +28,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeMessageHandler
     implements LocalMessageHandler<BeaconBlocksByRangeRequestMessage, BeaconBlock> {
@@ -57,8 +57,8 @@ public class BeaconBlocksByRangeMessageHandler
       return;
     }
     sendMatchingBlocks(message, callback)
-        .thenAccept(success -> callback.completeSuccessfully())
-        .exceptionally(
+        .finish(
+            callback::completeSuccessfully,
             error -> {
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
@@ -68,11 +68,10 @@ public class BeaconBlocksByRangeMessageHandler
                 LOG.error("Failed to process blocks by range request", error);
                 callback.completeWithError(RpcException.SERVER_ERROR);
               }
-              return null;
             });
   }
 
-  private CompletableFuture<?> sendMatchingBlocks(
+  private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<BeaconBlock> callback) {
     return storageClient
@@ -81,7 +80,7 @@ public class BeaconBlocksByRangeMessageHandler
         .orElseGet(() -> completedFuture(null));
   }
 
-  private CompletableFuture<RequestState> sendNextBlock(final RequestState requestState) {
+  private SafeFuture<RequestState> sendNextBlock(final RequestState requestState) {
     return storageClient
         .getBlockAtSlotExact(requestState.currentSlot, requestState.headBlockRoot)
         .thenCompose(

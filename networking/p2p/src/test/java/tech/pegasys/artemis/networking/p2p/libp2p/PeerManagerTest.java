@@ -30,7 +30,8 @@ public class PeerManagerTest {
 
   private final ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
   private final PeerManager peerManager =
-      new PeerManager(scheduler, new NoOpMetricsSystem(), Collections.emptyList());
+      new PeerManager(
+          scheduler, new NoOpMetricsSystem(), Collections.emptyList(), Collections.emptyMap());
 
   @Test
   public void subscribeConnect_singleListener() {

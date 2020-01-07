@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.eth2;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
@@ -23,11 +22,13 @@ import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
   private final P2PNetwork<?> network;
@@ -53,7 +54,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   }
 
   @Override
-  public CompletableFuture<?> start() {
+  public SafeFuture<?> start() {
     return super.start().thenAccept(r -> startup());
   }
 
@@ -100,5 +101,9 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   @Override
   public void unsubscribeConnect(final long subscriptionId) {
     peerManager.unsubscribeConnect(subscriptionId);
+  }
+
+  public BeaconChainMethods getBeaconChainMethods() {
+    return peerManager.getBeaconChainMethods();
   }
 }

@@ -16,44 +16,43 @@ package tech.pegasys.artemis.networking.eth2.rpc.core;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Preconditions;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
-  private final CompletableFuture<Void> completionFuture = new CompletableFuture<>();
+  private final SafeFuture<Void> completionFuture = new SafeFuture<>();
   private int receivedResponseCount = 0;
   private ResponseListener<O> responseListener;
 
   @Override
-  public CompletableFuture<O> expectSingleResponse() {
+  public SafeFuture<O> expectSingleResponse() {
     final AtomicReference<O> firstResponse = new AtomicReference<>();
-    expectMultipleResponses(
-        response -> {
-          if (!firstResponse.compareAndSet(null, response)) {
-            completionFuture.completeExceptionally(
-                new IllegalStateException(
-                    "Received multiple responses when single response expected"));
-          }
-        });
-    return completionFuture.thenApply(
-        done -> {
-          checkNotNull(firstResponse.get(), "No response received when single response expected");
-          return firstResponse.get();
+    return expectMultipleResponses(
+            response -> {
+              if (!firstResponse.compareAndSet(null, response)) {
+                throw new IllegalStateException(
+                    "Received multiple responses when single response expected");
+              }
+            })
+        .thenApply(
+            done -> {
+              checkNotNull(
+                  firstResponse.get(), "No response received when single response expected");
+              return firstResponse.get();
+            });
+  }
+
+  @Override
+  public SafeFuture<Void> expectNoResponse() {
+    return expectMultipleResponses(
+        data -> {
+          throw new IllegalStateException("Received response when none expected");
         });
   }
 
   @Override
-  public CompletableFuture<Void> expectNoResponse() {
-    expectMultipleResponses(
-        data ->
-            completionFuture.completeExceptionally(
-                new IllegalStateException("Received response when none expected")));
-    return completionFuture;
-  }
-
-  @Override
-  public CompletableFuture<Void> expectMultipleResponses(final ResponseListener<O> listener) {
+  public SafeFuture<Void> expectMultipleResponses(final ResponseListener<O> listener) {
     Preconditions.checkArgument(
         responseListener == null, "Multiple calls to 'expect' methods not allowed");
     responseListener = listener;

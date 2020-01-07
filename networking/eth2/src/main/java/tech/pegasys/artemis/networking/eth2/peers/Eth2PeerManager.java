@@ -22,7 +22,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -40,7 +39,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       Subscribers.create(true);
   private final ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
-  private final RpcMethods rpcMethods;
+  private final BeaconChainMethods rpcMethods;
   private final PeerValidatorFactory peerValidatorFactory;
 
   Eth2PeerManager(
@@ -51,7 +50,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     statusMessageFactory = new StatusMessageFactory(storageClient);
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
-        BeaconChainMethods.createRpcMethods(
+        BeaconChainMethods.create(
             this, combinedChainDataClient, storageClient, metricsSystem, statusMessageFactory);
   }
 
@@ -79,14 +78,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     if (peer.connectionInitiatedLocally()) {
-      eth2Peer.sendStatus();
+      eth2Peer.sendStatus().reportExceptions();
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->
             peerValidatorFactory
                 .create(eth2Peer, status)
                 .run()
-                .thenAccept(
+                .finish(
                     peerIsValid -> {
                       if (peerIsValid) {
                         connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
@@ -114,7 +113,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         });
   }
 
-  public RpcMethods getRpcMethods() {
+  public BeaconChainMethods getBeaconChainMethods() {
     return rpcMethods;
   }
 

@@ -23,7 +23,6 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 class EventBusExceptionHandlerTest {
 
@@ -40,8 +40,8 @@ class EventBusExceptionHandlerTest {
 
   private EventBus bus;
 
-  private final CompletableFuture<Level> logLevelFuture = new CompletableFuture<>();
-  private final CompletableFuture<Throwable> exceptionFuture = new CompletableFuture<>();
+  private final SafeFuture<Level> logLevelFuture = new SafeFuture<>();
+  private final SafeFuture<Throwable> exceptionFuture = new SafeFuture<>();
 
   @BeforeAll
   static void setupExecutor() {

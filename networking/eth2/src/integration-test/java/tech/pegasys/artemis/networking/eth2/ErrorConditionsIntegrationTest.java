@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.eth2;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,10 +25,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.artemis.util.Waiter;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ErrorConditionsIntegrationTest {
 
@@ -47,8 +47,10 @@ public class ErrorConditionsIntegrationTest {
 
     final Eth2Peer peer = network1.getPeer(network2.getNodeId()).orElseThrow();
 
-    final CompletableFuture<StatusMessage> response =
-        peer.sendRequest(BeaconChainMethods.STATUS, new InvalidStatusMessage())
+    final Eth2RpcMethod<StatusMessage, StatusMessage> status =
+        network1.getBeaconChainMethods().status();
+    final SafeFuture<StatusMessage> response =
+        peer.sendRequest(status, new InvalidStatusMessage())
             .thenCompose(ResponseStream::expectSingleResponse);
 
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))

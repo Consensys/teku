@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import identify.pb.IdentifyOuterClass;
@@ -35,9 +36,10 @@ import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,13 +50,15 @@ import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
+import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
@@ -70,11 +74,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final GossipNetwork gossipNetwork;
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
+  private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
 
   public LibP2PNetwork(
       final NetworkConfig config,
       final MetricsSystem metricsSystem,
-      final List<Protocol<?>> protocols,
+      final List<RpcMethod> rpcMethods,
       final List<PeerHandler> peerHandlers) {
     this.privKey =
         config
@@ -93,7 +98,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     final PubsubPublisherApi publisher = gossip.createPublisher(privKey, new Random().nextLong());
     gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
 
-    peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers);
+    // Setup rpc methods
+    rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(method)));
+
+    // Setup peers
+    peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers, rpcHandlers);
 
     host =
         BuildersJKt.hostJ(
@@ -107,7 +116,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
                       "/ip4/" + config.getNetworkInterface() + "/tcp/" + config.getListenPort());
 
               b.getProtocols().addAll(getDefaultProtocols());
-              b.getProtocols().addAll(protocols);
+              b.getProtocols().addAll(rpcHandlers.values());
 
               if (config.isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");
@@ -141,18 +150,18 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public CompletableFuture<?> start() {
+  public SafeFuture<?> start() {
     if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
-      return CompletableFuture.failedFuture(new IllegalStateException("Network already started"));
+      return SafeFuture.failedFuture(new IllegalStateException("Network already started"));
     }
     STDOUT.log(Level.INFO, "Starting libp2p network...");
-    return host.start()
+    return SafeFuture.of(host.start())
         .thenApply(
             i -> {
               STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
             })
-        .thenRun(() -> config.getPeers().forEach(this::connect));
+        .thenRun(() -> config.getPeers().forEach(reportExceptions(this::connect)));
   }
 
   @Override
@@ -161,7 +170,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public CompletableFuture<?> connect(final String peer) {
+  public SafeFuture<?> connect(final String peer) {
     return peerManager.connect(new Multiaddr(peer), host.getNetwork());
   }
 
@@ -196,7 +205,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       return;
     }
     STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
-    host.stop();
+    reportExceptions(host.stop());
     scheduler.shutdownNow();
   }
 

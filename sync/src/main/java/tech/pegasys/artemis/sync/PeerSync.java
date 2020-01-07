@@ -20,18 +20,20 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_BLOCK_BY_RANGE_REQU
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
-import tech.pegasys.artemis.statetransition.BlockImporter;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerSync {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
@@ -43,7 +45,7 @@ public class PeerSync {
     this.blockImporter = blockImporter;
   }
 
-  public CompletableFuture<PeerSyncResult> sync(final Eth2Peer peer) {
+  public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
     return executeSync(peer, compute_start_slot_at_epoch(storageClient.getFinalizedEpoch()));
   }
 
@@ -51,10 +53,10 @@ public class PeerSync {
     stopped.set(true);
   }
 
-  private CompletableFuture<PeerSyncResult> executeSync(
+  private SafeFuture<PeerSyncResult> executeSync(
       final Eth2Peer peer, final UnsignedLong latestRequestedSlot) {
     if (stopped.get()) {
-      return CompletableFuture.completedFuture(PeerSyncResult.CANCELLED);
+      return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
     final UnsignedLong advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
     final Bytes32 advertisedHeadRoot = peer.getStatus().getHeadRoot();
@@ -66,20 +68,31 @@ public class PeerSync {
         .thenCompose(
             res -> {
               if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch) >= 0) {
-                return CompletableFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
+                return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
               } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
                 return executeSync(peer, latestRequestedSlot.plus(count));
               } else {
                 disconnectFromPeer(peer);
-                return CompletableFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
+                return SafeFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
               }
             })
         .exceptionally(
             err -> {
               Throwable rootException = Throwables.getRootCause(err);
-              if (rootException instanceof StateTransitionException) {
-                disconnectFromPeer(peer);
-                return PeerSyncResult.BAD_BLOCK;
+              if (rootException instanceof FailedBlockImportException) {
+                final FailedBlockImportException importException =
+                    (FailedBlockImportException) rootException;
+                final FailureReason reason = importException.getResult().getFailureReason();
+                final BeaconBlock block = importException.getBlock();
+                LOG.warn("Failed to import block from peer {}: {}", block, peer);
+                if (reason == FailureReason.FAILED_STATE_TRANSITION
+                    || reason == FailureReason.UNKNOWN_PARENT) {
+                  LOG.debug("Disconnecting from peer ({}) who sent invalid block: {}", peer, block);
+                  disconnectFromPeer(peer);
+                  return PeerSyncResult.BAD_BLOCK;
+                } else {
+                  return PeerSyncResult.IMPORT_FAILED;
+                }
               }
               if (rootException instanceof CancellationException) {
                 return PeerSyncResult.CANCELLED;
@@ -101,23 +114,16 @@ public class PeerSync {
   }
 
   private void blockResponseListener(BeaconBlock block) {
-    try {
-      if (stopped.get()) {
-        throw new CancellationException("Peer sync was cancelled");
-      }
-      blockImporter.importBlock(block);
-    } catch (StateTransitionException e) {
-      throw new BadBlockException("State transition error", e);
+    if (stopped.get()) {
+      throw new CancellationException("Peer sync was cancelled");
+    }
+    final BlockImportResult result = blockImporter.importBlock(block);
+    if (!result.isSuccessful()) {
+      throw new FailedBlockImportException(block, result);
     }
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
-    peer.sendGoodbye(REASON_FAULT_ERROR);
-  }
-
-  public static class BadBlockException extends InvalidResponseException {
-    public BadBlockException(String message, Throwable cause) {
-      super(message, cause);
-    }
+    peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
   }
 }

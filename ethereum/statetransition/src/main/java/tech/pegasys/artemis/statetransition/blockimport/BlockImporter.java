@@ -11,18 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.statetransition.blockimport;
 
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
+import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
-import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
@@ -37,32 +37,20 @@ public class BlockImporter {
     this.eventBus = eventBus;
   }
 
-  /**
-   * @param block The block to check
-   * @return {@code true} If this block is from the future according to our node's clock
-   */
-  public boolean isFutureBlock(BeaconBlock block) {
-    if (storageClient.isPreGenesis()) {
-      return true;
-    }
-    final UnsignedLong genesisTime = storageClient.getStore().getGenesisTime();
-    return ForkChoiceUtil.isFutureBlock(block, genesisTime, storageClient.getStore().getTime());
-  }
-
-  /**
-   * @param block The block to check.
-   * @return {@code true} If block is attached to the local chain
-   */
-  public boolean isBlockAttached(BeaconBlock block) {
-    return storageClient.getBlockState(block.getParent_root()).isPresent();
-  }
-
-  public void importBlock(BeaconBlock block) throws StateTransitionException {
+  @CheckReturnValue
+  public BlockImportResult importBlock(BeaconBlock block) {
     LOG.trace("Import block at slot {}: {}", block.getSlot(), block);
     Store.Transaction transaction = storageClient.startStoreTransaction();
-    final BlockProcessingRecord record = on_block(transaction, block, stateTransition);
+    final BlockImportResult result = on_block(transaction, block, stateTransition);
+    if (!result.isSuccessful()) {
+      return result;
+    }
+
+    final BlockProcessingRecord record = result.getBlockProcessingRecord();
     transaction.commit().join();
     eventBus.post(new BlockImportedEvent(block));
     eventBus.post(record);
+
+    return result;
   }
 }

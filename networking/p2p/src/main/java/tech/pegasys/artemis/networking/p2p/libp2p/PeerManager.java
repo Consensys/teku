@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.Connection;
@@ -21,8 +22,8 @@ import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.network.NetworkImpl;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -32,10 +33,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
@@ -43,6 +47,7 @@ public class PeerManager implements ConnectionHandler {
 
   private final ScheduledExecutorService scheduler;
   private static final long RECONNECT_TIMEOUT = 5000;
+  private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
   private final List<PeerHandler> peerHandlers;
@@ -53,17 +58,19 @@ public class PeerManager implements ConnectionHandler {
   public PeerManager(
       final ScheduledExecutorService scheduler,
       final MetricsSystem metricsSystem,
-      final List<PeerHandler> peerHandlers) {
+      final List<PeerHandler> peerHandlers,
+      final Map<RpcMethod, RpcHandler> rpcHandlers) {
     this.scheduler = scheduler;
     this.peerHandlers = peerHandlers;
+    this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
   }
 
   @Override
   public void handleConnection(@NotNull final Connection connection) {
-    Peer peer = new LibP2PPeer(connection);
+    Peer peer = new LibP2PPeer(connection, rpcHandlers);
     onConnectedPeer(peer);
-    connection.closeFuture().thenRun(() -> onDisconnectedPeer(peer));
+    SafeFuture.of(connection.closeFuture()).finish(() -> onDisconnectedPeer(peer));
   }
 
   public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
@@ -74,32 +81,35 @@ public class PeerManager implements ConnectionHandler {
     connectSubscribers.unsubscribe(subscriptionId);
   }
 
-  public CompletableFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
+  public SafeFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
     STDOUT.log(Level.DEBUG, "Connecting to " + peer);
-    return network
-        .connect(peer)
+    return SafeFuture.of(network.connect(peer))
         .whenComplete(
             (conn, throwable) -> {
               if (throwable != null) {
                 STDOUT.log(
                     Level.DEBUG,
                     "Connection to " + peer + " failed. Will retry shortly: " + throwable);
-                scheduler.schedule(
-                    () -> connect(peer, network), RECONNECT_TIMEOUT, TimeUnit.MILLISECONDS);
+                ignoreFuture(
+                    scheduler.schedule(
+                        () -> connect(peer, network).reportExceptions(),
+                        RECONNECT_TIMEOUT,
+                        TimeUnit.MILLISECONDS));
               } else {
                 STDOUT.log(
                     Level.DEBUG,
                     "Connection to peer: "
                         + conn.getSecureSession().getRemoteId()
                         + " was successful");
-                conn.closeFuture()
-                    .thenAccept(
-                        ignore -> {
+                SafeFuture.of(conn.closeFuture())
+                    .finish(
+                        () -> {
                           LOG.debug("Connection to {} closed. Will retry shortly", peer);
-                          scheduler.schedule(
-                              () -> connect(peer, network),
-                              RECONNECT_TIMEOUT,
-                              TimeUnit.MILLISECONDS);
+                          ignoreFuture(
+                              scheduler.schedule(
+                                  () -> connect(peer, network).reportExceptions(),
+                                  RECONNECT_TIMEOUT,
+                                  TimeUnit.MILLISECONDS));
                         });
               }
             });

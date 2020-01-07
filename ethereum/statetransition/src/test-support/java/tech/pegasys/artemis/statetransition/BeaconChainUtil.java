@@ -20,18 +20,19 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSI
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.Signer;
+import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -74,7 +75,7 @@ public class BeaconChainUtil {
     initializeStorage(chainStorageClient, validatorKeys);
   }
 
-  public CompletableFuture<Void> setSlot(final UnsignedLong currentSlot) {
+  public void setSlot(final UnsignedLong currentSlot) {
     if (storageClient.isPreGenesis()) {
       throw new IllegalStateException("Cannot set current slot before genesis");
     }
@@ -82,7 +83,7 @@ public class BeaconChainUtil {
     final UnsignedLong time = storageClient.getGenesisTime().plus(currentSlot.times(secPerSlot));
     final Transaction tx = storageClient.startStoreTransaction();
     tx.setTime(time);
-    return tx.commit();
+    tx.commit().join();
   }
 
   public BeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {
@@ -98,15 +99,24 @@ public class BeaconChainUtil {
     final BeaconBlock block = createBlockAtSlot(slot, true, attestations);
     setSlot(slot);
     final Transaction transaction = storageClient.startStoreTransaction();
-    final BlockProcessingRecord record =
+    final BlockImportResult importResult =
         ForkChoiceUtil.on_block(transaction, block, stateTransition);
-    final CompletableFuture<Void> result = transaction.commit();
+    if (!importResult.isSuccessful()) {
+      throw new IllegalStateException(
+          "Produced an invalid block ( reason "
+              + importResult.getFailureReason().name()
+              + ") at slot "
+              + slot
+              + ": "
+              + block);
+    }
+    final SafeFuture<Void> result = transaction.commit();
     if (!result.isDone() || result.isCompletedExceptionally()) {
       throw new IllegalStateException(
           "Transaction did not commit immediately. Are you using a disk storage backed ChainStorageClient without having storage running?");
     }
     storageClient.updateBestBlock(block.signing_root("signature"), block.getSlot());
-    return record;
+    return importResult.getBlockProcessingRecord();
   }
 
   public BlockProcessingRecord createAndImportBlockAtSlot(final UnsignedLong slot)

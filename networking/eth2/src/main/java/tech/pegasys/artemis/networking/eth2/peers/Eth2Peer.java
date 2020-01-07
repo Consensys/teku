@@ -17,33 +17,35 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
+import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
-import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethods;
 import tech.pegasys.artemis.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
-  private final RpcMethods rpcMethods;
+  private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
-  private final CompletableFuture<PeerStatus> initialStatus = new CompletableFuture<>();
+  private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private AtomicBoolean chainValidated = new AtomicBoolean(false);
 
   public Eth2Peer(
       final Peer peer,
-      final RpcMethods rpcMethods,
+      final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory) {
     super(peer);
     this.rpcMethods = rpcMethods;
@@ -56,7 +58,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
-    initialStatus.thenAccept(subscriber::onInitialStatus);
+    initialStatus.finish(subscriber::onInitialStatus);
   }
 
   public PeerStatus getStatus() {
@@ -75,8 +77,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     chainValidated.set(true);
   }
 
-  public CompletableFuture<PeerStatus> sendStatus() {
-    return sendRequest(BeaconChainMethods.STATUS, statusMessageFactory.createStatusMessage())
+  public SafeFuture<PeerStatus> sendStatus() {
+    final Eth2RpcMethod<StatusMessage, StatusMessage> statusMethod = rpcMethods.status();
+    return sendRequest(statusMethod, statusMessageFactory.createStatusMessage())
         .thenCompose(ResponseStream::expectSingleResponse)
         .thenApply(
             remoteStatus -> {
@@ -86,49 +89,59 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
             });
   }
 
-  public CompletableFuture<Void> sendGoodbye(final UnsignedLong reason) {
-    return sendRequest(BeaconChainMethods.GOODBYE, new GoodbyeMessage(reason))
+  public SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
+    final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodByeMethod = rpcMethods.goodBye();
+    return sendRequest(goodByeMethod, new GoodbyeMessage(reason))
         .thenCompose(ResponseStream::expectNoResponse);
   }
 
-  public CompletableFuture<Void> requestBlocksByRoot(
+  public SafeFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final ResponseListener<BeaconBlock> listener) {
-    return requestStream(
-        BeaconChainMethods.BEACON_BLOCKS_BY_ROOT,
-        new BeaconBlocksByRootRequestMessage(blockRoots),
-        listener);
+    final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> blockByRoot =
+        rpcMethods.beaconBlocksByRoot();
+    return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
   }
 
-  public CompletableFuture<BeaconBlock> requestBlockBySlot(
+  public SafeFuture<BeaconBlock> requestBlockBySlot(
       final Bytes32 headBlockRoot, final UnsignedLong slot) {
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> blocksByRange =
+        rpcMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
             headBlockRoot, slot, UnsignedLong.ONE, UnsignedLong.ONE);
-    return sendRequest(BeaconChainMethods.BEACON_BLOCKS_BY_RANGE, request)
-        .thenCompose(ResponseStream::expectSingleResponse);
+    return sendRequest(blocksByRange, request).thenCompose(ResponseStream::expectSingleResponse);
   }
 
-  public CompletableFuture<Void> requestBlocksByRange(
+  public SafeFuture<Void> requestBlocksByRange(
       final Bytes32 headBlockRoot,
       final UnsignedLong startSlot,
       final UnsignedLong count,
       final UnsignedLong step,
       final ResponseListener<BeaconBlock> listener) {
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> blocksByRange =
+        rpcMethods.beaconBlocksByRange();
     return requestStream(
-        BeaconChainMethods.BEACON_BLOCKS_BY_RANGE,
+        blocksByRange,
         new BeaconBlocksByRangeRequestMessage(headBlockRoot, startSlot, count, step),
         listener);
   }
 
-  private <I extends RpcRequest, O> CompletableFuture<Void> requestStream(
-      final RpcMethod<I, O> method, I request, final ResponseStream.ResponseListener<O> listener) {
+  private <I extends RpcRequest, O> SafeFuture<Void> requestStream(
+      final Eth2RpcMethod<I, O> method,
+      final I request,
+      final ResponseStream.ResponseListener<O> listener) {
     return sendRequest(method, request)
         .thenCompose(responseStream -> responseStream.expectMultipleResponses(listener));
   }
 
-  public <I extends RpcRequest, O> CompletableFuture<ResponseStream<O>> sendRequest(
-      final RpcMethod<I, O> method, I request) {
-    return rpcMethods.invoke(method, this.getConnection(), request);
+  public <I extends RpcRequest, O> SafeFuture<ResponseStream<O>> sendRequest(
+      final Eth2RpcMethod<I, O> method, final I request) {
+    Bytes payload = method.encodeRequest(request);
+    final Eth2OutgoingRequestHandler<I, O> handler =
+        method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
+    return this.sendRequest(method, payload, handler)
+        .thenAccept(handler::handleInitialPayloadSent)
+        .thenApply(res -> handler.getResponseStream());
   }
 
   @Override

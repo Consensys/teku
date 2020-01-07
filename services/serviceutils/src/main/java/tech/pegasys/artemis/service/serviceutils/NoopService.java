@@ -13,17 +13,17 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
-import java.util.concurrent.CompletableFuture;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class NoopService extends Service {
 
   @Override
-  protected CompletableFuture<?> doStart() {
-    return CompletableFuture.completedFuture(null);
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.completedFuture(null);
   }
 
   @Override
-  protected CompletableFuture<?> doStop() {
-    return CompletableFuture.completedFuture(null);
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.completedFuture(null);
   }
 }

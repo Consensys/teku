@@ -17,22 +17,23 @@ import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 
-class RequestRpcDecoder<T> {
+public class RequestRpcDecoder<T extends RpcRequest> {
 
   protected final MessageBuffer buffer = new MessageBuffer();
   private final Class<T> dataType;
   private final RpcEncoding encoding;
   private Optional<T> result = Optional.empty();
 
-  protected RequestRpcDecoder(final RpcMethod<T, ?> method) {
-    this.dataType = method.getRequestType();
-    this.encoding = method.getEncoding();
+  public RequestRpcDecoder(final Class<T> dataType, final RpcEncoding encoding) {
+    this.dataType = dataType;
+    this.encoding = encoding;
   }
 
-  public Optional<T> onDataReceived(final ByteBuf byteBuf) throws RpcException {
-    buffer.appendData(byteBuf);
+  public Optional<T> onDataReceived(final ByteBuf bytes) throws RpcException {
+    buffer.appendData(bytes);
     buffer.consumeData(this::consumeData);
     if (result.isPresent() && !buffer.isEmpty()) {
       throw RpcException.INCORRECT_LENGTH_ERROR;
