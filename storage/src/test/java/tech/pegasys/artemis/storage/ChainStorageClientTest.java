@@ -259,7 +259,6 @@ class ChainStorageClientTest {
     tx.commit().reportExceptions();
     verify(eventBus, never()).post(argThat(this::isFinalizedCheckpointEvent));
 
-    // Check that store was updated
     final Checkpoint currentCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
   }
