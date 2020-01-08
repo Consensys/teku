@@ -14,8 +14,12 @@
 package tech.pegasys.artemis.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.storage.Store.get_genesis_store;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -24,7 +28,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.storage.Store.Transaction;
+import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.config.Constants;
 
 class ChainStorageClientTest {
@@ -218,5 +225,46 @@ class ChainStorageClientTest {
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
 
     assertThat(storageClient.isIncludedInBestState(GENESIS_BLOCK_ROOT)).isTrue();
+  }
+
+  @Test
+  public void startStoreTransaction_mutateFinalizedCheckpoint() {
+    Store store = get_genesis_store(DataStructureUtil.randomBeaconState(1));
+    storageClient.setStore(store);
+
+    final Checkpoint originalCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint newCheckpoint = DataStructureUtil.randomCheckpoint(1);
+    assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
+
+    final Transaction tx = storageClient.startStoreTransaction();
+    tx.setFinalizedCheckpoint(newCheckpoint);
+    verify(eventBus, never()).post(new FinalizedCheckpointEvent(newCheckpoint));
+
+    tx.commit().reportExceptions();
+    verify(eventBus).post(new FinalizedCheckpointEvent(newCheckpoint));
+
+    // Check that store was updated
+    final Checkpoint currentCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    assertThat(currentCheckpoint).isEqualTo(newCheckpoint);
+  }
+
+  @Test
+  public void startStoreTransaction_doNotMutateFinalizedCheckpoint() {
+    Store store = get_genesis_store(DataStructureUtil.randomBeaconState(1));
+    storageClient.setStore(store);
+    final Checkpoint originalCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+
+    final Transaction tx = storageClient.startStoreTransaction();
+    tx.setTime(UnsignedLong.valueOf(11L));
+    tx.commit().reportExceptions();
+    verify(eventBus, never()).post(argThat(this::isFinalizedCheckpointEvent));
+
+    // Check that store was updated
+    final Checkpoint currentCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
+  }
+
+  private boolean isFinalizedCheckpointEvent(final Object obj) {
+    return obj instanceof FinalizedCheckpointEvent;
   }
 }
