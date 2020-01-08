@@ -26,7 +26,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.artemis.util.hashToG2.hashToCurve;
+import tech.pegasys.artemis.util.hashToG2.HashToCurve;
 import tech.pegasys.artemis.util.mikuli.G2Point;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -47,7 +47,7 @@ public class BenchBLS {
 
   @Benchmark
   public void hashToCurve(Blackhole blackhole) {
-    G2Point result = new G2Point(hashToCurve.hashToG2(message, suite));
+    G2Point result = new G2Point(HashToCurve.hashToG2(message, suite));
     blackhole.consume(result);
   }
 }

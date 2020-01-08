@@ -17,7 +17,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.util.hashToG2.Chains.qChain;
-import static tech.pegasys.artemis.util.hashToG2.hashToCurve.hashToG2;
+import static tech.pegasys.artemis.util.hashToG2.HashToCurve.hashToG2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.isInG2;
 
 import java.util.ArrayList;
 import java.util.stream.Stream;
@@ -39,7 +40,7 @@ class hashToCurveTest {
         hashToG2(
             Bytes.concatenate(Bytes.wrap("Hello, world!".getBytes(UTF_8)), Bytes.ofUnsignedInt(i)));
     assertFalse(point.is_infinity());
-    assertTrue(qChain(new JacobianPoint(point)).isInfinity());
+    assertTrue(isInG2(new JacobianPoint(point)));
   }
 
   public static Stream<Arguments> getIndices() {

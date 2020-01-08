@@ -61,7 +61,7 @@ class ReferenceTests {
   })
   void referenceTest(
       String fileName, int testNumber, Bytes message, Bytes suite, G2Point expected) {
-    G2Point actual = new G2Point(hashToCurve.hashToG2(message, suite));
+    G2Point actual = new G2Point(HashToCurve.hashToG2(message, suite));
     assertEquals(expected, actual);
   }
 

@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.hashToG2;
 import static tech.pegasys.artemis.util.hashToG2.Chains.expChain;
 import static tech.pegasys.artemis.util.hashToG2.Chains.h2Chain;
 import static tech.pegasys.artemis.util.hashToG2.Chains.mxChain;
+import static tech.pegasys.artemis.util.hashToG2.Chains.qChain;
 import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
 import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Expand;
 import static tech.pegasys.artemis.util.hashToG2.IetfTools.HKDF_Extract;
@@ -33,7 +34,7 @@ class Helper {
    * @param p a JacobianPoint
    * @return true if the point is on the curve, false otherwise
    */
-  static boolean onCurveG2(JacobianPoint p) {
+  static boolean isOnCurve(JacobianPoint p) {
     if (p.isInfinity()) {
       return true;
     }
@@ -48,6 +49,16 @@ class Helper {
 
     FP2Immutable four = new FP2Immutable(new FP(4), new FP(4));
     return y2.equals(x3.add(z6.mul(four)));
+  }
+
+  /**
+   * Tests whether the given point lies in the G2 group.
+   *
+   * @param p a JacobianPoint
+   * @return true if the point is in G2, false otherwise
+   */
+  static boolean isInG2(JacobianPoint p) {
+    return isOnCurve(p) && qChain(p).isInfinity();
   }
 
   /**

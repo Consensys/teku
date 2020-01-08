@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.isOnCurve;
 import static tech.pegasys.artemis.util.hashToG2.JacobianPoint.INFINITY;
 import static tech.pegasys.artemis.util.hashToG2.Util.bigFromHex;
 
@@ -126,7 +126,7 @@ class JacobianPointTest {
                 "0x0374fe17a6875101c7172d962c383f065326c8e8c3f4971456224efe18619f404d7cfab6b3d7df460f44f55f72176eb2",
                 "0x0d15e558d16fe21b72637e9f0d53684cd52fe9dc41dc3dba522370048239b9b687003c8d3e928c2d17ed7451f9c91676"),
             FP2Immutable.ONE);
-    assertTrue(onCurveG2(a));
+    assertTrue(isOnCurve(a));
     assertEquals(expected.toString(), a.toAffine().toString());
   }
 
@@ -157,8 +157,8 @@ class JacobianPointTest {
             new FP2Immutable(
                 "0x05594bb289f0ebfd8fa3f020c6e1eaf4c49b97d8ccaf3470a3a02da4b3e7104778105bd6c7e0caf97206c77a8b501d4d",
                 "0x0625151f905fad40eb0e2b9b0a46d9afe531256c6d5e39897a27d94700f037a761a741d11275180bd18e620289e02a16"));
-    assertTrue(onCurveG2(a));
-    assertTrue(onCurveG2(b));
+    assertTrue(isOnCurve(a));
+    assertTrue(isOnCurve(b));
     assertNotEquals(a.add(b).getZ(), b.add(a).getZ());
     assertEquals(a.add(b), b.add(a));
   }

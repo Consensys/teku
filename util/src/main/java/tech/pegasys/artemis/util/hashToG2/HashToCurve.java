@@ -15,9 +15,10 @@ package tech.pegasys.artemis.util.hashToG2;
 
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
+import static tech.pegasys.artemis.util.hashToG2.Helper.isInG2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
 import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
-import static tech.pegasys.artemis.util.hashToG2.Helper.onCurveG2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.isOnCurve;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.ECP2;
@@ -42,7 +43,7 @@ import org.apache.tuweni.bytes.Bytes;
  * purposes of hashing to G2 within Ethereum I believe that this is of no consequence, since all the
  * input information is publicly known.
  */
-public class hashToCurve {
+public class HashToCurve {
 
   // The cipher suite is defined in the Eth2 specs
   private static final Bytes CIPHER_SUITE =
@@ -65,11 +66,13 @@ public class hashToCurve {
 
     JacobianPoint p = iso3(q0.add(q1));
 
-    if (!onCurveG2(p)) {
-      throw new RuntimeException("hashToCurve failed for unknown reasons.");
-    }
+    // This should never fail, and the check is non-trivial, so we use an assert
+    assert(isOnCurve(p));
 
     JacobianPoint q = clear_h2(p);
+
+    // This should never fail, and the check is very expensive, so we use an assert
+    assert(isInG2(q));
 
     return q.toECP2();
   }
