@@ -284,7 +284,7 @@ public class PeerSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
-            any(),
+            eq(UnsignedLong.ONE),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
@@ -304,7 +304,7 @@ public class PeerSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
-            any(),
+            eq(UnsignedLong.valueOf(lastReceivedBlockSlot + 1)),
             eq(peerHeadSlot.minus(UnsignedLong.valueOf(lastReceivedBlockSlot))),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
