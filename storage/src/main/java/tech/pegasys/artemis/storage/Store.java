@@ -103,7 +103,12 @@ public class Store implements ReadOnlyStore {
   }
 
   Transaction startTransaction(final TransactionPrecommit transactionPrecommit) {
-    return new Transaction(transactionCount++, transactionPrecommit);
+    return startTransaction(transactionPrecommit, StoreUpdateHandler.NOOP);
+  }
+
+  Transaction startTransaction(
+      final TransactionPrecommit transactionPrecommit, final StoreUpdateHandler updateHandler) {
+    return new Transaction(transactionCount++, transactionPrecommit, updateHandler);
   }
 
   @Override
@@ -259,10 +264,15 @@ public class Store implements ReadOnlyStore {
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
+    private final StoreUpdateHandler updateHandler;
 
-    Transaction(final long id, final TransactionPrecommit transactionPrecommit) {
+    Transaction(
+        final long id,
+        final TransactionPrecommit transactionPrecommit,
+        final StoreUpdateHandler updateHandler) {
       this.id = id;
       this.transactionPrecommit = transactionPrecommit;
+      this.updateHandler = updateHandler;
     }
 
     public void putLatestMessage(UnsignedLong validatorIndex, Checkpoint latestMessage) {
@@ -335,6 +345,9 @@ public class Store implements ReadOnlyStore {
                 } finally {
                   writeLock.unlock();
                 }
+
+                // Signal back changes to the handler
+                finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
               });
     }
 
@@ -422,5 +435,15 @@ public class Store implements ReadOnlyStore {
       return latest_messages.containsKey(validatorIndex)
           || Store.this.containsLatestMessage(validatorIndex);
     }
+  }
+
+  interface StoreUpdateHandler {
+    StoreUpdateHandler NOOP =
+        new StoreUpdateHandler() {
+          @Override
+          public void onNewFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {}
+        };
+
+    void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint);
   }
 }
