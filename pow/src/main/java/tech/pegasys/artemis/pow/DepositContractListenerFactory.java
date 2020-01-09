@@ -32,6 +32,7 @@ public class DepositContractListenerFactory {
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
     Credentials credentials =
         Credentials.create(controller.getAccounts().get(0).secretKey().bytes().toHexString());
+    System.out.println(controller.getAccounts().get(0).secretKey().bytes().toHexString());
     DepositContract contract = null;
     try {
       contract = DepositContract.deploy(web3j, credentials, new DefaultGasProvider()).send();
@@ -40,15 +41,14 @@ public class DepositContractListenerFactory {
           "DepositContractListenerFactory.simulationDeployDepositContract: DepositContract failed to deploy in the simulation environment",
           e);
     }
-    return new DepositContractListener(eventBus, contract);
+    return new DepositContractListener(web3j, eventBus, contract);
   }
 
   public static DepositContractListener eth1DepositContract(
-      EventBus eventBus, String provider, String address) {
-    Web3j web3j = Web3j.build(new HttpService(provider));
+      Web3j web3j, EventBus eventBus, String address) {
     DepositContract contract =
         DepositContract.load(
             address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
-    return new DepositContractListener(eventBus, contract);
+    return new DepositContractListener(web3j, eventBus, contract);
   }
 }

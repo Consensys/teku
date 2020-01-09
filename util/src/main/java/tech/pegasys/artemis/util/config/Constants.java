@@ -91,6 +91,7 @@ public class Constants {
 
   // Honest Validator
   public static UnsignedLong TARGET_AGGREGATORS_PER_COMMITTEE = UnsignedLong.valueOf(16);
+  public static UnsignedLong SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(14L);
 
   // Artemis specific
   public static String SIM_DEPOSIT_VALUE = "1000000000000000000";

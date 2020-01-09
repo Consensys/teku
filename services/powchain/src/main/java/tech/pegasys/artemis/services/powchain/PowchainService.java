@@ -37,6 +37,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.ganache.GanacheController;
+import tech.pegasys.artemis.pow.BlockListener;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.event.Deposit;
@@ -52,7 +53,8 @@ public class PowchainService implements ServiceInterface {
   private EventBus eventBus;
 
   private GanacheController controller;
-  private DepositContractListener listener;
+  private DepositContractListener depositContractListener;
+  private BlockListener blockListener;
 
   private String depositMode;
   private String contractAddr;
@@ -77,7 +79,7 @@ public class PowchainService implements ServiceInterface {
   public void run() {
     if (depositMode.equals(DEPOSIT_SIM) && depositSimFile == null) {
       controller = new GanacheController(Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT, 6000);
-      listener =
+      depositContractListener =
           DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
       Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
       MockStartValidatorKeyPairFactory mockStartValidatorKeyPairFactory =
@@ -89,7 +91,7 @@ public class PowchainService implements ServiceInterface {
         final DepositTransactionSender transactionSender =
             new DepositTransactionSender(
                 web3j,
-                listener.getContract().getContractAddress(),
+                depositContractListener.getContract().getContractAddress(),
                 keyPair.secretKey().bytes().toHexString());
 
         BLSKeyPair blsKeyPair = blsKeyPairList.get(i);
@@ -107,6 +109,7 @@ public class PowchainService implements ServiceInterface {
         }
         i++;
       }
+      blockListener = new BlockListener(web3j, eventBus, depositContractListener);
     } else if (depositMode.equals(DEPOSIT_SIM)) {
       JsonParser parser = new JsonParser();
       try {
@@ -127,8 +130,10 @@ public class PowchainService implements ServiceInterface {
         LOG.error("Failed to process deposit events", e);
       }
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
-      listener =
-          DepositContractListenerFactory.eth1DepositContract(eventBus, provider, contractAddr);
+      Web3j web3j = Web3j.build(new HttpService(provider));
+      depositContractListener =
+          DepositContractListenerFactory.eth1DepositContract(web3j, eventBus, contractAddr);
+      blockListener = new BlockListener(web3j, eventBus, depositContractListener);
     }
   }
 
@@ -136,8 +141,11 @@ public class PowchainService implements ServiceInterface {
   public void stop() {
     STDOUT.log(Level.DEBUG, "PowChainService.stop()");
     this.eventBus.unregister(this);
-    if (listener != null) {
-      listener.stop();
+    if (depositContractListener != null) {
+      depositContractListener.stop();
+    }
+    if (blockListener != null) {
+      blockListener.stop();
     }
   }
 }
