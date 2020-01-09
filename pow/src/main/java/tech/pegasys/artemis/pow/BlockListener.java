@@ -22,10 +22,10 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockListener {
 
-  private final BigInteger ETH1_CACHE_FOLLOW_DISTANCE = BigInteger.valueOf(10);
   private final Disposable newBlockSubscription;
 
   public BlockListener(
@@ -36,7 +36,7 @@ public class BlockListener {
             .subscribe(
                 block -> {
                   BigInteger cacheBlockNumber =
-                      block.getBlock().getNumber().subtract(ETH1_CACHE_FOLLOW_DISTANCE);
+                      block.getBlock().getNumber().subtract(BigInteger.valueOf(Constants.ETH1_CACHE_FOLLOW_DISTANCE));
                   EthBlock.Block eth1Block =
                       web3j
                           .ethGetBlockByNumber(
