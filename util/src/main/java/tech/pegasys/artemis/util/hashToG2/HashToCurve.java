@@ -16,9 +16,9 @@ package tech.pegasys.artemis.util.hashToG2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.clear_h2;
 import static tech.pegasys.artemis.util.hashToG2.Helper.hashToBase;
 import static tech.pegasys.artemis.util.hashToG2.Helper.isInG2;
+import static tech.pegasys.artemis.util.hashToG2.Helper.isOnCurve;
 import static tech.pegasys.artemis.util.hashToG2.Helper.iso3;
 import static tech.pegasys.artemis.util.hashToG2.Helper.mapToCurve;
-import static tech.pegasys.artemis.util.hashToG2.Helper.isOnCurve;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.milagro.amcl.BLS381.ECP2;
@@ -67,12 +67,12 @@ public class HashToCurve {
     JacobianPoint p = iso3(q0.add(q1));
 
     // This should never fail, and the check is non-trivial, so we use an assert
-    assert(isOnCurve(p));
+    assert isOnCurve(p);
 
     JacobianPoint q = clear_h2(p);
 
     // This should never fail, and the check is very expensive, so we use an assert
-    assert(isInG2(q));
+    assert isInG2(q);
 
     return q.toECP2();
   }
