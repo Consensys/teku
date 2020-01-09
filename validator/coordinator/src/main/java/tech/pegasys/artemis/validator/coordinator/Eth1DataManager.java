@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -71,20 +72,24 @@ public class Eth1DataManager {
   }
 
   public Eth1Data get_eth1_vote(BeaconState state) {
-    Collection<Eth1Data> votesToConsider = getVotesToConsider();
+    NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider();
     List<Eth1Data> validVotes =
         state.getEth1_data_votes().stream()
-            .filter(votesToConsider::contains)
+            .filter(votesToConsider::containsValue)
             .collect(Collectors.toList());
 
-    return validVotes.stream()
+    Eth1Data defaultVote = !votesToConsider.isEmpty()
+            ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
+
+    Optional<Eth1Data> vote = validVotes.stream()
         .max(
-            Comparator.comparing(vote -> Collections.frequency(validVotes, vote))
-                .thenComparing(vote -> -validVotes.indexOf(vote)))
-        .get();
+            Comparator.comparing(v -> Collections.frequency(validVotes, v))
+                .thenComparing(v -> -validVotes.indexOf(v)));
+
+    return vote.orElse(defaultVote);
   }
 
-  private Collection<Eth1Data> getVotesToConsider() {
+  private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider() {
     NavigableMap<UnsignedLong, Eth1Data> consideredSubMap =
         eth1ChainCache.subMap(
             currentVotingPeriodStartTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2))),
@@ -92,7 +97,7 @@ public class Eth1DataManager {
             currentVotingPeriodStartTime.minus(RANGE_CONSTANT),
             true);
 
-    return consideredSubMap.values();
+    return consideredSubMap;
   }
 
   private void prune(UnsignedLong periodStart) {
