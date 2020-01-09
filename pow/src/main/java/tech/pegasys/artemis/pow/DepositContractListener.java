@@ -91,7 +91,6 @@ public class DepositContractListener {
                     "Eth1 call get_deposit_count() has failed:" + ethCall.getError().getMessage());
               }
               String value = ethCall.getValue();
-              System.out.println(value);
               List<Type> list = contract.get_deposit_count().decodeFunctionResponse(value);
               byte[] bytes = (byte[]) list.get(0).getValue();
               long deposit_count = Bytes.wrap(bytes).reverse().toLong();

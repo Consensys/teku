@@ -32,7 +32,6 @@ public class DepositContractListenerFactory {
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
     Credentials credentials =
         Credentials.create(controller.getAccounts().get(0).secretKey().bytes().toHexString());
-    System.out.println(controller.getAccounts().get(0).secretKey().bytes().toHexString());
     DepositContract contract = null;
     try {
       contract = DepositContract.deploy(web3j, credentials, new DefaultGasProvider()).send();
