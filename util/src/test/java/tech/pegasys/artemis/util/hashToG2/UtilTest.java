@@ -11,27 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.mikuli;
+package tech.pegasys.artemis.util.hashToG2;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.artemis.util.hashToG2.Util.os2ip_modP;
 
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ROM;
+import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Test;
 
-class Util {
+class UtilTest {
 
-  static final BIG P = new BIG(ROM.Modulus);
-
-  /**
-   * Calculate (y_im * 2) // q (which corresponds to the a1 flag in the Eth2 BLS spec)
-   *
-   * <p>This is used to disambiguate Y, given X, as per the spec. P is the curve modulus.
-   *
-   * @param yIm the imaginary part of the Y coordinate of the point
-   * @return true if the a1 flag and yIm correspond
-   */
-  static boolean calculateYFlag(BIG yIm) {
-    BIG tmp = new BIG(yIm);
-    tmp.add(yIm);
-    tmp.div(P);
-    return tmp.isunity();
+  @Test
+  void os2ipTest() {
+    // Big-endian bytes
+    byte[] bytes = {1, 2, 3, 4};
+    assertEquals(new BIG(0x01020304).toString(), os2ip_modP(Bytes.wrap(bytes)).toString());
   }
 }
