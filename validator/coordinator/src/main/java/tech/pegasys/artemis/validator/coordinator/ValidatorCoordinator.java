@@ -41,6 +41,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -67,6 +68,7 @@ import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
+import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -112,6 +114,7 @@ public class ValidatorCoordinator {
     this.blockAttestationsPool = blockAttestationsPool;
     this.eventBus.register(this);
   }
+
   /*
   @Subscribe
   public void checkIfIncomingBlockObeysSlashingConditions(BeaconBlock block) {
@@ -154,7 +157,6 @@ public class ValidatorCoordinator {
     }
     this.store.addUnprocessedBlockHeader(proposerIndex, blockHeader);
   }
-
   */
 
   @Subscribe
@@ -317,13 +319,22 @@ public class ValidatorCoordinator {
 
       final Signer signer = getSigner(proposer);
       final Bytes32 parentRoot = previousBlock.signing_root("signature");
+
+      Eth1Data eth1Data;
+      if (eth1DataManager == null) {
+        final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
+        eth1Data = StartupUtil.get_eth1_data_stub(previousState, newEpoch);
+      } else {
+        eth1Data = eth1DataManager.get_eth1_vote(newState);
+      }
+
       newBlock =
           blockCreator.createNewBlock(
               signer,
               newSlot,
               newState,
               parentRoot,
-              eth1DataManager.get_eth1_vote(newState),
+              eth1Data,
               attestations,
               slashingsInBlock,
               deposits);
