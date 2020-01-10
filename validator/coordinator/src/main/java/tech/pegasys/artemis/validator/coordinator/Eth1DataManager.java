@@ -16,16 +16,13 @@ package tech.pegasys.artemis.validator.coordinator;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Collectors;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
@@ -76,17 +73,16 @@ public class Eth1DataManager {
   public Eth1Data get_eth1_vote(BeaconState state) {
     NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider();
     List<Eth1Data> validVotes = new ArrayList<>(state.getEth1_data_votes());
-    System.out.println(validVotes);
     validVotes.removeIf(v -> !votesToConsider.containsValue(v));
-    System.out.println(validVotes);
 
-    Eth1Data defaultVote = !votesToConsider.isEmpty()
-            ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
+    Eth1Data defaultVote =
+        !votesToConsider.isEmpty() ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
 
-    Optional<Eth1Data> vote = validVotes.stream()
-        .max(
-            Comparator.comparing(v -> Collections.frequency(validVotes, v))
-                .thenComparingInt(v -> -validVotes.indexOf(v)));
+    Optional<Eth1Data> vote =
+        validVotes.stream()
+            .max(
+                Comparator.comparing(v -> Collections.frequency(validVotes, v))
+                    .thenComparingInt(v -> -validVotes.indexOf(v)));
 
     return vote.orElse(defaultVote);
   }

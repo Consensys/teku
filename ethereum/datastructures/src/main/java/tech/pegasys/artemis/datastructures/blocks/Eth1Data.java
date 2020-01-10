@@ -152,9 +152,9 @@ public class Eth1Data implements Merkleizable, SimpleOffsetSerializable, SSZCont
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-            .add("deposit_root", deposit_root)
-            .add("deposit_count", deposit_count)
-            .add("block_hash", block_hash)
-            .toString();
+        .add("deposit_root", deposit_root)
+        .add("deposit_count", deposit_count)
+        .add("block_hash", block_hash)
+        .toString();
   }
 }
