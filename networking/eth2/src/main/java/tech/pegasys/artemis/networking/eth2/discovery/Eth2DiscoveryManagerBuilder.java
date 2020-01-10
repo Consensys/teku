@@ -64,20 +64,20 @@ public final class Eth2DiscoveryManagerBuilder {
     return this;
   }
 
-  public Eth2DiscoveryManager buildSeeded() {
-    Eth2DiscoveryManager ret = build();
+  public Eth2DiscoveryService buildSeeded() {
+    Eth2DiscoveryService ret = build();
     ret.setRnd(SEED);
     return ret;
   }
 
-  public Eth2DiscoveryManager build() {
-    Eth2DiscoveryManager eth2DiscoveryManager = new Eth2DiscoveryManager();
-    eth2DiscoveryManager.setNetworkInterface(networkInterface);
-    eth2DiscoveryManager.setPort(port);
-    eth2DiscoveryManager.setPeers(peers);
-    privateKey.ifPresent(eth2DiscoveryManager::setPrivateKey);
-    network.ifPresent(eth2DiscoveryManager::setNetwork);
-    eventBus.ifPresent(eth2DiscoveryManager::setEventBus);
-    return eth2DiscoveryManager;
+  public Eth2DiscoveryService build() {
+    Eth2DiscoveryService eth2DiscoveryService = new Eth2DiscoveryService();
+    eth2DiscoveryService.setNetworkInterface(networkInterface);
+    eth2DiscoveryService.setPort(port);
+    eth2DiscoveryService.setPeers(peers);
+    privateKey.ifPresent(eth2DiscoveryService::setPrivateKey);
+    network.ifPresent(eth2DiscoveryService::setNetwork);
+    eventBus.ifPresent(eth2DiscoveryService::setEventBus);
+    return eth2DiscoveryService;
   }
 }

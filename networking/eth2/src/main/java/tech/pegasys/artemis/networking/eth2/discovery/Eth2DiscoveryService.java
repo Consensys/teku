@@ -56,9 +56,9 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
-public class Eth2DiscoveryManager {
+public class Eth2DiscoveryService {
 
-  private static final Logger logger = LogManager.getLogger(Eth2DiscoveryManager.class);
+  private static final Logger logger = LogManager.getLogger(Eth2DiscoveryService.class);
 
   private Random rnd = new Random();
 
@@ -91,11 +91,11 @@ public class Eth2DiscoveryManager {
   // event bus by which to signal other services
   private Optional<EventBus> eventBus = Optional.empty();
 
-  public Eth2DiscoveryManager() {
+  public Eth2DiscoveryService() {
     setupDiscoveryManager();
   }
 
-  public Eth2DiscoveryManager(final P2PNetwork<?> network, final EventBus eventBus) {
+  public Eth2DiscoveryService(final P2PNetwork<?> network, final EventBus eventBus) {
     this.network = Optional.of(network);
     this.eventBus = Optional.of(eventBus);
     setupDiscoveryManager();

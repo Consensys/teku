@@ -17,7 +17,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManager;
+import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManagerBuilder;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
@@ -44,7 +44,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   private AggregateGossipManager aggregateGossipManager;
 
   private final NetworkConfig discoveryNetworkConfig;
-  private Eth2DiscoveryManager eth2DiscoveryManager;
+  private Eth2DiscoveryService eth2DiscoveryService;
 
   public Eth2Network(
       final P2PNetwork<?> network,
@@ -72,7 +72,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);
 
     Eth2DiscoveryManagerBuilder discoveryManagerBuilder = new Eth2DiscoveryManagerBuilder();
-    eth2DiscoveryManager =
+    eth2DiscoveryService =
         discoveryManagerBuilder
             .eventBus(Optional.of(eventBus))
             .network(Optional.of(network))
@@ -82,7 +82,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
             .peers(discoveryNetworkConfig.getPeers())
             .build();
 
-    SafeFuture.of(eth2DiscoveryManager.start()).reportExceptions();
+    SafeFuture.of(eth2DiscoveryService.start()).reportExceptions();
   }
 
   @Override
@@ -93,7 +93,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
-    SafeFuture.of(eth2DiscoveryManager.stop()).reportExceptions();
+    SafeFuture.of(eth2DiscoveryService.stop()).reportExceptions();
     super.stop();
   }
 
