@@ -320,13 +320,7 @@ public class ValidatorCoordinator {
       final Signer signer = getSigner(proposer);
       final Bytes32 parentRoot = previousBlock.signing_root("signature");
 
-      Eth1Data eth1Data;
-      if (eth1DataManager == null) {
-        final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
-        eth1Data = StartupUtil.get_eth1_data_stub(previousState, newEpoch);
-      } else {
-        eth1Data = eth1DataManager.get_eth1_vote(newState);
-      }
+      Eth1Data eth1Data = eth1DataManager.get_eth1_vote(newState);
 
       newBlock =
           blockCreator.createNewBlock(

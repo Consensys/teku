@@ -47,6 +47,7 @@ public class ValidatorCoordinatorTest {
   private EventBus eventBus;
   private ChainStorageClient storageClient;
   private ArtemisConfiguration config;
+  private BeaconChainUtil chainUtil;
 
   private static final int NUM_VALIDATORS = 12;
 
@@ -69,8 +70,7 @@ public class ValidatorCoordinatorTest {
     storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
-    chainUtil.initializeStorage();
+    chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
   }
 
   @Test
@@ -112,8 +112,11 @@ public class ValidatorCoordinatorTest {
 
   private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
     when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
-    return new ValidatorCoordinator(
+    ValidatorCoordinator vc = new ValidatorCoordinator(
         eventBus, storageClient, attestationAggregator, blockAttestationsPool, config);
+
+    chainUtil.initializeStorage();
+    return vc;
   }
 
   private Object blockWithSlot(final UnsignedLong slotNumber) {

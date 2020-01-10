@@ -47,6 +47,7 @@ public class Eth1DataManager {
   public Eth1DataManager(BeaconState genesisState, EventBus eventBus) {
     this.eventBus = eventBus;
     this.genesisTime = genesisState.getGenesis_time();
+    this.currentVotingPeriodStartTime = voting_period_start_time(genesisState.getSlot());
     this.eventBus.register(this);
   }
 
