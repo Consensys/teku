@@ -22,6 +22,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockListener {
@@ -40,23 +41,36 @@ public class BlockListener {
                           .getBlock()
                           .getNumber()
                           .subtract(BigInteger.valueOf(Constants.ETH1_CACHE_BUFFER));
-                  EthBlock.Block eth1Block =
-                      web3j
-                          .ethGetBlockByNumber(
-                              DefaultBlockParameter.valueOf(cacheBlockNumber), false)
-                          .send()
-                          .getBlock();
 
-                  Bytes32 eth1BlockHash = Bytes32.fromHexString(eth1Block.getHash());
-                  UnsignedLong eth1BlockTimestamp = UnsignedLong.valueOf(eth1Block.getTimestamp());
-                  UnsignedLong eth1BlockNumber = UnsignedLong.valueOf(eth1Block.getNumber());
-                  UnsignedLong count =
-                      depositContractListener.getDepositCount(cacheBlockNumber).join();
-                  Bytes32 root = depositContractListener.getDepositRoot(cacheBlockNumber).join();
+                  SafeFuture<EthBlock> blockFuture =
+                      SafeFuture.of(
+                          web3j
+                              .ethGetBlockByNumber(
+                                  DefaultBlockParameter.valueOf(cacheBlockNumber), false)
+                              .sendAsync());
 
-                  eventBus.post(
-                      new CacheEth1BlockEvent(
-                          eth1BlockNumber, eth1BlockHash, eth1BlockTimestamp, root, count));
+                  SafeFuture<UnsignedLong> countFuture =
+                      SafeFuture.of(depositContractListener.getDepositCount(cacheBlockNumber));
+                  SafeFuture<Bytes32> rootFuture =
+                      SafeFuture.of(depositContractListener.getDepositRoot(cacheBlockNumber));
+
+                  SafeFuture.allOf(blockFuture, countFuture, rootFuture)
+                      .thenRun(
+                          () -> {
+                            EthBlock.Block eth1Block = blockFuture.join().getBlock();
+                            Bytes32 eth1BlockHash = Bytes32.fromHexString(eth1Block.getHash());
+                            UnsignedLong eth1BlockTimestamp =
+                                UnsignedLong.valueOf(eth1Block.getTimestamp());
+                            UnsignedLong eth1BlockNumber =
+                                UnsignedLong.valueOf(eth1Block.getNumber());
+                            eventBus.post(
+                                new CacheEth1BlockEvent(
+                                    eth1BlockNumber,
+                                    eth1BlockHash,
+                                    eth1BlockTimestamp,
+                                    rootFuture.join(),
+                                    countFuture.join()));
+                          });
                 });
   }
 

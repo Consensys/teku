@@ -55,27 +55,6 @@ public class BlockProposalUtil {
       final UnsignedLong newSlot,
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
-      final SSZList<Attestation> attestations,
-      final SSZList<ProposerSlashing> slashings,
-      final SSZList<Deposit> deposits)
-      throws StateTransitionException {
-    final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
-    return createNewBlock(
-        signer,
-        newSlot,
-        previousState,
-        parentBlockSigningRoot,
-        StartupUtil.get_eth1_data_stub(previousState, newEpoch),
-        attestations,
-        slashings,
-        deposits);
-  }
-
-  public BeaconBlock createNewBlock(
-      final Signer signer,
-      final UnsignedLong newSlot,
-      final BeaconState previousState,
-      final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final SSZList<Attestation> attestations,
       final SSZList<ProposerSlashing> slashings,
@@ -116,11 +95,13 @@ public class BlockProposalUtil {
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot)
       throws StateTransitionException {
+    final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     return createNewBlock(
         signer,
         newSlot,
         previousState,
         parentBlockSigningRoot,
+        StartupUtil.get_eth1_data_stub(previousState, newEpoch),
         BeaconBlockBodyLists.createAttestations(),
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());
@@ -133,11 +114,13 @@ public class BlockProposalUtil {
       final Bytes32 parentBlockSigningRoot,
       final SSZList<Attestation> attestations)
       throws StateTransitionException {
+    final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     return createNewBlock(
         signer,
         newSlot,
         previousState,
         parentBlockSigningRoot,
+        StartupUtil.get_eth1_data_stub(previousState, newEpoch),
         attestations,
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());

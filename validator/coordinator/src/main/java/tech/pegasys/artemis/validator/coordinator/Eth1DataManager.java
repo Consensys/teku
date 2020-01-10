@@ -16,11 +16,7 @@ package tech.pegasys.artemis.validator.coordinator;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -71,7 +67,7 @@ public class Eth1DataManager {
     currentVotingPeriodStartTime = voting_period_start_time;
     prune(voting_period_start_time);
   }
-  
+
   public Eth1Data get_eth1_vote(BeaconState state) {
     NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider();
     Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
@@ -83,23 +79,23 @@ public class Eth1DataManager {
       }
 
       int finalI = i;
-      Eth1Vote vote = validVotes.computeIfAbsent(eth1Data, key -> {
-        Eth1Vote newVote = new Eth1Vote();
-        newVote.setIndex(finalI);
-        return newVote;
-
-      });
+      Eth1Vote vote =
+          validVotes.computeIfAbsent(
+              eth1Data,
+              key -> {
+                Eth1Vote newVote = new Eth1Vote();
+                newVote.setIndex(finalI);
+                return newVote;
+              });
       vote.incrementVotes();
       i++;
     }
 
     Eth1Data defaultVote =
-            !votesToConsider.isEmpty() ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
+        !votesToConsider.isEmpty() ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
 
     Optional<Eth1Data> vote =
-            validVotes.entrySet().stream()
-                    .max(Map.Entry.comparingByValue())
-                    .map(Map.Entry::getKey);
+        validVotes.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
 
     return vote.orElse(defaultVote);
   }
@@ -126,7 +122,7 @@ public class Eth1DataManager {
       } else {
         if (this.index < eth1Vote.index) {
           return 1;
-        } else if (this.index > eth1Vote.index){
+        } else if (this.index > eth1Vote.index) {
           return -1;
         } else {
           return 0;
