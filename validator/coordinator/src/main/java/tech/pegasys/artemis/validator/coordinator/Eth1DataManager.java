@@ -133,14 +133,11 @@ public class Eth1DataManager {
   }
 
   private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider() {
-    NavigableMap<UnsignedLong, Eth1Data> consideredSubMap =
-        eth1ChainCache.subMap(
-            currentVotingPeriodStartTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2))),
-            true,
-            currentVotingPeriodStartTime.minus(RANGE_CONSTANT),
-            true);
-
-    return consideredSubMap;
+    return eth1ChainCache.subMap(
+        currentVotingPeriodStartTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2))),
+        true,
+        currentVotingPeriodStartTime.minus(RANGE_CONSTANT),
+        true);
   }
 
   private void prune(UnsignedLong periodStart) {

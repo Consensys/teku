@@ -51,6 +51,7 @@ public class Eth1DataManagerTest {
   void setUp() {
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getGenesis_time()).thenReturn(genesisTime);
+    when(beaconState.getSlot()).thenReturn(UnsignedLong.ZERO);
     eth1DataManager = new Eth1DataManager(beaconState, eventBus);
   }
 
