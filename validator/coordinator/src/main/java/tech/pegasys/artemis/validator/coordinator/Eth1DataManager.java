@@ -19,7 +19,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -69,22 +71,68 @@ public class Eth1DataManager {
     currentVotingPeriodStartTime = voting_period_start_time;
     prune(voting_period_start_time);
   }
-
+  
   public Eth1Data get_eth1_vote(BeaconState state) {
     NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider();
-    List<Eth1Data> validVotes = new ArrayList<>(state.getEth1_data_votes());
-    validVotes.removeIf(v -> !votesToConsider.containsValue(v));
+    Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
+
+    int i = 0;
+    for (Eth1Data eth1Data : state.getEth1_data_votes()) {
+      if (!votesToConsider.containsValue(eth1Data)) {
+        continue;
+      }
+
+      int finalI = i;
+      Eth1Vote vote = validVotes.computeIfAbsent(eth1Data, key -> {
+        Eth1Vote newVote = new Eth1Vote();
+        newVote.setIndex(finalI);
+        return newVote;
+
+      });
+      vote.incrementVotes();
+      i++;
+    }
 
     Eth1Data defaultVote =
-        !votesToConsider.isEmpty() ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
+            !votesToConsider.isEmpty() ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
 
     Optional<Eth1Data> vote =
-        validVotes.stream()
-            .max(
-                Comparator.comparing(v -> Collections.frequency(validVotes, v))
-                    .thenComparingInt(v -> -validVotes.indexOf(v)));
+            validVotes.entrySet().stream()
+                    .max(Map.Entry.comparingByValue())
+                    .map(Map.Entry::getKey);
 
     return vote.orElse(defaultVote);
+  }
+
+  public static class Eth1Vote implements Comparable<Eth1Vote> {
+
+    private int vote = 0;
+    private int index = -1;
+
+    public void incrementVotes() {
+      vote++;
+    }
+
+    public void setIndex(int i) {
+      index = i;
+    }
+
+    @Override
+    public int compareTo(Eth1Vote eth1Vote) {
+      if (this.vote > eth1Vote.vote) {
+        return 1;
+      } else if (this.vote < eth1Vote.vote) {
+        return -1;
+      } else {
+        if (this.index < eth1Vote.index) {
+          return 1;
+        } else if (this.index > eth1Vote.index){
+          return -1;
+        } else {
+          return 0;
+        }
+      }
+    }
   }
 
   private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider() {
