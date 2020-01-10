@@ -133,7 +133,7 @@ public class Eth1DataManagerTest {
         new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
-            currentTime.minus(RANGE_CONSTANT),
+            currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2))),
             Bytes32.fromHexString("0x2222"),
             UnsignedLong.valueOf(10L));
     Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
