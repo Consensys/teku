@@ -36,10 +36,10 @@ public class Eth1DataManagerTest {
   private final UnsignedLong genesisTime = UnsignedLong.ZERO;
 
   static {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(10);
+    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(11);
     Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(100);
-    Constants.SLOTS_PER_ETH1_VOTING_PERIOD = 10;
-    Constants.SECONDS_PER_SLOT = 10;
+    Constants.SLOTS_PER_ETH1_VOTING_PERIOD = 12;
+    Constants.SECONDS_PER_SLOT = 8;
   }
 
   // RANGE_CONSTANT = 1000
@@ -56,7 +56,7 @@ public class Eth1DataManagerTest {
 
   @Test
   void majorityVoteWins() {
-    UnsignedLong slot = UnsignedLong.valueOf(200);
+    UnsignedLong slot = UnsignedLong.valueOf(3).times(RANGE_CONSTANT);
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
@@ -90,7 +90,7 @@ public class Eth1DataManagerTest {
 
   @Test
   void smallestDistanceWinsIfNoMajority() {
-    UnsignedLong slot = UnsignedLong.valueOf(200);
+    UnsignedLong slot = UnsignedLong.valueOf(3).times(RANGE_CONSTANT);
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
