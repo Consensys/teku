@@ -25,7 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.pow.event.Eth1BlockEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
@@ -60,8 +60,8 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent eth1BlockEvent1 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent1 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT),
@@ -69,8 +69,8 @@ public class Eth1DataManagerTest {
             UnsignedLong.valueOf(10L));
     Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
 
-    CacheEth1BlockEvent eth1BlockEvent2 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent2 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE),
@@ -94,8 +94,8 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent eth1BlockEvent1 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent1 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT),
@@ -103,8 +103,8 @@ public class Eth1DataManagerTest {
             UnsignedLong.valueOf(10L));
     Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
 
-    CacheEth1BlockEvent eth1BlockEvent2 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent2 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE),
@@ -129,8 +129,8 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent eth1BlockEvent1 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent1 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT),
@@ -138,8 +138,8 @@ public class Eth1DataManagerTest {
             UnsignedLong.valueOf(10L));
     Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
 
-    CacheEth1BlockEvent eth1BlockEvent2 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent2 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2).plus(UnsignedLong.ONE))),
@@ -163,8 +163,8 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent eth1BlockEvent1 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent1 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT),
@@ -172,8 +172,8 @@ public class Eth1DataManagerTest {
             UnsignedLong.valueOf(10L));
     Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
 
-    CacheEth1BlockEvent eth1BlockEvent2 =
-        new CacheEth1BlockEvent(
+    Eth1BlockEvent eth1BlockEvent2 =
+        new Eth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)),

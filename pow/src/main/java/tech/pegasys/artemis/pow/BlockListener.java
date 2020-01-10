@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.pow.event.Eth1BlockEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -64,7 +64,7 @@ public class BlockListener {
                             UnsignedLong eth1BlockNumber =
                                 UnsignedLong.valueOf(eth1Block.getNumber());
                             eventBus.post(
-                                new CacheEth1BlockEvent(
+                                new Eth1BlockEvent(
                                     eth1BlockNumber,
                                     eth1BlockHash,
                                     eth1BlockTimestamp,

@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.pow.event.Eth1BlockEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -37,11 +37,11 @@ public class Eth1DataManager {
       Constants.SECONDS_PER_ETH1_BLOCK.times(Constants.ETH1_FOLLOW_DISTANCE);
   private volatile UnsignedLong currentVotingPeriodStartTime;
 
-  static Eth1Data getEth1Data(CacheEth1BlockEvent cacheEth1BlockEvent) {
+  static Eth1Data getEth1Data(Eth1BlockEvent eth1BlockEvent) {
     return new Eth1Data(
-        cacheEth1BlockEvent.getDepositRoot(),
-        cacheEth1BlockEvent.getDepositCount(),
-        cacheEth1BlockEvent.getBlockHash());
+        eth1BlockEvent.getDepositRoot(),
+        eth1BlockEvent.getDepositCount(),
+        eth1BlockEvent.getBlockHash());
   }
 
   public Eth1DataManager(BeaconState genesisState, EventBus eventBus) {
@@ -51,8 +51,8 @@ public class Eth1DataManager {
   }
 
   @Subscribe
-  public void onCacheEth1BlockEvent(CacheEth1BlockEvent cacheEth1BlockEvent) {
-    eth1ChainCache.put(cacheEth1BlockEvent.getBlockTimestamp(), getEth1Data(cacheEth1BlockEvent));
+  public void onCacheEth1BlockEvent(Eth1BlockEvent eth1BlockEvent) {
+    eth1ChainCache.put(eth1BlockEvent.getBlockTimestamp(), getEth1Data(eth1BlockEvent));
   }
 
   @Subscribe
