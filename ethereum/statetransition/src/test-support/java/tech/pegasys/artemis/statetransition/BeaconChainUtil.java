@@ -95,6 +95,14 @@ public class BeaconChainUtil {
   }
 
   public BlockProcessingRecord createAndImportBlockAtSlot(
+      final UnsignedLong slot, List<Attestation> attestations) throws Exception {
+    SSZList<Attestation> sszList = attestations.isEmpty() ? null :
+        new SSZList<>(attestations, Constants.MAX_ATTESTATIONS, Attestation.class);
+
+    return createAndImportBlockAtSlot(slot, Optional.ofNullable(sszList));
+  }
+
+  public BlockProcessingRecord createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
     final BeaconBlock block = createBlockAtSlot(slot, true, attestations);
     setSlot(slot);
