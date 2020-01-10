@@ -32,6 +32,8 @@ import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.pow.exception.DepositCountRequestException;
+import tech.pegasys.artemis.pow.exception.DepositRootRequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DepositContractListener {
@@ -71,7 +73,7 @@ public class DepositContractListener {
         .thenApply(
             ethCall -> {
               if (ethCall.hasError()) {
-                throw new UnsupportedOperationException(
+                throw new DepositRootRequestException(
                     "Eth1 call get_deposit_root() has failed:" + ethCall.getError().getMessage());
               }
               String value = ethCall.getValue();
@@ -87,7 +89,7 @@ public class DepositContractListener {
         .thenApply(
             ethCall -> {
               if (ethCall.hasError()) {
-                throw new UnsupportedOperationException(
+                throw new DepositCountRequestException(
                     "Eth1 call get_deposit_count() has failed:" + ethCall.getError().getMessage());
               }
               String value = ethCall.getValue();

@@ -112,8 +112,9 @@ public class ValidatorCoordinatorTest {
 
   private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
     when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
-    ValidatorCoordinator vc = new ValidatorCoordinator(
-        eventBus, storageClient, attestationAggregator, blockAttestationsPool, config);
+    ValidatorCoordinator vc =
+        new ValidatorCoordinator(
+            eventBus, storageClient, attestationAggregator, blockAttestationsPool, config);
 
     chainUtil.initializeStorage();
     return vc;
