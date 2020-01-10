@@ -55,7 +55,7 @@ public class BlockListener {
                       SafeFuture.of(depositContractListener.getDepositRoot(cacheBlockNumber));
 
                   SafeFuture.allOf(blockFuture, countFuture, rootFuture)
-                      .thenRun(
+                      .finish(
                           () -> {
                             EthBlock.Block eth1Block = blockFuture.join().getBlock();
                             Bytes32 eth1BlockHash = Bytes32.fromHexString(eth1Block.getHash());
