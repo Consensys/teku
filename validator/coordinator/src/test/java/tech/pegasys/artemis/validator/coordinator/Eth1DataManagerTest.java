@@ -73,7 +73,7 @@ public class Eth1DataManagerTest {
         new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
-            currentTime.minus(RANGE_CONSTANT),
+            currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE),
             Bytes32.fromHexString("0x4444"),
             UnsignedLong.valueOf(10L));
     Eth1Data eth1Data2 = Eth1DataManager.getEth1Data(eth1BlockEvent2);
@@ -86,6 +86,41 @@ public class Eth1DataManagerTest {
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     assertThat(eth1DataManager.get_eth1_vote(beaconState)).isEqualTo(eth1Data2);
+  }
+
+  @Test
+  void smallestDistanceWinsIfNoMajority() {
+    UnsignedLong slot = UnsignedLong.valueOf(200);
+    UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
+    eventBus.post(new SlotEvent(slot));
+
+    CacheEth1BlockEvent eth1BlockEvent1 =
+            new CacheEth1BlockEvent(
+                    UnsignedLong.ZERO,
+                    Bytes32.fromHexString("0x1111"),
+                    currentTime.minus(RANGE_CONSTANT),
+                    Bytes32.fromHexString("0x2222"),
+                    UnsignedLong.valueOf(10L));
+    Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
+
+    CacheEth1BlockEvent eth1BlockEvent2 =
+            new CacheEth1BlockEvent(
+                    UnsignedLong.ZERO,
+                    Bytes32.fromHexString("0x3333"),
+                    currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE),
+                    Bytes32.fromHexString("0x4444"),
+                    UnsignedLong.valueOf(10L));
+    Eth1Data eth1Data2 = Eth1DataManager.getEth1Data(eth1BlockEvent2);
+
+    SSZList<Eth1Data> eth1DataVotes =
+            new SSZList<>(List.of(eth1Data1, eth1Data2), 10, Eth1Data.class);
+    BeaconState beaconState = mock(BeaconState.class);
+    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
+
+    eventBus.post(eth1BlockEvent1);
+    eventBus.post(eth1BlockEvent2);
+
+    assertThat(eth1DataManager.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
   }
 
   @Test

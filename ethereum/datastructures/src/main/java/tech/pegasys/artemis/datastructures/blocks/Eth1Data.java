@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
@@ -146,5 +147,14 @@ public class Eth1Data implements Merkleizable, SimpleOffsetSerializable, SSZCont
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(deposit_count.longValue())),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, block_hash)));
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+            .add("deposit_root", deposit_root)
+            .add("deposit_count", deposit_count)
+            .add("block_hash", block_hash)
+            .toString();
   }
 }
