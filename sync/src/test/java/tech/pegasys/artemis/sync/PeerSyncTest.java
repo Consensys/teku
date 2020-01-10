@@ -24,6 +24,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
@@ -80,7 +82,7 @@ public class PeerSyncTest {
     when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
-    when(blockImporter.importBlock(BLOCK))
+    when(blockImporter.importBlock(any()))
         .thenReturn(BlockImportResult.successful(processingRecord));
     peerSync = new PeerSync(storageClient, blockImporter);
   }
@@ -207,11 +209,13 @@ public class PeerSyncTest {
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-
     final ResponseStream.ResponseListener<BeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
-    responseListener.onResponse(BLOCK);
-    verify(blockImporter).importBlock(BLOCK);
+    final List<BeaconBlock> blocks =
+        respondWithBlocksAtSlots(responseListener, 1, PEER_HEAD_SLOT.intValue());
+    for (BeaconBlock block : blocks) {
+      verify(blockImporter).importBlock(block);
+    }
     assertThat(syncFuture).isNotDone();
 
     // Now that we've imported the block, our finalized epoch has updated but hasn't reached what
@@ -225,6 +229,31 @@ public class PeerSyncTest {
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
     verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+  }
+
+  @Test
+  void sync_unresponsivePeer() {
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(PEER_HEAD_BLOCK_ROOT),
+            any(),
+            any(),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    assertThat(syncFuture).isNotDone();
+    // Signal the request for data from the peer is complete.
+    requestFuture.complete(null);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.IMPORT_STALLED);
+    verify(peer, never()).sendGoodbye(any());
   }
 
   @Test
@@ -255,10 +284,19 @@ public class PeerSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
-            any(),
+            eq(UnsignedLong.ONE),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
+
+    final ResponseStream.ResponseListener<BeaconBlock> responseListener1 =
+        responseListenerArgumentCaptor.getValue();
+    final int lastReceivedBlockSlot = peerHeadSlot.intValue() - 2;
+    List<BeaconBlock> blocks =
+        respondWithBlocksAtSlots(responseListener1, 1, lastReceivedBlockSlot);
+    for (BeaconBlock block : blocks) {
+      verify(blockImporter).importBlock(block);
+    }
 
     // Signal the request for data from the peer is complete.
     requestFuture1.complete(null);
@@ -266,25 +304,37 @@ public class PeerSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(PEER_HEAD_BLOCK_ROOT),
-            any(),
-            eq(peerHeadSlot.minus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE)),
+            eq(UnsignedLong.valueOf(lastReceivedBlockSlot + 1)),
+            eq(peerHeadSlot.minus(UnsignedLong.valueOf(lastReceivedBlockSlot))),
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
+    final ResponseStream.ResponseListener<BeaconBlock> responseListener2 =
         responseListenerArgumentCaptor.getValue();
-    responseListener.onResponse(BLOCK);
-    verify(blockImporter).importBlock(BLOCK);
+    blocks = respondWithBlocksAtSlots(responseListener2, peerHeadSlot.intValue());
+    for (BeaconBlock block : blocks) {
+      verify(blockImporter).importBlock(block);
+    }
     assertThat(syncFuture).isNotDone();
 
-    // Signal the request for data from the peer is complete.
-    requestFuture2.complete(null);
-
+    // Signal that sync is complete
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
+    requestFuture2.complete(null);
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
-    verify(peer).sendGoodbye(GoodbyeMessage.REASON_FAULT_ERROR);
+    verify(peer, never()).sendGoodbye(any());
+  }
+
+  private List<BeaconBlock> respondWithBlocksAtSlots(
+      final ResponseStream.ResponseListener<BeaconBlock> responseListener, int... slots) {
+    List<BeaconBlock> blocks = new ArrayList<>();
+    for (int slot : slots) {
+      final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot, slot);
+      blocks.add(block);
+      responseListener.onResponse(block);
+    }
+    return blocks;
   }
 }
