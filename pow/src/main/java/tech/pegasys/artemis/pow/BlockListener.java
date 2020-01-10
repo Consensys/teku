@@ -39,7 +39,7 @@ public class BlockListener {
                       block
                           .getBlock()
                           .getNumber()
-                          .subtract(BigInteger.valueOf(Constants.ETH1_CACHE_FOLLOW_DISTANCE));
+                          .subtract(BigInteger.valueOf(Constants.ETH1_CACHE_BUFFER));
                   EthBlock.Block eth1Block =
                       web3j
                           .ethGetBlockByNumber(

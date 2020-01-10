@@ -93,16 +93,6 @@ public class Constants {
   public static UnsignedLong TARGET_AGGREGATORS_PER_COMMITTEE = UnsignedLong.valueOf(16);
   public static UnsignedLong SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(14L);
 
-  // Artemis specific
-  public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
-  public static int DEPOSIT_DATA_SIZE = 512; //
-  public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
-  public static Bytes32 ZERO_HASH = Bytes32.ZERO;
-  public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
-  public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
-  public static int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
-  public static int ETH1_CACHE_FOLLOW_DISTANCE = 100; // in blocks
-
   // Deposit
   public static String DEPOSIT_NORMAL = "normal";
   public static String DEPOSIT_TEST = "test";
@@ -127,6 +117,16 @@ public class Constants {
   public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
 
   public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
+
+  // Artemis specific
+  public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
+  public static int DEPOSIT_DATA_SIZE = 512; //
+  public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
+  public static Bytes32 ZERO_HASH = Bytes32.ZERO;
+  public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
+  public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
+  public static int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
+  public static int ETH1_CACHE_BUFFER = ETH1_FOLLOW_DISTANCE.intValue() - 10; // in blocks
 
   static {
     setConstants("minimal");
