@@ -81,16 +81,6 @@ public class Eth2DiscoveryService extends Service<Service.State> {
   // event bus by which to signal other services
   private EventBus eventBus;
 
-  //      public Eth2DiscoveryService() {
-  //      setupDiscoveryManager();
-  //      }
-
-  //    public Eth2DiscoveryService(final P2PNetwork<?> network, final EventBus eventBus) {
-  //      this.network = Optional.of(network);
-  //      this.eventBus = eventBus;
-  //      checkNotNull(eventBus);
-  //    }
-
   public NodeTable getNodeTable() {
     return nodeTable;
   }
