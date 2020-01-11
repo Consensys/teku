@@ -27,6 +27,8 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
@@ -105,7 +107,7 @@ public class BeaconNode {
 
 @VisibleForTesting
 final class EventBusExceptionHandler implements SubscriberExceptionHandler {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final ALogger logger;
 
   EventBusExceptionHandler(final ALogger logger) {
@@ -116,7 +118,7 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
   public final void handleException(
       final Throwable exception, final SubscriberExceptionContext context) {
     if (!isSpecFailure(exception)) {
-      logger.log(Level.FATAL, "Unexpected exception thrown in handler - PLEASE FIX OR REPORT");
+      LOG.error("Unhandled exception in handler for event " + context.getEvent(), exception);
       throw new RuntimeException(exception);
     }
 

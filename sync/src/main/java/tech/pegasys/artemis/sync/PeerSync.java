@@ -48,12 +48,20 @@ public class PeerSync {
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
+    LOG.debug("Start syncing to peer {}", peer);
     // Begin requesting blocks at our first non-finalized slot
     final UnsignedLong finalizedEpoch = storageClient.getFinalizedEpoch();
     final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
 
-    return executeSync(peer, peer.getStatus(), firstNonFinalSlot);
+    return executeSync(peer, peer.getStatus(), firstNonFinalSlot)
+      .whenComplete((res,err) -> {
+        if (err != null) {
+          LOG.debug("Failed to sync with peer {}: {}", peer, err);
+        } else {
+          LOG.debug("Finished syncing (with status {}) to peer {}", res.name(), peer);
+        }
+      });
   }
 
   public void stop() {
@@ -71,6 +79,7 @@ public class PeerSync {
       return completeSyncWithPeer(peer, status);
     }
 
+    LOG.debug("Request {} blocks starting at {} from peer {}", count, startSlot, peer);
     final AtomicLong latestSlotImported = new AtomicLong(-1);
     return peer.requestBlocksByRange(
             status.getHeadRoot(), startSlot, count, STEP, blockResponseListener(latestSlotImported))
@@ -143,6 +152,7 @@ public class PeerSync {
         throw new CancellationException("Peer sync was cancelled");
       }
       final BlockImportResult result = blockImporter.importBlock(block);
+      LOG.trace("Block import result for block at {}: {}", block.getSlot(), result);
       if (!result.isSuccessful()) {
         throw new FailedBlockImportException(block, result);
       }

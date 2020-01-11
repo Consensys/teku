@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -159,6 +160,14 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   @Override
   public int hashCode() {
     return Objects.hash(super.hashCode(), rpcMethods);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+      .add("id", getId())
+      .add("remoteStatus", remoteStatus)
+      .toString();
   }
 
   public interface InitialStatusSubscriber {
