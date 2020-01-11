@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
@@ -51,29 +50,6 @@ class Eth2DiscoveryServiceTest {
     eventBus = new EventBus();
     mockNetwork = mock(P2PNetwork.class);
     mockDiscoveryManager = mock(Eth2DiscoveryService.class);
-  }
-
-  @Test
-  void testDiscoveryMangerStartStop() throws ExecutionException, InterruptedException {
-    Eth2DiscoveryService dm = new Eth2DiscoveryService();
-    Assertions.assertEquals(
-        dm.getState(),
-        Eth2DiscoveryService.State.STOPPED,
-        "Discovery did not start in state STOPPED");
-    Assertions.assertTrue(
-        dm.stop().isCompletedExceptionally(),
-        "Discovery cannot be stopped when already in state STOPPED");
-    Assertions.assertEquals(
-        dm.start().get(),
-        Eth2DiscoveryService.State.RUNNING,
-        "Discovery failed to start from STOPPED to RUNNING");
-    Assertions.assertTrue(
-        dm.start().isCompletedExceptionally(),
-        "Discovery cannot be started when already in state RUNNING");
-    Assertions.assertEquals(
-        dm.stop().get(),
-        Eth2DiscoveryService.State.STOPPED,
-        "Discovery failed to stop from RUNNING to STOPPED");
   }
 
   @Test
