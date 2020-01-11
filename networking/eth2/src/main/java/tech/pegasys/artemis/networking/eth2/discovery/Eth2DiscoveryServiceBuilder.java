@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
-public final class Eth2DiscoveryManagerBuilder {
+public final class Eth2DiscoveryServiceBuilder {
 
   // core parameters for discovery service
   private String networkInterface;
@@ -34,32 +34,32 @@ public final class Eth2DiscoveryManagerBuilder {
 
   static final int SEED = 123456789;
 
-  public Eth2DiscoveryManagerBuilder networkInterface(String networkInterface) {
+  public Eth2DiscoveryServiceBuilder networkInterface(String networkInterface) {
     this.networkInterface = networkInterface;
     return this;
   }
 
-  public Eth2DiscoveryManagerBuilder port(int port) {
+  public Eth2DiscoveryServiceBuilder port(int port) {
     this.port = port;
     return this;
   }
 
-  public Eth2DiscoveryManagerBuilder peers(List<String> peers) {
+  public Eth2DiscoveryServiceBuilder peers(List<String> peers) {
     this.peers = peers;
     return this;
   }
 
-  public Eth2DiscoveryManagerBuilder privateKey(Optional<PrivKey> privateKey) {
+  public Eth2DiscoveryServiceBuilder privateKey(Optional<PrivKey> privateKey) {
     this.privateKey = privateKey;
     return this;
   }
 
-  public Eth2DiscoveryManagerBuilder network(Optional<P2PNetwork<?>> network) {
+  public Eth2DiscoveryServiceBuilder network(Optional<P2PNetwork<?>> network) {
     this.network = network;
     return this;
   }
 
-  public Eth2DiscoveryManagerBuilder eventBus(EventBus eventBus) {
+  public Eth2DiscoveryServiceBuilder eventBus(EventBus eventBus) {
     this.eventBus = eventBus;
     return this;
   }

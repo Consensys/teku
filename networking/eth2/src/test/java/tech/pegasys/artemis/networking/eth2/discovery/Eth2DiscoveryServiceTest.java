@@ -69,7 +69,7 @@ class Eth2DiscoveryServiceTest {
     doReturn(SafeFuture.completedFuture(true)).when(mockNetwork).connect(any());
 
     mockNetwork.start().reportExceptions();
-    Eth2DiscoveryManagerBuilder discoveryBuilder = new Eth2DiscoveryManagerBuilder();
+    Eth2DiscoveryServiceBuilder discoveryBuilder = new Eth2DiscoveryServiceBuilder();
     discoveryBuilder.network(Optional.of(mockNetwork)).eventBus(eventBus);
     Eth2DiscoveryService dm = discoveryBuilder.build();
 
@@ -102,7 +102,7 @@ class Eth2DiscoveryServiceTest {
   void nodeTableIntegrationTest() throws Exception {
     final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
     Eth2Network network1 = networkFactory.startNetwork();
-    Eth2DiscoveryManagerBuilder discoveryBuilder = new Eth2DiscoveryManagerBuilder();
+    Eth2DiscoveryServiceBuilder discoveryBuilder = new Eth2DiscoveryServiceBuilder();
     discoveryBuilder.network(Optional.of(mockNetwork)).eventBus(eventBus);
     Eth2DiscoveryService dm = discoveryBuilder.build();
 

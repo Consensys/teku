@@ -17,7 +17,7 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryManagerBuilder;
+import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryServiceBuilder;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
@@ -71,7 +71,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     attestationGossipManager = new AttestationGossipManager(network, eventBus, chainStorageClient);
     aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);
 
-    Eth2DiscoveryManagerBuilder discoveryManagerBuilder = new Eth2DiscoveryManagerBuilder();
+    Eth2DiscoveryServiceBuilder discoveryManagerBuilder = new Eth2DiscoveryServiceBuilder();
     eth2DiscoveryService =
         discoveryManagerBuilder
             .eventBus(eventBus)
