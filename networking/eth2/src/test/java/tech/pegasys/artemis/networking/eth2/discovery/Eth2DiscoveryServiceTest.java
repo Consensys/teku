@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
@@ -68,7 +69,12 @@ class Eth2DiscoveryServiceTest {
     doReturn(SafeFuture.completedFuture(true)).when(mockNetwork).connect(any());
 
     mockNetwork.start().reportExceptions();
-    Eth2DiscoveryService dm = new Eth2DiscoveryService(mockNetwork, eventBus);
+    Eth2DiscoveryManagerBuilder discoveryBuilder = new Eth2DiscoveryManagerBuilder();
+    discoveryBuilder.network(Optional.of(mockNetwork)).eventBus(eventBus);
+    Eth2DiscoveryService dm = discoveryBuilder.build();
+
+    DiscoveryPeerSubscriberImpl sip = new DiscoveryPeerSubscriberImpl(mockNetwork);
+    eventBus.register(sip);
 
     final String remoteHostEnr =
         "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
@@ -96,7 +102,12 @@ class Eth2DiscoveryServiceTest {
   void nodeTableIntegrationTest() throws Exception {
     final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
     Eth2Network network1 = networkFactory.startNetwork();
-    Eth2DiscoveryService dm = new Eth2DiscoveryService(network1, eventBus);
+    Eth2DiscoveryManagerBuilder discoveryBuilder = new Eth2DiscoveryManagerBuilder();
+    discoveryBuilder.network(Optional.of(mockNetwork)).eventBus(eventBus);
+    Eth2DiscoveryService dm = discoveryBuilder.build();
+
+    DiscoveryPeerSubscriberImpl sip = new DiscoveryPeerSubscriberImpl(network1);
+    eventBus.register(sip);
 
     final String remoteHostEnr =
         "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";

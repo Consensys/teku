@@ -14,14 +14,19 @@
 package tech.pegasys.artemis.networking.eth2.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.ethereum.beacon.discovery.schema.EnrField.IP_V4;
+import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 
 import com.google.common.eventbus.EventBus;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.storage.NodeTable;
+import tech.pegasys.artemis.networking.eth2.discovery.DiscoveryPeer.DiscoveryPeerBuilder;
 
 public class BusNodeTable extends DelegatingNodeTable {
 
@@ -39,6 +44,19 @@ public class BusNodeTable extends DelegatingNodeTable {
   public void save(NodeRecordInfo node) {
     super.save(node);
     eventBus.post(new DiscoveryNewPeerResponse(node));
+    // change this to DiscoveryPeer
+    InetAddress byAddress = null;
+    try {
+      byAddress = InetAddress.getByAddress(((Bytes) node.getNode().get(IP_V4)).toArray());
+    } catch (UnknownHostException e) {
+      logger.error("error in building DiscoveryPeer");
+    }
+    Bytes nodeId = node.getNode().getNodeId();
+    Integer udp = (int) node.getNode().get(UDP_V4);
+    DiscoveryPeer discoveryPeer =
+        new DiscoveryPeerBuilder().udp(udp).nodeId(nodeId).address(byAddress).build();
+
+    eventBus.post(discoveryPeer);
     logger.debug("Posted saved node:" + node);
   }
 

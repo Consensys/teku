@@ -19,7 +19,6 @@ import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -42,7 +41,6 @@ import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.IdentitySchemaV4Interpreter;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
-import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeSerializerFactory;
 import org.ethereum.beacon.discovery.storage.NodeTable;
@@ -81,17 +79,17 @@ public class Eth2DiscoveryService extends Service<Service.State> {
   private Optional<P2PNetwork<?>> network = Optional.empty();
 
   // event bus by which to signal other services
-  private Optional<EventBus> eventBus = Optional.empty();
+  private EventBus eventBus;
 
-  public Eth2DiscoveryService() {
-    setupDiscoveryManager();
-  }
+  //      public Eth2DiscoveryService() {
+  //      setupDiscoveryManager();
+  //      }
 
-  public Eth2DiscoveryService(final P2PNetwork<?> network, final EventBus eventBus) {
-    this.network = Optional.of(network);
-    this.eventBus = Optional.of(eventBus);
-    setupDiscoveryManager();
-  }
+  //    public Eth2DiscoveryService(final P2PNetwork<?> network, final EventBus eventBus) {
+  //      this.network = Optional.of(network);
+  //      this.eventBus = eventBus;
+  //      checkNotNull(eventBus);
+  //    }
 
   public NodeTable getNodeTable() {
     return nodeTable;
@@ -111,10 +109,7 @@ public class Eth2DiscoveryService extends Service<Service.State> {
    */
   @Override
   public SafeFuture<State> doStart() {
-    eventBus.ifPresent(
-        v -> {
-          v.register(this);
-        });
+    eventBus.register(this);
     return SafeFuture.completedFuture(this.getState());
   }
 
@@ -125,10 +120,7 @@ public class Eth2DiscoveryService extends Service<Service.State> {
    */
   @Override
   public SafeFuture<State> doStop() {
-    eventBus.ifPresent(
-        v -> {
-          v.unregister(this);
-        });
+    eventBus.unregister(this);
     return SafeFuture.completedFuture(this.getState());
   }
 
@@ -143,16 +135,13 @@ public class Eth2DiscoveryService extends Service<Service.State> {
 
   public void setEventBus(EventBus eventBus) {
     assert eventBus != null;
-    this.eventBus = Optional.of(eventBus);
+    this.eventBus = eventBus;
     if (this.getState().equals(Service.State.RUNNING)) {
-      this.eventBus.ifPresent(
-          eb -> {
-            eb.register(this);
-          });
+      this.eventBus.register(this);
     }
   }
 
-  public Optional<EventBus> getEventBus() {
+  public EventBus getEventBus() {
     return eventBus;
   }
 
@@ -169,14 +158,14 @@ public class Eth2DiscoveryService extends Service<Service.State> {
     return remoteNodeRecord;
   }
 
-  private void setupDiscoveryManager() {
+  Eth2DiscoveryService build() {
 
     final Pair<NodeRecord, byte[]> localNodeInfo;
     try {
       localNodeInfo = createLocalNodeRecord(getPort());
     } catch (Exception e) {
       logger.error("Cannot start server on desired address/port. Stopping.");
-      return;
+      return this;
     }
     NodeRecord localNodeRecord = localNodeInfo.getValue0();
     logger.info("localNodeRecord:" + localNodeRecord);
@@ -203,76 +192,7 @@ public class Eth2DiscoveryService extends Service<Service.State> {
     NodeBucketStorage nodeBucketStorage0 =
         nodeTableStorageFactory.createBucketStorage(database0, TEST_SERIALIZER, localNodeRecord);
 
-    nodeTable =
-        new NodeTable() {
-          final NodeTable nt = nodeTableStorage0.get();
-
-          @Override
-          public void save(NodeRecordInfo node) {
-            nt.save(node);
-            eventBus.ifPresent(
-                eb -> {
-                  eb.post(new DiscoveryNewPeerResponse(node));
-                });
-
-            try {
-              InetAddress byAddress =
-                  InetAddress.getByAddress(((Bytes) node.getNode().get(IP_V4)).toArray());
-
-              network.ifPresent(
-                  n -> {
-                    String d = Base58.INSTANCE.encode(node.getNode().getNodeId().toArray());
-                    String connectString =
-                        "/ip4/"
-                            + byAddress.getHostAddress()
-                            + "/tcp/"
-                            + node.getNode().get(UDP_V4)
-                            + "/p2p/"
-                            + d;
-                    SafeFuture<?> connect = n.connect(connectString);
-                    if (connect != null) {
-                      connect.finish(
-                          r -> {
-                            logger.info("discv5 connected to:" + connectString);
-                          },
-                          t -> {
-                            logger.error("discv5 connect failed: " + t.toString());
-                          });
-                    } else {
-                      logger.error(
-                          "connect failed with null, is this a mock? If so, the repo check expects a safe future to be handled, before being able to to test the mock");
-                    }
-                  });
-            } catch (UnknownHostException e) {
-              logger.error("Got unknown host exception for Peer Response");
-            }
-          }
-
-          @Override
-          public void remove(NodeRecordInfo node) {
-            nt.remove(node);
-          }
-
-          @Override
-          public Optional<NodeRecordInfo> getNode(Bytes nodeId) {
-            return nt.getNode(nodeId);
-          }
-
-          @Override
-          public List<NodeRecordInfo> findClosestNodes(Bytes nodeId, int logLimit) {
-            List<NodeRecordInfo> closestNodes = nt.findClosestNodes(nodeId, logLimit);
-            eventBus.ifPresent(
-                eb -> {
-                  eb.post(new DiscoveryFindNodesResponse(closestNodes));
-                });
-            return closestNodes;
-          }
-
-          @Override
-          public NodeRecord getHomeNode() {
-            return nt.getHomeNode();
-          }
-        };
+    nodeTable = new BusNodeTable(nodeTableStorage0.get(), eventBus);
 
     dm =
         new DiscoveryManagerImpl(
@@ -284,6 +204,7 @@ public class Eth2DiscoveryService extends Service<Service.State> {
             NODE_RECORD_FACTORY,
             Schedulers.createDefault().newSingleThreadDaemon("server-1"),
             Schedulers.createDefault().newSingleThreadDaemon("client-1"));
+    return this;
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

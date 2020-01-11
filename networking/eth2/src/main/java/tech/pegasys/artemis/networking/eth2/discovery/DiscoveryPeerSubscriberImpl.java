@@ -38,7 +38,7 @@ public class DiscoveryPeerSubscriberImpl implements DiscoveryPeerSubscriber {
         "/ip4/"
             + discoveryPeer.getAddress().getHostAddress()
             + "/tcp/"
-            + discoveryPeer.getUdpPort().toString()
+            + (discoveryPeer.getUdpPort().isPresent() ? discoveryPeer.getUdpPort().get() : "0")
             + "/p2p/"
             + d;
     SafeFuture<?> connect = network.connect(connectString);

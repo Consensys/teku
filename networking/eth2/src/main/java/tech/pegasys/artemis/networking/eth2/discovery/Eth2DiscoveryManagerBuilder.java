@@ -26,11 +26,11 @@ public final class Eth2DiscoveryManagerBuilder {
   private int port;
   // configuration of discovery service
   private List<String> peers; // for setting boot nodes
-  private Optional<PrivKey> privateKey; // for generating ENR records
+  private Optional<PrivKey> privateKey = Optional.empty(); // for generating ENR records
   // the network to potentially affect with discovered peers
   private Optional<P2PNetwork<?>> network = Optional.empty();
   // event bus by which to signal other services
-  private Optional<EventBus> eventBus = Optional.empty();
+  private EventBus eventBus;
 
   static final int SEED = 123456789;
 
@@ -59,7 +59,7 @@ public final class Eth2DiscoveryManagerBuilder {
     return this;
   }
 
-  public Eth2DiscoveryManagerBuilder eventBus(Optional<EventBus> eventBus) {
+  public Eth2DiscoveryManagerBuilder eventBus(EventBus eventBus) {
     this.eventBus = eventBus;
     return this;
   }
@@ -75,9 +75,9 @@ public final class Eth2DiscoveryManagerBuilder {
     eth2DiscoveryService.setNetworkInterface(networkInterface);
     eth2DiscoveryService.setPort(port);
     eth2DiscoveryService.setPeers(peers);
+    eth2DiscoveryService.setEventBus(eventBus);
     privateKey.ifPresent(eth2DiscoveryService::setPrivateKey);
     network.ifPresent(eth2DiscoveryService::setNetwork);
-    eventBus.ifPresent(eth2DiscoveryService::setEventBus);
-    return eth2DiscoveryService;
+    return eth2DiscoveryService.build();
   }
 }

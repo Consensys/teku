@@ -74,7 +74,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     Eth2DiscoveryManagerBuilder discoveryManagerBuilder = new Eth2DiscoveryManagerBuilder();
     eth2DiscoveryService =
         discoveryManagerBuilder
-            .eventBus(Optional.of(eventBus))
+            .eventBus(eventBus)
             .network(Optional.of(network))
             .networkInterface(discoveryNetworkConfig.getNetworkInterface())
             .port(discoveryNetworkConfig.getListenPort())
