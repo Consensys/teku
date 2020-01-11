@@ -34,8 +34,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
-import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService.State;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.service.serviceutils.Service.State;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")

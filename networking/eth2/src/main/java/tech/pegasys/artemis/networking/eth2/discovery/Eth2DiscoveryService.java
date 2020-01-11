@@ -26,8 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,10 +51,11 @@ import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
-public class Eth2DiscoveryService {
+public class Eth2DiscoveryService extends Service<Service.State> {
 
   private static final Logger logger = LogManager.getLogger(Eth2DiscoveryService.class);
 
@@ -66,13 +65,6 @@ public class Eth2DiscoveryService {
       new NodeRecordFactory(new IdentitySchemaV4Interpreter());
   private static final SerializerFactory TEST_SERIALIZER =
       new NodeSerializerFactory(NODE_RECORD_FACTORY);
-
-  public static enum State {
-    RUNNING,
-    STOPPED
-  }
-
-  private final AtomicReference<State> state = new AtomicReference<>(State.STOPPED);
 
   DiscoveryManager dm;
   private NodeTable nodeTable;
@@ -109,10 +101,6 @@ public class Eth2DiscoveryService {
   public void onDiscoveryRequest(final DiscoveryRequest request) {
     if (request.numPeersToFind == 0) {
       SafeFuture.of(this.stop()).reportExceptions();
-      return;
-    }
-    if (getState().equals(State.STOPPED)) {
-      SafeFuture.of(this.start()).reportExceptions();
     }
   }
 
@@ -121,15 +109,13 @@ public class Eth2DiscoveryService {
    *
    * @return Future indicating failure or State.RUNNING
    */
-  public CompletableFuture<State> start() {
-    if (!state.compareAndSet(State.STOPPED, State.RUNNING)) {
-      return CompletableFuture.failedFuture(new IllegalStateException("Network already started"));
-    }
+  @Override
+  public SafeFuture<State> doStart() {
     eventBus.ifPresent(
         v -> {
           v.register(this);
         });
-    return CompletableFuture.completedFuture(State.RUNNING);
+    return SafeFuture.completedFuture(this.getState());
   }
 
   /**
@@ -137,19 +123,13 @@ public class Eth2DiscoveryService {
    *
    * @return Future indicating failure or State.STOPPED
    */
-  public CompletableFuture<State> stop() {
-    if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
-      return CompletableFuture.failedFuture(new IllegalStateException("Network already stopped"));
-    }
+  @Override
+  public SafeFuture<State> doStop() {
     eventBus.ifPresent(
         v -> {
           v.unregister(this);
         });
-    return CompletableFuture.completedFuture(State.STOPPED);
-  }
-
-  public State getState() {
-    return state.get();
+    return SafeFuture.completedFuture(this.getState());
   }
 
   public void setNetwork(P2PNetwork<?> network) {
@@ -164,7 +144,7 @@ public class Eth2DiscoveryService {
   public void setEventBus(EventBus eventBus) {
     assert eventBus != null;
     this.eventBus = Optional.of(eventBus);
-    if (state.get().equals(State.RUNNING)) {
+    if (this.getState().equals(Service.State.RUNNING)) {
       this.eventBus.ifPresent(
           eb -> {
             eb.register(this);

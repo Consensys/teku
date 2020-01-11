@@ -15,15 +15,15 @@ package tech.pegasys.artemis.service.serviceutils;
 
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class NoopService extends Service {
+public class NoopService<T> extends Service<T> {
 
   @Override
-  protected SafeFuture<?> doStart() {
+  protected SafeFuture<T> doStart() {
     return SafeFuture.completedFuture(null);
   }
 
   @Override
-  protected SafeFuture<?> doStop() {
+  protected SafeFuture<T> doStop() {
     return SafeFuture.completedFuture(null);
   }
 }

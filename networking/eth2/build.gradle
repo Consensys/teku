@@ -6,6 +6,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:metrics')
   implementation project(':networking:p2p')
+  implementation project(':services:serviceutils')
 
   implementation 'tech.pegasys.discovery:discovery:0.1.0-SNAPSHOT'
 
