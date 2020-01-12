@@ -13,7 +13,10 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
+import io.libp2p.core.crypto.KEY_TYPE;
+import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,6 +52,11 @@ public class NetworkConfig {
 
   public Optional<PrivKey> getPrivateKey() {
     return privateKey;
+  }
+
+  public byte[] getDiscoveryPrivateKey() {
+    return Arrays.copyOfRange(
+        privateKey.orElse(KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()).bytes(), 0, 32);
   }
 
   public String getNetworkInterface() {

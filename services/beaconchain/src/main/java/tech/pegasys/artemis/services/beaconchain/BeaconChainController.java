@@ -167,11 +167,9 @@ public class BeaconChainController {
               true);
 
       NetworkConfigBuilder networkConfigBuilder = new NetworkConfigBuilder();
-      Bytes discoveryPkBytes = Bytes.fromHexString(config.getDiscoveryPrivateKey());
-      PrivKey discoveryPk = KeyKt.unmarshalPrivateKey(discoveryPkBytes.toArrayUnsafe());
       NetworkConfig discoveryNetworkConfig =
           networkConfigBuilder
-              .privateKey(Optional.of(discoveryPk))
+              .privateKey(Optional.of(pk)) // use same private key as network
               .networkInterface(config.getDiscoveryInterface())
               .advertisedPort(config.getDiscoveryPort())
               .listenPort(config.getDiscoveryPort())

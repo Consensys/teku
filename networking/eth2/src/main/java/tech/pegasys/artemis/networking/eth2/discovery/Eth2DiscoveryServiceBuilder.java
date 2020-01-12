@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.eth2.discovery;
 
 import com.google.common.eventbus.EventBus;
-import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -26,13 +25,11 @@ public final class Eth2DiscoveryServiceBuilder {
   private int port;
   // configuration of discovery service
   private List<String> peers; // for setting boot nodes
-  private Optional<PrivKey> privateKey = Optional.empty(); // for generating ENR records
+  private byte[] privateKey; // for generating ENR records
   // the network to potentially affect with discovered peers
   private Optional<P2PNetwork<?>> network = Optional.empty();
   // event bus by which to signal other services
   private EventBus eventBus;
-
-  static final int SEED = 123456789;
 
   public Eth2DiscoveryServiceBuilder networkInterface(String networkInterface) {
     this.networkInterface = networkInterface;
@@ -49,7 +46,7 @@ public final class Eth2DiscoveryServiceBuilder {
     return this;
   }
 
-  public Eth2DiscoveryServiceBuilder privateKey(Optional<PrivKey> privateKey) {
+  public Eth2DiscoveryServiceBuilder privateKey(byte[] privateKey) {
     this.privateKey = privateKey;
     return this;
   }
@@ -64,19 +61,13 @@ public final class Eth2DiscoveryServiceBuilder {
     return this;
   }
 
-  public Eth2DiscoveryService buildSeeded() {
-    Eth2DiscoveryService ret = build();
-    ret.setRnd(SEED);
-    return ret;
-  }
-
   public Eth2DiscoveryService build() {
     Eth2DiscoveryService eth2DiscoveryService = new Eth2DiscoveryService();
     eth2DiscoveryService.setNetworkInterface(networkInterface);
     eth2DiscoveryService.setPort(port);
     eth2DiscoveryService.setPeers(peers);
     eth2DiscoveryService.setEventBus(eventBus);
-    privateKey.ifPresent(eth2DiscoveryService::setPrivateKey);
+    eth2DiscoveryService.setPrivateKey(privateKey);
     network.ifPresent(eth2DiscoveryService::setNetwork);
     return eth2DiscoveryService.build();
   }

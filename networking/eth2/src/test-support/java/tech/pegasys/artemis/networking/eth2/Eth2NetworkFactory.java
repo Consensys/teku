@@ -28,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfigBuilder;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.Waiter;
@@ -135,7 +136,14 @@ public class Eth2NetworkFactory {
       eth2NetworkBuilder.eventBus(eventBus);
       eth2NetworkBuilder.chainStorageClient(chainStorageClient);
       eth2NetworkBuilder.metricsSystem(METRICS_SYSTEM);
-      eth2NetworkBuilder.discovery(generateConfig());
+
+      NetworkConfigBuilder ncb = new NetworkConfigBuilder();
+      ncb.advertisedPort(config.getAdvertisedPort() + 1)
+          .listenPort(config.getListenPort() + 1)
+          .networkInterface(config.getNetworkInterface())
+          .peers(new ArrayList<>())
+          .privateKey(config.getPrivateKey());
+      eth2NetworkBuilder.discovery(ncb.build());
 
       Eth2Network ret = eth2NetworkBuilder.build();
 

@@ -17,15 +17,13 @@ import static org.ethereum.beacon.discovery.schema.EnrField.IP_V4;
 import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
-import io.libp2p.core.crypto.PrivKey;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -49,15 +47,16 @@ import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.service.serviceutils.Service;
+import tech.pegasys.artemis.service.serviceutils.Service.State;
+import tech.pegasys.artemis.service.serviceutils.TypedService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
-public class Eth2DiscoveryService extends Service<Service.State> {
+public class Eth2DiscoveryService extends TypedService<State> implements DiscoveryNetwork {
 
   private static final Logger logger = LogManager.getLogger(Eth2DiscoveryService.class);
 
-  private Random rnd = new Random();
+  //  private static Random rnd = new Random();
 
   private static final NodeRecordFactory NODE_RECORD_FACTORY =
       new NodeRecordFactory(new IdentitySchemaV4Interpreter());
@@ -73,7 +72,7 @@ public class Eth2DiscoveryService extends Service<Service.State> {
 
   // configuration of discovery service
   private List<String> peers; // for setting boot nodes
-  private Optional<PrivKey> privateKey = Optional.empty(); // for generating ENR records
+  private byte[] privateKey; // for generating ENR records
 
   // the network to potentially affect with discovered peers
   private Optional<P2PNetwork<?>> network = Optional.empty();
@@ -83,13 +82,6 @@ public class Eth2DiscoveryService extends Service<Service.State> {
 
   public NodeTable getNodeTable() {
     return nodeTable;
-  }
-
-  @Subscribe
-  public void onDiscoveryRequest(final DiscoveryRequest request) {
-    if (request.numPeersToFind == 0) {
-      SafeFuture.of(this.stop()).reportExceptions();
-    }
   }
 
   /**
@@ -126,9 +118,34 @@ public class Eth2DiscoveryService extends Service<Service.State> {
   public void setEventBus(EventBus eventBus) {
     assert eventBus != null;
     this.eventBus = eventBus;
-    if (this.getState().equals(Service.State.RUNNING)) {
+    if (this.getState().equals(State.RUNNING)) {
       this.eventBus.register(this);
     }
+  }
+
+  @Override
+  public void findPeers() {
+    // nop - is this to start?
+  }
+
+  @Override
+  public void subscribePeerDiscovery(DiscoveryPeerSubscriber subscriber) {
+    eventBus.register(subscriber);
+  }
+
+  @Override
+  public void unsubscribePeerDiscovery(DiscoveryPeerSubscriber subscriber) {
+    eventBus.unregister(subscriber);
+  }
+
+  @Override
+  public Stream<DiscoveryPeer> streamPeers() {
+    // use logLimit of 0 to retrieve all entries in the node table
+    return getNodeTable().findClosestNodes(getNodeTable().getHomeNode().getNodeId(), 0).stream()
+        .map(
+            n -> {
+              return DiscoveryPeer.getDiscoveryPeerFromNodeRecord(n.getNode());
+            });
   }
 
   public EventBus getEventBus() {
@@ -136,7 +153,6 @@ public class Eth2DiscoveryService extends Service<Service.State> {
   }
 
   private NodeRecord setupRemoteNode(final String remoteHostEnr) {
-
     NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
     remoteNodeRecord.verify();
     logger.info("remoteNodeRecord:" + remoteNodeRecord);
@@ -149,21 +165,18 @@ public class Eth2DiscoveryService extends Service<Service.State> {
   }
 
   Eth2DiscoveryService build() {
-
-    final Pair<NodeRecord, byte[]> localNodeInfo;
+    final NodeRecord localNodeRecord;
     try {
-      localNodeInfo = createLocalNodeRecord(getPort());
+      localNodeRecord = createLocalNodeRecord(getPrivateKey(), getNetworkInterface(), getPort());
     } catch (Exception e) {
-      logger.error("Cannot start server on desired address/port. Stopping.");
+      logger.error("Error constructing local node record: " + e.getMessage());
       return this;
     }
-    NodeRecord localNodeRecord = localNodeInfo.getValue0();
+
     logger.info("localNodeRecord:" + localNodeRecord);
     // the following two lines to be removed when discovery master is next updated
     logger.info("localNodeEnr:" + localNodeRecord.asBase64());
     logger.info("localNodeId:" + localNodeRecord.getNodeId());
-
-    byte[] localPrivKey = localNodeInfo.getValue1();
 
     Database database0 = Database.inMemoryDB();
     NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
@@ -190,7 +203,7 @@ public class Eth2DiscoveryService extends Service<Service.State> {
             nodeTable,
             nodeBucketStorage0,
             localNodeRecord,
-            Bytes.wrap(localPrivKey),
+            Bytes.wrap(getPrivateKey()),
             NODE_RECORD_FACTORY,
             Schedulers.createDefault().newSingleThreadDaemon("server-1"),
             Schedulers.createDefault().newSingleThreadDaemon("client-1"));
@@ -198,14 +211,10 @@ public class Eth2DiscoveryService extends Service<Service.State> {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public Pair<NodeRecord, byte[]> createLocalNodeRecord(int port) throws UnknownHostException {
-    // set local service node
-    byte[] privKey1 = new byte[32];
-    rnd.nextBytes(privKey1);
-
+  public static NodeRecord createLocalNodeRecord(
+      byte[] privateKey, String networkInterface, int port) throws UnknownHostException {
     Bytes localAddressBytes =
-        Bytes.wrap(
-            InetAddress.getByName(getNetworkInterface()).getAddress()); // 172.18.0.2 // 127.0.0.1
+        Bytes.wrap(InetAddress.getByName(networkInterface).getAddress()); // 172.18.0.2 // 127.0.0.1
     Bytes localIp1 =
         Bytes.concatenate(Bytes.wrap(new byte[4 - localAddressBytes.size()]), localAddressBytes);
     NodeRecord nodeRecord1 =
@@ -215,17 +224,17 @@ public class Eth2DiscoveryService extends Service<Service.State> {
             Pair.with(IP_V4, localIp1),
             Pair.with(
                 EnrFieldV4.PKEY_SECP256K1,
-                Functions.derivePublicKeyFromPrivate(Bytes.wrap(privKey1))),
+                Functions.derivePublicKeyFromPrivate(Bytes.wrap(privateKey))),
             Pair.with(EnrField.TCP_V4, port),
             Pair.with(UDP_V4, port));
-    nodeRecord1.sign(Bytes.wrap(privKey1));
+    nodeRecord1.sign(Bytes.wrap(privateKey));
     nodeRecord1.verify();
-    return new Pair(nodeRecord1, privKey1);
+    return nodeRecord1;
   }
 
-  void setRnd(long seed) {
-    this.rnd = new Random(seed);
-  }
+  //  void setRnd(long seed) {
+  //    rnd = new Random(seed);
+  //  }
 
   public int getPort() {
     return port;
@@ -251,12 +260,12 @@ public class Eth2DiscoveryService extends Service<Service.State> {
     this.networkInterface = networkInterface;
   }
 
-  public Optional<PrivKey> getPrivateKey() {
+  public byte[] getPrivateKey() {
     return privateKey;
   }
 
-  public void setPrivateKey(PrivKey privateKey) {
+  public void setPrivateKey(byte[] privateKey) {
     assert privateKey != null;
-    this.privateKey = Optional.of(privateKey);
+    this.privateKey = privateKey;
   }
 }

@@ -19,15 +19,27 @@ import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 
 public class DiscoveryPeer {
+  static Logger logger = LogManager.getLogger();
 
-  static DiscoveryPeer parseEnr(String enr) throws UnknownHostException {
+  static DiscoveryPeer parseEnr(String enr) {
     NodeRecord node = NodeRecordFactory.DEFAULT.fromBase64(enr);
-    InetAddress byAddress = InetAddress.getByAddress(((Bytes) node.get(IP_V4)).toArray());
+    return getDiscoveryPeerFromNodeRecord(node);
+  }
+
+  public static DiscoveryPeer getDiscoveryPeerFromNodeRecord(NodeRecord node) {
+    InetAddress byAddress = null;
+    try {
+      byAddress = InetAddress.getByAddress(((Bytes) node.get(IP_V4)).toArray());
+    } catch (UnknownHostException e) {
+      logger.error("Error with address from node record");
+    }
     Bytes nodeId = node.getNodeId();
     Integer udp = (int) node.get(UDP_V4);
     return new DiscoveryPeerBuilder().udp(udp).nodeId(nodeId).address(byAddress).build();

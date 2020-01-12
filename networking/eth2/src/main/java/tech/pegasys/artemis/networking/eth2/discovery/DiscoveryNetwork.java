@@ -19,7 +19,9 @@ public interface DiscoveryNetwork {
 
   void findPeers();
 
-  void subscribePeerDiscovered(DiscoveryPeerSubscriber subscriber);
+  void subscribePeerDiscovery(DiscoveryPeerSubscriber subscriber);
+
+  void unsubscribePeerDiscovery(DiscoveryPeerSubscriber subscriber);
 
   Stream<DiscoveryPeer> streamPeers();
 }

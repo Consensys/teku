@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,15 +15,11 @@ package tech.pegasys.artemis.service.serviceutils;
 
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class NoopService extends Service {
+public abstract class TypedService<T> extends Service {
 
   @Override
-  protected SafeFuture<?> doStart() {
-    return SafeFuture.completedFuture(null);
-  }
+  protected abstract SafeFuture<? extends T> doStart();
 
   @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.completedFuture(null);
-  }
+  protected abstract SafeFuture<? extends T> doStop();
 }
