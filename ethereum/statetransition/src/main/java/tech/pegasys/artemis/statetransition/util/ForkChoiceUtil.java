@@ -120,8 +120,7 @@ public class ForkChoiceUtil {
   public static Bytes32 get_head(Store store) {
     // Execute the LMD-GHOST fork choice
     Bytes32 head = store.getJustifiedCheckpoint().getRoot();
-    UnsignedLong justified_slot =
-        compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch());
+    UnsignedLong justified_slot = store.getJustifiedCheckpoint().getEpochSlot();
 
     while (true) {
       final Bytes32 head_in_filter = head;
@@ -170,9 +169,7 @@ public class ForkChoiceUtil {
     }
 
     BeaconBlock new_justified_block = store.getBlock(new_justified_checkpoint.getRoot());
-    if (new_justified_block
-            .getSlot()
-            .compareTo(compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch()))
+    if (new_justified_block.getSlot().compareTo(store.getJustifiedCheckpoint().getEpochSlot())
         <= 0) {
       return false;
     }
@@ -311,8 +308,7 @@ public class ForkChoiceUtil {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
 
     // Make sure this block's slot is after the latest finalized slot
-    final UnsignedLong finalizedEpochStartSlot =
-        compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());
+    final UnsignedLong finalizedEpochStartSlot = finalizedCheckpoint.getEpochSlot();
     if (block.getSlot().compareTo(finalizedEpochStartSlot) <= 0) {
       return false;
     }
@@ -377,9 +373,7 @@ public class ForkChoiceUtil {
         unixTimeStamp.compareTo(
                 base_state
                     .getGenesis_time()
-                    .plus(
-                        compute_start_slot_at_epoch(target.getEpoch())
-                            .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
+                    .plus(target.getEpochSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0,
         "on_attestation: Attestations cannot be from the future epochs");
 
@@ -397,8 +391,7 @@ public class ForkChoiceUtil {
 
     // Store target checkpoint state if not yet seen
     if (!store.containsCheckpointState(target)) {
-      stateTransition.process_slots(
-          base_state, compute_start_slot_at_epoch(target.getEpoch()), false);
+      stateTransition.process_slots(base_state, target.getEpochSlot(), false);
       store.putCheckpointState(target, base_state);
     }
     BeaconState target_state = store.getCheckpointState(target);

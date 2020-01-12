@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
@@ -109,6 +111,10 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
 
   public Bytes32 getRoot() {
     return root;
+  }
+
+  public UnsignedLong getEpochSlot() {
+    return compute_start_slot_at_epoch(getEpoch());
   }
 
   @Override

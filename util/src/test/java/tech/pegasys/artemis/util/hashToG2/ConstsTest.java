@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,13 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.artemis.util.hashToG2;
 
-enum PeerSyncResult {
-  SUCCESSFUL_SYNC,
-  FAULTY_ADVERTISEMENT,
-  CANCELLED,
-  BAD_BLOCK,
-  IMPORT_FAILED,
-  IMPORT_STALLED
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.artemis.util.hashToG2.FP2Immutable.ONE;
+
+import org.junit.jupiter.api.Test;
+
+class ConstsTest {
+
+  @Test
+  void rootsOfUnityTest() {
+    for (FP2Immutable root : Consts.ROOTS_OF_UNITY) {
+      assertEquals(ONE, root.sqr().sqr().sqr().reduce());
+    }
+  }
 }

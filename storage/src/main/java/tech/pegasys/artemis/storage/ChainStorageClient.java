@@ -28,15 +28,18 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
+import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.alogger.ALogger;
 
 /** This class is the ChainStorage client-side logic */
-public class ChainStorageClient implements ChainStorage {
+public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   private static final Logger LOG = LogManager.getLogger();
   protected final EventBus eventBus;
   private final TransactionPrecommit transactionPrecommit;
@@ -109,7 +112,7 @@ public class ChainStorageClient implements ChainStorage {
   }
 
   public Store.Transaction startStoreTransaction() {
-    return store.startTransaction(transactionPrecommit);
+    return store.startTransaction(transactionPrecommit, this);
   }
 
   // NETWORKING RELATED INFORMATION METHODS:
@@ -260,5 +263,10 @@ public class ChainStorageClient implements ChainStorage {
 
   public UnsignedLong getFinalizedEpoch() {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
+  }
+
+  @Override
+  public void onNewFinalizedCheckpoint(final Checkpoint finalizedCheckpoint) {
+    eventBus.post(new FinalizedCheckpointEvent(finalizedCheckpoint));
   }
 }
