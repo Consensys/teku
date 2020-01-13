@@ -15,13 +15,11 @@ package tech.pegasys.artemis.test.acceptance;
 
 import static org.junit.Assert.fail;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
 import tech.pegasys.artemis.test.acceptance.dsl.BesuNode;
 
-@Disabled("Genesis generation does not yet match")
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
   @Test
