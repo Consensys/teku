@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.sync;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -29,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.service.serviceutils.Service;
+import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -49,6 +51,7 @@ class PendingBlocks extends Service {
   private final UnsignedLong historicalBlockTolerance;
 
   private volatile UnsignedLong currentSlot = UnsignedLong.ZERO;
+  private volatile UnsignedLong latestFinalizedSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
   PendingBlocks(
       final EventBus eventBus,
@@ -131,22 +134,40 @@ class PendingBlocks extends Service {
     currentSlot = slotEvent.getSlot();
     if (currentSlot.mod(historicalBlockTolerance).equals(UnsignedLong.ZERO)) {
       // Purge old blocks
-      pruneBlocks(isTooOld());
+      prune();
     }
   }
 
+  @Subscribe
+  void onFinalizedCheckpoint(final FinalizedCheckpointEvent finalizedCheckpointEvent) {
+    this.latestFinalizedSlot = finalizedCheckpointEvent.getFinalizedSlot();
+  }
+
+  @VisibleForTesting
+  void prune() {
+    pruneBlocks(this::isTooOld);
+  }
+
   private boolean shouldIgnoreBlock(final BeaconBlock block) {
-    return isTooOld().test(block) || isFromFuture().test(block);
+    return isTooOld(block) || isFromFarFuture(block);
   }
 
-  private Predicate<BeaconBlock> isTooOld() {
-    final UnsignedLong slot = calculateBlockAgeLimit();
-    return (block) -> block.getSlot().compareTo(slot) <= 0;
+  private boolean isTooOld(final BeaconBlock block) {
+    return isFromAFinalizedSlot(block) || isOutsideOfHistoricalLimit(block);
   }
 
-  private Predicate<BeaconBlock> isFromFuture() {
+  private boolean isFromFarFuture(final BeaconBlock block) {
     final UnsignedLong slot = (calculateFutureBlockLimit());
-    return (block) -> block.getSlot().compareTo(slot) > 0;
+    return block.getSlot().compareTo(slot) > 0;
+  }
+
+  private boolean isOutsideOfHistoricalLimit(final BeaconBlock block) {
+    final UnsignedLong slot = calculateBlockAgeLimit();
+    return block.getSlot().compareTo(slot) <= 0;
+  }
+
+  private boolean isFromAFinalizedSlot(final BeaconBlock block) {
+    return block.getSlot().compareTo(latestFinalizedSlot) <= 0;
   }
 
   private UnsignedLong calculateBlockAgeLimit() {

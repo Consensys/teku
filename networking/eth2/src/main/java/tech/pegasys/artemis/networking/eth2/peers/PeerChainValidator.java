@@ -145,8 +145,7 @@ public class PeerChainValidator {
 
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint) {
-    final UnsignedLong finalizedEpochSlot =
-        compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch());
+    final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochSlot();
 
     return historicalChainData
         .getFinalizedBlockAtSlot(finalizedEpochSlot)

@@ -21,11 +21,13 @@ import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
+import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
@@ -46,7 +48,12 @@ public class PeerSync {
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
-    return executeSync(peer, compute_start_slot_at_epoch(storageClient.getFinalizedEpoch()));
+    // Begin requesting blocks at our first non-finalized slot
+    final UnsignedLong finalizedEpoch = storageClient.getFinalizedEpoch();
+    final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
+
+    return executeSync(peer, peer.getStatus(), firstNonFinalSlot);
   }
 
   public void stop() {
@@ -54,73 +61,93 @@ public class PeerSync {
   }
 
   private SafeFuture<PeerSyncResult> executeSync(
-      final Eth2Peer peer, final UnsignedLong latestRequestedSlot) {
+      final Eth2Peer peer, final PeerStatus status, final UnsignedLong startSlot) {
     if (stopped.get()) {
       return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
-    final UnsignedLong advertisedHeadBlockSlot = peer.getStatus().getHeadSlot();
-    final Bytes32 advertisedHeadRoot = peer.getStatus().getHeadRoot();
-    final UnsignedLong advertisedFinalizedEpoch = peer.getStatus().getFinalizedEpoch();
-    final UnsignedLong count =
-        calculateNumberOfBlocksToRequest(latestRequestedSlot, advertisedHeadBlockSlot);
+
+    final UnsignedLong count = calculateNumberOfBlocksToRequest(startSlot, status);
+    if (count.longValue() == 0) {
+      return completeSyncWithPeer(peer, status);
+    }
+
+    final AtomicLong latestSlotImported = new AtomicLong(-1);
     return peer.requestBlocksByRange(
-            advertisedHeadRoot, latestRequestedSlot, count, STEP, this::blockResponseListener)
+            status.getHeadRoot(), startSlot, count, STEP, blockResponseListener(latestSlotImported))
         .thenCompose(
             res -> {
-              if (storageClient.getFinalizedEpoch().compareTo(advertisedFinalizedEpoch) >= 0) {
-                return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
-              } else if (latestRequestedSlot.compareTo(advertisedHeadBlockSlot) < 0) {
-                return executeSync(peer, latestRequestedSlot.plus(count));
-              } else {
-                disconnectFromPeer(peer);
-                return SafeFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
+              if (latestSlotImported.get() < 0) {
+                // Last request returned no blocks
+                // This doesn't necessarily mean the peer has misbehaved - it's possible its chain
+                // may have progressed and the blocks we're requesting are no longer available
+                return SafeFuture.completedFuture(PeerSyncResult.IMPORT_STALLED);
               }
+              final UnsignedLong nextSlot = UnsignedLong.valueOf(latestSlotImported.get() + 1);
+              return executeSync(peer, status, nextSlot);
             })
-        .exceptionally(
-            err -> {
-              Throwable rootException = Throwables.getRootCause(err);
-              if (rootException instanceof FailedBlockImportException) {
-                final FailedBlockImportException importException =
-                    (FailedBlockImportException) rootException;
-                final FailureReason reason = importException.getResult().getFailureReason();
-                final BeaconBlock block = importException.getBlock();
-                LOG.warn("Failed to import block from peer {}: {}", block, peer);
-                if (reason == FailureReason.FAILED_STATE_TRANSITION
-                    || reason == FailureReason.UNKNOWN_PARENT) {
-                  LOG.debug("Disconnecting from peer ({}) who sent invalid block: {}", peer, block);
-                  disconnectFromPeer(peer);
-                  return PeerSyncResult.BAD_BLOCK;
-                } else {
-                  return PeerSyncResult.IMPORT_FAILED;
-                }
-              }
-              if (rootException instanceof CancellationException) {
-                return PeerSyncResult.CANCELLED;
-              }
-              if (err instanceof RuntimeException) {
-                throw (RuntimeException) err;
-              } else {
-                throw new RuntimeException("Unhandled error while syncing", err);
-              }
-            });
+        .exceptionally(err -> handleFailedRequestToPeer(peer, err));
+  }
+
+  private PeerSyncResult handleFailedRequestToPeer(Eth2Peer peer, Throwable err) {
+    Throwable rootException = Throwables.getRootCause(err);
+    if (rootException instanceof FailedBlockImportException) {
+      final FailedBlockImportException importException = (FailedBlockImportException) rootException;
+      final FailureReason reason = importException.getResult().getFailureReason();
+      final BeaconBlock block = importException.getBlock();
+      LOG.warn("Failed to import block from peer {}: {}", block, peer);
+      if (reason == FailureReason.FAILED_STATE_TRANSITION
+          || reason == FailureReason.UNKNOWN_PARENT) {
+        LOG.debug("Disconnecting from peer ({}) who sent invalid block: {}", peer, block);
+        disconnectFromPeer(peer);
+        return PeerSyncResult.BAD_BLOCK;
+      } else {
+        return PeerSyncResult.IMPORT_FAILED;
+      }
+    }
+    if (rootException instanceof CancellationException) {
+      return PeerSyncResult.CANCELLED;
+    }
+    if (err instanceof RuntimeException) {
+      throw (RuntimeException) err;
+    } else {
+      throw new RuntimeException("Unhandled error while syncing", err);
+    }
+  }
+
+  private SafeFuture<PeerSyncResult> completeSyncWithPeer(
+      final Eth2Peer peer, final PeerStatus status) {
+    if (storageClient.getFinalizedEpoch().compareTo(status.getFinalizedEpoch()) >= 0) {
+      return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
+    } else {
+      disconnectFromPeer(peer);
+      return SafeFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
+    }
   }
 
   private UnsignedLong calculateNumberOfBlocksToRequest(
-      final UnsignedLong latestRequestedSlot, final UnsignedLong advertisedHeadBlockSlot) {
-    final UnsignedLong diff = advertisedHeadBlockSlot.minus(latestRequestedSlot);
+      final UnsignedLong nextSlot, final PeerStatus status) {
+    if (nextSlot.compareTo(status.getHeadSlot()) > 0) {
+      // We've synced the advertised head, nothing left to request
+      return UnsignedLong.ZERO;
+    }
+
+    final UnsignedLong diff = status.getHeadSlot().minus(nextSlot).plus(UnsignedLong.ONE);
     return diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
         ? MAX_BLOCK_BY_RANGE_REQUEST_SIZE
         : diff;
   }
 
-  private void blockResponseListener(BeaconBlock block) {
-    if (stopped.get()) {
-      throw new CancellationException("Peer sync was cancelled");
-    }
-    final BlockImportResult result = blockImporter.importBlock(block);
-    if (!result.isSuccessful()) {
-      throw new FailedBlockImportException(block, result);
-    }
+  private ResponseListener<BeaconBlock> blockResponseListener(final AtomicLong lastImportedSlot) {
+    return (block) -> {
+      if (stopped.get()) {
+        throw new CancellationException("Peer sync was cancelled");
+      }
+      final BlockImportResult result = blockImporter.importBlock(block);
+      if (!result.isSuccessful()) {
+        throw new FailedBlockImportException(block, result);
+      }
+      lastImportedSlot.set(block.getSlot().longValue());
+    };
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
