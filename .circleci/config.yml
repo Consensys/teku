@@ -95,7 +95,7 @@ commands:
               mkdir -p "$TARGET"
               cp -rf ${FILE}/*/* "$TARGET"
             done
-      - store_test_results:
+      - store_artifacts:
           path: build/test-artifacts
 
 jobs:
