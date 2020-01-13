@@ -24,7 +24,12 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 @Command(
     name = "artemis",
-    subcommands = {TransitionCommand.class, PeerCommand.class, DepositCommand.class},
+    subcommands = {
+      TransitionCommand.class,
+      PeerCommand.class,
+      DepositCommand.class,
+      GenesisCommand.class
+    },
     abbreviateSynopsis = true,
     description = "Run the Artemis beacon chain client and validator",
     mixinStandardHelpOptions = true,
