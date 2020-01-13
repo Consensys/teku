@@ -76,6 +76,8 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
 
+  public static boolean BLS_VERIFY_DEPOSIT = true;
+
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     UnsignedLong genesis_time =
@@ -166,7 +168,7 @@ public class BeaconStateUtil {
       // Verify the deposit signature (proof of possession) for new validators.
       // Note: Deposits are valid across forks, thus the deposit
       // domain is retrieved directly from `compute_domain`
-      boolean proof_is_valid =
+      boolean proof_is_valid = !BLS_VERIFY_DEPOSIT ||
           bls_verify(
               pubkey,
               deposit.getData().signing_root("signature"),

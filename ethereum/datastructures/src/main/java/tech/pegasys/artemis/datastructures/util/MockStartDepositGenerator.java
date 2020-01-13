@@ -22,7 +22,16 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class MockStartDepositGenerator {
-  private DepositGenerator depositGenerator = new DepositGenerator();
+  private final DepositGenerator depositGenerator;
+
+  public MockStartDepositGenerator() {
+    this(new DepositGenerator());
+  }
+
+  public MockStartDepositGenerator(
+      DepositGenerator depositGenerator) {
+    this.depositGenerator = depositGenerator;
+  }
 
   public List<DepositData> createDeposits(final List<BLSKeyPair> validatorKeys) {
     return validatorKeys.stream().map(this::createDepositData).collect(toList());

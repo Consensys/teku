@@ -44,27 +44,41 @@ public class BeaconChainUtil {
   private final BlockProposalUtil blockCreator = new BlockProposalUtil(stateTransition);
   private final ChainStorageClient storageClient;
   private final List<BLSKeyPair> validatorKeys;
+  private final boolean signDeposits;
 
   private BeaconChainUtil(
-      final List<BLSKeyPair> validatorKeys, final ChainStorageClient chainStorageClient) {
+      final List<BLSKeyPair> validatorKeys, final ChainStorageClient chainStorageClient,
+      boolean signDeposits) {
     this.validatorKeys = validatorKeys;
     this.storageClient = chainStorageClient;
+    this.signDeposits = signDeposits;
   }
 
   public static BeaconChainUtil create(
       final int validatorCount, final ChainStorageClient storageClient) {
     final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorCount);
-    return new BeaconChainUtil(validatorKeys, storageClient);
+    return create(storageClient, validatorKeys);
   }
 
   public static BeaconChainUtil create(
       final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys) {
-    return new BeaconChainUtil(validatorKeys, storageClient);
+    return create(storageClient, validatorKeys, true);
+  }
+
+  public static BeaconChainUtil create(
+      final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys, final boolean signDeposits) {
+    return new BeaconChainUtil(validatorKeys, storageClient, signDeposits);
   }
 
   public static void initializeStorage(
       final ChainStorageClient chainStorageClient, final List<BLSKeyPair> validatorKeys) {
-    StartupUtil.setupInitialState(chainStorageClient, 0, null, validatorKeys);
+    initializeStorage(chainStorageClient, validatorKeys, true);
+  }
+  public static void initializeStorage(
+      final ChainStorageClient chainStorageClient,
+      final List<BLSKeyPair> validatorKeys,
+      final boolean signDeposits) {
+    StartupUtil.setupInitialState(chainStorageClient, 0, null, validatorKeys, signDeposits);
   }
 
   public void initializeStorage() {
@@ -72,7 +86,7 @@ public class BeaconChainUtil {
   }
 
   public void initializeStorage(final ChainStorageClient chainStorageClient) {
-    initializeStorage(chainStorageClient, validatorKeys);
+    initializeStorage(chainStorageClient, validatorKeys, signDeposits);
   }
 
   public void setSlot(final UnsignedLong currentSlot) {
