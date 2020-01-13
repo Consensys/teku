@@ -53,7 +53,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(12, storageClient1);
     chainUtil.initializeStorage();
 
@@ -61,14 +65,22 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
-        networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus2)
+            .chainStorageClient(storageClient2)
+            .startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Setup network 3
     final EventBus eventBus3 = new EventBus();
     final ChainStorageClient storageClient3 = ChainStorageClient.memoryOnlyClient(eventBus3);
     final Eth2Network network3 =
-        networkFactory.eventBus(eventBus3).chainStorageClient(storageClient3).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus3)
+            .chainStorageClient(storageClient3)
+            .startNetwork();
     chainUtil.initializeStorage(storageClient3);
 
     // Connect networks 1 -> 2 -> 3
@@ -106,7 +118,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(12, storageClient1);
     chainUtil.initializeStorage();
 
@@ -114,14 +130,22 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
-        networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus2)
+            .chainStorageClient(storageClient2)
+            .startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Setup network 3
     final EventBus eventBus3 = new EventBus();
     final ChainStorageClient storageClient3 = ChainStorageClient.memoryOnlyClient(eventBus3);
     final Eth2Network network3 =
-        networkFactory.eventBus(eventBus3).chainStorageClient(storageClient3).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus3)
+            .chainStorageClient(storageClient3)
+            .startNetwork();
     chainUtil.initializeStorage(storageClient3);
 
     // Connect networks 1 -> 2 -> 3
@@ -157,7 +181,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient1, blsKeyPairList);
@@ -167,7 +195,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
-        networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus2)
+            .chainStorageClient(storageClient2)
+            .startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
@@ -196,7 +228,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient1, blsKeyPairList);
@@ -206,7 +242,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
-        networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus2)
+            .chainStorageClient(storageClient2)
+            .startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2
@@ -244,7 +284,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 12);
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient1, blsKeyPairList);
@@ -254,7 +298,11 @@ public class GossipMessageHandlerIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     final Eth2Network network2 =
-        networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus2)
+            .chainStorageClient(storageClient2)
+            .startNetwork();
     chainUtil.initializeStorage(storageClient2);
 
     // Connect networks 1 -> 2

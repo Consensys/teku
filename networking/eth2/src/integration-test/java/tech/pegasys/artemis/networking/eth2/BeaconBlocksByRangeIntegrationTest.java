@@ -31,7 +31,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconBlocksByRangeIntegrationTest {
 
-  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+  private Eth2NetworkFactory networkFactory;
   private Eth2Peer peer1;
   private ChainStorageClient storageClient1;
   private BeaconChainUtil beaconChainUtil;
@@ -41,9 +41,13 @@ public class BeaconBlocksByRangeIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
 
-    final Eth2Network network2 = networkFactory.peer(network1).startNetwork();
+    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     beaconChainUtil = BeaconChainUtil.create(1, storageClient1);
   }

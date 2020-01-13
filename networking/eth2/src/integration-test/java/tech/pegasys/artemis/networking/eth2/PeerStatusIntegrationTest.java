@@ -44,9 +44,13 @@ public class PeerStatusIntegrationTest {
     final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
-    final Eth2Network network1 = networkFactory.startNetwork();
+    final Eth2Network network1 = networkFactory.builder().startNetwork();
     final Eth2Network network2 =
-        networkFactory.eventBus(eventBus2).chainStorageClient(storageClient2).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus2)
+            .chainStorageClient(storageClient2)
+            .startNetwork();
 
     Waiter.waitFor(network1.connect(network2.getNodeAddress()));
     Waiter.waitFor(
@@ -67,13 +71,18 @@ public class PeerStatusIntegrationTest {
     final EventBus eventBus1 = new EventBus();
     final ChainStorageClient storageClient1 = ChainStorageClient.memoryOnlyClient(eventBus1);
     final Eth2Network network1 =
-        networkFactory.eventBus(eventBus1).chainStorageClient(storageClient1).startNetwork();
+        networkFactory
+            .builder()
+            .eventBus(eventBus1)
+            .chainStorageClient(storageClient1)
+            .startNetwork();
 
     final EventBus eventBus2 = new EventBus();
     final ChainStorageClient storageClient2 = ChainStorageClient.memoryOnlyClient(eventBus2);
     BeaconChainUtil.create(0, storageClient2).initializeStorage();
     final Eth2Network network2 =
         networkFactory
+            .builder()
             .eventBus(eventBus2)
             .chainStorageClient(storageClient2)
             .peer(network1)

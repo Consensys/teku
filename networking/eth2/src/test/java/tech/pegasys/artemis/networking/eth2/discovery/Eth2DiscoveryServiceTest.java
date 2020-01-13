@@ -112,7 +112,7 @@ class Eth2DiscoveryServiceTest {
   @Test
   void nodeTableIntegrationTest() throws Exception {
     final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-    Eth2Network network1 = networkFactory.startNetwork();
+    Eth2Network network1 = networkFactory.builder().startNetwork();
 
     Random rnd = new Random();
     byte[] privKey1 = new byte[32];

@@ -42,8 +42,8 @@ public class ErrorConditionsIntegrationTest {
 
   @Test
   public void shouldRejectInvalidRequests() throws Exception {
-    final Eth2Network network1 = networkFactory.startNetwork();
-    final Eth2Network network2 = networkFactory.peer(network1).startNetwork();
+    final Eth2Network network1 = networkFactory.builder().startNetwork();
+    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
 
     final Eth2Peer peer = network1.getPeer(network2.getNodeId()).orElseThrow();
 

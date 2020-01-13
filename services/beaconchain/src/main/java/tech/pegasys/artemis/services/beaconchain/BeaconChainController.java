@@ -170,7 +170,7 @@ public class BeaconChainController {
       NetworkConfig discoveryNetworkConfig =
           networkConfigBuilder
               .privateKey(Optional.of(pk)) // use same private key as network
-              .networkInterface(config.getDiscoveryInterface())
+              .networkInterface(config.getNetworkInterface())
               .advertisedPort(config.getDiscoveryPort())
               .listenPort(config.getDiscoveryPort())
               .peers(config.getDiscoveryBootPeers())

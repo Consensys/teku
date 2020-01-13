@@ -56,23 +56,19 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
 
   private static final Logger logger = LogManager.getLogger(Eth2DiscoveryService.class);
 
-  //  private static Random rnd = new Random();
-
   private static final NodeRecordFactory NODE_RECORD_FACTORY =
       new NodeRecordFactory(new IdentitySchemaV4Interpreter());
   private static final SerializerFactory TEST_SERIALIZER =
       new NodeSerializerFactory(NODE_RECORD_FACTORY);
 
-  DiscoveryManager dm;
+  private DiscoveryManager dm;
   private NodeTable nodeTable;
 
   // core parameters for discovery service
   private String networkInterface;
   private int port;
-
-  // configuration of discovery service
-  private List<String> peers; // for setting boot nodes
   private byte[] privateKey; // for generating ENR records
+  private List<String> peers; // for setting boot nodes
 
   // the network to potentially affect with discovered peers
   private Optional<P2PNetwork<?>> network = Optional.empty();
@@ -80,29 +76,15 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
   // event bus by which to signal other services
   private EventBus eventBus;
 
-  public NodeTable getNodeTable() {
-    return nodeTable;
-  }
-
-  /**
-   * Start discovery from stopped state
-   *
-   * @return Future indicating failure or State.RUNNING
-   */
   @Override
   public SafeFuture<State> doStart() {
-    eventBus.register(this);
+    dm.start();
     return SafeFuture.completedFuture(this.getState());
   }
 
-  /**
-   * Stop discovery
-   *
-   * @return Future indicating failure or State.STOPPED
-   */
   @Override
   public SafeFuture<State> doStop() {
-    eventBus.unregister(this);
+    dm.stop();
     return SafeFuture.completedFuture(this.getState());
   }
 
@@ -118,9 +100,10 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
   public void setEventBus(EventBus eventBus) {
     assert eventBus != null;
     this.eventBus = eventBus;
-    if (this.getState().equals(State.RUNNING)) {
-      this.eventBus.register(this);
-    }
+  }
+
+  public EventBus getEventBus() {
+    return eventBus;
   }
 
   @Override
@@ -141,15 +124,11 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
   @Override
   public Stream<DiscoveryPeer> streamPeers() {
     // use logLimit of 0 to retrieve all entries in the node table
-    return getNodeTable().findClosestNodes(getNodeTable().getHomeNode().getNodeId(), 0).stream()
+    return nodeTable.findClosestNodes(nodeTable.getHomeNode().getNodeId(), 0).stream()
         .map(
             n -> {
               return DiscoveryPeer.getDiscoveryPeerFromNodeRecord(n.getNode());
             });
-  }
-
-  public EventBus getEventBus() {
-    return eventBus;
   }
 
   private NodeRecord setupRemoteNode(final String remoteHostEnr) {
@@ -167,7 +146,7 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
   Eth2DiscoveryService build() {
     final NodeRecord localNodeRecord;
     try {
-      localNodeRecord = createLocalNodeRecord(getPrivateKey(), getNetworkInterface(), getPort());
+      localNodeRecord = createLocalNodeRecord(privateKey, networkInterface, port);
     } catch (Exception e) {
       logger.error("Error constructing local node record: " + e.getMessage());
       return this;
@@ -232,10 +211,6 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
     return nodeRecord1;
   }
 
-  //  void setRnd(long seed) {
-  //    rnd = new Random(seed);
-  //  }
-
   public int getPort() {
     return port;
   }
@@ -267,5 +242,9 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
   public void setPrivateKey(byte[] privateKey) {
     assert privateKey != null;
     this.privateKey = privateKey;
+  }
+
+  public NodeTable getNodeTable() {
+    return nodeTable;
   }
 }
