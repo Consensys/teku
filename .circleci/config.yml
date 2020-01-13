@@ -147,12 +147,11 @@ jobs:
       - run:
           name: AcceptanceTests
           command: |
-            cd acceptance-tests/src/acceptance-test/java
-            CLASSNAMES=$(circleci tests glob "**/*.java" \
-              | cut -c 1- | sed 's@/@.@g' \
+            CLASSNAMES=$(circleci tests glob "**/src/acceptance-test/java/**/*.java" \
+              | sed 's@.*/src/acceptance-test/java/@@' \
+              | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
               | circleci tests split --split-by=timings --timings-type=classname)
-            cd ../../../..
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
@@ -180,12 +179,11 @@ jobs:
       - run:
           name: ReferenceTests
           command: |
-            cd eth-reference-tests/src/referenceTest/java
-            CLASSNAMES=$(circleci tests glob "**/*.java" \
-              | cut -c 1- | sed 's@/@.@g' \
+            CLASSNAMES=$(circleci tests glob "**/src/referenceTest/java/**/*.java" \
+              | sed 's@.*/src/referenceTest/java/@@' \
+              | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
               | circleci tests split --split-by=timings --timings-type=classname)
-            cd ../../../..
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
