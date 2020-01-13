@@ -36,7 +36,6 @@ import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -120,8 +119,8 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
           Level.FATAL,
           "PLEASE FIX OR REPORT | Unexpected exception thrown for "
               + describeSubscriberException(exception, context),
-          Color.RED);
-      throw new RuntimeException(exception);
+          exception);
+      return;
     }
 
     logger.log(Level.WARN, specFailedMessage(exception, context));
