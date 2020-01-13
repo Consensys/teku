@@ -80,6 +80,23 @@ commands:
             done
       - store_test_results:
           path: build/test-results
+  capture_test_artifacts:
+    description: "Capture test artifacts"
+    steps:
+      - run:
+          name: "Gather test artifacts"
+          when: "always"
+          command: |
+            FILES=`find . -name test-artifacts`
+            for FILE in $FILES
+            do
+              MODULE=`echo "$FILE" | sed -e 's@./\(.*\)/build/test-artifacts@\1@'`
+              TARGET="build/test-artifacts/$MODULE"
+              mkdir -p "$TARGET"
+              cp -rf ${FILE}/*/* "$TARGET"
+            done
+      - store_test_results:
+          path: build/test-artifacts
 
 jobs:
   assemble:
@@ -158,6 +175,7 @@ jobs:
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
             ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
       - capture_test_results
+      - capture_test_artifacts
 
   referenceTests:
     parallelism: 4
