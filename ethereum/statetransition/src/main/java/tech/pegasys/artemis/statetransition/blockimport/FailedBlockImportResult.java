@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.blockimport;
 
+import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 
@@ -43,5 +44,13 @@ public class FailedBlockImportResult implements BlockImportResult {
   @Override
   public Optional<Throwable> getFailureCause() {
     return cause;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("failureReason", failureReason)
+        .add("cause", cause)
+        .toString();
   }
 }

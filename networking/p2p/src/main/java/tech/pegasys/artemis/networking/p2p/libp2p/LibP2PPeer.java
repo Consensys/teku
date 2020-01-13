@@ -15,15 +15,26 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
+import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class LibP2PPeer implements Peer {
+
+  private final Map<RpcMethod, RpcHandler> rpcHandlers;
   private final Connection connection;
   private final NodeId nodeId;
 
-  public LibP2PPeer(final Connection connection) {
+  public LibP2PPeer(final Connection connection, final Map<RpcMethod, RpcHandler> rpcHandlers) {
     this.connection = connection;
+    this.rpcHandlers = rpcHandlers;
+
     final PeerId peerId = connection.getSecureSession().getRemoteId();
     nodeId = new LibP2PNodeId(peerId);
   }
@@ -39,8 +50,19 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
-  public Connection getConnection() {
-    return connection;
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void disconnect() {
+    connection.getNettyChannel().close();
+  }
+
+  @Override
+  public SafeFuture<RpcStream> sendRequest(
+      RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
+    RpcHandler rpcHandler = rpcHandlers.get(rpcMethod);
+    if (rpcHandler == null) {
+      throw new IllegalArgumentException("Unknown rpc method invoked: " + rpcMethod.getId());
+    }
+    return rpcHandler.sendRequest(connection, initialPayload, handler);
   }
 
   @Override

@@ -36,8 +36,10 @@ import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,13 +52,14 @@ import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
+import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.network.Protocol;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -75,11 +78,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final GossipNetwork gossipNetwork;
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
+  private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
 
   public LibP2PNetwork(
       final NetworkConfig config,
       final MetricsSystem metricsSystem,
-      final List<Protocol<?>> protocols,
+      final List<RpcMethod> rpcMethods,
       final List<PeerHandler> peerHandlers) {
     this.privKey =
         config
@@ -98,7 +102,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     final PubsubPublisherApi publisher = gossip.createPublisher(privKey, new Random().nextLong());
     gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
 
-    peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers);
+    // Setup rpc methods
+    rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(method)));
+
+    // Setup peers
+    peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers, rpcHandlers);
 
     host =
         BuildersJKt.hostJ(
@@ -112,7 +120,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
                       "/ip4/" + config.getNetworkInterface() + "/tcp/" + config.getListenPort());
 
               b.getProtocols().addAll(getDefaultProtocols());
-              b.getProtocols().addAll(protocols);
+              b.getProtocols().addAll(rpcHandlers.values());
 
               if (config.isLogWireCipher()) {
                 b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");

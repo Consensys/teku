@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.config;
 
 import static java.util.Arrays.asList;
 
+import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -310,7 +311,7 @@ public class ArtemisConfiguration {
   }
 
   public String getTransitionRecordDir() {
-    return config.getString("output.transitionRecordDir");
+    return Strings.emptyToNull(config.getString("output.transitionRecordDir"));
   }
 
   /** @return Artemis specific constants */

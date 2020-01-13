@@ -22,11 +22,12 @@ import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.eth2.rpc.core.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
-import tech.pegasys.artemis.networking.p2p.network.Protocol;
+import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 
@@ -35,7 +36,7 @@ public class Eth2NetworkBuilder {
   protected EventBus eventBus;
   protected ChainStorageClient chainStorageClient;
   protected MetricsSystem metricsSystem;
-  protected List<Protocol<?>> protocols = new ArrayList<>();
+  protected List<RpcMethod> rpcMethods = new ArrayList<>();
   protected List<PeerHandler> peerHandlers = new ArrayList<>();
   protected NetworkConfig discoveryNetworkConfig;
 
@@ -52,19 +53,19 @@ public class Eth2NetworkBuilder {
     final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(chainStorageClient, historicalChainData, metricsSystem);
-    final Collection<? extends Protocol<?>> eth2Protocols = eth2PeerManager.getRpcMethods().all();
-    protocols.addAll(eth2Protocols);
+    final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
+    rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
 
     // Build core network and inject eth2 handlers
-    final P2PNetwork<?> p2pNetwork = buildP2PNetwork();
+    final P2PNetwork<?> network = buildNetwork();
 
     return new Eth2Network(
-        p2pNetwork, eth2PeerManager, eventBus, chainStorageClient, discoveryNetworkConfig);
+        network, eth2PeerManager, eventBus, chainStorageClient, discoveryNetworkConfig);
   }
 
-  protected P2PNetwork<?> buildP2PNetwork() {
-    return new LibP2PNetwork(config, metricsSystem, protocols, peerHandlers);
+  protected P2PNetwork<?> buildNetwork() {
+    return new LibP2PNetwork(config, metricsSystem, rpcMethods, peerHandlers);
   }
 
   private void validate() {
@@ -108,9 +109,9 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
-  public Eth2NetworkBuilder protocol(final Protocol<?> protocol) {
-    checkNotNull(protocol);
-    protocols.add(protocol);
+  public Eth2NetworkBuilder rpcMethod(final RpcMethod rpcMethod) {
+    checkNotNull(rpcMethod);
+    rpcMethods.add(rpcMethod);
     return this;
   }
 
