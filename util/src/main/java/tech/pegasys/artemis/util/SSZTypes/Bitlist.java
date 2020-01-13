@@ -50,6 +50,22 @@ public class Bitlist {
     return byteArray[i];
   }
 
+  /**
+   * Sets all bits in this bitlist which are set in the [other] list
+   */
+  public void setAllBits(Bitlist other) {
+    if (other.getCurrentSize() > getCurrentSize()) {
+      throw new IllegalArgumentException(
+          "Argument bitfield size is greater: " + other.getCurrentSize() + " > "
+              + getCurrentSize());
+    }
+    for (int i = 0; i < other.getCurrentSize(); i++) {
+      if (other.getBit(i) > 0) {
+        setBit(i);
+      }
+    }
+  }
+
   public byte[] getByteArray() {
     return byteArray;
   }

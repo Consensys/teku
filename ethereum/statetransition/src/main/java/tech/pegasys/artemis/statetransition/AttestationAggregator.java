@@ -23,13 +23,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSAggregate;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class AttestationAggregator {
 
@@ -115,6 +118,27 @@ public class AttestationAggregator {
     signaturesToAggregate.add(newAttestation.getAggregate_signature());
     oldAggregateAttestation.setAggregate_signature(
         BLSAggregate.bls_aggregate_signatures(signaturesToAggregate));
+  }
+
+  /**
+   * Aggregates passed attestations
+   * @param srcAttestations attestations which should have the same {@link Attestation#getData()}
+   */
+  public static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
+    assert !srcAttestations.isEmpty();
+    assert srcAttestations.stream().skip(1)
+        .allMatch(a -> a.getData().equals(srcAttestations.get(0).getData()));
+
+    int targetBitlistSize = srcAttestations.stream()
+        .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
+        .max().getAsInt();
+    Bitlist targetBitlist = new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    srcAttestations.forEach(a -> targetBitlist.setAllBits(a.getAggregation_bits()));
+    BLSSignature targetSig = BLSAggregate.bls_aggregate_signatures(
+        srcAttestations.stream().map(Attestation::getAggregate_signature).collect(
+            Collectors.toList()));
+
+    return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
 
   public void reset() {
