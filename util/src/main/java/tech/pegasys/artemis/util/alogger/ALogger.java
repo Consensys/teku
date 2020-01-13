@@ -56,7 +56,7 @@ public class ALogger {
   }
 
   public void log(Level level, String message, Throwable throwable) {
-    log(level, message, throwable, Color.RED);
+    this.logger.log(level, message, throwable);
   }
 
   public void log(Level level, String message, Throwable throwable, Color color) {
