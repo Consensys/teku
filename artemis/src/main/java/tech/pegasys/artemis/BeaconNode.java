@@ -27,8 +27,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
@@ -38,6 +36,7 @@ import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -107,7 +106,6 @@ public class BeaconNode {
 
 @VisibleForTesting
 final class EventBusExceptionHandler implements SubscriberExceptionHandler {
-  private static final Logger LOG = LogManager.getLogger();
   private final ALogger logger;
 
   EventBusExceptionHandler(final ALogger logger) {
@@ -118,7 +116,11 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
   public final void handleException(
       final Throwable exception, final SubscriberExceptionContext context) {
     if (!isSpecFailure(exception)) {
-      LOG.error("Unhandled exception in handler for event " + context.getEvent(), exception);
+      logger.log(
+          Level.FATAL,
+          "PLEASE FIX OR REPORT | Unexpected exception thrown for "
+              + describeSubscriberException(exception, context),
+          Color.RED);
       throw new RuntimeException(exception);
     }
 
@@ -131,8 +133,12 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
 
   private static String specFailedMessage(
       final Throwable exception, final SubscriberExceptionContext context) {
-    return "Spec failed"
-        + " for event '"
+    return "Spec failed for " + describeSubscriberException(exception, context);
+  }
+
+  private static String describeSubscriberException(
+      final Throwable exception, final SubscriberExceptionContext context) {
+    return "event '"
         + context.getEvent().getClass().getName()
         + "'"
         + " in handler '"
