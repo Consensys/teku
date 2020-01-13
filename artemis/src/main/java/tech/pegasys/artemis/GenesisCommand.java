@@ -16,6 +16,7 @@ package tech.pegasys.artemis;
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
+import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -54,23 +55,32 @@ public class GenesisCommand {
       footerHeading = "%n",
       footer = "Artemis is licensed under the Apache License 2.0")
   public void generate(@Mixin MockGenesisParams params) throws IOException {
-    FileOutputStream fileStream = new FileOutputStream(params.outputFile);
+    // Output to stdout if no file is specified
+    final boolean outputToFile = params.outputFile != null && !params.outputFile.isBlank();
+    try (final FileOutputStream fileStream =
+        outputToFile
+            ? new FileOutputStream(params.outputFile)
+            : new FileOutputStream(FileDescriptor.out)) {
+      if (outputToFile) {
+        STDOUT.log(
+            Level.INFO,
+            String.format(
+                "Generating mock genesis state for %d validators at genesis time %d",
+                params.validatorCount, params.genesisTime));
+      }
 
-    STDOUT.log(
-        Level.INFO,
-        String.format(
-            "Generating mock genesis state for %d validators at genesis time %d",
-            params.validatorCount, params.genesisTime));
+      final long genesisTime = params.genesisTime;
+      final List<BLSKeyPair> validatorKeys =
+          new MockStartValidatorKeyPairFactory().generateKeyPairs(0, params.validatorCount);
+      final BeaconState genesisState =
+          StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
 
-    final long genesisTime = params.genesisTime;
-    final List<BLSKeyPair> validatorKeys =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, params.validatorCount);
-    final BeaconState genesisState =
-        StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
-
-    STDOUT.log(Level.INFO, String.format("Saving genesis state to file: %s", params.outputFile));
-    fileStream.write(serialize(genesisState).toArrayUnsafe());
-    fileStream.close();
+      if (outputToFile) {
+        STDOUT.log(
+            Level.INFO, String.format("Saving genesis state to file: %s", params.outputFile));
+      }
+      fileStream.write(serialize(genesisState).toArrayUnsafe());
+    }
   }
 
   public static class MockGenesisParams {
@@ -78,7 +88,7 @@ public class GenesisCommand {
         names = {"-o", "--outputFile"},
         paramLabel = "<FILENAME>",
         description = "Path/filename of the output file")
-    private String outputFile = "./mock-genesis-state.bin";
+    private String outputFile = null;
 
     @Option(
         names = {"-v", "--validatorCount"},
