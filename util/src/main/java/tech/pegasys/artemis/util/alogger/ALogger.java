@@ -55,6 +55,14 @@ public class ALogger {
     this.logger.log(level, addColor(message, color));
   }
 
+  public void log(Level level, String message, Throwable throwable) {
+    this.logger.log(level, message, throwable);
+  }
+
+  public void log(Level level, String message, Throwable throwable, Color color) {
+    this.logger.log(level, addColor(message, color), throwable);
+  }
+
   private String findColor(Color color) {
     String colorCode = "";
     switch (color) {

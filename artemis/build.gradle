@@ -35,6 +35,7 @@ dependencies {
 
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
+  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
   test {
     testLogging.showStandardStreams = true
