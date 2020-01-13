@@ -40,7 +40,7 @@ class StatusMessageCompatibilityTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    artemis = networkFactory.startNetwork();
+    artemis = networkFactory.builder().startNetwork();
   }
 
   @AfterEach
