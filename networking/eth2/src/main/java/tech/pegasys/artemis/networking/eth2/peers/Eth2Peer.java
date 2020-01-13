@@ -165,9 +165,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-      .add("id", getId())
-      .add("remoteStatus", remoteStatus)
-      .toString();
+        .add("id", getId())
+        .add("remoteStatus", remoteStatus)
+        .toString();
   }
 
   public interface InitialStatusSubscriber {

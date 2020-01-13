@@ -49,8 +49,8 @@ public class FailedBlockImportResult implements BlockImportResult {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-      .add("failureReason", failureReason)
-      .add("cause", cause)
-      .toString();
+        .add("failureReason", failureReason)
+        .add("cause", cause)
+        .toString();
   }
 }

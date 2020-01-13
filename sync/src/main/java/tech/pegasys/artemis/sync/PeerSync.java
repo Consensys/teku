@@ -55,13 +55,14 @@ public class PeerSync {
     final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
 
     return executeSync(peer, peer.getStatus(), firstNonFinalSlot)
-      .whenComplete((res,err) -> {
-        if (err != null) {
-          LOG.debug("Failed to sync with peer {}: {}", peer, err);
-        } else {
-          LOG.debug("Finished syncing (with status {}) to peer {}", res.name(), peer);
-        }
-      });
+        .whenComplete(
+            (res, err) -> {
+              if (err != null) {
+                LOG.debug("Failed to sync with peer {}: {}", peer, err);
+              } else {
+                LOG.debug("Finished syncing (with status {}) to peer {}", res.name(), peer);
+              }
+            });
   }
 
   public void stop() {

@@ -47,8 +47,6 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-      .add("block", record.getBlock())
-      .toString();
+    return MoreObjects.toStringHelper(this).add("block", record.getBlock()).toString();
   }
 }
