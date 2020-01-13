@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.represent
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,6 +119,13 @@ public class AttestationAggregator {
     signaturesToAggregate.add(newAttestation.getAggregate_signature());
     oldAggregateAttestation.setAggregate_signature(
         BLSAggregate.bls_aggregate_signatures(signaturesToAggregate));
+  }
+
+  public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
+    Collection<List<Attestation>> groupedAtt = srcAttestations.stream()
+        .collect(Collectors.groupingBy(Attestation::getData)).values();
+    return groupedAtt.stream().map(AttestationAggregator::aggregateAttestations)
+        .collect(Collectors.toList());
   }
 
   /**
