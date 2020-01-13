@@ -31,7 +31,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconBlocksByRangeIntegrationTest {
 
-  private Eth2NetworkFactory networkFactory;
+  private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Peer peer1;
   private ChainStorageClient storageClient1;
   private BeaconChainUtil beaconChainUtil;
