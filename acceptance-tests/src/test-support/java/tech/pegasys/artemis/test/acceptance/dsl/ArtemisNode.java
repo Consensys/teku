@@ -53,6 +53,8 @@ public class ArtemisNode extends Node {
   public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/artemis:develop";
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.toml";
+  protected static final String ARTIFACTS_PATH = "/artifacts/";
+  private static final String DATABASE_PATH = ARTIFACTS_PATH + "artemis.db";
   private static final int P2P_PORT = 9000;
 
   private final SimpleHttpClient httpClient;
@@ -69,6 +71,7 @@ public class ArtemisNode extends Node {
     this.httpClient = httpClient;
     configOptions.accept(config);
     container
+        .withWorkingDirectory(ARTIFACTS_PATH)
         .withExposedPorts(REST_API_PORT)
         .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
         .withCommand("--config", CONFIG_FILE_PATH);
@@ -142,13 +145,13 @@ public class ArtemisNode extends Node {
   public File getDatabaseFileFromContainer() throws Exception {
     File tempDatabaseFile = File.createTempFile("artemis", ".db");
     tempDatabaseFile.deleteOnExit();
-    container.copyFileFromContainer("/artemis.db", tempDatabaseFile.getAbsolutePath());
+    container.copyFileFromContainer(DATABASE_PATH, tempDatabaseFile.getAbsolutePath());
     return tempDatabaseFile;
   }
 
   public void copyDatabaseFileToContainer(File databaseFile) {
     container.withCopyFileToContainer(
-        MountableFile.forHostPath(databaseFile.getAbsolutePath()), "/artemis.db");
+        MountableFile.forHostPath(databaseFile.getAbsolutePath()), DATABASE_PATH);
   }
 
   String getMultiAddr() {
@@ -174,6 +177,16 @@ public class ArtemisNode extends Node {
     container.stop();
   }
 
+  @Override
+  public void captureDebugArtifacts(final File artifactDir) {
+    if (container.isRunning()) {
+      copyDirectoryToTar(ARTIFACTS_PATH, new File(artifactDir, nodeAlias + ".tar"));
+    } else {
+      // Can't capture artifacts if it's not running but then it probably didn't cause the failure
+      LOG.debug("Not capturing artifacts from {} because it is not running", nodeAlias);
+    }
+  }
+
   public static class Config {
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
@@ -186,6 +199,7 @@ public class ArtemisNode extends Node {
     private static final String NODE_SECTION = "node";
     private static final String VALIDATOR_SECTION = "validator";
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
+    private static final String OUTPUT_SECTION = "output";
     private Map<String, Map<String, Object>> options = new HashMap<>();
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
@@ -210,6 +224,9 @@ public class ArtemisNode extends Node {
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", REST_API_PORT);
+
+      final Map<String, Object> output = getSection(OUTPUT_SECTION);
+      output.put("transitionRecordDir", ARTIFACTS_PATH + "transitions/");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {

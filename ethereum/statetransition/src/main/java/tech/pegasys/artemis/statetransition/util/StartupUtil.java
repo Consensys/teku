@@ -53,16 +53,8 @@ public final class StartupUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
-  private static BeaconStateWithCache createMockedStartInitialBeaconState(
+  public static BeaconStateWithCache createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys, boolean signDeposits) {
-    STDOUT.log(
-        Level.INFO,
-        "Starting with mocked start interoperability mode with genesis time "
-            + genesisTime
-            + " and "
-            + validatorKeys.size()
-            + " validators",
-        Color.GREEN);
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits)).createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator()
@@ -101,6 +93,14 @@ public final class StartupUtil {
         throw new IllegalStateException("Failed to load initial state", e);
       }
     } else {
+      STDOUT.log(
+          Level.INFO,
+          "Starting with mocked start interoperability mode with genesis time "
+              + genesisTime
+              + " and "
+              + validatorKeyPairs.size()
+              + " validators",
+          Color.GREEN);
       initialState =
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs, signDeposits);
     }
