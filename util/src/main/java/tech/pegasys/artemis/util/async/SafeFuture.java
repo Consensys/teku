@@ -97,13 +97,14 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   public void finish(final Consumer<T> onSuccess, final Consumer<Throwable> onError) {
-    whenComplete(
+    handle(
             (result, error) -> {
               if (error != null) {
                 onError.accept(error);
               } else {
                 onSuccess.accept(result);
               }
+              return null;
             })
         .reportExceptions();
   }
