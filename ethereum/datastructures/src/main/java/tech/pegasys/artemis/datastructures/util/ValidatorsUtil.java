@@ -73,12 +73,7 @@ public class ValidatorsUtil {
   public static List<Integer> get_active_validator_indices(BeaconState state, UnsignedLong epoch) {
     List<Validator> validators = state.getValidators();
     return IntStream.range(0, validators.size())
-        .parallel()
-        .flatMap(
-            index ->
-                is_active_validator(validators.get(index), epoch)
-                    ? IntStream.of(index)
-                    : IntStream.empty())
+        .filter(index -> is_active_validator(validators.get(index), epoch))
         .boxed()
         .collect(Collectors.toList());
   }
