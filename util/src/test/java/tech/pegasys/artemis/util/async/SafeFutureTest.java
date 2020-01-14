@@ -240,6 +240,17 @@ class SafeFutureTest {
   }
 
   @Test
+  public void finish_shouldReportExceptionsWhenNoErrorHandlerProvided() {
+    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.finish(() -> {});
+    safeFuture.completeExceptionally(new RuntimeException("Not handled"));
+
+    assertThat(logCounter.getCount()).isEqualTo(1);
+  }
+
+  @Test
   public void reportExceptions_shouldLogUnhandledExceptions() {
     final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
 
