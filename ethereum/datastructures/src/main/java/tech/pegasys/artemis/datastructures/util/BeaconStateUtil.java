@@ -168,12 +168,13 @@ public class BeaconStateUtil {
       // Verify the deposit signature (proof of possession) for new validators.
       // Note: Deposits are valid across forks, thus the deposit
       // domain is retrieved directly from `compute_domain`
-      boolean proof_is_valid = !BLS_VERIFY_DEPOSIT ||
-          bls_verify(
-              pubkey,
-              deposit.getData().signing_root("signature"),
-              deposit.getData().getSignature(),
-              compute_domain(DOMAIN_DEPOSIT));
+      boolean proof_is_valid =
+          !BLS_VERIFY_DEPOSIT
+              || bls_verify(
+                  pubkey,
+                  deposit.getData().signing_root("signature"),
+                  deposit.getData().getSignature(),
+                  compute_domain(DOMAIN_DEPOSIT));
       if (!proof_is_valid) {
         STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
         return;

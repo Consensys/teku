@@ -48,12 +48,13 @@ public class DepositGenerator {
     final DepositData depositData =
         new DepositData(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei, null);
 
-    depositData.setSignature(signDeposit ?
-        BLSSignature.sign(
-            validatorKeyPair,
-            depositData.signing_root("signature"),
-            compute_domain(DOMAIN_DEPOSIT)) :
-        BLSSignature.empty());
+    depositData.setSignature(
+        signDeposit
+            ? BLSSignature.sign(
+                validatorKeyPair,
+                depositData.signing_root("signature"),
+                compute_domain(DOMAIN_DEPOSIT))
+            : BLSSignature.empty());
     return depositData;
   }
 

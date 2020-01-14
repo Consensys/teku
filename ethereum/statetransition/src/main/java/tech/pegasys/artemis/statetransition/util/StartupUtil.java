@@ -56,7 +56,8 @@ public final class StartupUtil {
   public static BeaconStateWithCache createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys, boolean signDeposits) {
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(new DepositGenerator(signDeposits)).createDeposits(validatorKeys);
+        new MockStartDepositGenerator(new DepositGenerator(signDeposits))
+            .createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator()
         .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
   }
@@ -102,7 +103,8 @@ public final class StartupUtil {
               + " validators",
           Color.GREEN);
       initialState =
-          StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs, signDeposits);
+          StartupUtil.createMockedStartInitialBeaconState(
+              genesisTime, validatorKeyPairs, signDeposits);
     }
 
     chainStorageClient.initializeFromGenesis(initialState);

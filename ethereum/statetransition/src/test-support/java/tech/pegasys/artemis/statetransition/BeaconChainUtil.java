@@ -47,7 +47,8 @@ public class BeaconChainUtil {
   private final boolean signDeposits;
 
   private BeaconChainUtil(
-      final List<BLSKeyPair> validatorKeys, final ChainStorageClient chainStorageClient,
+      final List<BLSKeyPair> validatorKeys,
+      final ChainStorageClient chainStorageClient,
       boolean signDeposits) {
     this.validatorKeys = validatorKeys;
     this.storageClient = chainStorageClient;
@@ -66,7 +67,9 @@ public class BeaconChainUtil {
   }
 
   public static BeaconChainUtil create(
-      final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys, final boolean signDeposits) {
+      final ChainStorageClient storageClient,
+      final List<BLSKeyPair> validatorKeys,
+      final boolean signDeposits) {
     return new BeaconChainUtil(validatorKeys, storageClient, signDeposits);
   }
 
@@ -74,6 +77,7 @@ public class BeaconChainUtil {
       final ChainStorageClient chainStorageClient, final List<BLSKeyPair> validatorKeys) {
     initializeStorage(chainStorageClient, validatorKeys, true);
   }
+
   public static void initializeStorage(
       final ChainStorageClient chainStorageClient,
       final List<BLSKeyPair> validatorKeys,
@@ -110,8 +114,10 @@ public class BeaconChainUtil {
 
   public BlockProcessingRecord createAndImportBlockAtSlot(
       final UnsignedLong slot, List<Attestation> attestations) throws Exception {
-    SSZList<Attestation> sszList = attestations.isEmpty() ? null :
-        new SSZList<>(attestations, Constants.MAX_ATTESTATIONS, Attestation.class);
+    SSZList<Attestation> sszList =
+        attestations.isEmpty()
+            ? null
+            : new SSZList<>(attestations, Constants.MAX_ATTESTATIONS, Attestation.class);
 
     return createAndImportBlockAtSlot(slot, Optional.ofNullable(sszList));
   }

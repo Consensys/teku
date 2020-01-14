@@ -28,8 +28,7 @@ public class MockStartDepositGenerator {
     this(new DepositGenerator());
   }
 
-  public MockStartDepositGenerator(
-      DepositGenerator depositGenerator) {
+  public MockStartDepositGenerator(DepositGenerator depositGenerator) {
     this.depositGenerator = depositGenerator;
   }
 

@@ -122,29 +122,36 @@ public class AttestationAggregator {
   }
 
   public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
-    Collection<List<Attestation>> groupedAtt = srcAttestations.stream()
-        .collect(Collectors.groupingBy(Attestation::getData)).values();
-    return groupedAtt.stream().map(AttestationAggregator::aggregateAttestations)
+    Collection<List<Attestation>> groupedAtt =
+        srcAttestations.stream().collect(Collectors.groupingBy(Attestation::getData)).values();
+    return groupedAtt.stream()
+        .map(AttestationAggregator::aggregateAttestations)
         .collect(Collectors.toList());
   }
 
   /**
    * Aggregates passed attestations
+   *
    * @param srcAttestations attestations which should have the same {@link Attestation#getData()}
    */
   public static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
     assert !srcAttestations.isEmpty();
-    assert srcAttestations.stream().skip(1)
+    assert srcAttestations.stream()
+        .skip(1)
         .allMatch(a -> a.getData().equals(srcAttestations.get(0).getData()));
 
-    int targetBitlistSize = srcAttestations.stream()
-        .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
-        .max().getAsInt();
+    int targetBitlistSize =
+        srcAttestations.stream()
+            .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
+            .max()
+            .getAsInt();
     Bitlist targetBitlist = new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     srcAttestations.forEach(a -> targetBitlist.setAllBits(a.getAggregation_bits()));
-    BLSSignature targetSig = BLSAggregate.bls_aggregate_signatures(
-        srcAttestations.stream().map(Attestation::getAggregate_signature).collect(
-            Collectors.toList()));
+    BLSSignature targetSig =
+        BLSAggregate.bls_aggregate_signatures(
+            srcAttestations.stream()
+                .map(Attestation::getAggregate_signature)
+                .collect(Collectors.toList()));
 
     return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
