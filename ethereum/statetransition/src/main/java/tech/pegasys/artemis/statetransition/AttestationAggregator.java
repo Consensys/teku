@@ -122,11 +122,12 @@ public class AttestationAggregator {
   }
 
   /**
-   * Groups passed attestations by their
-   * {@link tech.pegasys.artemis.datastructures.operations.AttestationData}
-   * and aggregates attestations in every group to a single {@link Attestation}
-   * @return a list of aggregated {@link Attestation}s with distinct
-   * {@link tech.pegasys.artemis.datastructures.operations.AttestationData}
+   * Groups passed attestations by their {@link
+   * tech.pegasys.artemis.datastructures.operations.AttestationData} and aggregates attestations in
+   * every group to a single {@link Attestation}
+   *
+   * @return a list of aggregated {@link Attestation}s with distinct {@link
+   *     tech.pegasys.artemis.datastructures.operations.AttestationData}
    */
   public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
     Collection<List<Attestation>> groupedAtt =
