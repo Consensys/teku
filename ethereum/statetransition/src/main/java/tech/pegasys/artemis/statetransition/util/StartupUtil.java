@@ -54,6 +54,11 @@ public final class StartupUtil {
   }
 
   public static BeaconStateWithCache createMockedStartInitialBeaconState(
+      final long genesisTime, List<BLSKeyPair> validatorKeys) {
+    return createMockedStartInitialBeaconState(genesisTime, validatorKeys, true);
+  }
+
+  public static BeaconStateWithCache createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys, boolean signDeposits) {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
