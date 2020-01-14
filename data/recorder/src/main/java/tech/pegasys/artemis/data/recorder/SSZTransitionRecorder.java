@@ -22,15 +22,38 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SSZTransitionRecorder {
-
   private final Path outputDirectory;
 
   public SSZTransitionRecorder(final Path outputDirectory) {
     this.outputDirectory = mkdirs(outputDirectory);
+  }
+
+  @Subscribe
+  public void onGenesisEvent(final StoreGenesisDiskUpdateEvent genesisEvent) {
+    final Store store = genesisEvent.getStore();
+    final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
+    if (isNotGenesis(finalizedCheckpoint)) {
+      return;
+    }
+    final Bytes32 genesisRoot = finalizedCheckpoint.getRoot();
+    final BeaconState genesisState = store.getBlockState(genesisRoot);
+    store(outputDirectory.resolve("genesis.ssz"), genesisState);
+  }
+
+  private boolean isNotGenesis(final Checkpoint finalizedCheckpoint) {
+    final UnsignedLong genesisEpoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+    return finalizedCheckpoint == null
+        || finalizedCheckpoint.getEpoch().compareTo(genesisEpoch) != 0;
   }
 
   @Subscribe

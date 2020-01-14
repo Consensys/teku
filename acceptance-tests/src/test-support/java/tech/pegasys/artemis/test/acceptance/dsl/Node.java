@@ -15,9 +15,14 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.fail;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -55,6 +60,22 @@ public abstract class Node {
       Waiter.waitFor(condition);
     } catch (final Throwable t) {
       fail(t.getMessage() + " Logs: " + container.getLogs(), t);
+    }
+  }
+
+  public void captureDebugArtifacts(final File artifactDir) {}
+
+  protected void copyDirectoryToTar(final String sourcePath, final File localTargetDir) {
+    try {
+      try (InputStream inputStream =
+          container
+              .getDockerClient()
+              .copyArchiveFromContainerCmd(container.getContainerId(), sourcePath)
+              .exec()) {
+        IOUtils.copy(inputStream, Files.newOutputStream(localTargetDir.toPath()));
+      }
+    } catch (final IOException e) {
+      throw new RuntimeException("Failed to capture artifacts for " + nodeAlias, e);
     }
   }
 }

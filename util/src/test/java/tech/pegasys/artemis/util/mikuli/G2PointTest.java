@@ -29,7 +29,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Disabled
 class G2PointTest {
 
   @Test

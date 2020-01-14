@@ -18,10 +18,12 @@ import org.apache.milagro.amcl.BLS381.ROM;
 
 class Util {
 
+  static final BIG P = new BIG(ROM.Modulus);
+
   /**
    * Calculate (y_im * 2) // q (which corresponds to the a1 flag in the Eth2 BLS spec)
    *
-   * <p>This is used to disambiguate Y, given X, as per the spec. q is the curve modulus.
+   * <p>This is used to disambiguate Y, given X, as per the spec. P is the curve modulus.
    *
    * @param yIm the imaginary part of the Y coordinate of the point
    * @return true if the a1 flag and yIm correspond
@@ -29,7 +31,7 @@ class Util {
   static boolean calculateYFlag(BIG yIm) {
     BIG tmp = new BIG(yIm);
     tmp.add(yIm);
-    tmp.div(new BIG(ROM.Modulus));
+    tmp.div(P);
     return tmp.isunity();
   }
 }
