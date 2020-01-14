@@ -62,9 +62,9 @@ public class CommitteeAssignmentManager {
     this.committeeAssignments = commiteeAssignments;
   }
 
-  void updateCommiteeAssignments(
+  void updateCommitteeAssignments(
       final BeaconState state, final UnsignedLong epoch, EventBus eventBus) {
-    Set<Integer> committeeIndicesToRegister = getNewCommiteeeAssignments(state, epoch);
+    Set<Integer> committeeIndicesToRegister = getNewCommitteeAssignments(state, epoch);
     handleCommitteeIndexRegistrations(epoch, committeeIndicesToRegister, eventBus);
     handleCommitteeIndexDeregistrations(epoch, eventBus);
   }
@@ -105,7 +105,7 @@ public class CommitteeAssignmentManager {
 
   // Returns committee indices to subscribe according to the updated committee assignments
   // Fills in committeeAssignments mapping with attester information to produce attestations
-  private Set<Integer> getNewCommiteeeAssignments(BeaconState state, UnsignedLong epoch) {
+  private Set<Integer> getNewCommitteeAssignments(BeaconState state, UnsignedLong epoch) {
 
     Set<Integer> committeeIndicesToSubscribe = new HashSet<>();
 

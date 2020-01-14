@@ -77,7 +77,7 @@ class CommitteeAssignmentManagerTest {
   @Test
   void nothingAlreadyRegistered_someToRegister() throws Exception {
     EventBus eventBus = mock(EventBus.class);
-    committeeAssignmentManager.updateCommiteeAssignments(
+    committeeAssignmentManager.updateCommitteeAssignments(
         state, UnsignedLong.valueOf(GENESIS_EPOCH), eventBus);
 
     Waiter.waitFor(() -> verify(eventBus, times(1)).post(any(CommitteeAssignmentEvent.class)));
@@ -89,9 +89,9 @@ class CommitteeAssignmentManagerTest {
   void someAlreadyRegistered_someToRegister() throws Exception {
     EventBus eventBus = mock(EventBus.class);
 
-    committeeAssignmentManager.updateCommiteeAssignments(
+    committeeAssignmentManager.updateCommitteeAssignments(
         state, UnsignedLong.valueOf(GENESIS_EPOCH), eventBus);
-    committeeAssignmentManager.updateCommiteeAssignments(
+    committeeAssignmentManager.updateCommitteeAssignments(
         state, UnsignedLong.valueOf(GENESIS_EPOCH).plus(UnsignedLong.ONE), eventBus);
 
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(any(CommitteeAssignmentEvent.class)));
@@ -109,9 +109,9 @@ class CommitteeAssignmentManagerTest {
 
     EventBus eventBus = mock(EventBus.class);
 
-    committeeAssignmentManager.updateCommiteeAssignments(
+    committeeAssignmentManager.updateCommitteeAssignments(
         state, UnsignedLong.valueOf(GENESIS_EPOCH), eventBus);
-    committeeAssignmentManager.updateCommiteeAssignments(
+    committeeAssignmentManager.updateCommitteeAssignments(
         state, UnsignedLong.valueOf(GENESIS_EPOCH).plus(UnsignedLong.ONE), eventBus);
 
     ensureConditionRemainsMet(
@@ -119,7 +119,7 @@ class CommitteeAssignmentManagerTest {
 
     UnsignedLong secondEpoch = UnsignedLong.valueOf(3);
     state.setSlot(secondEpoch.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)));
-    committeeAssignmentManager.updateCommiteeAssignments(state, secondEpoch, eventBus);
+    committeeAssignmentManager.updateCommitteeAssignments(state, secondEpoch, eventBus);
 
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(any(CommitteeAssignmentEvent.class)));
     Waiter.waitFor(() -> verify(eventBus, times(1)).post(any(CommitteeDismissalEvent.class)));
@@ -136,9 +136,9 @@ class CommitteeAssignmentManagerTest {
 
     EventBus eventBus = mock(EventBus.class);
 
-    committeeAssignmentManager.updateCommiteeAssignments(state, UnsignedLong.valueOf(0), eventBus);
-    committeeAssignmentManager.updateCommiteeAssignments(state, UnsignedLong.valueOf(1), eventBus);
-    committeeAssignmentManager.updateCommiteeAssignments(state, UnsignedLong.valueOf(2), eventBus);
+    committeeAssignmentManager.updateCommitteeAssignments(state, UnsignedLong.valueOf(0), eventBus);
+    committeeAssignmentManager.updateCommitteeAssignments(state, UnsignedLong.valueOf(1), eventBus);
+    committeeAssignmentManager.updateCommitteeAssignments(state, UnsignedLong.valueOf(2), eventBus);
 
     ensureConditionRemainsMet(
         () -> verify(eventBus, never()).post(any(CommitteeAssignmentEvent.class)));
