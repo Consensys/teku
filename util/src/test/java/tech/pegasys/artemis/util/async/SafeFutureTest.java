@@ -20,9 +20,25 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.CountingNoOpAppender;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class SafeFutureTest {
+
+  @AfterEach
+  public void tearDown() {
+    // Reset logging to remove any additional appenders we added
+    final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+    ctx.reconfigure();
+  }
 
   @Test
   void of_successfullyCompletedFuture() {
@@ -180,5 +196,74 @@ class SafeFutureTest {
 
     final SafeFuture<Void> chainedFuture = future1.thenAccept(foo -> {});
     assertThat(chainedFuture).isInstanceOf(SafeFuture.class);
+  }
+
+  @Test
+  public void finish_shouldNotLogHandledExceptions() {
+    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.finish(() -> {}, onError -> {});
+    safeFuture.completeExceptionally(new RuntimeException("Oh no!"));
+
+    assertThat(logCounter.getCount()).isZero();
+  }
+
+  @Test
+  public void finish_shouldReportExceptionsThrowBySuccessHandler() {
+    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.finish(
+        () -> {
+          throw new RuntimeException("Oh no!");
+        },
+        onError -> {});
+    safeFuture.complete(null);
+
+    assertThat(logCounter.getCount()).isEqualTo(1);
+  }
+
+  @Test
+  public void finish_shouldReportExceptionsThrowByErrorHandler() {
+    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.finish(
+        () -> {},
+        onError -> {
+          throw new RuntimeException("Oh no!");
+        });
+    safeFuture.completeExceptionally(new Exception("Original exception"));
+
+    assertThat(logCounter.getCount()).isEqualTo(1);
+  }
+
+  @Test
+  public void reportExceptions_shouldLogUnhandledExceptions() {
+    final CountingNoOpAppender logCounter = startCountingReportedUnhandledExceptions();
+
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.reportExceptions();
+    safeFuture.completeExceptionally(new RuntimeException("Oh no!"));
+
+    assertThat(logCounter.getCount()).isEqualTo(1);
+  }
+
+  private CountingNoOpAppender startCountingReportedUnhandledExceptions() {
+    final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+    final Configuration config = ctx.getConfiguration();
+    final CountingNoOpAppender appender =
+        new CountingNoOpAppender("Mock", PatternLayout.newBuilder().build());
+    appender.start();
+    config.addAppender(appender);
+    AppenderRef ref = AppenderRef.createAppenderRef("Mock", null, null);
+    AppenderRef[] refs = new AppenderRef[] {ref};
+    LoggerConfig loggerConfig =
+        LoggerConfig.createLogger(false, Level.ERROR, "Mock", null, refs, null, config, null);
+    loggerConfig.addAppender(appender, null, null);
+    config.addLogger(SafeFuture.class.getName(), loggerConfig);
+    ctx.updateLoggers();
+    return appender;
   }
 }
