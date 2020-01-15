@@ -17,6 +17,7 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttest
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -143,10 +144,7 @@ public class AttestationAggregator {
    * @param srcAttestations attestations which should have the same {@link Attestation#getData()}
    */
   public static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
-    assert !srcAttestations.isEmpty();
-    assert srcAttestations.stream()
-        .skip(1)
-        .allMatch(a -> a.getData().equals(srcAttestations.get(0).getData()));
+    Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
 
     int targetBitlistSize =
         srcAttestations.stream()
