@@ -332,8 +332,8 @@ class BeaconStateUtilTest {
   void processDepositsShouldIgnoreInvalidSignedDeposits() {
     ArrayList<DepositWithIndex> deposits = randomDeposits(3, 100);
     deposits.get(1).getData().setSignature(BLSSignature.empty());
-    BeaconStateWithCache state = initialize_beacon_state_from_eth1(
-        Bytes32.ZERO, UnsignedLong.ZERO, deposits);
+    BeaconStateWithCache state =
+        initialize_beacon_state_from_eth1(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
     assertEquals(2, state.getValidators().size());
     assertEquals(deposits.get(0).getData().getPubkey(), state.getValidators().get(0).getPubkey());
     assertEquals(deposits.get(2).getData().getPubkey(), state.getValidators().get(1).getPubkey());

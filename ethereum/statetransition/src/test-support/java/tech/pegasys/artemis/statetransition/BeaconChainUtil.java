@@ -117,7 +117,8 @@ public class BeaconChainUtil {
     Optional<SSZList<Attestation>> sszList =
         attestations.isEmpty()
             ? Optional.empty()
-            : Optional.of(new SSZList<>(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
+            : Optional.of(
+                new SSZList<>(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
 
     return createAndImportBlockAtSlot(slot, sszList);
   }
