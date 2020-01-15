@@ -36,6 +36,7 @@ import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -105,7 +106,6 @@ public class BeaconNode {
 
 @VisibleForTesting
 final class EventBusExceptionHandler implements SubscriberExceptionHandler {
-
   private final ALogger logger;
 
   EventBusExceptionHandler(final ALogger logger) {
@@ -115,22 +115,31 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
   @Override
   public final void handleException(
       final Throwable exception, final SubscriberExceptionContext context) {
-    if (!isSpecFailure(exception)) {
-      logger.log(Level.FATAL, "Unexpected exception thrown in handler - PLEASE FIX OR REPORT");
-      throw new RuntimeException(exception);
+    if (isSpecFailure(exception)) {
+      logger.log(Level.WARN, specFailedMessage(exception, context), exception);
+    } else {
+      logger.log(Level.FATAL, unexpectedExceptionMessage(exception, context), exception, Color.RED);
     }
-
-    logger.log(Level.WARN, specFailedMessage(exception, context));
   }
 
   private static boolean isSpecFailure(final Throwable exception) {
     return exception instanceof IllegalArgumentException;
   }
 
+  private static String unexpectedExceptionMessage(
+      final Throwable exception, final SubscriberExceptionContext context) {
+    return "PLEASE FIX OR REPORT | Unexpected exception thrown for "
+        + describeSubscriberException(exception, context);
+  }
+
   private static String specFailedMessage(
       final Throwable exception, final SubscriberExceptionContext context) {
-    return "Spec failed"
-        + " for event '"
+    return "Spec failed for " + describeSubscriberException(exception, context);
+  }
+
+  private static String describeSubscriberException(
+      final Throwable exception, final SubscriberExceptionContext context) {
+    return "event '"
         + context.getEvent().getClass().getName()
         + "'"
         + " in handler '"

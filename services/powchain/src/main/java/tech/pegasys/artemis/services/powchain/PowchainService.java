@@ -111,10 +111,9 @@ public class PowchainService implements ServiceInterface {
       }
       blockListener = new BlockListener(web3j, eventBus, depositContractListener);
     } else if (depositMode.equals(DEPOSIT_SIM)) {
-      JsonParser parser = new JsonParser();
       try {
         Reader reader = Files.newBufferedReader(Paths.get(depositSimFile), UTF_8);
-        JsonArray validatorsJSON = ((JsonArray) parser.parse(reader));
+        JsonArray validatorsJSON = ((JsonArray) JsonParser.parseReader(reader));
         validatorsJSON.forEach(
             object -> {
               if (object.getAsJsonObject().get(EVENTS) != null) {

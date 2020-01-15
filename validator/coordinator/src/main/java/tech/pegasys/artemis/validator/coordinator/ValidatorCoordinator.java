@@ -177,8 +177,8 @@ public class ValidatorCoordinator {
     // Update committee assignments and subscribe to required committee indices for the next 2
     // epochs
     UnsignedLong genesisEpoch = UnsignedLong.valueOf(GENESIS_EPOCH);
-    committeeAssignmentManager.updateCommiteeAssignments(genesisState, genesisEpoch, eventBus);
-    committeeAssignmentManager.updateCommiteeAssignments(
+    committeeAssignmentManager.updateCommitteeAssignments(genesisState, genesisEpoch, eventBus);
+    committeeAssignmentManager.updateCommitteeAssignments(
         genesisState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
   }
 
@@ -238,7 +238,7 @@ public class ValidatorCoordinator {
         reportExceptions(
             CompletableFuture.runAsync(
                 () ->
-                    committeeAssignmentManager.updateCommiteeAssignments(
+                    committeeAssignmentManager.updateCommitteeAssignments(
                         headState, epoch.plus(UnsignedLong.ONE), eventBus)));
       }
 
