@@ -76,7 +76,19 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
 
+  /**
+   *  For debug/test purposes only
+   *  enables/disables {@link DepositData} BLS signature verification
+   *  Setting to <code>false</code> significantly speeds up state initialization
+   */
   public static boolean BLS_VERIFY_DEPOSIT = true;
+
+  /**
+   *  For debug/test purposes only
+   *  enables/disables deposit root Merkle proofs generation/validation
+   *  Setting to <code>false</code> significantly speeds up state initialization
+   */
+  public static boolean DEPOSIT_PROOFS_ENABLED = true;
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
@@ -101,19 +113,25 @@ public class BeaconStateUtil {
     }
 
     // Process deposits
-    DepositUtil.calcDepositProofs(deposits);
-    long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
-    List<DepositData> leaves = deposits.stream().map(Deposit::getData).collect(Collectors.toList());
-    for (int i = 0; i < deposits.size(); i++) {
-      SSZList<DepositData> deposit_data_list =
-          new SSZList<>(leaves.subList(0, i + 1), depositListLength, DepositData.class);
-      state
-          .getEth1_data()
-          .setDeposit_root(
-              HashTreeUtil.hash_tree_root(
-                  HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
-      STDOUT.log(Level.DEBUG, "About to process deposit: " + i);
-      process_deposit(state, deposits.get(i));
+    if (DEPOSIT_PROOFS_ENABLED) {
+      DepositUtil.calcDepositProofs(deposits);
+      long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
+      List<DepositData> leaves = deposits.stream().map(Deposit::getData)
+          .collect(Collectors.toList());
+      for (int i = 0; i < deposits.size(); i++) {
+        SSZList<DepositData> deposit_data_list =
+            new SSZList<>(leaves.subList(0, i + 1), depositListLength, DepositData.class);
+        state
+            .getEth1_data()
+            .setDeposit_root(
+                HashTreeUtil.hash_tree_root(
+                    HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
+        STDOUT.log(Level.DEBUG, "About to process deposit: " + i);
+        process_deposit(state, deposits.get(i));
+      }
+    } else {
+      STDOUT.log(Level.WARN, "About to process " + deposits.size() + " deposits without proofs.");
+      deposits.forEach(deposit -> process_deposit(state, deposit));
     }
 
     // Process activations
@@ -148,14 +166,16 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    checkArgument(
-        is_valid_merkle_branch(
-            deposit.getData().hash_tree_root(),
-            deposit.getProof(),
-            Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
-            toIntExact(state.getEth1_deposit_index().longValue()),
-            state.getEth1_data().getDeposit_root()),
-        "process_deposit: Verify the Merkle branch");
+    if (DEPOSIT_PROOFS_ENABLED) {
+      checkArgument(
+          is_valid_merkle_branch(
+              deposit.getData().hash_tree_root(),
+              deposit.getProof(),
+              Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
+              toIntExact(state.getEth1_deposit_index().longValue()),
+              state.getEth1_data().getDeposit_root()),
+          "process_deposit: Verify the Merkle branch");
+    }
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
@@ -721,7 +741,6 @@ public class BeaconStateUtil {
    * (defaults to zero).
    *
    * @param domain_type
-   * @param fork_version
    * @return
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#bls_domain</a>
