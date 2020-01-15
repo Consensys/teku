@@ -17,24 +17,19 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getAttest
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.representsNewAttester;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSAggregate;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.config.Constants;
 
 public class AttestationAggregator {
 
@@ -120,46 +115,6 @@ public class AttestationAggregator {
     signaturesToAggregate.add(newAttestation.getAggregate_signature());
     oldAggregateAttestation.setAggregate_signature(
         BLSAggregate.bls_aggregate_signatures(signaturesToAggregate));
-  }
-
-  /**
-   * Groups passed attestations by their {@link
-   * tech.pegasys.artemis.datastructures.operations.AttestationData} and aggregates attestations in
-   * every group to a single {@link Attestation}
-   *
-   * @return a list of aggregated {@link Attestation}s with distinct {@link
-   *     tech.pegasys.artemis.datastructures.operations.AttestationData}
-   */
-  public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
-    Collection<List<Attestation>> groupedAtt =
-        srcAttestations.stream().collect(Collectors.groupingBy(Attestation::getData)).values();
-    return groupedAtt.stream()
-        .map(AttestationAggregator::aggregateAttestations)
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * Aggregates passed attestations
-   *
-   * @param srcAttestations attestations which should have the same {@link Attestation#getData()}
-   */
-  public static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
-    Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
-
-    int targetBitlistSize =
-        srcAttestations.stream()
-            .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
-            .max()
-            .getAsInt();
-    Bitlist targetBitlist = new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    srcAttestations.forEach(a -> targetBitlist.setAllBits(a.getAggregation_bits()));
-    BLSSignature targetSig =
-        BLSAggregate.bls_aggregate_signatures(
-            srcAttestations.stream()
-                .map(Attestation::getAggregate_signature)
-                .collect(Collectors.toList()));
-
-    return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
 
   public void reset() {
