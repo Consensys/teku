@@ -18,7 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDeposits;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.is_power_of_two;
@@ -35,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
@@ -43,6 +46,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -322,6 +326,17 @@ class BeaconStateUtilTest {
       int idx = CommitteeUtil.compute_shuffled_index(i, listSize, seed);
       assertEquals(shuffling[i], idx);
     }
+  }
+
+  @Test
+  void processDepositsShouldIgnoreInvalidSignedDeposits() {
+    ArrayList<DepositWithIndex> deposits = randomDeposits(3, 100);
+    deposits.get(1).getData().setSignature(BLSSignature.empty());
+    BeaconStateWithCache state = initialize_beacon_state_from_eth1(
+        Bytes32.ZERO, UnsignedLong.ZERO, deposits);
+    assertEquals(2, state.getValidators().size());
+    assertEquals(deposits.get(0).getData().getPubkey(), state.getValidators().get(0).getPubkey());
+    assertEquals(deposits.get(2).getData().getPubkey(), state.getValidators().get(1).getPubkey());
   }
 
   // *************** END Shuffling Tests *****************
