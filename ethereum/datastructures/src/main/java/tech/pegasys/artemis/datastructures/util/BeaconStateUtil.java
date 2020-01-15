@@ -51,8 +51,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
@@ -111,6 +114,7 @@ public class BeaconStateUtil {
     }
 
     // Process deposits
+    Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
     if (DEPOSIT_PROOFS_ENABLED) {
       DepositUtil.calcDepositProofs(deposits);
       long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
@@ -125,11 +129,11 @@ public class BeaconStateUtil {
                 HashTreeUtil.hash_tree_root(
                     HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
         STDOUT.log(Level.DEBUG, "About to process deposit: " + i);
-        process_deposit(state, deposits.get(i));
+        process_deposit(state, deposits.get(i), keyCache);
       }
     } else {
       STDOUT.log(Level.WARN, "About to process " + deposits.size() + " deposits without proofs.");
-      deposits.forEach(deposit -> process_deposit(state, deposit));
+      deposits.forEach(deposit -> process_deposit(state, deposit, keyCache));
     }
 
     // Process activations
@@ -164,6 +168,12 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
+    process_deposit(state, deposit, null);
+  }
+
+  private static void process_deposit(
+      BeaconState state, Deposit deposit, Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+
     if (DEPOSIT_PROOFS_ENABLED) {
       checkArgument(
           is_valid_merkle_branch(
@@ -179,9 +189,20 @@ public class BeaconStateUtil {
 
     BLSPublicKey pubkey = deposit.getData().getPubkey();
     UnsignedLong amount = deposit.getData().getAmount();
-    List<BLSPublicKey> validator_pubkeys =
-        state.getValidators().stream().map(Validator::getPubkey).collect(Collectors.toList());
-    if (!validator_pubkeys.contains(pubkey)) {
+
+    SSZList<Validator> validators = state.getValidators();
+    OptionalInt existingIndex;
+    if (pubKeyToIndexMap != null) {
+      Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
+      existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
+    } else {
+      existingIndex =
+          IntStream.range(0, validators.size())
+              .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
+              .findFirst();
+    }
+
+    if (existingIndex.isEmpty()) {
 
       // Verify the deposit signature (proof of possession) for new validators.
       // Note: Deposits are valid across forks, thus the deposit
@@ -198,7 +219,7 @@ public class BeaconStateUtil {
         return;
       }
 
-      STDOUT.log(Level.DEBUG, "Adding new validator to state");
+      STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
       state
           .getValidators()
           .add(
@@ -216,8 +237,7 @@ public class BeaconStateUtil {
                   FAR_FUTURE_EPOCH));
       state.getBalances().add(amount);
     } else {
-      int index = validator_pubkeys.indexOf(pubkey);
-      increase_balance(state, index, amount);
+      increase_balance(state, existingIndex.getAsInt(), amount);
     }
   }
 
