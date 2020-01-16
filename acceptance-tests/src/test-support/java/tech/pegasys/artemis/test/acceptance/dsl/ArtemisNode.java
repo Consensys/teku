@@ -122,7 +122,8 @@ public class ArtemisNode extends Node {
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
-    waitFor(() -> assertThat(getCurrentBeaconHead()).isEqualTo(targetNode.getCurrentBeaconHead()));
+    waitFor(
+        () -> assertThat(getCurrentBeaconHead()).isEqualTo(targetNode.getCurrentBeaconHead()), 300);
   }
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
@@ -150,8 +151,12 @@ public class ArtemisNode extends Node {
   }
 
   public void copyDatabaseFileToContainer(File databaseFile) {
+    copyFileToContainer(databaseFile, DATABASE_PATH);
+  }
+
+  public void copyFileToContainer(File file, String containerPath) {
     container.withCopyFileToContainer(
-        MountableFile.forHostPath(databaseFile.getAbsolutePath()), DATABASE_PATH);
+        MountableFile.forHostPath(file.getAbsolutePath()), containerPath);
   }
 
   String getMultiAddr() {
@@ -247,9 +252,21 @@ public class ArtemisNode extends Node {
       return this;
     }
 
+    public Config withInteropValidators(final int startIndex, final int validatorCount) {
+      getSection(INTEROP_SECTION).put("ownedValidatorStartIndex", startIndex);
+      getSection(INTEROP_SECTION).put("ownedValidatorCount", validatorCount);
+      return this;
+    }
+
     public Config withRealNetwork() {
       setNetworkMode("jvmlibp2p");
       getSection(INTEROP_SECTION).put("privateKey", Bytes.wrap(privateKey.bytes()).toHexString());
+      return this;
+    }
+
+    public Config withGenesisState(String pathToGenesisState) {
+      getSection(INTEROP_SECTION).put("startState", pathToGenesisState);
+
       return this;
     }
 
