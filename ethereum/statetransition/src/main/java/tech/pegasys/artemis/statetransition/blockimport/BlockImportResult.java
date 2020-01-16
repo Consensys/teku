@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition.blockimport;
 
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
 
 public interface BlockImportResult {
   BlockImportResult FAILED_BLOCK_IS_FROM_FUTURE =
@@ -26,7 +25,7 @@ public interface BlockImportResult {
       new FailedBlockImportResult(
           FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED, Optional.empty());
 
-  static BlockImportResult failedStateTransition(final StateTransitionException cause) {
+  static BlockImportResult failedStateTransition(final Exception cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
   }
 

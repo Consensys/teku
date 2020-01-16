@@ -1,5 +1,3 @@
-import net.ltgt.gradle.errorprone.CheckSeverity
-
 import java.text.SimpleDateFormat
 
 plugins {
@@ -108,21 +106,21 @@ allprojects {
     options.errorprone {
       disableWarningsInGeneratedCode
       // Our equals need to be symmetric, this checker doesn't respect that.
-      check('EqualsGetClass', CheckSeverity.OFF)
+      check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       // We use the JSR-305 annotations instead of the Google annotations.
-      check('ImmutableEnumChecker', CheckSeverity.OFF)
+      check('ImmutableEnumChecker', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
-      check('FieldCanBeFinal', CheckSeverity.OFF)
-      check('InsecureCryptoUsage', CheckSeverity.WARN)
-      check('WildcardImport', CheckSeverity.WARN)
+      check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
+      check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
 
       // This check is broken in Java 12.  See https://github.com/google/error-prone/issues/1257
       if (JavaVersion.current() == JavaVersion.VERSION_12) {
-        check('Finally', CheckSeverity.OFF)
+        check('Finally', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       }
       // This check is broken after Java 12.  See https://github.com/google/error-prone/issues/1352
       if (JavaVersion.current() > JavaVersion.VERSION_12) {
-        check('TypeParameterUnusedInFormals', CheckSeverity.OFF)
+        check('TypeParameterUnusedInFormals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       }
     }
     options.encoding = 'UTF-8'

@@ -45,6 +45,7 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.Store.Transaction;
 
 public class ForkChoiceUtil {
 
@@ -253,24 +254,30 @@ public class ForkChoiceUtil {
     store.putBlockState(block.signing_root("signature"), state);
 
     // Update justified checkpoint
-    if (state
-            .getCurrent_justified_checkpoint()
-            .getEpoch()
-            .compareTo(store.getJustifiedCheckpoint().getEpoch())
-        > 0) {
-      store.setBestJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
-      if (should_update_justified_checkpoint(store, state.getCurrent_justified_checkpoint())) {
-        store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+    final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
+    if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
+      try {
+        storeCheckpointState(
+            store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        return BlockImportResult.failedStateTransition(e);
+      }
+      store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+      if (should_update_justified_checkpoint(store, justifiedCheckpoint)) {
+        store.setJustifiedCheckpoint(justifiedCheckpoint);
       }
     }
 
     // Update finalized checkpoint
-    if (state
-            .getFinalized_checkpoint()
-            .getEpoch()
-            .compareTo(store.getFinalizedCheckpoint().getEpoch())
-        > 0) {
-      store.setFinalizedCheckpoint(state.getFinalized_checkpoint());
+    final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
+    if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
+      try {
+        storeCheckpointState(
+            store, st, finalizedCheckpoint, store.getBlockState(finalizedCheckpoint.getRoot()));
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        return BlockImportResult.failedStateTransition(e);
+      }
+      store.setFinalizedCheckpoint(finalizedCheckpoint);
     }
 
     final BlockProcessingRecord record = new BlockProcessingRecord(preState, block, state);
@@ -366,12 +373,11 @@ public class ForkChoiceUtil {
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
-    BeaconStateWithCache base_state =
-        BeaconStateWithCache.deepCopy(store.getBlockState(target.getRoot()));
+    BeaconState targetRootState = store.getBlockState(target.getRoot());
     UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     checkArgument(
         unixTimeStamp.compareTo(
-                base_state
+                targetRootState
                     .getGenesis_time()
                     .plus(target.getEpochSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
             >= 0,
@@ -390,10 +396,7 @@ public class ForkChoiceUtil {
         "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
 
     // Store target checkpoint state if not yet seen
-    if (!store.containsCheckpointState(target)) {
-      stateTransition.process_slots(base_state, target.getEpochSlot(), false);
-      store.putCheckpointState(target, base_state);
-    }
+    storeCheckpointState(store, stateTransition, target, targetRootState);
     BeaconState target_state = store.getCheckpointState(target);
 
     // Attestations can only affect the fork choice of subsequent slots.
@@ -420,6 +423,25 @@ public class ForkChoiceUtil {
         store.putLatestMessage(
             i, new Checkpoint(target.getEpoch(), attestation.getData().getBeacon_block_root()));
       }
+    }
+  }
+
+  private static void storeCheckpointState(
+      final Transaction store,
+      final StateTransition stateTransition,
+      final Checkpoint target,
+      final BeaconState targetRootState)
+      throws SlotProcessingException, EpochProcessingException {
+    if (!store.containsCheckpointState(target)) {
+      final BeaconState targetState;
+      if (target.getEpochSlot().equals(targetRootState.getSlot())) {
+        targetState = targetRootState;
+      } else {
+        final BeaconStateWithCache base_state = BeaconStateWithCache.deepCopy(targetRootState);
+        stateTransition.process_slots(base_state, target.getEpochSlot(), false);
+        targetState = base_state;
+      }
+      store.putCheckpointState(target, targetState);
     }
   }
 }
