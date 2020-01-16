@@ -328,6 +328,8 @@ class BeaconStateUtilTest {
     }
   }
 
+  // *************** END Shuffling Tests *****************
+
   @Test
   void processDepositsShouldIgnoreInvalidSignedDeposits() {
     ArrayList<DepositWithIndex> deposits = randomDeposits(3, 100);
@@ -339,5 +341,8 @@ class BeaconStateUtilTest {
     assertEquals(deposits.get(2).getData().getPubkey(), state.getValidators().get(1).getPubkey());
   }
 
-  // *************** END Shuffling Tests *****************
+  @Test
+  void ensureVerifyDepositDefaultsToTrue() {
+    assertThat(BeaconStateUtil.BLS_VERIFY_DEPOSIT).isTrue();
+  }
 }
