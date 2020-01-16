@@ -4,6 +4,9 @@ plugins {
 
 dependencies {
   implementation project(':util')
+  implementation project(':storage')
+  implementation project(':ethereum:statetransition')
+  implementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   implementation project(':eth-tests')
   implementation project(':ethereum:datastructures')
   implementation 'org.apache.tuweni:tuweni-bytes'
