@@ -14,10 +14,12 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
@@ -66,5 +68,21 @@ class BLS12381Test {
     Signature aggregatedSignature = BLS12381.aggregate(signatures);
 
     assertTrue(BLS12381.fastAggregateVerify(publicKeys, message, aggregatedSignature));
+  }
+
+  @Test
+  void signingWithZeroSecretKeyGivesPointAtInfinity() {
+    SecretKey secretKey = new SecretKey(new Scalar(new BIG(0)));
+    Signature sig = BLS12381.sign(secretKey, Bytes.wrap("Hello, world!".getBytes(UTF_8)));
+    assertTrue(sig.g2Point().ecp2Point().is_infinity());
+  }
+
+  @Test
+  void verifyingWithPointsAtInfinityAlwaysSucceeds() {
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    PublicKey infPubKey = new PublicKey(new G1Point());
+    Signature infSignature = new Signature(new G2Point());
+
+    assertTrue(BLS12381.verify(infPubKey, message, infSignature));
   }
 }

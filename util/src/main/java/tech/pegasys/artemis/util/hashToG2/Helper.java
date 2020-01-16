@@ -54,6 +54,9 @@ class Helper {
   /**
    * Tests whether the given point lies in the G2 group.
    *
+   * <p>Once the GLV patent has expired we can replace the qChain with the endomorphism here:
+   * https://eprint.iacr.org/2019/814.pdf
+   *
    * @param p a JacobianPoint
    * @return true if the point is in G2, false otherwise
    */

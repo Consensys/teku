@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
-import static tech.pegasys.artemis.util.mikuli.G2Point.hashToG2;
+import static tech.pegasys.artemis.util.hashToG2.HashToCurve.hashToG2;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -54,7 +54,7 @@ public final class BLS12381 {
    * @return The Signature, not null
    */
   public static Signature sign(SecretKey secretKey, Bytes message) {
-    G2Point hashInGroup2 = hashToG2(message);
+    G2Point hashInGroup2 = new G2Point(hashToG2(message));
     return new Signature(secretKey.sign(hashInGroup2));
   }
 
@@ -117,7 +117,7 @@ public final class BLS12381 {
    * @return True if the verification is successful, false otherwise
    */
   private static boolean coreVerify(PublicKey publicKey, Bytes message, Signature signature) {
-    G2Point hashInGroup2 = hashToG2(message);
+    G2Point hashInGroup2 = new G2Point(hashToG2(message));
     return signature.verify(publicKey, hashInGroup2);
   }
 }
