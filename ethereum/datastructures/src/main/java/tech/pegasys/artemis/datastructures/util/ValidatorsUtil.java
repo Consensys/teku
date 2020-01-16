@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.util;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,18 +71,11 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
   public static List<Integer> get_active_validator_indices(BeaconState state, UnsignedLong epoch) {
-    List<Integer> active_validator_indices = Collections.synchronizedList(new ArrayList<>());
     List<Validator> validators = state.getValidators();
-    IntStream.range(0, validators.size())
-        .parallel()
-        .forEachOrdered(
-            index -> {
-              if (is_active_validator(validators.get(index), epoch)) {
-                active_validator_indices.add(index);
-              }
-            });
-
-    return active_validator_indices;
+    return IntStream.range(0, validators.size())
+        .filter(index -> is_active_validator(validators.get(index), epoch))
+        .boxed()
+        .collect(Collectors.toList());
   }
 
   /**

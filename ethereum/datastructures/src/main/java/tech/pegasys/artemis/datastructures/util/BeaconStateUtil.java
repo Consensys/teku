@@ -51,8 +51,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
@@ -75,6 +78,18 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
+
+  /**
+   * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
+   * Setting to <code>false</code> significantly speeds up state initialization
+   */
+  public static boolean BLS_VERIFY_DEPOSIT = true;
+
+  /**
+   * For debug/test purposes only enables/disables deposit root Merkle proofs generation/validation
+   * Setting to <code>false</code> significantly speeds up state initialization
+   */
+  public static boolean DEPOSIT_PROOFS_ENABLED = true;
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
@@ -99,19 +114,26 @@ public class BeaconStateUtil {
     }
 
     // Process deposits
-    DepositUtil.calcDepositProofs(deposits);
-    long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
-    List<DepositData> leaves = deposits.stream().map(Deposit::getData).collect(Collectors.toList());
-    for (int i = 0; i < deposits.size(); i++) {
-      SSZList<DepositData> deposit_data_list =
-          new SSZList<>(leaves.subList(0, i + 1), depositListLength, DepositData.class);
-      state
-          .getEth1_data()
-          .setDeposit_root(
-              HashTreeUtil.hash_tree_root(
-                  HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
-      STDOUT.log(Level.DEBUG, "About to process deposit: " + i);
-      process_deposit(state, deposits.get(i));
+    Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
+    if (DEPOSIT_PROOFS_ENABLED) {
+      DepositUtil.calcDepositProofs(deposits);
+      long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
+      List<DepositData> leaves =
+          deposits.stream().map(Deposit::getData).collect(Collectors.toList());
+      for (int i = 0; i < deposits.size(); i++) {
+        SSZList<DepositData> deposit_data_list =
+            new SSZList<>(leaves.subList(0, i + 1), depositListLength, DepositData.class);
+        state
+            .getEth1_data()
+            .setDeposit_root(
+                HashTreeUtil.hash_tree_root(
+                    HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
+        STDOUT.log(Level.DEBUG, "About to process deposit: " + i);
+        process_deposit(state, deposits.get(i), keyCache);
+      }
+    } else {
+      STDOUT.log(Level.WARN, "About to process " + deposits.size() + " deposits without proofs.");
+      deposits.forEach(deposit -> process_deposit(state, deposit, keyCache));
     }
 
     // Process activations
@@ -146,38 +168,58 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    checkArgument(
-        is_valid_merkle_branch(
-            deposit.getData().hash_tree_root(),
-            deposit.getProof(),
-            Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
-            toIntExact(state.getEth1_deposit_index().longValue()),
-            state.getEth1_data().getDeposit_root()),
-        "process_deposit: Verify the Merkle branch");
+    process_deposit(state, deposit, null);
+  }
+
+  private static void process_deposit(
+      BeaconState state, Deposit deposit, Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
+
+    if (DEPOSIT_PROOFS_ENABLED) {
+      checkArgument(
+          is_valid_merkle_branch(
+              deposit.getData().hash_tree_root(),
+              deposit.getProof(),
+              Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
+              toIntExact(state.getEth1_deposit_index().longValue()),
+              state.getEth1_data().getDeposit_root()),
+          "process_deposit: Verify the Merkle branch");
+    }
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
     BLSPublicKey pubkey = deposit.getData().getPubkey();
     UnsignedLong amount = deposit.getData().getAmount();
-    List<BLSPublicKey> validator_pubkeys =
-        state.getValidators().stream().map(Validator::getPubkey).collect(Collectors.toList());
-    if (!validator_pubkeys.contains(pubkey)) {
+
+    SSZList<Validator> validators = state.getValidators();
+    OptionalInt existingIndex;
+    if (pubKeyToIndexMap != null) {
+      Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
+      existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
+    } else {
+      existingIndex =
+          IntStream.range(0, validators.size())
+              .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
+              .findFirst();
+    }
+
+    if (existingIndex.isEmpty()) {
 
       // Verify the deposit signature (proof of possession) for new validators.
       // Note: Deposits are valid across forks, thus the deposit
       // domain is retrieved directly from `compute_domain`
       boolean proof_is_valid =
-          bls_verify(
-              pubkey,
-              deposit.getData().signing_root("signature"),
-              deposit.getData().getSignature(),
-              compute_domain(DOMAIN_DEPOSIT));
+          !BLS_VERIFY_DEPOSIT
+              || bls_verify(
+                  pubkey,
+                  deposit.getData().signing_root("signature"),
+                  deposit.getData().getSignature(),
+                  compute_domain(DOMAIN_DEPOSIT));
       if (!proof_is_valid) {
         STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
         return;
       }
 
-      STDOUT.log(Level.DEBUG, "Adding new validator to state");
+      STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
       state
           .getValidators()
           .add(
@@ -195,8 +237,7 @@ public class BeaconStateUtil {
                   FAR_FUTURE_EPOCH));
       state.getBalances().add(amount);
     } else {
-      int index = validator_pubkeys.indexOf(pubkey);
-      increase_balance(state, index, amount);
+      increase_balance(state, existingIndex.getAsInt(), amount);
     }
   }
 
@@ -718,7 +759,6 @@ public class BeaconStateUtil {
    * (defaults to zero).
    *
    * @param domain_type
-   * @param fork_version
    * @return
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#bls_domain</a>
