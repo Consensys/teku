@@ -16,15 +16,23 @@ package tech.pegasys.artemis.datastructures.util;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.collections.LimitedHashMap;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {
+
+  public static int MAX_ACTIVE_VALIDATORS_CACHE = 64;
+
+  public static Map<UnsignedLong, List<Integer>> activeValidatorsCache =
+      Collections.synchronizedMap(new LimitedHashMap<>(MAX_ACTIVE_VALIDATORS_CACHE));
 
   /**
    * Check if (this) validator is active in the given epoch.
@@ -101,10 +109,13 @@ public class ValidatorsUtil {
    */
   public static List<Integer> get_active_validator_indices(BeaconState state, UnsignedLong epoch) {
     List<Validator> validators = state.getValidators();
-    return IntStream.range(0, validators.size())
-        .filter(index -> is_active_validator(validators.get(index), epoch))
-        .boxed()
-        .collect(Collectors.toList());
+    return activeValidatorsCache.computeIfAbsent(
+        epoch,
+        e ->
+            IntStream.range(0, validators.size())
+                .filter(index -> is_active_validator(validators.get(index), epoch))
+                .boxed()
+                .collect(Collectors.toList()));
   }
 
   /**
