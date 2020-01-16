@@ -37,7 +37,6 @@ public class Eth2NetworkBuilder {
   protected MetricsSystem metricsSystem;
   protected List<RpcMethod> rpcMethods = new ArrayList<>();
   protected List<PeerHandler> peerHandlers = new ArrayList<>();
-  protected NetworkConfig discoveryNetworkConfig;
 
   private Eth2NetworkBuilder() {}
 
@@ -59,8 +58,7 @@ public class Eth2NetworkBuilder {
     // Build core network and inject eth2 handlers
     final P2PNetwork<?> network = buildNetwork();
 
-    return new Eth2Network(
-        network, eth2PeerManager, eventBus, chainStorageClient, discoveryNetworkConfig);
+    return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient, config);
   }
 
   protected P2PNetwork<?> buildNetwork() {
@@ -81,12 +79,6 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder config(final NetworkConfig config) {
     checkNotNull(config);
     this.config = config;
-    return this;
-  }
-
-  public Eth2NetworkBuilder discovery(final NetworkConfig discoveryNetworkConfig) {
-    checkNotNull(discoveryNetworkConfig);
-    this.discoveryNetworkConfig = discoveryNetworkConfig;
     return this;
   }
 

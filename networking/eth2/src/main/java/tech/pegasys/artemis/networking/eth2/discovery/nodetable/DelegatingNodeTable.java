@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.discovery;
+package tech.pegasys.artemis.networking.eth2.discovery.nodetable;
 
 import java.util.List;
 import java.util.Optional;

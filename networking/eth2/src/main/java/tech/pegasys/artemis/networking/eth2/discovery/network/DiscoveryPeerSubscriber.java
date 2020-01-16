@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.discovery;
+package tech.pegasys.artemis.networking.eth2.discovery.network;
 
-import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
-
-public class DiscoveryNewPeerResponse {
-
-  private final NodeRecordInfo nodeRecord;
-
-  public DiscoveryNewPeerResponse(NodeRecordInfo nodeRecord) {
-    this.nodeRecord = nodeRecord;
-  }
-
-  public NodeRecordInfo getNodeRecord() {
-    return nodeRecord;
-  }
+public interface DiscoveryPeerSubscriber {
+  void onDiscovery(DiscoveryPeer peer);
 }

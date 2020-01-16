@@ -20,8 +20,6 @@ import com.google.common.eventbus.EventBus;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -46,35 +44,80 @@ import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.service.serviceutils.Service.State;
-import tech.pegasys.artemis.service.serviceutils.TypedService;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeer;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeerSubscriber;
+import tech.pegasys.artemis.networking.eth2.discovery.nodetable.EventEmittingNodeTable;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
-public class Eth2DiscoveryService extends TypedService<State> implements DiscoveryNetwork {
+public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
+  private final Logger logger = LogManager.getLogger();
 
-  private static final Logger logger = LogManager.getLogger(Eth2DiscoveryService.class);
-
-  private static final NodeRecordFactory NODE_RECORD_FACTORY =
-      new NodeRecordFactory(new IdentitySchemaV4Interpreter());
-  private static final SerializerFactory TEST_SERIALIZER =
-      new NodeSerializerFactory(NODE_RECORD_FACTORY);
-
-  private DiscoveryManager dm;
-  private NodeTable nodeTable;
-
-  // core parameters for discovery service
-  private String networkInterface;
-  private int port;
-  private byte[] privateKey; // for generating ENR records
-  private List<String> peers; // for setting boot nodes
-
-  // the network to potentially affect with discovered peers
-  private Optional<P2PNetwork<?>> network = Optional.empty();
+  private final DiscoveryManager dm;
+  private final NodeTable nodeTable;
 
   // event bus by which to signal other services
-  private EventBus eventBus;
+  private final EventBus eventBus;
+  private final NetworkConfig config;
+
+  public Eth2DiscoveryService(final NetworkConfig networkConfig, final EventBus eventBus) {
+    this.config = networkConfig;
+    this.eventBus = eventBus;
+
+    final NodeRecord localNodeRecord;
+    try {
+      localNodeRecord =
+          createNodeRecord(
+              config.getDiscoveryPrivateKey(),
+              config.getNetworkInterface(),
+              config.getListenPort());
+      logger.info("localNodeRecord:" + localNodeRecord);
+      // the following two lines to be removed when discovery master is next updated
+      logger.info("localNodeEnr:" + localNodeRecord.asBase64());
+      logger.info("localNodeId:" + localNodeRecord.getNodeId());
+
+      Database database0 = Database.inMemoryDB();
+      NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
+      NodeRecordFactory NODE_RECORD_FACTORY =
+          new NodeRecordFactory(new IdentitySchemaV4Interpreter());
+      SerializerFactory TEST_SERIALIZER = new NodeSerializerFactory(NODE_RECORD_FACTORY);
+      NodeTableStorage nodeTableStorage0 =
+          nodeTableStorageFactory.createTable(
+              database0,
+              TEST_SERIALIZER,
+              (oldSeq) -> localNodeRecord,
+              () -> {
+                if (config.getDiscoveryPeers().size() > 0) {
+                  return config.getDiscoveryPeers().stream()
+                      .map(this::setupRemoteNode)
+                      .collect(Collectors.toList());
+                } else {
+                  return Collections.emptyList();
+                }
+              }); // Collections.singletonList(remoteNodeRecord)
+      NodeBucketStorage nodeBucketStorage0 =
+          nodeTableStorageFactory.createBucketStorage(database0, TEST_SERIALIZER, localNodeRecord);
+
+      this.nodeTable = new EventEmittingNodeTable(nodeTableStorage0.get(), eventBus);
+
+      this.dm =
+          new DiscoveryManagerImpl(
+              // delegating node table
+              nodeTable,
+              nodeBucketStorage0,
+              localNodeRecord,
+              Bytes.wrap(config.getDiscoveryPrivateKey()),
+              NODE_RECORD_FACTORY,
+              Schedulers.createDefault().newSingleThreadDaemon("server-1"),
+              Schedulers.createDefault().newSingleThreadDaemon("client-1"));
+    } catch (Exception e) {
+      logger.error("Error constructing local node record: " + e.getMessage());
+      throw new RuntimeException("Error constructing DiscoveryService");
+    }
+  }
 
   @Override
   public SafeFuture<State> doStart() {
@@ -86,20 +129,6 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
   public SafeFuture<State> doStop() {
     dm.stop();
     return SafeFuture.completedFuture(this.getState());
-  }
-
-  public void setNetwork(P2PNetwork<?> network) {
-    assert network != null;
-    this.network = Optional.of(network);
-  }
-
-  public Optional<P2PNetwork<?>> getNetwork() {
-    return network;
-  }
-
-  public void setEventBus(EventBus eventBus) {
-    assert eventBus != null;
-    this.eventBus = eventBus;
   }
 
   public EventBus getEventBus() {
@@ -125,10 +154,7 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
   public Stream<DiscoveryPeer> streamPeers() {
     // use logLimit of 0 to retrieve all entries in the node table
     return nodeTable.findClosestNodes(nodeTable.getHomeNode().getNodeId(), 0).stream()
-        .map(
-            n -> {
-              return DiscoveryPeer.getDiscoveryPeerFromNodeRecord(n.getNode());
-            });
+        .map(n -> DiscoveryPeer.fromNodeRecord(n.getNode()));
   }
 
   private NodeRecord setupRemoteNode(final String remoteHostEnr) {
@@ -143,105 +169,26 @@ public class Eth2DiscoveryService extends TypedService<State> implements Discove
     return remoteNodeRecord;
   }
 
-  Eth2DiscoveryService build() {
-    final NodeRecord localNodeRecord;
-    try {
-      localNodeRecord = createLocalNodeRecord(privateKey, networkInterface, port);
-    } catch (Exception e) {
-      logger.error("Error constructing local node record: " + e.getMessage());
-      return this;
-    }
-
-    logger.info("localNodeRecord:" + localNodeRecord);
-    // the following two lines to be removed when discovery master is next updated
-    logger.info("localNodeEnr:" + localNodeRecord.asBase64());
-    logger.info("localNodeId:" + localNodeRecord.getNodeId());
-
-    Database database0 = Database.inMemoryDB();
-    NodeTableStorageFactoryImpl nodeTableStorageFactory = new NodeTableStorageFactoryImpl();
-    NodeTableStorage nodeTableStorage0 =
-        nodeTableStorageFactory.createTable(
-            database0,
-            TEST_SERIALIZER,
-            (oldSeq) -> localNodeRecord,
-            () -> {
-              if (peers != null && peers.size() > 0) {
-                return peers.stream().map(this::setupRemoteNode).collect(Collectors.toList());
-              } else {
-                return Collections.emptyList();
-              }
-            }); // Collections.singletonList(remoteNodeRecord)
-    NodeBucketStorage nodeBucketStorage0 =
-        nodeTableStorageFactory.createBucketStorage(database0, TEST_SERIALIZER, localNodeRecord);
-
-    nodeTable = new BusNodeTable(nodeTableStorage0.get(), eventBus);
-
-    dm =
-        new DiscoveryManagerImpl(
-            // delegating node table
-            nodeTable,
-            nodeBucketStorage0,
-            localNodeRecord,
-            Bytes.wrap(getPrivateKey()),
-            NODE_RECORD_FACTORY,
-            Schedulers.createDefault().newSingleThreadDaemon("server-1"),
-            Schedulers.createDefault().newSingleThreadDaemon("client-1"));
-    return this;
-  }
-
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public static NodeRecord createLocalNodeRecord(
-      byte[] privateKey, String networkInterface, int port) throws UnknownHostException {
+  public static NodeRecord createNodeRecord(byte[] privateKey, String networkInterface, int port)
+      throws UnknownHostException {
     Bytes localAddressBytes =
         Bytes.wrap(InetAddress.getByName(networkInterface).getAddress()); // 172.18.0.2 // 127.0.0.1
-    Bytes localIp1 =
+    Bytes localIp =
         Bytes.concatenate(Bytes.wrap(new byte[4 - localAddressBytes.size()]), localAddressBytes);
-    NodeRecord nodeRecord1 =
+    NodeRecord nodeRecord =
         NodeRecordFactory.DEFAULT.createFromValues(
             UInt64.ZERO,
             Pair.with(EnrField.ID, IdentitySchema.V4),
-            Pair.with(IP_V4, localIp1),
+            Pair.with(IP_V4, localIp),
             Pair.with(
                 EnrFieldV4.PKEY_SECP256K1,
                 Functions.derivePublicKeyFromPrivate(Bytes.wrap(privateKey))),
-            Pair.with(EnrField.TCP_V4, port),
+            //            Pair.with(EnrField.TCP_V4, port),
             Pair.with(UDP_V4, port));
-    nodeRecord1.sign(Bytes.wrap(privateKey));
-    nodeRecord1.verify();
-    return nodeRecord1;
-  }
-
-  public int getPort() {
-    return port;
-  }
-
-  public void setPort(int port) {
-    this.port = port;
-  }
-
-  public List<String> getPeers() {
-    return peers;
-  }
-
-  public void setPeers(List<String> peers) {
-    this.peers = peers;
-  }
-
-  public String getNetworkInterface() {
-    return networkInterface;
-  }
-
-  public void setNetworkInterface(String networkInterface) {
-    this.networkInterface = networkInterface;
-  }
-
-  public byte[] getPrivateKey() {
-    return privateKey;
-  }
-
-  public void setPrivateKey(byte[] privateKey) {
-    assert privateKey != null;
-    this.privateKey = privateKey;
+    nodeRecord.sign(Bytes.wrap(privateKey));
+    nodeRecord.verify();
+    return nodeRecord;
   }
 
   public NodeTable getNodeTable() {

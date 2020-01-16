@@ -23,20 +23,20 @@ import static org.mockito.Mockito.verify;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
-import java.util.Optional;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
+import org.ethereum.beacon.discovery.storage.NodeTable;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeerSubscriberImpl;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.service.serviceutils.Service.State;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -44,60 +44,62 @@ class Eth2DiscoveryServiceTest {
 
   private EventBus eventBus;
 
-  private Eth2DiscoveryService mockDiscoveryManager;
-  private P2PNetwork<?> mockNetwork;
+  //  private Eth2DiscoveryService mockDiscoveryManager;
+  private static P2PNetwork<?> mockNetwork;
+  private static Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
+
+  @BeforeAll
+  static void doBeforeAll() {
+    mockNetwork = mock(P2PNetwork.class);
+    doReturn(SafeFuture.completedFuture(true)).when(mockNetwork).start();
+    doReturn(SafeFuture.completedFuture(true)).when(mockNetwork).connect(any());
+  }
 
   @BeforeEach
   void doBefore() {
     eventBus = new EventBus();
-    mockNetwork = mock(P2PNetwork.class);
-    mockDiscoveryManager = mock(Eth2DiscoveryService.class);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    networkFactory.stopAll();
   }
 
   @Test
   void testEventBusRegistration() {
-    DiscoveryRequest discoveryRequest = new DiscoveryRequest(2);
-    mockDiscoveryManager.setEventBus(eventBus);
-    eventBus.register(mockDiscoveryManager);
-    eventBus.post(discoveryRequest);
-    //    verify(mockDiscoveryManager).onDiscoveryRequest(new DiscoveryRequest(2));
+    // cleared for now
   }
 
   @Test
   void testMockNetworkUsage() throws Exception {
-    // mocked discovery manager
-    doReturn(SafeFuture.completedFuture(true)).when(mockNetwork).start();
-    doReturn(SafeFuture.completedFuture(true)).when(mockNetwork).connect(any());
+    Eth2Network mockEth2Network = mock(Eth2Network.class);
+    doReturn(SafeFuture.completedFuture(true)).when(mockEth2Network).start();
 
-    // set local service node
-    Random rnd = new Random();
-    byte[] privKey1 = new byte[32];
-    rnd.nextBytes(privKey1);
+    Eth2Network eth2Network = networkFactory.builder().startNetwork();
 
-    mockNetwork.start().reportExceptions();
-    Eth2DiscoveryServiceBuilder discoveryBuilder = new Eth2DiscoveryServiceBuilder();
-    discoveryBuilder
-        .privateKey(privKey1)
-        .network(Optional.of(mockNetwork))
-        .eventBus(eventBus)
-        .networkInterface("127.0.0.1")
-        .port(9001);
-    Eth2DiscoveryService dm = discoveryBuilder.build();
+    doReturn(mockNetwork).when(mockEth2Network).getP2PNetwork();
 
+    Eth2DiscoveryService serviceMock = mock(Eth2DiscoveryService.class);
+
+    NodeTable nt = ((Eth2DiscoveryService) eth2Network.getDiscoveryService()).getNodeTable();
+    EventBus localeventBus =
+        ((Eth2DiscoveryService) eth2Network.getDiscoveryService()).getEventBus();
+    doReturn(nt).when(serviceMock).getNodeTable();
+    doReturn(localeventBus).when(serviceMock).getEventBus();
+
+    //    serviceMock.subscribePeerDiscovery(new DiscoveryPeerSubscriberImpl(mockNetwork));
     DiscoveryPeerSubscriberImpl sip = new DiscoveryPeerSubscriberImpl(mockNetwork);
-    eventBus.register(sip);
+    localeventBus.register(sip);
 
     final String remoteHostEnr =
         "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
     NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
     NodeRecordInfo remoteNodeRecordInfo = NodeRecordInfo.createDefault(remoteNodeRecord);
-    dm.getNodeTable().save(remoteNodeRecordInfo);
+    serviceMock.getNodeTable().save(remoteNodeRecordInfo);
     InetAddress byAddress =
         InetAddress.getByAddress(((Bytes) remoteNodeRecord.get(IP_V4)).toArray());
 
-    State state = (State) dm.start().get(10, TimeUnit.SECONDS);
-    Assertions.assertEquals(
-        State.RUNNING, state, "Failed to start discovery manager with mock network");
+    mockNetwork.start().reportExceptions();
 
     verify(mockNetwork)
         .connect(
@@ -111,21 +113,10 @@ class Eth2DiscoveryServiceTest {
 
   @Test
   void nodeTableIntegrationTest() throws Exception {
-    final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
     Eth2Network network1 = networkFactory.builder().startNetwork();
 
-    Random rnd = new Random();
-    byte[] privKey1 = new byte[32];
-    rnd.nextBytes(privKey1);
-
-    Eth2DiscoveryServiceBuilder discoveryBuilder = new Eth2DiscoveryServiceBuilder();
-    discoveryBuilder
-        .privateKey(privKey1)
-        .network(Optional.of(mockNetwork))
-        .eventBus(eventBus)
-        .networkInterface("127.0.0.1")
-        .port(9001);
-    Eth2DiscoveryService dm = discoveryBuilder.build();
+    Eth2DiscoveryService discoveryService =
+        new Eth2DiscoveryService(network1.getNetworkConfig(), eventBus);
 
     DiscoveryPeerSubscriberImpl sip = new DiscoveryPeerSubscriberImpl(network1);
     eventBus.register(sip);
@@ -134,10 +125,10 @@ class Eth2DiscoveryServiceTest {
         "-IS4QJxZ43ITU3AsQxvwlkyzZvImNBH9CFu3yxMFWOK5rddgb0WjtIOBlPzs1JOlfi6YbM6Em3Ueu5EW-IdoPynMj4QBgmlkgnY0gmlwhKwSAAOJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCIys";
     NodeRecord remoteNodeRecord = NodeRecordFactory.DEFAULT.fromBase64(remoteHostEnr);
     NodeRecordInfo nodeRecordInfo = NodeRecordInfo.createDefault(remoteNodeRecord);
-    dm.getNodeTable().save(nodeRecordInfo);
+    discoveryService.getNodeTable().save(nodeRecordInfo);
 
     Assertions.assertTrue(
-        dm.getNodeTable().getNode(nodeRecordInfo.getNode().getNodeId()).isPresent());
+        discoveryService.getNodeTable().getNode(nodeRecordInfo.getNode().getNodeId()).isPresent());
 
     networkFactory.stopAll();
   }

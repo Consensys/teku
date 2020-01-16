@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
 import java.net.BindException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,11 +29,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.network.NetworkConfigBuilder;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
@@ -44,9 +47,10 @@ public class Eth2NetworkFactory {
 
   protected static final Logger LOG = LogManager.getLogger();
   protected static final NoOpMetricsSystem METRICS_SYSTEM = new NoOpMetricsSystem();
-  protected static final int MIN_PORT = 6000;
-  protected static final int MAX_PORT = 9000;
+  protected static final int MIN_PORT = 9000;
+  protected static final int MAX_PORT = 10000;
   protected List<Eth2Network> multiaddrpeers = new ArrayList<>();
+  protected List<DiscoveryPeer> enrpeers = new ArrayList<>();
 
   protected final List<Eth2Network> networks = new ArrayList<>();
 
@@ -74,6 +78,22 @@ public class Eth2NetworkFactory {
     return this;
   }
 
+  public Eth2NetworkFactory discoveryPeer(NetworkConfig networkConfig) {
+
+    try {
+      NodeRecord nodeRecord =
+          Eth2DiscoveryService.createNodeRecord(
+              networkConfig.getDiscoveryPrivateKey(),
+              networkConfig.getNetworkInterface(),
+              networkConfig.getAdvertisedPort());
+      this.enrpeers.add(DiscoveryPeer.fromNodeRecord(nodeRecord));
+    } catch (UnknownHostException e) {
+      throw new IllegalArgumentException("Attempt to construct invalid DiscoveryPeer");
+    }
+
+    return this;
+  }
+
   public Eth2NetworkFactory chainStorageClient(ChainStorageClient chainStorageClient) {
     this.chainStorageClient = chainStorageClient;
     return this;
@@ -82,6 +102,8 @@ public class Eth2NetworkFactory {
   public class Eth2P2PNetworkBuilder {
 
     protected List<Eth2Network> peers = new ArrayList<>();
+    protected List<Eth2Network> discoveryPeers = new ArrayList<>();
+
     protected EventBus eventBus;
     protected ChainStorageClient chainStorageClient;
     protected List<RpcMethod> rpcMethods = new ArrayList<>();
@@ -134,28 +156,44 @@ public class Eth2NetworkFactory {
         final P2PNetwork<?> network =
             new LibP2PNetwork(config, METRICS_SYSTEM, rpcMethods, peerHandlers);
 
-        NetworkConfig discoveryConfig =
-            new NetworkConfigBuilder()
-                .privateKey(config.getPrivateKey())
-                .peers(new ArrayList<>())
-                .networkInterface("127.0.0.1")
-                .listenPort(config.getListenPort() + 1)
-                .advertisedPort(config.getAdvertisedPort() + 1)
-                .build();
-        return new Eth2Network(
-            network, eth2PeerManager, eventBus, chainStorageClient, discoveryConfig);
+        return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient, config);
       }
     }
 
     private NetworkConfig generateConfig() {
       final List<String> peerAddresses =
           peers.stream().map(P2PNetwork::getNodeAddress).collect(Collectors.toList());
+      final List<String> discoveryAddresses =
+          discoveryPeers.stream()
+              .map(
+                  eth2network -> {
+                    NetworkConfig networkConfig = eth2network.getNetworkConfig();
+                    try {
+                      NodeRecord nodeRecord =
+                          Eth2DiscoveryService.createNodeRecord(
+                              networkConfig.getDiscoveryPrivateKey(),
+                              networkConfig.getNetworkInterface(),
+                              networkConfig.getAdvertisedPort());
+                      return nodeRecord.asBase64();
+                    } catch (UnknownHostException e) {
+                      throw new IllegalArgumentException("Could not construct discoveryPeer");
+                    }
+                  })
+              .collect(Collectors.toList());
 
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
       return new NetworkConfig(
-          Optional.empty(), "127.0.0.1", port, port, peerAddresses, false, false, false);
+          Optional.empty(),
+          "127.0.0.1",
+          port,
+          port,
+          peerAddresses,
+          discoveryAddresses,
+          false,
+          false,
+          false);
     }
 
     private void setDefaults() {
@@ -169,6 +207,11 @@ public class Eth2NetworkFactory {
 
     public Eth2P2PNetworkBuilder peer(final Eth2Network peer) {
       this.peers.add(peer);
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder discoveryPeer(final Eth2Network peer) {
+      this.discoveryPeers.add(peer);
       return this;
     }
 

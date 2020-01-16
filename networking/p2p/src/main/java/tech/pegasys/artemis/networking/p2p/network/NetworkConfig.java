@@ -27,6 +27,7 @@ public class NetworkConfig {
   private final int listenPort;
   private final int advertisedPort;
   private final List<String> peers;
+  private final List<String> discoveryPeers;
   private final boolean logWireCipher;
   private final boolean logWirePlain;
   private final boolean logMuxFrames;
@@ -37,6 +38,7 @@ public class NetworkConfig {
       final int listenPort,
       final int advertisedPort,
       final List<String> peers,
+      final List<String> discoveryPeers,
       final boolean logWireCipher,
       final boolean logWirePlain,
       final boolean logMuxFrames) {
@@ -45,6 +47,7 @@ public class NetworkConfig {
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
     this.peers = peers;
+    this.discoveryPeers = discoveryPeers;
     this.logWireCipher = logWireCipher;
     this.logWirePlain = logWirePlain;
     this.logMuxFrames = logMuxFrames;
@@ -74,6 +77,8 @@ public class NetworkConfig {
   public List<String> getPeers() {
     return peers;
   }
+
+  public List<String> getDiscoveryPeers() { return discoveryPeers; }
 
   public boolean isLogWireCipher() {
     return logWireCipher;

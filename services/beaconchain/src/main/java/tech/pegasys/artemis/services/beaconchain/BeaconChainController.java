@@ -42,7 +42,6 @@ import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
-import tech.pegasys.artemis.networking.p2p.network.NetworkConfigBuilder;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.NoopService;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -162,19 +161,10 @@ public class BeaconChainController {
               config.getPort(),
               config.getAdvertisedPort(),
               config.getStaticPeers(),
+              config.getDiscoveryBootPeers(),
               true,
               true,
               true);
-
-      NetworkConfigBuilder networkConfigBuilder = new NetworkConfigBuilder();
-      NetworkConfig discoveryNetworkConfig =
-          networkConfigBuilder
-              .privateKey(Optional.of(pk)) // use same private key as network
-              .networkInterface(config.getNetworkInterface())
-              .advertisedPort(config.getDiscoveryPort())
-              .listenPort(config.getDiscoveryPort())
-              .peers(config.getDiscoveryBootPeers())
-              .build();
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
@@ -182,7 +172,6 @@ public class BeaconChainController {
               .eventBus(eventBus)
               .chainStorageClient(chainStorageClient)
               .metricsSystem(metricsSystem)
-              .discovery(discoveryNetworkConfig)
               .build();
       this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else {

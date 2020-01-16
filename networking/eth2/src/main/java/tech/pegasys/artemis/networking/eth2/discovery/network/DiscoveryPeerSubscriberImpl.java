@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.eth2.discovery;
+package tech.pegasys.artemis.networking.eth2.discovery.network;
 
 import com.google.common.eventbus.Subscribe;
 import io.libp2p.etc.encode.Base58;
@@ -21,27 +21,26 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DiscoveryPeerSubscriberImpl implements DiscoveryPeerSubscriber {
-
   Logger logger = LogManager.getLogger();
 
-  private P2PNetwork<?> network;
+  private final P2PNetwork<?> network;
 
-  public DiscoveryPeerSubscriberImpl(P2PNetwork<?> network) {
+  public DiscoveryPeerSubscriberImpl(final P2PNetwork<?> network) {
     this.network = network;
   }
 
   @Subscribe
   @Override
   public void onDiscovery(DiscoveryPeer discoveryPeer) {
-    String d = Base58.INSTANCE.encode(discoveryPeer.getNodeId().toArray());
-    String connectString =
+    final String d = Base58.INSTANCE.encode(discoveryPeer.getNodeId().toArray());
+    final String connectString =
         "/ip4/"
             + discoveryPeer.getAddress().getHostAddress()
             + "/tcp/"
-            + (discoveryPeer.getUdpPort().isPresent() ? discoveryPeer.getUdpPort().get() : "0")
+            + discoveryPeer.getUdpPort()
             + "/p2p/"
             + d;
-    SafeFuture<?> connect = network.connect(connectString);
+    final SafeFuture<?> connect = network.connect(connectString);
     if (connect != null) {
       connect.finish(
           r -> {

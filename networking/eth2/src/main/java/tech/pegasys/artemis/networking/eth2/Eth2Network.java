@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService;
-import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryServiceBuilder;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
@@ -38,13 +38,13 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
   private final ChainStorageClient chainStorageClient;
+  private final NetworkConfig networkConfig;
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
   private BlockGossipManager blockGossipManager;
   private AttestationGossipManager attestationGossipManager;
   private AggregateGossipManager aggregateGossipManager;
 
-  private final NetworkConfig discoveryNetworkConfig;
   private Eth2DiscoveryService eth2DiscoveryService;
 
   public Eth2Network(
@@ -52,13 +52,25 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
       final ChainStorageClient chainStorageClient,
-      final NetworkConfig discoveryNetworkConfig) {
+      final NetworkConfig networkConfig) {
     super(network);
     this.network = network;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
-    this.discoveryNetworkConfig = discoveryNetworkConfig;
+    this.networkConfig = networkConfig;
+  }
+
+  public DiscoveryNetwork getDiscoveryService() {
+    return eth2DiscoveryService;
+  }
+
+  public P2PNetwork<?> getP2PNetwork() {
+    return network;
+  }
+
+  public NetworkConfig getNetworkConfig() {
+    return networkConfig;
   }
 
   @Override
@@ -72,16 +84,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     attestationGossipManager = new AttestationGossipManager(network, eventBus, chainStorageClient);
     aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);
 
-    Eth2DiscoveryServiceBuilder discoveryServiceBuilder = new Eth2DiscoveryServiceBuilder();
-    eth2DiscoveryService =
-        discoveryServiceBuilder
-            .eventBus(eventBus)
-            .network(Optional.of(network))
-            .networkInterface(discoveryNetworkConfig.getNetworkInterface())
-            .port(discoveryNetworkConfig.getListenPort())
-            .privateKey(discoveryNetworkConfig.getDiscoveryPrivateKey())
-            .peers(discoveryNetworkConfig.getPeers())
-            .build();
+    eth2DiscoveryService = new Eth2DiscoveryService(networkConfig, eventBus);
 
     SafeFuture.of(eth2DiscoveryService.start()).reportExceptions();
   }

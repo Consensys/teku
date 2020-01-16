@@ -11,15 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.service.serviceutils;
+package tech.pegasys.artemis.networking.eth2.discovery.network;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import java.util.stream.Stream;
 
-public abstract class TypedService<T> extends Service {
+public interface DiscoveryNetwork {
 
-  @Override
-  protected abstract SafeFuture<? extends T> doStart();
+  void findPeers();
 
-  @Override
-  protected abstract SafeFuture<? extends T> doStop();
+  Stream<DiscoveryPeer> streamPeers();
+
+  void subscribePeerDiscovery(DiscoveryPeerSubscriber subscriber);
+
+  void unsubscribePeerDiscovery(DiscoveryPeerSubscriber subscriber);
 }
