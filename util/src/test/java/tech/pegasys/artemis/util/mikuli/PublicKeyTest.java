@@ -15,12 +15,21 @@ package tech.pegasys.artemis.util.mikuli;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
+import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 
 public class PublicKeyTest {
+
+  @Test
+  void zeroSecretKeyGivesPointAtInfinity() {
+    PublicKey pubKey = new PublicKey(new SecretKey(new Scalar(new BIG(0))));
+    assertTrue(pubKey.g1Point().ecpPoint().is_infinity());
+  }
+
   @Test
   void succeedsWhenPassingEmptyListToAggregatePublicKeysDoesNotThrowException() {
     assertDoesNotThrow(() -> PublicKey.aggregate(Collections.emptyList()));

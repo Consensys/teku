@@ -49,6 +49,10 @@ public class HashToCurve {
   private static final Bytes CIPHER_SUITE =
       Bytes.wrap("BLS_SIG_BLS12381G2-SHA256-SSWU-RO-_POP_".getBytes(StandardCharsets.UTF_8));
 
+  public static boolean isInGroupG2(ECP2 point) {
+    return isInG2(new JacobianPoint(point));
+  }
+
   /**
    * Hashes to the G2 curve as described in the new BLS standard.
    *

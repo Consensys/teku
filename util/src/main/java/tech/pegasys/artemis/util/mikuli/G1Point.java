@@ -25,8 +25,8 @@ import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
- * G1 is a subgroup of an elliptic curve whose points are elements of the finite field Fp - simple
- * numbers mod some prime p. The curve is defined by: y^2 = x^3 + 4
+ * G1 is a subgroup of an elliptic curve whose points are elements of the finite field Fp. The curve
+ * is defined by: y^2 = x^3 + 4.
  */
 public final class G1Point implements Group<G1Point> {
 
@@ -207,12 +207,12 @@ public final class G1Point implements Group<G1Point> {
     byte[] xBytes = new byte[fpPointSize];
     point.getX().toBytes(xBytes);
 
-    // Serialisation flags as defined in the Eth2 specs
-    boolean c = true;
+    // Serialisation flags as defined in the documentation
     boolean b = point.is_infinity();
     boolean a = !b && calculateYFlag(point.getY());
 
-    byte flags = (byte) ((a ? 1 << 5 : 0) | (b ? 1 << 6 : 0) | (c ? 1 << 7 : 0));
+    // c is always true for compressed points
+    byte flags = (byte) ((4 | (b ? 2 : 0) | (a ? 1 : 0)) << 5);
     byte mask = (byte) 31;
     xBytes[0] &= mask;
     xBytes[0] |= flags;
