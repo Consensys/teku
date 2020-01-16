@@ -19,6 +19,6 @@ public final class BlockProcessingException extends Exception {
   }
 
   public BlockProcessingException(RuntimeException e) {
-    super(e.toString());
+    super(e);
   }
 }
