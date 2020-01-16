@@ -77,16 +77,14 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 public class BeaconStateUtil {
 
   /**
-   *  For debug/test purposes only
-   *  enables/disables {@link DepositData} BLS signature verification
-   *  Setting to <code>false</code> significantly speeds up state initialization
+   * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
+   * Setting to <code>false</code> significantly speeds up state initialization
    */
   public static boolean BLS_VERIFY_DEPOSIT = true;
 
   /**
-   *  For debug/test purposes only
-   *  enables/disables deposit root Merkle proofs generation/validation
-   *  Setting to <code>false</code> significantly speeds up state initialization
+   * For debug/test purposes only enables/disables deposit root Merkle proofs generation/validation
+   * Setting to <code>false</code> significantly speeds up state initialization
    */
   public static boolean DEPOSIT_PROOFS_ENABLED = true;
 
@@ -116,8 +114,8 @@ public class BeaconStateUtil {
     if (DEPOSIT_PROOFS_ENABLED) {
       DepositUtil.calcDepositProofs(deposits);
       long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
-      List<DepositData> leaves = deposits.stream().map(Deposit::getData)
-          .collect(Collectors.toList());
+      List<DepositData> leaves =
+          deposits.stream().map(Deposit::getData).collect(Collectors.toList());
       for (int i = 0; i < deposits.size(); i++) {
         SSZList<DepositData> deposit_data_list =
             new SSZList<>(leaves.subList(0, i + 1), depositListLength, DepositData.class);
