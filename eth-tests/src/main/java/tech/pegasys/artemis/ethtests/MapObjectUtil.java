@@ -152,9 +152,8 @@ public class MapObjectUtil {
       return new G2Point(new ECP2(x, y));
     } else {
       Map map = (Map) object;
-      return G2Point.hashToG2(
-          Bytes.fromHexString(map.get("message").toString()),
-          Bytes.fromHexString(map.get("domain").toString()));
+      // TODO conform to new test vectors
+      return G2Point.hashToG2(Bytes.fromHexString(map.get("message").toString()));
     }
   }
 
