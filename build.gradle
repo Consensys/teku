@@ -471,6 +471,7 @@ subprojects {
     group = "verification"
     description = "Runs the Artemis acceptance tests"
 
+    systemProperty "artemis.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
     classpath = sourceSets.acceptanceTest.runtimeClasspath
   }

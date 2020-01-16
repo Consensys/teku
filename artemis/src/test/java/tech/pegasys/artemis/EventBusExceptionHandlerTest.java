@@ -13,17 +13,13 @@
 
 package tech.pegasys.artemis;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
@@ -31,6 +27,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -41,7 +38,8 @@ class EventBusExceptionHandlerTest {
   private EventBus bus;
 
   private final SafeFuture<Level> logLevelFuture = new SafeFuture<>();
-  private final SafeFuture<Throwable> exceptionFuture = new SafeFuture<>();
+  private final SafeFuture<Throwable> handledException = new SafeFuture<>();
+  private final SafeFuture<Throwable> unhandledExceptionFuture = new SafeFuture<>();
 
   @BeforeAll
   static void setupExecutor() {
@@ -62,6 +60,18 @@ class EventBusExceptionHandlerTest {
           public void log(final Level level, final String message) {
             logLevelFuture.complete(level);
           }
+
+          @Override
+          public void log(Level level, String message, Throwable throwable, Color color) {
+            handledException.complete(throwable);
+            logLevelFuture.complete(level);
+          }
+
+          @Override
+          public void log(Level level, String message, Throwable throwable) {
+            handledException.complete(throwable);
+            logLevelFuture.complete(level);
+          }
         };
 
     final var exceptionHandlerRecordingWrapper =
@@ -75,7 +85,7 @@ class EventBusExceptionHandlerTest {
             try {
               delegate.handleException(exception, context);
             } catch (final RuntimeException thrown) {
-              exceptionFuture.complete(thrown);
+              unhandledExceptionFuture.complete(thrown);
               throw thrown;
             }
           }
@@ -85,36 +95,38 @@ class EventBusExceptionHandlerTest {
   }
 
   @Test
-  void logWarningIfAssertFails() throws ExecutionException, InterruptedException {
+  void logWarningIfAssertFails() throws Exception {
+    final IllegalArgumentException exception = new IllegalArgumentException("whoops");
     bus.register(
         new Object() {
           @Subscribe
           void onString(final String test) {
-            checkArgument("other".equals(test), "Assertion failed");
+            throw exception;
           }
         });
     bus.post("test");
 
-    assertEquals(Level.WARN, logLevelFuture.get());
-    assertFalse(exceptionFuture.isDone());
+    Waiter.waitFor(logLevelFuture);
+    assertThat(logLevelFuture).isCompletedWithValue(Level.WARN);
+    assertThat(unhandledExceptionFuture).isNotDone();
+    assertThat(handledException).isCompletedWithValue(exception);
   }
 
   @Test
-  void logFatalAndRethrowIfNonAssertExceptionThrown()
-      throws ExecutionException, InterruptedException {
+  void logFatalIfNonAssertExceptionThrown() throws Exception {
+    final RuntimeException exception = new RuntimeException("test");
     bus.register(
         new Object() {
           @Subscribe
           void onString(String test) {
-            throw new RuntimeException("test");
+            throw exception;
           }
         });
     bus.post("test");
 
-    assertEquals(Level.FATAL, logLevelFuture.get());
-
-    var exception = exceptionFuture.get();
-    assertTrue(exception instanceof RuntimeException);
-    assertTrue(exception.getCause() instanceof RuntimeException);
+    Waiter.waitFor(logLevelFuture);
+    assertThat(logLevelFuture).isCompletedWithValue(Level.FATAL);
+    assertThat(unhandledExceptionFuture).isNotDone();
+    assertThat(handledException).isCompletedWithValue(exception);
   }
 }

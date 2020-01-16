@@ -14,14 +14,20 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class PendingBlocksTest {
@@ -30,13 +36,22 @@ public class PendingBlocksTest {
   private final UnsignedLong futureTolerance = UnsignedLong.valueOf(2);
   private final PendingBlocks pendingBlocks =
       new PendingBlocks(eventBus, historicalTolerance, futureTolerance);
-  private final UnsignedLong currentSlot = historicalTolerance.times(UnsignedLong.valueOf(2));
+  private UnsignedLong currentSlot = historicalTolerance.times(UnsignedLong.valueOf(2));
 
   @BeforeEach
   public void setup() {
     // Set up slot
     assertThat(pendingBlocks.start()).isCompleted();
-    eventBus.post(new SlotEvent(currentSlot));
+    setSlot(currentSlot);
+  }
+
+  private void setSlot(final long slot) {
+    setSlot(UnsignedLong.valueOf(slot));
+  }
+
+  private void setSlot(final UnsignedLong slot) {
+    currentSlot = slot;
+    eventBus.post(new SlotEvent(slot));
   }
 
   @AfterEach
@@ -99,6 +114,46 @@ public class PendingBlocksTest {
   }
 
   @Test
+  public void add_nonFinalizedBlock() {
+    final BeaconBlock finalizedBlock = DataStructureUtil.randomBeaconBlock(10, 1);
+    final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
+    eventBus.post(new FinalizedCheckpointEvent(checkpoint));
+
+    final UnsignedLong slot = checkpoint.getEpochSlot().plus(UnsignedLong.ONE);
+    setSlot(slot);
+    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot.longValue(), 1);
+
+    pendingBlocks.add(block);
+    assertThat(pendingBlocks.contains(block)).isTrue();
+    assertThat(pendingBlocks.size()).isEqualTo(1);
+    assertThat(pendingBlocks.childrenOf(block.getParent_root())).containsExactlyInAnyOrder(block);
+  }
+
+  @Test
+  public void add_finalizedBlock() {
+    final BeaconBlock finalizedBlock = DataStructureUtil.randomBeaconBlock(10, 1);
+    final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
+    eventBus.post(new FinalizedCheckpointEvent(checkpoint));
+    final long slot = checkpoint.getEpochSlot().longValue() + 10;
+    setSlot(slot);
+
+    final long blockSlot = checkpoint.getEpochSlot().longValue();
+    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(blockSlot, 1);
+
+    pendingBlocks.add(block);
+    assertThat(pendingBlocks.contains(block)).isFalse();
+    assertThat(pendingBlocks.size()).isEqualTo(0);
+    assertThat(pendingBlocks.childrenOf(block.getParent_root())).isEmpty();
+  }
+
+  private Checkpoint finalizedCheckpoint(BeaconBlock block) {
+    final UnsignedLong epoch = compute_epoch_at_slot(block.getSlot()).plus(UnsignedLong.ONE);
+    final Bytes32 root = block.signing_root("signature");
+
+    return new Checkpoint(epoch, root);
+  }
+
+  @Test
   public void add_duplicateBlock() {
     final BeaconBlock block = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
     pendingBlocks.add(block);
@@ -157,6 +212,43 @@ public class PendingBlocksTest {
     assertThat(pendingBlocks.contains(blockB)).isTrue();
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(pendingBlocks.childrenOf(blockA.getParent_root())).containsExactlyInAnyOrder(blockB);
+  }
+
+  @Test
+  public void prune_finalizedBlocks() {
+    final BeaconBlock finalizedBlock = DataStructureUtil.randomBeaconBlock(10, 1);
+    final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
+    final long finalizedSlot = checkpoint.getEpochSlot().longValue();
+    setSlot(finalizedSlot);
+
+    // Add a bunch of blocks
+    List<BeaconBlock> nonFinalBlocks =
+        List.of(DataStructureUtil.randomBeaconBlock(finalizedSlot + 1, 1));
+    List<BeaconBlock> finalizedBlocks =
+        List.of(
+            DataStructureUtil.randomBeaconBlock(finalizedSlot, 2),
+            DataStructureUtil.randomBeaconBlock(finalizedSlot - 1, 3));
+    List<BeaconBlock> allBlocks = new ArrayList<>();
+    allBlocks.addAll(nonFinalBlocks);
+    allBlocks.addAll(finalizedBlocks);
+    nonFinalBlocks.forEach(pendingBlocks::add);
+    finalizedBlocks.forEach(pendingBlocks::add);
+
+    // Check that all blocks are in the collection
+    assertThat(pendingBlocks.size()).isEqualTo(finalizedBlocks.size() + nonFinalBlocks.size());
+    for (BeaconBlock block : allBlocks) {
+      assertThat(pendingBlocks.contains(block)).isTrue();
+    }
+
+    // Update finalized checkpoint and prune
+    eventBus.post(new FinalizedCheckpointEvent(checkpoint));
+    pendingBlocks.prune();
+
+    // Check that all final blocks have been pruned
+    assertThat(pendingBlocks.size()).isEqualTo(nonFinalBlocks.size());
+    for (BeaconBlock block : nonFinalBlocks) {
+      assertThat(pendingBlocks.contains(block)).isTrue();
+    }
   }
 
   @Test
