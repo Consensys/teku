@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.bls.BLSAggregate;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -99,7 +99,7 @@ class AttestationAggregatorTest {
             == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
-        BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));
+        BLS.aggregate(List.of(sig1, sig2)));
   }
 
   @Test
@@ -160,7 +160,7 @@ class AttestationAggregatorTest {
             == 1);
     assertEquals(
         aggregator.getAggregateAndProofs().get(0).getAggregate().getAggregate_signature(),
-        BLSAggregate.bls_aggregate_signatures(List.of(sig1, sig2)));
+        BLS.aggregate(List.of(sig1, sig2)));
   }
 
   @Test

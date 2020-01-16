@@ -77,6 +77,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class BeaconStateUtil {
 
@@ -364,6 +365,30 @@ public class BeaconStateUtil {
    */
   public static Bytes compute_domain(Bytes4 domain_type) {
     return compute_domain(domain_type, new Bytes4(Bytes.wrap(new byte[4])));
+  }
+
+  /**
+   * Return the signing root of an object by calculating the root of the object-domain tree.
+   *
+   * @param object An object implementing the Merkleizable interface
+   * @param domain
+   * @return the signing root
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
+   */
+  public static Bytes compute_signing_root(Merkleizable object, Bytes domain) {
+
+    // TODO: Something like the following, but stubbed for now
+    /*
+       return HashTreeUtil.merkleize(
+           Arrays.asList(
+               HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, object.hash_tree_root()),
+               HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, domain)
+           ));
+    */
+
+    // TODO: remove this
+    return Bytes32.random();
   }
 
   /**
