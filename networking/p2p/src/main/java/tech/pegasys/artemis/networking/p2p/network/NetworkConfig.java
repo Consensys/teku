@@ -78,7 +78,9 @@ public class NetworkConfig {
     return peers;
   }
 
-  public List<String> getDiscoveryPeers() { return discoveryPeers; }
+  public List<String> getDiscoveryPeers() {
+    return discoveryPeers;
+  }
 
   public boolean isLogWireCipher() {
     return logWireCipher;
