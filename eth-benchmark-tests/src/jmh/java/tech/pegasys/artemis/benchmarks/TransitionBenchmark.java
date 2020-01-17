@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.benchmarks;
 
 import static org.mockito.Mockito.mock;
@@ -29,11 +42,12 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
+/** JMH base class for measuring state transitions performance */
+@BenchmarkMode(Mode.SingleShotTime)
 @State(Scope.Thread)
 @Fork(0)
-@BenchmarkMode(Mode.SingleShotTime)
 @Threads(1)
-public class TransitionBenchmark {
+public abstract class TransitionBenchmark {
 
   ChainStorageClient localStorage;
   BeaconChainUtil localChain;
@@ -60,8 +74,8 @@ public class TransitionBenchmark {
     String keysFile = "/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz";
 
     System.out.println("Generating keypairs from " + keysFile);
-    List<BLSKeyPair> validatorKeys = BlsKeyPairIO.createReaderForResource(keysFile)
-        .readAll(validatorsCount);
+    List<BLSKeyPair> validatorKeys =
+        BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
 
     EventBus localEventBus = mock(EventBus.class);
     localStorage = ChainStorageClient.memoryOnlyClient(localEventBus);
@@ -74,8 +88,7 @@ public class TransitionBenchmark {
   }
 
   @TearDown
-  public void dispose() throws Exception {
-  }
+  public void dispose() throws Exception {}
 
   protected void prefetchBlock() {
     prefetchedBlock = blockIterator.next();
@@ -97,13 +110,18 @@ public class TransitionBenchmark {
     }
   }
 
+  /**
+   * Measures pure block transition performance by importing epoch boundary blocks outside of the
+   * benchmark method
+   */
   public static class BlockTransitionBench extends TransitionBenchmark {
 
     @Setup(Level.Iteration)
-    public void init1() throws Exception {
+    public void init() throws Exception {
       if (lastResult != null
           && (lastResult.getBlockProcessingRecord().getBlock().getSlot().longValue() + 1)
-          % Constants.SLOTS_PER_EPOCH == 0) {
+                  % Constants.SLOTS_PER_EPOCH
+              == 0) {
 
         // import block with epoch transition
         importNextBlock();
@@ -119,12 +137,19 @@ public class TransitionBenchmark {
     }
   }
 
+  /**
+   * Measures epoch state transition performance by importing only epoch boundary blocks in the
+   * benchmark method. Other blocks are 'skipped' by importing them outside of benchmark method.
+   * NOTE: the resulting time would include block AND epoch transition
+   */
   public static class EpochTransitionBench extends TransitionBenchmark {
     @Setup(Level.Iteration)
-    public void init1() throws Exception {
+    public void init() throws Exception {
       // import all blocks without epoch transition
-      while(lastResult == null || (lastResult.getBlockProcessingRecord().getBlock().getSlot().longValue() + 1)
-          % Constants.SLOTS_PER_EPOCH != 0) {
+      while (lastResult == null
+          || (lastResult.getBlockProcessingRecord().getBlock().getSlot().longValue() + 1)
+                  % Constants.SLOTS_PER_EPOCH
+              != 0) {
         importNextBlock();
       }
       prefetchBlock();

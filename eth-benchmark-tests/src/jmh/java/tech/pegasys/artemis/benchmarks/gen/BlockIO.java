@@ -32,6 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
+/** Utility class to read/write SSZ serialized blocks */
 public class BlockIO {
 
   public static class Reader
@@ -68,10 +69,7 @@ public class BlockIO {
 
     public List<BeaconBlock> readAll(int limit) {
       try {
-        return StreamSupport
-            .stream(spliterator(), false)
-            .limit(limit)
-            .collect(Collectors.toList());
+        return StreamSupport.stream(spliterator(), false).limit(limit).collect(Collectors.toList());
       } finally {
         try {
           close();
@@ -79,7 +77,6 @@ public class BlockIO {
         }
       }
     }
-
   }
 
   public static class Writer implements AutoCloseable, Consumer<BeaconBlock> {

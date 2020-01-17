@@ -31,6 +31,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
+/** The test to be run manually for profiling block imports */
 public class ProfilingRun {
 
   @Disabled

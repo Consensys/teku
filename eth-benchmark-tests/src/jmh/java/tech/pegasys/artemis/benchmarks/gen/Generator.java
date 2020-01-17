@@ -41,6 +41,9 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
+/**
+ * Utility class for generating BLS keypairs and blocks files Test methods need to be run manually
+ */
 public class Generator {
 
   @Disabled
