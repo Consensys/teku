@@ -88,13 +88,13 @@ public class Eth1DataCache {
         continue;
       }
 
-      int finalI = i;
+      final int currentIndex = i;
       Eth1Vote vote =
           validVotes.computeIfAbsent(
               eth1Data,
               key -> {
                 Eth1Vote newVote = new Eth1Vote();
-                newVote.setIndex(finalI);
+                newVote.setIndex(currentIndex);
                 return newVote;
               });
       vote.incrementVotes();
