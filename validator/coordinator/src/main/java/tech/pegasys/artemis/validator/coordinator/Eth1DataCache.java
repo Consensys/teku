@@ -39,7 +39,7 @@ public class Eth1DataCache {
   private final EventBus eventBus;
   private Optional<UnsignedLong> genesisTime = Optional.empty();
 
-  private NavigableMap<UnsignedLong, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
+  private final NavigableMap<UnsignedLong, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
   private volatile UnsignedLong currentVotingPeriodStartTime;
 
   public Eth1DataCache(EventBus eventBus) {
