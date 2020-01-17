@@ -54,7 +54,7 @@ public class Eth1DataCache {
 
   @Subscribe
   public void onCacheEth1BlockEvent(CacheEth1BlockEvent cacheEth1BlockEvent) {
-    eth1ChainCache.put(cacheEth1BlockEvent.getBlockTimestamp(), getEth1Data(cacheEth1BlockEvent));
+    eth1ChainCache.put(cacheEth1BlockEvent.getBlockTimestamp(), createEth1Data(cacheEth1BlockEvent));
   }
 
   @Subscribe
@@ -163,7 +163,7 @@ public class Eth1DataCache {
     return blockTimestamp.compareTo(getCacheRangeLowerBound()) < 0;
   }
 
-  private static Eth1Data getEth1Data(CacheEth1BlockEvent eth1BlockEvent) {
+  private static Eth1Data createEth1Data(CacheEth1BlockEvent eth1BlockEvent) {
     return new Eth1Data(
         eth1BlockEvent.getDepositRoot(),
         eth1BlockEvent.getDepositCount(),
