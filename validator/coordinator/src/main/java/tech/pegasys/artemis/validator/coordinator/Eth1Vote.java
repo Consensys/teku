@@ -43,4 +43,3 @@ public class Eth1Vote implements Comparable<Eth1Vote> {
     }
   }
 }
-}
