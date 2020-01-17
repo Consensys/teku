@@ -40,11 +40,11 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.mikuli.G2Point;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -255,8 +255,8 @@ public abstract class TestSuite {
   public static Stream<Arguments> aggregatePublicKeysSetup(Path path) {
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", PublicKey[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSPublicKey[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", BLSPublicKey.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
@@ -264,7 +264,7 @@ public abstract class TestSuite {
   public static Stream<Arguments> messageHashCompressedSetup(Path path) {
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
     testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
@@ -273,8 +273,8 @@ public abstract class TestSuite {
   public static Stream<Arguments> privateKeyPublicKeySetup(Path path) {
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSSecretKey.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", BLSPublicKey.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
@@ -282,7 +282,7 @@ public abstract class TestSuite {
   public static Stream<Arguments> messageHashUncompressedSetup(Path path) {
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
     testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
@@ -292,9 +292,8 @@ public abstract class TestSuite {
 
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "domain")));
-    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input", "privkey")));
-    testSet.add(new TestObject("data.yaml", Signature.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSSecretKey.class, Paths.get("input", "privkey")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
@@ -302,8 +301,8 @@ public abstract class TestSuite {
   public static Stream<Arguments> aggregateSignaturesSetup(Path path) {
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", Signature[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSSignature[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 

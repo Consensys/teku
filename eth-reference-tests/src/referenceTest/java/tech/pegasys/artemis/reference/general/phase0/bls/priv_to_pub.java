@@ -23,8 +23,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 
 class priv_to_pub extends TestSuite {
 
@@ -32,8 +32,8 @@ class priv_to_pub extends TestSuite {
   // result should match the expected output.
   @ParameterizedTest(name = "{index}. private to public key {0} -> {1}")
   @MethodSource("readPrivateToPublicKey")
-  void privateToPublicKey(SecretKey secretKey, PublicKey pubkeyExpected) {
-    PublicKey pubkeyActual = new PublicKey(secretKey);
+  void privateToPublicKey(BLSSecretKey secretKey, BLSPublicKey pubkeyExpected) {
+    BLSPublicKey pubkeyActual = new BLSPublicKey(secretKey);
     assertEquals(pubkeyExpected, pubkeyActual);
   }
 

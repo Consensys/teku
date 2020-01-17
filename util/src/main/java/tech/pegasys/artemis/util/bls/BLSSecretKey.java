@@ -18,8 +18,8 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public final class BLSSecretKey {
 
-  public static BLSSecretKey fromBytes(Bytes bytes48) {
-    return new BLSSecretKey(SecretKey.fromBytes(bytes48));
+  public static BLSSecretKey fromBytes(Bytes bytes) {
+    return new BLSSecretKey(SecretKey.fromBytes(bytes));
   }
 
   private SecretKey secretKey;

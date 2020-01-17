@@ -24,10 +24,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.BLS12381;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
+import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class sign_msg extends TestSuite {
 
@@ -35,9 +34,8 @@ class sign_msg extends TestSuite {
   // the result should match the expected output.
   @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
   @MethodSource("readSignMessages")
-  void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Signature signatureExpected) {
-    Signature signatureActual =
-        BLS12381.sign(new KeyPair(secretKey), message.toArray(), domain).signature();
+  void signMessages(Bytes message, BLSSecretKey secretKey, BLSSignature signatureExpected) {
+    BLSSignature signatureActual = BLS.sign(secretKey, message);
     assertEquals(signatureExpected, signatureActual);
   }
 
