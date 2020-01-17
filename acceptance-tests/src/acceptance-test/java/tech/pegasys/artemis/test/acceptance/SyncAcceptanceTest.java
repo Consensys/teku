@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.test.acceptance;
 
-import java.io.File;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -21,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode.Config;
-import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNodeUtils;
+import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 
 public class SyncAcceptanceTest extends AcceptanceTestBase {
   private static final Logger LOG = LogManager.getLogger();
@@ -30,18 +29,12 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
   public void test() throws Exception {
     LOG.info("Start test");
     final int validatorCount = 2;
-    File genesisFile = ArtemisNodeUtils.generateGenesisState(validatorCount);
-    LOG.info(
-        "Created genesis file (size: {}): {}", genesisFile.length(), genesisFile.getAbsolutePath());
+    final GenesisStateConfig genesisStateConfig = GenesisStateConfig.create(validatorCount);
 
-    final String genesisStateContainerPath = "/config/genesis-state.bin";
     final ArtemisNode primaryNode =
-        createArtemisNode(configurePrimaryNode(genesisStateContainerPath, validatorCount));
+        createArtemisNode(configurePrimaryNode(genesisStateConfig, validatorCount));
     final ArtemisNode lateJoiningNode =
-        createArtemisNode(configureLateJoiningNode(genesisStateContainerPath, primaryNode));
-    // Copy genesis state to containers
-    primaryNode.copyFileToContainer(genesisFile, genesisStateContainerPath);
-    lateJoiningNode.copyFileToContainer(genesisFile, genesisStateContainerPath);
+        createArtemisNode(configureLateJoiningNode(genesisStateConfig, primaryNode));
 
     LOG.info("Start first node");
     primaryNode.start();
@@ -60,15 +53,19 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
   }
 
   private Consumer<Config> configurePrimaryNode(
-      final String genesisStatePath, final int validatorCount) {
+      final GenesisStateConfig genesisConfig, final int validatorCount) {
     return c ->
-        c.withGenesisState(genesisStatePath)
+        c.withGenesisConfig(genesisConfig)
             .withRealNetwork()
             .withInteropValidators(0, validatorCount);
   }
 
   private Consumer<Config> configureLateJoiningNode(
-      final String genesisStatePath, final ArtemisNode primaryNode) {
-    return c -> c.withGenesisState(genesisStatePath).withRealNetwork().withPeers(primaryNode);
+      final GenesisStateConfig genesisConfig, final ArtemisNode primaryNode) {
+    return c ->
+        c.withGenesisConfig(genesisConfig)
+            .withRealNetwork()
+            .withPeers(primaryNode)
+            .withInteropValidators(0, 0);
   }
 }
