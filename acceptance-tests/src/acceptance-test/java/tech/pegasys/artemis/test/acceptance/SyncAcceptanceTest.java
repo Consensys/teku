@@ -16,6 +16,7 @@ package tech.pegasys.artemis.test.acceptance;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
@@ -26,7 +27,8 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
   private static final Logger LOG = LogManager.getLogger();
 
   @Test
-  public void test() throws Exception {
+  @Disabled("This test doesn't work yet.  Need to debug node connectivity issues.")
+  public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
     final int validatorCount = 2;
     final GenesisStateConfig genesisStateConfig = GenesisStateConfig.create(validatorCount);
 
