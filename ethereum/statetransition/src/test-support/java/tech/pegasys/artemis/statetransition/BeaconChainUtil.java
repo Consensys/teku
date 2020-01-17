@@ -62,8 +62,16 @@ public class BeaconChainUtil {
   }
 
   public static BeaconChainUtil create(
+      final int validatorCount,
+      final ChainStorageClient storageClient,
+      final boolean signDeposits) {
+    final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorCount);
+    return create(storageClient, validatorKeys, signDeposits);
+  }
+
+  public static BeaconChainUtil create(
       final ChainStorageClient storageClient, final List<BLSKeyPair> validatorKeys) {
-    return create(storageClient, validatorKeys, true);
+    return create(storageClient, validatorKeys, false);
   }
 
   public static BeaconChainUtil create(
@@ -75,7 +83,7 @@ public class BeaconChainUtil {
 
   public static void initializeStorage(
       final ChainStorageClient chainStorageClient, final List<BLSKeyPair> validatorKeys) {
-    initializeStorage(chainStorageClient, validatorKeys, true);
+    initializeStorage(chainStorageClient, validatorKeys, false);
   }
 
   public static void initializeStorage(

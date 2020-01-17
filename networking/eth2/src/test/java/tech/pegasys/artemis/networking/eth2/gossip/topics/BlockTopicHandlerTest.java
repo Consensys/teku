@@ -23,13 +23,16 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.DisableDepositValidation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
+@ExtendWith(DisableDepositValidation.class)
 public class BlockTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);

@@ -29,6 +29,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.util.DisableDepositValidation;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -40,6 +42,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
+@ExtendWith(DisableDepositValidation.class)
 public class ValidatorCoordinatorTest {
 
   private BlockAttestationsPool blockAttestationsPool;

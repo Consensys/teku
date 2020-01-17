@@ -11,5 +11,6 @@ dependencies {
 
     testImplementation 'org.mockito:mockito-core'
     testImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+    testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
     testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
 }

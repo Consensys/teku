@@ -24,8 +24,10 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.DisableDepositValidation;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -34,6 +36,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
+@ExtendWith(DisableDepositValidation.class)
 public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = mock(EventBus.class);

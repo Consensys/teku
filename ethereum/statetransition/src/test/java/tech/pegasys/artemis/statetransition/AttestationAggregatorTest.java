@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.DisableDepositValidation;
 import tech.pegasys.artemis.datastructures.validator.AggregatorInformation;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSAggregate;
@@ -33,6 +35,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
+@ExtendWith(DisableDepositValidation.class)
 class AttestationAggregatorTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);

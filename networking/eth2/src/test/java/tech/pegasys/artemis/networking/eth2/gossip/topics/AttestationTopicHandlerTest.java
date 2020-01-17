@@ -25,7 +25,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.DisableDepositValidation;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -34,6 +36,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
+@ExtendWith(DisableDepositValidation.class)
 public class AttestationTopicHandlerTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
