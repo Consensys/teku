@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.benchmarks;
 
 import static org.mockito.Mockito.mock;
@@ -16,24 +29,9 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.collections.LimitedHashMap;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ProfilingRun {
-
-
-  @Test
-  public void a() {
-    LimitedHashMap<String, String> map = new LimitedHashMap<>(0);
-    map.computeIfAbsent("a", k -> {
-      System.out.println("Computed");
-      return "c";
-    });
-    map.computeIfAbsent("a", k -> {
-      System.out.println("Computed");
-      return "c";
-    });
-  }
 
   @Disabled
   @Test
@@ -89,5 +87,4 @@ public class ProfilingRun {
       }
     }
   }
-
 }
