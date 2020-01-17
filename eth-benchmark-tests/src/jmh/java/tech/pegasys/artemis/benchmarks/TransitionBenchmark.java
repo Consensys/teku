@@ -117,7 +117,7 @@ public abstract class TransitionBenchmark {
   public static class BlockTransitionBench extends TransitionBenchmark {
 
     @Setup(Level.Iteration)
-    public void init() throws Exception {
+    public void skipAndPrefetch() throws Exception {
       if (lastResult != null
           && (lastResult.getBlockProcessingRecord().getBlock().getSlot().longValue() + 1)
                   % Constants.SLOTS_PER_EPOCH
@@ -144,7 +144,7 @@ public abstract class TransitionBenchmark {
    */
   public static class EpochTransitionBench extends TransitionBenchmark {
     @Setup(Level.Iteration)
-    public void init() throws Exception {
+    public void skipAndPrefetch() throws Exception {
       // import all blocks without epoch transition
       while (lastResult == null
           || (lastResult.getBlockProcessingRecord().getBlock().getSlot().longValue() + 1)
