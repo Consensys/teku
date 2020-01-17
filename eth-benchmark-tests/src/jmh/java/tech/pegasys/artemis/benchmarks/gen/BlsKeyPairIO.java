@@ -171,7 +171,8 @@ public class BlsKeyPairIO {
   public static Reader createReaderFromStream(InputStream input, boolean gzipped)
       throws IOException {
     BufferedReader reader =
-        new BufferedReader(new InputStreamReader(gzipped ? new GZIPInputStream(input) : input, UTF_8));
+        new BufferedReader(
+            new InputStreamReader(gzipped ? new GZIPInputStream(input) : input, UTF_8));
     return new Reader(reader);
   }
 
