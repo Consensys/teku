@@ -86,7 +86,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
    */
-  static BLSSignature aggregate(List<BLSSignature> signatures) {
+  public static BLSSignature aggregate(List<BLSSignature> signatures) {
     List<Signature> signatureObjects =
         signatures.stream().map(x -> x.signature).collect(Collectors.toList());
     return new BLSSignature(Signature.aggregate(signatureObjects));
@@ -141,7 +141,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @param domain the domain as specified in the Eth2 spec
    * @return true if the signature is valid, false if it is not
    */
-  boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, Bytes domain) {
+  public boolean checkSignature(List<BLSPublicKey> publicKeys, List<Bytes> messages, Bytes domain) {
     checkArgument(
         publicKeys.size() == messages.size(),
         "Differing numbers of public keys and messages: %s and %s",

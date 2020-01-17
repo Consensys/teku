@@ -30,6 +30,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
@@ -54,8 +55,14 @@ public final class StartupUtil {
 
   public static BeaconStateWithCache createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys) {
+    return createMockedStartInitialBeaconState(genesisTime, validatorKeys, true);
+  }
+
+  public static BeaconStateWithCache createMockedStartInitialBeaconState(
+      final long genesisTime, List<BLSKeyPair> validatorKeys, boolean signDeposits) {
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator().createDeposits(validatorKeys);
+        new MockStartDepositGenerator(new DepositGenerator(signDeposits))
+            .createDeposits(validatorKeys);
     return new MockStartBeaconStateGenerator()
         .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
   }
@@ -74,14 +81,15 @@ public final class StartupUtil {
       final int numValidators) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numValidators);
-    setupInitialState(chainStorageClient, genesisTime, startState, validatorKeys);
+    setupInitialState(chainStorageClient, genesisTime, startState, validatorKeys, true);
   }
 
   public static void setupInitialState(
       final ChainStorageClient chainStorageClient,
       final long genesisTime,
       final String startState,
-      final List<BLSKeyPair> validatorKeyPairs) {
+      final List<BLSKeyPair> validatorKeyPairs,
+      final boolean signDeposits) {
     BeaconStateWithCache initialState;
     if (startState != null) {
       try {
@@ -100,7 +108,8 @@ public final class StartupUtil {
               + " validators",
           Color.GREEN);
       initialState =
-          StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeyPairs);
+          StartupUtil.createMockedStartInitialBeaconState(
+              genesisTime, validatorKeyPairs, signDeposits);
     }
 
     chainStorageClient.initializeFromGenesis(initialState);
