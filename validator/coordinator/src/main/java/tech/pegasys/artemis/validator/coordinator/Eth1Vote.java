@@ -27,19 +27,20 @@ public class Eth1Vote implements Comparable<Eth1Vote> {
   }
 
   @Override
+  // Greater vote number, or in case of a tie,
+  // smallest index number wins
   public int compareTo(Eth1Vote eth1Vote) {
     if (this.vote > eth1Vote.vote) {
       return 1;
     } else if (this.vote < eth1Vote.vote) {
       return -1;
+    } else if (this.index < eth1Vote.index) {
+      return 1;
+    } else if (this.index > eth1Vote.index) {
+      return -1;
     } else {
-      if (this.index < eth1Vote.index) {
-        return 1;
-      } else if (this.index > eth1Vote.index) {
-        return -1;
-      } else {
-        return 0;
-      }
+      return 0;
     }
   }
+}
 }
