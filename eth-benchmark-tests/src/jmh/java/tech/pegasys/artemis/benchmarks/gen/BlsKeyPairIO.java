@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.benchmarks.gen;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -169,13 +171,13 @@ public class BlsKeyPairIO {
   public static Reader createReaderFromStream(InputStream input, boolean gzipped)
       throws IOException {
     BufferedReader reader =
-        new BufferedReader(new InputStreamReader(gzipped ? new GZIPInputStream(input) : input));
+        new BufferedReader(new InputStreamReader(gzipped ? new GZIPInputStream(input) : input, UTF_8));
     return new Reader(reader);
   }
 
   public static Writer createWriter(File outFile, Supplier<BLSKeyPair> generator) {
     try {
-      return new Writer(generator, new BufferedWriter(new FileWriter(outFile)));
+      return new Writer(generator, new BufferedWriter(new FileWriter(outFile, UTF_8)));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
