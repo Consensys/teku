@@ -54,7 +54,8 @@ public class Eth1DataCache {
 
   @Subscribe
   public void onCacheEth1BlockEvent(CacheEth1BlockEvent cacheEth1BlockEvent) {
-    eth1ChainCache.put(cacheEth1BlockEvent.getBlockTimestamp(), createEth1Data(cacheEth1BlockEvent));
+    eth1ChainCache.put(
+        cacheEth1BlockEvent.getBlockTimestamp(), createEth1Data(cacheEth1BlockEvent));
   }
 
   @Subscribe
