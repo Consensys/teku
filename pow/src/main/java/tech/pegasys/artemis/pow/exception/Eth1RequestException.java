@@ -19,6 +19,6 @@ public class Eth1RequestException extends RuntimeException {
   }
 
   public Eth1RequestException(RuntimeException e) {
-    super(e.toString());
+    super(e);
   }
 }
