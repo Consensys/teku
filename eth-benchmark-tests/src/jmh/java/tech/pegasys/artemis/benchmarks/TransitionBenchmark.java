@@ -22,8 +22,6 @@ import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
-import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
@@ -49,9 +47,6 @@ public class TransitionBenchmark {
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    ValidatorsUtil.MAX_ACTIVE_VALIDATORS_CACHE = 0;
-    CommitteeUtil.MAX_SHUFFLE_CACHE = 0;
-
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
     BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
@@ -80,8 +75,6 @@ public class TransitionBenchmark {
 
   @TearDown
   public void dispose() throws Exception {
-    ValidatorsUtil.activeValidatorsCache.clear();
-    CommitteeUtil.shuffleCache.clear();
   }
 
   protected void prefetchBlock() {
