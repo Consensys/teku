@@ -14,11 +14,14 @@
 package tech.pegasys.artemis.reference.general.phase0.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static tech.pegasys.artemis.util.hashToG2.HashToCurve.hashToG2;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -31,7 +34,15 @@ class msg_hash_compressed extends TestSuite {
   // compression, and the result should match the expected output.
   @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
   @MethodSource("readMessageHashG2Compressed")
-  void messageHashToG2Compressed(G2Point g2PointActual, G2Point g2PointExpected) {
+  void messageHashToG2Compressed(Bytes message, G2Point g2PointExpected) {
+    // TODO: The cipher suite in the test generator is wrong. Update here when fixed.
+    // G2Point g2PointActual = G2Point.hashToG2(message);
+    G2Point g2PointActual =
+        new G2Point(
+            hashToG2(
+                message,
+                Bytes.wrap(
+                    "BLS_SIG_BLS12381G2-SHA256-SSWU-RO_POP_".getBytes(StandardCharsets.UTF_8))));
     assertEquals(g2PointExpected, g2PointActual);
   }
 

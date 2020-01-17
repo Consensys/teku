@@ -82,6 +82,11 @@ public final class PublicKey {
   private final Bytes rawData;
   private final Supplier<G1Point> point;
 
+  /**
+   * Construct from a SecretKey
+   *
+   * @param secretKey
+   */
   public PublicKey(SecretKey secretKey) {
     this(KeyPair.g1Generator.mul(secretKey.getScalarValue()));
   }

@@ -20,12 +20,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.Signature;
+import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class aggregate_sigs extends TestSuite {
 
@@ -33,8 +33,8 @@ class aggregate_sigs extends TestSuite {
   // match the expected output.
   @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
   @MethodSource("readAggregateSignatures")
-  void aggregateSig(List<Signature> signatures, Bytes aggregateSignatureExpected) {
-    Bytes aggregateSignatureActual = Signature.aggregate(signatures).g2Point().toBytesCompressed();
+  void aggregateSig(List<BLSSignature> signatures, BLSSignature aggregateSignatureExpected) {
+    BLSSignature aggregateSignatureActual = BLS.aggregate(signatures);
     assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
   }
 

@@ -50,12 +50,10 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.mikuli.G2Point;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 public class MapObjectUtil {
 
@@ -67,6 +65,11 @@ public class MapObjectUtil {
     else if (classtype.equals(BeaconBlock.class)) return getBeaconBlock((Map) object);
     else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
+    else if (classtype.equals(BLSPublicKey.class)) return getPublicKey(object.toString());
+    else if (classtype.equals(BLSPublicKey[].class)) return getPublicKeyArray((List) object);
+    else if (classtype.equals(BLSSecretKey.class)) return getSecretKey(object.toString());
+    else if (classtype.equals(BLSSignature.class)) return getSignature(object.toString());
+    else if (classtype.equals(BLSSignature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
     else if (classtype.equals(Bytes32[].class)) return getBytes32Array((List) object);
     else if (classtype.equals(BeaconState.class)) return getBeaconState((Map) object);
@@ -82,11 +85,6 @@ public class MapObjectUtil {
     else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
     else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
     else if (classtype.equals(ProposerSlashing.class)) return getProposerSlashing((Map) object);
-    else if (classtype.equals(PublicKey.class)) return getPublicKey(object.toString());
-    else if (classtype.equals(PublicKey[].class)) return getPublicKeyArray((List) object);
-    else if (classtype.equals(SecretKey.class)) return getSecretKey(object.toString());
-    else if (classtype.equals(Signature.class)) return getSignature(object.toString());
-    else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
     else if (classtype.equals(Integer[].class)) return getIntegerArray((List) object);
@@ -152,7 +150,6 @@ public class MapObjectUtil {
       return new G2Point(new ECP2(x, y));
     } else {
       Map map = (Map) object;
-      // TODO conform to new test vectors
       return G2Point.hashToG2(Bytes.fromHexString(map.get("message").toString()));
     }
   }
@@ -166,27 +163,27 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<PublicKey> getPublicKeyArray(List list) {
-    return (List<PublicKey>)
+  private static List<BLSPublicKey> getPublicKeyArray(List list) {
+    return (List<BLSPublicKey>)
         list.stream().map(object -> getPublicKey(object.toString())).collect(Collectors.toList());
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<Signature> getSignatureArray(List list) {
-    return (List<Signature>)
+  private static List<BLSSignature> getSignatureArray(List list) {
+    return (List<BLSSignature>)
         list.stream().map(object -> getSignature(object.toString())).collect(Collectors.toList());
   }
 
-  private static PublicKey getPublicKey(String s) {
-    return PublicKey.fromBytesCompressed(Bytes.fromHexString(s));
+  private static BLSPublicKey getPublicKey(String s) {
+    return BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(s));
   }
 
-  private static SecretKey getSecretKey(String s) {
-    return SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(s)));
+  private static BLSSecretKey getSecretKey(String s) {
+    return BLSSecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(s)));
   }
 
-  private static Signature getSignature(String s) {
-    return Signature.fromBytesCompressed(Bytes.fromHexString(s));
+  private static BLSSignature getSignature(String s) {
+    return BLSSignature.fromBytes(Bytes.fromHexString(s));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
