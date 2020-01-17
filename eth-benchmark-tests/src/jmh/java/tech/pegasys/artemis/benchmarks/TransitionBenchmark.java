@@ -114,7 +114,7 @@ public abstract class TransitionBenchmark {
    * Measures pure block transition performance by importing epoch boundary blocks outside of the
    * benchmark method
    */
-  public static class BlockTransitionBench extends TransitionBenchmark {
+  public static class Block extends TransitionBenchmark {
 
     @Setup(Level.Iteration)
     public void skipAndPrefetch() throws Exception {
@@ -142,7 +142,7 @@ public abstract class TransitionBenchmark {
    * benchmark method. Other blocks are 'skipped' by importing them outside of benchmark method.
    * NOTE: the resulting time would include block AND epoch transition
    */
-  public static class EpochTransitionBench extends TransitionBenchmark {
+  public static class Epoch extends TransitionBenchmark {
     @Setup(Level.Iteration)
     public void skipAndPrefetch() throws Exception {
       // import all blocks without epoch transition
