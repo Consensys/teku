@@ -27,7 +27,6 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void test() throws Exception {
-    LOG.info("Start test");
     final int validatorCount = 2;
     final GenesisStateConfig genesisStateConfig = GenesisStateConfig.create(validatorCount);
 
@@ -36,19 +35,19 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
     final ArtemisNode lateJoiningNode =
         createArtemisNode(configureLateJoiningNode(genesisStateConfig, primaryNode));
 
-    LOG.info("Start first node");
+    LOG.debug("Start first node");
     primaryNode.start();
-    LOG.info("Wait for genesis");
+    LOG.debug("Wait for genesis");
     primaryNode.waitForGenesis();
-    LOG.info("Wait for new block");
-    primaryNode.waitForNewBlock();
-    LOG.info("Wait for finalized block");
+    LOG.debug("Wait for finalized block");
     primaryNode.waitForNewFinalization();
-    LOG.info("First node has finalized block");
+    LOG.debug("First node has finalized block");
 
-    LOG.info("Starting second node");
+    LOG.debug("Start second node");
     lateJoiningNode.start();
+    LOG.debug("Wait for genesis");
     lateJoiningNode.waitForGenesis();
+    LOG.debug("Wait second node to sync with first node.");
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
   }
 
