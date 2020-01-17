@@ -25,10 +25,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.pow.event.Eth1BlockEvent;
-import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.SlotEvent;
 
 public class Eth1DataManagerTest {
 
@@ -45,14 +45,14 @@ public class Eth1DataManagerTest {
   // RANGE_CONSTANT = 1000
   private final UnsignedLong RANGE_CONSTANT =
       Constants.SECONDS_PER_ETH1_BLOCK.times(Constants.ETH1_FOLLOW_DISTANCE);
-  private Eth1DataManager eth1DataManager;
+  private Eth1DataCache eth1DataCache;
 
   @BeforeEach
   void setUp() {
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getGenesis_time()).thenReturn(genesisTime);
     when(beaconState.getSlot()).thenReturn(UnsignedLong.ZERO);
-    eth1DataManager = new Eth1DataManager(beaconState, eventBus);
+    eth1DataCache = new Eth1DataCache(beaconState, eventBus);
   }
 
   @Test
@@ -61,32 +61,32 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    Eth1BlockEvent eth1BlockEvent1 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT),
             Bytes32.fromHexString("0x2222"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
+    Eth1Data eth1Data1 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent1);
 
-    Eth1BlockEvent eth1BlockEvent2 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE),
             Bytes32.fromHexString("0x4444"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data2 = Eth1DataManager.getEth1Data(eth1BlockEvent2);
+    Eth1Data eth1Data2 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent2);
 
-    eventBus.post(eth1BlockEvent1);
-    eventBus.post(eth1BlockEvent2);
+    eventBus.post(cacheEth1BlockEvent1);
+    eventBus.post(cacheEth1BlockEvent2);
 
     SSZList<Eth1Data> eth1DataVotes =
         new SSZList<>(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    assertThat(eth1DataManager.get_eth1_vote(beaconState)).isEqualTo(eth1Data2);
+    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data2);
   }
 
   @Test
@@ -95,33 +95,33 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    Eth1BlockEvent eth1BlockEvent1 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT),
             Bytes32.fromHexString("0x2222"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
+    Eth1Data eth1Data1 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent1);
 
-    Eth1BlockEvent eth1BlockEvent2 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE),
             Bytes32.fromHexString("0x4444"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data2 = Eth1DataManager.getEth1Data(eth1BlockEvent2);
+    Eth1Data eth1Data2 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent2);
 
     SSZList<Eth1Data> eth1DataVotes =
         new SSZList<>(List.of(eth1Data1, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
 
-    eventBus.post(eth1BlockEvent1);
-    eventBus.post(eth1BlockEvent2);
+    eventBus.post(cacheEth1BlockEvent1);
+    eventBus.post(cacheEth1BlockEvent2);
 
-    assertThat(eth1DataManager.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
   }
 
   @Test
@@ -130,32 +130,32 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    Eth1BlockEvent eth1BlockEvent1 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2))),
             Bytes32.fromHexString("0x2222"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
+    Eth1Data eth1Data1 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent1);
 
-    Eth1BlockEvent eth1BlockEvent2 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2).plus(UnsignedLong.ONE))),
             Bytes32.fromHexString("0x4444"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data2 = Eth1DataManager.getEth1Data(eth1BlockEvent2);
+    Eth1Data eth1Data2 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent2);
 
-    eventBus.post(eth1BlockEvent1);
-    eventBus.post(eth1BlockEvent2);
+    eventBus.post(cacheEth1BlockEvent1);
+    eventBus.post(cacheEth1BlockEvent2);
 
     SSZList<Eth1Data> eth1DataVotes =
         new SSZList<>(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    assertThat(eth1DataManager.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
   }
 
   @Test
@@ -164,31 +164,31 @@ public class Eth1DataManagerTest {
     UnsignedLong currentTime = slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT));
     eventBus.post(new SlotEvent(slot));
 
-    Eth1BlockEvent eth1BlockEvent1 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x1111"),
             currentTime.minus(RANGE_CONSTANT),
             Bytes32.fromHexString("0x2222"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data1 = Eth1DataManager.getEth1Data(eth1BlockEvent1);
+    Eth1Data eth1Data1 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent1);
 
-    Eth1BlockEvent eth1BlockEvent2 =
-        new Eth1BlockEvent(
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        new CacheEth1BlockEvent(
             UnsignedLong.ZERO,
             Bytes32.fromHexString("0x3333"),
             currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)),
             Bytes32.fromHexString("0x4444"),
             UnsignedLong.valueOf(10L));
-    Eth1Data eth1Data2 = Eth1DataManager.getEth1Data(eth1BlockEvent2);
+    Eth1Data eth1Data2 = Eth1DataCache.getEth1Data(cacheEth1BlockEvent2);
 
-    eventBus.post(eth1BlockEvent1);
-    eventBus.post(eth1BlockEvent2);
+    eventBus.post(cacheEth1BlockEvent1);
+    eventBus.post(cacheEth1BlockEvent2);
 
     SSZList<Eth1Data> eth1DataVotes =
         new SSZList<>(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
-    assertThat(eth1DataManager.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
   }
 }

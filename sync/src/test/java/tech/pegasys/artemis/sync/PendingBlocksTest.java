@@ -28,7 +28,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
-import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.util.time.SlotEvent;
 
 public class PendingBlocksTest {
   private final EventBus eventBus = new EventBus();

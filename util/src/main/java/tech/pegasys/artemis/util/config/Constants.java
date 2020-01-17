@@ -126,7 +126,7 @@ public class Constants {
   public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
   public static int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
-  public static int ETH1_CACHE_BUFFER = ETH1_FOLLOW_DISTANCE.intValue() - 10; // in blocks
+  public static UnsignedLong ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10); // in sec
 
   static {
     setConstants("minimal");

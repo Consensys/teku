@@ -37,9 +37,9 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.ganache.GanacheController;
-import tech.pegasys.artemis.pow.BlockListener;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
+import tech.pegasys.artemis.pow.Eth1DataManager;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
@@ -54,7 +54,6 @@ public class PowchainService implements ServiceInterface {
 
   private GanacheController controller;
   private DepositContractListener depositContractListener;
-  private BlockListener blockListener;
 
   private String depositMode;
   private String contractAddr;
@@ -109,7 +108,7 @@ public class PowchainService implements ServiceInterface {
         }
         i++;
       }
-      blockListener = new BlockListener(web3j, eventBus, depositContractListener);
+      new Eth1DataManager(web3j, eventBus, depositContractListener);
     } else if (depositMode.equals(DEPOSIT_SIM)) {
       try {
         Reader reader = Files.newBufferedReader(Paths.get(depositSimFile), UTF_8);
@@ -132,7 +131,7 @@ public class PowchainService implements ServiceInterface {
       Web3j web3j = Web3j.build(new HttpService(provider));
       depositContractListener =
           DepositContractListenerFactory.eth1DepositContract(web3j, eventBus, contractAddr);
-      blockListener = new BlockListener(web3j, eventBus, depositContractListener);
+      new Eth1DataManager(web3j, eventBus, depositContractListener);
     }
   }
 
@@ -142,9 +141,6 @@ public class PowchainService implements ServiceInterface {
     this.eventBus.unregister(this);
     if (depositContractListener != null) {
       depositContractListener.stop();
-    }
-    if (blockListener != null) {
-      blockListener.stop();
     }
   }
 }

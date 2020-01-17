@@ -70,7 +70,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -78,6 +77,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.SlotEvent;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
@@ -89,7 +89,7 @@ public class ValidatorCoordinator {
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
-  private Eth1DataManager eth1DataManager;
+  private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
   //  maps slots to Lists of attestation informations
@@ -111,6 +111,7 @@ public class ValidatorCoordinator {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
+    this.eth1DataCache = new Eth1DataCache(eventBus);
     this.eventBus.register(this);
   }
 
@@ -172,7 +173,7 @@ public class ValidatorCoordinator {
 
     this.committeeAssignmentManager =
         new CommitteeAssignmentManager(validators, committeeAssignments);
-    this.eth1DataManager = new Eth1DataManager(genesisState, eventBus);
+    eth1DataCache.startBeaconChainMode(genesisState);
 
     // Update committee assignments and subscribe to required committee indices for the next 2
     // epochs
@@ -319,7 +320,7 @@ public class ValidatorCoordinator {
       final Signer signer = getSigner(proposer);
       final Bytes32 parentRoot = previousBlock.signing_root("signature");
 
-      Eth1Data eth1Data = eth1DataManager.get_eth1_vote(newState);
+      Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
 
       newBlock =
           blockCreator.createNewBlock(

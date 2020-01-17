@@ -31,9 +31,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.SlotEvent;
 
 class PendingBlocks extends Service {
   private static final Logger LOG = LogManager.getLogger();

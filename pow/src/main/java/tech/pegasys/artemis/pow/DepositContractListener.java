@@ -18,7 +18,6 @@ import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVE
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.reactivex.disposables.Disposable;
-import java.math.BigInteger;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -67,9 +66,9 @@ public class DepositContractListener {
   }
 
   @SuppressWarnings("rawtypes")
-  public SafeFuture<Bytes32> getDepositRoot(BigInteger blockHeight) {
+  public SafeFuture<Bytes32> getDepositRoot(UnsignedLong blockHeight) {
     String encodedFunction = contract.get_deposit_root().encodeFunctionCall();
-    return callFunctionAtBlockHeight(encodedFunction, blockHeight)
+    return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
             ethCall -> {
               if (ethCall.hasError()) {
@@ -83,9 +82,9 @@ public class DepositContractListener {
   }
 
   @SuppressWarnings("rawtypes")
-  public SafeFuture<UnsignedLong> getDepositCount(BigInteger blockHeight) {
+  public SafeFuture<UnsignedLong> getDepositCount(UnsignedLong blockHeight) {
     String encodedFunction = contract.get_deposit_count().encodeFunctionCall();
-    return callFunctionAtBlockHeight(encodedFunction, blockHeight)
+    return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
             ethCall -> {
               if (ethCall.hasError()) {
@@ -108,14 +107,14 @@ public class DepositContractListener {
     subscriptionNewDeposit.dispose();
   }
 
-  private SafeFuture<EthCall> callFunctionAtBlockHeight(
-      String encodedFunction, BigInteger blockHeight) {
+  private SafeFuture<EthCall> callFunctionAtBlockNumber(
+      String encodedFunction, UnsignedLong blockHeight) {
     return SafeFuture.of(
         web3j
             .ethCall(
                 Transaction.createEthCallTransaction(
                     null, contract.getContractAddress(), encodedFunction),
-                DefaultBlockParameter.valueOf(blockHeight))
+                DefaultBlockParameter.valueOf(blockHeight.bigIntegerValue()))
             .sendAsync());
   }
 }

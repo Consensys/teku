@@ -17,7 +17,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class Eth1BlockEvent {
+public class CacheEth1BlockEvent {
 
   private final UnsignedLong blockNumber;
   private final Bytes32 blockHash;
@@ -25,7 +25,7 @@ public class Eth1BlockEvent {
   private final Bytes32 depositRoot;
   private final UnsignedLong depositCount;
 
-  public Eth1BlockEvent(
+  public CacheEth1BlockEvent(
       UnsignedLong blockNumber,
       Bytes32 blockHash,
       UnsignedLong blockTimestamp,
