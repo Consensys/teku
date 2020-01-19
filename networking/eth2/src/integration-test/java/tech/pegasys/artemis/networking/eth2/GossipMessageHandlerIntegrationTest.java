@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
@@ -97,7 +97,7 @@ public class GossipMessageHandlerIntegrationTest {
     Thread.sleep(2000);
 
     // Propagate block from network 1
-    final BeaconBlock newBlock = chainUtil.createBlockAtSlot(UnsignedLong.valueOf(2L));
+    final SignedBeaconBlock newBlock = chainUtil.createBlockAtSlot(UnsignedLong.valueOf(2L));
     eventBus1.post(new BlockProposedEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
@@ -162,7 +162,7 @@ public class GossipMessageHandlerIntegrationTest {
     Thread.sleep(2000);
 
     // Propagate block from network 1
-    final BeaconBlock newBlock =
+    final SignedBeaconBlock newBlock =
         chainUtil.createBlockAtSlotFromInvalidProposer(UnsignedLong.valueOf(2L));
     eventBus1.post(new BlockProposedEvent(newBlock));
 

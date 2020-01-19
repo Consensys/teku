@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
@@ -39,8 +40,8 @@ public class voluntary_exit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process voluntary_exit")
   @MethodSource({"mainnetVoluntaryExitSetup", "minimalVoluntaryExitSetup"})
-  void processVoluntaryExit(VoluntaryExit voluntary_exit, BeaconState pre) {
-    List<VoluntaryExit> voluntary_exits = new ArrayList<>();
+  void processVoluntaryExit(SignedVoluntaryExit voluntary_exit, BeaconState pre) {
+    List<SignedVoluntaryExit> voluntary_exits = new ArrayList<>();
     voluntary_exits.add(voluntary_exit);
     assertThrows(
         BlockProcessingException.class, () -> process_voluntary_exits(pre, voluntary_exits));
@@ -48,8 +49,8 @@ public class voluntary_exit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process voluntary_exit")
   @MethodSource({"mainnetVoluntaryExitSuccessSetup", "minimalVoluntaryExitSuccessSetup"})
-  void processVoluntaryExit(VoluntaryExit voluntary_exit, BeaconState pre, BeaconState post) {
-    List<VoluntaryExit> voluntary_exits = new ArrayList<>();
+  void processVoluntaryExit(SignedVoluntaryExit voluntary_exit, BeaconState pre, BeaconState post) {
+    List<SignedVoluntaryExit> voluntary_exits = new ArrayList<>();
     voluntary_exits.add(voluntary_exit);
     assertDoesNotThrow(() -> process_voluntary_exits(pre, voluntary_exits));
     assertEquals(pre, post);

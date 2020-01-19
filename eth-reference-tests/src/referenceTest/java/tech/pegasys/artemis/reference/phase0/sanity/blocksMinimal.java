@@ -27,7 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.ethtests.TestSuite;
@@ -52,7 +52,7 @@ public class blocksMinimal extends TestSuite {
     "sanitySkippedSlotsSetup",
     "sanityVoluntaryExitSetup",
   })
-  void sanityProcessBlock(BeaconState pre, BeaconState post, List<BeaconBlock> blocks) {
+  void sanityProcessBlock(BeaconState pre, BeaconState post, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
@@ -153,7 +153,7 @@ public class blocksMinimal extends TestSuite {
     "sanityExpectedDepositInBlockSetup",
     "sanityPrevSlotBlockTransitionSetup"
   })
-  void sanityProcessBlockInvalid(BeaconState pre, List<BeaconBlock> blocks) {
+  void sanityProcessBlockInvalid(BeaconState pre, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(

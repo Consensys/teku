@@ -17,7 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
@@ -29,7 +29,7 @@ public class StoreDiskUpdateEvent {
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> finalizedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
-  private final Map<Bytes32, BeaconBlock> blocks;
+  private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final Map<Bytes32, BeaconState> blockStates;
   private final Map<Checkpoint, BeaconState> checkpointStates;
   private final Map<UnsignedLong, Checkpoint> latestMessages;
@@ -41,7 +41,7 @@ public class StoreDiskUpdateEvent {
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> finalizedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
-      final Map<Bytes32, BeaconBlock> blocks,
+      final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> blockStates,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UnsignedLong, Checkpoint> latestMessages) {
@@ -81,7 +81,7 @@ public class StoreDiskUpdateEvent {
     return bestJustifiedCheckpoint;
   }
 
-  public Map<Bytes32, BeaconBlock> getBlocks() {
+  public Map<Bytes32, SignedBeaconBlock> getBlocks() {
     return blocks;
   }
 

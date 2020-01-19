@@ -61,11 +61,11 @@ import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -81,15 +81,14 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
-  public static void process_block_header(
-      BeaconState state, BeaconBlock block, boolean validate_state_root)
+  public static void process_block_header(BeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       checkArgument(
           block.getSlot().equals(state.getSlot()),
           "process_block_header: Verify that the slots match");
       checkArgument(
-          block.getParent_root().equals(state.getLatest_block_header().signing_root("signature")),
+          block.getParent_root().equals(state.getLatest_block_header().hash_tree_root()),
           "process_block_header: Verify that the parent matches");
 
       // Save the current block as the new latest block
@@ -98,21 +97,12 @@ public final class BlockProcessorUtil {
               block.getSlot(),
               block.getParent_root(),
               Bytes32.ZERO, // Overwritten in the next `process_slot` call
-              block.getBody().hash_tree_root(),
-              BLSSignature.empty()));
+              block.getBody().hash_tree_root()));
 
       // Only if we are processing blocks (not proposing them)
       Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
       checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
-      if (validate_state_root) {
-        checkArgument(
-            bls_verify(
-                proposer.getPubkey(),
-                block.signing_root("signature"),
-                block.getSignature(),
-                get_domain(state, DOMAIN_BEACON_PROPOSER)),
-            "process_block_header: Verify proposer signature");
-      }
+
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
@@ -239,8 +229,9 @@ public final class BlockProcessorUtil {
         checkArgument(
             proposer_slashing
                 .getHeader_1()
+                .getMessage()
                 .getSlot()
-                .equals(proposer_slashing.getHeader_2().getSlot()),
+                .equals(proposer_slashing.getHeader_2().getMessage().getSlot()),
             "process_proposer_slashings: Verify that the slots match");
 
         checkArgument(
@@ -256,23 +247,23 @@ public final class BlockProcessorUtil {
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                proposer_slashing.getHeader_1().signing_root("signature"),
+                proposer_slashing.getHeader_1().getMessage().hash_tree_root(),
                 proposer_slashing.getHeader_1().getSignature(),
                 get_domain(
                     state,
                     DOMAIN_BEACON_PROPOSER,
-                    compute_epoch_at_slot(proposer_slashing.getHeader_1().getSlot()))),
+                    compute_epoch_at_slot(proposer_slashing.getHeader_1().getMessage().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 1");
 
         checkArgument(
             bls_verify(
                 proposer.getPubkey(),
-                proposer_slashing.getHeader_2().signing_root("signature"),
+                proposer_slashing.getHeader_2().getMessage().hash_tree_root(),
                 proposer_slashing.getHeader_2().getSignature(),
                 get_domain(
                     state,
                     DOMAIN_BEACON_PROPOSER,
-                    compute_epoch_at_slot(proposer_slashing.getHeader_2().getSlot()))),
+                    compute_epoch_at_slot(proposer_slashing.getHeader_2().getMessage().getSlot()))),
             "process_proposer_slashings: Verify signatures are valid 2");
 
         slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
@@ -437,13 +428,13 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
-  public static void process_voluntary_exits(BeaconState state, List<VoluntaryExit> exits)
+  public static void process_voluntary_exits(BeaconState state, List<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     try {
 
       // For each exit in block.body.voluntaryExits:
-      for (VoluntaryExit exit : exits) {
-
+      for (SignedVoluntaryExit signedExit : exits) {
+        final VoluntaryExit exit = signedExit.getMessage();
         checkArgument(
             UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
                 > 0,
@@ -475,7 +466,10 @@ public final class BlockProcessorUtil {
         Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
         checkArgument(
             bls_verify(
-                validator.getPubkey(), exit.signing_root("signature"), exit.getSignature(), domain),
+                validator.getPubkey(),
+                exit.signing_root("signature"),
+                signedExit.getSignature(),
+                domain),
             "process_voluntary_exits: Verify signature");
 
         // - Run initiate_validator_exit(state, exit.validator_index)

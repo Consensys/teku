@@ -35,6 +35,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -219,14 +220,15 @@ public class ForkChoiceUtil {
 
   /**
    * @param store
-   * @param block
+   * @param signed_block
    * @param st
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
   @CheckReturnValue
   public static BlockImportResult on_block(
-      Store.Transaction store, BeaconBlock block, StateTransition st) {
+      Store.Transaction store, SignedBeaconBlock signed_block, StateTransition st) {
+    final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
     // Return early if precondition checks fail;
@@ -237,7 +239,7 @@ public class ForkChoiceUtil {
     }
 
     // Add new block to the store
-    store.putBlock(block.signing_root("signature"), block);
+    store.putBlock(block.hash_tree_root(), signed_block);
 
     // Make a copy of the state to avoid mutability issues
     BeaconStateWithCache state =
@@ -245,13 +247,13 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(state, block, true);
+      state = st.initiate(state, signed_block, true);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
 
     // Add new state for this block to the store
-    store.putBlockState(block.signing_root("signature"), state);
+    store.putBlockState(block.hash_tree_root(), state);
 
     // Update justified checkpoint
     final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
@@ -280,7 +282,7 @@ public class ForkChoiceUtil {
       store.setFinalizedCheckpoint(finalizedCheckpoint);
     }
 
-    final BlockProcessingRecord record = new BlockProcessingRecord(preState, block, state);
+    final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
     return BlockImportResult.successful(record);
   }
 

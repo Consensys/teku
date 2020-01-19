@@ -13,21 +13,21 @@
 
 package tech.pegasys.artemis.sync;
 
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 
 public class FailedBlockImportException extends InvalidResponseException {
-  private final BeaconBlock block;
+  private final SignedBeaconBlock block;
   private final BlockImportResult result;
 
-  public FailedBlockImportException(final BeaconBlock block, final BlockImportResult result) {
+  public FailedBlockImportException(final SignedBeaconBlock block, final BlockImportResult result) {
     super("Unable to import block due to error " + result.getFailureReason() + ": " + block);
     this.block = block;
     this.result = result;
   }
 
-  public BeaconBlock getBlock() {
+  public SignedBeaconBlock getBlock() {
     return block;
   }
 

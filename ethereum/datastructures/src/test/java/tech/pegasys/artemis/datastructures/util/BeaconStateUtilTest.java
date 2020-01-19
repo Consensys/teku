@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -106,6 +107,11 @@ class BeaconStateUtilTest {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = deposit.getData().getPubkey();
     DepositData depositData = deposit.getData();
+    DepositMessage depositMessage =
+        new DepositMessage(
+            depositData.getPubkey(),
+            depositData.getWithdrawal_credentials(),
+            depositData.getAmount());
     Bytes domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
@@ -114,7 +120,7 @@ class BeaconStateUtilTest {
 
     assertTrue(
         BLSVerify.bls_verify(
-            pubkey, depositData.signing_root("signature"), depositData.getSignature(), domain));
+            pubkey, depositMessage.hash_tree_root(), depositData.getSignature(), domain));
   }
 
   @Test
@@ -130,7 +136,7 @@ class BeaconStateUtilTest {
 
     assertFalse(
         BLSVerify.bls_verify(
-            pubkey, depositData.signing_root("signature"), depositData.getSignature(), domain));
+            pubkey, depositData.hash_tree_root(), depositData.getSignature(), domain));
   }
 
   @Test

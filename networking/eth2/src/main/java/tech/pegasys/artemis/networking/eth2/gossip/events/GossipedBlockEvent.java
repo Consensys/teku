@@ -14,16 +14,16 @@
 package tech.pegasys.artemis.networking.eth2.gossip.events;
 
 import java.util.Objects;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
 public class GossipedBlockEvent {
-  private final BeaconBlock block;
+  private final SignedBeaconBlock block;
 
-  public GossipedBlockEvent(final BeaconBlock block) {
+  public GossipedBlockEvent(final SignedBeaconBlock block) {
     this.block = block;
   }
 
-  public BeaconBlock getBlock() {
+  public SignedBeaconBlock getBlock() {
     return block;
   }
 

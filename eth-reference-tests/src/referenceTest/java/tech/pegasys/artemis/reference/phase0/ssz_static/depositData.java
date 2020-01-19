@@ -41,7 +41,7 @@ public class depositData extends TestSuite {
   void processSSZStaticDepositData(
       DepositData deserializedDepositData, Bytes32 root, Bytes32 signingRoot) throws Exception {
     assertEquals(deserializedDepositData.hash_tree_root(), root);
-    assertEquals(deserializedDepositData.signing_root("signature"), signingRoot);
+    assertEquals(deserializedDepositData.hash_tree_root(), signingRoot);
   }
 
   @MustBeClosed

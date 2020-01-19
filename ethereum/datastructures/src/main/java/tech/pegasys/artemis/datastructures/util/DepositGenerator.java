@@ -23,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -45,17 +46,15 @@ public class DepositGenerator {
       final UnsignedLong amountInGwei,
       final BLSPublicKey withdrawalPublicKey) {
     final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalPublicKey);
-    final DepositData depositData =
-        new DepositData(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei, null);
+    final DepositMessage depositMessage =
+        new DepositMessage(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei);
 
-    depositData.setSignature(
+    final BLSSignature signature =
         signDeposit
             ? BLSSignature.sign(
-                validatorKeyPair,
-                depositData.signing_root("signature"),
-                compute_domain(DOMAIN_DEPOSIT))
-            : BLSSignature.empty());
-    return depositData;
+                validatorKeyPair, depositMessage.hash_tree_root(), compute_domain(DOMAIN_DEPOSIT))
+            : BLSSignature.empty();
+    return new DepositData(depositMessage, signature);
   }
 
   private Bytes32 createWithdrawalCredentials(final BLSPublicKey withdrawalPublicKey) {

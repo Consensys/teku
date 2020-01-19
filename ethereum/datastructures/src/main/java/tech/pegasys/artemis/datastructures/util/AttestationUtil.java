@@ -241,11 +241,11 @@ public class AttestationUtil {
   public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
     UnsignedLong slot = state.getSlot();
     // Get variables necessary that can be shared among Attestations of all validators
-    Bytes32 beacon_block_root = block.signing_root("signature");
+    Bytes32 beacon_block_root = block.hash_tree_root();
     UnsignedLong start_slot = compute_start_slot_at_epoch(get_current_epoch(state));
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0
-            ? block.signing_root("signature")
+            ? block.hash_tree_root()
             : get_block_root_at_slot(state, start_slot);
     Checkpoint source = state.getCurrent_justified_checkpoint();
     Checkpoint target = new Checkpoint(get_current_epoch(state), epoch_boundary_block_root);

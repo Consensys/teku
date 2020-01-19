@@ -24,7 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
@@ -61,138 +61,149 @@ public class PendingBlocksTest {
 
   @Test
   public void add_blockForCurrentSlot() {
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
+    final SignedBeaconBlock block =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
     pendingBlocks.add(block);
 
     assertThat(pendingBlocks.contains(block)).isTrue();
     assertThat(pendingBlocks.size()).isEqualTo(1);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).containsExactlyInAnyOrder(block);
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root()))
+        .containsExactlyInAnyOrder(block);
   }
 
   @Test
   public void add_historicalBlockWithinWindow() {
     final UnsignedLong slot = currentSlot.minus(historicalTolerance);
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
     pendingBlocks.add(block);
 
     assertThat(pendingBlocks.contains(block)).isTrue();
     assertThat(pendingBlocks.size()).isEqualTo(1);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).containsExactlyInAnyOrder(block);
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root()))
+        .containsExactlyInAnyOrder(block);
   }
 
   @Test
   public void add_historicalBlockOutsideWindow() {
     final UnsignedLong slot = currentSlot.minus(historicalTolerance).minus(UnsignedLong.ONE);
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
     pendingBlocks.add(block);
 
     assertThat(pendingBlocks.contains(block)).isFalse();
     assertThat(pendingBlocks.size()).isEqualTo(0);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).isEmpty();
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root())).isEmpty();
   }
 
   @Test
   public void add_futureBlockWithinWindow() {
     final UnsignedLong slot = currentSlot.plus(futureTolerance);
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
     pendingBlocks.add(block);
 
     assertThat(pendingBlocks.contains(block)).isTrue();
     assertThat(pendingBlocks.size()).isEqualTo(1);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).containsExactlyInAnyOrder(block);
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root()))
+        .containsExactlyInAnyOrder(block);
   }
 
   @Test
   public void add_futureBlockOutsideWindow() {
     final UnsignedLong slot = currentSlot.plus(futureTolerance).plus(UnsignedLong.ONE);
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
     pendingBlocks.add(block);
 
     assertThat(pendingBlocks.contains(block)).isFalse();
     assertThat(pendingBlocks.size()).isEqualTo(0);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).isEmpty();
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root())).isEmpty();
   }
 
   @Test
   public void add_nonFinalizedBlock() {
-    final BeaconBlock finalizedBlock = DataStructureUtil.randomBeaconBlock(10, 1);
+    final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     eventBus.post(new FinalizedCheckpointEvent(checkpoint));
 
     final UnsignedLong slot = checkpoint.getEpochSlot().plus(UnsignedLong.ONE);
     setSlot(slot);
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
 
     pendingBlocks.add(block);
     assertThat(pendingBlocks.contains(block)).isTrue();
     assertThat(pendingBlocks.size()).isEqualTo(1);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).containsExactlyInAnyOrder(block);
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root()))
+        .containsExactlyInAnyOrder(block);
   }
 
   @Test
   public void add_finalizedBlock() {
-    final BeaconBlock finalizedBlock = DataStructureUtil.randomBeaconBlock(10, 1);
+    final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     eventBus.post(new FinalizedCheckpointEvent(checkpoint));
     final long slot = checkpoint.getEpochSlot().longValue() + 10;
     setSlot(slot);
 
     final long blockSlot = checkpoint.getEpochSlot().longValue();
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(blockSlot, 1);
+    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(blockSlot, 1);
 
     pendingBlocks.add(block);
     assertThat(pendingBlocks.contains(block)).isFalse();
     assertThat(pendingBlocks.size()).isEqualTo(0);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).isEmpty();
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root())).isEmpty();
   }
 
-  private Checkpoint finalizedCheckpoint(BeaconBlock block) {
+  private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
     final UnsignedLong epoch = compute_epoch_at_slot(block.getSlot()).plus(UnsignedLong.ONE);
-    final Bytes32 root = block.signing_root("signature");
+    final Bytes32 root = block.getMessage().hash_tree_root();
 
     return new Checkpoint(epoch, root);
   }
 
   @Test
   public void add_duplicateBlock() {
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
+    final SignedBeaconBlock block =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
     pendingBlocks.add(block);
     pendingBlocks.add(block);
 
     assertThat(pendingBlocks.contains(block)).isTrue();
     assertThat(pendingBlocks.size()).isEqualTo(1);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).containsExactlyInAnyOrder(block);
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root()))
+        .containsExactlyInAnyOrder(block);
   }
 
   @Test
   public void add_siblingBlocks() {
-    final BeaconBlock blockA = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
-    final BeaconBlock blockB =
-        DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), blockA.getParent_root(), 2);
+    final SignedBeaconBlock blockA =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+    final SignedBeaconBlock blockB =
+        DataStructureUtil.randomSignedBeaconBlock(
+            currentSlot.longValue(), blockA.getMessage().getParent_root(), 2);
     pendingBlocks.add(blockA);
     pendingBlocks.add(blockB);
 
     assertThat(pendingBlocks.contains(blockA)).isTrue();
     assertThat(pendingBlocks.contains(blockB)).isTrue();
     assertThat(pendingBlocks.size()).isEqualTo(2);
-    assertThat(pendingBlocks.childrenOf(blockA.getParent_root()))
+    assertThat(pendingBlocks.childrenOf(blockA.getMessage().getParent_root()))
         .containsExactlyInAnyOrder(blockA, blockB);
   }
 
   @Test
   public void remove_existingBlock() {
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
+    final SignedBeaconBlock block =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
     pendingBlocks.add(block);
     pendingBlocks.remove(block);
 
     assertThat(pendingBlocks.contains(block)).isFalse();
     assertThat(pendingBlocks.size()).isEqualTo(0);
-    assertThat(pendingBlocks.childrenOf(block.getParent_root())).isEmpty();
+    assertThat(pendingBlocks.childrenOf(block.getMessage().getParent_root())).isEmpty();
   }
 
   @Test
   public void remove_unknownBlock() {
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
+    final SignedBeaconBlock block =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
     pendingBlocks.remove(block);
 
     assertThat(pendingBlocks.contains(block)).isFalse();
@@ -202,9 +213,11 @@ public class PendingBlocksTest {
 
   @Test
   public void remove_siblingBlock() {
-    final BeaconBlock blockA = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
-    final BeaconBlock blockB =
-        DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), blockA.getParent_root(), 2);
+    final SignedBeaconBlock blockA =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+    final SignedBeaconBlock blockB =
+        DataStructureUtil.randomSignedBeaconBlock(
+            currentSlot.longValue(), blockA.getParent_root(), 2);
     pendingBlocks.add(blockA);
     pendingBlocks.add(blockB);
     pendingBlocks.remove(blockA);
@@ -216,19 +229,19 @@ public class PendingBlocksTest {
 
   @Test
   public void prune_finalizedBlocks() {
-    final BeaconBlock finalizedBlock = DataStructureUtil.randomBeaconBlock(10, 1);
+    final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     final long finalizedSlot = checkpoint.getEpochSlot().longValue();
     setSlot(finalizedSlot);
 
     // Add a bunch of blocks
-    List<BeaconBlock> nonFinalBlocks =
-        List.of(DataStructureUtil.randomBeaconBlock(finalizedSlot + 1, 1));
-    List<BeaconBlock> finalizedBlocks =
+    List<SignedBeaconBlock> nonFinalBlocks =
+        List.of(DataStructureUtil.randomSignedBeaconBlock(finalizedSlot + 1, 1));
+    List<SignedBeaconBlock> finalizedBlocks =
         List.of(
-            DataStructureUtil.randomBeaconBlock(finalizedSlot, 2),
-            DataStructureUtil.randomBeaconBlock(finalizedSlot - 1, 3));
-    List<BeaconBlock> allBlocks = new ArrayList<>();
+            DataStructureUtil.randomSignedBeaconBlock(finalizedSlot, 2),
+            DataStructureUtil.randomSignedBeaconBlock(finalizedSlot - 1, 3));
+    List<SignedBeaconBlock> allBlocks = new ArrayList<>();
     allBlocks.addAll(nonFinalBlocks);
     allBlocks.addAll(finalizedBlocks);
     nonFinalBlocks.forEach(pendingBlocks::add);
@@ -236,7 +249,7 @@ public class PendingBlocksTest {
 
     // Check that all blocks are in the collection
     assertThat(pendingBlocks.size()).isEqualTo(finalizedBlocks.size() + nonFinalBlocks.size());
-    for (BeaconBlock block : allBlocks) {
+    for (SignedBeaconBlock block : allBlocks) {
       assertThat(pendingBlocks.contains(block)).isTrue();
     }
 
@@ -246,15 +259,17 @@ public class PendingBlocksTest {
 
     // Check that all final blocks have been pruned
     assertThat(pendingBlocks.size()).isEqualTo(nonFinalBlocks.size());
-    for (BeaconBlock block : nonFinalBlocks) {
+    for (SignedBeaconBlock block : nonFinalBlocks) {
       assertThat(pendingBlocks.contains(block)).isTrue();
     }
   }
 
   @Test
   public void onSlot_prunesOldBlocks() {
-    final BeaconBlock blockA = DataStructureUtil.randomBeaconBlock(currentSlot.longValue() - 1L, 1);
-    final BeaconBlock blockB = DataStructureUtil.randomBeaconBlock(currentSlot.longValue(), 1);
+    final SignedBeaconBlock blockA =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L, 1);
+    final SignedBeaconBlock blockB =
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
     pendingBlocks.add(blockA);
     pendingBlocks.add(blockB);
 

@@ -42,7 +42,7 @@ public class indexedAttestation extends TestSuite {
       IndexedAttestation deserializedIndexedAttestation, Bytes32 root, Bytes32 signingRoot)
       throws Exception {
     assertEquals(deserializedIndexedAttestation.hash_tree_root(), root);
-    assertEquals(deserializedIndexedAttestation.signing_root("signature"), signingRoot);
+    assertEquals(deserializedIndexedAttestation.hash_tree_root(), signingRoot);
   }
 
   @MustBeClosed

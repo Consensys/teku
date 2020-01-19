@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockBody;
@@ -21,9 +22,10 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.Random;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class BeaconBlockTest {
 
@@ -31,10 +33,8 @@ class BeaconBlockTest {
   private Bytes32 previous_root = Bytes32.random(new Random(100));
   private Bytes32 state_root = Bytes32.random(new Random(101));
   private BeaconBlockBody body = randomBeaconBlockBody(100);
-  private BLSSignature signature = BLSSignature.random(100);
 
-  private BeaconBlock beaconBlock =
-      new BeaconBlock(slot, previous_root, state_root, body, signature);
+  private BeaconBlock beaconBlock = new BeaconBlock(slot, previous_root, state_root, body);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -45,7 +45,7 @@ class BeaconBlockTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    BeaconBlock testBeaconBlock = new BeaconBlock(slot, previous_root, state_root, body, signature);
+    BeaconBlock testBeaconBlock = new BeaconBlock(slot, previous_root, state_root, body);
 
     assertEquals(beaconBlock, testBeaconBlock);
   }
@@ -53,23 +53,21 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot.plus(UnsignedLong.ONE), previous_root, state_root, body, signature);
+        new BeaconBlock(slot.plus(UnsignedLong.ONE), previous_root, state_root, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenParentRootsAreDifferent() {
-    BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, previous_root.not(), state_root, body, signature);
+    BeaconBlock testBeaconBlock = new BeaconBlock(slot, previous_root.not(), state_root, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void equalsReturnsFalseWhenStateRootsAreDifferent() {
-    BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, previous_root, state_root.not(), body, signature);
+    BeaconBlock testBeaconBlock = new BeaconBlock(slot, previous_root, state_root.not(), body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -84,29 +82,15 @@ class BeaconBlockTest {
       otherBody = randomBeaconBlockBody(101);
     }
 
-    BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, previous_root, state_root, otherBody, signature);
-
-    assertNotEquals(beaconBlock, testBeaconBlock);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    BLSSignature differentSignature = BLSSignature.random(100);
-    while (differentSignature.equals(signature)) {
-      differentSignature = BLSSignature.random(101);
-    }
-
-    BeaconBlock testBeaconBlock =
-        new BeaconBlock(slot, previous_root, state_root, body, differentSignature);
+    BeaconBlock testBeaconBlock = new BeaconBlock(slot, previous_root, state_root, otherBody);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
 
   @Test
   void roundtripSSZ() {
-    // todo
-    // Bytes sszBeaconBlockBytes = beaconBlock.toBytes();
-    // assertEquals(beaconBlock, BeaconBlock.fromBytes(sszBeaconBlockBytes));
+    final Bytes ssz = SimpleOffsetSerializer.serialize(beaconBlock);
+    final BeaconBlock result = SimpleOffsetSerializer.deserialize(ssz, BeaconBlock.class);
+    assertThat(result).isEqualTo(beaconBlock);
   }
 }
