@@ -54,6 +54,15 @@ import tech.pegasys.artemis.storage.Store.Transaction;
 
 public class ForkChoiceUtil {
 
+  /**
+   * Spec version 0.9.3 fixed a spec bug where attestations affecting the current slot would be
+   * processed because the check failed to add GENESIS_TIME and incorrectly allowed all attestations
+   *
+   * <p>Since we don't currently support deferring processing of attestations, we continue to
+   * preserve this bug.  We should move to making this toggle permanently false.
+   */
+  private static final boolean PROCESS_ATTESTATIONS_EARLY = true;
+
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
@@ -460,10 +469,7 @@ public class ForkChoiceUtil {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
-    UnsignedLong attestation_slot = attestation.getData().getSlot();
-    checkArgument(
-        get_current_slot(store).compareTo(attestation_slot.plus(UnsignedLong.ONE)) >= 0,
-        "on_attestation: Attestation can only affect the fork choice of subsequent slots");
+    checkAttestationForPreviousSlot(store, attestation);
 
     // Get state at the `target` to validate attestation and calculate the committees
     IndexedAttestation indexed_attestation = get_indexed_attestation(target_state, attestation);
@@ -479,6 +485,17 @@ public class ForkChoiceUtil {
             i, new Checkpoint(target.getEpoch(), attestation.getData().getBeacon_block_root()));
       }
     }
+  }
+
+  private static void checkAttestationForPreviousSlot(
+      final Transaction store, final Attestation attestation) {
+    UnsignedLong attestation_slot =
+        PROCESS_ATTESTATIONS_EARLY
+            ? attestation.getData().getSlot()
+            : attestation.getData().getSlot().plus(UnsignedLong.ONE);
+    checkArgument(
+        get_current_slot(store).compareTo(attestation_slot) >= 0,
+        "on_attestation: Attestation can only affect the fork choice of subsequent slots");
   }
 
   private static void storeCheckpointState(
