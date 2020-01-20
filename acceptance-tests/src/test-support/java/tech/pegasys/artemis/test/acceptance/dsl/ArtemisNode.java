@@ -104,6 +104,7 @@ public class ArtemisNode extends Node {
 
   public void start() throws Exception {
     assertThat(started).isFalse();
+    LOG.debug("Start node {}", nodeAlias);
     started = true;
     final Map<File, String> configFiles = config.write();
     this.configFiles = configFiles.keySet();
@@ -115,6 +116,7 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForGenesis() {
+    LOG.debug("Wait for genesis");
     waitFor(this::fetchGenesisTime);
   }
 
@@ -139,6 +141,7 @@ public class ArtemisNode extends Node {
 
   public void waitForNewFinalization() throws IOException {
     UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
+    LOG.debug("Wait for finalized block");
     waitFor(
         () ->
             assertThat(getCurrentFinalizedCheckpoint().getEpoch())
@@ -147,6 +150,7 @@ public class ArtemisNode extends Node {
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
+    LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
         () -> assertThat(getCurrentBeaconHead()).isEqualTo(targetNode.getCurrentBeaconHead()), 300);
   }

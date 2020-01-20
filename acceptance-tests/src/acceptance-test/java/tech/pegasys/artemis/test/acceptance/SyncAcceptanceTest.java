@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.test.acceptance;
 
 import java.util.function.Consumer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
@@ -24,7 +22,6 @@ import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode.Config;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 
 public class SyncAcceptanceTest extends AcceptanceTestBase {
-  private static final Logger LOG = LogManager.getLogger();
 
   @Test
   @Disabled("This test doesn't work yet.  Need to debug node connectivity issues.")
@@ -37,19 +34,12 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
     final ArtemisNode lateJoiningNode =
         createArtemisNode(configureLateJoiningNode(genesisStateConfig, primaryNode));
 
-    LOG.debug("Start first node");
     primaryNode.start();
-    LOG.debug("Wait for genesis");
     primaryNode.waitForGenesis();
-    LOG.debug("Wait for finalized block");
     primaryNode.waitForNewFinalization();
-    LOG.debug("First node has finalized block");
 
-    LOG.debug("Start second node");
     lateJoiningNode.start();
-    LOG.debug("Wait for genesis");
     lateJoiningNode.waitForGenesis();
-    LOG.debug("Wait second node to sync with first node.");
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
   }
 
