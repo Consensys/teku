@@ -130,7 +130,7 @@ public class StateTransition {
 
   public BeaconStateWithCache initiate(BeaconStateWithCache state, SignedBeaconBlock block)
       throws StateTransitionException {
-    return initiate(state, block, false);
+    return initiate(state, block, true);
   }
 
   /**
