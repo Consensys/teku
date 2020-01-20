@@ -80,7 +80,7 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   @Override
   public List<Bytes> get_variable_parts() {
     return List.of(
-        Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(body), Bytes.EMPTY);
+        Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, SimpleOffsetSerializer.serialize(body));
   }
 
   @Override
