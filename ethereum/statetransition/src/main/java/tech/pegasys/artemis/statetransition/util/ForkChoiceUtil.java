@@ -21,13 +21,17 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
@@ -50,13 +54,17 @@ import tech.pegasys.artemis.storage.Store.Transaction;
 
 public class ForkChoiceUtil {
 
-  public static UnsignedLong get_current_slot(Store.Transaction store, boolean useUnixTime) {
+  public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
     return time.minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
-  public static UnsignedLong get_current_slot(Store.Transaction store) {
+  public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
+    return UnsignedLong.valueOf(GENESIS_SLOT).plus(get_slots_since_genesis(store, useUnixTime));
+  }
+
+  public static UnsignedLong get_current_slot(ReadOnlyStore store) {
     return get_current_slot(store, false);
   }
 
@@ -111,6 +119,57 @@ public class ForkChoiceUtil {
             .sum());
   }
 
+  public static boolean filter_block_tree(
+      ReadOnlyStore store, Bytes32 block_root, Map<Bytes32, BeaconBlock> blocks) {
+    BeaconBlock block = store.getBlock(block_root);
+    List<Bytes32> children =
+        store.getBlockRoots().stream()
+            .filter(root -> store.getBlock(root).getParent_root().equals(block_root))
+            .collect(Collectors.toList());
+    // If any children branches contain expected finalized/justified checkpoints,
+    // add to filtered block-tree and signal viability to parent
+    if (!children.isEmpty()) {
+      boolean filter_block_tree_result =
+          children.stream()
+              .map(child -> filter_block_tree(store, child, blocks))
+              .reduce((a, b) -> a || b)
+              .orElse(false);
+      if (filter_block_tree_result) {
+        blocks.put(block_root, block);
+        return true;
+      }
+      return false;
+    }
+
+    BeaconState head_state = store.getBlockState(block_root);
+    boolean correct_justified =
+        store.getJustifiedCheckpoint().getEpoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))
+            || head_state.getCurrent_justified_checkpoint().equals(store.getJustifiedCheckpoint());
+    boolean correct_finalized =
+        store.getFinalizedCheckpoint().getEpoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))
+            || head_state.getFinalized_checkpoint().equals(store.getFinalizedCheckpoint());
+
+    if (correct_justified && correct_finalized) {
+      blocks.put(block_root, block);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Retrieve a filtered block tree from store, only returning branches whose leaf state's
+   * justified/finalized info agrees with that in store.
+   *
+   * @param store
+   * @return
+   */
+  public static Map<Bytes32, BeaconBlock> get_filtered_block_tree(Store store) {
+    Bytes32 base = store.getJustifiedCheckpoint().getRoot();
+    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+    filter_block_tree(store, base, blocks);
+    return blocks;
+  }
+
   /**
    * Gets the root of the head block according to LMD-GHOST
    *
@@ -120,6 +179,9 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_head</a>
    */
   public static Bytes32 get_head(Store store) {
+    // Get filtered block tree that only includes viable branches
+    final Map<Bytes32, BeaconBlock> blocks = get_filtered_block_tree(store);
+
     // Execute the LMD-GHOST fork choice
     Bytes32 head = store.getJustifiedCheckpoint().getRoot();
     UnsignedLong justified_slot = store.getJustifiedCheckpoint().getEpochSlot();
@@ -127,11 +189,14 @@ public class ForkChoiceUtil {
     while (true) {
       final Bytes32 head_in_filter = head;
       List<Bytes32> children =
-          store.getBlockRoots().stream()
+          blocks.entrySet().stream()
               .filter(
-                  root ->
-                      store.getBlock(root).getParent_root().equals(head_in_filter)
-                          && store.getBlock(root).getSlot().compareTo(justified_slot) > 0)
+                  (entry) -> {
+                    final BeaconBlock block = entry.getValue();
+                    return block.getParent_root().equals(head_in_filter)
+                        && block.getSlot().compareTo(justified_slot) > 0;
+                  })
+              .map(Entry::getKey)
               .collect(Collectors.toList());
 
       if (children.size() == 0) {
@@ -155,13 +220,13 @@ public class ForkChoiceUtil {
               .get();
     }
   }
-
   /*
   To address the bouncing attack, only update conflicting justified
   checkpoints in the fork choice if in the early slots of the epoch.
   Otherwise, delay incorporation of new justified checkpoint until next epoch boundary.
   See https://ethresear.ch/t/prevention-of-bouncing-attack-on-ffg/6114 for more detailed analysis and discussion.
   */
+
   public static boolean should_update_justified_checkpoint(
       Store.Transaction store, Checkpoint new_justified_checkpoint) {
     if (compute_slots_since_epoch_start(get_current_slot(store, true))
@@ -259,14 +324,19 @@ public class ForkChoiceUtil {
     final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
     if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
       try {
-        storeCheckpointState(
-            store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
+        if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
+            > 0) {
+          storeCheckpointState(
+              store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
+          store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+        }
+        if (should_update_justified_checkpoint(store, justifiedCheckpoint)) {
+          storeCheckpointState(
+              store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
+          store.setJustifiedCheckpoint(justifiedCheckpoint);
+        }
       } catch (SlotProcessingException | EpochProcessingException e) {
         return BlockImportResult.failedStateTransition(e);
-      }
-      store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-      if (should_update_justified_checkpoint(store, justifiedCheckpoint)) {
-        store.setJustifiedCheckpoint(justifiedCheckpoint);
       }
     }
 
@@ -291,7 +361,7 @@ public class ForkChoiceUtil {
     if (preState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
-    if (blockIsFromFuture(block, preState, store)) {
+    if (blockIsFromFuture(block, store)) {
       return Optional.of(BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE);
     }
     if (!blockDescendsFromLatestFinalizedBlock(block, store)) {
@@ -300,16 +370,8 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
-  private static boolean blockIsFromFuture(
-      BeaconBlock block, final BeaconState preState, ReadOnlyStore store) {
-    final UnsignedLong genesisTime = preState.getGenesis_time();
-    final UnsignedLong now = store.getTime();
-    final UnsignedLong blockTime = getBlockTime(block, genesisTime);
-    return now.compareTo(blockTime) < 0;
-  }
-
-  private static UnsignedLong getBlockTime(BeaconBlock block, UnsignedLong genesisTime) {
-    return genesisTime.plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+  private static boolean blockIsFromFuture(BeaconBlock block, ReadOnlyStore store) {
+    return get_current_slot(store).compareTo(block.getSlot()) < 0;
   }
 
   private static boolean blockDescendsFromLatestFinalizedBlock(
@@ -366,8 +428,8 @@ public class ForkChoiceUtil {
         "on_attestation: Attestations must be from the current or previous epoch");
 
     checkArgument(
-        store.containsBlock(target.getRoot()),
-        "on_attestation: Cannot calculate the current shuffling if have not seen the target");
+        target.getEpoch().equals(compute_epoch_at_slot(attestation.getData().getSlot())),
+        "on_attestation: Attestation slot must be within specified epoch");
 
     checkArgument(
         store.getBlockRoots().contains(target.getRoot()),
@@ -376,13 +438,8 @@ public class ForkChoiceUtil {
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
     BeaconState targetRootState = store.getBlockState(target.getRoot());
-    UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     checkArgument(
-        unixTimeStamp.compareTo(
-                targetRootState
-                    .getGenesis_time()
-                    .plus(target.getEpochSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-            >= 0,
+        get_current_slot(store).compareTo(compute_start_slot_at_epoch(target.getEpoch())) >= 0,
         "on_attestation: Attestations cannot be from the future epochs");
 
     checkArgument(
@@ -405,12 +462,8 @@ public class ForkChoiceUtil {
     // Delay consideration in the fork choice until their slot is in the past.
     UnsignedLong attestation_slot = attestation.getData().getSlot();
     checkArgument(
-        unixTimeStamp.compareTo(
-                attestation_slot
-                    .plus(UnsignedLong.ONE)
-                    .times(UnsignedLong.valueOf(SECONDS_PER_SLOT)))
-            >= 0,
-        "on_attestation: Attestation can only affect the forck choice of subsequent slots");
+        get_current_slot(store).compareTo(attestation_slot.plus(UnsignedLong.ONE)) >= 0,
+        "on_attestation: Attestation can only affect the fork choice of subsequent slots");
 
     // Get state at the `target` to validate attestation and calculate the committees
     IndexedAttestation indexed_attestation = get_indexed_attestation(target_state, attestation);
