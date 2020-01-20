@@ -127,7 +127,7 @@ public class ValidatorCoordinatorTest {
             return false;
           }
           final BlockProposedEvent block = (BlockProposedEvent) argument;
-          return block.getBlock().getSlot().equals(slotNumber);
+          return block.getBlock().getMessage().getSlot().equals(slotNumber);
         });
   }
 }

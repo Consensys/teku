@@ -26,6 +26,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
@@ -50,7 +51,7 @@ public class BlockProposalUtil {
     this.stateTransition = stateTransition;
   }
 
-  public BeaconBlock createNewBlock(
+  public SignedBeaconBlock createNewBlock(
       final Signer signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
@@ -73,41 +74,41 @@ public class BlockProposalUtil {
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
-    final BLSSignature tmpSignature = BLSSignature.empty();
     final BeaconBlock newBlock =
-        new BeaconBlock(
-            newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody, tmpSignature);
+        new BeaconBlock(newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody);
 
     // Run state transition and set state root
-    Bytes32 stateRoot = stateTransition.initiate(newState, newBlock, false).hash_tree_root();
+    Bytes32 stateRoot =
+        stateTransition
+            .initiate(newState, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false)
+            .hash_tree_root();
     newBlock.setState_root(stateRoot);
 
     // Sign block and set block signature
     BLSSignature blockSignature = getBlockSignature(newState, newBlock, signer);
-    newBlock.setSignature(blockSignature);
 
-    return newBlock;
+    return new SignedBeaconBlock(newBlock, blockSignature);
   }
 
-  public BeaconBlock createEmptyBlock(
+  public SignedBeaconBlock createEmptyBlock(
       final Signer signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
-      final Bytes32 parentBlockSigningRoot)
+      final Bytes32 parentBlockRoot)
       throws StateTransitionException {
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     return createNewBlock(
         signer,
         newSlot,
         previousState,
-        parentBlockSigningRoot,
+        parentBlockRoot,
         StartupUtil.get_eth1_data_stub(previousState, newEpoch),
         BeaconBlockBodyLists.createAttestations(),
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());
   }
 
-  public BeaconBlock createBlockWithAttestations(
+  public SignedBeaconBlock createBlockWithAttestations(
       final Signer signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
@@ -159,7 +160,7 @@ public class BlockProposalUtil {
             Constants.DOMAIN_BEACON_PROPOSER,
             BeaconStateUtil.compute_epoch_at_slot(block.getSlot()));
 
-    final Bytes32 blockRoot = block.signing_root("signature");
+    final Bytes32 blockRoot = block.hash_tree_root();
 
     return signer.sign(blockRoot, domain);
   }

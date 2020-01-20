@@ -15,6 +15,7 @@ package tech.pegasys.artemis.ethtests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
@@ -34,7 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.provider.Arguments;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -157,30 +158,34 @@ public abstract class TestSuite {
 
       return result.stream()
           .map(
-              walkPath -> {
-                return testSet.getFileNames().stream()
-                    .flatMap(
-                        fileName -> {
-                          Object object =
-                              pathToObject(
-                                  Path.of(walkPath, fileName),
-                                  testSet.getTestObjectByFileName(fileName));
-                          return testSet.getTestObjectByFileName(fileName).stream()
-                              .map(
-                                  testObject -> {
-                                    if (fileName.contains(".ssz")) {
-                                      Bytes objectBytes =
-                                          getSSZBytesFromPath(Path.of(walkPath, fileName));
-                                      return SimpleOffsetSerializer.deserialize(
-                                          objectBytes, testObject.getClassName());
-                                    } else {
-                                      return parseObjectFromFile(
-                                          testObject.getClassName(), testObject.getPath(), object);
-                                    }
-                                  });
-                        })
-                    .collect(Collectors.toList());
-              })
+              walkPath ->
+                  Streams.concat(
+                          testSet.getFileNames().stream()
+                              .flatMap(
+                                  fileName -> {
+                                    Object object =
+                                        pathToObject(
+                                            Path.of(walkPath, fileName),
+                                            testSet.getTestObjectByFileName(fileName));
+                                    return testSet.getTestObjectByFileName(fileName).stream()
+                                        .map(
+                                            testObject -> {
+                                              if (fileName.contains(".ssz")) {
+                                                Bytes objectBytes =
+                                                    getSSZBytesFromPath(
+                                                        Path.of(walkPath, fileName));
+                                                return SimpleOffsetSerializer.deserialize(
+                                                    objectBytes, testObject.getClassName());
+                                              } else {
+                                                return parseObjectFromFile(
+                                                    testObject.getClassName(),
+                                                    testObject.getPath(),
+                                                    object);
+                                              }
+                                            });
+                                  }),
+                          Stream.of(Path.of(walkPath).getFileName().toString()))
+                      .collect(Collectors.toList()))
           .map(objects -> Arguments.of(objects.toArray()));
     } catch (IOException e) {
       LOG.warn("Failed to load tests from " + path, e);
@@ -335,20 +340,6 @@ public abstract class TestSuite {
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("serialized.ssz", className, null));
     testSet.add(new TestObject("roots.yaml", Bytes32.class, Paths.get("root")));
-    testSet.add(new TestObject("roots.yaml", Bytes32.class, Paths.get("signing_root")));
-
-    return findTestsByPath(testSet);
-  }
-
-  @MustBeClosed
-  @SuppressWarnings("rawtypes")
-  public static Stream<Arguments> sszStaticSetupNoSigningRoot(
-      Path path, Path configPath, Class className) throws Exception {
-    loadConfigFromPath(configPath);
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("serialized.ssz", className, null));
-    testSet.add(new TestObject("roots.yaml", Bytes32.class, Paths.get("root")));
 
     return findTestsByPath(testSet);
   }
@@ -359,7 +350,7 @@ public abstract class TestSuite {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("block.yaml", BeaconBlock.class, null));
+    testSet.add(new TestObject("block.yaml", SignedBeaconBlock.class, null));
     testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
 
     return findTestsByPath(testSet);
@@ -371,7 +362,7 @@ public abstract class TestSuite {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("block.yaml", BeaconBlock.class, null));
+    testSet.add(new TestObject("block.yaml", SignedBeaconBlock.class, null));
     testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
     testSet.add(new TestObject("post.yaml", BeaconState.class, null));
 
@@ -384,7 +375,7 @@ public abstract class TestSuite {
     loadConfigFromPath(configPath);
 
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("block.yaml", BeaconBlock.class, null));
+    testSet.add(new TestObject("block.yaml", SignedBeaconBlock.class, null));
     testSet.add(new TestObject("meta.yaml", Integer.class, Paths.get("bls_setting")));
     testSet.add(new TestObject("pre.yaml", BeaconState.class, null));
 
@@ -508,11 +499,11 @@ public abstract class TestSuite {
     testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
     testSet.add(new TestObject("post.ssz", BeaconState.class, null));
     for (int i = 0; i < block_count; i++) {
-      testSet.add(new TestObject("blocks_" + i + ".ssz", BeaconBlock.class, null));
+      testSet.add(new TestObject("blocks_" + i + ".ssz", SignedBeaconBlock.class, null));
     }
 
     return convertArgumentToList(
-        BeaconBlock.class, block_count, findTestsByPath(testSet).collect(Collectors.toList()))
+        SignedBeaconBlock.class, block_count, findTestsByPath(testSet).collect(Collectors.toList()))
         .stream();
   }
 
@@ -528,11 +519,11 @@ public abstract class TestSuite {
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("pre.ssz", BeaconState.class, null));
     for (int i = 0; i < block_count; i++) {
-      testSet.add(new TestObject("blocks_" + i + ".ssz", BeaconBlock.class, null));
+      testSet.add(new TestObject("blocks_" + i + ".ssz", SignedBeaconBlock.class, null));
     }
 
     return convertArgumentToList(
-        BeaconBlock.class, block_count, findTestsByPath(testSet).collect(Collectors.toList()))
+        SignedBeaconBlock.class, block_count, findTestsByPath(testSet).collect(Collectors.toList()))
         .stream();
   }
 

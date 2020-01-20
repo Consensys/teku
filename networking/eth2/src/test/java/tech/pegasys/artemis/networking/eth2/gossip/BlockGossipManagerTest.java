@@ -23,7 +23,7 @@ import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
@@ -48,7 +48,7 @@ public class BlockGossipManagerTest {
   @Test
   public void onBlockProposed() {
     // Should gossip new blocks received from event bus
-    BeaconBlock block = DataStructureUtil.randomBeaconBlock(1, 100);
+    SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 100);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
     eventBus.post(new BlockProposedEvent(block));
 

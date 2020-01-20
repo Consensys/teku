@@ -33,7 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.artemis.datastructures.state.Fork;
@@ -54,7 +54,7 @@ public class PeerSyncTest {
   private BlockImporter blockImporter = mock(BlockImporter.class);
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
 
-  private static final BeaconBlock BLOCK = DataStructureUtil.randomBeaconBlock(1, 100);
+  private static final SignedBeaconBlock BLOCK = DataStructureUtil.randomSignedBeaconBlock(1, 100);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(30);
   private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
@@ -71,7 +71,7 @@ public class PeerSyncTest {
   private PeerSync peerSync;
 
   @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<ResponseStream.ResponseListener<BeaconBlock>>
+  private final ArgumentCaptor<ResponseStream.ResponseListener<SignedBeaconBlock>>
       responseListenerArgumentCaptor =
           ArgumentCaptor.forClass(ResponseStream.ResponseListener.class);
 
@@ -126,7 +126,7 @@ public class PeerSyncTest {
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
+    final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
 
     // Importing the returned block fails
@@ -169,7 +169,7 @@ public class PeerSyncTest {
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
+    final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
 
     // Stop the sync, no further blocks should be imported
@@ -209,11 +209,11 @@ public class PeerSyncTest {
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener =
+    final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
-    final List<BeaconBlock> blocks =
+    final List<SignedBeaconBlock> blocks =
         respondWithBlocksAtSlots(responseListener, 1, PEER_HEAD_SLOT.intValue());
-    for (BeaconBlock block : blocks) {
+    for (SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
     assertThat(syncFuture).isNotDone();
@@ -289,12 +289,12 @@ public class PeerSyncTest {
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
 
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener1 =
+    final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener1 =
         responseListenerArgumentCaptor.getValue();
     final int lastReceivedBlockSlot = peerHeadSlot.intValue() - 2;
-    List<BeaconBlock> blocks =
+    List<SignedBeaconBlock> blocks =
         respondWithBlocksAtSlots(responseListener1, 1, lastReceivedBlockSlot);
-    for (BeaconBlock block : blocks) {
+    for (SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
 
@@ -310,10 +310,10 @@ public class PeerSyncTest {
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
-    final ResponseStream.ResponseListener<BeaconBlock> responseListener2 =
+    final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener2 =
         responseListenerArgumentCaptor.getValue();
     blocks = respondWithBlocksAtSlots(responseListener2, peerHeadSlot.intValue());
-    for (BeaconBlock block : blocks) {
+    for (SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
     assertThat(syncFuture).isNotDone();
@@ -327,11 +327,11 @@ public class PeerSyncTest {
     verify(peer, never()).sendGoodbye(any());
   }
 
-  private List<BeaconBlock> respondWithBlocksAtSlots(
-      final ResponseStream.ResponseListener<BeaconBlock> responseListener, int... slots) {
-    List<BeaconBlock> blocks = new ArrayList<>();
+  private List<SignedBeaconBlock> respondWithBlocksAtSlots(
+      final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener, int... slots) {
+    List<SignedBeaconBlock> blocks = new ArrayList<>();
     for (int slot : slots) {
-      final BeaconBlock block = DataStructureUtil.randomBeaconBlock(slot, slot);
+      final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot, slot);
       blocks.add(block);
       responseListener.onResponse(block);
     }

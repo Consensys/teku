@@ -38,10 +38,9 @@ public class beaconBlock extends TestSuite {
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(
-      BeaconBlock deserializedBeaconBlock, Bytes32 root, Bytes32 signingRoot) throws Exception {
+  void processSSZStaticBeaconBlock(BeaconBlock deserializedBeaconBlock, Bytes32 root)
+      throws Exception {
     assertEquals(deserializedBeaconBlock.hash_tree_root(), root);
-    assertEquals(deserializedBeaconBlock.signing_root("signature"), signingRoot);
   }
 
   @MustBeClosed

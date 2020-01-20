@@ -42,6 +42,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.Eth1DataWithIndexAndDeposits;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
@@ -213,6 +215,7 @@ public class ValidatorCoordinator {
   public void onBlockImported(BlockImportedEvent event) {
     event
         .getBlock()
+        .getMessage()
         .getBody()
         .getAttestations()
         .forEach(blockAttestationsPool::addAggregateAttestationProcessedInBlock);
@@ -309,7 +312,7 @@ public class ValidatorCoordinator {
         return;
       }
 
-      BeaconBlock newBlock;
+      SignedBeaconBlock newBlock;
       // Collect attestations to include
       SSZList<Attestation> attestations = getAttestationsForSlot(newSlot);
       // Collect slashing to include
@@ -318,10 +321,8 @@ public class ValidatorCoordinator {
       final SSZList<Deposit> deposits = getDepositsForBlock();
 
       final Signer signer = getSigner(proposer);
-      final Bytes32 parentRoot = previousBlock.signing_root("signature");
-
       Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
-
+      final Bytes32 parentRoot = previousBlock.hash_tree_root();
       newBlock =
           blockCreator.createNewBlock(
               signer,
@@ -337,7 +338,7 @@ public class ValidatorCoordinator {
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
 
       if (validators.get(proposer).isNaughty()) {
-        final BeaconBlock naughtyBlock =
+        final SignedBeaconBlock naughtyBlock =
             blockCreator.createEmptyBlock(signer, newSlot, newState, parentRoot);
         this.eventBus.post(naughtyBlock);
       }

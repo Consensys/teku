@@ -28,11 +28,9 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.hashtree.SigningRoot;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Attestation
-    implements Merkleizable, SigningRoot, SimpleOffsetSerializable, SSZContainer {
+public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
@@ -139,13 +137,6 @@ public class Attestation
 
   public void setAggregate_signature(BLSSignature aggregate_signature) {
     this.signature = aggregate_signature;
-  }
-
-  @Override
-  public Bytes32 signing_root(String truncation_param) {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits), data.hash_tree_root()));
   }
 
   @Override

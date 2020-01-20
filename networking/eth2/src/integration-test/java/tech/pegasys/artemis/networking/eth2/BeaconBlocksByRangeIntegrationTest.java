@@ -24,7 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -59,14 +59,14 @@ public class BeaconBlocksByRangeIntegrationTest {
 
   @Test
   public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
-    final List<BeaconBlock> response = requestBlocks(Bytes32.ZERO);
+    final List<SignedBeaconBlock> response = requestBlocks(Bytes32.ZERO);
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
     beaconChainUtil.initializeStorage();
-    final List<BeaconBlock> response = requestBlocks(storageClient1.getBestBlockRoot());
+    final List<SignedBeaconBlock> response = requestBlocks(storageClient1.getBestBlockRoot());
     assertThat(response).isEmpty();
   }
 
@@ -74,16 +74,18 @@ public class BeaconBlocksByRangeIntegrationTest {
   public void shouldSendEmptyResponseWhenHeadBlockRootDoesNotMatchAnyBlock() throws Exception {
     beaconChainUtil.initializeStorage();
     beaconChainUtil.createAndImportBlockAtSlot(1);
-    final List<BeaconBlock> response = requestBlocks(Bytes32.ZERO);
+    final List<SignedBeaconBlock> response = requestBlocks(Bytes32.ZERO);
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldRespondWithBlocksWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
     beaconChainUtil.initializeStorage();
-    final BeaconBlock nonCanonicalBlock = beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
+    final SignedBeaconBlock nonCanonicalBlock =
+        beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
     storageClient1.updateBestBlock(nonCanonicalBlock.getParent_root(), UnsignedLong.ZERO);
-    final List<BeaconBlock> response = requestBlocks(nonCanonicalBlock.signing_root("signature"));
+    final List<SignedBeaconBlock> response =
+        requestBlocks(nonCanonicalBlock.getMessage().hash_tree_root());
     assertThat(response).containsExactly(nonCanonicalBlock);
   }
 
@@ -91,22 +93,22 @@ public class BeaconBlocksByRangeIntegrationTest {
   public void shouldRespondWithBlocksFromCanonicalChain() throws Exception {
     beaconChainUtil.initializeStorage();
 
-    final BeaconBlock block1 = beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
-    final Bytes32 block1Root = block1.signing_root("signature");
+    final SignedBeaconBlock block1 = beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
+    final Bytes32 block1Root = block1.getMessage().hash_tree_root();
     storageClient1.updateBestBlock(block1Root, block1.getSlot());
 
-    final BeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2).getBlock();
-    final Bytes32 block2Root = block2.signing_root("signature");
+    final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2).getBlock();
+    final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     storageClient1.updateBestBlock(block2Root, block2.getSlot());
 
-    final List<BeaconBlock> response = requestBlocks(block2Root);
+    final List<SignedBeaconBlock> response = requestBlocks(block2Root);
     assertThat(response).containsExactly(block1, block2);
   }
 
-  private List<BeaconBlock> requestBlocks(final Bytes32 headBlockRoot)
+  private List<SignedBeaconBlock> requestBlocks(final Bytes32 headBlockRoot)
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException {
-    final List<BeaconBlock> blocks = new ArrayList<>();
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer1.requestBlocksByRange(
             headBlockRoot,

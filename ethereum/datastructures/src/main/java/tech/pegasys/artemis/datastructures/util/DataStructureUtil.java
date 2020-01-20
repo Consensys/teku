@@ -28,15 +28,19 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -157,14 +161,24 @@ public final class DataStructureUtil {
     return new AttesterSlashing(randomIndexedAttestation(seed), randomIndexedAttestation(seed++));
   }
 
+  public static SignedBeaconBlock randomSignedBeaconBlock(long slotNum, int seed) {
+    final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, seed);
+    return new SignedBeaconBlock(beaconBlock, BLSSignature.random());
+  }
+
+  public static SignedBeaconBlock randomSignedBeaconBlock(
+      long slotNum, Bytes32 parentRoot, int seed) {
+    final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, parentRoot, seed);
+    return new SignedBeaconBlock(beaconBlock, BLSSignature.random());
+  }
+
   public static BeaconBlock randomBeaconBlock(long slotNum, int seed) {
     UnsignedLong slot = UnsignedLong.valueOf(slotNum);
     Bytes32 previous_root = randomBytes32(seed);
     Bytes32 state_root = randomBytes32(seed++);
     BeaconBlockBody body = randomBeaconBlockBody(seed++);
-    BLSSignature signature = BLSSignature.random(seed++);
 
-    return new BeaconBlock(slot, previous_root, state_root, body, signature);
+    return new BeaconBlock(slot, previous_root, state_root, body);
   }
 
   public static BeaconBlock randomBeaconBlock(long slotNum, Bytes32 parentRoot, int seed) {
@@ -172,9 +186,12 @@ public final class DataStructureUtil {
 
     Bytes32 state_root = randomBytes32(seed);
     BeaconBlockBody body = randomBeaconBlockBody(seed++);
-    BLSSignature signature = BLSSignature.random(seed++);
 
-    return new BeaconBlock(slot, parentRoot, state_root, body, signature);
+    return new BeaconBlock(slot, parentRoot, state_root, body);
+  }
+
+  public static SignedBeaconBlockHeader randomSignedBeaconBlockHeader(int seed) {
+    return new SignedBeaconBlockHeader(randomBeaconBlockHeader(seed), BLSSignature.random());
   }
 
   public static BeaconBlockHeader randomBeaconBlockHeader(int seed) {
@@ -182,8 +199,7 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed++),
         randomBytes32(seed++),
         randomBytes32(seed++),
-        randomBytes32(seed++),
-        BLSSignature.random(seed));
+        randomBytes32(seed++));
   }
 
   public static BeaconBlockBody randomBeaconBlockBody(int seed) {
@@ -212,15 +228,17 @@ public final class DataStructureUtil {
             DataStructureUtil::randomDepositWithoutIndex,
             seed++),
         randomSSZList(
-            VoluntaryExit.class,
+            SignedVoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
-            DataStructureUtil::randomVoluntaryExit,
+            DataStructureUtil::randomSignedVoluntaryExit,
             seed++));
   }
 
   public static ProposerSlashing randomProposerSlashing(int seed) {
     return new ProposerSlashing(
-        randomUnsignedLong(seed++), randomBeaconBlockHeader(seed++), randomBeaconBlockHeader(seed));
+        randomUnsignedLong(seed++),
+        randomSignedBeaconBlockHeader(seed++),
+        randomSignedBeaconBlockHeader(seed));
   }
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
@@ -238,24 +256,17 @@ public final class DataStructureUtil {
     BLSPublicKey pubkey = keyPair.getPublicKey();
     Bytes32 withdrawal_credentials = randomBytes32(seed++);
 
-    DepositData proof_of_possession_data =
-        new DepositData(
-            pubkey,
-            withdrawal_credentials,
-            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-            Constants.EMPTY_SIGNATURE);
+    DepositMessage proof_of_possession_data =
+        new DepositMessage(
+            pubkey, withdrawal_credentials, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
 
     BLSSignature proof_of_possession =
         BLSSignature.sign(
             keyPair,
-            proof_of_possession_data.signing_root("signature"),
+            proof_of_possession_data.hash_tree_root(),
             BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
 
-    return new DepositData(
-        keyPair.getPublicKey(),
-        withdrawal_credentials,
-        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-        proof_of_possession);
+    return new DepositData(proof_of_possession_data, proof_of_possession);
   }
 
   public static DepositWithIndex randomDepositWithIndex(int seed) {
@@ -288,9 +299,12 @@ public final class DataStructureUtil {
     return deposits;
   }
 
+  public static SignedVoluntaryExit randomSignedVoluntaryExit(int seed) {
+    return new SignedVoluntaryExit(randomVoluntaryExit(seed), BLSSignature.random());
+  }
+
   public static VoluntaryExit randomVoluntaryExit(int seed) {
-    return new VoluntaryExit(
-        randomUnsignedLong(seed), randomUnsignedLong(seed++), BLSSignature.random(seed++));
+    return new VoluntaryExit(randomUnsignedLong(seed), randomUnsignedLong(seed++));
   }
 
   public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {

@@ -57,6 +57,6 @@ public class beaconState extends TestSuite {
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
     Path path = Paths.get(config, "phase0", "ssz_static", "BeaconState");
-    return sszStaticSetupNoSigningRoot(path, configPath, BeaconState.class);
+    return sszStaticSetup(path, configPath, BeaconState.class);
   }
 }

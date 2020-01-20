@@ -67,6 +67,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
+import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -187,8 +188,8 @@ public class BeaconStateUtil {
 
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
-    BLSPublicKey pubkey = deposit.getData().getPubkey();
-    UnsignedLong amount = deposit.getData().getAmount();
+    final BLSPublicKey pubkey = deposit.getData().getPubkey();
+    final UnsignedLong amount = deposit.getData().getAmount();
 
     SSZList<Validator> validators = state.getValidators();
     OptionalInt existingIndex;
@@ -207,19 +208,25 @@ public class BeaconStateUtil {
       // Verify the deposit signature (proof of possession) for new validators.
       // Note: Deposits are valid across forks, thus the deposit
       // domain is retrieved directly from `compute_domain`
-      boolean proof_is_valid =
-          !BLS_VERIFY_DEPOSIT
-              || bls_verify(
-                  pubkey,
-                  deposit.getData().signing_root("signature"),
-                  deposit.getData().getSignature(),
-                  compute_domain(DOMAIN_DEPOSIT));
-      if (!proof_is_valid) {
-        STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
-        return;
+      if (BLS_VERIFY_DEPOSIT) {
+        final DepositMessage deposit_message =
+            new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
+        boolean proof_is_valid =
+            !BLS_VERIFY_DEPOSIT
+                || bls_verify(
+                    pubkey,
+                    deposit_message.hash_tree_root(),
+                    deposit.getData().getSignature(),
+                    compute_domain(DOMAIN_DEPOSIT));
+        if (!proof_is_valid) {
+          STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
+          return;
+        }
       }
 
-      STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+      if (pubKeyToIndexMap == null) {
+        STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+      }
       state
           .getValidators()
           .add(

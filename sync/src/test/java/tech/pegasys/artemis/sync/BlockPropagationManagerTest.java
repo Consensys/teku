@@ -22,7 +22,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
@@ -75,7 +75,7 @@ public class BlockPropagationManagerTest {
   @Test
   public void onGossipedBlock_shouldImport() throws Exception {
     final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
-    final BeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
     incrementSlot();
 
     assertThat(importedBlocks.get()).isEmpty();
@@ -90,7 +90,7 @@ public class BlockPropagationManagerTest {
     final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
-    final BeaconBlock nextNextBlock =
+    final SignedBeaconBlock nextNextBlock =
         remoteChain.createAndImportBlockAtSlot(nextNextSlot).getBlock();
 
     incrementSlot();
@@ -105,7 +105,7 @@ public class BlockPropagationManagerTest {
   @Test
   public void onGossipedBlock_futureBlock() throws Exception {
     final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
-    final BeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock();
+    final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock();
 
     localEventBus.post(new GossipedBlockEvent(nextBlock));
     assertThat(importedBlocks.get()).isEmpty();
@@ -120,7 +120,7 @@ public class BlockPropagationManagerTest {
     final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
-    final BeaconBlock nextNextBlock =
+    final SignedBeaconBlock nextNextBlock =
         remoteChain.createAndImportBlockAtSlot(nextNextSlot).getBlock();
 
     incrementSlot();
@@ -134,7 +134,7 @@ public class BlockPropagationManagerTest {
   @Test
   public void onBlockImported_withPendingBlocks() throws Exception {
     final int blockCount = 3;
-    final List<BeaconBlock> blocks = new ArrayList<>(blockCount);
+    final List<SignedBeaconBlock> blocks = new ArrayList<>(blockCount);
 
     for (int i = 0; i < blockCount; i++) {
       final UnsignedLong nextSlot = incrementSlot();
@@ -157,7 +157,7 @@ public class BlockPropagationManagerTest {
   @Test
   public void onBlockImported_withPendingFutureBlocks() throws Exception {
     final int blockCount = 3;
-    final List<BeaconBlock> blocks = new ArrayList<>(blockCount);
+    final List<SignedBeaconBlock> blocks = new ArrayList<>(blockCount);
 
     // Update local slot to match the first new block
     incrementSlot();
@@ -174,7 +174,7 @@ public class BlockPropagationManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing next block to be queued for import
-    final BeaconBlock firstBlock = blocks.get(0);
+    final SignedBeaconBlock firstBlock = blocks.get(0);
     assertThat(blockImporter.importBlock(firstBlock).isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactly(firstBlock);
     assertThat(pendingBlocks.size()).isEqualTo(1);

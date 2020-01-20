@@ -36,7 +36,7 @@ import org.mapdb.Atomic.Var;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.DBMaker.Maker;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
@@ -54,9 +54,9 @@ public class MapDbDatabase implements Database {
   private final Atomic.Var<Checkpoint> finalizedCheckpoint;
 
   private final ConcurrentNavigableMap<UnsignedLong, Bytes32> finalizedRootsBySlot;
-  private final ConcurrentMap<Bytes32, BeaconBlock> finalizedBlocksByRoot;
+  private final ConcurrentMap<Bytes32, SignedBeaconBlock> finalizedBlocksByRoot;
   private final ConcurrentMap<Bytes32, BeaconState> finalizedStatesByRoot;
-  private final ConcurrentMap<Bytes32, BeaconBlock> hotBlocksByRoot;
+  private final ConcurrentMap<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
   private final ConcurrentMap<Bytes32, BeaconState> hotStatesByRoot;
 
   private final ConcurrentMap<Checkpoint, BeaconState> checkpointStates;
@@ -101,7 +101,7 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "finalizedBlocksByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconBlock.class))
+                new MapDBSerializer<>(SignedBeaconBlock.class))
             .createOrOpen();
     finalizedStatesByRoot =
         db.hashMap(
@@ -114,7 +114,7 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "hotBlocksByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconBlock.class))
+                new MapDBSerializer<>(SignedBeaconBlock.class))
             .createOrOpen();
     hotStatesByRoot =
         db.hashMap(
@@ -153,7 +153,7 @@ public class MapDbDatabase implements Database {
           .getBlockRoots()
           .forEach(
               root -> {
-                final BeaconBlock block = store.getBlock(root);
+                final SignedBeaconBlock block = store.getSignedBlock(root);
                 final BeaconState state = store.getBlockState(root);
                 addHotBlock(root, block);
                 hotStatesByRoot.put(root, state);
@@ -204,7 +204,7 @@ public class MapDbDatabase implements Database {
     }
   }
 
-  private void addHotBlock(final Bytes32 root, final BeaconBlock block) {
+  private void addHotBlock(final Bytes32 root, final SignedBeaconBlock block) {
     hotBlocksByRoot.put(root, block);
     addToHotRootsBySlotCache(root, block);
   }
@@ -217,7 +217,7 @@ public class MapDbDatabase implements Database {
     final UnsignedLong highestFinalizedSlot =
         finalizedRootsBySlot.isEmpty() ? UnsignedLong.ZERO : finalizedRootsBySlot.lastKey();
     Bytes32 newlyFinalizedBlockRoot = newFinalizedCheckpoint.getRoot();
-    BeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
+    SignedBeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
     while (newlyFinalizedBlock != null
         && newlyFinalizedBlock.getSlot().compareTo(highestFinalizedSlot) > 0) {
       LOG.debug(
@@ -235,7 +235,7 @@ public class MapDbDatabase implements Database {
             newlyFinalizedBlockRoot,
             newFinalizedCheckpoint.getEpoch());
       }
-      newlyFinalizedBlockRoot = newlyFinalizedBlock.getParent_root();
+      newlyFinalizedBlockRoot = newlyFinalizedBlock.getMessage().getParent_root();
       newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
     }
 
@@ -271,7 +271,7 @@ public class MapDbDatabase implements Database {
     hotRootsBySlotCache.keySet().removeAll(toRemove.keySet());
   }
 
-  private void addToHotRootsBySlotCache(final Bytes32 root, final BeaconBlock block) {
+  private void addToHotRootsBySlotCache(final Bytes32 root, final SignedBeaconBlock block) {
     hotRootsBySlotCache
         .computeIfAbsent(
             block.getSlot(), key -> Collections.newSetFromMap(new ConcurrentHashMap<>()))
@@ -298,8 +298,8 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public Optional<BeaconBlock> getBlock(final Bytes32 root) {
-    final BeaconBlock block = hotBlocksByRoot.get(root);
+  public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
+    final SignedBeaconBlock block = hotBlocksByRoot.get(root);
     return block != null
         ? Optional.of(block)
         : Optional.ofNullable(finalizedBlocksByRoot.get(root));

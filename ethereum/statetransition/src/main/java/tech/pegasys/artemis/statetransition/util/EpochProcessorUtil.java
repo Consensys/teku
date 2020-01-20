@@ -32,13 +32,14 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_eligible_for_activation;
+import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_eligible_for_activation_queue;
 import static tech.pegasys.artemis.util.config.Constants.BASE_REWARDS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.BASE_REWARD_FACTOR;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.EJECTION_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
-import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.INACTIVITY_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
@@ -447,11 +448,9 @@ public final class EpochProcessorUtil {
       for (int index = 0; index < validators.size(); index++) {
         Validator validator = validators.get(index);
 
-        if (validator.getActivation_eligibility_epoch().equals(FAR_FUTURE_EPOCH)
-            && validator
-                .getEffective_balance()
-                .equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
-          validator.setActivation_eligibility_epoch(get_current_epoch(state));
+        if (is_eligible_for_activation_queue(validator)) {
+          validator.setActivation_eligibility_epoch(
+              get_current_epoch(state).plus(UnsignedLong.ONE));
         }
 
         if (is_active_validator(validator, get_current_epoch(state))
@@ -461,47 +460,42 @@ public final class EpochProcessorUtil {
         }
       }
 
-      // Queue validators eligible for activation and not dequeued for activation prior to finalized
-      // epoch
+      // Queue validators eligible for activation and not yet dequeued for activation
       List<Integer> activation_queue =
           IntStream.range(0, state.getValidators().size())
               .sequential()
               .filter(
                   index -> {
                     Validator validator = state.getValidators().get(index);
-                    return !validator.getActivation_eligibility_epoch().equals(FAR_FUTURE_EPOCH)
-                        && validator
-                                .getActivation_epoch()
-                                .compareTo(
-                                    compute_activation_exit_epoch(
-                                        state.getFinalized_checkpoint().getEpoch()))
-                            >= 0;
+                    return is_eligible_for_activation(state, validator);
                   })
               .boxed()
+              .sorted(
+                  (index1, index2) -> {
+                    int comparisonResult =
+                        state
+                            .getValidators()
+                            .get(index1)
+                            .getActivation_eligibility_epoch()
+                            .compareTo(
+                                state
+                                    .getValidators()
+                                    .get(index2)
+                                    .getActivation_eligibility_epoch());
+                    if (comparisonResult == 0) {
+                      return index1.compareTo(index2);
+                    } else {
+                      return comparisonResult;
+                    }
+                  })
               .collect(Collectors.toList());
-      activation_queue.sort(
-          (i1, i2) -> {
-            int comparisonResult =
-                state
-                    .getValidators()
-                    .get(i1)
-                    .getActivation_eligibility_epoch()
-                    .compareTo(state.getValidators().get(i2).getActivation_eligibility_epoch());
-            if (comparisonResult == 0) {
-              return i1.compareTo(i2);
-            } else {
-              return comparisonResult;
-            }
-          });
 
       // Dequeued validators for activation up to churn limit (without resetting activation epoch)
       int churn_limit = get_validator_churn_limit(state).intValue();
       int sublist_size = Math.min(churn_limit, activation_queue.size());
       for (Integer index : activation_queue.subList(0, sublist_size)) {
         Validator validator = state.getValidators().get(index);
-        if (validator.getActivation_epoch().equals(FAR_FUTURE_EPOCH)) {
-          validator.setActivation_epoch(compute_activation_exit_epoch(get_current_epoch(state)));
-        }
+        validator.setActivation_epoch(compute_activation_exit_epoch(get_current_epoch(state)));
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);

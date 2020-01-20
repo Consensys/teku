@@ -33,11 +33,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class Store implements ReadOnlyStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -49,7 +51,7 @@ public class Store implements ReadOnlyStore {
   private Checkpoint justified_checkpoint;
   private Checkpoint finalized_checkpoint;
   private Checkpoint best_justified_checkpoint;
-  private Map<Bytes32, BeaconBlock> blocks;
+  private Map<Bytes32, SignedBeaconBlock> blocks;
   private Map<Bytes32, BeaconState> block_states;
   private Map<Checkpoint, BeaconState> checkpoint_states;
   private Map<UnsignedLong, Checkpoint> latest_messages;
@@ -60,7 +62,7 @@ public class Store implements ReadOnlyStore {
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
-      final Map<Bytes32, BeaconBlock> blocks,
+      final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states,
       final Map<UnsignedLong, Checkpoint> latest_messages) {
@@ -77,16 +79,16 @@ public class Store implements ReadOnlyStore {
 
   public static Store get_genesis_store(final BeaconState genesisState) {
     BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
-    Bytes32 root = genesisBlock.signing_root("signature");
+    Bytes32 root = genesisBlock.hash_tree_root();
 
     Checkpoint justified_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
     Checkpoint finalized_checkpoint = new Checkpoint(UnsignedLong.valueOf(GENESIS_EPOCH), root);
-    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+    Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
-    blocks.put(root, genesisBlock);
+    blocks.put(root, new SignedBeaconBlock(genesisBlock, BLSSignature.empty()));
     block_states.put(root, BeaconStateWithCache.deepCopy(genesisState));
     checkpoint_states.put(justified_checkpoint, BeaconStateWithCache.deepCopy(genesisState));
 
@@ -163,6 +165,12 @@ public class Store implements ReadOnlyStore {
 
   @Override
   public BeaconBlock getBlock(Bytes32 blockRoot) {
+    final SignedBeaconBlock signedBlock = getSignedBlock(blockRoot);
+    return signedBlock != null ? signedBlock.getMessage() : null;
+  }
+
+  @Override
+  public SignedBeaconBlock getSignedBlock(Bytes32 blockRoot) {
     readLock.lock();
     try {
       return blocks.get(blockRoot);
@@ -260,7 +268,7 @@ public class Store implements ReadOnlyStore {
     private Optional<Checkpoint> justified_checkpoint = Optional.empty();
     private Optional<Checkpoint> finalized_checkpoint = Optional.empty();
     private Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
-    private Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+    private Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     private Map<Bytes32, BeaconState> block_states = new HashMap<>();
     private Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     private Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
@@ -287,7 +295,7 @@ public class Store implements ReadOnlyStore {
       block_states.put(blockRoot, state);
     }
 
-    public void putBlock(Bytes32 blockRoot, BeaconBlock block) {
+    public void putBlock(Bytes32 blockRoot, SignedBeaconBlock block) {
       blocks.put(blockRoot, block);
     }
 
@@ -386,7 +394,13 @@ public class Store implements ReadOnlyStore {
 
     @Override
     public BeaconBlock getBlock(final Bytes32 blockRoot) {
-      return either(blockRoot, blocks::get, Store.this::getBlock);
+      final SignedBeaconBlock signedBlock = getSignedBlock(blockRoot);
+      return signedBlock != null ? signedBlock.getMessage() : null;
+    }
+
+    @Override
+    public SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
+      return either(blockRoot, blocks::get, Store.this::getSignedBlock);
     }
 
     @Override
