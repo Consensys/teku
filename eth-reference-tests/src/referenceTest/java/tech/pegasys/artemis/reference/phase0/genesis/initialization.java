@@ -35,12 +35,13 @@ import tech.pegasys.artemis.ethtests.TestSuite;
 @ExtendWith(BouncyCastleExtension.class)
 public class initialization extends TestSuite {
 
-  @ParameterizedTest(name = "{index} root of Merkleizable")
+  @ParameterizedTest(name = "{index}.{3} root of Merkleizable")
   @MethodSource({"genesisGenericInitializationSetup"})
   void genesisInitialization(
       BeaconState state,
       UnsignedLong eth1_timestamp,
       Bytes32 eth1_block_hash,
+      String testName,
       List<? extends Deposit> deposits) {
     BeaconState beaconState =
         initialize_beacon_state_from_eth1(eth1_block_hash, eth1_timestamp, deposits);

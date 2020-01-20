@@ -35,7 +35,7 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 @ExtendWith(BouncyCastleExtension.class)
 public class blocksMainnetValid1 extends TestSuite {
 
-  @ParameterizedTest(name = "{index} Sanity blocks valid (Mainnet)")
+  @ParameterizedTest(name = "{index}.{2} Sanity blocks valid (Mainnet)")
   @MethodSource({
     "sanityAttestationSetup",
     "sanityAttesterSlashingSetup",
@@ -44,7 +44,8 @@ public class blocksMainnetValid1 extends TestSuite {
     "sanityDepositTopUpSetup",
     "sanityEmptyBlockTransitionSetup",
   })
-  void sanityProcessBlock(BeaconState pre, BeaconState post, List<SignedBeaconBlock> blocks) {
+  void sanityProcessBlock(
+      BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(

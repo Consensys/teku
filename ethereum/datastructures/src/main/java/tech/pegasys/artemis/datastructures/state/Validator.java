@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -267,5 +268,19 @@ public class Validator
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(exit_epoch.longValue())),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(withdrawable_epoch.longValue()))));
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("pubkey", pubkey)
+        .add("withdrawal_credentials", withdrawal_credentials)
+        .add("effective_balance", effective_balance)
+        .add("slashed", slashed)
+        .add("activation_eligibility_epoch", activation_eligibility_epoch)
+        .add("activation_epoch", activation_epoch)
+        .add("exit_epoch", exit_epoch)
+        .add("withdrawable_epoch", withdrawable_epoch)
+        .toString();
   }
 }

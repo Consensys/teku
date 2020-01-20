@@ -8,6 +8,7 @@ dependencies {
   referenceTestImplementation project(':storage')
 
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  referenceTestImplementation 'org.assertj:assertj-core'
   referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
   referenceTestImplementation 'org.apache.tuweni:tuweni-junit'

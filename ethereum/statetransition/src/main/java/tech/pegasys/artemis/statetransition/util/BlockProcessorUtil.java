@@ -43,10 +43,13 @@ import static tech.pegasys.artemis.util.config.Constants.PERSISTENT_COMMITTEE_PE
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
+import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -304,15 +307,12 @@ public final class BlockProcessorUtil {
             "process_attester_slashings: Is valid indexed attestation 2");
         boolean slashed_any = false;
 
-        List<UnsignedLong> attesting_indices_1 = attestation_1.getAttesting_indices();
-        List<UnsignedLong> attesting_indices_2 = attestation_2.getAttesting_indices();
+        Set<UnsignedLong> indices =
+            Sets.intersection(
+                new TreeSet<>(attestation_1.getAttesting_indices()), // TreeSet as must be sorted
+                new HashSet<>(attestation_2.getAttesting_indices()));
 
-        // retainAll is being used to get the intersection of these two lists
-        List<UnsignedLong> sorted_intersection_of_indices = attesting_indices_1;
-        sorted_intersection_of_indices.retainAll(attesting_indices_2);
-        Collections.sort(sorted_intersection_of_indices);
-
-        for (UnsignedLong index : sorted_intersection_of_indices) {
+        for (UnsignedLong index : indices) {
           if (is_slashable_validator(
               state.getValidators().get(toIntExact(index.longValue())), get_current_epoch(state))) {
             slash_validator(state, toIntExact(index.longValue()));
@@ -350,7 +350,9 @@ public final class BlockProcessorUtil {
             data.getTarget().getEpoch().equals(get_previous_epoch(state))
                 || data.getTarget().getEpoch().equals(get_current_epoch(state)),
             "process_attestations: Attestation not from current or previous epoch");
-
+        checkArgument(
+            data.getTarget().getEpoch().equals(compute_epoch_at_slot(data.getSlot())),
+            "process_attestations: Attestation slot not in specified epoch");
         checkArgument(
             data.getSlot()
                     .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
@@ -466,10 +468,7 @@ public final class BlockProcessorUtil {
         Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
         checkArgument(
             bls_verify(
-                validator.getPubkey(),
-                exit.signing_root("signature"),
-                signedExit.getSignature(),
-                domain),
+                validator.getPubkey(), exit.hash_tree_root(), signedExit.getSignature(), domain),
             "process_voluntary_exits: Verify signature");
 
         // - Run initiate_validator_exit(state, exit.validator_index)

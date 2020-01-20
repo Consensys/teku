@@ -30,7 +30,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
@@ -59,7 +58,7 @@ public class voluntary_exit extends TestSuite {
   @MustBeClosed
   static Stream<Arguments> voluntary_exitSetup(String config) throws Exception {
     Path path = Paths.get(config, "phase0", "operations", "voluntary_exit", "pyspec_tests");
-    return operationSetup(path, Paths.get(config), "voluntary_exit.ssz", VoluntaryExit.class);
+    return operationSetup(path, Paths.get(config), "voluntary_exit.ssz", SignedVoluntaryExit.class);
   }
 
   @MustBeClosed
@@ -76,7 +75,7 @@ public class voluntary_exit extends TestSuite {
   static Stream<Arguments> voluntary_exitSuccessSetup(String config) throws Exception {
     Path path = Paths.get(config, "phase0", "operations", "voluntary_exit", "pyspec_tests");
     return operationSuccessSetup(
-        path, Paths.get(config), "voluntary_exit.ssz", VoluntaryExit.class);
+        path, Paths.get(config), "voluntary_exit.ssz", SignedVoluntaryExit.class);
   }
 
   @MustBeClosed

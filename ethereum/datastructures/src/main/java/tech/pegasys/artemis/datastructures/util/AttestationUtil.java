@@ -26,7 +26,6 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMM
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -146,8 +145,8 @@ public class AttestationUtil {
       return false;
     }
 
-    List<UnsignedLong> bit_0_indices_sorted = new ArrayList<>(attesting_indices);
-    Collections.sort(bit_0_indices_sorted);
+    List<UnsignedLong> bit_0_indices_sorted =
+        attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {
       STDOUT.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");

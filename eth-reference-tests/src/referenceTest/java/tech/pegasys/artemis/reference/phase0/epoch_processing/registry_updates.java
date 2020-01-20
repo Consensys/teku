@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.reference.phase0.epoch_processing;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.errorprone.annotations.MustBeClosed;
@@ -31,22 +32,24 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 @ExtendWith(BouncyCastleExtension.class)
 public class registry_updates extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. process registry updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process registry updates pre={0} -> post={1}")
   @MethodSource({
     "mainnetProcessRegistryUpdates",
   })
-  void mainnetProcessRegistryUpdates(BeaconState pre, BeaconState post) throws Exception {
+  void mainnetProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
     EpochProcessorUtil.process_registry_updates(pre);
     assertEquals(pre, post);
   }
 
-  @ParameterizedTest(name = "{index}. process registry updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process registry updates pre={0} -> post={1}")
   @MethodSource({
     "minimalProcessRegistryUpdates",
   })
-  void minimalProcessRegistryUpdates(BeaconState pre, BeaconState post) throws Exception {
+  void minimalProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
     EpochProcessorUtil.process_registry_updates(pre);
-    assertEquals(pre, post);
+    assertThat(pre).usingRecursiveComparison().isEqualTo(post);
   }
 
   @MustBeClosed

@@ -87,20 +87,6 @@ public class VoluntaryExit implements Merkleizable, SimpleOffsetSerializable, SS
     return validator_index;
   }
 
-  public Bytes32 signing_root(String truncation_param) {
-    if (!truncation_param.equals("signature")) {
-      throw new UnsupportedOperationException(
-          "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
-    }
-
-    return Bytes32.rightPad(
-        HashTreeUtil.merkleize(
-            Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue())),
-                HashTreeUtil.hash_tree_root(
-                    SSZTypes.BASIC, SSZ.encodeUInt64(validator_index.longValue())))));
-  }
-
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(

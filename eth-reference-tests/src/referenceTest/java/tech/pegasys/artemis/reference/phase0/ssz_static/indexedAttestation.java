@@ -39,10 +39,8 @@ public class indexedAttestation extends TestSuite {
     "processMainnet",
   })
   void processSSZStaticIndexedAttestation(
-      IndexedAttestation deserializedIndexedAttestation, Bytes32 root, Bytes32 signingRoot)
-      throws Exception {
+      IndexedAttestation deserializedIndexedAttestation, Bytes32 root) throws Exception {
     assertEquals(deserializedIndexedAttestation.hash_tree_root(), root);
-    assertEquals(deserializedIndexedAttestation.hash_tree_root(), signingRoot);
   }
 
   @MustBeClosed
