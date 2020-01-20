@@ -47,7 +47,6 @@ import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeer;
-import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeerSubscriber;
 import tech.pegasys.artemis.networking.eth2.discovery.nodetable.EventEmittingNodeTable;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -140,16 +139,6 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
   @Override
   public void findPeers() {
     // nop - is this to start?
-  }
-
-  @Override
-  public void subscribePeerDiscovery(DiscoveryPeerSubscriber subscriber) {
-    eventBus.register(subscriber);
-  }
-
-  @Override
-  public void unsubscribePeerDiscovery(DiscoveryPeerSubscriber subscriber) {
-    eventBus.unregister(subscriber);
   }
 
   @Override
