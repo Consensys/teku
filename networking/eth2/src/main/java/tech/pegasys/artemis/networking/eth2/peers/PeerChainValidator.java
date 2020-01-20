@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
@@ -29,6 +30,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -112,11 +114,22 @@ public class PeerChainValidator {
       return SafeFuture.completedFuture(true);
     }
 
-    // Check whether finalized checkpoints are compatible
     final Checkpoint finalizedCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
     final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
+    final UnsignedLong currentEpoch = compute_epoch_at_slot(storageClient.getBestSlot());
 
+    // Make sure remote finalized epoch is reasonable
+    if (remoteEpochIsInvalid(currentEpoch, remoteFinalizedEpoch)) {
+      LOG.debug(
+          "Peer is advertising invalid finalized epoch {} which is at or ahead of our current epoch {}: {}",
+          remoteFinalizedEpoch,
+          currentEpoch,
+          peer);
+      return SafeFuture.completedFuture(false);
+    }
+
+    // Check whether finalized checkpoints are compatible
     if (finalizedEpoch.compareTo(remoteFinalizedEpoch) == 0) {
       return verifyFinalizedCheckpointsAreTheSame(finalizedCheckpoint);
     } else if (finalizedEpoch.compareTo(remoteFinalizedEpoch) > 0) {
@@ -126,6 +139,15 @@ public class PeerChainValidator {
       // Our peer is ahead of us, check that they agree on our finalized epoch
       return verifyPeerAgreesWithOurFinalizedCheckpoint(finalizedCheckpoint);
     }
+  }
+
+  private boolean remoteEpochIsInvalid(
+      final UnsignedLong currentEpoch, final UnsignedLong remoteFinalizedEpoch) {
+    // Remote finalized epoch is invalid if it is from the future
+    return remoteFinalizedEpoch.compareTo(currentEpoch) > 0
+        // Remote finalized epoch is invalid if is from the current epoch (unless we're at genesis)
+        || (remoteFinalizedEpoch.compareTo(currentEpoch) == 0
+            && remoteFinalizedEpoch.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) > 0);
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(Checkpoint finalizedCheckpoint) {
