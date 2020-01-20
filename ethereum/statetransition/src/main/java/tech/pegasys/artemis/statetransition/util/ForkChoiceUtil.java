@@ -59,7 +59,7 @@ public class ForkChoiceUtil {
    * processed because the check failed to add GENESIS_TIME and incorrectly allowed all attestations
    *
    * <p>Since we don't currently support deferring processing of attestations, we continue to
-   * preserve this bug.  We should move to making this toggle permanently false.
+   * preserve this bug. We should move to making this toggle permanently false.
    */
   private static final boolean PROCESS_ATTESTATIONS_EARLY = true;
 
