@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 
@@ -30,7 +30,7 @@ import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 class FutureBlocks {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_BLOCKS_PER_SLOT = 500;
-  private final NavigableMap<UnsignedLong, Set<BeaconBlock>> queuedFutureBlocks =
+  private final NavigableMap<UnsignedLong, Set<SignedBeaconBlock>> queuedFutureBlocks =
       new ConcurrentSkipListMap<>();
 
   /**
@@ -38,7 +38,7 @@ class FutureBlocks {
    *
    * @param block The block to add
    */
-  public void add(final BeaconBlock block) {
+  public void add(final SignedBeaconBlock block) {
     LOG.trace("Save future block at slot {} for later import: {}", block.getSlot(), block);
     queuedFutureBlocks.computeIfAbsent(block.getSlot(), key -> createNewSet()).add(block);
   }
@@ -49,8 +49,8 @@ class FutureBlocks {
    * @param currentSlot The slot to be considered current
    * @return The set of blocks that are no longer in the future
    */
-  public List<BeaconBlock> prune(final UnsignedLong currentSlot) {
-    final List<BeaconBlock> dequeued = new ArrayList<>();
+  public List<SignedBeaconBlock> prune(final UnsignedLong currentSlot) {
+    final List<SignedBeaconBlock> dequeued = new ArrayList<>();
     queuedFutureBlocks
         .headMap(currentSlot, true)
         .keySet()
@@ -58,7 +58,7 @@ class FutureBlocks {
     return dequeued;
   }
 
-  public boolean contains(final BeaconBlock block) {
+  public boolean contains(final SignedBeaconBlock block) {
     return queuedFutureBlocks.getOrDefault(block.getSlot(), Collections.emptySet()).contains(block);
   }
 
@@ -66,7 +66,7 @@ class FutureBlocks {
     return queuedFutureBlocks.values().stream().map(Set::size).reduce(Integer::sum).orElse(0);
   }
 
-  private final Set<BeaconBlock> createNewSet() {
+  private Set<SignedBeaconBlock> createNewSet() {
     return LimitedSet.create(MAX_BLOCKS_PER_SLOT, Mode.DROP_LEAST_RECENTLY_ACCESSED);
   }
 }

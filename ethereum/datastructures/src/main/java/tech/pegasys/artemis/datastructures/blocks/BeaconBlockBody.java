@@ -25,7 +25,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -48,7 +48,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
   private SSZList<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
   private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
   private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
-  private SSZList<VoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
+  private final SSZList<SignedVoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
 
   public BeaconBlockBody(
       BLSSignature randao_reveal,
@@ -58,7 +58,7 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
       SSZList<AttesterSlashing> attester_slashings,
       SSZList<Attestation> attestations,
       SSZList<Deposit> deposits,
-      SSZList<VoluntaryExit> voluntary_exits) {
+      SSZList<SignedVoluntaryExit> voluntary_exits) {
     this.randao_reveal = randao_reveal;
     this.eth1_data = eth1_data;
     this.graffiti = graffiti;
@@ -206,12 +206,8 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     this.deposits = deposits;
   }
 
-  public SSZList<VoluntaryExit> getVoluntary_exits() {
+  public SSZList<SignedVoluntaryExit> getVoluntary_exits() {
     return voluntary_exits;
-  }
-
-  public void setVoluntary_exits(SSZList<VoluntaryExit> voluntary_exits) {
-    this.voluntary_exits = voluntary_exits;
   }
 
   public Bytes32 hash_tree_root() {

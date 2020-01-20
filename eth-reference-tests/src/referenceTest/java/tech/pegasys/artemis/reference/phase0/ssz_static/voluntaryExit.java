@@ -38,10 +38,9 @@ public class voluntaryExit extends TestSuite {
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticVoluntaryExit(
-      VoluntaryExit deserializedVoluntaryExit, Bytes32 root, Bytes32 signingRoot) throws Exception {
+  void processSSZStaticVoluntaryExit(VoluntaryExit deserializedVoluntaryExit, Bytes32 root)
+      throws Exception {
     assertEquals(deserializedVoluntaryExit.hash_tree_root(), root);
-    assertEquals(deserializedVoluntaryExit.signing_root("signature"), signingRoot);
   }
 
   @MustBeClosed

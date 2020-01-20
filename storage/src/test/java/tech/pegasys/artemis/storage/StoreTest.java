@@ -16,15 +16,15 @@ package tech.pegasys.artemis.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlock;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSignedBeaconBlock;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -60,7 +60,7 @@ class StoreTest {
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
     final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
-    final BeaconBlock block = randomBeaconBlock(10, 100);
+    final SignedBeaconBlock block = randomSignedBeaconBlock(10, 100);
     final BeaconState state = randomBeaconState(100);
     final UnsignedLong genesisTime = UnsignedLong.valueOf(1);
     final UnsignedLong time = UnsignedLong.valueOf(3);
@@ -82,7 +82,7 @@ class StoreTest {
     assertEquals(INITIAL_JUSTIFIED_CHECKPOINT, store.getJustifiedCheckpoint());
     assertEquals(INITIAL_BEST_JUSTIFIED_CHECKPOINT, store.getBestJustifiedCheckpoint());
 
-    assertEquals(block, transaction.getBlock(blockRoot));
+    assertEquals(block, transaction.getSignedBlock(blockRoot));
     assertEquals(state, transaction.getBlockState(blockRoot));
     assertEquals(finalizedCheckpoint, transaction.getFinalizedCheckpoint());
     assertEquals(justifiedCheckpoint, transaction.getJustifiedCheckpoint());
@@ -93,7 +93,7 @@ class StoreTest {
 
     assertThat(transaction.commit()).isCompleted();
 
-    assertEquals(block, store.getBlock(blockRoot));
+    assertEquals(block, store.getSignedBlock(blockRoot));
     assertEquals(state, store.getBlockState(blockRoot));
     assertEquals(finalizedCheckpoint, store.getFinalizedCheckpoint());
     assertEquals(justifiedCheckpoint, store.getJustifiedCheckpoint());

@@ -20,7 +20,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -38,8 +38,8 @@ public class BlockImporter {
   }
 
   @CheckReturnValue
-  public BlockImportResult importBlock(BeaconBlock block) {
-    LOG.trace("Import block at slot {}: {}", block.getSlot(), block);
+  public BlockImportResult importBlock(SignedBeaconBlock block) {
+    LOG.trace("Import block at slot {}: {}", block.getMessage().getSlot(), block);
     Store.Transaction transaction = storageClient.startStoreTransaction();
     final BlockImportResult result = on_block(transaction, block, stateTransition);
     if (!result.isSuccessful()) {

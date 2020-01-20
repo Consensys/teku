@@ -57,6 +57,6 @@ public class beaconBlockHeader extends TestSuite {
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
     Path path = Paths.get(config, "phase0", "ssz_static", "BeaconBlockHeader");
-    return sszStaticSetupNoSigningRoot(path, configPath, BeaconBlockHeader.class);
+    return sszStaticSetup(path, configPath, BeaconBlockHeader.class);
   }
 }

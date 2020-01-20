@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -97,15 +97,15 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final ResponseListener<BeaconBlock> listener) {
-    final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> blockByRoot =
+      final List<Bytes32> blockRoots, final ResponseListener<SignedBeaconBlock> listener) {
+    final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
   }
 
-  public SafeFuture<BeaconBlock> requestBlockBySlot(
+  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(
       final Bytes32 headBlockRoot, final UnsignedLong slot) {
-    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> blocksByRange =
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
@@ -118,8 +118,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       final UnsignedLong startSlot,
       final UnsignedLong count,
       final UnsignedLong step,
-      final ResponseListener<BeaconBlock> listener) {
-    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> blocksByRange =
+      final ResponseListener<SignedBeaconBlock> listener) {
+    final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(
         blocksByRange,

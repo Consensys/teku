@@ -28,6 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -63,65 +64,70 @@ public class BeaconBlocksByRootIntegrationTest {
   @Test
   public void shouldSendEmptyResponsePreGenesisEvent() throws Exception {
     final List<Bytes32> blockRoots = singletonList(Bytes32.ZERO);
-    final List<BeaconBlock> response = requestBlocks(blockRoots);
+    final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
     BeaconChainUtil.create(0, storageClient1).initializeStorage();
-    final List<BeaconBlock> response = requestBlocks(singletonList(Bytes32.ZERO));
+    final List<SignedBeaconBlock> response = requestBlocks(singletonList(Bytes32.ZERO));
     assertThat(response).isEmpty();
   }
 
   @Test
   public void shouldReturnSingleBlockWhenOnlyOneMatches() throws Exception {
     BeaconChainUtil.create(0, storageClient1).initializeStorage();
-    final BeaconBlock block = addBlock();
+    final SignedBeaconBlock block = addBlock();
 
-    final List<BeaconBlock> response = requestBlocks(singletonList(block.hash_tree_root()));
+    final List<SignedBeaconBlock> response =
+        requestBlocks(singletonList(block.getMessage().hash_tree_root()));
     assertThat(response).containsExactly(block);
   }
 
   @Test
   public void shouldReturnMultipleBlocksWhenAllRequestsMatch() throws Exception {
     BeaconChainUtil.create(0, storageClient1).initializeStorage();
-    final List<BeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
+    final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
     final List<Bytes32> blockRoots =
-        blocks.stream().map(BeaconBlock::hash_tree_root).collect(toList());
-    final List<BeaconBlock> response = requestBlocks(blockRoots);
+        blocks.stream()
+            .map(SignedBeaconBlock::getMessage)
+            .map(BeaconBlock::hash_tree_root)
+            .collect(toList());
+    final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
   @Test
   public void shouldReturnMatchingBlocksWhenSomeRequestsDoNotMatch() throws Exception {
     BeaconChainUtil.create(0, storageClient1).initializeStorage();
-    final List<BeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
+    final List<SignedBeaconBlock> blocks = asList(addBlock(), addBlock(), addBlock());
 
     // Real block roots interspersed with ones that don't match any blocks
     final List<Bytes32> blockRoots =
         blocks.stream()
+            .map(SignedBeaconBlock::getMessage)
             .map(BeaconBlock::hash_tree_root)
             .flatMap(hash -> Stream.of(Bytes32.fromHexStringLenient("0x123456789"), hash))
             .collect(toList());
 
-    final List<BeaconBlock> response = requestBlocks(blockRoots);
+    final List<SignedBeaconBlock> response = requestBlocks(blockRoots);
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
-  private BeaconBlock addBlock() {
-    final BeaconBlock block = DataStructureUtil.randomBeaconBlock(seed, seed++);
-    final Bytes32 blockRoot = block.hash_tree_root();
+  private SignedBeaconBlock addBlock() {
+    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(seed, seed++);
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Transaction transaction = storageClient1.startStoreTransaction();
     transaction.putBlock(blockRoot, block);
     assertThat(transaction.commit()).isCompleted();
     return block;
   }
 
-  private List<BeaconBlock> requestBlocks(final List<Bytes32> blockRoots)
+  private List<SignedBeaconBlock> requestBlocks(final List<Bytes32> blockRoots)
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException {
-    final List<BeaconBlock> blocks = new ArrayList<>();
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(peer1.requestBlocksByRoot(blockRoots, blocks::add));
     return blocks;
   }

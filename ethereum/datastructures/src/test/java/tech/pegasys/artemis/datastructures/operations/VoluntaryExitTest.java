@@ -20,15 +20,14 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class VoluntaryExitTest {
   private int seed = 100;
   private UnsignedLong epoch = randomUnsignedLong(seed);
   private UnsignedLong validatorIndex = randomUnsignedLong(seed++);
-  private BLSSignature signature = BLSSignature.random(seed++);
 
-  private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
+  private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex);
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
@@ -39,7 +38,7 @@ class VoluntaryExitTest {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    VoluntaryExit testVoluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
+    VoluntaryExit testVoluntaryExit = new VoluntaryExit(epoch, validatorIndex);
 
     assertEquals(voluntaryExit, testVoluntaryExit);
   }
@@ -47,7 +46,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch.plus(randomUnsignedLong(seed++)), validatorIndex, signature);
+        new VoluntaryExit(epoch.plus(randomUnsignedLong(seed++)), validatorIndex);
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
@@ -55,26 +54,16 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch, validatorIndex.plus(randomUnsignedLong(seed++)), signature);
-
-    assertNotEquals(voluntaryExit, testVoluntaryExit);
-  }
-
-  @Test
-  void equalsReturnsFalseWhenSignaturesAreDifferent() {
-    BLSSignature differentSignature = BLSSignature.random();
-    while (differentSignature.equals(signature)) {
-      differentSignature = BLSSignature.random();
-    }
-
-    VoluntaryExit testVoluntaryExit = new VoluntaryExit(epoch, validatorIndex, differentSignature);
+        new VoluntaryExit(epoch, validatorIndex.plus(randomUnsignedLong(seed++)));
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
 
   @Test
   void roundtripSSZ() {
-    Bytes sszVoluntaryExitBytes = voluntaryExit.toBytes();
-    assertEquals(voluntaryExit, VoluntaryExit.fromBytes(sszVoluntaryExitBytes));
+    Bytes sszVoluntaryExitBytes = SimpleOffsetSerializer.serialize(voluntaryExit);
+    assertEquals(
+        voluntaryExit,
+        SimpleOffsetSerializer.deserialize(sszVoluntaryExitBytes, VoluntaryExit.class));
   }
 }

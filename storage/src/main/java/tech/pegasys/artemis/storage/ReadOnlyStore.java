@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
@@ -33,6 +34,8 @@ public interface ReadOnlyStore {
   Checkpoint getBestJustifiedCheckpoint();
 
   BeaconBlock getBlock(Bytes32 blockRoot);
+
+  SignedBeaconBlock getSignedBlock(Bytes32 blockRoot);
 
   boolean containsBlock(Bytes32 blockRoot);
 

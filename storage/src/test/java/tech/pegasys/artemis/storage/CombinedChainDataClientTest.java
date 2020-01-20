@@ -23,7 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -72,7 +72,7 @@ class CombinedChainDataClientTest {
   @Test
   public void getBlockAtSlotExact_returnBlockFromHistoricalDataWhenHeadRootKnownAndSlotFinalized() {
     final UnsignedLong slot = UnsignedLong.ONE;
-    final BeaconBlock block = block(slot);
+    final SignedBeaconBlock block = block(slot);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
     when(historicalChainData.getFinalizedBlockAtSlot(slot))
@@ -85,7 +85,7 @@ class CombinedChainDataClientTest {
   @Test
   public void getBlockAtSlotExact_returnEmptyWhenFinalizedSlotDidNotHaveABlock() {
     final UnsignedLong slot = UnsignedLong.ONE;
-    final BeaconBlock block = block(UnsignedLong.ZERO);
+    final SignedBeaconBlock block = block(UnsignedLong.ZERO);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
     when(historicalChainData.getFinalizedBlockAtSlot(slot))
@@ -98,7 +98,7 @@ class CombinedChainDataClientTest {
   @Test
   public void getBlockInEffectAtSlot_returnPrecedingBlockWhenFinalizedSlotDidNotHaveABlock() {
     final UnsignedLong slot = UnsignedLong.ONE;
-    final BeaconBlock block = block(UnsignedLong.ZERO);
+    final SignedBeaconBlock block = block(UnsignedLong.ZERO);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
     when(historicalChainData.getFinalizedBlockAtSlot(slot))
@@ -111,10 +111,10 @@ class CombinedChainDataClientTest {
   @Test
   public void getBlockAtSlotExact_returnBlockInHeadSlot() {
     final UnsignedLong slot = UnsignedLong.ONE;
-    final BeaconBlock block = block(slot);
+    final SignedBeaconBlock block = block(slot);
     final Bytes32 headBlockRoot = Bytes32.ZERO;
     when(store.getBlockState(headBlockRoot)).thenReturn(beaconState(slot));
-    when(store.getBlock(headBlockRoot)).thenReturn(block);
+    when(store.getSignedBlock(headBlockRoot)).thenReturn(block);
 
     assertThat(client.getBlockAtSlotExact(slot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
@@ -141,14 +141,14 @@ class CombinedChainDataClientTest {
     // Avoid the simple case where the requested slot is the head block slot
     final UnsignedLong headSlot = requestedSlot.plus(UnsignedLong.ONE);
 
-    final BeaconBlock block = block(requestedSlot);
-    final Bytes32 blockRoot = block.signing_root("signature");
+    final SignedBeaconBlock block = block(requestedSlot);
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
     final BeaconState bestState = beaconState(headSlot);
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(historicalIndex, blockRoot);
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
-    when(store.getBlock(blockRoot)).thenReturn(block);
+    when(store.getSignedBlock(blockRoot)).thenReturn(block);
 
     assertThat(client.getBlockAtSlotExact(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
@@ -167,8 +167,8 @@ class CombinedChainDataClientTest {
     final UnsignedLong headSlot =
         lastSlotInHistoricalWindow.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT));
 
-    final BeaconBlock block = block(requestedSlot);
-    final Bytes32 blockRoot = block.signing_root("signature");
+    final SignedBeaconBlock block = block(requestedSlot);
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
     final BeaconState headState = beaconState(headSlot);
     final Bytes32 olderBlockRoot = Bytes32.fromHexString("0x8976");
@@ -181,7 +181,7 @@ class CombinedChainDataClientTest {
 
     when(store.getBlockState(headBlockRoot)).thenReturn(headState);
     when(store.getBlockState(olderBlockRoot)).thenReturn(olderState);
-    when(store.getBlock(blockRoot)).thenReturn(block);
+    when(store.getSignedBlock(blockRoot)).thenReturn(block);
 
     assertThat(client.getBlockAtSlotExact(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
@@ -196,14 +196,14 @@ class CombinedChainDataClientTest {
     final UnsignedLong headSlot = requestedSlot.plus(UnsignedLong.ONE);
 
     // Block is actually from the block before the requested slot
-    final BeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
-    final Bytes32 blockRoot = block.signing_root("signature");
+    final SignedBeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
     final BeaconState bestState = beaconState(headSlot);
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(historicalIndex, blockRoot);
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
-    when(store.getBlock(blockRoot)).thenReturn(block);
+    when(store.getSignedBlock(blockRoot)).thenReturn(block);
 
     assertThat(client.getBlockAtSlotExact(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.empty());
@@ -218,21 +218,21 @@ class CombinedChainDataClientTest {
     final UnsignedLong headSlot = requestedSlot.plus(UnsignedLong.ONE);
 
     // Block is actually from the block before the requested slot
-    final BeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
-    final Bytes32 blockRoot = block.signing_root("signature");
+    final SignedBeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
     final BeaconState bestState = beaconState(headSlot);
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(historicalIndex, blockRoot);
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
-    when(store.getBlock(blockRoot)).thenReturn(block);
+    when(store.getSignedBlock(blockRoot)).thenReturn(block);
 
     assertThat(client.getBlockInEffectAtSlot(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
   }
 
-  private BeaconBlock block(final UnsignedLong slot) {
-    return DataStructureUtil.randomBeaconBlock(slot.longValue(), seed++);
+  private SignedBeaconBlock block(final UnsignedLong slot) {
+    return DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), seed++);
   }
 
   private BeaconState beaconState(final UnsignedLong slot) {

@@ -17,11 +17,11 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 
 public class GossipedBlockCollector {
-  private final Collection<BeaconBlock> blocks = new ConcurrentLinkedQueue<>();
+  private final Collection<SignedBeaconBlock> blocks = new ConcurrentLinkedQueue<>();
 
   public GossipedBlockCollector(final EventBus eventBus) {
     eventBus.register(this);
@@ -32,7 +32,7 @@ public class GossipedBlockCollector {
     blocks.add(event.getBlock());
   }
 
-  public Collection<BeaconBlock> getBlocks() {
+  public Collection<SignedBeaconBlock> getBlocks() {
     return blocks;
   }
 }

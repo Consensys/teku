@@ -26,7 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.ethtests.TestSuite;
@@ -35,7 +35,7 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 @ExtendWith(BouncyCastleExtension.class)
 public class blocksMainnetValid2 extends TestSuite {
 
-  @ParameterizedTest(name = "{index} Sanity blocks valid (Mainnet)")
+  @ParameterizedTest(name = "{index}.{2} Sanity blocks valid (Mainnet)")
   @MethodSource({
     "sanityEmptyEpochTransitionSetup",
     "sanityHistoricalBatchSetup",
@@ -44,13 +44,12 @@ public class blocksMainnetValid2 extends TestSuite {
     "sanitySkippedSlotsSetup",
     "sanityVoluntaryExitSetup",
   })
-  void sanityProcessBlock(BeaconState pre, BeaconState post, List<BeaconBlock> blocks) {
+  void sanityProcessBlock(
+      BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
-        block -> {
-          assertDoesNotThrow(() -> stateTransition.initiate(preWithCache, block, true));
-        });
+        block -> assertDoesNotThrow(() -> stateTransition.initiate(preWithCache, block, true)));
     assertEquals(preWithCache, post);
   }
 

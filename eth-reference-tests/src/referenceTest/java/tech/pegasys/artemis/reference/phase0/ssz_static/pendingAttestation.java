@@ -57,6 +57,6 @@ public class pendingAttestation extends TestSuite {
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
     Path path = Paths.get(config, "phase0", "ssz_static", "PendingAttestation");
-    return sszStaticSetupNoSigningRoot(path, configPath, PendingAttestation.class);
+    return sszStaticSetup(path, configPath, PendingAttestation.class);
   }
 }

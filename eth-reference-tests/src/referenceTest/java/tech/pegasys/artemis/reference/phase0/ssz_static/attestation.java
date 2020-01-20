@@ -38,10 +38,9 @@ public class attestation extends TestSuite {
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticAttestation(
-      Attestation deserializedAttestation, Bytes32 root, Bytes32 signingRoot) throws Exception {
+  void processSSZStaticAttestation(Attestation deserializedAttestation, Bytes32 root)
+      throws Exception {
     assertEquals(deserializedAttestation.hash_tree_root(), root);
-    assertEquals(deserializedAttestation.signing_root("signature"), signingRoot);
   }
 
   @MustBeClosed
