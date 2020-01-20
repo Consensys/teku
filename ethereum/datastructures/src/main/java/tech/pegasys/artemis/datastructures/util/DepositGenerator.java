@@ -30,6 +30,16 @@ import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
 public class DepositGenerator {
 
+  private final boolean signDeposit;
+
+  public DepositGenerator() {
+    this(true);
+  }
+
+  public DepositGenerator(boolean signDeposit) {
+    this.signDeposit = signDeposit;
+  }
+
   public DepositData createDepositData(
       final BLSKeyPair validatorKeyPair,
       final UnsignedLong amountInGwei,
@@ -39,10 +49,12 @@ public class DepositGenerator {
         new DepositData(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei, null);
 
     depositData.setSignature(
-        BLSSignature.sign(
-            validatorKeyPair,
-            depositData.signing_root("signature"),
-            compute_domain(DOMAIN_DEPOSIT)));
+        signDeposit
+            ? BLSSignature.sign(
+                validatorKeyPair,
+                depositData.signing_root("signature"),
+                compute_domain(DOMAIN_DEPOSIT))
+            : BLSSignature.empty());
     return depositData;
   }
 
