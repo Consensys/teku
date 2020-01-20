@@ -33,7 +33,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
@@ -52,9 +52,9 @@ public abstract class TransitionBenchmark {
   ChainStorageClient localStorage;
   BeaconChainUtil localChain;
   BlockImporter blockImporter;
-  Iterator<BeaconBlock> blockIterator;
+  Iterator<SignedBeaconBlock> blockIterator;
   BlockImportResult lastResult;
-  BeaconBlock prefetchedBlock;
+  SignedBeaconBlock prefetchedBlock;
 
   @Param({"1024", "3072"})
   int validatorsCount;
@@ -95,7 +95,7 @@ public abstract class TransitionBenchmark {
   }
 
   protected void importNextBlock() {
-    BeaconBlock block;
+    SignedBeaconBlock block;
     if (prefetchedBlock == null) {
       block = blockIterator.next();
     } else {

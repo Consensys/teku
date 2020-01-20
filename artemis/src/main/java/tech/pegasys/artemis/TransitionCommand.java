@@ -28,7 +28,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -73,7 +73,7 @@ public class TransitionCommand implements Runnable {
         (state, stateTransition) -> {
           if (blocks != null) {
             for (String blockPath : blocks) {
-              BeaconBlock block = readBlock(blockPath);
+              SignedBeaconBlock block = readBlock(blockPath);
               state = stateTransition.initiate(state, block);
             }
           }
@@ -150,9 +150,9 @@ public class TransitionCommand implements Runnable {
     }
   }
 
-  private BeaconBlock readBlock(final String path) throws IOException {
+  private SignedBeaconBlock readBlock(final String path) throws IOException {
     final Bytes blockData = Bytes.wrap(Files.readAllBytes(Path.of(path)));
-    return SimpleOffsetSerializer.deserialize(blockData, BeaconBlock.class);
+    return SimpleOffsetSerializer.deserialize(blockData, SignedBeaconBlock.class);
   }
 
   @Override

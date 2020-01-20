@@ -17,7 +17,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -39,7 +39,7 @@ public class BeaconBlockBodyLists {
     return new SSZList<>(Deposit.class, Constants.MAX_DEPOSITS);
   }
 
-  public static SSZList<VoluntaryExit> createVoluntaryExits() {
-    return new SSZList<>(VoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
+  public static SSZList<SignedVoluntaryExit> createVoluntaryExits() {
+    return new SSZList<>(SignedVoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
   }
 }

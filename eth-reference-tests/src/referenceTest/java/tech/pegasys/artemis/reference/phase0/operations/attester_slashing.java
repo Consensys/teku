@@ -37,19 +37,20 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 @ExtendWith(BouncyCastleExtension.class)
 public class attester_slashing extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. process attester slashing success")
+  @ParameterizedTest(name = "{index}.{3} process attester slashing success")
   @MethodSource({"mainnetAttesterSlashingSuccessSetup", "minimalAttesterSlashingSuccessSetup"})
   void processAttesterSlashingSuccess(
-      AttesterSlashing attester_slashing, BeaconState pre, BeaconState post) {
+      AttesterSlashing attester_slashing, BeaconState pre, BeaconState post, String testName) {
     List<AttesterSlashing> attester_slashings = new ArrayList<>();
     attester_slashings.add(attester_slashing);
     assertDoesNotThrow(() -> process_attester_slashings(pre, attester_slashings));
     assertEquals(pre, post);
   }
 
-  @ParameterizedTest(name = "{index}. process attester slashing success")
+  @ParameterizedTest(name = "{index}.{2} process attester slashing rejection")
   @MethodSource({"mainnetAttesterSlashingSetup", "minimalAttesterSlashingSetup"})
-  void processAttesterSlashing(AttesterSlashing attester_slashing, BeaconState pre) {
+  void processAttesterSlashing(
+      AttesterSlashing attester_slashing, BeaconState pre, String testName) {
     List<AttesterSlashing> attester_slashings = new ArrayList<>();
     attester_slashings.add(attester_slashing);
     assertThrows(

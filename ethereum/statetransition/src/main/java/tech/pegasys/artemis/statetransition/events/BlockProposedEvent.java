@@ -14,17 +14,17 @@
 package tech.pegasys.artemis.statetransition.events;
 
 import java.util.Objects;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
 /** This event is emitted when a new block is proposed locally */
 public class BlockProposedEvent {
-  private final BeaconBlock block;
+  private final SignedBeaconBlock block;
 
-  public BlockProposedEvent(final BeaconBlock block) {
+  public BlockProposedEvent(final SignedBeaconBlock block) {
     this.block = block;
   }
 
-  public BeaconBlock getBlock() {
+  public SignedBeaconBlock getBlock() {
     return block;
   }
 

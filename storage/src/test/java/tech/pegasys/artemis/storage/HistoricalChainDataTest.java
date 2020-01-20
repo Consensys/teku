@@ -21,15 +21,15 @@ import static org.mockito.Mockito.verify;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 class HistoricalChainDataTest {
-  private static final Optional<BeaconBlock> BLOCK =
-      Optional.of(DataStructureUtil.randomBeaconBlock(1, 100));
+  private static final Optional<SignedBeaconBlock> BLOCK =
+      Optional.of(DataStructureUtil.randomSignedBeaconBlock(1, 100));
   private final EventBus eventBus = mock(EventBus.class);
   private final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
 
@@ -40,7 +40,7 @@ class HistoricalChainDataTest {
 
   @Test
   public void shouldRetrieveBlockBySlot() {
-    final SafeFuture<Optional<BeaconBlock>> result =
+    final SafeFuture<Optional<SignedBeaconBlock>> result =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
     verify(eventBus).post(new GetFinalizedBlockAtSlotRequest(ONE));
     assertThat(result).isNotDone();
@@ -51,7 +51,7 @@ class HistoricalChainDataTest {
 
   @Test
   public void shouldResolveWithEmptyOptionalWhenBlockNotAvailable() {
-    final SafeFuture<Optional<BeaconBlock>> result =
+    final SafeFuture<Optional<SignedBeaconBlock>> result =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
 
     historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, Optional.empty()));
@@ -65,9 +65,9 @@ class HistoricalChainDataTest {
 
   @Test
   public void shouldResolveMultipleRequestsForTheSameSlotWithFirstAvailableData() {
-    final SafeFuture<Optional<BeaconBlock>> result1 =
+    final SafeFuture<Optional<SignedBeaconBlock>> result1 =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
-    final SafeFuture<Optional<BeaconBlock>> result2 =
+    final SafeFuture<Optional<SignedBeaconBlock>> result2 =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
 
     assertThat(result1).isNotDone();
