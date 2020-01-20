@@ -224,7 +224,9 @@ public class BeaconStateUtil {
         }
       }
 
-      STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+      if (pubKeyToIndexMap == null) {
+        STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+      }
       state
           .getValidators()
           .add(

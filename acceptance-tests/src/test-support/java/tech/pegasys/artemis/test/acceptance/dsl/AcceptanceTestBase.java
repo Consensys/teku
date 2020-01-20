@@ -14,8 +14,10 @@
 package tech.pegasys.artemis.test.acceptance.dsl;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.Network;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase.CaptureArtifacts;
+import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 @ExtendWith(CaptureArtifacts.class)
 public class AcceptanceTestBase {
@@ -32,6 +35,7 @@ public class AcceptanceTestBase {
   private final SimpleHttpClient httpClient = new SimpleHttpClient();
   private final List<Node> nodes = new ArrayList<>();
   private final Network network = Network.newNetwork();
+  private final GenesisStateGenerator genesisStateGenerator = new GenesisStateGenerator();
 
   @AfterEach
   final void shutdownNodes() {
@@ -44,7 +48,11 @@ public class AcceptanceTestBase {
   }
 
   protected ArtemisNode createArtemisNode(final Consumer<ArtemisNode.Config> configOptions) {
-    return addNode(new ArtemisNode(httpClient, network, configOptions));
+    try {
+      return addNode(ArtemisNode.create(httpClient, network, configOptions, genesisStateGenerator));
+    } catch (IOException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   protected ArtemisDepositSender createArtemisDepositSender() {
