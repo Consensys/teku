@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.tuweni.toml.Toml.tomlEscape;
@@ -35,7 +36,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -46,6 +49,8 @@ import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 import tech.pegasys.artemis.test.acceptance.dsl.data.FinalizedCheckpoint;
+import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
+import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 public class ArtemisNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -58,18 +63,17 @@ public class ArtemisNode extends Node {
   private static final int P2P_PORT = 9000;
 
   private final SimpleHttpClient httpClient;
-  private final Config config = new Config();
+  private final Config config;
 
   private boolean started = false;
   private Set<File> configFiles;
 
-  ArtemisNode(
-      final SimpleHttpClient httpClient,
-      final Network network,
-      final Consumer<Config> configOptions) {
+  private ArtemisNode(
+      final SimpleHttpClient httpClient, final Network network, final Config config) {
     super(network, ARTEMIS_DOCKER_IMAGE, LOG);
     this.httpClient = httpClient;
-    configOptions.accept(config);
+    this.config = config;
+
     container
         .withWorkingDirectory(ARTIFACTS_PATH)
         .withExposedPorts(REST_API_PORT)
@@ -77,8 +81,30 @@ public class ArtemisNode extends Node {
         .withCommand("--config", CONFIG_FILE_PATH);
   }
 
+  public static ArtemisNode create(
+      final SimpleHttpClient httpClient,
+      final Network network,
+      Consumer<Config> configOptions,
+      final GenesisStateGenerator genesisStateGenerator)
+      throws TimeoutException, IOException {
+
+    final Config config = new Config();
+    configOptions.accept(config);
+
+    final ArtemisNode node = new ArtemisNode(httpClient, network, config);
+
+    if (config.getGenesisStateConfig().isPresent()) {
+      final GenesisStateConfig genesisConfig = config.getGenesisStateConfig().get();
+      File genesisFile = genesisStateGenerator.generateState(genesisConfig);
+      node.copyFileToContainer(genesisFile, genesisConfig.getPath());
+    }
+
+    return node;
+  }
+
   public void start() throws Exception {
     assertThat(started).isFalse();
+    LOG.debug("Start node {}", nodeAlias);
     started = true;
     final Map<File, String> configFiles = config.write();
     this.configFiles = configFiles.keySet();
@@ -90,6 +116,7 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForGenesis() {
+    LOG.debug("Wait for genesis");
     waitFor(this::fetchGenesisTime);
   }
 
@@ -114,6 +141,7 @@ public class ArtemisNode extends Node {
 
   public void waitForNewFinalization() throws IOException {
     UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
+    LOG.debug("Wait for finalized block");
     waitFor(
         () ->
             assertThat(getCurrentFinalizedCheckpoint().getEpoch())
@@ -122,7 +150,9 @@ public class ArtemisNode extends Node {
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
-    waitFor(() -> assertThat(getCurrentBeaconHead()).isEqualTo(targetNode.getCurrentBeaconHead()));
+    LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
+    waitFor(
+        () -> assertThat(getCurrentBeaconHead()).isEqualTo(targetNode.getCurrentBeaconHead()), 300);
   }
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
@@ -150,8 +180,12 @@ public class ArtemisNode extends Node {
   }
 
   public void copyDatabaseFileToContainer(File databaseFile) {
+    copyFileToContainer(databaseFile, DATABASE_PATH);
+  }
+
+  public void copyFileToContainer(File file, String containerPath) {
     container.withCopyFileToContainer(
-        MountableFile.forHostPath(databaseFile.getAbsolutePath()), DATABASE_PATH);
+        MountableFile.forHostPath(file.getAbsolutePath()), containerPath);
   }
 
   String getMultiAddr() {
@@ -204,6 +238,7 @@ public class ArtemisNode extends Node {
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Optional<String> validatorKeys = Optional.empty();
+    private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
 
     public Config() {
       final Map<String, Object> node = getSection(NODE_SECTION);
@@ -247,15 +282,41 @@ public class ArtemisNode extends Node {
       return this;
     }
 
+    public Config withInteropValidators(final int startIndex, final int validatorCount) {
+      getSection(INTEROP_SECTION).put("ownedValidatorStartIndex", startIndex);
+      getSection(INTEROP_SECTION).put("ownedValidatorCount", validatorCount);
+      return this;
+    }
+
     public Config withRealNetwork() {
       setNetworkMode("jvmlibp2p");
       getSection(INTEROP_SECTION).put("privateKey", Bytes.wrap(privateKey.bytes()).toHexString());
       return this;
     }
 
+    public Config withGenesisState(String pathToGenesisState) {
+      checkNotNull(pathToGenesisState);
+      getSection(INTEROP_SECTION).put("startState", pathToGenesisState);
+      return this;
+    }
+
+    /**
+     * Configures parameters for generating a genesis state.
+     *
+     * @param config Configuration defining how to generate the genesis state.
+     * @return this config
+     */
+    public Config withGenesisConfig(final GenesisStateConfig config) {
+      checkNotNull(config);
+      this.genesisStateConfig = Optional.of(config);
+      return withGenesisState(config.getPath());
+    }
+
     public Config withPeers(final ArtemisNode... nodes) {
-      getSection(NODE_SECTION)
-          .put("peers", asList(nodes).stream().map(ArtemisNode::getMultiAddr).collect(toList()));
+      final List<String> peers =
+          asList(nodes).stream().map(ArtemisNode::getMultiAddr).collect(toList());
+      LOG.debug("Set peers: {}", peers.stream().collect(Collectors.joining(", ")));
+      getSection(NODE_SECTION).put("peers", peers);
       return this;
     }
 
@@ -273,6 +334,10 @@ public class ArtemisNode extends Node {
 
     public String getPeerId() {
       return peerId.toBase58();
+    }
+
+    public Optional<GenesisStateConfig> getGenesisStateConfig() {
+      return genesisStateConfig;
     }
 
     public Map<File, String> write() throws Exception {
