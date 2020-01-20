@@ -31,13 +31,14 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Writer;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -58,9 +59,9 @@ public class Generator {
     System.out.println("Generating keypairs...");
     int validatorsCount = 3 * 1024;
 
-    //    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorsCount);
-    List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForFile("bls-key-pairs.txt").readAll(validatorsCount);
+    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorsCount);
+    //    List<BLSKeyPair> validatorKeys =
+    //        BlsKeyPairIO.createReaderForFile("bls-key-pairs.txt").readAll(validatorsCount);
 
     System.out.println("Keypairs done.");
 
@@ -90,14 +91,14 @@ public class Generator {
               localChain.createAndImportBlockAtSlot(
                   currentSlot, Utils.groupAndAggregateAttestations(attestations));
 
-          final BeaconBlock block = record.getBlock();
+          final SignedBeaconBlock block = record.getBlock();
           writer.accept(block);
 
           attestations =
               UnsignedLong.ONE.equals(currentSlot)
                   ? Collections.emptyList()
                   : attestationGenerator.getAttestationsForSlot(
-                      record.getPostState(), block, currentSlot);
+                      record.getPostState(), block.getMessage(), currentSlot);
 
           System.out.println(
               "Processed: "

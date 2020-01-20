@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
@@ -53,7 +53,7 @@ public class ProfilingRun {
 
     System.out.println("Start blocks import from " + blocksFile);
     try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
-      for (BeaconBlock block : blockReader) {
+      for (SignedBeaconBlock block : blockReader) {
         System.out.println(block);
       }
     }
@@ -74,7 +74,7 @@ public class ProfilingRun {
 
     System.out.println("Start blocks import from " + blocksFile);
     try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
-      for (BeaconBlock block : blockReader) {
+      for (SignedBeaconBlock block : blockReader) {
         long s = System.currentTimeMillis();
         localChain.setSlot(block.getSlot());
         BlockImportResult result = blockImporter.importBlock(block);
