@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.core.crypto.KEY_TYPE;
+import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -185,7 +187,9 @@ public class Eth2NetworkFactory {
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
       return new NetworkConfig(
-          Optional.empty(),
+          // generate the key in the test utility to make sure it's available to all
+          // other downstream components, e.g., discovery, beyond just the p2p network
+          Optional.of(KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()),
           "127.0.0.1",
           port,
           port,

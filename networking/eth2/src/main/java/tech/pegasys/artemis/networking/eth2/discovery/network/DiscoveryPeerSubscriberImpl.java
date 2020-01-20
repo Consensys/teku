@@ -14,13 +14,13 @@
 package tech.pegasys.artemis.networking.eth2.discovery.network;
 
 import com.google.common.eventbus.Subscribe;
-import io.libp2p.etc.encode.Base58;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DiscoveryPeerSubscriberImpl implements DiscoveryPeerSubscriber {
+
   Logger logger = LogManager.getLogger();
 
   private final P2PNetwork<?> network;
@@ -32,14 +32,14 @@ public class DiscoveryPeerSubscriberImpl implements DiscoveryPeerSubscriber {
   @Subscribe
   @Override
   public void onDiscovery(DiscoveryPeer discoveryPeer) {
-    final String d = Base58.INSTANCE.encode(discoveryPeer.getNodeId().toArray());
+    logger.debug("DiscoveryPeer subscriber notified");
     final String connectString =
         "/ip4/"
             + discoveryPeer.getAddress().getHostAddress()
             + "/tcp/"
             + discoveryPeer.getUdpPort()
             + "/p2p/"
-            + d;
+            + discoveryPeer.getNodeIdString();
     final SafeFuture<?> connect = network.connect(connectString);
     if (connect != null) {
       connect.finish(

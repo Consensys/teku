@@ -13,12 +13,10 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
-import io.libp2p.core.crypto.KEY_TYPE;
-import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 
 public class NetworkConfig {
 
@@ -58,8 +56,13 @@ public class NetworkConfig {
   }
 
   public byte[] getDiscoveryPrivateKey() {
-    return Arrays.copyOfRange(
-        privateKey.orElse(KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()).bytes(), 0, 32);
+    // handle compressed keys that are zero-prefaced (indicating a positive value)
+    PrivKey pkey = privateKey.orElseThrow();
+    Bytes rawBytes = Bytes.wrap(pkey.raw());
+    if (rawBytes.size() == 33) {
+      rawBytes = rawBytes.slice(1, 32);
+    }
+    return rawBytes.toArray();
   }
 
   public String getNetworkInterface() {

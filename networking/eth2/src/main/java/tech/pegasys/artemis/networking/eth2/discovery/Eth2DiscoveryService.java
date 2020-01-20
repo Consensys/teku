@@ -17,6 +17,7 @@ import static org.ethereum.beacon.discovery.schema.EnrField.IP_V4;
 import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
@@ -54,6 +55,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 @SuppressWarnings("UnstableApiUsage")
 public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
+
   private final Logger logger = LogManager.getLogger();
 
   private final DiscoveryManager dm;
@@ -165,6 +167,8 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
     // the following two lines to be removed when discovery master is next updated
     logger.info("remoteEnr:" + remoteNodeRecord.asBase64());
     logger.info("remoteNodeId:" + remoteNodeRecord.getNodeId());
+    logger.info(
+        "remoteNodeIdBase58:" + Base58.INSTANCE.encode(remoteNodeRecord.getNodeId().toArray()));
 
     return remoteNodeRecord;
   }
@@ -184,7 +188,6 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
             Pair.with(
                 EnrFieldV4.PKEY_SECP256K1,
                 Functions.derivePublicKeyFromPrivate(Bytes.wrap(privateKey))),
-            //            Pair.with(EnrField.TCP_V4, port),
             Pair.with(UDP_V4, port));
     nodeRecord.sign(Bytes.wrap(privateKey));
     nodeRecord.verify();

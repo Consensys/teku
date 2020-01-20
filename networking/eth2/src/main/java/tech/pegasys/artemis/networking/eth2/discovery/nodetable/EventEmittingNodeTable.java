@@ -36,6 +36,12 @@ public class EventEmittingNodeTable extends DelegatingNodeTable {
     this.eventBus = eventBus;
   }
 
+  /**
+   * Posts a DiscoveryPeer onto the EventBus even if the node is already present in the NodeTable;
+   * the NodeTable is left unmodified.
+   *
+   * @param node
+   */
   @Override
   public void save(NodeRecordInfo node) {
     DiscoveryPeer discoveryPeer = DiscoveryPeer.fromNodeRecord(node.getNode());

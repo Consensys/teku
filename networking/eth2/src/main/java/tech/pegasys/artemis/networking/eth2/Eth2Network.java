@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeer;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeerSubscriberImpl;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.BlockGossipManager;
@@ -34,6 +36,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNetwork<Eth2Peer> {
+
   private final P2PNetwork<?> network;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -46,6 +49,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   private AggregateGossipManager aggregateGossipManager;
 
   private Eth2DiscoveryService eth2DiscoveryService;
+  private DiscoveryPeerSubscriberImpl discoveryPeerSubscriber;
 
   public Eth2Network(
       final P2PNetwork<?> network,
@@ -84,7 +88,20 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     attestationGossipManager = new AttestationGossipManager(network, eventBus, chainStorageClient);
     aggregateGossipManager = new AggregateGossipManager(network, eventBus, chainStorageClient);
 
+    // register for peer events early on so that boot discovery peers are connected to
+    discoveryPeerSubscriber = new DiscoveryPeerSubscriberImpl(network);
+    eventBus.register(discoveryPeerSubscriber);
+
     eth2DiscoveryService = new Eth2DiscoveryService(networkConfig, eventBus);
+
+    // take the discovery boot nodes and connect to them at the p2p layer
+    eth2DiscoveryService
+        .getNodeTable()
+        .findClosestNodes(
+            DiscoveryPeer.fromNodeRecord(eth2DiscoveryService.getNodeTable().getHomeNode())
+                .getNodeId(),
+            0)
+        .forEach(eth2DiscoveryService.getNodeTable()::save);
 
     SafeFuture.of(eth2DiscoveryService.start()).reportExceptions();
   }
@@ -97,6 +114,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
+    eventBus.unregister(discoveryPeerSubscriber);
     SafeFuture.of(eth2DiscoveryService.stop()).reportExceptions();
     super.stop();
   }
