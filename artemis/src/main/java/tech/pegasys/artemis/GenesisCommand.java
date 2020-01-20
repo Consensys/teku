@@ -16,9 +16,9 @@ package tech.pegasys.artemis;
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
-import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
@@ -57,10 +57,8 @@ public class GenesisCommand {
   public void generate(@Mixin MockGenesisParams params) throws IOException {
     // Output to stdout if no file is specified
     final boolean outputToFile = params.outputFile != null && !params.outputFile.isBlank();
-    try (final FileOutputStream fileStream =
-        outputToFile
-            ? new FileOutputStream(params.outputFile)
-            : new FileOutputStream(FileDescriptor.out)) {
+    try (final OutputStream fileStream =
+        outputToFile ? new FileOutputStream(params.outputFile) : System.out) {
       if (outputToFile) {
         STDOUT.log(
             Level.INFO,
@@ -80,6 +78,9 @@ public class GenesisCommand {
             Level.INFO, String.format("Saving genesis state to file: %s", params.outputFile));
       }
       fileStream.write(serialize(genesisState).toArrayUnsafe());
+      if (outputToFile) {
+        STDOUT.log(Level.INFO, String.format("Genesis state file saved: %s", params.outputFile));
+      }
     }
   }
 
