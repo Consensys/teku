@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
@@ -28,30 +27,27 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
+import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class AttestationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private final EventBus eventBus;
-  private final ChainStorageClient storageClient;
-  private final StateTransition stateTransition;
+  private final ForkChoiceAttestationProcessor attestationProcessor;
   private final PendingPool<Attestation> pendingAttestations;
   private final FutureItems<Attestation> futureAttestations;
 
-  private AttestationManager(
+  AttestationManager(
       final EventBus eventBus,
-      final ChainStorageClient storageClient,
-      final StateTransition stateTransition,
+      final ForkChoiceAttestationProcessor attestationProcessor,
       final PendingPool<Attestation> pendingAttestations,
       final FutureItems<Attestation> futureAttestations) {
     this.eventBus = eventBus;
-    this.storageClient = storageClient;
-    this.stateTransition = stateTransition;
+    this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
   }
@@ -64,14 +60,13 @@ public class AttestationManager extends Service {
         new FutureItems<>(Attestation::getEarliestSlotForProcessing);
     return new AttestationManager(
         eventBus,
-        storageClient,
-        new StateTransition(false),
+        new ForkChoiceAttestationProcessor(storageClient, new StateTransition(false)),
         pendingAttestations,
         futureAttestations);
   }
 
   @Subscribe
-  void onGossipedAttestation(final Attestation attestation) {
+  private void onGossipedAttestation(final Attestation attestation) {
     processAttestation(attestation);
     // TODO: Should we post this if the attestation was invalid?
     // What if it was delayed?
@@ -79,7 +74,7 @@ public class AttestationManager extends Service {
   }
 
   @Subscribe
-  void onAggregateAndProof(final AggregateAndProof aggregateAndProof) {
+  private void onAggregateAndProof(final AggregateAndProof aggregateAndProof) {
     final Attestation aggregate = aggregateAndProof.getAggregate();
     processAttestation(aggregate);
     // TODO: Should we post this if the attestation was invalid?
@@ -88,12 +83,12 @@ public class AttestationManager extends Service {
   }
 
   @Subscribe
-  void onSlot(final SlotEvent slotEvent) {
+  private void onSlot(final SlotEvent slotEvent) {
     futureAttestations.prune(slotEvent.getSlot()).forEach(this::processAttestation);
   }
 
   @Subscribe
-  void onBlockImported(final BlockImportedEvent blockImportedEvent) {
+  private void onBlockImported(final BlockImportedEvent blockImportedEvent) {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     pendingAttestations
@@ -109,12 +104,9 @@ public class AttestationManager extends Service {
     if (pendingAttestations.contains(attestation)) {
       return;
     }
-    final Store.Transaction transaction = storageClient.startStoreTransaction();
-    final AttestationProcessingResult result =
-        on_attestation(transaction, attestation, stateTransition);
+    final AttestationProcessingResult result = attestationProcessor.processAttestation(attestation);
     if (result.isSuccessful()) {
       LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
-      transaction.commit(() -> {}, "Failed to persist attestation result");
     } else {
       switch (result.getFailureReason()) {
         case UNKNOWN_PARENT:
