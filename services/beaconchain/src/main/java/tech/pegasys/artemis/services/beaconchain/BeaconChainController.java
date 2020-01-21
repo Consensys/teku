@@ -57,7 +57,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
-import tech.pegasys.artemis.sync.AttestationPropagationManager;
+import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -83,7 +83,7 @@ public class BeaconChainController {
   private BlockAttestationsPool blockAttestationsPool;
   private Service syncService;
   private boolean testMode;
-  private AttestationPropagationManager attestationPropagationManager;
+  private AttestationManager attestationManager;
 
   public BeaconChainController(
       EventBus eventBus, MetricsSystem metricsSystem, ArtemisConfiguration config) {
@@ -150,8 +150,7 @@ public class BeaconChainController {
   }
 
   private void initAttestationPropagationManager() {
-    attestationPropagationManager =
-        AttestationPropagationManager.create(eventBus, chainStorageClient);
+    attestationManager = AttestationManager.create(eventBus, chainStorageClient);
   }
 
   public void initP2PNetwork() {
@@ -218,7 +217,7 @@ public class BeaconChainController {
   public void start() {
     STDOUT.log(
         Level.DEBUG, "BeaconChainController.start(): starting AttestationPropagationManager");
-    attestationPropagationManager.start().reportExceptions();
+    attestationManager.start().reportExceptions();
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting p2pNetwork");
     networkExecutor.execute(networkTask);
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): emit NodeStartEvent");
@@ -246,7 +245,7 @@ public class BeaconChainController {
   public void stop() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.stop()");
     syncService.stop().reportExceptions();
-    attestationPropagationManager.stop().reportExceptions();
+    attestationManager.stop().reportExceptions();
     if (!Objects.isNull(p2pNetwork)) {
       this.p2pNetwork.stop();
     }

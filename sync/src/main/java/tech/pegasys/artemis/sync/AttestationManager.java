@@ -36,7 +36,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class AttestationPropagationManager extends Service {
+public class AttestationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private final EventBus eventBus;
   private final ChainStorageClient storageClient;
@@ -44,7 +44,7 @@ public class AttestationPropagationManager extends Service {
   private final PendingPool<Attestation> pendingAttestations;
   private final FutureItems<Attestation> futureAttestations;
 
-  private AttestationPropagationManager(
+  private AttestationManager(
       final EventBus eventBus,
       final ChainStorageClient storageClient,
       final StateTransition stateTransition,
@@ -57,13 +57,13 @@ public class AttestationPropagationManager extends Service {
     this.futureAttestations = futureAttestations;
   }
 
-  public static AttestationPropagationManager create(
+  public static AttestationManager create(
       final EventBus eventBus, final ChainStorageClient storageClient) {
     final PendingPool<Attestation> pendingAttestations =
         PendingPool.createForAttestations(eventBus);
     final FutureItems<Attestation> futureAttestations =
         new FutureItems<>(attestation -> attestation.getData().getSlot().plus(UnsignedLong.ONE));
-    return new AttestationPropagationManager(
+    return new AttestationManager(
         eventBus,
         storageClient,
         new StateTransition(false),
