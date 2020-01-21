@@ -258,10 +258,12 @@ class SafeFutureTest {
     final AtomicReference<Throwable> receivedError = new AtomicReference<>();
     final SafeFuture<String> safeFuture = new SafeFuture<>();
     final SafeFuture<String> composedFuture = new SafeFuture<>();
-    final SafeFuture<String> result = safeFuture.exceptionallyCompose(error -> {
-      receivedError.set(error);
-      return composedFuture;
-    });
+    final SafeFuture<String> result =
+        safeFuture.exceptionallyCompose(
+            error -> {
+              receivedError.set(error);
+              return composedFuture;
+            });
     final RuntimeException exception = new RuntimeException("Nope");
 
     safeFuture.completeExceptionally(exception);
@@ -277,9 +279,11 @@ class SafeFutureTest {
     final RuntimeException exception1 = new RuntimeException("Error1");
     final RuntimeException exception2 = new RuntimeException("Error2");
     final SafeFuture<String> safeFuture = new SafeFuture<>();
-    final SafeFuture<String> result = safeFuture.exceptionallyCompose(error -> {
-      throw exception2;
-    });
+    final SafeFuture<String> result =
+        safeFuture.exceptionallyCompose(
+            error -> {
+              throw exception2;
+            });
 
     safeFuture.completeExceptionally(exception1);
     assertExceptionallyCompletedWith(result, exception2);
@@ -290,10 +294,12 @@ class SafeFutureTest {
     final AtomicReference<Throwable> receivedError = new AtomicReference<>();
     final SafeFuture<String> safeFuture = new SafeFuture<>();
     final SafeFuture<String> composedFuture = new SafeFuture<>();
-    final SafeFuture<String> result = safeFuture.exceptionallyCompose(error -> {
-      receivedError.set(error);
-      return composedFuture;
-    });
+    final SafeFuture<String> result =
+        safeFuture.exceptionallyCompose(
+            error -> {
+              receivedError.set(error);
+              return composedFuture;
+            });
 
     safeFuture.complete("Success");
     assertThat(result).isCompletedWithValue("Success");
@@ -321,8 +327,7 @@ class SafeFutureTest {
   }
 
   private void assertExceptionallyCompletedWith(
-      final SafeFuture<String> safeFuture,
-      final RuntimeException exception) {
+      final SafeFuture<String> safeFuture, final RuntimeException exception) {
     assertThat(safeFuture).isCompletedExceptionally();
     assertThatThrownBy(safeFuture::join)
         .isInstanceOf(CompletionException.class)
