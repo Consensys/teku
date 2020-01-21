@@ -29,6 +29,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -44,7 +45,7 @@ class PendingBlocks extends Service {
   private static final UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
   private final EventBus eventBus;
-  private final Map<Bytes32, BeaconBlock> pendingBlocks = new ConcurrentHashMap<>();
+  private final Map<Bytes32, SignedBeaconBlock> pendingBlocks = new ConcurrentHashMap<>();
   private final Map<Bytes32, Set<Bytes32>> pendingBlocksByParentRoot = new ConcurrentHashMap<>();
   // Define the range of slots we care about
   private final UnsignedLong futureBlockTolerance;
@@ -73,14 +74,14 @@ class PendingBlocks extends Service {
     return SafeFuture.completedFuture(null);
   }
 
-  public void add(BeaconBlock block) {
+  public void add(SignedBeaconBlock block) {
     if (shouldIgnoreBlock(block)) {
       // Ignore blocks outside of the range we care about
       return;
     }
 
-    final Bytes32 blockRoot = block.signing_root("signature");
-    final Bytes32 parentRoot = block.getParent_root();
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Bytes32 parentRoot = block.getMessage().getParent_root();
 
     // Index block by parent
     pendingBlocksByParentRoot
@@ -91,15 +92,18 @@ class PendingBlocks extends Service {
 
     // Index block by root
     if (pendingBlocks.putIfAbsent(blockRoot, block) == null) {
-      LOG.trace("Save unattached block at slot {} for future import: {}", block.getSlot(), block);
+      LOG.trace(
+          "Save unattached block at slot {} for future import: {}",
+          block.getMessage().getSlot(),
+          block);
     }
   }
 
-  public void remove(BeaconBlock beaconBlock) {
-    final Bytes32 blockRoot = beaconBlock.signing_root("signature");
+  public void remove(SignedBeaconBlock beaconBlock) {
+    final Bytes32 blockRoot = beaconBlock.getMessage().hash_tree_root();
     pendingBlocks.remove(blockRoot);
 
-    final Bytes32 parentRoot = beaconBlock.getParent_root();
+    final Bytes32 parentRoot = beaconBlock.getMessage().getParent_root();
     Set<Bytes32> childSet = pendingBlocksByParentRoot.get(parentRoot);
     if (childSet == null) {
       return;
@@ -112,12 +116,12 @@ class PendingBlocks extends Service {
     return pendingBlocks.size();
   }
 
-  public boolean contains(final BeaconBlock block) {
-    final Bytes32 blockRoot = block.signing_root("signature");
+  public boolean contains(final SignedBeaconBlock block) {
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     return pendingBlocks.containsKey(blockRoot);
   }
 
-  public List<BeaconBlock> childrenOf(final Bytes32 parentRoot) {
+  public List<SignedBeaconBlock> childrenOf(final Bytes32 parentRoot) {
     final Set<Bytes32> childHashes = pendingBlocksByParentRoot.get(parentRoot);
     if (childHashes == null) {
       return Collections.emptyList();
@@ -145,11 +149,11 @@ class PendingBlocks extends Service {
 
   @VisibleForTesting
   void prune() {
-    pruneBlocks(this::isTooOld);
+    pruneBlocks(block -> isTooOld(block.getMessage()));
   }
 
-  private boolean shouldIgnoreBlock(final BeaconBlock block) {
-    return isTooOld(block) || isFromFarFuture(block);
+  private boolean shouldIgnoreBlock(final SignedBeaconBlock block) {
+    return isTooOld(block.getMessage()) || isFromFarFuture(block.getMessage());
   }
 
   private boolean isTooOld(final BeaconBlock block) {
@@ -184,7 +188,7 @@ class PendingBlocks extends Service {
     return currentSlot.plus(futureBlockTolerance);
   }
 
-  private void pruneBlocks(final Predicate<BeaconBlock> shouldRemove) {
+  private void pruneBlocks(final Predicate<SignedBeaconBlock> shouldRemove) {
     pendingBlocks.values().stream().filter(shouldRemove).forEach(this::remove);
   }
 

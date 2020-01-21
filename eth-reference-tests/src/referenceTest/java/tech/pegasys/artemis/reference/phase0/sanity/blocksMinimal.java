@@ -27,7 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.ethtests.TestSuite;
@@ -37,7 +37,7 @@ import tech.pegasys.artemis.statetransition.StateTransitionException;
 @ExtendWith(BouncyCastleExtension.class)
 public class blocksMinimal extends TestSuite {
 
-  @ParameterizedTest(name = "{index} Sanity blocks valid (Minimal)")
+  @ParameterizedTest(name = "{index}.{2} Sanity blocks valid (Minimal)")
   @MethodSource({
     "sanityAttestationSetup",
     "sanityAttesterSlashingSetup",
@@ -52,7 +52,8 @@ public class blocksMinimal extends TestSuite {
     "sanitySkippedSlotsSetup",
     "sanityVoluntaryExitSetup",
   })
-  void sanityProcessBlock(BeaconState pre, BeaconState post, List<BeaconBlock> blocks) {
+  void sanityProcessBlock(
+      BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
@@ -147,13 +148,13 @@ public class blocksMinimal extends TestSuite {
     return sanityMultiBlockSetup(path, configPath);
   }
 
-  @ParameterizedTest(name = "{index} Sanity blocks invalid")
+  @ParameterizedTest(name = "{index}.{1} Sanity blocks invalid")
   @MethodSource({
     "sanityInvalidStateRootSetup",
     "sanityExpectedDepositInBlockSetup",
     "sanityPrevSlotBlockTransitionSetup"
   })
-  void sanityProcessBlockInvalid(BeaconState pre, List<BeaconBlock> blocks) {
+  void sanityProcessBlockInvalid(BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(

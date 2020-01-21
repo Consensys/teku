@@ -233,7 +233,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
       return false;
     }
     return getBlockRootBySlot(block.getSlot())
-        .map(actualRoot -> actualRoot.equals(block.signing_root("signature")))
+        .map(actualRoot -> actualRoot.equals(block.hash_tree_root()))
         .orElse(false);
   }
 

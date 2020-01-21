@@ -17,13 +17,13 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 
 public class ImportedBlocks implements AutoCloseable {
 
   private final EventBus eventBus;
-  private List<BeaconBlock> importedBlocks = new ArrayList<>();
+  private List<SignedBeaconBlock> importedBlocks = new ArrayList<>();
 
   public ImportedBlocks(final EventBus eventBus) {
     this.eventBus = eventBus;
@@ -35,7 +35,7 @@ public class ImportedBlocks implements AutoCloseable {
     importedBlocks.add(blockImportedEvent.getBlock());
   }
 
-  public List<BeaconBlock> get() {
+  public List<SignedBeaconBlock> get() {
     return importedBlocks;
   }
 

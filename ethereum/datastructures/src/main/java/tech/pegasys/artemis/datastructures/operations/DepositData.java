@@ -27,19 +27,17 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.hashtree.SigningRoot;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class DepositData
-    implements Merkleizable, SigningRoot, SimpleOffsetSerializable, SSZContainer {
+public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 2;
 
-  private BLSPublicKey pubkey;
-  private Bytes32 withdrawal_credentials;
-  private UnsignedLong amount;
-  private BLSSignature signature;
+  private final BLSPublicKey pubkey;
+  private final Bytes32 withdrawal_credentials;
+  private final UnsignedLong amount;
+  private BLSSignature signature; // Signing over DepositMessage
 
   public DepositData(
       BLSPublicKey pubkey,
@@ -50,6 +48,14 @@ public class DepositData
     this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
     this.signature = signature;
+  }
+
+  public DepositData(final DepositMessage depositMessage, final BLSSignature signature) {
+    this(
+        depositMessage.getPubkey(),
+        depositMessage.getWithdrawal_credentials(),
+        depositMessage.getAmount(),
+        signature);
   }
 
   public DepositData() {
@@ -136,24 +142,12 @@ public class DepositData
     return pubkey;
   }
 
-  public void setPubkey(BLSPublicKey pubkey) {
-    this.pubkey = pubkey;
-  }
-
   public Bytes32 getWithdrawal_credentials() {
     return withdrawal_credentials;
   }
 
-  public void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {
-    this.withdrawal_credentials = withdrawal_credentials;
-  }
-
   public UnsignedLong getAmount() {
     return amount;
-  }
-
-  public void setAmount(UnsignedLong amount) {
-    this.amount = amount;
   }
 
   public BLSSignature getSignature() {
@@ -162,22 +156,6 @@ public class DepositData
 
   public void setSignature(BLSSignature signature) {
     this.signature = signature;
-  }
-
-  @Override
-  public Bytes32 signing_root(String truncation_param) {
-    if (!truncation_param.equals("signature")) {
-      throw new UnsupportedOperationException(
-          "Only signed_root(proposal, \"signature\") is currently supported for type Proposal.");
-    }
-
-    return Bytes32.rightPad(
-        HashTreeUtil.merkleize(
-            Arrays.asList(
-                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toBytes()),
-                HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
-                HashTreeUtil.hash_tree_root(
-                    SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())))));
   }
 
   @Override

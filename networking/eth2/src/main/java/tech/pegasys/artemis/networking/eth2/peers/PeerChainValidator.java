@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -182,20 +182,22 @@ public class PeerChainValidator {
         .thenApply(block -> validateBlockRootsMatch(block, finalizedCheckpoint.getRoot()));
   }
 
-  private BeaconBlock toBlock(UnsignedLong lookupSlot, Optional<BeaconBlock> maybeBlock) {
+  private SignedBeaconBlock toBlock(
+      UnsignedLong lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
     return maybeBlock.orElseThrow(
         () -> new IllegalStateException("Missing finalized block at slot " + lookupSlot));
   }
 
-  private UnsignedLong blockToSlot(UnsignedLong lookupSlot, Optional<BeaconBlock> maybeBlock) {
+  private UnsignedLong blockToSlot(
+      UnsignedLong lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
     return maybeBlock
-        .map(BeaconBlock::getSlot)
+        .map(SignedBeaconBlock::getSlot)
         .orElseThrow(
             () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
   }
 
-  private boolean validateBlockRootsMatch(final BeaconBlock block, final Bytes32 root) {
-    final Bytes32 blockRoot = block.signing_root("signature");
+  private boolean validateBlockRootsMatch(final SignedBeaconBlock block, final Bytes32 root) {
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final boolean rootsMatch = Objects.equals(blockRoot, root);
     if (rootsMatch) {
       LOG.trace("Verified finalized blocks match for peer: {}", peer);

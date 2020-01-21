@@ -15,20 +15,21 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockHeader;
+import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSignedBeaconBlockHeader;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class ProposerSlashingTest {
   private int seed = 100;
   private UnsignedLong proposerIndex = randomUnsignedLong(seed);
-  private BeaconBlockHeader proposal1 = randomBeaconBlockHeader(seed++);
-  private BeaconBlockHeader proposal2 = randomBeaconBlockHeader(seed++);
+  private SignedBeaconBlockHeader proposal1 = randomSignedBeaconBlockHeader(seed++);
+  private SignedBeaconBlockHeader proposal2 = randomSignedBeaconBlockHeader(seed++);
 
   private ProposerSlashing proposerSlashing =
       new ProposerSlashing(proposerIndex, proposal1, proposal2);
@@ -58,11 +59,11 @@ class ProposerSlashingTest {
 
   @Test
   void equalsReturnsFalseWhenProposalData1IsDifferent() {
-    // Proposalis rather involved to create. Just create a random one until it is not the
+    // Proposal is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    BeaconBlockHeader otherProposal1 = randomBeaconBlockHeader(seed++);
+    SignedBeaconBlockHeader otherProposal1 = randomSignedBeaconBlockHeader(seed++);
     while (Objects.equals(otherProposal1, proposal1)) {
-      otherProposal1 = randomBeaconBlockHeader(seed++);
+      otherProposal1 = randomSignedBeaconBlockHeader(seed++);
     }
 
     ProposerSlashing testProposerSlashing =
@@ -75,9 +76,9 @@ class ProposerSlashingTest {
   void equalsReturnsFalseWhenProposalData2IsDifferent() {
     // Proposal is rather involved to create. Just create a random one until it is not the
     // same as the original.
-    BeaconBlockHeader otherProposal2 = randomBeaconBlockHeader(seed++);
+    SignedBeaconBlockHeader otherProposal2 = randomSignedBeaconBlockHeader(seed++);
     while (Objects.equals(otherProposal2, proposal2)) {
-      otherProposal2 = randomBeaconBlockHeader(seed++);
+      otherProposal2 = randomSignedBeaconBlockHeader(seed++);
     }
 
     ProposerSlashing testProposerSlashing =
@@ -88,7 +89,9 @@ class ProposerSlashingTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszProposerSlashingBytes = proposerSlashing.toBytes();
-    assertEquals(proposerSlashing, ProposerSlashing.fromBytes(sszProposerSlashingBytes));
+    Bytes sszProposerSlashingBytes = SimpleOffsetSerializer.serialize(proposerSlashing);
+    assertEquals(
+        proposerSlashing,
+        SimpleOffsetSerializer.deserialize(sszProposerSlashingBytes, ProposerSlashing.class));
   }
 }

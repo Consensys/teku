@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods;
 
 import org.apache.logging.log4j.LogManager;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
@@ -22,7 +22,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconBlocksByRootMessageHandler
-    implements LocalMessageHandler<BeaconBlocksByRootRequestMessage, BeaconBlock> {
+    implements LocalMessageHandler<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
   private final ChainStorageClient storageClient;
@@ -35,7 +35,7 @@ public class BeaconBlocksByRootMessageHandler
   public void onIncomingMessage(
       final Eth2Peer peer,
       final BeaconBlocksByRootRequestMessage message,
-      final ResponseCallback<BeaconBlock> callback) {
+      final ResponseCallback<SignedBeaconBlock> callback) {
     LOG.trace(
         "Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message.getBlockRoots());
     if (storageClient.getStore() != null) {
@@ -43,7 +43,7 @@ public class BeaconBlocksByRootMessageHandler
           .getBlockRoots()
           .forEach(
               blockRoot -> {
-                final BeaconBlock block = storageClient.getStore().getBlock(blockRoot);
+                final SignedBeaconBlock block = storageClient.getStore().getSignedBlock(blockRoot);
                 if (block != null) {
                   callback.respond(block);
                 }

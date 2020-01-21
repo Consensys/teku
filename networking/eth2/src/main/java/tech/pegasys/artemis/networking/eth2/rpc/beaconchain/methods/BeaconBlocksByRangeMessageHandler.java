@@ -21,7 +21,7 @@ import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.LocalMessageHandler;
@@ -31,7 +31,7 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeMessageHandler
-    implements LocalMessageHandler<BeaconBlocksByRangeRequestMessage, BeaconBlock> {
+    implements LocalMessageHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> {
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
   private final CombinedChainDataClient storageClient;
@@ -44,7 +44,7 @@ public class BeaconBlocksByRangeMessageHandler
   public void onIncomingMessage(
       final Eth2Peer peer,
       final BeaconBlocksByRangeRequestMessage message,
-      final ResponseCallback<BeaconBlock> callback) {
+      final ResponseCallback<SignedBeaconBlock> callback) {
     LOG.trace(
         "Peer {} requested {} BeaconBlocks from chain {} starting at slot {} with step {}",
         peer.getId(),
@@ -73,7 +73,7 @@ public class BeaconBlocksByRangeMessageHandler
 
   private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
-      final ResponseCallback<BeaconBlock> callback) {
+      final ResponseCallback<SignedBeaconBlock> callback) {
     return storageClient
         .getNonfinalizedBlockState(message.getHeadBlockRoot())
         .map(headState -> sendNextBlock(new RequestState(message, headState.getSlot(), callback)))
@@ -96,7 +96,7 @@ public class BeaconBlocksByRangeMessageHandler
 
   private static class RequestState {
     private final UnsignedLong headSlot;
-    private final ResponseCallback<BeaconBlock> callback;
+    private final ResponseCallback<SignedBeaconBlock> callback;
     private final Bytes32 headBlockRoot;
     private final UnsignedLong step;
     private UnsignedLong currentSlot;
@@ -105,7 +105,7 @@ public class BeaconBlocksByRangeMessageHandler
     public RequestState(
         final BeaconBlocksByRangeRequestMessage message,
         final UnsignedLong headSlot,
-        final ResponseCallback<BeaconBlock> callback) {
+        final ResponseCallback<SignedBeaconBlock> callback) {
       this.headBlockRoot = message.getHeadBlockRoot();
       this.currentSlot = message.getStartSlot();
       this.remainingBlocks = message.getCount();
@@ -126,7 +126,7 @@ public class BeaconBlocksByRangeMessageHandler
       return !needsMoreBlocks() || hasReachedHeadSlot();
     }
 
-    void sendBlock(final BeaconBlock block) {
+    void sendBlock(final SignedBeaconBlock block) {
       remainingBlocks = remainingBlocks.minus(ONE);
       callback.respond(block);
     }

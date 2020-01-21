@@ -24,7 +24,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
@@ -56,7 +56,7 @@ public class BlockImporterTest {
 
   @Test
   public void importBlock_success() throws Exception {
-    final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
+    final SignedBeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
     localChain.setSlot(block.getSlot());
 
     final BlockImportResult result = blockImporter.importBlock(block);
@@ -65,7 +65,7 @@ public class BlockImporterTest {
 
   @Test
   public void importBlock_alreadyInChain() throws Exception {
-    final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
+    final SignedBeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
     localChain.setSlot(block.getSlot());
 
     assertThat(blockImporter.importBlock(block).isSuccessful()).isTrue();
@@ -77,11 +77,11 @@ public class BlockImporterTest {
   public void importBlock_latestFinalizedBlock() throws Exception {
     Constants.SLOTS_PER_EPOCH = 6;
 
-    final List<BeaconBlock> blocks = new ArrayList<>();
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
     UnsignedLong currentSlot = localStorage.getBestSlot();
     for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
       currentSlot = currentSlot.plus(UnsignedLong.ONE);
-      final BeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
+      final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
       blocks.add(block);
     }
 
@@ -102,11 +102,11 @@ public class BlockImporterTest {
   public void importBlock_knownBlockOlderThanLatestFinalized() throws Exception {
     Constants.SLOTS_PER_EPOCH = 6;
 
-    final List<BeaconBlock> blocks = new ArrayList<>();
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
     UnsignedLong currentSlot = localStorage.getBestSlot();
     for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
       currentSlot = currentSlot.plus(UnsignedLong.ONE);
-      final BeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
+      final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
       blocks.add(block);
     }
 
@@ -132,7 +132,7 @@ public class BlockImporterTest {
 
   @Test
   public void importBlock_fromFuture() throws Exception {
-    final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
+    final SignedBeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
 
     final BlockImportResult result = blockImporter.importBlock(block);
     assertImportFailed(result, FailureReason.BLOCK_IS_FROM_FUTURE);
@@ -140,8 +140,8 @@ public class BlockImporterTest {
 
   @Test
   public void importBlock_unknownParent() throws Exception {
-    otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE).getBlock();
-    final BeaconBlock block2 =
+    otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE);
+    final SignedBeaconBlock block2 =
         otherChain.createAndImportBlockAtSlot(UnsignedLong.valueOf(2)).getBlock();
     localChain.setSlot(block2.getSlot());
 
@@ -165,7 +165,8 @@ public class BlockImporterTest {
     tx.commit().join();
 
     // Now create a new block that is not descendent from the finalized block
-    final BeaconBlock block = otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE).getBlock();
+    final SignedBeaconBlock block =
+        otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE).getBlock();
 
     final BlockImportResult result = blockImporter.importBlock(block);
     assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
@@ -173,8 +174,8 @@ public class BlockImporterTest {
 
   @Test
   public void importBlock_invalidStateTransition() throws Exception {
-    final BeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
-    block.setState_root(Bytes32.ZERO);
+    final SignedBeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
+    block.getMessage().setState_root(Bytes32.ZERO);
     localChain.setSlot(block.getSlot());
 
     final BlockImportResult result = blockImporter.importBlock(block);

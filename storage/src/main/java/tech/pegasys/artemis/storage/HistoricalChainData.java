@@ -18,21 +18,21 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.AsyncEventTracker;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class HistoricalChainData {
-  private final AsyncEventTracker<UnsignedLong, Optional<BeaconBlock>> eventTracker;
+  private final AsyncEventTracker<UnsignedLong, Optional<SignedBeaconBlock>> eventTracker;
 
   public HistoricalChainData(final EventBus eventBus) {
     this.eventTracker = new AsyncEventTracker<>(eventBus);
     eventBus.register(this);
   }
 
-  public SafeFuture<Optional<BeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
     return eventTracker.sendRequest(slot, new GetFinalizedBlockAtSlotRequest(slot));
   }
 

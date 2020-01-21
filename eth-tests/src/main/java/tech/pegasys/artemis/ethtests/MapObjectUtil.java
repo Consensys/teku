@@ -29,6 +29,8 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
@@ -36,6 +38,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
+import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -65,6 +68,7 @@ public class MapObjectUtil {
     else if (classtype.equals(AttestationData.class)) return getAttestationData((Map) object);
     else if (classtype.equals(AttesterSlashing.class)) return getAttesterSlashing((Map) object);
     else if (classtype.equals(BeaconBlock.class)) return getBeaconBlock((Map) object);
+    else if (classtype.equals(SignedBeaconBlock.class)) return getSignedBeaconBlock((Map) object);
     else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
@@ -89,6 +93,8 @@ public class MapObjectUtil {
     else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Validator.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
+    else if (classtype.equals(SignedVoluntaryExit.class))
+      return getSignedVoluntaryExit((Map) object);
     else if (classtype.equals(Integer[].class)) return getIntegerArray((List) object);
     else if (classtype.equals(UnsignedLong.class)) return UnsignedLong.valueOf(object.toString());
     else if (classtype.equals(Integer.class)) return Integer.valueOf(object.toString());
@@ -378,15 +384,21 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"rawtypes"})
+  private static SignedBeaconBlock getSignedBeaconBlock(Map map) {
+    final BeaconBlock block = getBeaconBlock((Map) map.get("message"));
+    final BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    return new SignedBeaconBlock(block, signature);
+  }
+
+  @SuppressWarnings({"rawtypes"})
   private static BeaconBlock getBeaconBlock(Map map) {
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
     Bytes32 state_root = Bytes32.fromHexString(map.get("state_root").toString());
     BeaconBlockBody body = getBeaconBlockBody((Map) map.get("body"));
-    BLSSignature signature =
-        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
-    return new BeaconBlock(slot, parent_root, state_root, body, signature);
+    return new BeaconBlock(slot, parent_root, state_root, body);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -419,12 +431,12 @@ public class MapObjectUtil {
                 .stream().map(e -> getDeposit(e)).collect(Collectors.toList()),
             Constants.MAX_DEPOSITS,
             Deposit.class);
-    SSZList<VoluntaryExit> voluntary_exits =
+    SSZList<SignedVoluntaryExit> voluntary_exits =
         new SSZList<>(
             ((List<Map>) map.get("voluntary_exits"))
-                .stream().map(e -> getVoluntaryExit(e)).collect(Collectors.toList()),
+                .stream().map(e -> getSignedVoluntaryExit(e)).collect(Collectors.toList()),
             Constants.MAX_VOLUNTARY_EXITS,
-            VoluntaryExit.class);
+            SignedVoluntaryExit.class);
 
     return new BeaconBlockBody(
         randao_reveal,
@@ -438,13 +450,19 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"rawtypes"})
+  private static SignedVoluntaryExit getSignedVoluntaryExit(Map map) {
+    final VoluntaryExit message = getVoluntaryExit((Map) map.get("message"));
+    BLSSignature signature =
+        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
+    return new SignedVoluntaryExit(message, signature);
+  }
+
+  @SuppressWarnings({"rawtypes"})
   private static VoluntaryExit getVoluntaryExit(Map map) {
     UnsignedLong epoch = UnsignedLong.valueOf(map.get("epoch").toString());
     UnsignedLong validator_index = UnsignedLong.valueOf(map.get("validator_index").toString());
-    BLSSignature signature =
-        BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
-    return new VoluntaryExit(epoch, validator_index, signature);
+    return new VoluntaryExit(epoch, validator_index);
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
@@ -483,8 +501,8 @@ public class MapObjectUtil {
   @SuppressWarnings({"rawtypes"})
   private static ProposerSlashing getProposerSlashing(Map map) {
     UnsignedLong proposer_index = UnsignedLong.valueOf(map.get("proposer_index").toString());
-    BeaconBlockHeader header_1 = getBeaconBlockHeader((Map) map.get("header_1"));
-    BeaconBlockHeader header_2 = getBeaconBlockHeader((Map) map.get("header_2"));
+    SignedBeaconBlockHeader header_1 = getSignedBeaconBlockHeader((Map) map.get("header_1"));
+    SignedBeaconBlockHeader header_2 = getSignedBeaconBlockHeader((Map) map.get("header_2"));
 
     return new ProposerSlashing(proposer_index, header_1, header_2);
   }
@@ -495,10 +513,17 @@ public class MapObjectUtil {
     Bytes32 parent_root = Bytes32.fromHexString(map.get("parent_root").toString());
     Bytes32 state_root = Bytes32.fromHexString(map.get("state_root").toString());
     Bytes32 body_root = Bytes32.fromHexString(map.get("body_root").toString());
+
+    return new BeaconBlockHeader(slot, parent_root, state_root, body_root);
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  private static SignedBeaconBlockHeader getSignedBeaconBlockHeader(Map map) {
+    final BeaconBlockHeader beaconBlockHeader = getBeaconBlockHeader(map);
     BLSSignature signature =
         BLSSignature.fromBytes(Bytes.fromHexString(map.get("signature").toString()));
 
-    return new BeaconBlockHeader(slot, parent_root, state_root, body_root, signature);
+    return new SignedBeaconBlockHeader(beaconBlockHeader, signature);
   }
 
   @SuppressWarnings({"rawtypes"})

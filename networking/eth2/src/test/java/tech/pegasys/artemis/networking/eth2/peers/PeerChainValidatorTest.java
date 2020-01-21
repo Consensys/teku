@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -66,23 +66,23 @@ public class PeerChainValidatorTest {
   private final UnsignedLong earlierBlockSlot = earlierEpochSlot.minus(UnsignedLong.ONE);
   private final UnsignedLong laterBlockSlot = laterEpochSlot.minus(UnsignedLong.ONE);
 
-  private final BeaconBlock genesisBlock =
-      DataStructureUtil.randomBeaconBlock(genesisSlot.longValue(), 1);
-  private final BeaconBlock remoteFinalizedBlock =
-      DataStructureUtil.randomBeaconBlock(remoteFinalizedBlockSlot.longValue(), 1);
-  private final BeaconBlock earlierBlock =
-      DataStructureUtil.randomBeaconBlock(earlierBlockSlot.longValue(), 2);
-  private final BeaconBlock laterBlock =
-      DataStructureUtil.randomBeaconBlock(laterBlockSlot.longValue(), 3);
+  private final SignedBeaconBlock genesisBlock =
+      DataStructureUtil.randomSignedBeaconBlock(genesisSlot.longValue(), 1);
+  private final SignedBeaconBlock remoteFinalizedBlock =
+      DataStructureUtil.randomSignedBeaconBlock(remoteFinalizedBlockSlot.longValue(), 1);
+  private final SignedBeaconBlock earlierBlock =
+      DataStructureUtil.randomSignedBeaconBlock(earlierBlockSlot.longValue(), 2);
+  private final SignedBeaconBlock laterBlock =
+      DataStructureUtil.randomSignedBeaconBlock(laterBlockSlot.longValue(), 3);
 
   private final Checkpoint genesisCheckpoint =
-      new Checkpoint(genesisEpoch, genesisBlock.signing_root("signature"));
+      new Checkpoint(genesisEpoch, genesisBlock.getMessage().hash_tree_root());
   private final Checkpoint remoteFinalizedCheckpoint =
-      new Checkpoint(remoteFinalizedEpoch, remoteFinalizedBlock.signing_root("signature"));
+      new Checkpoint(remoteFinalizedEpoch, remoteFinalizedBlock.getMessage().hash_tree_root());
   private final Checkpoint earlierCheckpoint =
-      new Checkpoint(earlierEpoch, earlierBlock.signing_root("signature"));
+      new Checkpoint(earlierEpoch, earlierBlock.getMessage().hash_tree_root());
   private final Checkpoint laterCheckpoint =
-      new Checkpoint(laterEpoch, laterBlock.signing_root("signature"));
+      new Checkpoint(laterEpoch, laterBlock.getMessage().hash_tree_root());
 
   private PeerStatus remoteStatus;
   private PeerChainValidator peerChainValidator;
@@ -292,8 +292,8 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnSameChain() {
-    final SafeFuture<BeaconBlock> blockFuture = SafeFuture.completedFuture(earlierBlock);
-    final SafeFuture<Optional<BeaconBlock>> optionalBlockFuture =
+    final SafeFuture<SignedBeaconBlock> blockFuture = SafeFuture.completedFuture(earlierBlock);
+    final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
@@ -304,9 +304,9 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadOnDifferentChain() {
-    final SafeFuture<BeaconBlock> blockFuture =
+    final SafeFuture<SignedBeaconBlock> blockFuture =
         SafeFuture.completedFuture(randomBlock(earlierBlockSlot));
-    final SafeFuture<Optional<BeaconBlock>> optionalBlockFuture =
+    final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
@@ -317,8 +317,9 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsAheadAndUnresponsive() {
-    final SafeFuture<BeaconBlock> blockFuture = SafeFuture.failedFuture(new NullPointerException());
-    final SafeFuture<Optional<BeaconBlock>> optionalBlockFuture =
+    final SafeFuture<SignedBeaconBlock> blockFuture =
+        SafeFuture.failedFuture(new NullPointerException());
+    final SafeFuture<Optional<SignedBeaconBlock>> optionalBlockFuture =
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
@@ -329,7 +330,7 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsBehindOnSameChain() {
-    SafeFuture<Optional<BeaconBlock>> blockResult =
+    SafeFuture<Optional<SignedBeaconBlock>> blockResult =
         SafeFuture.completedFuture(Optional.of(remoteFinalizedBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
@@ -338,7 +339,7 @@ public class PeerChainValidatorTest {
   }
 
   private void remoteChainIsBehindOnDifferentChain() {
-    SafeFuture<Optional<BeaconBlock>> blockResult =
+    SafeFuture<Optional<SignedBeaconBlock>> blockResult =
         SafeFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
@@ -346,8 +347,8 @@ public class PeerChainValidatorTest {
         .thenReturn(blockResult);
   }
 
-  private BeaconBlock randomBlock(UnsignedLong slot) {
-    return DataStructureUtil.randomBeaconBlock(slot.longValue(), slot.intValue());
+  private SignedBeaconBlock randomBlock(UnsignedLong slot) {
+    return DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), slot.intValue());
   }
 
   private Checkpoint getFinalizedCheckpoint(final PeerStatus status) {
