@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 
 public class ProcessedAttestationEvent {
@@ -25,5 +27,27 @@ public class ProcessedAttestationEvent {
 
   public Attestation getAttestation() {
     return attestation;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final ProcessedAttestationEvent that = (ProcessedAttestationEvent) o;
+    return Objects.equals(attestation, that.attestation);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(attestation);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("attestation", attestation).toString();
   }
 }

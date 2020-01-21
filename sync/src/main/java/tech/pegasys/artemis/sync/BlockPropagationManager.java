@@ -35,15 +35,15 @@ public class BlockPropagationManager extends Service {
   private final EventBus eventBus;
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
-  private final PendingBlocks pendingBlocks;
-  private final FutureBlocks futureBlocks;
+  private final PendingPool<SignedBeaconBlock> pendingBlocks;
+  private final FutureItems<SignedBeaconBlock> futureBlocks;
 
   BlockPropagationManager(
       final EventBus eventBus,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter,
-      final PendingBlocks pendingBlocks,
-      final FutureBlocks futureBlocks) {
+      final PendingPool<SignedBeaconBlock> pendingBlocks,
+      final FutureItems<SignedBeaconBlock> futureBlocks) {
     this.eventBus = eventBus;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
@@ -55,8 +55,9 @@ public class BlockPropagationManager extends Service {
       final EventBus eventBus,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    final PendingBlocks pendingBlocks = PendingBlocks.create(eventBus);
-    final FutureBlocks futureBlocks = new FutureBlocks();
+    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
+    final FutureItems<SignedBeaconBlock> futureBlocks =
+        new FutureItems<>(SignedBeaconBlock::getSlot);
     return new BlockPropagationManager(
         eventBus, storageClient, blockImporter, pendingBlocks, futureBlocks);
   }
