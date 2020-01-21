@@ -55,7 +55,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     if (stage instanceof SafeFuture) {
       return (SafeFuture<U>) stage;
     }
-    final SafeFuture<U> safeFuture = new SafeFuture<>();
+    return propagateResult(stage, new SafeFuture<>());
+  }
+
+  private static <U> SafeFuture<U> propagateResult(
+      final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
         (result, error) -> {
           if (error != null) {
@@ -107,6 +111,32 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               return null;
             })
         .reportExceptions();
+  }
+
+  /**
+   * Returns a new CompletionStage that, when the provided stage completes exceptionally, is
+   * executed with the provided stage's exception as the argument to the supplied function.
+   * Otherwise the returned stage completes successfully with the same value as the provided stage.
+   *
+   * <p>This is the exceptional equivalent to {@link CompletionStage#thenCompose(Function)}
+   *
+   * @param errorHandler the function returning a new CompletionStage
+   * @return the SafeFuture
+   */
+  public SafeFuture<T> exceptionallyCompose(
+      final Function<Throwable, CompletionStage<T>> errorHandler) {
+    final SafeFuture<T> result = new SafeFuture<>();
+    whenComplete(
+        (value, error) -> {
+          try {
+            final CompletionStage<T> nextStep =
+                error != null ? errorHandler.apply(error) : completedFuture(value);
+            propagateResult(nextStep, result);
+          } catch (final Throwable t) {
+            result.completeExceptionally(t);
+          }
+        });
+    return result;
   }
 
   @SuppressWarnings("unchecked")

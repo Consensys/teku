@@ -261,6 +261,43 @@ class SafeFutureTest {
     assertThat(logCounter.getCount()).isEqualTo(1);
   }
 
+  @Test
+  public void exceptionallyCompose_shouldComposeInErrorCase() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+    final SafeFuture<String> composedFuture = new SafeFuture<>();
+    final SafeFuture<String> result = safeFuture.exceptionallyCompose(error -> {
+      receivedError.set(error);
+      return composedFuture;
+    });
+    final RuntimeException exception = new RuntimeException("Nope");
+
+    safeFuture.completeExceptionally(exception);
+    assertThat(result).isNotDone();
+    assertThat(receivedError).hasValue(exception);
+
+    composedFuture.complete("Success");
+    assertThat(result).isCompletedWithValue("Success");
+  }
+
+  @Test
+  public void exceptionallyCompose_shouldNotDoAnythingWhenCompletedSuccessfully() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+    final SafeFuture<String> composedFuture = new SafeFuture<>();
+    final SafeFuture<String> result = safeFuture.exceptionallyCompose(error -> {
+      receivedError.set(error);
+      return composedFuture;
+    });
+
+    safeFuture.complete("Success");
+    assertThat(result).isCompletedWithValue("Success");
+    assertThat(receivedError).hasValue(null);
+
+    composedFuture.complete("Composed");
+    assertThat(result).isCompletedWithValue("Success");
+  }
+
   private CountingNoOpAppender startCountingReportedUnhandledExceptions() {
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     final Configuration config = ctx.getConfiguration();
