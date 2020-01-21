@@ -49,13 +49,13 @@ import tech.pegasys.artemis.storage.Store.Transaction;
 
 public class ForkChoiceUtil {
 
-  public static UnsignedLong get_current_slot(Store.Transaction store, boolean useUnixTime) {
+  public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
     return time.minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
-  public static UnsignedLong get_current_slot(Store.Transaction store) {
+  public static UnsignedLong get_current_slot(ReadOnlyStore store) {
     return get_current_slot(store, false);
   }
 

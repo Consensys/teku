@@ -45,6 +45,7 @@ public class PeerChainValidatorTest {
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
 
+  private final UnsignedLong genesisTime = UnsignedLong.valueOf(0);
   private final Bytes4 remoteFork = new Bytes4(Bytes.fromHexString("0x1234", 4));
   private final Bytes4 otherFork = new Bytes4(Bytes.fromHexString("0x3333", 4));
 
@@ -92,8 +93,13 @@ public class PeerChainValidatorTest {
     when(peer.hasStatus()).thenReturn(true);
     when(peer.sendGoodbye(any())).thenReturn(SafeFuture.completedFuture(null));
 
+    when(store.getGenesisTime()).thenReturn(genesisTime);
+    when(store.getTime())
+        .thenReturn(
+            genesisTime.plus(
+                laterBlockSlot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT))));
+
     when(storageClient.getStore()).thenReturn(store);
-    when(storageClient.getBestSlot()).thenReturn(laterEpochSlot);
   }
 
   @Test
@@ -264,16 +270,25 @@ public class PeerChainValidatorTest {
     final Checkpoint remoteFinalizedCheckpoint = getFinalizedCheckpoint(remoteStatus);
     when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
 
-    when(storageClient.getBestSlot()).thenReturn(remoteFinalizedCheckpoint.getEpochSlot());
+    final UnsignedLong currentTime =
+        genesisTime.plus(
+            remoteFinalizedCheckpoint
+                .getEpochSlot()
+                .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    when(store.getTime()).thenReturn(currentTime);
   }
 
   private void remoteCheckpointIsAtFutureEpoch() {
     final Checkpoint remoteFinalizedCheckpoint = getFinalizedCheckpoint(remoteStatus);
     when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
 
-    final UnsignedLong previousEpochSlot =
-        compute_start_slot_at_epoch(remoteFinalizedCheckpoint.getEpoch().minus(UnsignedLong.ONE));
-    when(storageClient.getBestSlot()).thenReturn(previousEpochSlot);
+    final UnsignedLong currentTime =
+        genesisTime.plus(
+            remoteFinalizedCheckpoint
+                .getEpochSlot()
+                .minus(UnsignedLong.ONE)
+                .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    when(store.getTime()).thenReturn(currentTime);
   }
 
   private void remoteChainIsAheadOnSameChain() {

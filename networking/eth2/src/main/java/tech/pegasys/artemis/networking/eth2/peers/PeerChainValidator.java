@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2.peers;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_current_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
@@ -117,7 +118,7 @@ public class PeerChainValidator {
     final Checkpoint finalizedCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
     final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
-    final UnsignedLong currentEpoch = compute_epoch_at_slot(storageClient.getBestSlot());
+    final UnsignedLong currentEpoch = getCurrentEpoch();
 
     // Make sure remote finalized epoch is reasonable
     if (remoteEpochIsInvalid(currentEpoch, remoteFinalizedEpoch)) {
@@ -139,6 +140,11 @@ public class PeerChainValidator {
       // Our peer is ahead of us, check that they agree on our finalized epoch
       return verifyPeerAgreesWithOurFinalizedCheckpoint(finalizedCheckpoint);
     }
+  }
+
+  private UnsignedLong getCurrentEpoch() {
+    final UnsignedLong currentSlot = get_current_slot(storageClient.getStore());
+    return compute_epoch_at_slot(currentSlot);
   }
 
   private boolean remoteEpochIsInvalid(
