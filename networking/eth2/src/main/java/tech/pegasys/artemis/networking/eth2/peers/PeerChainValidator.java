@@ -147,7 +147,7 @@ public class PeerChainValidator {
     return remoteFinalizedEpoch.compareTo(currentEpoch) > 0
         // Remote finalized epoch is invalid if is from the current epoch (unless we're at genesis)
         || (remoteFinalizedEpoch.compareTo(currentEpoch) == 0
-            && remoteFinalizedEpoch.compareTo(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)) > 0);
+            && !remoteFinalizedEpoch.equals(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(Checkpoint finalizedCheckpoint) {
