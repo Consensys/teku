@@ -28,11 +28,9 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
-import tech.pegasys.artemis.pow.exception.DepositCountRequestException;
-import tech.pegasys.artemis.pow.exception.DepositRootRequestException;
+import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DepositContractListener {
@@ -70,12 +68,7 @@ public class DepositContractListener {
     String encodedFunction = contract.get_deposit_root().encodeFunctionCall();
     return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
-            ethCall -> {
-              if (ethCall.hasError()) {
-                throw new DepositRootRequestException(
-                    "Eth1 call get_deposit_root() has failed:" + ethCall.getError().getMessage());
-              }
-              String value = ethCall.getValue();
+            value -> {
               List<Type> list = contract.get_deposit_root().decodeFunctionResponse(value);
               return Bytes32.wrap((byte[]) list.get(0).getValue());
             });
@@ -86,12 +79,7 @@ public class DepositContractListener {
     String encodedFunction = contract.get_deposit_count().encodeFunctionCall();
     return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
-            ethCall -> {
-              if (ethCall.hasError()) {
-                throw new DepositCountRequestException(
-                    "Eth1 call get_deposit_count() has failed:" + ethCall.getError().getMessage());
-              }
-              String value = ethCall.getValue();
+            value -> {
               List<Type> list = contract.get_deposit_count().decodeFunctionResponse(value);
               byte[] bytes = (byte[]) list.get(0).getValue();
               long deposit_count = Bytes.wrap(bytes).reverse().toLong();
@@ -107,14 +95,22 @@ public class DepositContractListener {
     subscriptionNewDeposit.dispose();
   }
 
-  private SafeFuture<EthCall> callFunctionAtBlockNumber(
+  private SafeFuture<String> callFunctionAtBlockNumber(
       String encodedFunction, UnsignedLong blockHeight) {
     return SafeFuture.of(
-        web3j
-            .ethCall(
-                Transaction.createEthCallTransaction(
-                    null, contract.getContractAddress(), encodedFunction),
-                DefaultBlockParameter.valueOf(blockHeight.bigIntegerValue()))
-            .sendAsync());
+            web3j
+                    .ethCall(
+                            Transaction.createEthCallTransaction(
+                                    null, contract.getContractAddress(), encodedFunction),
+                            DefaultBlockParameter.valueOf(blockHeight.bigIntegerValue()))
+                    .sendAsync())
+            .thenApply(ethCall -> {
+              if (ethCall.hasError()) {
+                throw new Eth1RequestException(
+                        "Eth1 call has failed:" + ethCall.getError().getMessage());
+              } else {
+                return ethCall.getValue();
+              }
+            });
   }
 }

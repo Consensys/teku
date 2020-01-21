@@ -25,7 +25,15 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Date;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +43,7 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 /*
 
@@ -95,13 +104,10 @@ public class Eth1DataManager {
   private final EventBus eventBus;
 
   private AtomicReference<EthBlock.Block> latestBlockReference = new AtomicReference<>();
+  private AtomicInteger cacheStartupRetry = new AtomicInteger(0);
+  private AtomicBoolean cacheStartupDone = new AtomicBoolean(false);
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-  private enum StartupLogicStates {
-    SUCCESSFULLY_COMPLETED,
-    UNSUCCESSFULLY_COMPLETED,
-    UNABLE_TO_EXPLORE_BLOCKS,
-    DONE_EXPLORING,
-  }
 
   public Eth1DataManager(
       Web3j web3j, EventBus eventBus, DepositContractListener depositContractListener) {
@@ -110,20 +116,19 @@ public class Eth1DataManager {
     this.eventBus = eventBus;
     eventBus.register(this);
 
-    runCacheStartupLogic()
-        .finish(
-            (result) -> {
-              if (!result.equals(StartupLogicStates.SUCCESSFULLY_COMPLETED)) {
-                throw new RuntimeException("Eth1DataManager unable to fill cache at startup");
-              }
-            });
+    runCacheStartup();
   }
 
   @Subscribe
   public void onTick(Date date) {
-    // Fetch new Eth1 blocks every SECONDS_PER_ETH1_BLOCK seconds.
+    // Fetch new Eth1 blocks every SECONDS_PER_ETH1_BLOCK seconds
     // (can't use slot events here as an approximation due to this needing to be run pre-genesis)
     if (!hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, date)) {
+      return;
+    }
+
+    // Bail if cache startup logic hasn't finished yet
+    if (!cacheStartupDone.get()) {
       return;
     }
 
@@ -137,16 +142,18 @@ public class Eth1DataManager {
     }
 
     UnsignedLong latestBlockNumber = UnsignedLong.valueOf(latestBlock.getNumber());
-    exploreBlocksInDirection(latestBlockNumber, true)
-        .finish(
-            res -> {
-              if (!res.equals(StartupLogicStates.DONE_EXPLORING)) {
-                LOG.warn("Failed to import new eth1 blocks");
-              }
-            });
+    exploreBlocksInDirection(latestBlockNumber, true).reportExceptions();
   }
 
-  private SafeFuture<StartupLogicStates> runCacheStartupLogic() {
+
+  public void runCacheStartup(){
+    doCacheStartup().finish(() -> {
+      LOG.info("Eth1DataManager successfully ran cache startup logic");
+      cacheStartupDone.set(true);
+    });
+  }
+
+  private SafeFuture<Void> doCacheStartup() {
     UnsignedLong cacheRangeLowerBound = getCacheRangeLowerBound();
     UnsignedLong cacheRangerUpperBound = getCacheRangeUpperBound();
 
@@ -169,75 +176,75 @@ public class Eth1DataManager {
         getMidRangeBlock(latestBlockNumberFuture, blockNumberDiffFuture);
 
     return blockFuture
-        .thenCompose(
-            eth1block -> {
-              EthBlock.Block block = eth1block.getBlock();
-              UnsignedLong timestamp = UnsignedLong.valueOf(block.getTimestamp());
-              SafeFuture<EthBlock> middleBlockFuture = blockFuture;
-              if (!isTimestampInRange(timestamp)) {
+            .thenCompose(
+                    eth1block -> {
+                      EthBlock.Block block = eth1block.getBlock();
+                      UnsignedLong timestamp = UnsignedLong.valueOf(block.getTimestamp());
+                      SafeFuture<EthBlock> middleBlockFuture = blockFuture;
+                      if (!isTimestampInRange(timestamp)) {
 
-                SafeFuture<UnsignedLong> realSecondsPerEth1BlockFuture =
-                    calculateRealSecondsPerEth1BlockFuture(
-                        latestBlockTimestampFuture,
-                        blockNumberDiffFuture,
-                        SafeFuture.completedFuture(timestamp));
+                        SafeFuture<UnsignedLong> realSecondsPerEth1BlockFuture =
+                                calculateRealSecondsPerEth1BlockFuture(
+                                        latestBlockTimestampFuture,
+                                        blockNumberDiffFuture,
+                                        SafeFuture.completedFuture(timestamp));
 
-                SafeFuture<UnsignedLong> newBlockNumberDiffFuture =
-                    getBlockNumberDiffWithMidRangeBlock(
-                        latestBlockTimestampFuture, realSecondsPerEth1BlockFuture, cacheMidRange);
+                        SafeFuture<UnsignedLong> newBlockNumberDiffFuture =
+                                getBlockNumberDiffWithMidRangeBlock(
+                                        latestBlockTimestampFuture, realSecondsPerEth1BlockFuture, cacheMidRange);
 
-                middleBlockFuture =
-                    getMidRangeBlock(latestBlockNumberFuture, newBlockNumberDiffFuture);
-              }
-              return middleBlockFuture;
-            })
-        .thenCompose(
-            middleBlock -> {
-              EthBlock.Block block = middleBlock.getBlock();
-              UnsignedLong middleBlockNumber = UnsignedLong.valueOf(block.getNumber());
-              postCacheEth1BlockEvent(middleBlockNumber, block).reportExceptions();
-              SafeFuture<StartupLogicStates> exploreUpResultFuture =
-                  exploreBlocksInDirection(middleBlockNumber, true);
-              SafeFuture<StartupLogicStates> exploreDownResultFuture =
-                  exploreBlocksInDirection(middleBlockNumber, false);
-              return SafeFuture.allOf(exploreUpResultFuture, exploreDownResultFuture)
-                  .thenApply(
-                      done -> {
-                        StartupLogicStates exploreUpResult = exploreUpResultFuture.getNow(null);
-                        checkNotNull(exploreUpResult);
+                        middleBlockFuture =
+                                getMidRangeBlock(latestBlockNumberFuture, newBlockNumberDiffFuture);
+                      }
+                      return middleBlockFuture;
+                    })
+            .thenCompose(
+                    middleBlock -> {
+                      EthBlock.Block block = middleBlock.getBlock();
+                      UnsignedLong middleBlockNumber = UnsignedLong.valueOf(block.getNumber());
+                      postCacheEth1BlockEvent(middleBlockNumber, block).reportExceptions();
+                      SafeFuture<Void> exploreUpResultFuture =
+                              exploreBlocksInDirection(middleBlockNumber, true);
+                      SafeFuture<Void> exploreDownResultFuture =
+                              exploreBlocksInDirection(middleBlockNumber, false);
+                      return SafeFuture.allOf(exploreUpResultFuture, exploreDownResultFuture);
+                    })
+            .exceptionallyCompose(
+                    err -> {
+                      if (cacheStartupRetry.incrementAndGet() == Constants.ETH1_CACHE_STARTUP_RETRY_GIVEUP) {
+                        LOG.fatal("Eth1DataManager has given up on filling Eth1Data due to multiple failed attempts");
+                        blockFuture.completeExceptionally(null);
+                        return;
+                      }
+                      LOG.debug(
+                              "Eth1DataManager failed to run cache startup logic. Retry in "
+                                      + Constants.ETH1_CACHE_STARTUP_RETRY_TIMEOUT + " seconds", err);
 
-                        StartupLogicStates exploreDownResult = exploreDownResultFuture.getNow(null);
-                        checkNotNull(exploreDownResult);
+                      Executor delayed = CompletableFuture.delayedExecutor(
+                              Constants.ETH1_CACHE_STARTUP_RETRY_TIMEOUT, TimeUnit.SECONDS);
 
-                        if (exploreDownResult.equals(StartupLogicStates.DONE_EXPLORING)
-                            && exploreUpResult.equals(StartupLogicStates.DONE_EXPLORING)) {
-                          return StartupLogicStates.SUCCESSFULLY_COMPLETED;
-                        } else {
-                          return StartupLogicStates.UNSUCCESSFULLY_COMPLETED;
-                        }
-                      });
-            });
+                      return CompletableFuture.supplyAsync(this::doCacheStartup., delayed);
+                    });
   }
 
-  private SafeFuture<StartupLogicStates> exploreBlocksInDirection(
+  private SafeFuture<Void> exploreBlocksInDirection(
       UnsignedLong blockNumber, final boolean isDirectionUp) {
     blockNumber =
         isDirectionUp ? blockNumber.plus(UnsignedLong.ONE) : blockNumber.minus(UnsignedLong.ONE);
     SafeFuture<EthBlock> blockFuture = getEth1BlockFuture(blockNumber);
     UnsignedLong finalBlockNumber = blockNumber;
     return blockFuture
-        .thenCompose(
-            ethBlock -> {
-              EthBlock.Block block = ethBlock.getBlock();
-              if (isDirectionUp) latestBlockReference.set(block);
-              UnsignedLong timestamp = UnsignedLong.valueOf(block.getTimestamp());
-              postCacheEth1BlockEvent(finalBlockNumber, block).reportExceptions();
-              if (isTimestampInRange(timestamp)) {
-                return exploreBlocksInDirection(finalBlockNumber, isDirectionUp);
-              }
-              return SafeFuture.completedFuture(StartupLogicStates.DONE_EXPLORING);
-            })
-        .exceptionally(err -> StartupLogicStates.UNABLE_TO_EXPLORE_BLOCKS);
+            .thenCompose(
+                    ethBlock -> {
+                      EthBlock.Block block = ethBlock.getBlock();
+                      if (isDirectionUp) latestBlockReference.set(block);
+                      UnsignedLong timestamp = UnsignedLong.valueOf(block.getTimestamp());
+                      postCacheEth1BlockEvent(finalBlockNumber, block).reportExceptions();
+                      if (isTimestampInRange(timestamp)) {
+                        return exploreBlocksInDirection(finalBlockNumber, isDirectionUp);
+                      }
+                      return SafeFuture.completedFuture(null);
+                    });
   }
 
   private SafeFuture<UnsignedLong> calculateRealSecondsPerEth1BlockFuture(
@@ -254,8 +261,8 @@ public class Eth1DataManager {
               UnsignedLong latestBlockTimestamp = latestBlockTimestampFuture.getNow(null);
               checkNotNull(latestBlockTimestamp);
 
-              UnsignedLong actual_time_diff = latestBlockTimestamp.minus(blockTimestamp);
-              return blockNumberDiff.dividedBy(actual_time_diff);
+              UnsignedLong actualTimeDiff = latestBlockTimestamp.minus(blockTimestamp);
+              return blockNumberDiff.dividedBy(actualTimeDiff);
             });
   }
 
@@ -366,7 +373,7 @@ public class Eth1DataManager {
 
   public static boolean hasBeenApproximately(UnsignedLong seconds, Date date) {
     return UnsignedLong.valueOf(date.getTime())
-        .mod(SECONDS_PER_ETH1_BLOCK)
+        .mod(seconds)
         .equals(UnsignedLong.ZERO);
   }
 }

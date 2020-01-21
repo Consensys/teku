@@ -127,6 +127,8 @@ public class Constants {
   public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
   public static int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
   public static UnsignedLong ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10); // in sec
+  public static long ETH1_CACHE_STARTUP_RETRY_TIMEOUT = 10; // in sec
+  public static long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
 
   static {
     setConstants("minimal");
