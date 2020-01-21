@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
@@ -26,14 +25,6 @@ import tech.pegasys.artemis.util.Waiter;
 public class DiscoveryIntegrationTest {
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-  private Eth2Network network1;
-  private Eth2Network network2;
-
-  @BeforeEach
-  public void setUp() throws Exception {
-    network1 = networkFactory.builder().startNetwork();
-    network2 = networkFactory.builder().discoveryPeer(network1).startNetwork();
-  }
 
   @AfterEach
   public void tearDown() {
@@ -42,6 +33,9 @@ public class DiscoveryIntegrationTest {
 
   @Test
   public void shouldDiscoverBootPeer() throws Exception {
+    final Eth2Network network1 = networkFactory.builder().startNetwork();
+    final Eth2Network network2 = networkFactory.builder().discoveryPeer(network1).startNetwork();
+
     // check that discovery boot peers have been added to its node table
     DiscoveryNetwork discoveryService = network2.getDiscoveryService();
     assertTrue(discoveryService.streamPeers().count() > 0);
@@ -49,5 +43,22 @@ public class DiscoveryIntegrationTest {
     final Eth2Peer[] peer1 = new Eth2Peer[1];
     Waiter.waitFor(() -> peer1[0] = network2.getPeer(network1.getNodeId()).orElseThrow());
     Waiter.waitFor(() -> assertThat(peer1[0].isConnected()).isTrue());
+  }
+
+  @Test
+  public void peersConnectedIndirectlyShouldDiscoveryEachOther() throws Exception {
+    final Eth2Network bootnode = networkFactory.builder().startNetwork();
+
+    // Setup network A with bootnode
+    final Eth2Network nodeA = networkFactory.builder().discoveryPeer(bootnode).startNetwork();
+    Waiter.waitFor(() -> assertThat(bootnode.getPeer(nodeA.getNodeId()).isPresent()));
+
+    // Setup network B with same bootnode
+    final Eth2Network nodeB = networkFactory.builder().discoveryPeer(bootnode).startNetwork();
+    Waiter.waitFor(() -> assertThat(bootnode.getPeer(nodeB.getNodeId()).isPresent()));
+
+    // A and B should find each other through the bootnode
+    Waiter.waitFor(() -> assertThat(nodeA.getPeer(nodeB.getNodeId())).isPresent());
+    Waiter.waitFor(() -> assertThat(nodeB.getPeer(nodeA.getNodeId())).isPresent());
   }
 }
