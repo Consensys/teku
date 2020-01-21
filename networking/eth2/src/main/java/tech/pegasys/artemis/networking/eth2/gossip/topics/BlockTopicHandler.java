@@ -15,9 +15,11 @@ package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_current_slot;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -39,9 +41,11 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
   private static final Logger LOG = LogManager.getLogger();
   private final ChainStorageClient chainStorageClient;
+  private final EventBus eventBus;
 
   public BlockTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
     super(eventBus);
+    this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
   }
 
@@ -62,19 +66,28 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
 
   @Override
   protected boolean validateData(final SignedBeaconBlock block) {
+    if (chainStorageClient.isPreGenesis()) {
+      // We can't process blocks pre-genesis
+      return false;
+    }
+
     final BeaconState preState =
         chainStorageClient.getStore().getBlockState(block.getMessage().getParent_root());
     if (preState == null) {
-      // TODO - handle future and unattached blocks
-      LOG.warn(
-          "Dropping block message at slot {} with unknown parent state {}",
-          block.getMessage().getSlot(),
-          block.getMessage().getParent_root());
+      // Post event even if we don't have the prestate
+      eventBus.post(createEvent(block));
       return false;
     }
 
     if (!isBlockSignatureValid(block, preState)) {
       LOG.trace("Dropping gossiped block with invalid signature: {}", block);
+      return false;
+    }
+
+    final UnsignedLong currentSlot = get_current_slot(chainStorageClient.getStore());
+    if (block.getSlot().compareTo(currentSlot) > 0) {
+      // Don't gossip future blocks
+      eventBus.post(createEvent(block));
       return false;
     }
 
