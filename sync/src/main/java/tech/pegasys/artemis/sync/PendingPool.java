@@ -100,18 +100,8 @@ class PendingPool<T> extends Service {
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         DEFAULT_FUTURE_SLOT_TOLERANCE,
         Attestation::hash_tree_root,
-        attestation ->
-            Set.of(
-                attestation.getData().getTarget().getRoot(),
-                attestation.getData().getBeacon_block_root()),
-        attestation ->
-            max(
-                attestation.getData().getSlot().plus(UnsignedLong.ONE),
-                attestation.getData().getTarget().getEpochSlot()));
-  }
-
-  private static UnsignedLong max(final UnsignedLong a, final UnsignedLong b) {
-    return a.compareTo(b) > 0 ? a : b;
+        Attestation::getDependentBlockRoots,
+        Attestation::getEarliestSlotForProcessing);
   }
 
   @Override

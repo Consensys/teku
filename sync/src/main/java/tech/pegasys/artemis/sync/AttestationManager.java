@@ -18,7 +18,6 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +61,7 @@ public class AttestationManager extends Service {
     final PendingPool<Attestation> pendingAttestations =
         PendingPool.createForAttestations(eventBus);
     final FutureItems<Attestation> futureAttestations =
-        new FutureItems<>(attestation -> attestation.getData().getSlot().plus(UnsignedLong.ONE));
+        new FutureItems<>(Attestation::getEarliestSlotForProcessing);
     return new AttestationManager(
         eventBus,
         storageClient,
