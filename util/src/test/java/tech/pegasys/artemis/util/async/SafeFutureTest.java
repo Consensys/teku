@@ -60,11 +60,7 @@ class SafeFutureTest {
 
     final RuntimeException exception = new RuntimeException("Oh no");
     completableFuture.completeExceptionally(exception);
-    assertThat(safeFuture).isCompletedExceptionally();
-    assertThatThrownBy(safeFuture::join)
-        .isInstanceOf(CompletionException.class)
-        .extracting(Throwable::getCause)
-        .isSameAs(exception);
+    assertExceptionallyCompletedWith(safeFuture, exception);
   }
 
   @Test
@@ -77,11 +73,7 @@ class SafeFutureTest {
     final RuntimeException exception = new RuntimeException("Oh no");
     final SafeFuture<String> safeFuture = SafeFuture.failedFuture(exception);
 
-    assertThat(safeFuture).isCompletedExceptionally();
-    assertThatThrownBy(safeFuture::join)
-        .isInstanceOf(CompletionException.class)
-        .extracting(Throwable::getCause)
-        .isSameAs(exception);
+    assertExceptionallyCompletedWith(safeFuture, exception);
   }
 
   @Test
@@ -281,6 +273,19 @@ class SafeFutureTest {
   }
 
   @Test
+  public void exceptionallyCompose_shouldCompleteExceptionallyWhenHandlerThrowsException() {
+    final RuntimeException exception1 = new RuntimeException("Error1");
+    final RuntimeException exception2 = new RuntimeException("Error2");
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+    final SafeFuture<String> result = safeFuture.exceptionallyCompose(error -> {
+      throw exception2;
+    });
+
+    safeFuture.completeExceptionally(exception1);
+    assertExceptionallyCompletedWith(result, exception2);
+  }
+
+  @Test
   public void exceptionallyCompose_shouldNotDoAnythingWhenCompletedSuccessfully() {
     final AtomicReference<Throwable> receivedError = new AtomicReference<>();
     final SafeFuture<String> safeFuture = new SafeFuture<>();
@@ -313,5 +318,15 @@ class SafeFutureTest {
     config.addLogger(SafeFuture.class.getName(), loggerConfig);
     ctx.updateLoggers();
     return appender;
+  }
+
+  private void assertExceptionallyCompletedWith(
+      final SafeFuture<String> safeFuture,
+      final RuntimeException exception) {
+    assertThat(safeFuture).isCompletedExceptionally();
+    assertThatThrownBy(safeFuture::join)
+        .isInstanceOf(CompletionException.class)
+        .extracting(Throwable::getCause)
+        .isSameAs(exception);
   }
 }
