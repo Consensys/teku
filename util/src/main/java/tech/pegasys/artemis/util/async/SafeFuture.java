@@ -58,6 +58,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return propagateResult(stage, new SafeFuture<>());
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private static <U> SafeFuture<U> propagateResult(
       final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
@@ -123,6 +124,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @param errorHandler the function returning a new CompletionStage
    * @return the SafeFuture
    */
+  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<T> exceptionallyCompose(
       final Function<Throwable, CompletionStage<T>> errorHandler) {
     final SafeFuture<T> result = new SafeFuture<>();
