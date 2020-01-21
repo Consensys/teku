@@ -20,6 +20,8 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
@@ -35,6 +37,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class AttestationPropagationManager extends Service {
+  private static final Logger LOG = LogManager.getLogger();
   private final EventBus eventBus;
   private final ChainStorageClient storageClient;
   private final StateTransition stateTransition;
@@ -111,17 +114,19 @@ public class AttestationPropagationManager extends Service {
     final AttestationProcessingResult result =
         on_attestation(transaction, attestation, stateTransition);
     if (result.isSuccessful()) {
-      STDOUT.log(Level.INFO, "Processed attestation successfully");
+      LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
       transaction.commit(() -> {}, "Failed to persist attestation result");
     } else {
       switch (result.getFailureReason()) {
         case UNKNOWN_PARENT:
-          STDOUT.log(Level.INFO, "Deferring attestation as require block is not yet present");
+          LOG.trace(
+              "Deferring attestation {} as require block is not yet present",
+              attestation::hash_tree_root);
           pendingAttestations.add(attestation);
           break;
         case ATTESTATION_IS_NOT_FROM_PREVIOUS_SLOT:
         case FOR_FUTURE_EPOCH:
-          STDOUT.log(Level.INFO, "Deferring attestation until a future slot");
+          LOG.trace("Deferring attestation {} until a future slot", attestation::hash_tree_root);
           futureAttestations.add(attestation);
           break;
         default:
