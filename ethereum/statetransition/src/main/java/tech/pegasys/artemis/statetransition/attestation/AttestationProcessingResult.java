@@ -18,7 +18,7 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 
 public interface AttestationProcessingResult {
   AttestationProcessingResult SUCCESSFUL = new Successful();
-  AttestationProcessingResult FAILED_UNKNOWN_TARGET = new Failure(FailureReason.UNKNOWN_PARENT);
+  AttestationProcessingResult FAILED_UNKNOWN_BLOCK = new Failure(FailureReason.UNKNOWN_BLOCK);
   AttestationProcessingResult FAILED_NOT_FROM_PAST =
       new Failure(FailureReason.ATTESTATION_IS_NOT_FROM_PREVIOUS_SLOT);
   AttestationProcessingResult FAILED_FUTURE_EPOCH = new Failure(FailureReason.FOR_FUTURE_EPOCH);
@@ -44,7 +44,7 @@ public interface AttestationProcessingResult {
   String getFailureMessage();
 
   enum FailureReason {
-    UNKNOWN_PARENT,
+    UNKNOWN_BLOCK,
     ATTESTATION_IS_NOT_FROM_PREVIOUS_SLOT,
     FOR_FUTURE_EPOCH,
     FAILED_STATE_TRANSITION,

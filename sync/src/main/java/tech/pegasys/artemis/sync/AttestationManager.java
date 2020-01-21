@@ -30,6 +30,7 @@ import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingRes
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
+import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -71,7 +72,7 @@ public class AttestationManager extends Service {
     processAttestation(attestation);
     // TODO: Should we post this if the attestation was invalid?
     // What if it was delayed?
-    this.eventBus.post(new ProcessedAggregateEvent(attestation));
+    this.eventBus.post(new ProcessedAttestationEvent(attestation));
   }
 
   @Subscribe
@@ -113,7 +114,7 @@ public class AttestationManager extends Service {
       LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
     } else {
       switch (result.getFailureReason()) {
-        case UNKNOWN_PARENT:
+        case UNKNOWN_BLOCK:
           LOG.trace(
               "Deferring attestation {} as require block is not yet present",
               attestation::hash_tree_root);

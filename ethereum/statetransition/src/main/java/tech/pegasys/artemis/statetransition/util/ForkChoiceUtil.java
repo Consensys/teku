@@ -440,7 +440,7 @@ public class ForkChoiceUtil {
     if (!store.getBlockRoots().contains(target.getRoot())) {
       // Attestations target must be for a known block. If a target block is unknown, delay
       // consideration until the block is found
-      return AttestationProcessingResult.FAILED_UNKNOWN_TARGET;
+      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
     }
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
@@ -452,7 +452,7 @@ public class ForkChoiceUtil {
     if (!store.getBlockRoots().contains(attestation.getData().getBeacon_block_root())) {
       // Attestations must be for a known block. If block is unknown, delay consideration until the
       // block is found
-      return AttestationProcessingResult.FAILED_UNKNOWN_TARGET;
+      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
     }
 
     if (store
