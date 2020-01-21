@@ -79,15 +79,15 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
       return false;
     }
 
+    if (!isBlockSignatureValid(block, preState)) {
+      LOG.trace("Dropping gossiped block with invalid signature: {}", block);
+      return false;
+    }
+
     final UnsignedLong currentSlot = get_current_slot(chainStorageClient.getStore());
     if (block.getSlot().compareTo(currentSlot) > 0) {
       // Don't gossip future blocks
       eventBus.post(createEvent(block));
-      return false;
-    }
-
-    if (!isBlockSignatureValid(block, preState)) {
-      LOG.trace("Dropping gossiped block with invalid signature: {}", block);
       return false;
     }
 
