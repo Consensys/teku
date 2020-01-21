@@ -66,6 +66,7 @@ public class AttestationManager extends Service {
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   private void onGossipedAttestation(final Attestation attestation) {
     processAttestation(attestation);
     // TODO: Should we post this if the attestation was invalid?
@@ -74,6 +75,7 @@ public class AttestationManager extends Service {
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   private void onAggregateAndProof(final AggregateAndProof aggregateAndProof) {
     final Attestation aggregate = aggregateAndProof.getAggregate();
     processAttestation(aggregate);
@@ -83,11 +85,13 @@ public class AttestationManager extends Service {
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   private void onSlot(final SlotEvent slotEvent) {
     futureAttestations.prune(slotEvent.getSlot()).forEach(this::processAttestation);
   }
 
   @Subscribe
+  @SuppressWarnings("unused")
   private void onBlockImported(final BlockImportedEvent blockImportedEvent) {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
