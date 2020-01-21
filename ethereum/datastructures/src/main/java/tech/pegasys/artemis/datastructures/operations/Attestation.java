@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.collect.Sets;
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -54,6 +57,20 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   public Attestation() {
     this.aggregation_bits =
         new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  }
+
+  public UnsignedLong getEarliestSlotForProcessing() {
+    // Attestations can't be processed until their slot is in the past and until we are in the same
+    // epoch as their target.
+    return max(data.getSlot().plus(UnsignedLong.ONE), data.getTarget().getEpochSlot());
+  }
+
+  public Collection<Bytes32> getDependentBlockRoots() {
+    return Sets.newHashSet(data.getTarget().getRoot(), data.getBeacon_block_root());
+  }
+
+  private static UnsignedLong max(final UnsignedLong a, final UnsignedLong b) {
+    return a.compareTo(b) > 0 ? a : b;
   }
 
   @Override

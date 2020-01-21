@@ -13,13 +13,17 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestationData;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBitlist;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -30,6 +34,77 @@ class AttestationTest {
   private BLSSignature aggregateSignature = BLSSignature.random(seed++);
 
   private Attestation attestation = new Attestation(aggregationBitfield, data, aggregateSignature);
+
+  @Test
+  void shouldNotBeProcessableBeforeSlotAfterCreationSlot() {
+    final Attestation attestation =
+        new Attestation(
+            aggregationBitfield,
+            new AttestationData(
+                UnsignedLong.valueOf(60),
+                UnsignedLong.ZERO,
+                Bytes32.ZERO,
+                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
+                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO)),
+            BLSSignature.empty());
+
+    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(UnsignedLong.valueOf(61));
+  }
+
+  @Test
+  void shouldNotBeProcessableBeforeFirstSlotOfTargetEpoch() {
+    final Checkpoint target = new Checkpoint(UnsignedLong.valueOf(10), Bytes32.ZERO);
+    final Attestation attestation =
+        new Attestation(
+            aggregationBitfield,
+            new AttestationData(
+                UnsignedLong.valueOf(1),
+                UnsignedLong.ZERO,
+                Bytes32.ZERO,
+                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
+                target),
+            BLSSignature.empty());
+
+    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochSlot());
+  }
+
+  @Test
+  public void shouldBeDependentOnTargetBlockAndBeaconBlockRoot() {
+    final Bytes32 targetRoot = Bytes32.fromHexString("0x01");
+    final Bytes32 beaconBlockRoot = Bytes32.fromHexString("0x02");
+
+    final Attestation attestation =
+        new Attestation(
+            aggregationBitfield,
+            new AttestationData(
+                UnsignedLong.valueOf(1),
+                UnsignedLong.ZERO,
+                beaconBlockRoot,
+                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
+                new Checkpoint(UnsignedLong.valueOf(10), targetRoot)),
+            BLSSignature.empty());
+
+    assertThat(attestation.getDependentBlockRoots())
+        .containsExactlyInAnyOrder(targetRoot, beaconBlockRoot);
+  }
+
+  @Test
+  public void shouldBeDependentOnSingleBlockWhenTargetBlockAndBeaconBlockRootAreEqual() {
+    final Bytes32 root = Bytes32.fromHexString("0x01");
+
+    final Attestation attestation =
+        new Attestation(
+            aggregationBitfield,
+            new AttestationData(
+                UnsignedLong.valueOf(1),
+                UnsignedLong.ZERO,
+                root,
+                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
+                new Checkpoint(UnsignedLong.valueOf(10), root)),
+            BLSSignature.empty());
+
+    assertThat(attestation.getDependentBlockRoots()).containsExactlyInAnyOrder(root);
+  }
 
   @Test
   void equalsReturnsTrueWhenObjectsAreSame() {
