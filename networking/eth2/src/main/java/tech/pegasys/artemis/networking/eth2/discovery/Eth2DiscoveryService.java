@@ -99,7 +99,7 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
                   return Collections.emptyList();
                 }
               }); // Collections.singletonList(remoteNodeRecord)
-      NodeBucketStorage nodeBucketStorage0 =
+      NodeBucketStorage nodeBucketStorage =
           nodeTableStorageFactory.createBucketStorage(database0, TEST_SERIALIZER, localNodeRecord);
 
       this.nodeTable = new EventEmittingNodeTable(nodeTableStorage0.get(), eventBus);
@@ -108,12 +108,13 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
           new DiscoveryManagerImpl(
               // delegating node table
               nodeTable,
-              nodeBucketStorage0,
+              nodeBucketStorage,
               localNodeRecord,
               Bytes.wrap(config.getDiscoveryPrivateKey()),
               NODE_RECORD_FACTORY,
               Schedulers.createDefault().newSingleThreadDaemon("server-1"),
               Schedulers.createDefault().newSingleThreadDaemon("client-1"));
+
     } catch (Exception e) {
       logger.error("Error constructing local node record: " + e.getMessage());
       throw new RuntimeException("Error constructing DiscoveryService");
@@ -137,9 +138,7 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
   }
 
   @Override
-  public void findPeers() {
-    // nop - is this to start?
-  }
+  public void findPeers() {}
 
   @Override
   public Stream<DiscoveryPeer> streamPeers() {
@@ -183,7 +182,7 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
     return nodeRecord;
   }
 
-  public NodeTable getNodeTable() {
+  NodeTable getNodeTable() {
     return nodeTable;
   }
 }

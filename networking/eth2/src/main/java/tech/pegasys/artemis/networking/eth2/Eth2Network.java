@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
-import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeer;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeerSubscriberImpl;
 import tech.pegasys.artemis.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.artemis.networking.eth2.gossip.AttestationGossipManager;
@@ -95,13 +94,7 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     eth2DiscoveryService = new Eth2DiscoveryService(networkConfig, eventBus);
 
     // take the discovery boot nodes and connect to them at the p2p layer
-    eth2DiscoveryService
-        .getNodeTable()
-        .findClosestNodes(
-            DiscoveryPeer.fromNodeRecord(eth2DiscoveryService.getNodeTable().getHomeNode())
-                .getNodeId(),
-            0)
-        .forEach(eth2DiscoveryService.getNodeTable()::save);
+    eth2DiscoveryService.streamPeers().forEach(discoveryPeerSubscriber::onDiscovery);
 
     SafeFuture.of(eth2DiscoveryService.start()).reportExceptions();
   }
