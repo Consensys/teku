@@ -62,7 +62,7 @@ public class PeerSyncTest {
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
           new StatusMessage(
-              Fork.VERSION_ZERO,
+              Constants.GENESIS_FORK_VERSION,
               Bytes32.ZERO,
               PEER_FINALIZED_EPOCH,
               PEER_HEAD_BLOCK_ROOT,

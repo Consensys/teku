@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.util.config.Constants.BLS_WITHDRAWAL_PREFIX;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_DEPOSIT;
 
@@ -24,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -48,11 +50,11 @@ public class DepositGenerator {
     final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalPublicKey);
     final DepositMessage depositMessage =
         new DepositMessage(validatorKeyPair.getPublicKey(), withdrawalCredentials, amountInGwei);
-
     final BLSSignature signature =
         signDeposit
-            ? BLSSignature.sign(
-                validatorKeyPair, depositMessage.hash_tree_root(), compute_domain(DOMAIN_DEPOSIT))
+            ? BLS.sign(
+                validatorKeyPair.getSecretKey(),
+                compute_signing_root(depositMessage, compute_domain(DOMAIN_DEPOSIT)))
             : BLSSignature.empty();
     return new DepositData(depositMessage, signature);
   }

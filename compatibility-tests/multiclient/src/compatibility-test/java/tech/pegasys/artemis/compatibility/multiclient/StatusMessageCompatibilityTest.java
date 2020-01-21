@@ -24,11 +24,11 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tech.pegasys.artemis.compatibility.multiclient.clients.Prysm;
-import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
+import tech.pegasys.artemis.util.config.Constants;
 
 @Testcontainers
 class StatusMessageCompatibilityTest {
@@ -55,7 +55,7 @@ class StatusMessageCompatibilityTest {
     final Eth2Peer prysm = artemis.getPeer(PRYSM_NODE.getId()).orElseThrow();
     final PeerStatus status = prysm.getStatus();
     assertThat(status).isNotNull();
-    assertThat(status.getHeadForkVersion()).isEqualTo(Fork.VERSION_ZERO);
+    assertThat(status.getHeadForkVersion()).isEqualTo(Constants.GENESIS_FORK_VERSION);
 
     // No validators so nothing should get finalised.
     assertThat(status.getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);

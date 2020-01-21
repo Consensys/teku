@@ -59,11 +59,6 @@ public class BLSSignature implements SimpleOffsetSerializable {
     return BLSSignature.fromBytes(Bytes.wrap(new byte[BLS_SIGNATURE_SIZE]));
   }
 
-  // Temporary stub to get things to compile. TODO: remove in favour of BLS.sign()
-  public static BLSSignature sign(BLSKeyPair keyPair, Bytes message, Bytes domain) {
-    return BLS.sign(keyPair.getSecretKey(), message);
-  }
-
   @Override
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;

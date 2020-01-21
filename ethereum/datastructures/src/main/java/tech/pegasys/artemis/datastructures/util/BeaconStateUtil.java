@@ -402,6 +402,22 @@ public class BeaconStateUtil {
   }
 
   /**
+   * Return the signing root of a Bytes object by calculating the root of the object-domain tree.
+   *
+   * @param bytes Bytes string
+   * @param domain
+   * @return the signing root
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
+   */
+  public static Bytes compute_signing_root(Bytes bytes, Bytes domain) {
+    SigningRoot domain_wrapped_object =
+        new SigningRoot(
+            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.VECTOR_OF_BASIC, bytes), domain);
+    return domain_wrapped_object.hash_tree_root();
+  }
+
+  /**
    * Returns the epoch number of the given slot.
    *
    * @param slot - The slot number under consideration.

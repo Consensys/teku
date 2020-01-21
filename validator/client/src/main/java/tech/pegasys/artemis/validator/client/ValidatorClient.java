@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
+
 import com.google.protobuf.ByteString;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -24,8 +26,8 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
 import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
 import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorClient {
   private static final Logger LOG = LogManager.getLogger();
@@ -77,9 +79,11 @@ public class ValidatorClient {
     }
 
     private ByteString performSigning(SignatureRequest request) {
-      Bytes message = Bytes.wrap(request.getMessage().toByteArray());
-      Bytes domain = Bytes.wrap(request.getDomain().toByteArray());
-      return ByteString.copyFrom(BLSSignature.sign(keypair, message, domain).toBytes().toArray());
+      final Bytes message = Bytes.wrap(request.getMessage().toByteArray());
+      final Bytes domain = Bytes.wrap(request.getDomain().toByteArray());
+      final Bytes signing_root = compute_signing_root(message, domain);
+      return ByteString.copyFrom(
+          BLS.sign(keypair.getSecretKey(), signing_root).toBytes().toArray());
     }
   }
 }
