@@ -24,6 +24,7 @@ public class SyncService extends Service {
 
   private final SyncManager syncManager;
   private final BlockPropagationManager blockPropagationManager;
+  private final AttestationPropagationManager attestationPropagationManager;
 
   public SyncService(
       final EventBus eventBus,
@@ -33,15 +34,20 @@ public class SyncService extends Service {
     this.syncManager = SyncManager.create(network, storageClient, blockImporter);
     this.blockPropagationManager =
         BlockPropagationManager.create(eventBus, storageClient, blockImporter);
+    attestationPropagationManager = AttestationPropagationManager.create(eventBus, storageClient);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOf(syncManager.start(), blockPropagationManager.start());
+    return SafeFuture.allOf(
+        syncManager.start(),
+        blockPropagationManager.start(),
+        attestationPropagationManager.start());
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
+    return SafeFuture.allOf(
+        syncManager.stop(), blockPropagationManager.stop(), attestationPropagationManager.stop());
   }
 }
