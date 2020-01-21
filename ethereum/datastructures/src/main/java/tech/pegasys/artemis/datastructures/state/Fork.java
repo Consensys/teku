@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
@@ -113,5 +114,14 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
             HashTreeUtil.hash_tree_root(
                 SSZTypes.VECTOR_OF_BASIC, current_version.getWrappedBytes()),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()))));
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("previous_version", previous_version)
+        .add("current_version", current_version)
+        .add("epoch", epoch)
+        .toString();
   }
 }

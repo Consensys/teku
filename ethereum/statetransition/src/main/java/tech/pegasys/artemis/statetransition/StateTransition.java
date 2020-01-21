@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
@@ -50,7 +51,7 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.bls.BLSVerify;
+import tech.pegasys.artemis.util.bls.BLS;
 
 public class StateTransition {
 
@@ -84,8 +85,10 @@ public class StateTransition {
       boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
+      final BeaconBlock block = signed_block.getMessage();
+
       // Process slots (including those with no blocks) since block
-      process_slots(state, signed_block.getMessage().getSlot(), printEnabled);
+      process_slots(state, block.getSlot(), printEnabled);
 
       // Verify signature
       if (validateStateRootAndSignatures) {
@@ -93,13 +96,13 @@ public class StateTransition {
             verify_block_signature(state, signed_block), "state_transition: Verify signature");
       }
       // Process_block
-      process_block(state, signed_block.getMessage(), validateStateRootAndSignatures);
+      process_block(state, block, validateStateRootAndSignatures);
 
       Bytes32 stateRoot = state.hash_tree_root();
       // Validate state root (`validate_state_root == True` in production)
       if (validateStateRootAndSignatures) {
         checkArgument(
-            signed_block.getMessage().getState_root().equals(stateRoot),
+            block.getState_root().equals(stateRoot),
             "Block state root does NOT match the calculated state root!\n"
                 + "Block state root: "
                 + signed_block.getMessage().getState_root().toHexString()
@@ -120,12 +123,9 @@ public class StateTransition {
   private static boolean verify_block_signature(
       final BeaconState state, SignedBeaconBlock signed_block) {
     final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
-    final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
-    return BLSVerify.bls_verify(
-        proposer.getPubkey(),
-        signed_block.getMessage().hash_tree_root(),
-        signed_block.getSignature(),
-        domain);
+    final Bytes signing_root =
+        compute_signing_root(signed_block.getMessage(), get_domain(state, DOMAIN_BEACON_PROPOSER));
+    return BLS.verify(proposer.getPubkey(), signing_root, signed_block.getSignature());
   }
 
   public BeaconStateWithCache initiate(BeaconStateWithCache state, SignedBeaconBlock block)

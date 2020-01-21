@@ -38,8 +38,6 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public final class BLS12381 {
 
-  // private static final String domainSeparationTag = "BLS_SIG_BLS12381G2-SHA256-SSWU-RO-_POP_";
-
   /*
    * Methods used directly in the Ethereum 2.0 specifications.
    */

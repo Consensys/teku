@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
@@ -160,5 +161,15 @@ public class BeaconBlockHeader implements Merkleizable, SimpleOffsetSerializable
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, body_root)));
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("parent_root", parent_root)
+        .add("state_root", state_root)
+        .add("body_root", body_root)
+        .toString();
   }
 }

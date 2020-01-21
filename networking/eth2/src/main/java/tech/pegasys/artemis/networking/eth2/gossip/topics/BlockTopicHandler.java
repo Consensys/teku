@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_current_slot;
@@ -34,8 +35,8 @@ import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.bls.BLSVerify;
 
 public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
@@ -108,8 +109,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     final int proposerIndex = get_beacon_proposer_index(postState);
     final Validator proposer = postState.getValidators().get(proposerIndex);
     final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
+    final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
-    return BLSVerify.bls_verify(
-        proposer.getPubkey(), block.getMessage().hash_tree_root(), signature, domain);
+    return BLS.verify(proposer.getPubkey(), signing_root, signature);
   }
 }

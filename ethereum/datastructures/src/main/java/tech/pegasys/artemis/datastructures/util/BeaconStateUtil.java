@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_b
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
@@ -30,17 +29,18 @@ import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_V
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.artemis.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.MAX_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 import static tech.pegasys.artemis.util.config.Constants.MIN_PER_EPOCH_CHURN_LIMIT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.util.config.Constants.MIN_SLASHING_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_DAY;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -62,6 +62,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -70,10 +71,13 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.SigningRoot;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -97,8 +101,8 @@ public class BeaconStateUtil {
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     UnsignedLong genesis_time =
         eth1_timestamp
-            .minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)))
-            .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY)));
+            .minus(eth1_timestamp.mod(UnsignedLong.valueOf(MIN_GENESIS_DELAY)))
+            .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(MIN_GENESIS_DELAY)));
 
     Eth1Data eth1_data = new Eth1Data();
     eth1_data.setBlock_hash(eth1_block_hash);
@@ -109,6 +113,8 @@ public class BeaconStateUtil {
 
     BeaconStateWithCache state = new BeaconStateWithCache();
     state.setGenesis_time(genesis_time);
+    state.setFork(
+        new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));
     state.setEth1_data(eth1_data);
     state.setLatest_block_header(beaconBlockHeader);
     for (int i = 0; i < state.getRandao_mixes().size(); i++) {
@@ -181,7 +187,7 @@ public class BeaconStateUtil {
           is_valid_merkle_branch(
               deposit.getData().hash_tree_root(),
               deposit.getProof(),
-              Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
+              Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the List length mix-in
               toIntExact(state.getEth1_deposit_index().longValue()),
               state.getEth1_data().getDeposit_root()),
           "process_deposit: Verify the Merkle branch");
@@ -206,19 +212,16 @@ public class BeaconStateUtil {
 
     if (existingIndex.isEmpty()) {
 
-      // Verify the deposit signature (proof of possession) for new validators.
-      // Note: Deposits are valid across forks, thus the deposit
-      // domain is retrieved directly from `compute_domain`
+      // Verify the deposit signature (proof of possession) which is not checked by the deposit
+      // contract
       if (BLS_VERIFY_DEPOSIT) {
         final DepositMessage deposit_message =
             new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
+        final Bytes domain = compute_domain(DOMAIN_DEPOSIT);
+        final Bytes signing_root = compute_signing_root(deposit_message, domain);
         boolean proof_is_valid =
             !BLS_VERIFY_DEPOSIT
-                || bls_verify(
-                    pubkey,
-                    deposit_message.hash_tree_root(),
-                    deposit.getData().getSignature(),
-                    compute_domain(DOMAIN_DEPOSIT));
+                || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
         if (!proof_is_valid) {
           STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
           return;
@@ -364,7 +367,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
   public static Bytes compute_domain(Bytes4 domain_type) {
-    return compute_domain(domain_type, new Bytes4(Bytes.wrap(new byte[4])));
+    return compute_domain(domain_type, GENESIS_FORK_VERSION);
   }
 
   /**
@@ -377,18 +380,25 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
   public static Bytes compute_signing_root(Merkleizable object, Bytes domain) {
+    SigningRoot domain_wrapped_object = new SigningRoot(object.hash_tree_root(), domain);
+    return domain_wrapped_object.hash_tree_root();
+  }
 
-    // TODO: Something like the following, but stubbed for now
-    /*
-       return HashTreeUtil.merkleize(
-           Arrays.asList(
-               HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, object.hash_tree_root()),
-               HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, domain)
-           ));
-    */
-
-    // TODO: remove this
-    return Bytes32.random();
+  /**
+   * Return the signing root of a 64-bit integer by calculating the root of the object-domain tree.
+   *
+   * @param number A long value
+   * @param domain
+   * @return the signing root
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
+   */
+  public static Bytes compute_signing_root(long number, Bytes domain) {
+    SigningRoot domain_wrapped_object =
+        new SigningRoot(
+            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(number)),
+            domain);
+    return domain_wrapped_object.hash_tree_root();
   }
 
   /**

@@ -22,10 +22,11 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 public class Constants {
 
   // Non-configurable constants
+  public static long GENESIS_SLOT = 0;
+  public static long GENESIS_EPOCH = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
   public static int BASE_REWARDS_PER_EPOCH = 4;
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
-  public static int SECONDS_PER_DAY = 86400;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
   public static String ENDIANNESS = "little";
 
@@ -46,21 +47,21 @@ public class Constants {
   public static long EFFECTIVE_BALANCE_INCREMENT;
 
   // Initial values
-  public static long GENESIS_SLOT;
-  public static long GENESIS_EPOCH;
+  public static Bytes4 GENESIS_FORK_VERSION;
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
+  public static int MIN_GENESIS_DELAY;
   public static int SECONDS_PER_SLOT = 12;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
   public static int MAX_SEED_LOOKAHEAD;
+  public static int MIN_EPOCHS_TO_INACTIVITY_PENALTY;
   public static int SLOTS_PER_ETH1_VOTING_PERIOD;
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
   public static int PERSISTENT_COMMITTEE_PERIOD;
-  public static int MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 
   // State list lengths
   public static int EPOCHS_PER_HISTORICAL_VECTOR;
@@ -157,21 +158,21 @@ public class Constants {
       EFFECTIVE_BALANCE_INCREMENT = 1000000000L;
 
       // Initial values
-      GENESIS_SLOT = 0;
-      GENESIS_EPOCH = 0;
+      GENESIS_FORK_VERSION = new Bytes4(Bytes.fromHexString("0x00000000"));
       BLS_WITHDRAWAL_PREFIX = Bytes.wrap(new byte[1]);
 
       // Time parameters
+      MIN_GENESIS_DELAY = 86400;
+      SECONDS_PER_SLOT = 12;
       MIN_ATTESTATION_INCLUSION_DELAY = 1;
       SLOTS_PER_EPOCH = 32;
       MIN_SEED_LOOKAHEAD = 1;
       MAX_SEED_LOOKAHEAD = 4;
+      MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
       SLOTS_PER_ETH1_VOTING_PERIOD = 1024;
       SLOTS_PER_HISTORICAL_ROOT = 8192;
       MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
       PERSISTENT_COMMITTEE_PERIOD = 2048;
-      MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
-      EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 16384;
 
       // State list lengths
       EPOCHS_PER_HISTORICAL_VECTOR = 65536;
@@ -214,21 +215,21 @@ public class Constants {
       EFFECTIVE_BALANCE_INCREMENT = 1000000000L;
 
       // Initial values
-      GENESIS_SLOT = 0;
-      GENESIS_EPOCH = 0;
+      GENESIS_FORK_VERSION = new Bytes4(Bytes.fromHexString("0x00000001"));
       BLS_WITHDRAWAL_PREFIX = Bytes.wrap(new byte[1]);
 
       // Time parameters
+      MIN_GENESIS_DELAY = 300;
+      SECONDS_PER_SLOT = 6;
       MIN_ATTESTATION_INCLUSION_DELAY = 1;
       SLOTS_PER_EPOCH = 8;
       MIN_SEED_LOOKAHEAD = 1;
       MAX_SEED_LOOKAHEAD = 4;
+      MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
       SLOTS_PER_ETH1_VOTING_PERIOD = 16;
       SLOTS_PER_HISTORICAL_ROOT = 64;
       MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
       PERSISTENT_COMMITTEE_PERIOD = 2048;
-      MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
-      EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 4096;
 
       // State list lengths
       EPOCHS_PER_HISTORICAL_VECTOR = 64;
