@@ -39,14 +39,14 @@ public class AttestationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
   private final EventBus eventBus;
   private final ForkChoiceAttestationProcessor attestationProcessor;
-  private final PendingPool<Attestation> pendingAttestations;
-  private final FutureItems<Attestation> futureAttestations;
+  private final PendingPool<DelayableAttestation> pendingAttestations;
+  private final FutureItems<DelayableAttestation> futureAttestations;
 
   AttestationManager(
       final EventBus eventBus,
       final ForkChoiceAttestationProcessor attestationProcessor,
-      final PendingPool<Attestation> pendingAttestations,
-      final FutureItems<Attestation> futureAttestations) {
+      final PendingPool<DelayableAttestation> pendingAttestations,
+      final FutureItems<DelayableAttestation> futureAttestations) {
     this.eventBus = eventBus;
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
@@ -55,10 +55,10 @@ public class AttestationManager extends Service {
 
   public static AttestationManager create(
       final EventBus eventBus, final ChainStorageClient storageClient) {
-    final PendingPool<Attestation> pendingAttestations =
+    final PendingPool<DelayableAttestation> pendingAttestations =
         PendingPool.createForAttestations(eventBus);
-    final FutureItems<Attestation> futureAttestations =
-        new FutureItems<>(Attestation::getEarliestSlotForProcessing);
+    final FutureItems<DelayableAttestation> futureAttestations =
+        new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
     return new AttestationManager(
         eventBus,
         new ForkChoiceAttestationProcessor(storageClient, new StateTransition(false)),
@@ -69,20 +69,18 @@ public class AttestationManager extends Service {
   @Subscribe
   @SuppressWarnings("unused")
   private void onGossipedAttestation(final Attestation attestation) {
-    processAttestation(attestation);
-    // TODO: Should we post this if the attestation was invalid?
-    // What if it was delayed?
-    this.eventBus.post(new ProcessedAttestationEvent(attestation));
+    processAttestation(
+        new DelayableAttestation(
+            attestation, () -> eventBus.post(new ProcessedAttestationEvent(attestation))));
   }
 
   @Subscribe
   @SuppressWarnings("unused")
   private void onAggregateAndProof(final AggregateAndProof aggregateAndProof) {
     final Attestation aggregate = aggregateAndProof.getAggregate();
-    processAttestation(aggregate);
-    // TODO: Should we post this if the attestation was invalid?
-    // What if it was delayed?
-    this.eventBus.post(new ProcessedAggregateEvent(aggregate));
+    processAttestation(
+        new DelayableAttestation(
+            aggregate, () -> eventBus.post(new ProcessedAggregateEvent(aggregate))));
   }
 
   @Subscribe
@@ -105,25 +103,28 @@ public class AttestationManager extends Service {
             });
   }
 
-  private void processAttestation(final Attestation attestation) {
-    if (pendingAttestations.contains(attestation)) {
+  private void processAttestation(final DelayableAttestation delayableAttestation) {
+    if (pendingAttestations.contains(delayableAttestation)) {
       return;
     }
-    final AttestationProcessingResult result = attestationProcessor.processAttestation(attestation);
+    final AttestationProcessingResult result =
+        attestationProcessor.processAttestation(delayableAttestation.getAttestation());
     if (result.isSuccessful()) {
-      LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
+      LOG.trace("Processed attestation {} successfully", delayableAttestation::hash_tree_root);
+      delayableAttestation.onAttestationProcessedSuccessfully();
     } else {
       switch (result.getFailureReason()) {
         case UNKNOWN_BLOCK:
           LOG.trace(
               "Deferring attestation {} as require block is not yet present",
-              attestation::hash_tree_root);
-          pendingAttestations.add(attestation);
+              delayableAttestation::hash_tree_root);
+          pendingAttestations.add(delayableAttestation);
           break;
         case ATTESTATION_IS_NOT_FROM_PREVIOUS_SLOT:
         case FOR_FUTURE_EPOCH:
-          LOG.trace("Deferring attestation {} until a future slot", attestation::hash_tree_root);
-          futureAttestations.add(attestation);
+          LOG.trace(
+              "Deferring attestation {} until a future slot", delayableAttestation::hash_tree_root);
+          futureAttestations.add(delayableAttestation);
           break;
         default:
           STDOUT.log(Level.WARN, "Failed to process attestation: " + result.getFailureMessage());
