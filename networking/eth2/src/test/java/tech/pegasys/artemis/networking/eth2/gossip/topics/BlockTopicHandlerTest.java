@@ -59,7 +59,7 @@ public class BlockTopicHandlerTest {
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
-    verify(eventBus, never()).post(new GossipedBlockEvent(block));
+    verify(eventBus).post(new GossipedBlockEvent(block));
   }
 
   @Test

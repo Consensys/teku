@@ -39,9 +39,11 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   public static final String BLOCKS_TOPIC = "/eth2/beacon_block/ssz";
   private static final Logger LOG = LogManager.getLogger();
   private final ChainStorageClient chainStorageClient;
+  private final EventBus eventBus;
 
   public BlockTopicHandler(final EventBus eventBus, final ChainStorageClient chainStorageClient) {
     super(eventBus);
+    this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
   }
 
@@ -65,11 +67,8 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     final BeaconState preState =
         chainStorageClient.getStore().getBlockState(block.getMessage().getParent_root());
     if (preState == null) {
-      // TODO - handle future and unattached blocks
-      LOG.warn(
-          "Dropping block message at slot {} with unknown parent state {}",
-          block.getMessage().getSlot(),
-          block.getMessage().getParent_root());
+      // Post event even if we don't have the prestate
+      eventBus.post(createEvent(block));
       return false;
     }
 
