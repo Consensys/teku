@@ -21,7 +21,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
-import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
@@ -35,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
+import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeer;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryPeerSubscriberImpl;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -108,7 +108,7 @@ class Eth2DiscoveryServiceTest {
                 + "/tcp/"
                 + (int) remoteNodeRecord.get(UDP_V4)
                 + "/p2p/"
-                + Base58.INSTANCE.encode(remoteNodeRecord.getNodeId().toArray()));
+                + DiscoveryPeer.fromNodeRecord(remoteNodeRecord).getNodeIdString());
   }
 
   @Test
