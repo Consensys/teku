@@ -85,7 +85,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Listen for new block event to arrive on networks 2 and 3
     final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
-    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(node2.eventBus());
+    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(node3.eventBus());
 
     // Verify the expected block was gossiped across the network
     Waiter.waitFor(
@@ -131,7 +131,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Listen for new block event to arrive on networks 2 and 3
     final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
-    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(node2.eventBus());
+    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(node3.eventBus());
 
     // Wait for blocks to propagate
     ensureConditionRemainsMet(() -> assertThat(network2Blocks.getBlocks()).isEmpty(), 10000);
