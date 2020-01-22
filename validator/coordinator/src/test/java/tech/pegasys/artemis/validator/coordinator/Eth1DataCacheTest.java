@@ -30,7 +30,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class Eth1DataManagerTest {
+public class Eth1DataCacheTest {
 
   private final EventBus eventBus = new EventBus();
   private final UnsignedLong genesisTime = UnsignedLong.ZERO;
