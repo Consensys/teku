@@ -26,9 +26,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class Eth1DataManagerTest {
 

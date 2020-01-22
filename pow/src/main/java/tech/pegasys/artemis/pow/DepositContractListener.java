@@ -99,15 +99,16 @@ public class DepositContractListener {
       String encodedFunction, UnsignedLong blockHeight) {
     return SafeFuture.of(
             web3j
-                    .ethCall(
-                            Transaction.createEthCallTransaction(
-                                    null, contract.getContractAddress(), encodedFunction),
-                            DefaultBlockParameter.valueOf(blockHeight.bigIntegerValue()))
-                    .sendAsync())
-            .thenApply(ethCall -> {
+                .ethCall(
+                    Transaction.createEthCallTransaction(
+                        null, contract.getContractAddress(), encodedFunction),
+                    DefaultBlockParameter.valueOf(blockHeight.bigIntegerValue()))
+                .sendAsync())
+        .thenApply(
+            ethCall -> {
               if (ethCall.hasError()) {
                 throw new Eth1RequestException(
-                        "Eth1 call has failed:" + ethCall.getError().getMessage());
+                    "Eth1 call has failed:" + ethCall.getError().getMessage());
               } else {
                 return ethCall.getValue();
               }
