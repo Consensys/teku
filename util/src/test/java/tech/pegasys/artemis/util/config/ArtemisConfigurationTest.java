@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,12 @@ final class ArtemisConfigurationTest {
         IllegalArgumentException.class,
         () ->
             ArtemisConfiguration.fromString("node.identity=\"2345\"\nnode.advertisedPort=100000"));
+  }
+
+  @Test
+  void advertisedPortDefaultsToPort() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("node.port=1234");
+    assertThat(config.getAdvertisedPort()).isEqualTo(1234);
   }
 
   @Test
