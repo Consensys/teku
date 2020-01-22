@@ -106,8 +106,6 @@ public class Eth1DataManager {
   private AtomicReference<EthBlock.Block> latestBlockReference = new AtomicReference<>();
   private AtomicInteger cacheStartupRetry = new AtomicInteger(0);
   private AtomicBoolean cacheStartupDone = new AtomicBoolean(false);
-  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-
 
   public Eth1DataManager(
       Web3j web3j, EventBus eventBus, DepositContractListener depositContractListener) {
@@ -144,7 +142,6 @@ public class Eth1DataManager {
     UnsignedLong latestBlockNumber = UnsignedLong.valueOf(latestBlock.getNumber());
     exploreBlocksInDirection(latestBlockNumber, true).reportExceptions();
   }
-
 
   public void runCacheStartup(){
     doCacheStartup().finish(() -> {
@@ -212,18 +209,17 @@ public class Eth1DataManager {
             .exceptionallyCompose(
                     err -> {
                       if (cacheStartupRetry.incrementAndGet() == Constants.ETH1_CACHE_STARTUP_RETRY_GIVEUP) {
-                        LOG.fatal("Eth1DataManager has given up on filling Eth1Data due to multiple failed attempts");
-                        blockFuture.completeExceptionally(null);
-                        return;
+                        return SafeFuture.failedFuture(new RuntimeException("Eth1DataManager aborted due to multiple failed startup attempts"));
                       }
+
                       LOG.debug(
                               "Eth1DataManager failed to run cache startup logic. Retry in "
                                       + Constants.ETH1_CACHE_STARTUP_RETRY_TIMEOUT + " seconds", err);
 
-                      Executor delayed = CompletableFuture.delayedExecutor(
-                              Constants.ETH1_CACHE_STARTUP_RETRY_TIMEOUT, TimeUnit.SECONDS);
-
-                      return CompletableFuture.supplyAsync(this::doCacheStartup., delayed);
+                      return SafeFuture.runAfterDelay(
+                              this::doCacheStartup,
+                              Constants.ETH1_CACHE_STARTUP_RETRY_TIMEOUT,
+                              TimeUnit.SECONDS);
                     });
   }
 

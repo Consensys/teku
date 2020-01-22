@@ -38,7 +38,7 @@ import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class ValidatorCoordinatorTest {
 

@@ -27,7 +27,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class BlockPropagationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();

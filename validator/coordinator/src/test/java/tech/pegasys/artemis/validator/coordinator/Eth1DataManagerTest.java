@@ -28,7 +28,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class Eth1DataManagerTest {
 
