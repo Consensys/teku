@@ -36,6 +36,7 @@ import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.events.Subscribers;
 
 class PendingPool<T> extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -46,15 +47,20 @@ class PendingPool<T> extends Service {
   private static final UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
   private final EventBus eventBus;
+  private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
+      Subscribers.create(true);
+  private final Subscribers<RequiredBlockRootDroppedSubscriber>
+      requiredBlockRootDroppedSubscribers = Subscribers.create(true);
+
   private final Map<Bytes32, T> pendingItems = new ConcurrentHashMap<>();
-  private final Map<Bytes32, Set<Bytes32>> pendingItemsByDependentBlockRoot =
+  private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot =
       new ConcurrentHashMap<>();
   // Define the range of slots we care about
   private final UnsignedLong futureSlotTolerance;
   private final UnsignedLong historicalSlotTolerance;
 
   private final Function<T, Bytes32> hashTreeRootFunction;
-  private final Function<T, Collection<Bytes32>> dependentBlockHashFunction;
+  private final Function<T, Collection<Bytes32>> requiredBlockRootsFunction;
   private final Function<T, UnsignedLong> targetSlotFunction;
 
   private volatile UnsignedLong currentSlot = UnsignedLong.ZERO;
@@ -65,13 +71,13 @@ class PendingPool<T> extends Service {
       final UnsignedLong historicalSlotTolerance,
       final UnsignedLong futureSlotTolerance,
       final Function<T, Bytes32> hashTreeRootFunction,
-      final Function<T, Collection<Bytes32>> dependentBlockHashFunction,
+      final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UnsignedLong> targetSlotFunction) {
     this.eventBus = eventBus;
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
     this.hashTreeRootFunction = hashTreeRootFunction;
-    this.dependentBlockHashFunction = dependentBlockHashFunction;
+    this.requiredBlockRootsFunction = requiredBlockRootsFunction;
     this.targetSlotFunction = targetSlotFunction;
   }
 
@@ -116,16 +122,23 @@ class PendingPool<T> extends Service {
     }
 
     final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
-    final Collection<Bytes32> dependentBlockRoots = dependentBlockHashFunction.apply(item);
+    final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(item);
 
-    dependentBlockRoots.forEach(
-        dependentBlockRoot ->
-            // Index block by parent
-            pendingItemsByDependentBlockRoot
+    requiredRoots.forEach(
+        requiredRoot ->
+            // Index item by required roots
+            pendingItemsByRequiredBlockRoot
                 // Go ahead and add our root when the set is constructed to ensure we don't
                 // accidentally
                 // drop this set when we prune empty sets
-                .computeIfAbsent(dependentBlockRoot, (key) -> createRootSet(itemRoot))
+                .computeIfAbsent(
+                    requiredRoot,
+                    (key) -> {
+                      final Set<Bytes32> dependants = createRootSet(itemRoot);
+                      requiredBlockRootSubscribers.forEach(
+                          c -> c.onRequiredBlockRoot(requiredRoot));
+                      return dependants;
+                    })
                 .add(itemRoot));
 
     // Index item by root
@@ -141,15 +154,18 @@ class PendingPool<T> extends Service {
     final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
     pendingItems.remove(itemRoot);
 
-    final Collection<Bytes32> dependentBlockRoots = dependentBlockHashFunction.apply(item);
-    dependentBlockRoots.forEach(
-        dependentBlockRoot -> {
-          Set<Bytes32> childSet = pendingItemsByDependentBlockRoot.get(dependentBlockRoot);
+    final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(item);
+    requiredRoots.forEach(
+        requiredRoot -> {
+          Set<Bytes32> childSet = pendingItemsByRequiredBlockRoot.get(requiredRoot);
           if (childSet == null) {
             return;
           }
           childSet.remove(itemRoot);
-          pendingItemsByDependentBlockRoot.remove(dependentBlockRoot, Collections.emptySet());
+          if (pendingItemsByRequiredBlockRoot.remove(requiredRoot, Collections.emptySet())) {
+            requiredBlockRootDroppedSubscribers.forEach(
+                s -> s.onRequiredBlockRootDropped(requiredRoot));
+          }
         });
   }
 
@@ -159,11 +175,15 @@ class PendingPool<T> extends Service {
 
   public boolean contains(final T item) {
     final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
+    return contains(itemRoot);
+  }
+
+  public boolean contains(final Bytes32 itemRoot) {
     return pendingItems.containsKey(itemRoot);
   }
 
   public List<T> childrenOf(final Bytes32 blockRoot) {
-    final Set<Bytes32> childRoots = pendingItemsByDependentBlockRoot.get(blockRoot);
+    final Set<Bytes32> childRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
     if (childRoots == null) {
       return Collections.emptyList();
     }
@@ -172,6 +192,23 @@ class PendingPool<T> extends Service {
         .map(pendingItems::get)
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
+  }
+
+  public long subscribeRequiredBlockRoot(final RequiredBlockRootSubscriber subscriber) {
+    return requiredBlockRootSubscribers.subscribe(subscriber);
+  }
+
+  public boolean unsubscribeRequiredBlockRoot(final long subscriberId) {
+    return requiredBlockRootSubscribers.unsubscribe(subscriberId);
+  }
+
+  public long subscribeRequiredBlockRootDropped(
+      final RequiredBlockRootDroppedSubscriber subscriber) {
+    return requiredBlockRootDroppedSubscribers.subscribe(subscriber);
+  }
+
+  public boolean unsubscribeRequiredBlockRootDropped(final long subscriberId) {
+    return requiredBlockRootDroppedSubscribers.unsubscribe(subscriberId);
   }
 
   @Subscribe
@@ -243,5 +280,13 @@ class PendingPool<T> extends Service {
   protected SafeFuture<?> doStop() {
     eventBus.unregister(this);
     return SafeFuture.completedFuture(null);
+  }
+
+  public interface RequiredBlockRootSubscriber {
+    void onRequiredBlockRoot(final Bytes32 blockRoot);
+  }
+
+  public interface RequiredBlockRootDroppedSubscriber {
+    void onRequiredBlockRootDropped(final Bytes32 blockRoot);
   }
 }

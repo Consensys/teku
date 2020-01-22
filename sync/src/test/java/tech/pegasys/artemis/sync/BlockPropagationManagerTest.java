@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -29,6 +31,7 @@ import tech.pegasys.artemis.statetransition.ImportedBlocks;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
@@ -43,6 +46,7 @@ public class BlockPropagationManagerTest {
       PendingPool.createForBlocks(localEventBus, historicalBlockTolerance, futureBlockTolerance);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       new FutureItems<>(SignedBeaconBlock::getSlot);
+  private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
   private final ChainStorageClient localStorage =
       ChainStorageClient.memoryOnlyClient(localEventBus);
@@ -55,7 +59,12 @@ public class BlockPropagationManagerTest {
   private final BlockImporter blockImporter = new BlockImporter(localStorage, localEventBus);
   private final BlockPropagationManager blockPropagationManager =
       new BlockPropagationManager(
-          localEventBus, localStorage, blockImporter, pendingBlocks, futureBlocks);
+          localEventBus,
+          localStorage,
+          blockImporter,
+          pendingBlocks,
+          futureBlocks,
+          recentBlockFetcher);
 
   private final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
   private UnsignedLong currentSlot = genesisSlot;
@@ -64,6 +73,8 @@ public class BlockPropagationManagerTest {
   public void setup() {
     localChain.initializeStorage();
     remoteChain.initializeStorage();
+    when(recentBlockFetcher.start()).thenReturn(SafeFuture.completedFuture(null));
+    when(recentBlockFetcher.stop()).thenReturn(SafeFuture.completedFuture(null));
     assertThat(blockPropagationManager.start()).isCompleted();
   }
 

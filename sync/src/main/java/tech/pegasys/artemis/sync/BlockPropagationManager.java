@@ -15,10 +15,12 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
@@ -37,35 +39,48 @@ public class BlockPropagationManager extends Service {
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final FutureItems<SignedBeaconBlock> futureBlocks;
+  private final FetchRecentBlocksService recentBlockFetcher;
 
   BlockPropagationManager(
       final EventBus eventBus,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final FutureItems<SignedBeaconBlock> futureBlocks) {
+      final FutureItems<SignedBeaconBlock> futureBlocks,
+      final FetchRecentBlocksService recentBlockFetcher) {
     this.eventBus = eventBus;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
+    this.recentBlockFetcher = recentBlockFetcher;
   }
 
   public static BlockPropagationManager create(
       final EventBus eventBus,
+      final Eth2Network eth2Network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);
+    final FetchRecentBlocksService recentBlockFetcher =
+        FetchRecentBlocksService.create(eth2Network, pendingBlocks);
     return new BlockPropagationManager(
-        eventBus, storageClient, blockImporter, pendingBlocks, futureBlocks);
+        eventBus, storageClient, blockImporter, pendingBlocks, futureBlocks, recentBlockFetcher);
   }
 
   @Override
   public SafeFuture<?> doStart() {
     this.eventBus.register(this);
-    return this.pendingBlocks.start();
+    recentBlockFetcher.subscribeBlockFetched(this::importBlock);
+    return SafeFuture.allOf(recentBlockFetcher.start(), pendingBlocks.start());
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    eventBus.unregister(this);
+    return SafeFuture.allOf(recentBlockFetcher.stop(), pendingBlocks.stop());
   }
 
   @Subscribe
@@ -87,13 +102,9 @@ public class BlockPropagationManager extends Service {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     pendingBlocks.remove(block);
-    pendingBlocks
-        .childrenOf(blockRoot)
-        .forEach(
-            child -> {
-              pendingBlocks.remove(child);
-              importBlock(child);
-            });
+    final List<SignedBeaconBlock> children = pendingBlocks.childrenOf(blockRoot);
+    children.forEach(pendingBlocks::remove);
+    children.forEach(this::importBlock);
   }
 
   @Subscribe
@@ -118,12 +129,5 @@ public class BlockPropagationManager extends Service {
       LOG.trace(
           "Unable to import gossiped block for reason {}: {}", result.getFailureReason(), block);
     }
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    final SafeFuture<?> shutdownFuture = pendingBlocks.stop();
-    eventBus.unregister(this);
-    return shutdownFuture;
   }
 }
