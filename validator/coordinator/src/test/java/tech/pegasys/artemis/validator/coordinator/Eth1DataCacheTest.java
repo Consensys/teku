@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -66,15 +65,14 @@ public class Eth1DataCacheTest {
   void majorityVoteWins() {
     eth1DataCache.startBeaconChainMode(genesisState);
     UnsignedLong slot = UnsignedLong.valueOf(3).times(RANGE_CONSTANT);
-    UnsignedLong currentTime = genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    UnsignedLong currentTime =
+        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent cacheEth1BlockEvent1 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT)
-    );
-    CacheEth1BlockEvent cacheEth1BlockEvent2 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE)
-    );
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -93,15 +91,14 @@ public class Eth1DataCacheTest {
   void smallestDistanceWinsIfNoMajority() {
     eth1DataCache.startBeaconChainMode(genesisState);
     UnsignedLong slot = UnsignedLong.valueOf(3).times(RANGE_CONSTANT);
-    UnsignedLong currentTime = genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    UnsignedLong currentTime =
+        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent cacheEth1BlockEvent1 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT)
-    );
-    CacheEth1BlockEvent cacheEth1BlockEvent2 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE)
-    );
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -121,15 +118,17 @@ public class Eth1DataCacheTest {
   void oldVoteDoesNotCount() {
     eth1DataCache.startBeaconChainMode(genesisState);
     UnsignedLong slot = UnsignedLong.valueOf(300);
-    UnsignedLong currentTime = genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    UnsignedLong currentTime =
+        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent cacheEth1BlockEvent1 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2)))
-    );
-    CacheEth1BlockEvent cacheEth1BlockEvent2 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2).plus(UnsignedLong.ONE)))
-    );
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(
+            currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2))));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(
+            currentTime.minus(
+                RANGE_CONSTANT.times(UnsignedLong.valueOf(2).plus(UnsignedLong.ONE))));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -148,15 +147,14 @@ public class Eth1DataCacheTest {
   void tooRecentVoteDoesNotCount() {
     eth1DataCache.startBeaconChainMode(genesisState);
     UnsignedLong slot = UnsignedLong.valueOf(300);
-    UnsignedLong currentTime = genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    UnsignedLong currentTime =
+        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     eventBus.post(new SlotEvent(slot));
 
-    CacheEth1BlockEvent cacheEth1BlockEvent1 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT)
-    );
-    CacheEth1BlockEvent cacheEth1BlockEvent2 = createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE))
-    );
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -172,12 +170,55 @@ public class Eth1DataCacheTest {
   }
 
   @Test
+  void noValidVotesInThisPeriod_eth1ChainLive() {
+    eth1DataCache.startBeaconChainMode(genesisState);
+    UnsignedLong slot = UnsignedLong.valueOf(300);
+    UnsignedLong currentTime =
+            genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    eventBus.post(new SlotEvent(slot));
+
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+            createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+            createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)));
+
+
+    eventBus.post(cacheEth1BlockEvent1);
+    eventBus.post(cacheEth1BlockEvent2);
+
+    SSZList<Eth1Data> eth1DataVotes =
+            new SSZList<>(List.of(), 10, Eth1Data.class);
+    BeaconState beaconState = mock(BeaconState.class);
+    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
+
+    Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
+    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+  }
+
+  @Test
+  void noValidVotesInThisPeriod_eth1ChainNotLive() {
+    eth1DataCache.startBeaconChainMode(genesisState);
+    UnsignedLong slot = UnsignedLong.valueOf(300);
+    eventBus.post(new SlotEvent(slot));
+
+    Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
+
+    SSZList<Eth1Data> eth1DataVotes =
+            new SSZList<>(List.of(eth1Data), 10, Eth1Data.class);
+    BeaconState beaconState = mock(BeaconState.class);
+    when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
+    when(beaconState.getEth1_data()).thenReturn(eth1Data);
+    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data);
+  }
+
+  @Test
   void pruneBeforeGenesis() {
     UnsignedLong currentTime = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     UnsignedLong cacheRangeLowerBound = Eth1DataManager.getCacheRangeLowerBound();
 
     CacheEth1BlockEvent cacheEth1BlockEvent1 = createRandomCacheEth1BlockEvent(currentTime);
-    CacheEth1BlockEvent cacheEth1BlockEvent2 = createRandomCacheEth1BlockEvent(cacheRangeLowerBound.minus(UnsignedLong.ONE));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(cacheRangeLowerBound.minus(UnsignedLong.ONE));
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
@@ -194,13 +235,18 @@ public class Eth1DataCacheTest {
   void pruneAfterGenesis() {
     eth1DataCache.startBeaconChainMode(genesisState);
     UnsignedLong slotAtNextVotingPeriodStart = UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD);
-    UnsignedLong timeAtNextVotingPeriodStart = genesisTime.plus(slotAtNextVotingPeriodStart.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    UnsignedLong timeAtNextVotingPeriodStart =
+        genesisTime.plus(
+            slotAtNextVotingPeriodStart.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
 
     UnsignedLong specRangeLowerBound = eth1DataCache.getSpecRangeLowerBound();
 
-    CacheEth1BlockEvent cacheEth1BlockEvent1 = createRandomCacheEth1BlockEvent(timeAtNextVotingPeriodStart.plus(UnsignedLong.ONE));
-    CacheEth1BlockEvent cacheEth1BlockEvent2 = createRandomCacheEth1BlockEvent(specRangeLowerBound.minus(UnsignedLong.ONE));
-    CacheEth1BlockEvent cacheEth1BlockEvent3 = createRandomCacheEth1BlockEvent(specRangeLowerBound.minus(UnsignedLong.valueOf(2)));
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(timeAtNextVotingPeriodStart.plus(UnsignedLong.ONE));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(specRangeLowerBound.minus(UnsignedLong.ONE));
+    CacheEth1BlockEvent cacheEth1BlockEvent3 =
+        createRandomCacheEth1BlockEvent(specRangeLowerBound.minus(UnsignedLong.valueOf(2)));
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
@@ -218,10 +264,10 @@ public class Eth1DataCacheTest {
   private CacheEth1BlockEvent createRandomCacheEth1BlockEvent(UnsignedLong timestamp) {
     long seed = 0;
     return new CacheEth1BlockEvent(
-            DataStructureUtil.randomUnsignedLong(++seed),
-            DataStructureUtil.randomBytes32(++seed),
-            timestamp,
-            DataStructureUtil.randomBytes32(++seed),
-            DataStructureUtil.randomUnsignedLong(++seed));
+        DataStructureUtil.randomUnsignedLong(++seed),
+        DataStructureUtil.randomBytes32(++seed),
+        timestamp,
+        DataStructureUtil.randomBytes32(++seed),
+        DataStructureUtil.randomUnsignedLong(++seed));
   }
 }

@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -93,17 +92,13 @@ public class Eth1DataCache {
       }
 
       final int currentIndex = i;
-      Eth1Vote vote =
-          validVotes.computeIfAbsent(
-              eth1Data,
-              key -> new Eth1Vote(currentIndex)
-          );
+      Eth1Vote vote = validVotes.computeIfAbsent(eth1Data, key -> new Eth1Vote(currentIndex));
       vote.incrementVotes();
       i++;
     }
 
     Eth1Data defaultVote =
-        votesToConsider.isEmpty() ?  state.getEth1_data() : votesToConsider.lastEntry().getValue();
+        votesToConsider.isEmpty() ? state.getEth1_data() : votesToConsider.lastEntry().getValue();
 
     Optional<Eth1Data> vote =
         validVotes.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
@@ -112,11 +107,7 @@ public class Eth1DataCache {
   }
 
   private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider() {
-    return eth1ChainCache.subMap(
-        getSpecRangeLowerBound(),
-        true,
-        getSpecRangeUpperBound(),
-        true);
+    return eth1ChainCache.subMap(getSpecRangeLowerBound(), true, getSpecRangeUpperBound(), true);
   }
 
   private void prune() {
@@ -165,6 +156,6 @@ public class Eth1DataCache {
 
   @VisibleForTesting
   NavigableMap<UnsignedLong, Eth1Data> getMapForTesting() {
-   return Collections.unmodifiableNavigableMap(eth1ChainCache);
+    return Collections.unmodifiableNavigableMap(eth1ChainCache);
   }
 }
