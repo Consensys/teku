@@ -53,8 +53,10 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_RO
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -347,30 +349,41 @@ public final class EpochProcessorUtil {
     }
 
     // Proposer and inclusion delay micro-rewards
-    for (Integer index : get_unslashed_attesting_indices(state, matching_source_attestations)) {
-      matching_source_attestations.stream()
-          .filter(
-              a ->
-                  get_attesting_indices(state, a.getData(), a.getAggregation_bits())
-                      .contains(index))
-          .min(Comparator.comparing(PendingAttestation::getInclusion_delay))
-          .ifPresent(
-              attestation -> {
-                UnsignedLong proposer_reward =
-                    get_base_reward(state, index)
-                        .dividedBy(UnsignedLong.valueOf(PROPOSER_REWARD_QUOTIENT));
-                rewards.set(
-                    attestation.getProposer_index().intValue(),
-                    rewards.get(attestation.getProposer_index().intValue()).plus(proposer_reward));
-                UnsignedLong max_attester_reward =
-                    get_base_reward(state, index).minus(proposer_reward);
-                rewards.set(
-                    index,
-                    rewards
-                        .get(index)
-                        .plus(max_attester_reward.dividedBy(attestation.getInclusion_delay())));
-              });
-    }
+
+    // map (unslashed attester index) -> (list of source attestations)
+    Map<Integer, List<PendingAttestation>> validator_source_attestations =
+        matching_source_attestations.stream()
+            .flatMap(
+                a ->
+                    get_unslashed_attesting_indices(state, Collections.singletonList(a)).stream()
+                        .map(i -> Pair.of(i, a)))
+            .collect(
+                Collectors.groupingBy(
+                    Pair::getLeft, Collectors.mapping(Pair::getRight, Collectors.toList())));
+
+    validator_source_attestations.forEach(
+        (index, attestations) ->
+            attestations.stream()
+                .min(Comparator.comparing(PendingAttestation::getInclusion_delay))
+                .ifPresent(
+                    attestation -> {
+                      UnsignedLong proposer_reward =
+                          get_base_reward(state, index)
+                              .dividedBy(UnsignedLong.valueOf(PROPOSER_REWARD_QUOTIENT));
+                      rewards.set(
+                          attestation.getProposer_index().intValue(),
+                          rewards
+                              .get(attestation.getProposer_index().intValue())
+                              .plus(proposer_reward));
+                      UnsignedLong max_attester_reward =
+                          get_base_reward(state, index).minus(proposer_reward);
+                      rewards.set(
+                          index,
+                          rewards
+                              .get(index)
+                              .plus(
+                                  max_attester_reward.dividedBy(attestation.getInclusion_delay())));
+                    }));
 
     // Inactivity penalty
     UnsignedLong finality_delay = previous_epoch.minus(state.getFinalized_checkpoint().getEpoch());
