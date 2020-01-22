@@ -174,20 +174,18 @@ public class Eth1DataCacheTest {
     eth1DataCache.startBeaconChainMode(genesisState);
     UnsignedLong slot = UnsignedLong.valueOf(300);
     UnsignedLong currentTime =
-            genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     eventBus.post(new SlotEvent(slot));
 
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
-            createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-            createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)));
-
+        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)));
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
 
-    SSZList<Eth1Data> eth1DataVotes =
-            new SSZList<>(List.of(), 10, Eth1Data.class);
+    SSZList<Eth1Data> eth1DataVotes = new SSZList<>(List.of(), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
 
@@ -203,8 +201,7 @@ public class Eth1DataCacheTest {
 
     Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
 
-    SSZList<Eth1Data> eth1DataVotes =
-            new SSZList<>(List.of(eth1Data), 10, Eth1Data.class);
+    SSZList<Eth1Data> eth1DataVotes = new SSZList<>(List.of(eth1Data), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     when(beaconState.getEth1_data()).thenReturn(eth1Data);
