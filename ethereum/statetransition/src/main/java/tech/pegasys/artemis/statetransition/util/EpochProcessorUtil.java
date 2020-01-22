@@ -349,7 +349,6 @@ public final class EpochProcessorUtil {
     }
 
     // Proposer and inclusion delay micro-rewards
-
     // map (unslashed attester index) -> (list of source attestations)
     Map<Integer, List<PendingAttestation>> validator_source_attestations =
         matching_source_attestations.stream()
