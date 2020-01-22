@@ -17,7 +17,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initializ
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
@@ -33,23 +32,15 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
-import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -59,8 +50,6 @@ import tech.pegasys.artemis.util.config.Constants;
 public class StateProcessor {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final EventBus eventBus;
-  private final StateTransition stateTransition;
   private final BlockImporter blockImporter;
   private final ChainStorageClient chainStorageClient;
   private final ArtemisConfiguration config;
@@ -69,17 +58,11 @@ public class StateProcessor {
   private boolean genesisReady = false;
 
   public StateProcessor(
-      EventBus eventBus,
-      ChainStorageClient chainStorageClient,
-      MetricsSystem metricsSystem,
-      ArtemisConfiguration config) {
-    this.eventBus = eventBus;
+      EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
     this.config = config;
-    this.stateTransition = new StateTransition(true, new EpochMetrics(metricsSystem));
     this.chainStorageClient = chainStorageClient;
-    this.eventBus.register(this);
-
     this.blockImporter = new BlockImporter(chainStorageClient, eventBus);
+    eventBus.register(this);
   }
 
   public void eth2Genesis(GenesisEvent genesisEvent) {
@@ -164,31 +147,6 @@ public class StateProcessor {
               + blockProposedEvent,
           result.getFailureCause().orElse(null));
     }
-  }
-
-  private void onAttestation(Attestation attestation) {
-    try {
-      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
-      on_attestation(transaction, attestation, stateTransition);
-      transaction.commit(() -> {}, "Failed to persist attestation result");
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.WARN, "Exception in onAttestation: " + e.toString());
-    }
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onGossipedAttestation(Attestation attestation) {
-    onAttestation(attestation);
-    this.eventBus.post(new ProcessedAttestationEvent(attestation));
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onAggregateAndProof(AggregateAndProof aggregateAndProof) {
-    Attestation aggregate = aggregateAndProof.getAggregate();
-    onAttestation(aggregate);
-    this.eventBus.post(new ProcessedAggregateEvent(aggregate));
   }
 
   private void setSimulationGenesisTime(BeaconState state) {

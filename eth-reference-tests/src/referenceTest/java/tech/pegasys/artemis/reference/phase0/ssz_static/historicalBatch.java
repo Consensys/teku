@@ -57,6 +57,6 @@ public class historicalBatch extends TestSuite {
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
     Path path = Paths.get(config, "phase0", "ssz_static", "HistoricalBatch");
-    return sszStaticSetupNoSigningRoot(path, configPath, HistoricalBatch.class);
+    return sszStaticSetup(path, configPath, HistoricalBatch.class);
   }
 }

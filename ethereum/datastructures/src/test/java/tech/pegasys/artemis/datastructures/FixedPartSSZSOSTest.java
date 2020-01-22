@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockHeader;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
@@ -27,8 +26,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -78,31 +75,15 @@ class FixedPartSSZSOSTest {
     Bytes32 previous_block_root = Bytes32.random(new Random(100));
     Bytes32 state_root = Bytes32.random(new Random(101));
     Bytes32 block_body_root = Bytes32.random(new Random(102));
-    BLSSignature signature = BLSSignature.random(100);
 
     BeaconBlockHeader beaconBlockHeader =
-        new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root, signature);
+        new BeaconBlockHeader(slot, previous_block_root, state_root, block_body_root);
 
     Bytes sszBeaconBlockHeaderBytes = beaconBlockHeader.toBytes();
     Bytes sosBeaconBlockHeaderBytes = SimpleOffsetSerializer.serialize(beaconBlockHeader);
 
     // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
     // assertEquals(sszBeaconBlockHeaderBytes, sosBeaconBlockHeaderBytes);
-  }
-
-  @Test
-  void testProposerSlashingSOS() {
-    UnsignedLong proposerIndex = randomUnsignedLong(100);
-    BeaconBlockHeader proposal1 = randomBeaconBlockHeader(100);
-    BeaconBlockHeader proposal2 = randomBeaconBlockHeader(101);
-
-    ProposerSlashing proposerSlashing = new ProposerSlashing(proposerIndex, proposal1, proposal2);
-
-    Bytes sszProposerSlashingBytes = proposerSlashing.toBytes();
-    Bytes sosProposerSlashingBytes = SimpleOffsetSerializer.serialize(proposerSlashing);
-
-    // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
-    // assertEquals(sszProposerSlashingBytes, sosProposerSlashingBytes);
   }
 
   @Test
@@ -147,21 +128,6 @@ class FixedPartSSZSOSTest {
 
     // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
     // assertEquals(sszDepositDataBytes, sosDepositDataBytes);
-  }
-
-  @Test
-  void testVoluntaryExitSOS() {
-    UnsignedLong epoch = randomUnsignedLong(100);
-    UnsignedLong validatorIndex = randomUnsignedLong(101);
-    BLSSignature signature = BLSSignature.random(100);
-
-    VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex, signature);
-
-    Bytes sszVoluntaryExitBytes = voluntaryExit.toBytes();
-    Bytes sosVoluntaryExitBytes = SimpleOffsetSerializer.serialize(voluntaryExit);
-
-    // SJS - The test fails due to SSZ discrepancy, but the SOS value is correct.
-    // assertEquals(sszVoluntaryExitBytes, sosVoluntaryExitBytes);
   }
 
   @Test

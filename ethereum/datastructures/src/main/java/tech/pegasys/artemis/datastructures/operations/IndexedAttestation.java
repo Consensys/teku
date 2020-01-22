@@ -30,18 +30,17 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.hashtree.SigningRoot;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class IndexedAttestation
-    implements Merkleizable, SigningRoot, SimpleOffsetSerializable, SSZContainer {
+public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private SSZList<UnsignedLong> attesting_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private AttestationData data;
-  private BLSSignature signature;
+  private final SSZList<UnsignedLong>
+      attesting_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private final AttestationData data;
+  private final BLSSignature signature;
 
   public IndexedAttestation(
       SSZList<UnsignedLong> attesting_indices, AttestationData data, BLSSignature signature) {
@@ -50,9 +49,12 @@ public class IndexedAttestation
     this.signature = signature;
   }
 
+  // Required by SSZ reflection
   public IndexedAttestation() {
     this.attesting_indices =
         new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    data = null;
+    signature = null;
   }
 
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
@@ -120,24 +122,12 @@ public class IndexedAttestation
     return attesting_indices;
   }
 
-  public void setAttesting_indices(SSZList<UnsignedLong> attesting_indices) {
-    this.attesting_indices = attesting_indices;
-  }
-
   public AttestationData getData() {
     return data;
   }
 
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
-
   public BLSSignature getSignature() {
     return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
-    this.signature = signature;
   }
 
   @Override
@@ -151,22 +141,5 @@ public class IndexedAttestation
                     .collect(Collectors.toList())),
             data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
-  }
-
-  @Override
-  public Bytes32 signing_root(String truncation_param) {
-    if (!truncation_param.equals("signature")) {
-      throw new UnsupportedOperationException(
-          "Only signed_root(beaconBlock, \"signature\") is currently supported for type BeaconBlock.");
-    }
-
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root_list_ul(
-                Constants.MAX_VALIDATORS_PER_COMMITTEE,
-                attesting_indices.stream()
-                    .map(item -> SSZ.encodeUInt64(item.longValue()))
-                    .collect(Collectors.toList())),
-            data.hash_tree_root()));
   }
 }

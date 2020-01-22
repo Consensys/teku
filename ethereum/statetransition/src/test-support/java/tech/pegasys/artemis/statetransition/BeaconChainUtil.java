@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.Signer;
@@ -104,7 +105,7 @@ public class BeaconChainUtil {
     tx.commit().join();
   }
 
-  public BeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {
+  public SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot) throws Exception {
     return createBlockAtSlot(slot, true);
   }
 
@@ -125,7 +126,7 @@ public class BeaconChainUtil {
 
   public BlockProcessingRecord createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
-    final BeaconBlock block = createBlockAtSlot(slot, true, attestations);
+    final SignedBeaconBlock block = createBlockAtSlot(slot, true, attestations);
     setSlot(slot);
     final Transaction transaction = storageClient.startStoreTransaction();
     final BlockImportResult importResult =
@@ -144,7 +145,8 @@ public class BeaconChainUtil {
       throw new IllegalStateException(
           "Transaction did not commit immediately. Are you using a disk storage backed ChainStorageClient without having storage running?");
     }
-    storageClient.updateBestBlock(block.signing_root("signature"), block.getSlot());
+    storageClient.updateBestBlock(
+        block.getMessage().hash_tree_root(), block.getMessage().getSlot());
     return importResult.getBlockProcessingRecord();
   }
 
@@ -153,17 +155,17 @@ public class BeaconChainUtil {
     return createAndImportBlockAtSlot(slot, Optional.empty());
   }
 
-  public BeaconBlock createBlockAtSlotFromInvalidProposer(final UnsignedLong slot)
+  public SignedBeaconBlock createBlockAtSlotFromInvalidProposer(final UnsignedLong slot)
       throws Exception {
     return createBlockAtSlot(slot, false);
   }
 
-  private BeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
+  private SignedBeaconBlock createBlockAtSlot(final UnsignedLong slot, boolean withValidProposer)
       throws Exception {
     return createBlockAtSlot(slot, withValidProposer, Optional.empty());
   }
 
-  private BeaconBlock createBlockAtSlot(
+  private SignedBeaconBlock createBlockAtSlot(
       final UnsignedLong slot,
       boolean withValidProposer,
       Optional<SSZList<Attestation>> attestations)

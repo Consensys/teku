@@ -55,6 +55,6 @@ public class deposit extends TestSuite {
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
     Path path = Paths.get(config, "phase0", "ssz_static", "Deposit");
-    return sszStaticSetupNoSigningRoot(path, configPath, Deposit.class);
+    return sszStaticSetup(path, configPath, Deposit.class);
   }
 }

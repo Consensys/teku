@@ -23,7 +23,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
@@ -44,8 +44,9 @@ public class BlockTopicHandlerTest {
   @Test
   public void handleMessage_validBlock() throws Exception {
     final UnsignedLong nextSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
-    final BeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
+    beaconChainUtil.setSlot(nextSlot);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(true);
@@ -53,13 +54,25 @@ public class BlockTopicHandlerTest {
   }
 
   @Test
+  public void handleMessage_validFutureBlock() throws Exception {
+    final UnsignedLong nextSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
+    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
+    Bytes serialized = SimpleOffsetSerializer.serialize(block);
+    beaconChainUtil.setSlot(storageClient.getBestSlot());
+
+    final boolean result = topicHandler.handleMessage(serialized);
+    assertThat(result).isEqualTo(false);
+    verify(eventBus).post(new GossipedBlockEvent(block));
+  }
+
+  @Test
   public void handleMessage_invalidBlock_unknownPreState() {
-    BeaconBlock block = DataStructureUtil.randomBeaconBlock(1, 100);
+    SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 100);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
-    verify(eventBus, never()).post(new GossipedBlockEvent(block));
+    verify(eventBus).post(new GossipedBlockEvent(block));
   }
 
   @Test
@@ -73,8 +86,9 @@ public class BlockTopicHandlerTest {
   @Test
   public void handleMessage_invalidBlock_wrongProposer() throws Exception {
     final UnsignedLong nextSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
-    final BeaconBlock block = beaconChainUtil.createBlockAtSlotFromInvalidProposer(nextSlot);
+    final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlotFromInvalidProposer(nextSlot);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
+    beaconChainUtil.setSlot(nextSlot);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);

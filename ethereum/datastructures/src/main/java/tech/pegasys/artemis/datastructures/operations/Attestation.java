@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.google.common.collect.Sets;
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -28,11 +31,9 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.hashtree.SigningRoot;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Attestation
-    implements Merkleizable, SigningRoot, SimpleOffsetSerializable, SSZContainer {
+public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
@@ -56,6 +57,20 @@ public class Attestation
   public Attestation() {
     this.aggregation_bits =
         new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+  }
+
+  public UnsignedLong getEarliestSlotForProcessing() {
+    // Attestations can't be processed until their slot is in the past and until we are in the same
+    // epoch as their target.
+    return max(data.getSlot().plus(UnsignedLong.ONE), data.getTarget().getEpochSlot());
+  }
+
+  public Collection<Bytes32> getDependentBlockRoots() {
+    return Sets.newHashSet(data.getTarget().getRoot(), data.getBeacon_block_root());
+  }
+
+  private static UnsignedLong max(final UnsignedLong a, final UnsignedLong b) {
+    return a.compareTo(b) > 0 ? a : b;
   }
 
   @Override
@@ -139,13 +154,6 @@ public class Attestation
 
   public void setAggregate_signature(BLSSignature aggregate_signature) {
     this.signature = aggregate_signature;
-  }
-
-  @Override
-  public Bytes32 signing_root(String truncation_param) {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits), data.hash_tree_root()));
   }
 
   @Override

@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {
 
@@ -37,6 +38,34 @@ public class ValidatorsUtil {
   public static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
     return validator.getActivation_epoch().compareTo(epoch) <= 0
         && epoch.compareTo(validator.getExit_epoch()) < 0;
+  }
+
+  /**
+   * Check if validator is eligible to be placed into the activation queue.
+   *
+   * @param validator the validator
+   * @return true if eligible for the activation queue otherwise false
+   */
+  public static boolean is_eligible_for_activation_queue(Validator validator) {
+    return validator.getActivation_eligibility_epoch().equals(Constants.FAR_FUTURE_EPOCH)
+        && validator
+            .getEffective_balance()
+            .equals(UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+  }
+
+  /**
+   * Check if validator is eligible for activation.
+   *
+   * @param state the beacon state
+   * @param validator the validator
+   * @return true if the validator is eligible for activation
+   */
+  public static boolean is_eligible_for_activation(BeaconState state, Validator validator) {
+    return validator
+                .getActivation_eligibility_epoch()
+                .compareTo(state.getFinalized_checkpoint().getEpoch())
+            <= 0
+        && validator.getActivation_epoch().equals(Constants.FAR_FUTURE_EPOCH);
   }
 
   /**

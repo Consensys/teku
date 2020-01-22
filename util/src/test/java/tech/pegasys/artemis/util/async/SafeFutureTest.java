@@ -15,11 +15,19 @@ package tech.pegasys.artemis.util.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -30,6 +38,7 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class SafeFutureTest {
 
@@ -60,11 +69,7 @@ class SafeFutureTest {
 
     final RuntimeException exception = new RuntimeException("Oh no");
     completableFuture.completeExceptionally(exception);
-    assertThat(safeFuture).isCompletedExceptionally();
-    assertThatThrownBy(safeFuture::join)
-        .isInstanceOf(CompletionException.class)
-        .extracting(Throwable::getCause)
-        .isSameAs(exception);
+    assertExceptionallyCompletedWith(safeFuture, exception);
   }
 
   @Test
@@ -77,11 +82,7 @@ class SafeFutureTest {
     final RuntimeException exception = new RuntimeException("Oh no");
     final SafeFuture<String> safeFuture = SafeFuture.failedFuture(exception);
 
-    assertThat(safeFuture).isCompletedExceptionally();
-    assertThatThrownBy(safeFuture::join)
-        .isInstanceOf(CompletionException.class)
-        .extracting(Throwable::getCause)
-        .isSameAs(exception);
+    assertExceptionallyCompletedWith(safeFuture, exception);
   }
 
   @Test
@@ -261,6 +262,121 @@ class SafeFutureTest {
     assertThat(logCounter.getCount()).isEqualTo(1);
   }
 
+  @Test
+  public void exceptionallyCompose_shouldComposeInErrorCase() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+    final SafeFuture<String> composedFuture = new SafeFuture<>();
+    final SafeFuture<String> result =
+        safeFuture.exceptionallyCompose(
+            error -> {
+              receivedError.set(error);
+              return composedFuture;
+            });
+    final RuntimeException exception = new RuntimeException("Nope");
+
+    safeFuture.completeExceptionally(exception);
+    assertThat(result).isNotDone();
+    assertThat(receivedError).hasValue(exception);
+
+    composedFuture.complete("Success");
+    assertThat(result).isCompletedWithValue("Success");
+  }
+
+  @Test
+  public void exceptionallyCompose_shouldCompleteExceptionallyWhenHandlerThrowsException() {
+    final RuntimeException exception1 = new RuntimeException("Error1");
+    final RuntimeException exception2 = new RuntimeException("Error2");
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+    final SafeFuture<String> result =
+        safeFuture.exceptionallyCompose(
+            error -> {
+              throw exception2;
+            });
+
+    safeFuture.completeExceptionally(exception1);
+    assertExceptionallyCompletedWith(result, exception2);
+  }
+
+  @Test
+  public void exceptionallyCompose_shouldNotDoAnythingWhenCompletedSuccessfully() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+    final SafeFuture<String> composedFuture = new SafeFuture<>();
+    final SafeFuture<String> result =
+        safeFuture.exceptionallyCompose(
+            error -> {
+              receivedError.set(error);
+              return composedFuture;
+            });
+
+    safeFuture.complete("Success");
+    assertThat(result).isCompletedWithValue("Success");
+    assertThat(receivedError).hasValue(null);
+
+    composedFuture.complete("Composed");
+    assertThat(result).isCompletedWithValue("Success");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void runAsync_shouldExecuteActionWithExecutorAndReturnResult() {
+    final SafeFuture<String> actionResult = new SafeFuture<>();
+    final Executor executor = mock(Executor.class);
+    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    when(action.get()).thenReturn(actionResult);
+
+    final SafeFuture<String> result = SafeFuture.runAsync(action, executor);
+
+    final ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+    verify(executor).execute(captor.capture());
+    final Runnable executedRunnable = captor.getValue();
+
+    executedRunnable.run();
+    verify(action).get();
+    assertThat(result).isNotDone();
+
+    actionResult.complete("Yay");
+    assertThat(result).isCompletedWithValue("Yay");
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void runAsync_shouldExecuteActionWithExecutorAndReturnExceptionalResult() {
+    final SafeFuture<String> actionResult = new SafeFuture<>();
+    final Executor executor = mock(Executor.class);
+    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    when(action.get()).thenReturn(actionResult);
+
+    final SafeFuture<String> result = SafeFuture.runAsync(action, executor);
+
+    final ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
+    verify(executor).execute(captor.capture());
+    final Runnable executedRunnable = captor.getValue();
+
+    executedRunnable.run();
+    verify(action).get();
+    assertThat(result).isNotDone();
+
+    final RuntimeException exception = new RuntimeException("Nope");
+    actionResult.completeExceptionally(exception);
+    assertExceptionallyCompletedWith(result, exception);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void runAsync_shouldCompleteExceptionallyWhenExecutorFails() {
+    final Executor executor = mock(Executor.class);
+    final Supplier<SafeFuture<String>> action = mock(Supplier.class);
+    final RuntimeException exception = new RuntimeException("Nope");
+    doThrow(exception).when(executor).execute(any());
+
+    final SafeFuture<String> result = SafeFuture.runAsync(action, executor);
+
+    verify(action, never()).get();
+    assertExceptionallyCompletedWith(result, exception);
+  }
+
   private CountingNoOpAppender startCountingReportedUnhandledExceptions() {
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     final Configuration config = ctx.getConfiguration();
@@ -276,5 +392,14 @@ class SafeFutureTest {
     config.addLogger(SafeFuture.class.getName(), loggerConfig);
     ctx.updateLoggers();
     return appender;
+  }
+
+  private void assertExceptionallyCompletedWith(
+      final SafeFuture<String> safeFuture, final RuntimeException exception) {
+    assertThat(safeFuture).isCompletedExceptionally();
+    assertThatThrownBy(safeFuture::join)
+        .isInstanceOf(CompletionException.class)
+        .extracting(Throwable::getCause)
+        .isSameAs(exception);
   }
 }

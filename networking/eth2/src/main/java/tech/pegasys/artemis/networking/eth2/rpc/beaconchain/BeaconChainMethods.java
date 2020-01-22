@@ -17,7 +17,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -44,16 +44,19 @@ public class BeaconChainMethods {
 
   private final Eth2RpcMethod<StatusMessage, StatusMessage> status;
   private final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye;
-  private final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksByRoot;
-  private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> beaconBlocksByRange;
+  private final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
+      beaconBlocksByRoot;
+  private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
+      beaconBlocksByRange;
 
   private final Collection<Eth2RpcMethod<?, ?>> allMethods;
 
   private BeaconChainMethods(
       final Eth2RpcMethod<StatusMessage, StatusMessage> status,
       final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye,
-      final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksByRoot,
-      final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> beaconBlocksByRange) {
+      final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> beaconBlocksByRoot,
+      final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
+          beaconBlocksByRange) {
     this.status = status;
     this.goodBye = goodBye;
     this.beaconBlocksByRoot = beaconBlocksByRoot;
@@ -100,7 +103,7 @@ public class BeaconChainMethods {
         peerLookup);
   }
 
-  private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock>
+  private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRoot(
           final ChainStorageClient chainStorageClient, final PeerLookup peerLookup) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
@@ -109,13 +112,13 @@ public class BeaconChainMethods {
         BEACON_BLOCKS_BY_ROOT,
         RpcEncoding.SSZ,
         BeaconBlocksByRootRequestMessage.class,
-        BeaconBlock.class,
+        SignedBeaconBlock.class,
         false,
         beaconBlocksByRootHandler,
         peerLookup);
   }
 
-  private static Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock>
+  private static Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRange(
           final CombinedChainDataClient combinedChainDataClient, final PeerLookup peerLookup) {
 
@@ -125,7 +128,7 @@ public class BeaconChainMethods {
         BEACON_BLOCKS_BY_RANGE,
         RpcEncoding.SSZ,
         BeaconBlocksByRangeRequestMessage.class,
-        BeaconBlock.class,
+        SignedBeaconBlock.class,
         false,
         beaconBlocksByRangeHandler,
         peerLookup);
@@ -143,11 +146,11 @@ public class BeaconChainMethods {
     return goodBye;
   }
 
-  public Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlock> beaconBlocksByRoot() {
+  public Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> beaconBlocksByRoot() {
     return beaconBlocksByRoot;
   }
 
-  public Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, BeaconBlock> beaconBlocksByRange() {
+  public Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> beaconBlocksByRange() {
     return beaconBlocksByRange;
   }
 }

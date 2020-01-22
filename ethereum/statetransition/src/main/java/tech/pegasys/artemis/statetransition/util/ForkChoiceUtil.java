@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -21,13 +20,17 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
@@ -35,6 +38,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -42,20 +46,24 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.Transaction;
 
 public class ForkChoiceUtil {
-
-  public static UnsignedLong get_current_slot(Store.Transaction store, boolean useUnixTime) {
+  public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
     return time.minus(store.getGenesisTime()).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
   }
 
-  public static UnsignedLong get_current_slot(Store.Transaction store) {
+  public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
+    return UnsignedLong.valueOf(GENESIS_SLOT).plus(get_slots_since_genesis(store, useUnixTime));
+  }
+
+  public static UnsignedLong get_current_slot(ReadOnlyStore store) {
     return get_current_slot(store, false);
   }
 
@@ -110,6 +118,57 @@ public class ForkChoiceUtil {
             .sum());
   }
 
+  public static boolean filter_block_tree(
+      ReadOnlyStore store, Bytes32 block_root, Map<Bytes32, BeaconBlock> blocks) {
+    BeaconBlock block = store.getBlock(block_root);
+    List<Bytes32> children =
+        store.getBlockRoots().stream()
+            .filter(root -> store.getBlock(root).getParent_root().equals(block_root))
+            .collect(Collectors.toList());
+    // If any children branches contain expected finalized/justified checkpoints,
+    // add to filtered block-tree and signal viability to parent
+    if (!children.isEmpty()) {
+      boolean filter_block_tree_result =
+          children.stream()
+              .map(child -> filter_block_tree(store, child, blocks))
+              .reduce((a, b) -> a || b)
+              .orElse(false);
+      if (filter_block_tree_result) {
+        blocks.put(block_root, block);
+        return true;
+      }
+      return false;
+    }
+
+    BeaconState head_state = store.getBlockState(block_root);
+    boolean correct_justified =
+        store.getJustifiedCheckpoint().getEpoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))
+            || head_state.getCurrent_justified_checkpoint().equals(store.getJustifiedCheckpoint());
+    boolean correct_finalized =
+        store.getFinalizedCheckpoint().getEpoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))
+            || head_state.getFinalized_checkpoint().equals(store.getFinalizedCheckpoint());
+
+    if (correct_justified && correct_finalized) {
+      blocks.put(block_root, block);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Retrieve a filtered block tree from store, only returning branches whose leaf state's
+   * justified/finalized info agrees with that in store.
+   *
+   * @param store
+   * @return
+   */
+  public static Map<Bytes32, BeaconBlock> get_filtered_block_tree(Store store) {
+    Bytes32 base = store.getJustifiedCheckpoint().getRoot();
+    Map<Bytes32, BeaconBlock> blocks = new HashMap<>();
+    filter_block_tree(store, base, blocks);
+    return blocks;
+  }
+
   /**
    * Gets the root of the head block according to LMD-GHOST
    *
@@ -119,6 +178,9 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_head</a>
    */
   public static Bytes32 get_head(Store store) {
+    // Get filtered block tree that only includes viable branches
+    final Map<Bytes32, BeaconBlock> blocks = get_filtered_block_tree(store);
+
     // Execute the LMD-GHOST fork choice
     Bytes32 head = store.getJustifiedCheckpoint().getRoot();
     UnsignedLong justified_slot = store.getJustifiedCheckpoint().getEpochSlot();
@@ -126,11 +188,14 @@ public class ForkChoiceUtil {
     while (true) {
       final Bytes32 head_in_filter = head;
       List<Bytes32> children =
-          store.getBlockRoots().stream()
+          blocks.entrySet().stream()
               .filter(
-                  root ->
-                      store.getBlock(root).getParent_root().equals(head_in_filter)
-                          && store.getBlock(root).getSlot().compareTo(justified_slot) > 0)
+                  (entry) -> {
+                    final BeaconBlock block = entry.getValue();
+                    return block.getParent_root().equals(head_in_filter)
+                        && block.getSlot().compareTo(justified_slot) > 0;
+                  })
+              .map(Entry::getKey)
               .collect(Collectors.toList());
 
       if (children.size() == 0) {
@@ -154,13 +219,13 @@ public class ForkChoiceUtil {
               .get();
     }
   }
-
   /*
   To address the bouncing attack, only update conflicting justified
   checkpoints in the fork choice if in the early slots of the epoch.
   Otherwise, delay incorporation of new justified checkpoint until next epoch boundary.
   See https://ethresear.ch/t/prevention-of-bouncing-attack-on-ffg/6114 for more detailed analysis and discussion.
   */
+
   public static boolean should_update_justified_checkpoint(
       Store.Transaction store, Checkpoint new_justified_checkpoint) {
     if (compute_slots_since_epoch_start(get_current_slot(store, true))
@@ -219,14 +284,15 @@ public class ForkChoiceUtil {
 
   /**
    * @param store
-   * @param block
+   * @param signed_block
    * @param st
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
   @CheckReturnValue
   public static BlockImportResult on_block(
-      Store.Transaction store, BeaconBlock block, StateTransition st) {
+      Store.Transaction store, SignedBeaconBlock signed_block, StateTransition st) {
+    final BeaconBlock block = signed_block.getMessage();
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
     // Return early if precondition checks fail;
@@ -237,7 +303,7 @@ public class ForkChoiceUtil {
     }
 
     // Add new block to the store
-    store.putBlock(block.signing_root("signature"), block);
+    store.putBlock(block.hash_tree_root(), signed_block);
 
     // Make a copy of the state to avoid mutability issues
     BeaconStateWithCache state =
@@ -245,26 +311,31 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(state, block, true);
+      state = st.initiate(state, signed_block, true);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
 
     // Add new state for this block to the store
-    store.putBlockState(block.signing_root("signature"), state);
+    store.putBlockState(block.hash_tree_root(), state);
 
     // Update justified checkpoint
     final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
     if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
       try {
-        storeCheckpointState(
-            store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
+        if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
+            > 0) {
+          storeCheckpointState(
+              store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
+          store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+        }
+        if (should_update_justified_checkpoint(store, justifiedCheckpoint)) {
+          storeCheckpointState(
+              store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
+          store.setJustifiedCheckpoint(justifiedCheckpoint);
+        }
       } catch (SlotProcessingException | EpochProcessingException e) {
         return BlockImportResult.failedStateTransition(e);
-      }
-      store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-      if (should_update_justified_checkpoint(store, justifiedCheckpoint)) {
-        store.setJustifiedCheckpoint(justifiedCheckpoint);
       }
     }
 
@@ -280,7 +351,7 @@ public class ForkChoiceUtil {
       store.setFinalizedCheckpoint(finalizedCheckpoint);
     }
 
-    final BlockProcessingRecord record = new BlockProcessingRecord(preState, block, state);
+    final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
     return BlockImportResult.successful(record);
   }
 
@@ -289,7 +360,7 @@ public class ForkChoiceUtil {
     if (preState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
-    if (blockIsFromFuture(block, preState, store)) {
+    if (blockIsFromFuture(block, store)) {
       return Optional.of(BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE);
     }
     if (!blockDescendsFromLatestFinalizedBlock(block, store)) {
@@ -298,16 +369,8 @@ public class ForkChoiceUtil {
     return Optional.empty();
   }
 
-  private static boolean blockIsFromFuture(
-      BeaconBlock block, final BeaconState preState, ReadOnlyStore store) {
-    final UnsignedLong genesisTime = preState.getGenesis_time();
-    final UnsignedLong now = store.getTime();
-    final UnsignedLong blockTime = getBlockTime(block, genesisTime);
-    return now.compareTo(blockTime) < 0;
-  }
-
-  private static UnsignedLong getBlockTime(BeaconBlock block, UnsignedLong genesisTime) {
-    return genesisTime.plus(block.getSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+  private static boolean blockIsFromFuture(BeaconBlock block, ReadOnlyStore store) {
+    return get_current_slot(store).compareTo(block.getSlot()) < 0;
   }
 
   private static boolean blockDescendsFromLatestFinalizedBlock(
@@ -344,13 +407,13 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
-  public static void on_attestation(
-      Store.Transaction store, Attestation attestation, StateTransition stateTransition)
-      throws SlotProcessingException, EpochProcessingException {
+  @CheckReturnValue
+  public static AttestationProcessingResult on_attestation(
+      Store.Transaction store, Attestation attestation, StateTransition stateTransition) {
 
     Checkpoint target = attestation.getData().getTarget();
 
-    UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store, true));
+    UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store));
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
     UnsignedLong previous_epoch =
@@ -358,63 +421,65 @@ public class ForkChoiceUtil {
             ? current_epoch.minus(UnsignedLong.ONE)
             : UnsignedLong.valueOf(GENESIS_EPOCH);
 
-    List<UnsignedLong> epochs = List.of(current_epoch, previous_epoch);
-    checkArgument(
-        epochs.contains(target.getEpoch()),
-        "on_attestation: Attestations must be from the current or previous epoch");
+    if (!target.getEpoch().equals(previous_epoch) && !target.getEpoch().equals(current_epoch)) {
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestations must be from the current or previous epoch");
+    }
 
-    checkArgument(
-        store.containsBlock(target.getRoot()),
-        "on_attestation: Cannot calculate the current shuffling if have not seen the target");
-
-    checkArgument(
-        store.getBlockRoots().contains(target.getRoot()),
-        "on_attestation: Attestations target must be for a known block. If a target block is unknown, delay consideration until the block is found");
-
-    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
-    // arrives
-    BeaconState targetRootState = store.getBlockState(target.getRoot());
-    UnsignedLong unixTimeStamp = UnsignedLong.valueOf(Instant.now().getEpochSecond());
-    checkArgument(
-        unixTimeStamp.compareTo(
-                targetRootState
-                    .getGenesis_time()
-                    .plus(target.getEpochSlot().times(UnsignedLong.valueOf(SECONDS_PER_SLOT))))
-            >= 0,
-        "on_attestation: Attestations cannot be from the future epochs");
-
-    checkArgument(
-        store.getBlockRoots().contains(attestation.getData().getBeacon_block_root()),
-        "on_attestation: Attestations must be for a known block. If block is unknown, delay consideration until the block is found");
-
-    checkArgument(
-        store
-                .getBlock(attestation.getData().getBeacon_block_root())
-                .getSlot()
-                .compareTo(attestation.getData().getSlot())
-            <= 0,
-        "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
-
-    // Store target checkpoint state if not yet seen
-    storeCheckpointState(store, stateTransition, target, targetRootState);
-    BeaconState target_state = store.getCheckpointState(target);
+    if (!target.getEpoch().equals(compute_epoch_at_slot(attestation.getData().getSlot()))) {
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestation slot must be within specified epoch");
+    }
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
-    UnsignedLong attestation_slot = attestation.getData().getSlot();
-    checkArgument(
-        unixTimeStamp.compareTo(
-                attestation_slot
-                    .plus(UnsignedLong.ONE)
-                    .times(UnsignedLong.valueOf(SECONDS_PER_SLOT)))
-            >= 0,
-        "on_attestation: Attestation can only affect the forck choice of subsequent slots");
+    if (get_current_slot(store).compareTo(attestation.getData().getSlot()) <= 0) {
+      return AttestationProcessingResult.FAILED_NOT_FROM_PAST;
+    }
+
+    if (!store.getBlockRoots().contains(target.getRoot())) {
+      // Attestations target must be for a known block. If a target block is unknown, delay
+      // consideration until the block is found
+      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
+    }
+
+    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
+    // arrives
+    if (get_current_slot(store).compareTo(target.getEpochSlot()) < 0) {
+      return AttestationProcessingResult.FAILED_FUTURE_EPOCH;
+    }
+
+    if (!store.getBlockRoots().contains(attestation.getData().getBeacon_block_root())) {
+      // Attestations must be for a known block. If block is unknown, delay consideration until the
+      // block is found
+      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
+    }
+
+    if (store
+            .getBlock(attestation.getData().getBeacon_block_root())
+            .getSlot()
+            .compareTo(attestation.getData().getSlot())
+        > 0) {
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
+    }
+
+    // Store target checkpoint state if not yet seen
+    BeaconState targetRootState = store.getBlockState(target.getRoot());
+    try {
+      storeCheckpointState(store, stateTransition, target, targetRootState);
+    } catch (SlotProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    } catch (EpochProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    }
+    BeaconState target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
     IndexedAttestation indexed_attestation = get_indexed_attestation(target_state, attestation);
-    checkArgument(
-        is_valid_indexed_attestation(target_state, indexed_attestation),
-        "on_attestation: Attestation is not valid");
+    if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
+      return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
+    }
 
     // Update latest messages
     for (UnsignedLong i : indexed_attestation.getAttesting_indices()) {
@@ -424,6 +489,7 @@ public class ForkChoiceUtil {
             i, new Checkpoint(target.getEpoch(), attestation.getData().getBeacon_block_root()));
       }
     }
+    return AttestationProcessingResult.SUCCESSFUL;
   }
 
   private static void storeCheckpointState(

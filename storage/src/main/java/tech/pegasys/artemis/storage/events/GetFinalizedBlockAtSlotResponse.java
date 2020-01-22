@@ -15,14 +15,14 @@ package tech.pegasys.artemis.storage.events;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
 public class GetFinalizedBlockAtSlotResponse {
   private final UnsignedLong slot;
-  private final Optional<BeaconBlock> block;
+  private final Optional<SignedBeaconBlock> block;
 
   public GetFinalizedBlockAtSlotResponse(
-      final UnsignedLong slot, final Optional<BeaconBlock> block) {
+      final UnsignedLong slot, final Optional<SignedBeaconBlock> block) {
     this.slot = slot;
     this.block = block;
   }
@@ -31,7 +31,7 @@ public class GetFinalizedBlockAtSlotResponse {
     return slot;
   }
 
-  public Optional<BeaconBlock> getBlock() {
+  public Optional<SignedBeaconBlock> getBlock() {
     return block;
   }
 }

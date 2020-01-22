@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
@@ -103,7 +103,7 @@ public class PeerSync {
     if (rootException instanceof FailedBlockImportException) {
       final FailedBlockImportException importException = (FailedBlockImportException) rootException;
       final FailureReason reason = importException.getResult().getFailureReason();
-      final BeaconBlock block = importException.getBlock();
+      final SignedBeaconBlock block = importException.getBlock();
       LOG.warn("Failed to import block from peer {}: {}", block, peer);
       if (reason == FailureReason.FAILED_STATE_TRANSITION
           || reason == FailureReason.UNKNOWN_PARENT) {
@@ -147,17 +147,18 @@ public class PeerSync {
         : diff;
   }
 
-  private ResponseListener<BeaconBlock> blockResponseListener(final AtomicLong lastImportedSlot) {
+  private ResponseListener<SignedBeaconBlock> blockResponseListener(
+      final AtomicLong lastImportedSlot) {
     return (block) -> {
       if (stopped.get()) {
         throw new CancellationException("Peer sync was cancelled");
       }
       final BlockImportResult result = blockImporter.importBlock(block);
-      LOG.trace("Block import result for block at {}: {}", block.getSlot(), result);
+      LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
       if (!result.isSuccessful()) {
         throw new FailedBlockImportException(block, result);
       }
-      lastImportedSlot.set(block.getSlot().longValue());
+      lastImportedSlot.set(block.getMessage().getSlot().longValue());
     };
   }
 

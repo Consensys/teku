@@ -29,14 +29,14 @@ import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 /** Utility class to read/write SSZ serialized blocks */
 public class BlockIO {
 
   public static class Reader
-      implements AutoCloseable, Supplier<BeaconBlock>, Iterable<BeaconBlock> {
+      implements AutoCloseable, Supplier<SignedBeaconBlock>, Iterable<SignedBeaconBlock> {
 
     private final ObjectInputStream inputStream;
 
@@ -50,12 +50,12 @@ public class BlockIO {
     }
 
     @Override
-    public BeaconBlock get() {
+    public SignedBeaconBlock get() {
       try {
         int size = inputStream.readInt();
         byte[] bytes = new byte[size];
         inputStream.readFully(bytes);
-        return SimpleOffsetSerializer.deserialize(Bytes.wrap(bytes), BeaconBlock.class);
+        return SimpleOffsetSerializer.deserialize(Bytes.wrap(bytes), SignedBeaconBlock.class);
       } catch (Exception e) {
         return null;
       }
@@ -63,11 +63,11 @@ public class BlockIO {
 
     @NotNull
     @Override
-    public Iterator<BeaconBlock> iterator() {
+    public Iterator<SignedBeaconBlock> iterator() {
       return Utils.fromSupplier(this);
     }
 
-    public List<BeaconBlock> readAll(int limit) {
+    public List<SignedBeaconBlock> readAll(int limit) {
       try {
         return StreamSupport.stream(spliterator(), false).limit(limit).collect(Collectors.toList());
       } finally {
@@ -79,7 +79,7 @@ public class BlockIO {
     }
   }
 
-  public static class Writer implements AutoCloseable, Consumer<BeaconBlock> {
+  public static class Writer implements AutoCloseable, Consumer<SignedBeaconBlock> {
     private final ObjectOutputStream outputStream;
 
     Writer(ObjectOutputStream outputStream) {
@@ -92,7 +92,7 @@ public class BlockIO {
     }
 
     @Override
-    public void accept(BeaconBlock block) {
+    public void accept(SignedBeaconBlock block) {
       try {
         Bytes bytes = SimpleOffsetSerializer.serialize(block);
         outputStream.writeInt(bytes.size());

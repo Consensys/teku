@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.networking.eth2.peers;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_current_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
@@ -22,13 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -112,11 +115,22 @@ public class PeerChainValidator {
       return SafeFuture.completedFuture(true);
     }
 
-    // Check whether finalized checkpoints are compatible
     final Checkpoint finalizedCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
     final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
+    final UnsignedLong currentEpoch = getCurrentEpoch();
 
+    // Make sure remote finalized epoch is reasonable
+    if (remoteEpochIsInvalid(currentEpoch, remoteFinalizedEpoch)) {
+      LOG.debug(
+          "Peer is advertising invalid finalized epoch {} which is at or ahead of our current epoch {}: {}",
+          remoteFinalizedEpoch,
+          currentEpoch,
+          peer);
+      return SafeFuture.completedFuture(false);
+    }
+
+    // Check whether finalized checkpoints are compatible
     if (finalizedEpoch.compareTo(remoteFinalizedEpoch) == 0) {
       return verifyFinalizedCheckpointsAreTheSame(finalizedCheckpoint);
     } else if (finalizedEpoch.compareTo(remoteFinalizedEpoch) > 0) {
@@ -126,6 +140,20 @@ public class PeerChainValidator {
       // Our peer is ahead of us, check that they agree on our finalized epoch
       return verifyPeerAgreesWithOurFinalizedCheckpoint(finalizedCheckpoint);
     }
+  }
+
+  private UnsignedLong getCurrentEpoch() {
+    final UnsignedLong currentSlot = get_current_slot(storageClient.getStore());
+    return compute_epoch_at_slot(currentSlot);
+  }
+
+  private boolean remoteEpochIsInvalid(
+      final UnsignedLong currentEpoch, final UnsignedLong remoteFinalizedEpoch) {
+    // Remote finalized epoch is invalid if it is from the future
+    return remoteFinalizedEpoch.compareTo(currentEpoch) > 0
+        // Remote finalized epoch is invalid if is from the current epoch (unless we're at genesis)
+        || (remoteFinalizedEpoch.compareTo(currentEpoch) == 0
+            && !remoteFinalizedEpoch.equals(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(Checkpoint finalizedCheckpoint) {
@@ -154,20 +182,22 @@ public class PeerChainValidator {
         .thenApply(block -> validateBlockRootsMatch(block, finalizedCheckpoint.getRoot()));
   }
 
-  private BeaconBlock toBlock(UnsignedLong lookupSlot, Optional<BeaconBlock> maybeBlock) {
+  private SignedBeaconBlock toBlock(
+      UnsignedLong lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
     return maybeBlock.orElseThrow(
         () -> new IllegalStateException("Missing finalized block at slot " + lookupSlot));
   }
 
-  private UnsignedLong blockToSlot(UnsignedLong lookupSlot, Optional<BeaconBlock> maybeBlock) {
+  private UnsignedLong blockToSlot(
+      UnsignedLong lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
     return maybeBlock
-        .map(BeaconBlock::getSlot)
+        .map(SignedBeaconBlock::getSlot)
         .orElseThrow(
             () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
   }
 
-  private boolean validateBlockRootsMatch(final BeaconBlock block, final Bytes32 root) {
-    final Bytes32 blockRoot = block.signing_root("signature");
+  private boolean validateBlockRootsMatch(final SignedBeaconBlock block, final Bytes32 root) {
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final boolean rootsMatch = Objects.equals(blockRoot, root);
     if (rootsMatch) {
       LOG.trace("Verified finalized blocks match for peer: {}", peer);
