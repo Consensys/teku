@@ -19,9 +19,12 @@ import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,7 +79,7 @@ public class Eth1DataCache {
     }
 
     currentVotingPeriodStartTime = voting_period_start_time;
-    prune(voting_period_start_time);
+    prune();
   }
 
   public Eth1Data get_eth1_vote(BeaconState state) {
@@ -93,17 +96,14 @@ public class Eth1DataCache {
       Eth1Vote vote =
           validVotes.computeIfAbsent(
               eth1Data,
-              key -> {
-                Eth1Vote newVote = new Eth1Vote();
-                newVote.setIndex(currentIndex);
-                return newVote;
-              });
+              key -> new Eth1Vote(currentIndex)
+          );
       vote.incrementVotes();
       i++;
     }
 
     Eth1Data defaultVote =
-        !votesToConsider.isEmpty() ? votesToConsider.lastEntry().getValue() : state.getEth1_data();
+        votesToConsider.isEmpty() ?  state.getEth1_data() : votesToConsider.lastEntry().getValue();
 
     Optional<Eth1Data> vote =
         validVotes.entrySet().stream().max(Map.Entry.comparingByValue()).map(Map.Entry::getKey);
@@ -113,18 +113,10 @@ public class Eth1DataCache {
 
   private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider() {
     return eth1ChainCache.subMap(
-        getSpecRangeLowerBound(currentVotingPeriodStartTime),
+        getSpecRangeLowerBound(),
         true,
-        getSpecRangeUpperBound(currentVotingPeriodStartTime),
+        getSpecRangeUpperBound(),
         true);
-  }
-
-  private void prune(UnsignedLong periodStart) {
-    if (eth1ChainCache.isEmpty()) return;
-
-    while (isBlockTooOld(eth1ChainCache.firstKey(), periodStart)) {
-      eth1ChainCache.remove(eth1ChainCache.firstKey());
-    }
   }
 
   private void prune() {
@@ -141,12 +133,12 @@ public class Eth1DataCache {
     return computeTimeAtSlot(eth1VotingPeriodStartSlot);
   }
 
-  private static UnsignedLong getSpecRangeLowerBound(UnsignedLong currentVotingPeriodStartTime) {
+  UnsignedLong getSpecRangeLowerBound() {
     return currentVotingPeriodStartTime.minus(
         ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
   }
 
-  private static UnsignedLong getSpecRangeUpperBound(UnsignedLong currentVotingPeriodStartTime) {
+  UnsignedLong getSpecRangeUpperBound() {
     return currentVotingPeriodStartTime.minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
   }
 
@@ -156,18 +148,23 @@ public class Eth1DataCache {
     return genesisTime.get().plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
   }
 
-  private static boolean isBlockTooOld(UnsignedLong blockTimestamp, UnsignedLong periodStart) {
-    return blockTimestamp.compareTo(getSpecRangeLowerBound(periodStart)) < 0;
+  private boolean isBlockTooOld(UnsignedLong blockTimestamp) {
+    if (genesisTime.isPresent()) {
+      return blockTimestamp.compareTo(getSpecRangeLowerBound()) < 0;
+    } else {
+      return blockTimestamp.compareTo(getCacheRangeLowerBound()) < 0;
+    }
   }
 
-  private static boolean isBlockTooOld(UnsignedLong blockTimestamp) {
-    return blockTimestamp.compareTo(getCacheRangeLowerBound()) < 0;
-  }
-
-  private static Eth1Data createEth1Data(CacheEth1BlockEvent eth1BlockEvent) {
+  public static Eth1Data createEth1Data(CacheEth1BlockEvent eth1BlockEvent) {
     return new Eth1Data(
         eth1BlockEvent.getDepositRoot(),
         eth1BlockEvent.getDepositCount(),
         eth1BlockEvent.getBlockHash());
+  }
+
+  @VisibleForTesting
+  NavigableMap<UnsignedLong, Eth1Data> getMapForTesting() {
+   return Collections.unmodifiableNavigableMap(eth1ChainCache);
   }
 }

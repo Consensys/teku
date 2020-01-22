@@ -16,14 +16,14 @@ package tech.pegasys.artemis.validator.coordinator;
 public class Eth1Vote implements Comparable<Eth1Vote> {
 
   private int vote = 0;
-  private int index = -1;
+  private final int index;
+
+  public Eth1Vote(int index) {
+    this.index = index;
+  }
 
   public void incrementVotes() {
     vote++;
-  }
-
-  public void setIndex(int i) {
-    index = i;
   }
 
   // Greater vote number, or in case of a tie,
