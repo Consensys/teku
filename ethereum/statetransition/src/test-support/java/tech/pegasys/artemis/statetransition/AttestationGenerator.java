@@ -17,11 +17,14 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -37,8 +40,10 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.bls.BLSAggregate;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
@@ -103,6 +108,46 @@ public class AttestationGenerator {
 
     attestation.setAggregation_bits(newBitlist);
     return attestation;
+  }
+
+  /**
+   * Groups passed attestations by their {@link
+   * tech.pegasys.artemis.datastructures.operations.AttestationData} and aggregates attestations in
+   * every group to a single {@link Attestation}
+   *
+   * @return a list of aggregated {@link Attestation}s with distinct {@link
+   *     tech.pegasys.artemis.datastructures.operations.AttestationData}
+   */
+  public static List<Attestation> groupAndAggregateAttestations(List<Attestation> srcAttestations) {
+    Collection<List<Attestation>> groupedAtt =
+        srcAttestations.stream().collect(Collectors.groupingBy(Attestation::getData)).values();
+    return groupedAtt.stream()
+        .map(AttestationGenerator::aggregateAttestations)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Aggregates passed attestations
+   *
+   * @param srcAttestations attestations which should have the same {@link Attestation#getData()}
+   */
+  public static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
+    Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
+
+    int targetBitlistSize =
+        srcAttestations.stream()
+            .mapToInt(a -> a.getAggregation_bits().getCurrentSize())
+            .max()
+            .getAsInt();
+    Bitlist targetBitlist = new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    srcAttestations.forEach(a -> targetBitlist.setAllBits(a.getAggregation_bits()));
+    BLSSignature targetSig =
+        BLSAggregate.bls_aggregate_signatures(
+            srcAttestations.stream()
+                .map(Attestation::getAggregate_signature)
+                .collect(Collectors.toList()));
+
+    return new Attestation(targetBitlist, srcAttestations.get(0).getData(), targetSig);
   }
 
   public Attestation validAttestation(final ChainStorageClient storageClient)
