@@ -36,4 +36,9 @@ public final class BLSSecretKey {
   public SecretKey getSecretKey() {
     return secretKey;
   }
+
+  @Override
+  public String toString() {
+    return secretKey.toString();
+  }
 }

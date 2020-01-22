@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import com.google.common.base.MoreObjects;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 
 public final class BLSKeyPair {
@@ -77,5 +78,13 @@ public final class BLSKeyPair {
 
   public BLSSecretKey getSecretKey() {
     return secretKey;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("publicKey", publicKey)
+        .add("secretKey", secretKey)
+        .toString();
   }
 }
