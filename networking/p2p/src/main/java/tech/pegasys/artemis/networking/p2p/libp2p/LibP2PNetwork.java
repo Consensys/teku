@@ -23,7 +23,8 @@ import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import io.libp2p.core.dsl.BuildersJKt;
+import io.libp2p.core.dsl.Builder.Defaults;
+import io.libp2p.core.dsl.BuilderJKt;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
@@ -105,7 +106,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers, rpcHandlers);
 
     host =
-        BuildersJKt.hostJ(
+        BuilderJKt.hostJ(
+            Defaults.None,
             b -> {
               b.getIdentity().setFactory(() -> privKey);
               b.getTransports().add(TcpTransport::new);

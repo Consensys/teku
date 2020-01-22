@@ -19,8 +19,8 @@ import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
 import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
+import io.libp2p.core.Network;
 import io.libp2p.core.multiformats.Multiaddr;
-import io.libp2p.network.NetworkImpl;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,7 +81,7 @@ public class PeerManager implements ConnectionHandler {
     connectSubscribers.unsubscribe(subscriptionId);
   }
 
-  public SafeFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
+  public SafeFuture<?> connect(final Multiaddr peer, final Network network) {
     STDOUT.log(Level.DEBUG, "Connecting to " + peer);
     return SafeFuture.of(network.connect(peer))
         .whenComplete(
@@ -99,7 +99,7 @@ public class PeerManager implements ConnectionHandler {
                 STDOUT.log(
                     Level.DEBUG,
                     "Connection to peer: "
-                        + conn.getSecureSession().getRemoteId()
+                        + conn.secureSession().getRemoteId()
                         + " was successful");
                 SafeFuture.of(conn.closeFuture())
                     .finish(

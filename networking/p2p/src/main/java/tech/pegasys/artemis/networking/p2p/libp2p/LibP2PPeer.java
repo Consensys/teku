@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -30,13 +31,15 @@ public class LibP2PPeer implements Peer {
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
   private final Connection connection;
   private final NodeId nodeId;
+  private final AtomicBoolean connected = new AtomicBoolean(true);
 
   public LibP2PPeer(final Connection connection, final Map<RpcMethod, RpcHandler> rpcHandlers) {
     this.connection = connection;
     this.rpcHandlers = rpcHandlers;
 
-    final PeerId peerId = connection.getSecureSession().getRemoteId();
+    final PeerId peerId = connection.secureSession().getRemoteId();
     nodeId = new LibP2PNodeId(peerId);
+    SafeFuture.of(connection.closeFuture()).finish(res -> connected.set(false));
   }
 
   @Override
@@ -46,13 +49,14 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public boolean isConnected() {
-    return connection.getNettyChannel().isOpen();
+    return connected.get();
   }
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public void disconnect() {
-    connection.getNettyChannel().close();
+    connected.set(false);
+    connection.close();
   }
 
   @Override
