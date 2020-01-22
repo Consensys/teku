@@ -62,7 +62,7 @@ public class AsyncEventDeliverer<T> extends EventDeliverer<T> {
   }
 
   @Override
-  public void close() {
+  public void stop() {
     executor.shutdownNow();
   }
 

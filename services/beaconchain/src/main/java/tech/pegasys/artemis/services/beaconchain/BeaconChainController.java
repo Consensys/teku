@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import tech.pegasys.artemis.events.EventChannel;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -62,11 +63,13 @@ import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeEvents;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainController {
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
+  private EventChannel<TimeEvents> timeEventChannel;
   private Runnable networkTask;
   private final ArtemisConfiguration config;
   private EventBus eventBus;
@@ -110,9 +113,11 @@ public class BeaconChainController {
 
   public void initTimer() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initTimer()");
+    timeEventChannel = EventChannel.createAsync(TimeEvents.class);
+    timeEventChannel.subscribe(this::onTick);
     int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
-      this.timer = new Timer(this.eventBus, 0, timerPeriodInMiliseconds);
+      this.timer = new Timer(timeEventChannel.getPublisher(), 0, timerPeriodInMiliseconds);
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
@@ -260,6 +265,7 @@ public class BeaconChainController {
     this.timer.stop();
     this.beaconRestAPI.stop();
     this.eventBus.unregister(this);
+    timeEventChannel.stop();
   }
 
   @Subscribe
@@ -278,8 +284,6 @@ public class BeaconChainController {
     nodeSlot = currentSlot;
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
   private void onTick(Date date) {
     if (!testMode && !stateProcessor.isGenesisReady()) {
       return;

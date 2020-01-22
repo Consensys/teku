@@ -17,15 +17,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.joining;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
-public class EventChannel<T> implements Closeable {
+public class EventChannel<T> {
 
   private final T publisher;
   private final EventDeliverer<T> invoker;
@@ -45,7 +43,7 @@ public class EventChannel<T> implements Closeable {
         Executors.newCachedThreadPool(
             new ThreadFactoryBuilder()
                 .setDaemon(true)
-                .setNameFormat("event-" + channelInterface.getSimpleName() + "-%d")
+                .setNameFormat(channelInterface.getSimpleName() + "-%d")
                 .build()));
   }
 
@@ -89,8 +87,7 @@ public class EventChannel<T> implements Closeable {
     invoker.subscribe(listener);
   }
 
-  @Override
-  public void close() throws IOException {
-    invoker.close();
+  public void stop() {
+    invoker.stop();
   }
 }

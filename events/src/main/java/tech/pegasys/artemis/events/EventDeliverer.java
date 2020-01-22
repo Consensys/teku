@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.events;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -22,7 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.events.Subscribers;
 
-abstract class EventDeliverer<T> implements InvocationHandler, Closeable {
+abstract class EventDeliverer<T> implements InvocationHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final Subscribers<T> subscribers = Subscribers.create(true);
 
@@ -54,6 +52,5 @@ abstract class EventDeliverer<T> implements InvocationHandler, Closeable {
   protected abstract void deliverTo(T subscriber, Method method, Object[] args)
       throws IllegalAccessException, InvocationTargetException;
 
-  @Override
-  public void close() throws IOException {}
+  public void stop() {}
 }
