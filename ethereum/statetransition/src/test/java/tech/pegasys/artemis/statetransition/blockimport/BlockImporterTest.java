@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition.blockimport;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
@@ -22,31 +23,53 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockImporterTest {
-  private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
+  private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final ChainStorageClient localStorage =
       ChainStorageClient.memoryOnlyClient(localEventBus);
-  private final BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys);
+  private final BeaconChainUtil localChain =
+      BeaconChainUtil.create(localStorage, validatorKeys, false);
 
   private final EventBus otherEventBus = mock(EventBus.class);
   private final ChainStorageClient otherStorage =
       ChainStorageClient.memoryOnlyClient(otherEventBus);
-  private final BeaconChainUtil otherChain = BeaconChainUtil.create(otherStorage, validatorKeys);
+  private final BeaconChainUtil otherChain =
+      BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
   private final BlockImporter blockImporter = new BlockImporter(localStorage, localEventBus);
+
+  @BeforeAll
+  public static void init() {
+    Constants.SLOTS_PER_EPOCH = 6;
+    BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
+    BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
+  }
+
+  @AfterAll
+  public static void dispose() {
+    BeaconStateUtil.BLS_VERIFY_DEPOSIT = true;
+    BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = true;
+  }
 
   @BeforeEach
   public void setup() {
@@ -71,6 +94,55 @@ public class BlockImporterTest {
     assertThat(blockImporter.importBlock(block).isSuccessful()).isTrue();
     BlockImportResult result = blockImporter.importBlock(block);
     assertSuccessfulResult(result);
+  }
+
+  @Test
+  public void importBlock_validAttestations() throws Exception {
+
+    UnsignedLong currentSlot = UnsignedLong.ONE;
+    BlockProcessingRecord record1 = localChain.createAndImportBlockAtSlot(currentSlot);
+    currentSlot = currentSlot.plus(UnsignedLong.ONE);
+    BlockProcessingRecord record2 = localChain.createAndImportBlockAtSlot(currentSlot);
+
+    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    List<Attestation> attestations =
+        attestationGenerator.getAttestationsForSlot(
+            record2.getPostState(), record1.getBlock().getMessage(), currentSlot);
+    List<Attestation> aggregatedAttestations =
+        AttestationGenerator.groupAndAggregateAttestations(attestations);
+
+    currentSlot = currentSlot.plus(UnsignedLong.ONE);
+
+    localChain.createAndImportBlockAtSlot(currentSlot, aggregatedAttestations);
+  }
+
+  @Test
+  public void importBlock_attestationWithInvalidSignature() throws Exception {
+
+    UnsignedLong currentSlot = UnsignedLong.ONE;
+    BlockProcessingRecord record1 = localChain.createAndImportBlockAtSlot(currentSlot);
+    currentSlot = currentSlot.plus(UnsignedLong.ONE);
+    BlockProcessingRecord record2 = localChain.createAndImportBlockAtSlot(currentSlot);
+
+    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    List<Attestation> attestations =
+        attestationGenerator.getAttestationsForSlot(
+            record2.getPostState(), record1.getBlock().getMessage(), currentSlot);
+    List<Attestation> aggregatedAttestations =
+        AttestationGenerator.groupAndAggregateAttestations(attestations);
+
+    // make one attestation signature invalid
+    aggregatedAttestations
+        .get(aggregatedAttestations.size() / 2)
+        .setAggregate_signature(BLSSignature.random());
+
+    UnsignedLong currentSlotFinal = currentSlot.plus(UnsignedLong.ONE);
+
+    assertThatCode(
+            () -> {
+              localChain.createAndImportBlockAtSlot(currentSlotFinal, aggregatedAttestations);
+            })
+        .hasMessageContaining("signature");
   }
 
   @Test
