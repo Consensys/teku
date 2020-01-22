@@ -29,14 +29,10 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
   private static final int BLS_PUBKEY_SIZE = 48;
 
   /**
-   * Generates a compressed, serialised, random, valid public key.
+   * Generates a compressed, serialised, random, valid public key based on a seed.
    *
    * @return PublicKey The public key, not null
    */
-  public static BLSPublicKey random() {
-    return new BLSPublicKey(PublicKey.random());
-  }
-
   public static BLSPublicKey random(int seed) {
     return new BLSPublicKey(PublicKey.random(seed));
   }
@@ -79,21 +75,30 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
   private final PublicKey publicKey;
 
   /**
-   * Construct from a Mikuli PublicKey object
+   * Copy constructor.
    *
-   * @param publicKey A Mikuli PublicKey
+   * @param publicKey A BLSPublicKey
    */
-  public BLSPublicKey(PublicKey publicKey) {
-    this.publicKey = publicKey;
+  public BLSPublicKey(BLSPublicKey publicKey) {
+    this.publicKey = publicKey.getPublicKey();
   }
 
   /**
-   * Construct from a BLSSecretKey object
+   * Construct from a BLSSecretKey object.
    *
    * @param secretKey A BLSSecretKey
    */
   public BLSPublicKey(BLSSecretKey secretKey) {
     this.publicKey = new PublicKey(secretKey.getSecretKey());
+  }
+
+  /**
+   * Construct from a Mikuli PublicKey object.
+   *
+   * @param publicKey A Mikuli PublicKey
+   */
+  BLSPublicKey(PublicKey publicKey) {
+    this.publicKey = publicKey;
   }
 
   /**

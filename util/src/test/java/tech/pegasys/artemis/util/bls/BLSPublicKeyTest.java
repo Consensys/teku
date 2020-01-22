@@ -72,7 +72,7 @@ class BLSPublicKeyTest {
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalPublicKeys() {
     BLSPublicKey publicKey = BLSPublicKey.random(42);
-    BLSPublicKey copyOfPublicKey = new BLSPublicKey(publicKey.getPublicKey());
+    BLSPublicKey copyOfPublicKey = new BLSPublicKey(publicKey);
     assertEquals(publicKey, copyOfPublicKey);
   }
 

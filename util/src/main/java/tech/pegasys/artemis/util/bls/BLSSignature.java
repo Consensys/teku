@@ -18,6 +18,7 @@ import static java.util.Objects.isNull;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.Signature;
@@ -32,12 +33,12 @@ public class BLSSignature implements SimpleOffsetSerializable {
   /**
    * Create a random, but valid, signature.
    *
-   * <p>TODO: track down all usages of this and insert a seed value. Then delete this method.
+   * <p>Generally prefer the seeded version.
    *
    * @return a random signature
    */
-  public static BLSSignature random() {
-    return new BLSSignature(Signature.random(1));
+  static BLSSignature random() {
+    return new BLSSignature(Signature.random(new Random().nextInt()));
   }
 
   /**
@@ -83,7 +84,21 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   private final Signature signature;
 
-  public BLSSignature(Signature signature) {
+  /**
+   * Copy constructor.
+   *
+   * @param signature A BLSSignature
+   */
+  public BLSSignature(BLSSignature signature) {
+    this.signature = signature.getSignature();
+  }
+
+  /**
+   * Construct from a Mikuli Signature object.
+   *
+   * @param signature A Mikuli Signature
+   */
+  BLSSignature(Signature signature) {
     this.signature = signature;
   }
 

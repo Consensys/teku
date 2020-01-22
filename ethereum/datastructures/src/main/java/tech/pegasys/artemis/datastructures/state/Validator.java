@@ -73,7 +73,7 @@ public class Validator
   }
 
   public Validator(Validator validator) {
-    this.pubkey = new BLSPublicKey(validator.getPubkey().getPublicKey());
+    this.pubkey = new BLSPublicKey(validator.getPubkey());
     this.withdrawal_credentials = validator.getWithdrawal_credentials();
     this.effective_balance = validator.getEffective_balance();
     this.slashed = validator.isSlashed();
@@ -189,7 +189,7 @@ public class Validator
   }
 
   public BLSPublicKey getPubkey() {
-    return new BLSPublicKey(pubkey.getPublicKey());
+    return new BLSPublicKey(pubkey);
   }
 
   public void setPubkey(BLSPublicKey pubkey) {

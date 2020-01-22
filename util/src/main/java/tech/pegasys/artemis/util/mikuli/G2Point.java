@@ -210,8 +210,6 @@ public final class G2Point implements Group<G2Point> {
   /**
    * Verify that the given point is in the correct subgroup for G2.
    *
-   * <p>We use the method in hashToG2 to avoid duplication. That one ought to be faster.
-   *
    * @param point The elliptic curve point
    * @return True if the point is in G2; false otherwise
    */

@@ -48,7 +48,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
-  private final BLSKeyPair randomKeyPair = BLSKeyPair.random();
+  private final BLSKeyPair randomKeyPair = BLSKeyPair.random(12345);
 
   public AttestationGenerator(final List<BLSKeyPair> validatorKeys) {
     this.validatorKeys = validatorKeys;

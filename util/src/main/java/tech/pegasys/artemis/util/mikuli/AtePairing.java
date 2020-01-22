@@ -34,7 +34,7 @@ final class AtePairing {
    * Calculates the product of pairings while performing the final exponentiation only once. This
    * ought to be more efficient.
    *
-   * <p>If pair(-p, q) == pair(r, s) then the result of this is one in GT.
+   * <p>If pair(-p, q) == pair(r, s) then the result of this is "one" in GT.
    *
    * @param p a point in Group1, not null
    * @param q a point in Group2, not null

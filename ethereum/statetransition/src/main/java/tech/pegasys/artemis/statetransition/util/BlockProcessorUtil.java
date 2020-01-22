@@ -231,7 +231,7 @@ public final class BlockProcessorUtil {
             !Objects.equals(proposer_slashing.getHeader_1(), proposer_slashing.getHeader_2()),
             "process_proposer_slashings: Verify the headers are different");
 
-        Validator proposer =
+        final Validator proposer =
             state
                 .getValidators()
                 .get(toIntExact(proposer_slashing.getProposer_index().longValue()));

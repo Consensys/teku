@@ -42,9 +42,8 @@ import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 @Command(
     name = "validator",
@@ -178,7 +177,7 @@ public class DepositCommand implements Runnable {
   }
 
   private BLSKeyPair privateKeyToKeyPair(final String validatorKey) {
-    return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(Bytes.fromHexString(validatorKey))));
+    return new BLSKeyPair(BLSSecretKey.fromBytes(Bytes.fromHexString(validatorKey)));
   }
 
   private static class UnsignedLongConverter implements ITypeConverter<UnsignedLong> {

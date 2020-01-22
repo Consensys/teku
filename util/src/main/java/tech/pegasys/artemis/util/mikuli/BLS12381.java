@@ -25,8 +25,8 @@ import org.apache.tuweni.bytes.Bytes;
 
 /**
  * This Boneh-Lynn-Shacham (BLS) signature implementation is constructed from a pairing friendly
- * BLS12-381 elliptic curve. This implementation implements a subset of the functions from the
- * proposed IETF standard.
+ * BLS12-381 elliptic curve. It implements a subset of the functions from the proposed IETF
+ * standard.
  *
  * <p>Reference: https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00
  *

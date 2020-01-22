@@ -52,13 +52,11 @@ class DepositDataTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
-    BLSPublicKey differentPublicKey = BLSPublicKey.random();
-    while (pubkey.equals(differentPublicKey)) {
-      differentPublicKey = BLSPublicKey.random();
-    }
+    BLSPublicKey differentPublicKey = BLSPublicKey.random(99);
     DepositData testDepositInput =
         new DepositData(differentPublicKey, withdrawalCredentials, amount, signature);
 
+    assertNotEquals(pubkey, differentPublicKey);
     assertNotEquals(depositData, testDepositInput);
   }
 
@@ -72,14 +70,11 @@ class DepositDataTest {
 
   @Test
   void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
-    BLSSignature differentSignature = BLSSignature.random();
-    while (differentSignature.equals(signature)) {
-      differentSignature = BLSSignature.random();
-    }
-
+    BLSSignature differentSignature = BLSSignature.random(99);
     DepositData testDepositInput =
         new DepositData(pubkey, withdrawalCredentials, amount, differentSignature);
 
+    assertNotEquals(signature, differentSignature);
     assertNotEquals(depositData, testDepositInput);
   }
 

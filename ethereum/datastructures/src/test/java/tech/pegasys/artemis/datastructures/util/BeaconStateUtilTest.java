@@ -125,7 +125,7 @@ class BeaconStateUtilTest {
   @Test
   void validateProofOfPosessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
     Deposit deposit = newDeposits(1).get(0);
-    BLSPublicKey pubkey = BLSPublicKey.random();
+    BLSPublicKey pubkey = BLSPublicKey.random(42);
     DepositData depositData = deposit.getData();
     DepositMessage depositMessage =
         new DepositMessage(

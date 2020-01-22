@@ -41,7 +41,7 @@ class aggregate_pubkeys extends TestSuite {
   @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
   @MethodSource("readAggregatePublicKeys")
   void aggregatePubkeys(List<BLSPublicKey> pubkeys, BLSPublicKey aggregatePubkeyExpected) {
-    BLSPublicKey aggregatePubkeyActual = BLSPublicKey.random();
+    BLSPublicKey aggregatePubkeyActual = BLSPublicKey.random(1);
     assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
   }
 

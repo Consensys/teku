@@ -70,7 +70,7 @@ class BLSSignatureTest {
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalSignatures() {
     BLSSignature signature = BLSSignature.random(17);
-    BLSSignature copyOfSignature = new BLSSignature(signature.getSignature());
+    BLSSignature copyOfSignature = new BLSSignature(signature);
     assertEquals(signature, copyOfSignature);
   }
 

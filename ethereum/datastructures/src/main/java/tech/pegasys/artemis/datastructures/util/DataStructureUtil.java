@@ -168,13 +168,13 @@ public final class DataStructureUtil {
 
   public static SignedBeaconBlock randomSignedBeaconBlock(long slotNum, int seed) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, seed);
-    return new SignedBeaconBlock(beaconBlock, BLSSignature.random());
+    return new SignedBeaconBlock(beaconBlock, BLSSignature.random(++seed));
   }
 
   public static SignedBeaconBlock randomSignedBeaconBlock(
       long slotNum, Bytes32 parentRoot, int seed) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, parentRoot, seed);
-    return new SignedBeaconBlock(beaconBlock, BLSSignature.random());
+    return new SignedBeaconBlock(beaconBlock, BLSSignature.random(++seed));
   }
 
   public static BeaconBlock randomBeaconBlock(long slotNum, int seed) {
@@ -196,7 +196,7 @@ public final class DataStructureUtil {
   }
 
   public static SignedBeaconBlockHeader randomSignedBeaconBlockHeader(int seed) {
-    return new SignedBeaconBlockHeader(randomBeaconBlockHeader(seed), BLSSignature.random());
+    return new SignedBeaconBlockHeader(randomBeaconBlockHeader(seed), BLSSignature.random(++seed));
   }
 
   public static BeaconBlockHeader randomBeaconBlockHeader(int seed) {
@@ -304,7 +304,7 @@ public final class DataStructureUtil {
   }
 
   public static SignedVoluntaryExit randomSignedVoluntaryExit(int seed) {
-    return new SignedVoluntaryExit(randomVoluntaryExit(seed), BLSSignature.random());
+    return new SignedVoluntaryExit(randomVoluntaryExit(seed), BLSSignature.random(++seed));
   }
 
   public static VoluntaryExit randomVoluntaryExit(int seed) {

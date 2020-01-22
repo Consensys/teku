@@ -52,7 +52,7 @@ public class Constants {
 
   // Time parameters
   public static int MIN_GENESIS_DELAY;
-  public static int SECONDS_PER_SLOT = 12;
+  public static int SECONDS_PER_SLOT;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
