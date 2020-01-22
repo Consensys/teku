@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -47,22 +46,13 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
+import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.storage.ReadOnlyStore;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.Store.Transaction;
 
 public class ForkChoiceUtil {
-
-  /**
-   * Spec version 0.9.3 fixed a spec bug where attestations affecting the current slot would be
-   * processed because the check failed to add GENESIS_TIME and incorrectly allowed all attestations
-   *
-   * <p>Since we don't currently support deferring processing of attestations, we continue to
-   * preserve this bug. We should move to making this toggle permanently false.
-   */
-  private static final boolean PROCESS_ATTESTATIONS_EARLY = true;
-
   public static UnsignedLong get_slots_since_genesis(ReadOnlyStore store, boolean useUnixTime) {
     UnsignedLong time =
         useUnixTime ? UnsignedLong.valueOf(Instant.now().getEpochSecond()) : store.getTime();
@@ -417,13 +407,13 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
-  public static void on_attestation(
-      Store.Transaction store, Attestation attestation, StateTransition stateTransition)
-      throws SlotProcessingException, EpochProcessingException {
+  @CheckReturnValue
+  public static AttestationProcessingResult on_attestation(
+      Store.Transaction store, Attestation attestation, StateTransition stateTransition) {
 
     Checkpoint target = attestation.getData().getTarget();
 
-    UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store, true));
+    UnsignedLong current_epoch = compute_epoch_at_slot(get_current_slot(store));
 
     // Use GENESIS_EPOCH for previous when genesis to avoid underflow
     UnsignedLong previous_epoch =
@@ -431,51 +421,65 @@ public class ForkChoiceUtil {
             ? current_epoch.minus(UnsignedLong.ONE)
             : UnsignedLong.valueOf(GENESIS_EPOCH);
 
-    List<UnsignedLong> epochs = List.of(current_epoch, previous_epoch);
-    checkArgument(
-        epochs.contains(target.getEpoch()),
-        "on_attestation: Attestations must be from the current or previous epoch");
+    if (!target.getEpoch().equals(previous_epoch) && !target.getEpoch().equals(current_epoch)) {
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestations must be from the current or previous epoch");
+    }
 
-    checkArgument(
-        target.getEpoch().equals(compute_epoch_at_slot(attestation.getData().getSlot())),
-        "on_attestation: Attestation slot must be within specified epoch");
-
-    checkArgument(
-        store.getBlockRoots().contains(target.getRoot()),
-        "on_attestation: Attestations target must be for a known block. If a target block is unknown, delay consideration until the block is found");
-
-    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
-    // arrives
-    BeaconState targetRootState = store.getBlockState(target.getRoot());
-    checkArgument(
-        get_current_slot(store).compareTo(compute_start_slot_at_epoch(target.getEpoch())) >= 0,
-        "on_attestation: Attestations cannot be from the future epochs");
-
-    checkArgument(
-        store.getBlockRoots().contains(attestation.getData().getBeacon_block_root()),
-        "on_attestation: Attestations must be for a known block. If block is unknown, delay consideration until the block is found");
-
-    checkArgument(
-        store
-                .getBlock(attestation.getData().getBeacon_block_root())
-                .getSlot()
-                .compareTo(attestation.getData().getSlot())
-            <= 0,
-        "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
-
-    // Store target checkpoint state if not yet seen
-    storeCheckpointState(store, stateTransition, target, targetRootState);
-    BeaconState target_state = store.getCheckpointState(target);
+    if (!target.getEpoch().equals(compute_epoch_at_slot(attestation.getData().getSlot()))) {
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestation slot must be within specified epoch");
+    }
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
-    checkAttestationForPreviousSlot(store, attestation);
+    if (get_current_slot(store).compareTo(attestation.getData().getSlot()) <= 0) {
+      return AttestationProcessingResult.FAILED_NOT_FROM_PAST;
+    }
+
+    if (!store.getBlockRoots().contains(target.getRoot())) {
+      // Attestations target must be for a known block. If a target block is unknown, delay
+      // consideration until the block is found
+      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
+    }
+
+    // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
+    // arrives
+    if (get_current_slot(store).compareTo(target.getEpochSlot()) < 0) {
+      return AttestationProcessingResult.FAILED_FUTURE_EPOCH;
+    }
+
+    if (!store.getBlockRoots().contains(attestation.getData().getBeacon_block_root())) {
+      // Attestations must be for a known block. If block is unknown, delay consideration until the
+      // block is found
+      return AttestationProcessingResult.FAILED_UNKNOWN_BLOCK;
+    }
+
+    if (store
+            .getBlock(attestation.getData().getBeacon_block_root())
+            .getSlot()
+            .compareTo(attestation.getData().getSlot())
+        > 0) {
+      return AttestationProcessingResult.invalid(
+          "on_attestation: Attestations must not be for blocks in the future. If not, the attestation should not be considered");
+    }
+
+    // Store target checkpoint state if not yet seen
+    BeaconState targetRootState = store.getBlockState(target.getRoot());
+    try {
+      storeCheckpointState(store, stateTransition, target, targetRootState);
+    } catch (SlotProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    } catch (EpochProcessingException e) {
+      return AttestationProcessingResult.failedStateTransition(e);
+    }
+    BeaconState target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
     IndexedAttestation indexed_attestation = get_indexed_attestation(target_state, attestation);
-    checkArgument(
-        is_valid_indexed_attestation(target_state, indexed_attestation),
-        "on_attestation: Attestation is not valid");
+    if (!is_valid_indexed_attestation(target_state, indexed_attestation)) {
+      return AttestationProcessingResult.invalid("on_attestation: Attestation is not valid");
+    }
 
     // Update latest messages
     for (UnsignedLong i : indexed_attestation.getAttesting_indices()) {
@@ -485,17 +489,7 @@ public class ForkChoiceUtil {
             i, new Checkpoint(target.getEpoch(), attestation.getData().getBeacon_block_root()));
       }
     }
-  }
-
-  private static void checkAttestationForPreviousSlot(
-      final Transaction store, final Attestation attestation) {
-    UnsignedLong attestation_slot =
-        PROCESS_ATTESTATIONS_EARLY
-            ? attestation.getData().getSlot()
-            : attestation.getData().getSlot().plus(UnsignedLong.ONE);
-    checkArgument(
-        get_current_slot(store).compareTo(attestation_slot) >= 0,
-        "on_attestation: Attestation can only affect the fork choice of subsequent slots");
+    return AttestationProcessingResult.SUCCESSFUL;
   }
 
   private static void storeCheckpointState(

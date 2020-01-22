@@ -39,9 +39,10 @@ public class BlockPropagationManagerTest {
   private final EventBus remoteEventBus = new EventBus();
   private final UnsignedLong historicalBlockTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureBlockTolerance = UnsignedLong.valueOf(2);
-  private final PendingBlocks pendingBlocks =
-      new PendingBlocks(localEventBus, historicalBlockTolerance, futureBlockTolerance);
-  private final FutureBlocks futureBlocks = new FutureBlocks();
+  private final PendingPool<SignedBeaconBlock> pendingBlocks =
+      PendingPool.createForBlocks(localEventBus, historicalBlockTolerance, futureBlockTolerance);
+  private final FutureItems<SignedBeaconBlock> futureBlocks =
+      new FutureItems<>(SignedBeaconBlock::getSlot);
 
   private final ChainStorageClient localStorage =
       ChainStorageClient.memoryOnlyClient(localEventBus);
