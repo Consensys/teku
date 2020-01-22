@@ -89,7 +89,7 @@ public class Generator {
           // localStorage.getBlockByRoot(localStorage.getBestBlockRoot());
           BlockProcessingRecord record =
               localChain.createAndImportBlockAtSlot(
-                  currentSlot, Utils.groupAndAggregateAttestations(attestations));
+                  currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
 
           final SignedBeaconBlock block = record.getBlock();
           writer.accept(block);
