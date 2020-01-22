@@ -388,12 +388,18 @@ public final class BlockProcessorUtil {
               "process_attestations: Attestation source error 2");
           state.getPrevious_epoch_attestations().add(pendingAttestation);
         }
-
-        // Check signature
-        checkArgument(
-            is_valid_indexed_attestation(state, get_indexed_attestation(state, attestation)),
-            "process_attestations: Check signature");
       }
+
+      attestations.stream()
+          .parallel()
+          .forEach(
+              attestation -> {
+                // Check signature
+                checkArgument(
+                    is_valid_indexed_attestation(
+                        state, get_indexed_attestation(state, attestation)),
+                    "process_attestations: Check signature");
+              });
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);
