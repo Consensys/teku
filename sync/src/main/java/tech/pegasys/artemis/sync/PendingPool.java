@@ -31,7 +31,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -94,14 +93,14 @@ class PendingPool<T> extends Service {
         SignedBeaconBlock::getSlot);
   }
 
-  public static PendingPool<Attestation> createForAttestations(final EventBus eventBus) {
+  public static PendingPool<DelayableAttestation> createForAttestations(final EventBus eventBus) {
     return new PendingPool<>(
         eventBus,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         DEFAULT_FUTURE_SLOT_TOLERANCE,
-        Attestation::hash_tree_root,
-        Attestation::getDependentBlockRoots,
-        Attestation::getEarliestSlotForProcessing);
+        DelayableAttestation::hash_tree_root,
+        DelayableAttestation::getDependentBlockRoots,
+        DelayableAttestation::getEarliestSlotForProcessing);
   }
 
   @Override
