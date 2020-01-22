@@ -43,8 +43,8 @@ public class AsyncEventDeliverer<T> extends EventDeliverer<T> {
   void subscribe(final T subscriber) {
     final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     eventQueuesBySubscriber.put(subscriber, queue);
-    executor.execute(new QueueReader(queue));
     super.subscribe(subscriber);
+    executor.execute(new QueueReader(queue));
   }
 
   @Override
