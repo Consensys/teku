@@ -45,9 +45,11 @@ public class LRUCache<K, V> implements Cache<K, V> {
     this.maxCapacity = capacity;
     this.cacheData =
         Collections.synchronizedMap(
-            new LinkedHashMap<K, V>(maxCapacity + 1) {
+            new LinkedHashMap<>(maxCapacity + 1) {
               {
-                putAll(initialCachedContent);
+                synchronized (initialCachedContent) {
+                  putAll(initialCachedContent);
+                }
               }
 
               // This method is called just after a new entry has been added
