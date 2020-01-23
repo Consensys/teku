@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 import org.apache.logging.log4j.Level;
@@ -55,8 +57,8 @@ public class StateProcessor {
   private final BlockImporter blockImporter;
   private final ChainStorageClient chainStorageClient;
   private final ArtemisConfiguration config;
-  private final NavigableSet<DepositWithIndex> deposits = new TreeSet<>();
-  private Bytes32 genesisEth1BlockHash;
+  private final List<DepositWithIndex> deposits = new ArrayList<>();
+  private final NavigableSet<DepositWithIndex> pendingDeposits = new TreeSet<>();
 
   private boolean genesisReady = false;
 
@@ -89,14 +91,33 @@ public class StateProcessor {
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     STDOUT.log(Level.DEBUG, "New deposit received");
-    final DepositWithIndex depositWithIndex =
-        DepositUtil.convertDepositEventToOperationDeposit(event);
+    pendingDeposits.add(DepositUtil.convertDepositEventToOperationDeposit(event));
+
+    processPendingDeposits();
+  }
+
+  private void processPendingDeposits() {
+    UnsignedLong expectedDepositIndex =
+        deposits.isEmpty()
+            ? UnsignedLong.ZERO
+            : deposits.get(deposits.size() - 1).getIndex().plus(UnsignedLong.ONE);
+
+    for (Iterator<DepositWithIndex> i = pendingDeposits.iterator(); i.hasNext(); ) {
+      final DepositWithIndex depositToProcess = i.next();
+      if (!depositToProcess.getIndex().equals(expectedDepositIndex)) {
+        return;
+      }
+      processDeposit(depositToProcess);
+      i.remove();
+      expectedDepositIndex = expectedDepositIndex.plus(UnsignedLong.ONE);
+    }
+  }
+
+  private void processDeposit(final DepositWithIndex depositWithIndex) {
     deposits.add(depositWithIndex);
     // Eth1 hash has to be from the block containing the last required deposit but we may be
     // receiving deposits out of order.
-    if (deposits.last().equals(depositWithIndex)) {
-      genesisEth1BlockHash = Bytes32.fromHexString(event.getResponse().log.getBlockHash());
-    }
+    Bytes32 genesisEth1BlockHash = Bytes32.fromHexString(depositWithIndex.getLog().getBlockHash());
 
     UnsignedLong eth1_timestamp = null;
     try {
