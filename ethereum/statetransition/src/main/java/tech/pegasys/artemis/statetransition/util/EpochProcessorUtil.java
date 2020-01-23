@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -332,8 +333,9 @@ public final class EpochProcessorUtil {
       List<Integer> unslashed_attesting_indices =
           get_unslashed_attesting_indices(state, attestations);
       UnsignedLong attesting_balance = get_total_balance(state, unslashed_attesting_indices);
+      HashSet<Integer> unslashed_attesting_indices_set = new HashSet<>(unslashed_attesting_indices);
       for (Integer index : eligible_validator_indices) {
-        if (unslashed_attesting_indices.contains(index)) {
+        if (unslashed_attesting_indices_set.contains(index)) {
           rewards.set(
               index,
               rewards
