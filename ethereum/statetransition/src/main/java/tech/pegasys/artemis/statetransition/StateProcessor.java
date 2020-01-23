@@ -26,8 +26,10 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
-import java.util.List;
+import java.util.NavigableSet;
+import java.util.TreeSet;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,7 +55,8 @@ public class StateProcessor {
   private final BlockImporter blockImporter;
   private final ChainStorageClient chainStorageClient;
   private final ArtemisConfiguration config;
-  private final List<DepositWithIndex> deposits = new ArrayList<>();
+  private final NavigableSet<DepositWithIndex> deposits = new TreeSet<>();
+  private Bytes32 genesisEth1BlockHash;
 
   private boolean genesisReady = false;
 
@@ -86,13 +89,20 @@ public class StateProcessor {
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
     STDOUT.log(Level.DEBUG, "New deposit received");
-    deposits.add(DepositUtil.convertDepositEventToOperationDeposit(event));
+    final DepositWithIndex depositWithIndex =
+        DepositUtil.convertDepositEventToOperationDeposit(event);
+    deposits.add(depositWithIndex);
+    // Eth1 hash has to be from the block containing the last required deposit but we may be
+    // receiving deposits out of order.
+    if (deposits.last().equals(depositWithIndex)) {
+      genesisEth1BlockHash = Bytes32.fromHexString(event.getResponse().log.getBlockHash());
+    }
 
     UnsignedLong eth1_timestamp = null;
     try {
       eth1_timestamp =
-          DepositUtil.getEpochBlockTimeByDepositBlockNumber(
-              event.getResponse().log.getBlockNumber(), config.getNodeUrl());
+          DepositUtil.getEpochBlockTimeByDepositBlockHash(
+              genesisEth1BlockHash, config.getNodeUrl());
     } catch (IOException e) {
       STDOUT.log(Level.FATAL, e.toString());
     }
@@ -103,9 +113,7 @@ public class StateProcessor {
       if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
         BeaconStateWithCache candidate_state =
             initialize_beacon_state_from_eth1(
-                Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
-                eth1_timestamp,
-                deposits);
+                genesisEth1BlockHash, eth1_timestamp, new ArrayList<>(deposits));
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
           eth2Genesis(new GenesisEvent(candidate_state));
@@ -114,9 +122,7 @@ public class StateProcessor {
       } else {
         BeaconStateWithCache candidate_state =
             initialize_beacon_state_from_eth1(
-                Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
-                eth1_timestamp,
-                deposits);
+                genesisEth1BlockHash, eth1_timestamp, new ArrayList<>(deposits));
         if (is_valid_genesis_state(candidate_state)) {
           eth2Genesis(new GenesisEvent(candidate_state));
         }
@@ -125,7 +131,7 @@ public class StateProcessor {
   }
 
   public boolean isGenesisReasonable(
-      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits, boolean isSimulation) {
+      UnsignedLong eth1_timestamp, Collection<DepositWithIndex> deposits, boolean isSimulation) {
     final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
     if (isSimulation) return sufficientValidators;
     final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;

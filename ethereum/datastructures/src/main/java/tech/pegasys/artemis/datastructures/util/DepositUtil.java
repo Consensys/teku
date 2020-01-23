@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -28,7 +27,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameterNumber;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
@@ -198,13 +196,10 @@ public class DepositUtil {
     return new tech.pegasys.artemis.pow.event.Deposit(response);
   }
 
-  public static UnsignedLong getEpochBlockTimeByDepositBlockNumber(
-      BigInteger blockNumber, String provider) throws IOException {
+  public static UnsignedLong getEpochBlockTimeByDepositBlockHash(Bytes32 blockHash, String provider)
+      throws IOException {
     Web3j web3 = Web3j.build(new HttpService(provider));
     return UnsignedLong.valueOf(
-        web3.ethGetBlockByNumber(new DefaultBlockParameterNumber(blockNumber), true)
-            .send()
-            .getBlock()
-            .getTimestamp());
+        web3.ethGetBlockByHash(blockHash.toHexString(), true).send().getBlock().getTimestamp());
   }
 }
