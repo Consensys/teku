@@ -24,8 +24,10 @@ import java.util.function.Function;
  */
 public class NoOpCache<K, V> implements Cache<K, V> {
 
+  @SuppressWarnings("rawtypes")
   private static final NoOpCache INSTANCE = new NoOpCache();
 
+  @SuppressWarnings("unchecked")
   public static <K, V> Cache<K, V> getNoOpCache() {
     return INSTANCE;
   }

@@ -16,6 +16,7 @@ package tech.pegasys.artemis.datastructures.util.cache;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -48,8 +49,10 @@ public class LRUCache<K, V> implements Cache<K, V> {
               {
                 putAll(initialCachedContent);
               }
+
               // This method is called just after a new entry has been added
-              public boolean removeEldestEntry(Map.Entry eldest) {
+              @Override
+              protected boolean removeEldestEntry(Entry<K, V> eldest) {
                 return size() > maxCapacity;
               }
             });
@@ -80,6 +83,7 @@ public class LRUCache<K, V> implements Cache<K, V> {
     return result;
   }
 
+  @Override
   public Optional<V> getCached(K key) {
     return Optional.ofNullable(cacheData.get(key));
   }
