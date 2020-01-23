@@ -47,6 +47,7 @@ import tech.pegasys.artemis.service.serviceutils.NoopService;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
+import tech.pegasys.artemis.statetransition.PreGenesisDepositHandler;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
@@ -102,6 +103,7 @@ public class BeaconChainController {
     initBlockAttestationsPool();
     initValidatorCoordinator();
     initStateProcessor();
+    initPreGenesisDepositHandler();
     initAttestationPropagationManager();
     initP2PNetwork();
     initSyncManager();
@@ -146,7 +148,11 @@ public class BeaconChainController {
 
   public void initStateProcessor() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
-    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient, config);
+    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient);
+  }
+
+  private void initPreGenesisDepositHandler() {
+    eventBus.register(new PreGenesisDepositHandler(config, chainStorageClient));
   }
 
   private void initAttestationPropagationManager() {
@@ -281,21 +287,19 @@ public class BeaconChainController {
   @Subscribe
   @SuppressWarnings("unused")
   private void onTick(Date date) {
-    if (!testMode && !stateProcessor.isGenesisReady()) {
+    if (chainStorageClient.isPreGenesis()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
-    if (chainStorageClient.getStore() != null) {
-      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
-      on_tick(transaction, currentTime);
-      transaction.commit().join();
-      final UnsignedLong nextSlotStartTime =
-          chainStorageClient
-              .getGenesisTime()
-              .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-      if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
-        processSlot();
-      }
+    final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
+    on_tick(transaction, currentTime);
+    transaction.commit().join();
+    final UnsignedLong nextSlotStartTime =
+        chainStorageClient
+            .getGenesisTime()
+            .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
+      processSlot();
     }
   }
 
