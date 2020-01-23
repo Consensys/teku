@@ -19,9 +19,7 @@ import tech.pegasys.artemis.datastructures.util.cache.Cache;
 import tech.pegasys.artemis.datastructures.util.cache.LRUCache;
 import tech.pegasys.artemis.datastructures.util.cache.NoOpCache;
 
-/**
- * The container class for all transition caches.
- */
+/** The container class for all transition caches. */
 public class TransitionCaches {
 
   private static int MAX_ACTIVE_VALIDATORS_CACHE = 8;
@@ -35,16 +33,12 @@ public class TransitionCaches {
         }
       };
 
-  /**
-   * Creates new instance with clean caches
-   */
+  /** Creates new instance with clean caches */
   public static TransitionCaches createNewEmpty() {
     return new TransitionCaches();
   }
 
-  /**
-   * Returns the instance which doesn't cache anything
-   */
+  /** Returns the instance which doesn't cache anything */
   public static TransitionCaches getNoOp() {
     return NO_OP_INSTANCE;
   }
@@ -59,16 +53,14 @@ public class TransitionCaches {
     this.activeValidators = activeValidators;
   }
 
-  /**
-   * (epoch) -> (active validators) cache
-   */
+  /** (epoch) -> (active validators) cache */
   public Cache<UnsignedLong, List<Integer>> getActiveValidators() {
     return activeValidators;
   }
 
   /**
-   * Makes an independent copy which contains all the data in this instance
-   * Modifications to returned caches shouldn't affect caches from this instance
+   * Makes an independent copy which contains all the data in this instance Modifications to
+   * returned caches shouldn't affect caches from this instance
    */
   public TransitionCaches copy() {
     return new TransitionCaches(activeValidators.copy());
