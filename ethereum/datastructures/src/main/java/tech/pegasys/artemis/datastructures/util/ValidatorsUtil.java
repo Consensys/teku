@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.collections.LimitedHashMap;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {
