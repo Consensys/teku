@@ -38,7 +38,6 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -57,11 +56,11 @@ public class Generator {
     BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
 
     System.out.println("Generating keypairs...");
-    int validatorsCount = 3 * 1024;
+    int validatorsCount = 10 * 1024;
 
-    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorsCount);
-    //    List<BLSKeyPair> validatorKeys =
-    //        BlsKeyPairIO.createReaderForFile("bls-key-pairs.txt").readAll(validatorsCount);
+    List<BLSKeyPair> validatorKeys =
+        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
+            .readAll(validatorsCount);
 
     System.out.println("Keypairs done.");
 
