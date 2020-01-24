@@ -56,8 +56,6 @@ public class StateProcessor {
   private final DepositQueue depositQueue = new DepositQueue(this::onOrderedDeposit);
   private final List<DepositWithIndex> deposits = new ArrayList<>();
 
-  private boolean genesisReady = false;
-
   public StateProcessor(
       EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
     this.config = config;
@@ -67,7 +65,6 @@ public class StateProcessor {
   }
 
   public void eth2Genesis(GenesisEvent genesisEvent) {
-    this.genesisReady = true;
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
     chainStorageClient.initializeFromGenesis(initialState);
@@ -153,9 +150,5 @@ public class StateProcessor {
     Date date = new Date();
     state.setGenesis_time(
         UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));
-  }
-
-  public boolean isGenesisReady() {
-    return genesisReady;
   }
 }
