@@ -41,6 +41,7 @@ import tech.pegasys.artemis.util.async.AsyncRunnerTest;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class Eth1DataManagerTest {
 
   private final EventBus eventBus = mock(EventBus.class);
@@ -189,7 +190,9 @@ public class Eth1DataManagerTest {
   }
 
   @Test
-  void onTick_startupNotDone() {}
+  void onTick_startupNotDone() {
+
+  }
 
   @Test
   void onTick_startupDoneGetNewBlocks() {}
@@ -214,8 +217,8 @@ public class Eth1DataManagerTest {
     return mockRequest;
   }
 
-  private Request<?, EthBlock> mockFailedRequest() {
-    Request<?, EthBlock> mockRequest = mock(Request.class);
+  private Request mockFailedRequest() {
+    Request mockRequest = mock(Request.class);
     when(mockRequest.sendAsync())
         .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Nope")));
     return mockRequest;
