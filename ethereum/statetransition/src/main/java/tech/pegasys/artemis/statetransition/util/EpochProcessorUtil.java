@@ -53,12 +53,15 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_RO
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -148,6 +151,13 @@ public final class EpochProcessorUtil {
    */
   private static List<Integer> get_unslashed_attesting_indices(
       BeaconState state, List<PendingAttestation> attestations) {
+    return get_unslashed_attesting_indices(state, attestations, ArrayList::new);
+  }
+
+  private static <T extends Collection<Integer>> T get_unslashed_attesting_indices(
+      BeaconState state,
+      List<PendingAttestation> attestations,
+      final Supplier<T> collectionFactory) {
     TreeSet<Integer> output = new TreeSet<>();
     for (PendingAttestation a : attestations) {
       output.addAll(get_attesting_indices(state, a.getData(), a.getAggregation_bits()));
@@ -155,7 +165,7 @@ public final class EpochProcessorUtil {
     List<Integer> output_list = new ArrayList<>(output);
     return output_list.stream()
         .filter(index -> !state.getValidators().get(index).isSlashed())
-        .collect(Collectors.toList());
+        .collect(Collectors.toCollection(collectionFactory));
   }
 
   /**
@@ -330,12 +340,11 @@ public final class EpochProcessorUtil {
     attestation_lists.add(matching_target_attestations);
     attestation_lists.add(matching_head_attestations);
     for (List<PendingAttestation> attestations : attestation_lists) {
-      List<Integer> unslashed_attesting_indices =
-          get_unslashed_attesting_indices(state, attestations);
+      Set<Integer> unslashed_attesting_indices =
+          get_unslashed_attesting_indices(state, attestations, HashSet::new);
       UnsignedLong attesting_balance = get_total_balance(state, unslashed_attesting_indices);
-      HashSet<Integer> unslashed_attesting_indices_set = new HashSet<>(unslashed_attesting_indices);
       for (Integer index : eligible_validator_indices) {
-        if (unslashed_attesting_indices_set.contains(index)) {
+        if (unslashed_attesting_indices.contains(index)) {
           rewards.set(
               index,
               rewards
@@ -389,8 +398,9 @@ public final class EpochProcessorUtil {
     // Inactivity penalty
     UnsignedLong finality_delay = previous_epoch.minus(state.getFinalized_checkpoint().getEpoch());
     if (finality_delay.longValue() > MIN_EPOCHS_TO_INACTIVITY_PENALTY) {
-      List<Integer> matching_target_attesting_indices =
-          get_unslashed_attesting_indices(state, matching_target_attestations);
+      Set<Integer> matching_target_attesting_indices =
+          get_unslashed_attesting_indices(state, matching_target_attestations, HashSet::new);
+
       for (Integer index : eligible_validator_indices) {
         penalties.set(
             index,
