@@ -42,15 +42,12 @@ public class LRUCache<K, V> implements Cache<K, V> {
 
   private LRUCache(int capacity, Map<K, V> initialCachedContent) {
     this.maxCapacity = capacity;
-    this.cacheData =
-        Collections.synchronizedMap(
-            new LimitedHashMap<>(maxCapacity) {
-              {
-                synchronized (initialCachedContent) {
-                  putAll(initialCachedContent);
-                }
-              }
-            });
+    LimitedHashMap<K, V> cacheMap = new LimitedHashMap<>(maxCapacity);
+    // copy safely, initialCachedContent is always a SynchronizedMap instance
+    synchronized (initialCachedContent) {
+      cacheMap.putAll(initialCachedContent);
+    }
+    this.cacheData = Collections.synchronizedMap(cacheMap);
   }
 
   @Override
