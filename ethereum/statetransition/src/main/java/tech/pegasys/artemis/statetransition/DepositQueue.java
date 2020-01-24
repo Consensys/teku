@@ -13,17 +13,17 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 
 public class DepositQueue {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final NavigableSet<DepositWithIndex> pendingDeposits = new TreeSet<>();
   private final Consumer<DepositWithIndex> depositConsumer;
@@ -34,18 +34,19 @@ public class DepositQueue {
   }
 
   public void onDeposit(DepositWithIndex deposit) {
-    STDOUT.log(Level.DEBUG, "New deposit received");
+    LOG.trace("New deposit received with index {}", deposit.getIndex());
     pendingDeposits.add(deposit);
     processPendingDeposits();
   }
 
   private void processPendingDeposits() {
     for (Iterator<DepositWithIndex> i = pendingDeposits.iterator(); i.hasNext(); ) {
-      final DepositWithIndex depositToProcess = i.next();
-      if (!depositToProcess.getIndex().equals(expectedDepositIndex)) {
+      final DepositWithIndex deposit = i.next();
+      if (!deposit.getIndex().equals(expectedDepositIndex)) {
         return;
       }
-      depositConsumer.accept(depositToProcess);
+      LOG.trace("Processing deposit with index {}", deposit.getIndex());
+      depositConsumer.accept(deposit);
       i.remove();
       expectedDepositIndex = expectedDepositIndex.plus(UnsignedLong.ONE);
     }
