@@ -23,7 +23,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.time.Instant;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,6 +39,7 @@ import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 /*
 
@@ -99,6 +99,7 @@ public class Eth1DataManager {
   private final DepositContractListener depositContractListener;
   private final EventBus eventBus;
   private final AsyncRunner asyncRunner;
+  private final TimeProvider timeProvider;
 
   private AtomicReference<EthBlock.Block> latestBlockReference = new AtomicReference<>();
   private AtomicInteger cacheStartupRetry = new AtomicInteger(0);
@@ -108,26 +109,31 @@ public class Eth1DataManager {
       Web3j web3j,
       EventBus eventBus,
       DepositContractListener depositContractListener,
-      AsyncRunner asyncRunner) {
+      AsyncRunner asyncRunner,
+      TimeProvider timeProvider) {
     this.web3j = web3j;
     this.eventBus = eventBus;
     this.depositContractListener = depositContractListener;
     this.asyncRunner = asyncRunner;
-    eventBus.register(this);
+    this.timeProvider = timeProvider;
+  }
 
-    runCacheStartup();
+  public void start() {
+    doCacheStartup()
+        .finish(
+            () -> {
+              LOG.info("Eth1DataManager successfully ran cache startup logic");
+              cacheStartupDone.set(true);
+              eventBus.register(this);
+            });
   }
 
   @Subscribe
   public void onTick(Date date) {
+
     // Fetch new Eth1 blocks every SECONDS_PER_ETH1_BLOCK seconds
     // (can't use slot events here as an approximation due to this needing to be run pre-genesis)
-    if (!hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, date)) {
-      return;
-    }
-
-    // Bail if cache startup logic hasn't finished yet
-    if (!cacheStartupDone.get()) {
+    if (!hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, timeProvider.getTimeInSeconds())) {
       return;
     }
 
@@ -142,15 +148,6 @@ public class Eth1DataManager {
 
     UnsignedLong latestBlockNumber = UnsignedLong.valueOf(latestBlock.getNumber());
     exploreBlocksInDirection(latestBlockNumber, true).reportExceptions();
-  }
-
-  public void runCacheStartup() {
-    doCacheStartup()
-        .finish(
-            () -> {
-              LOG.info("Eth1DataManager successfully ran cache startup logic");
-              cacheStartupDone.set(true);
-            });
   }
 
   private SafeFuture<Void> doCacheStartup() {
@@ -197,6 +194,7 @@ public class Eth1DataManager {
         .thenCompose(
             middleBlock -> {
               EthBlock.Block block = middleBlock.getBlock();
+              latestBlockReference.set(block);
               UnsignedLong middleBlockNumber = UnsignedLong.valueOf(block.getNumber());
               postCacheEth1BlockEvent(middleBlockNumber, block).reportExceptions();
               SafeFuture<Void> exploreUpResultFuture =
@@ -278,7 +276,7 @@ public class Eth1DataManager {
             });
   }
 
-  private static boolean isTimestampInRange(UnsignedLong timestamp) {
+  private boolean isTimestampInRange(UnsignedLong timestamp) {
     return timestamp.compareTo(getCacheRangeLowerBound()) >= 0
         && timestamp.compareTo(getCacheRangeUpperBound()) <= 0;
   }
@@ -354,27 +352,33 @@ public class Eth1DataManager {
             });
   }
 
-  public static UnsignedLong getCacheRangeLowerBound() {
-    UnsignedLong current_time = UnsignedLong.valueOf(Instant.now().getEpochSecond());
-    return current_time
+  public static UnsignedLong getCacheRangeLowerBound(UnsignedLong currentTime) {
+    return currentTime
         .minus(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD * SECONDS_PER_SLOT))
         .minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
   }
 
-  static UnsignedLong getCacheRangeUpperBound() {
-    UnsignedLong current_time = UnsignedLong.valueOf(Instant.now().getEpochSecond());
-    return current_time
+  public UnsignedLong getCacheRangeLowerBound() {
+    return getCacheRangeLowerBound(timeProvider.getTimeInSeconds());
+  }
+
+  public static UnsignedLong getCacheRangeUpperBound(UnsignedLong currentTime) {
+    return currentTime
         .minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK))
         .plus(ETH1_REQUEST_BUFFER);
   }
 
-  static UnsignedLong getCacheMidRangeTimestamp() {
+  UnsignedLong getCacheRangeUpperBound() {
+    return getCacheRangeUpperBound(timeProvider.getTimeInSeconds());
+  }
+
+  UnsignedLong getCacheMidRangeTimestamp() {
     return getCacheRangeUpperBound()
         .plus(getCacheRangeLowerBound())
         .dividedBy(UnsignedLong.valueOf(2));
   }
 
-  public static boolean hasBeenApproximately(UnsignedLong seconds, Date date) {
-    return UnsignedLong.valueOf(date.getTime()).mod(seconds).equals(UnsignedLong.ZERO);
+  public static boolean hasBeenApproximately(UnsignedLong seconds, UnsignedLong currentTime) {
+    return currentTime.mod(seconds).equals(UnsignedLong.ZERO);
   }
 }

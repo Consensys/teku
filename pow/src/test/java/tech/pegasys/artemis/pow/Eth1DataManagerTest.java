@@ -17,13 +17,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,14 +44,16 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.AsyncRunnerTest;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Eth1DataManagerTest {
 
-  private final EventBus eventBus = mock(EventBus.class);
+  private final EventBus eventBus = spy(new EventBus());
   private Eth1DataManager eth1DataManager;
   private Web3j web3j;
   private DepositContractListener depositContractListener;
+  private TimeProvider timeProvider;
 
   private final AsyncRunner asyncRunner = new AsyncRunnerTest();
 
@@ -61,17 +67,21 @@ public class Eth1DataManagerTest {
   @BeforeEach
   void setUp() {
     web3j = mock(Web3j.class);
+    timeProvider = new TimeProvider();
     depositContractListener = mock(DepositContractListener.class);
     when(depositContractListener.getDepositCount(any()))
         .thenReturn(SafeFuture.completedFuture(UnsignedLong.valueOf(1234)));
     when(depositContractListener.getDepositRoot(any()))
         .thenReturn(SafeFuture.completedFuture(HEX_STRING));
+
+    eth1DataManager =
+        new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner, timeProvider);
   }
 
   @Test
   void cacheStartup_blockActuallyInMidRange() {
     UnsignedLong midRangeTimestamp =
-        Eth1DataManager.getCacheRangeUpperBound().minus(UnsignedLong.ONE);
+        eth1DataManager.getCacheRangeUpperBound().minus(UnsignedLong.ONE);
 
     UnsignedLong firstUpwardNumber = INCONSEQUENTIAL_BLOCK_NUMBER.plus(UnsignedLong.ONE);
 
@@ -99,7 +109,7 @@ public class Eth1DataManagerTest {
         .thenReturn(firstDownwardBlockRequest)
         .thenReturn(secondDownwardBlockRequest);
 
-    eth1DataManager = new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner);
+    eth1DataManager.start();
 
     ArgumentCaptor<CacheEth1BlockEvent> eventArgumentCaptor =
         ArgumentCaptor.forClass(CacheEth1BlockEvent.class);
@@ -136,11 +146,11 @@ public class Eth1DataManagerTest {
   void cacheStartup_recalculateSecondsToFindMidRangeBlock() {
     // First mid-range block does not actually have timestamp in range
     UnsignedLong firstMidRangeBlockTimestamp =
-        Eth1DataManager.getCacheRangeLowerBound().minus(UnsignedLong.ONE);
+        eth1DataManager.getCacheRangeLowerBound().minus(UnsignedLong.ONE);
 
     UnsignedLong secondMidRangeBlockNumber = INCONSEQUENTIAL_BLOCK_NUMBER;
     UnsignedLong secondMidRangeBlockTimestamp =
-        Eth1DataManager.getCacheRangeUpperBound().minus(UnsignedLong.ONE);
+        eth1DataManager.getCacheRangeUpperBound().minus(UnsignedLong.ONE);
 
     UnsignedLong upwardBlockNumber = secondMidRangeBlockNumber.plus(UnsignedLong.ONE);
     UnsignedLong upwardBlockTimestamp = UnsignedLong.MAX_VALUE;
@@ -164,7 +174,7 @@ public class Eth1DataManagerTest {
         .thenReturn(upwardBlockRequest)
         .thenReturn(downwardBlockRequest);
 
-    eth1DataManager = new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner);
+    eth1DataManager.start();
 
     ArgumentCaptor<CacheEth1BlockEvent> eventArgumentCaptor =
         ArgumentCaptor.forClass(CacheEth1BlockEvent.class);
@@ -183,7 +193,7 @@ public class Eth1DataManagerTest {
     Request mockRequest = mockFailedRequest();
     when(web3j.ethGetBlockByNumber(any(), eq(false))).thenReturn(mockRequest);
 
-    eth1DataManager = new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner);
+    eth1DataManager.start();
 
     verify(web3j, times(Math.toIntExact(Constants.ETH1_CACHE_STARTUP_RETRY_GIVEUP)))
         .ethGetBlockByNumber(any(), eq(false));
@@ -191,13 +201,85 @@ public class Eth1DataManagerTest {
 
   @Test
   void onTick_startupNotDone() {
-
+    eth1DataManager =
+        spy(
+            new Eth1DataManager(
+                web3j, eventBus, depositContractListener, asyncRunner, timeProvider));
+    eventBus.post(new Date());
+    verifyNoInteractions(eth1DataManager);
   }
 
   @Test
-  void onTick_startupDoneGetNewBlocks() {}
+  void onTick_startupDoneGetNewBlock() throws Exception {
+    timeProvider = mock(TimeProvider.class);
+    UnsignedLong currentTime = UnsignedLong.valueOf(10000000);
+    when(timeProvider.getTimeInSeconds()).thenReturn(currentTime);
 
-  private Request<?, EthBlock> mockBlockRequest(UnsignedLong number, UnsignedLong timestamp) {
+    // latestBlock here refers to the block with highest timestamp in cache
+    UnsignedLong latestBlockTimestampDiffWithUpperBound = UnsignedLong.valueOf(2);
+    UnsignedLong latestBlockTimestamp =
+        Eth1DataManager.getCacheRangeUpperBound(currentTime)
+            .plus(latestBlockTimestampDiffWithUpperBound);
+    mockBlocksForNormalStart(latestBlockTimestamp, currentTime);
+
+    eth1DataManager =
+        spy(
+            new Eth1DataManager(
+                web3j, eventBus, depositContractListener, asyncRunner, timeProvider));
+
+    eth1DataManager.start();
+
+    UnsignedLong minimumTimeForNewBlockRequest =
+        currentTime.plus(latestBlockTimestampDiffWithUpperBound).plus(UnsignedLong.ONE);
+
+    UnsignedLong minimumTimeForOnTickToRun =
+        incrementTimeUntilDivisible(minimumTimeForNewBlockRequest, SECONDS_PER_ETH1_BLOCK);
+
+    when(timeProvider.getTimeInSeconds()).thenReturn(minimumTimeForOnTickToRun);
+
+    Request upwardBlockRequest =
+        mockBlockRequest(INCONSEQUENTIAL_BLOCK_NUMBER, UnsignedLong.MAX_VALUE);
+    when(web3j.ethGetBlockByNumber(any(), eq(false))).thenReturn(upwardBlockRequest);
+
+    eth1DataManager.onTick(new Date());
+
+    verify(web3j, times(5)).ethGetBlockByNumber(any(), eq(false));
+  }
+
+  @Test
+  void onTick_startupDone_LatestTimestampStillHigherThanUpperBound() {
+    timeProvider = mock(TimeProvider.class);
+    UnsignedLong currentTime =
+        incrementTimeUntilDivisible(UnsignedLong.valueOf(10000000), SECONDS_PER_ETH1_BLOCK);
+    when(timeProvider.getTimeInSeconds()).thenReturn(currentTime);
+
+    // latestBlock here refers to the block with highest timestamp in cache
+    UnsignedLong latestBlockTimestampDiffWithUpperBound = UnsignedLong.valueOf(2);
+    UnsignedLong latestBlockTimestamp =
+        Eth1DataManager.getCacheRangeUpperBound(currentTime)
+            .plus(latestBlockTimestampDiffWithUpperBound);
+    mockBlocksForNormalStart(latestBlockTimestamp, currentTime);
+
+    eth1DataManager =
+        spy(
+            new Eth1DataManager(
+                web3j, eventBus, depositContractListener, asyncRunner, timeProvider));
+
+    eth1DataManager.start();
+
+    UnsignedLong minimumTimeForNewBlockRequest =
+        currentTime.plus(latestBlockTimestampDiffWithUpperBound).plus(UnsignedLong.ONE);
+
+    Request upwardBlockRequest =
+        mockBlockRequest(INCONSEQUENTIAL_BLOCK_NUMBER, UnsignedLong.MAX_VALUE);
+    when(web3j.ethGetBlockByNumber(any(), eq(false))).thenReturn(upwardBlockRequest);
+
+    eth1DataManager.onTick(new Date());
+
+    verify(web3j, times(4)).ethGetBlockByNumber(any(), eq(false));
+  }
+
+  private Request mockBlockRequest(UnsignedLong number, UnsignedLong timestamp) {
     return mockRequest(mockBlock(number, timestamp));
   }
 
@@ -211,8 +293,8 @@ public class Eth1DataManagerTest {
     return mockBlock;
   }
 
-  private Request<?, EthBlock> mockRequest(EthBlock block) {
-    Request<?, EthBlock> mockRequest = mock(Request.class);
+  private Request mockRequest(EthBlock block) {
+    Request mockRequest = mock(Request.class);
     when(mockRequest.sendAsync()).thenReturn(CompletableFuture.completedFuture(block));
     return mockRequest;
   }
@@ -222,5 +304,37 @@ public class Eth1DataManagerTest {
     when(mockRequest.sendAsync())
         .thenReturn(CompletableFuture.failedFuture(new RuntimeException("Nope")));
     return mockRequest;
+  }
+
+  // Returns the timestamp of the most upwards block mocked
+  private UnsignedLong mockBlocksForNormalStart(
+      UnsignedLong latestBlockTimestamp, UnsignedLong currentTime) {
+    UnsignedLong midRangeTimestamp =
+        Eth1DataManager.getCacheRangeUpperBound(currentTime).minus(UnsignedLong.ONE);
+
+    UnsignedLong upwardNumber = INCONSEQUENTIAL_BLOCK_NUMBER.plus(UnsignedLong.ONE);
+
+    UnsignedLong downwardNumber = INCONSEQUENTIAL_BLOCK_NUMBER.minus(UnsignedLong.ONE);
+    UnsignedLong downwardTimestamp = UnsignedLong.ONE;
+
+    Request midRangeBlockRequest =
+        mockBlockRequest(INCONSEQUENTIAL_BLOCK_NUMBER, midRangeTimestamp);
+    Request upwardBlockRequest = mockBlockRequest(upwardNumber, latestBlockTimestamp);
+    Request downwardBlockRequest = mockBlockRequest(downwardNumber, downwardTimestamp);
+
+    when(web3j.ethGetBlockByNumber(any(), eq(false)))
+        .thenReturn(mockLatestBlockRequest)
+        .thenReturn(midRangeBlockRequest)
+        .thenReturn(upwardBlockRequest)
+        .thenReturn(downwardBlockRequest);
+
+    return upwardNumber;
+  }
+
+  private UnsignedLong incrementTimeUntilDivisible(UnsignedLong currentTime, UnsignedLong divider) {
+    while (!currentTime.mod(divider).equals(UnsignedLong.ZERO)) {
+      currentTime = currentTime.plus(UnsignedLong.ONE);
+    }
+    return currentTime;
   }
 }

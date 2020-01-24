@@ -79,6 +79,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
@@ -112,7 +113,7 @@ public class ValidatorCoordinator {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
-    this.eth1DataCache = new Eth1DataCache(eventBus);
+    this.eth1DataCache = new Eth1DataCache(eventBus, new TimeProvider());
     this.eventBus.register(this);
   }
 

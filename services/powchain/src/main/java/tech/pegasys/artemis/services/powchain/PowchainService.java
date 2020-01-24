@@ -109,7 +109,9 @@ public class PowchainService implements ServiceInterface {
         }
         i++;
       }
-      new Eth1DataManager(web3j, eventBus, depositContractListener, new AsyncRunnerProd());
+      Eth1DataManager eth1DataManager =
+          new Eth1DataManager(web3j, eventBus, depositContractListener, new AsyncRunnerProd());
+      eth1DataManager.start();
     } else if (depositMode.equals(DEPOSIT_SIM)) {
       try {
         Reader reader = Files.newBufferedReader(Paths.get(depositSimFile), UTF_8);
@@ -132,7 +134,9 @@ public class PowchainService implements ServiceInterface {
       Web3j web3j = Web3j.build(new HttpService(provider));
       depositContractListener =
           DepositContractListenerFactory.eth1DepositContract(web3j, eventBus, contractAddr);
-      new Eth1DataManager(web3j, eventBus, depositContractListener, new AsyncRunnerProd());
+      Eth1DataManager eth1DataManager =
+          new Eth1DataManager(web3j, eventBus, depositContractListener, new AsyncRunnerProd());
+      eth1DataManager.start();
     }
   }
 

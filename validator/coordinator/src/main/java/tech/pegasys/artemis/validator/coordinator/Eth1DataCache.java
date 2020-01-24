@@ -35,16 +35,19 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class Eth1DataCache {
 
   private final EventBus eventBus;
+  private final TimeProvider timeProvider;
   private Optional<UnsignedLong> genesisTime = Optional.empty();
 
   private final NavigableMap<UnsignedLong, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
   private volatile UnsignedLong currentVotingPeriodStartTime;
 
-  public Eth1DataCache(EventBus eventBus) {
+  public Eth1DataCache(EventBus eventBus, TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
     this.eventBus = eventBus;
     this.eventBus.register(this);
   }
@@ -62,7 +65,8 @@ public class Eth1DataCache {
 
   @Subscribe
   public void onTick(Date date) {
-    if (!hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, date) || genesisTime.isPresent()) {
+    if (!hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, timeProvider.getTimeInSeconds())
+        || genesisTime.isPresent()) {
       return;
     }
     prune();
@@ -143,7 +147,7 @@ public class Eth1DataCache {
     if (genesisTime.isPresent()) {
       return blockTimestamp.compareTo(getSpecRangeLowerBound()) < 0;
     } else {
-      return blockTimestamp.compareTo(getCacheRangeLowerBound()) < 0;
+      return blockTimestamp.compareTo(getCacheRangeLowerBound(timeProvider.getTimeInSeconds())) < 0;
     }
   }
 
