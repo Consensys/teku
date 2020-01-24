@@ -37,6 +37,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -97,16 +98,21 @@ public class Eth1DataManager {
   private final Web3j web3j;
   private final DepositContractListener depositContractListener;
   private final EventBus eventBus;
+  private final AsyncRunner asyncRunner;
 
   private AtomicReference<EthBlock.Block> latestBlockReference = new AtomicReference<>();
   private AtomicInteger cacheStartupRetry = new AtomicInteger(0);
   private AtomicBoolean cacheStartupDone = new AtomicBoolean(false);
 
   public Eth1DataManager(
-      Web3j web3j, EventBus eventBus, DepositContractListener depositContractListener) {
+      Web3j web3j,
+      EventBus eventBus,
+      DepositContractListener depositContractListener,
+      AsyncRunner asyncRunner) {
     this.web3j = web3j;
-    this.depositContractListener = depositContractListener;
     this.eventBus = eventBus;
+    this.depositContractListener = depositContractListener;
+    this.asyncRunner = asyncRunner;
     eventBus.register(this);
 
     runCacheStartup();
@@ -148,11 +154,7 @@ public class Eth1DataManager {
   }
 
   private SafeFuture<Void> doCacheStartup() {
-    UnsignedLong cacheRangeLowerBound = getCacheRangeLowerBound();
-    UnsignedLong cacheRangerUpperBound = getCacheRangeUpperBound();
-
-    UnsignedLong cacheMidRange =
-        cacheRangerUpperBound.plus(cacheRangeLowerBound).dividedBy(UnsignedLong.valueOf(2));
+    final UnsignedLong cacheMidRangeTimestamp = getCacheMidRangeTimestamp();
 
     SafeFuture<EthBlock> latestEthBlockFuture = getLatestEth1BlockFuture();
 
@@ -160,14 +162,14 @@ public class Eth1DataManager {
         getBlockTimestampFuture(latestEthBlockFuture);
     SafeFuture<UnsignedLong> latestBlockNumberFuture = getBlockNumberFuture(latestEthBlockFuture);
 
-    SafeFuture<UnsignedLong> blockNumberDiffFuture =
-        getBlockNumberDiffWithMidRangeBlock(
+    SafeFuture<UnsignedLong> approximatedBlockNumberDiff =
+        getApproximatedBlockNumberDiffWithMidRangeBlock(
             latestBlockTimestampFuture,
             SafeFuture.completedFuture(SECONDS_PER_ETH1_BLOCK),
-            cacheMidRange);
+            cacheMidRangeTimestamp);
 
     SafeFuture<EthBlock> blockFuture =
-        getMidRangeBlock(latestBlockNumberFuture, blockNumberDiffFuture);
+        getMidRangeBlock(latestBlockNumberFuture, approximatedBlockNumberDiff);
 
     return blockFuture
         .thenCompose(
@@ -179,13 +181,13 @@ public class Eth1DataManager {
 
                 SafeFuture<UnsignedLong> realSecondsPerEth1BlockFuture =
                     calculateRealSecondsPerEth1BlockFuture(
-                        latestBlockTimestampFuture,
-                        blockNumberDiffFuture,
-                        SafeFuture.completedFuture(timestamp));
+                        latestBlockTimestampFuture, approximatedBlockNumberDiff, timestamp);
 
                 SafeFuture<UnsignedLong> newBlockNumberDiffFuture =
-                    getBlockNumberDiffWithMidRangeBlock(
-                        latestBlockTimestampFuture, realSecondsPerEth1BlockFuture, cacheMidRange);
+                    getApproximatedBlockNumberDiffWithMidRangeBlock(
+                        latestBlockTimestampFuture,
+                        realSecondsPerEth1BlockFuture,
+                        cacheMidRangeTimestamp);
 
                 middleBlockFuture =
                     getMidRangeBlock(latestBlockNumberFuture, newBlockNumberDiffFuture);
@@ -218,7 +220,7 @@ public class Eth1DataManager {
                       + " seconds",
                   err);
 
-              return SafeFuture.runAfterDelay(
+              return asyncRunner.runAfterDelay(
                   this::doCacheStartup,
                   Constants.ETH1_CACHE_STARTUP_RETRY_TIMEOUT,
                   TimeUnit.SECONDS);
@@ -247,19 +249,17 @@ public class Eth1DataManager {
   private SafeFuture<UnsignedLong> calculateRealSecondsPerEth1BlockFuture(
       SafeFuture<UnsignedLong> latestBlockTimestampFuture,
       SafeFuture<UnsignedLong> blockNumberDiffFuture,
-      SafeFuture<UnsignedLong> blockTimestampFuture) {
-    return SafeFuture.allOf(latestBlockTimestampFuture, blockNumberDiffFuture, blockTimestampFuture)
+      UnsignedLong blockTimestamp) {
+    return SafeFuture.allOf(latestBlockTimestampFuture, blockNumberDiffFuture)
         .thenApply(
             done -> {
-              UnsignedLong blockTimestamp = blockTimestampFuture.getNow(null);
-              checkNotNull(blockTimestamp);
               UnsignedLong blockNumberDiff = blockNumberDiffFuture.getNow(null);
               checkNotNull(blockNumberDiff);
               UnsignedLong latestBlockTimestamp = latestBlockTimestampFuture.getNow(null);
               checkNotNull(latestBlockTimestamp);
 
               UnsignedLong actualTimeDiff = latestBlockTimestamp.minus(blockTimestamp);
-              return blockNumberDiff.dividedBy(actualTimeDiff);
+              return actualTimeDiff.dividedBy(blockNumberDiff);
             });
   }
 
@@ -292,10 +292,10 @@ public class Eth1DataManager {
     return blockFuture.thenApply(ethBlock -> UnsignedLong.valueOf(ethBlock.getBlock().getNumber()));
   }
 
-  private SafeFuture<UnsignedLong> getBlockNumberDiffWithMidRangeBlock(
+  private SafeFuture<UnsignedLong> getApproximatedBlockNumberDiffWithMidRangeBlock(
       SafeFuture<UnsignedLong> latestBlockTimestampFuture,
       SafeFuture<UnsignedLong> secondsPerEth1BlockFuture,
-      UnsignedLong rcrAverage) {
+      UnsignedLong cacheMidRangeTimestamp) {
     return SafeFuture.allOf(latestBlockTimestampFuture, secondsPerEth1BlockFuture)
         .thenApply(
             done -> {
@@ -305,11 +305,11 @@ public class Eth1DataManager {
               UnsignedLong latestBlockTimestamp = latestBlockTimestampFuture.getNow(null);
               checkNotNull(latestBlockTimestamp);
 
-              if (latestBlockTimestamp.compareTo(rcrAverage) < 0) {
+              if (latestBlockTimestamp.compareTo(cacheMidRangeTimestamp) < 0) {
                 throw new RuntimeException(
                     "Latest block timestamp is less than the cache mid-range");
               }
-              UnsignedLong timeDiff = latestBlockTimestamp.minus(rcrAverage);
+              UnsignedLong timeDiff = latestBlockTimestamp.minus(cacheMidRangeTimestamp);
               return timeDiff.dividedBy(secondsPerEth1Block);
             });
   }
@@ -361,11 +361,17 @@ public class Eth1DataManager {
         .minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
   }
 
-  public static UnsignedLong getCacheRangeUpperBound() {
+  static UnsignedLong getCacheRangeUpperBound() {
     UnsignedLong current_time = UnsignedLong.valueOf(Instant.now().getEpochSecond());
     return current_time
         .minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK))
         .plus(ETH1_REQUEST_BUFFER);
+  }
+
+  static UnsignedLong getCacheMidRangeTimestamp() {
+    return getCacheRangeUpperBound()
+        .plus(getCacheRangeLowerBound())
+        .dividedBy(UnsignedLong.valueOf(2));
   }
 
   public static boolean hasBeenApproximately(UnsignedLong seconds, Date date) {

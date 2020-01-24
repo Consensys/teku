@@ -21,4 +21,7 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
   implementation 'org.apache.commons:commons-lang3'
+
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 }

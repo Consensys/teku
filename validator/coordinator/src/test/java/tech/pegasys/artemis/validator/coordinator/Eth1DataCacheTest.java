@@ -47,7 +47,6 @@ public class Eth1DataCacheTest {
     Constants.SECONDS_PER_SLOT = 8;
   }
 
-  // RANGE_CONSTANT = 1000
   private final UnsignedLong RANGE_CONSTANT =
       Constants.SECONDS_PER_ETH1_BLOCK.times(Constants.ETH1_FOLLOW_DISTANCE);
   private Eth1DataCache eth1DataCache;
