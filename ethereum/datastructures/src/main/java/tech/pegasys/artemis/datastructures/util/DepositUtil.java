@@ -200,6 +200,6 @@ public class DepositUtil {
       throws IOException {
     Web3j web3 = Web3j.build(new HttpService(provider));
     return UnsignedLong.valueOf(
-        web3.ethGetBlockByHash(blockHash.toHexString(), true).send().getBlock().getTimestamp());
+        web3.ethGetBlockByHash(blockHash.toHexString(), false).send().getBlock().getTimestamp());
   }
 }
