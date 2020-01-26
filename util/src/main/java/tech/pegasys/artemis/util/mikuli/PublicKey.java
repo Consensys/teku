@@ -51,10 +51,9 @@ public final class PublicKey {
    * @return PublicKey The public key
    */
   static PublicKey aggregate(List<PublicKey> keys) {
-    if (keys.isEmpty()) {
-      return new PublicKey(new G1Point());
-    }
-    return keys.stream().reduce((a, b) -> a.combine(b)).get();
+    return keys.isEmpty()
+        ? new PublicKey(new G1Point())
+        : keys.stream().reduce(PublicKey::combine).get();
   }
 
   /**

@@ -68,6 +68,24 @@ public class BLS {
   }
 
   /**
+   * Verifies an aggregate BLS signature against a list of distinct messages using the list of
+   * public keys.
+   *
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1.1
+   *
+   * @param publicKeys The list of public keys, not null
+   * @param messages The list of messages to verify, all distinct, not null
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  public static boolean aggregateVerify(
+      List<BLSPublicKey> publicKeys, List<Bytes> messages, BLSSignature signature) {
+    List<PublicKey> publicKeyObjects =
+        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
+    return BLS12381.aggregateVerify(publicKeyObjects, messages, signature.getSignature());
+  }
+
+  /**
    * Verifies an aggregate BLS signature against a message using the list of public keys.
    *
    * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.3.4

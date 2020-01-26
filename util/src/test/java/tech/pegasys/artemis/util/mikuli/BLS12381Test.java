@@ -85,4 +85,49 @@ class BLS12381Test {
 
     assertTrue(BLS12381.verify(infPubKey, message, infSignature));
   }
+
+  @Test
+  void aggregateVerifyDistinctMessages() {
+    Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
+    Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
+    Bytes message3 = Bytes.wrap("Hello, world 3!".getBytes(UTF_8));
+    KeyPair keyPair1 = KeyPair.random(1);
+    KeyPair keyPair2 = KeyPair.random(2);
+    KeyPair keyPair3 = KeyPair.random(3);
+
+    List<PublicKey> publicKeys =
+            Arrays.asList(keyPair1.publicKey(), keyPair2.publicKey(), keyPair3.publicKey());
+    List<Bytes> messages =
+            Arrays.asList(message1, message2, message3);
+    List<Signature> signatures =
+            Arrays.asList(
+                    BLS12381.sign(keyPair1.secretKey(), message1),
+                    BLS12381.sign(keyPair2.secretKey(), message2),
+                    BLS12381.sign(keyPair3.secretKey(), message3));
+    Signature aggregatedSignature = BLS12381.aggregate(signatures);
+
+    assertTrue(BLS12381.aggregateVerify(publicKeys, messages, aggregatedSignature));
+  }
+
+  @Test
+  void aggregateVerifyDuplicateMessages() {
+    Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
+    Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
+    KeyPair keyPair1 = KeyPair.random(1);
+    KeyPair keyPair2 = KeyPair.random(2);
+    KeyPair keyPair3 = KeyPair.random(3);
+
+    List<PublicKey> publicKeys =
+            Arrays.asList(keyPair1.publicKey(), keyPair2.publicKey(), keyPair3.publicKey());
+    List<Bytes> messages =
+            Arrays.asList(message1, message2, message2);
+    List<Signature> signatures =
+            Arrays.asList(
+                    BLS12381.sign(keyPair1.secretKey(), message1),
+                    BLS12381.sign(keyPair2.secretKey(), message2),
+                    BLS12381.sign(keyPair3.secretKey(), message2));
+    Signature aggregatedSignature = BLS12381.aggregate(signatures);
+
+    assertFalse(BLS12381.aggregateVerify(publicKeys, messages, aggregatedSignature));
+  }
 }

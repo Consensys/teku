@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static tech.pegasys.artemis.util.mikuli.KeyPair.g1Generator;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
@@ -28,7 +29,7 @@ public final class Signature {
 
   private static final int COMPRESSED_SIG_SIZE = 96;
   private static final int UNCOMPRESSED_SIG_SIZE = 192;
-  private static final G1Point g1GeneratorNeg = KeyPair.g1Generator.neg();
+  private static final G1Point g1GeneratorNeg = g1Generator.neg();
 
   /**
    * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
@@ -38,10 +39,9 @@ public final class Signature {
    * @return Signature
    */
   static Signature aggregate(List<Signature> signatures) {
-    if (signatures.isEmpty()) {
-      return new Signature(new G2Point());
-    }
-    return signatures.stream().reduce(Signature::combine).get();
+    return signatures.isEmpty()
+        ? new Signature(new G2Point())
+        : signatures.stream().reduce(Signature::combine).get();
   }
 
   /**
@@ -133,16 +133,40 @@ public final class Signature {
   }
 
   /**
-   * Verify that this signature is correct for the give public key and G2Point.
+   * Verify that this signature is correct for the given public key and G2Point.
    *
    * @param publicKey The public key, not null
-   * @param hashInGroup2 The G2 point corresponding to the message data to verify, not null
+   * @param hashInG2 The G2 point corresponding to the message data to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  boolean verify(PublicKey publicKey, G2Point hashInGroup2) {
+  boolean verify(PublicKey publicKey, G2Point hashInG2) {
     try {
-      GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInGroup2, g1GeneratorNeg, point.get());
+      GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInG2, g1GeneratorNeg, point.get());
       return e.isunity();
+    } catch (RuntimeException e) {
+      return false;
+    }
+  }
+
+  /**
+   * Verify that this signature is correct for the given lists of public keys and G2Points.
+   *
+   * @param publicKeys The list of public keys, not empty, not null
+   * @param hashesInG2 The list of G2 point corresponding to the messages to verify, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  boolean aggregateVerify(List<PublicKey> publicKeys, List<G2Point> hashesInG2) {
+    checkArgument(
+        publicKeys.size() == hashesInG2.size(),
+        "List of public keys and list of messages differ in length");
+    checkArgument(publicKeys.size() > 0, "List of public keys is empty");
+    try {
+      GTPoint gt1 = AtePairing.pair(publicKeys.get(0).g1Point(), hashesInG2.get(0));
+      for (int i = 1; i < publicKeys.size(); i++) {
+        gt1 = gt1.mul(AtePairing.pair(publicKeys.get(i).g1Point(), hashesInG2.get(i)));
+      }
+      GTPoint gt2 = AtePairing.pair(g1Generator, point.get());
+      return gt2.equals(gt1);
     } catch (RuntimeException e) {
       return false;
     }

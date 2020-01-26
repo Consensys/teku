@@ -18,29 +18,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class aggregate_sigs extends TestSuite {
+class Sign extends TestSuite {
 
-  // The aggregate_sigs handler should aggregate the signatures in the input, and the result should
-  // match the expected output.
-  @ParameterizedTest(name = "{index}. aggregate sigs {0} -> {1}")
-  @MethodSource("readAggregateSignatures")
-  void aggregateSig(List<BLSSignature> signatures, BLSSignature aggregateSignatureExpected) {
-    BLSSignature aggregateSignatureActual = BLS.aggregate(signatures);
-    assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
+  @ParameterizedTest(name = "{index}. sign {3}")
+  @MethodSource("signData")
+  void sign(
+      Bytes message, BLSSecretKey secretKey, BLSSignature signatureExpected, String testname) {
+    BLSSignature signatureActual = BLS.sign(secretKey, message);
+    assertEquals(signatureExpected, signatureActual);
   }
 
   @MustBeClosed
-  static Stream<Arguments> readAggregateSignatures() {
-    Path path = Paths.get("general", "phase0", "bls", "aggregate_sigs", "small");
-    return aggregateSignaturesSetup(path);
+  static Stream<Arguments> signData() {
+    Path path = Paths.get("/general/phase0/bls/sign/small");
+    return signSetup(path);
   }
 }

@@ -25,23 +25,25 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.util.bls.BLS;
-import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class sign_msg extends TestSuite {
+class Verify extends TestSuite {
 
-  // The sign_msg handler should sign the given message, with domain, using the given privkey, and
-  // the result should match the expected output.
-  @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
-  @MethodSource("readSignMessages")
-  void signMessages(Bytes message, BLSSecretKey secretKey, BLSSignature signatureExpected) {
-    BLSSignature signatureActual = BLS.sign(secretKey, message);
-    assertEquals(signatureExpected, signatureActual);
+  @ParameterizedTest(name = "{index}. verify {4}")
+  @MethodSource("verifyData")
+  void verify(
+      BLSPublicKey publicKey,
+      Bytes message,
+      BLSSignature signature,
+      Boolean expected,
+      String testname) {
+    assertEquals(expected, BLS.verify(publicKey, message, signature));
   }
 
   @MustBeClosed
-  static Stream<Arguments> readSignMessages() {
-    Path path = Paths.get("/general/phase0/bls/sign_msg/small");
-    return signMessagesSetup(path);
+  static Stream<Arguments> verifyData() {
+    Path path = Paths.get("/general/phase0/bls/verify/small");
+    return verifySetup(path);
   }
 }

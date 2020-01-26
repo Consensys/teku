@@ -181,15 +181,15 @@ public class MapObjectUtil {
   }
 
   private static BLSPublicKey getPublicKey(String s) {
-    return BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(s));
+    return BLSPublicKey.fromBytesCompressed(Bytes.fromHexStringLenient(s, 48));
   }
 
   private static BLSSecretKey getSecretKey(String s) {
-    return BLSSecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(s)));
+    return BLSSecretKey.fromBytes(Bytes.fromHexStringLenient(s, 48));
   }
 
   private static BLSSignature getSignature(String s) {
-    return BLSSignature.fromBytes(Bytes.fromHexString(s));
+    return BLSSignature.fromBytes(Bytes.fromHexStringLenient(s, 96));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

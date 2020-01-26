@@ -15,7 +15,10 @@ package tech.pegasys.artemis.util.mikuli;
 
 import static tech.pegasys.artemis.util.hashToG2.HashToCurve.hashToG2;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 
 /*
@@ -85,7 +88,28 @@ public final class BLS12381 {
   }
 
   /**
-   * Verifies an aggregate BLS signature against a message using the list of public keys.
+   * Verifies an aggregate signature against a list of distinct messages using the list of public
+   * keys.
+   *
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1.1
+   *
+   * @param publicKeys The list of public keys, not null
+   * @param messages The list of messages to verify, all distinct, not null
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  public static boolean aggregateVerify(
+      List<PublicKey> publicKeys, List<Bytes> messages, Signature signature) {
+    // Check that there are no duplicate messages
+    Set<Bytes> set = new HashSet<>();
+    for (Bytes message : messages) {
+      if (!set.add(message)) return false;
+    }
+    return coreAggregateVerify(publicKeys, messages, signature);
+  }
+
+  /**
+   * Verifies an aggregate signature against a message using the list of public keys.
    *
    * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.3.4
    *
@@ -117,5 +141,23 @@ public final class BLS12381 {
   private static boolean coreVerify(PublicKey publicKey, Bytes message, Signature signature) {
     G2Point hashInGroup2 = new G2Point(hashToG2(message));
     return signature.verify(publicKey, hashInGroup2);
+  }
+
+  /**
+   * Verifies an aggregate signature against a list of distinct messages using the list of public
+   * keys.
+   *
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.8
+   *
+   * @param publicKeys The list of public keys, not null
+   * @param messages The list of messages to verify, all distinct, not null
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  public static boolean coreAggregateVerify(
+      List<PublicKey> publicKeys, List<Bytes> messages, Signature signature) {
+    List<G2Point> hashesInG2 =
+        messages.stream().map(m -> new G2Point(hashToG2(m))).collect(Collectors.toList());
+    return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 }
