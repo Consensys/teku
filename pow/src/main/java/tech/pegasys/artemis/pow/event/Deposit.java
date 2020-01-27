@@ -34,19 +34,22 @@ public class Deposit extends AbstractEvent<DepositContract.DepositEventEventResp
   private Bytes32 withdrawal_credentials;
   private BLSSignature signature;
   private UnsignedLong amount;
+  private final UnsignedLong blockTimestamp;
   private UnsignedLong merkle_tree_index;
 
   private static final ObjectMapper mapper = new ObjectMapper();
 
   private Map<String, Object> outputFieldMap = new HashMap<>();
 
-  public Deposit(DepositContract.DepositEventEventResponse response) {
+  public Deposit(
+      DepositContract.DepositEventEventResponse response, final UnsignedLong blockTimestamp) {
     super(response);
     this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).reverse().toLong());
     this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
     this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
     this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
     this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).reverse().toLong());
+    this.blockTimestamp = blockTimestamp;
   }
 
   public UnsignedLong getMerkle_tree_index() {
@@ -63,6 +66,10 @@ public class Deposit extends AbstractEvent<DepositContract.DepositEventEventResp
 
   public UnsignedLong getAmount() {
     return amount;
+  }
+
+  public UnsignedLong getBlockTimestamp() {
+    return blockTimestamp;
   }
 
   public void setPubkey(BLSPublicKey pubkey) {
