@@ -34,6 +34,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class Eth1DataCacheTest {
 
@@ -57,7 +58,7 @@ public class Eth1DataCacheTest {
     genesisState = mock(BeaconState.class);
     when(genesisState.getGenesis_time()).thenReturn(genesisTime);
     when(genesisState.getSlot()).thenReturn(UnsignedLong.ZERO);
-    eth1DataCache = new Eth1DataCache(eventBus);
+    eth1DataCache = new Eth1DataCache(eventBus, new TimeProvider());
   }
 
   @Test

@@ -22,7 +22,9 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.math.IntMath;
 import com.google.common.primitives.UnsignedLong;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -257,7 +259,9 @@ public class Eth1DataManager {
               checkNotNull(latestBlockTimestamp);
 
               UnsignedLong actualTimeDiff = latestBlockTimestamp.minus(blockTimestamp);
-              return actualTimeDiff.dividedBy(blockNumberDiff);
+              return UnsignedLong.valueOf(
+                  IntMath.divide(
+                      actualTimeDiff.intValue(), blockNumberDiff.intValue(), RoundingMode.HALF_UP));
             });
   }
 
@@ -308,7 +312,9 @@ public class Eth1DataManager {
                     "Latest block timestamp is less than the cache mid-range");
               }
               UnsignedLong timeDiff = latestBlockTimestamp.minus(cacheMidRangeTimestamp);
-              return timeDiff.dividedBy(secondsPerEth1Block);
+              return UnsignedLong.valueOf(
+                  IntMath.divide(
+                      timeDiff.intValue(), secondsPerEth1Block.intValue(), RoundingMode.HALF_UP));
             });
   }
 
@@ -373,9 +379,11 @@ public class Eth1DataManager {
   }
 
   UnsignedLong getCacheMidRangeTimestamp() {
-    return getCacheRangeUpperBound()
-        .plus(getCacheRangeLowerBound())
-        .dividedBy(UnsignedLong.valueOf(2));
+    return UnsignedLong.valueOf(
+        IntMath.divide(
+            getCacheRangeUpperBound().plus(getCacheRangeLowerBound()).intValue(),
+            2,
+            RoundingMode.HALF_UP));
   }
 
   public static boolean hasBeenApproximately(UnsignedLong seconds, UnsignedLong currentTime) {
