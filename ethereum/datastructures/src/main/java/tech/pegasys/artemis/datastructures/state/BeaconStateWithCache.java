@@ -25,8 +25,11 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public final class BeaconStateWithCache extends BeaconState {
 
+  private final TransitionCaches transitionCaches;
+
   public BeaconStateWithCache() {
     super();
+    transitionCaches = TransitionCaches.createNewEmpty();
   }
 
   public BeaconStateWithCache(
@@ -86,6 +89,53 @@ public final class BeaconStateWithCache extends BeaconState {
         previous_justified_checkpoint,
         current_justified_checkpoint,
         finalized_checkpoint);
+    transitionCaches = TransitionCaches.createNewEmpty();
+  }
+
+  private BeaconStateWithCache(
+      UnsignedLong genesis_time,
+      UnsignedLong slot,
+      Fork fork,
+      BeaconBlockHeader latest_block_header,
+      SSZVector<Bytes32> block_roots,
+      SSZVector<Bytes32> state_roots,
+      SSZList<Bytes32> historical_roots,
+      Eth1Data eth1_data,
+      SSZList<Eth1Data> eth1_data_votes,
+      UnsignedLong eth1_deposit_index,
+      SSZList<Validator> validators,
+      SSZList<UnsignedLong> balances,
+      SSZVector<Bytes32> randao_mixes,
+      SSZVector<UnsignedLong> slashings,
+      SSZList<PendingAttestation> previous_epoch_attestations,
+      SSZList<PendingAttestation> current_epoch_attestations,
+      Bitvector justification_bits,
+      Checkpoint previous_justified_checkpoint,
+      Checkpoint current_justified_checkpoint,
+      Checkpoint finalized_checkpoint,
+      TransitionCaches transitionCaches) {
+    super(
+        genesis_time,
+        slot,
+        fork,
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
+        validators,
+        balances,
+        randao_mixes,
+        slashings,
+        previous_epoch_attestations,
+        current_epoch_attestations,
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_checkpoint,
+        finalized_checkpoint);
+    this.transitionCaches = transitionCaches;
   }
 
   public static BeaconStateWithCache deepCopy(BeaconState state) {
@@ -138,7 +188,10 @@ public final class BeaconStateWithCache extends BeaconState {
         state.getJustification_bits().copy(),
         state.getPrevious_justified_checkpoint(),
         state.getCurrent_justified_checkpoint(),
-        state.getFinalized_checkpoint());
+        state.getFinalized_checkpoint(),
+        state instanceof BeaconStateWithCache
+            ? ((BeaconStateWithCache) state).transitionCaches.copy()
+            : TransitionCaches.createNewEmpty());
   }
 
   /**
@@ -170,6 +223,16 @@ public final class BeaconStateWithCache extends BeaconState {
         state.getPrevious_justified_checkpoint(),
         state.getCurrent_justified_checkpoint(),
         state.getFinalized_checkpoint());
+  }
+
+  public static TransitionCaches getTransitionCaches(BeaconState state) {
+    return state instanceof BeaconStateWithCache
+        ? ((BeaconStateWithCache) state).getTransitionCaches()
+        : TransitionCaches.getNoOp();
+  }
+
+  public TransitionCaches getTransitionCaches() {
+    return transitionCaches;
   }
 
   private static <S extends Copyable<S>, T extends List<S>> T copyList(
