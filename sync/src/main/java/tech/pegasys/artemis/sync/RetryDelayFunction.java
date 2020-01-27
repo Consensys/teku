@@ -19,12 +19,12 @@ public interface RetryDelayFunction {
   public Duration getRetryDelay(final int retryCount);
 
   static RetryDelayFunction createExponentialRetry(
-      final Duration minDuration, final Duration maxDuration) {
+      final float multiplier, final Duration minDuration, final Duration maxDuration) {
     final long minMs = minDuration.toMillis();
     final long maxMs = maxDuration.toMillis();
     return (retryCount) -> {
-      final long exponentialRetry = Math.round(Math.pow(minMs, retryCount));
-      final long retry = Math.min(maxMs, Math.max(minMs, exponentialRetry));
+      final long retryVal = Math.round(Math.pow(multiplier, retryCount) * minMs);
+      final long retry = Math.min(maxMs, Math.max(minMs, retryVal));
       return Duration.ofMillis(retry);
     };
   }

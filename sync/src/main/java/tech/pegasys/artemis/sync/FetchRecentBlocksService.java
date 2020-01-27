@@ -40,9 +40,9 @@ class FetchRecentBlocksService extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;
-  private static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(5);
+  private static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(30);
   private static final RetryDelayFunction DEFAULT_RETRY_DELAY_FUNCTION =
-      RetryDelayFunction.createExponentialRetry(Duration.ofSeconds(5), Duration.ofMinutes(5));
+      RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
 
   private final int maxConcurrentRequests;
   private final Eth2Network eth2Network;
