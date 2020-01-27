@@ -53,9 +53,8 @@ public class StateProcessor {
   private final BlockImporter blockImporter;
   private final ChainStorageClient chainStorageClient;
   private final ArtemisConfiguration config;
+  private final DepositQueue depositQueue = new DepositQueue(this::onOrderedDeposit);
   private final List<DepositWithIndex> deposits = new ArrayList<>();
-
-  private boolean genesisReady = false;
 
   public StateProcessor(
       EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
@@ -66,7 +65,6 @@ public class StateProcessor {
   }
 
   public void eth2Genesis(GenesisEvent genesisEvent) {
-    this.genesisReady = true;
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
     chainStorageClient.initializeFromGenesis(initialState);
@@ -85,16 +83,21 @@ public class StateProcessor {
 
   @Subscribe
   public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
-    STDOUT.log(Level.DEBUG, "New deposit received");
-    deposits.add(DepositUtil.convertDepositEventToOperationDeposit(event));
+    depositQueue.onDeposit(DepositUtil.convertDepositEventToOperationDeposit(event));
+  }
 
-    UnsignedLong eth1_timestamp = null;
+  private void onOrderedDeposit(final DepositWithIndex deposit) {
+    STDOUT.log(Level.DEBUG, "New deposit received");
+    deposits.add(deposit);
+
+    final Bytes32 eth1BlockHash = Bytes32.fromHexString(deposit.getLog().getBlockHash());
+    final UnsignedLong eth1_timestamp;
     try {
       eth1_timestamp =
-          DepositUtil.getEpochBlockTimeByDepositBlockNumber(
-              event.getResponse().log.getBlockNumber(), config.getNodeUrl());
+          DepositUtil.getEpochBlockTimeByDepositBlockHash(eth1BlockHash, config.getNodeUrl());
     } catch (IOException e) {
       STDOUT.log(Level.FATAL, e.toString());
+      return;
     }
 
     // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
@@ -102,10 +105,7 @@ public class StateProcessor {
         eth1_timestamp, deposits, config.getDepositMode().equals(Constants.DEPOSIT_SIM))) {
       if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
         BeaconStateWithCache candidate_state =
-            initialize_beacon_state_from_eth1(
-                Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
-                eth1_timestamp,
-                deposits);
+            initialize_beacon_state_from_eth1(eth1BlockHash, eth1_timestamp, deposits);
         if (is_valid_genesis_stateSim(candidate_state)) {
           setSimulationGenesisTime(candidate_state);
           eth2Genesis(new GenesisEvent(candidate_state));
@@ -113,10 +113,7 @@ public class StateProcessor {
 
       } else {
         BeaconStateWithCache candidate_state =
-            initialize_beacon_state_from_eth1(
-                Bytes32.fromHexString(event.getResponse().log.getBlockHash()),
-                eth1_timestamp,
-                deposits);
+            initialize_beacon_state_from_eth1(eth1BlockHash, eth1_timestamp, deposits);
         if (is_valid_genesis_state(candidate_state)) {
           eth2Genesis(new GenesisEvent(candidate_state));
         }
@@ -153,9 +150,5 @@ public class StateProcessor {
     Date date = new Date();
     state.setGenesis_time(
         UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));
-  }
-
-  public boolean isGenesisReady() {
-    return genesisReady;
   }
 }

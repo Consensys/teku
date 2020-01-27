@@ -281,21 +281,19 @@ public class BeaconChainController {
   @Subscribe
   @SuppressWarnings("unused")
   private void onTick(Date date) {
-    if (!testMode && !stateProcessor.isGenesisReady()) {
+    if (chainStorageClient.isPreGenesis()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
-    if (chainStorageClient.getStore() != null) {
-      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
-      on_tick(transaction, currentTime);
-      transaction.commit().join();
-      final UnsignedLong nextSlotStartTime =
-          chainStorageClient
-              .getGenesisTime()
-              .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-      if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
-        processSlot();
-      }
+    final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
+    on_tick(transaction, currentTime);
+    transaction.commit().join();
+    final UnsignedLong nextSlotStartTime =
+        chainStorageClient
+            .getGenesisTime()
+            .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
+      processSlot();
     }
   }
 
