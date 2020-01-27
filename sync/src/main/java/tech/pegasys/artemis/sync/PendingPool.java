@@ -208,12 +208,12 @@ class PendingPool<T> extends Service {
    * @return A list of items that depend on this block root.
    */
   private List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
-    final Set<Bytes32> childRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
-    if (childRoots == null) {
+    final Set<Bytes32> dependentRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
+    if (dependentRoots == null) {
       return Collections.emptyList();
     }
 
-    return childRoots.stream()
+    return dependentRoots.stream()
         .map(pendingItems::get)
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
@@ -228,22 +228,22 @@ class PendingPool<T> extends Service {
    * @return A list of items that either directly or indirectly depend on the given block root.
    */
   private List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
-    final Set<Bytes32> descendantRoots = new HashSet<>();
+    final Set<Bytes32> dependentRoots = new HashSet<>();
 
-    Set<Bytes32> parentRoots = Set.of(blockRoot);
-    while (!parentRoots.isEmpty()) {
-      final Set<Bytes32> childRoots =
-          parentRoots.stream()
+    Set<Bytes32> requiredRoots = Set.of(blockRoot);
+    while (!requiredRoots.isEmpty()) {
+      final Set<Bytes32> roots =
+          requiredRoots.stream()
               .map(pendingItemsByRequiredBlockRoot::get)
               .filter(Objects::nonNull)
               .flatMap(Set::stream)
               .collect(Collectors.toSet());
 
-      descendantRoots.addAll(childRoots);
-      parentRoots = childRoots;
+      dependentRoots.addAll(roots);
+      requiredRoots = roots;
     }
 
-    return descendantRoots.stream()
+    return dependentRoots.stream()
         .map(pendingItems::get)
         .filter(Objects::nonNull)
         .collect(Collectors.toList());

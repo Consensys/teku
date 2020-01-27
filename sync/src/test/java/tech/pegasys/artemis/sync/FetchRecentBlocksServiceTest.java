@@ -107,7 +107,7 @@ public class FetchRecentBlocksServiceTest {
   }
 
   @Test
-  public void handleDuplicateRequiredBlock() {
+  public void handleDuplicateRequiredBlocks() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
     recentBlockFetcher.requestRecentBlock(root);
     recentBlockFetcher.requestRecentBlock(root);
