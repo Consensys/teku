@@ -128,14 +128,13 @@ public class BlockPropagationManager extends Service {
   private void importBlock(final SignedBeaconBlock block) {
     final BlockImportResult result = blockImporter.importBlock(block);
     if (result.isSuccessful()) {
-      LOG.trace("Imported gossiped block: {}", block);
+      LOG.trace("Imported block: {}", block);
     } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
       pendingBlocks.add(block);
     } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
       futureBlocks.add(block);
     } else {
-      LOG.trace(
-          "Unable to import gossiped block for reason {}: {}", result.getFailureReason(), block);
+      LOG.trace("Unable to import block for reason {}: {}", result.getFailureReason(), block);
       dropInvalidBlock(block);
     }
   }
