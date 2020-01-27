@@ -93,7 +93,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void fetchSingleBlockSuccessfully() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
+    recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -109,8 +109,8 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void handleDuplicateRequiredBlock() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
+    recentBlockFetcher.requestRecentBlock(root);
+    recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -127,7 +127,7 @@ public class FetchRecentBlocksServiceTest {
   public void ignoreKnownBlock() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
     when(pendingBlocksPool.contains(root)).thenReturn(true);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
+    recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(0, 0, 0);
     assertThat(importedBlocks).isEmpty();
@@ -136,8 +136,8 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void cancelBlockRequest() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
-    recentBlockFetcher.handleRequiredBlockRootDropped(root);
+    recentBlockFetcher.requestRecentBlock(root);
+    recentBlockFetcher.cancelRecentBlockRequest(root);
 
     verify(tasks.get(0)).cancel();
     // Manually cancel future
@@ -151,7 +151,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void fetchSingleBlockWithRetry() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
+    recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -173,7 +173,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void cancelTaskWhileWaitingToRetry() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
+    recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -187,7 +187,7 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 0, 0);
 
     // Cancel task
-    recentBlockFetcher.handleRequiredBlockRootDropped(root);
+    recentBlockFetcher.cancelRecentBlockRequest(root);
     verify(tasks.get(0)).cancel();
     when(tasks.get(0).run())
         .thenReturn(SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.CANCELLED)));
@@ -200,7 +200,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void handlesPeersUnavailable() {
     final Bytes32 root = DataStructureUtil.randomBytes32(1);
-    recentBlockFetcher.handleRequiredBlockRoot(root);
+    recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -224,7 +224,7 @@ public class FetchRecentBlocksServiceTest {
     final int taskCount = maxConcurrentRequests + 1;
     for (int i = 0; i < taskCount; i++) {
       final Bytes32 root = DataStructureUtil.randomBytes32(1);
-      recentBlockFetcher.handleRequiredBlockRoot(root);
+      recentBlockFetcher.requestRecentBlock(root);
     }
 
     assertTaskCounts(taskCount, taskCount - 1, 1);

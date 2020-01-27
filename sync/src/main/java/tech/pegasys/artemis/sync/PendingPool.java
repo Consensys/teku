@@ -19,6 +19,7 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -182,13 +183,67 @@ class PendingPool<T> extends Service {
     return pendingItems.containsKey(itemRoot);
   }
 
-  public List<T> childrenOf(final Bytes32 blockRoot) {
+  /**
+   * Returns any items that are dependent on the given block root
+   *
+   * @param blockRoot The block root that some pending items may depend on.
+   * @param includeIndirectDependents Whether to include items that depend indirectly on the given
+   *     root. For example, if item B depends on item A which in turn depends on {@code blockRoot},
+   *     both items A and B are returned if {@code includeIndirectDependents} is {@code true}. If
+   *     {@code includeIndirectDependents} is {@code false}, only item A is returned.
+   * @return The list of items which depend on the given block root.
+   */
+  public List<T> getItemsDependingOn(final Bytes32 blockRoot, boolean includeIndirectDependents) {
+    if (includeIndirectDependents) {
+      return getAllItemsDependingOn(blockRoot);
+    } else {
+      return getItemsDirectlyDependingOn(blockRoot);
+    }
+  }
+
+  /**
+   * Returns any items that are directly dependent on the given block root
+   *
+   * @param blockRoot The block root that some pending items may depend on
+   * @return A list of items that depend on this block root.
+   */
+  private List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
     final Set<Bytes32> childRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
     if (childRoots == null) {
       return Collections.emptyList();
     }
 
     return childRoots.stream()
+        .map(pendingItems::get)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * Returns all items that directly or indirectly depend on the given block root. In other words,
+   * if item B depends on item A which in turn depends on {@code blockRoot}, both items A and B are
+   * returned.
+   *
+   * @param blockRoot The block root that some pending items may depend on.
+   * @return A list of items that either directly or indirectly depend on the given block root.
+   */
+  private List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
+    final Set<Bytes32> descendantRoots = new HashSet<>();
+
+    Set<Bytes32> parentRoots = Set.of(blockRoot);
+    while (!parentRoots.isEmpty()) {
+      final Set<Bytes32> childRoots =
+          parentRoots.stream()
+              .map(pendingItemsByRequiredBlockRoot::get)
+              .filter(Objects::nonNull)
+              .flatMap(Set::stream)
+              .collect(Collectors.toSet());
+
+      descendantRoots.addAll(childRoots);
+      parentRoots = childRoots;
+    }
+
+    return descendantRoots.stream()
         .map(pendingItems::get)
         .filter(Objects::nonNull)
         .collect(Collectors.toList());

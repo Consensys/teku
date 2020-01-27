@@ -104,12 +104,11 @@ class FetchRecentBlocksService extends Service {
   }
 
   private void setupSubscribers() {
-    this.pendingBlocksPool.subscribeRequiredBlockRoot(this::handleRequiredBlockRoot);
-    this.pendingBlocksPool.subscribeRequiredBlockRootDropped(this::handleRequiredBlockRootDropped);
+    this.pendingBlocksPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
+    this.pendingBlocksPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
   }
 
-  @VisibleForTesting
-  void handleRequiredBlockRoot(final Bytes32 blockRoot) {
+  public void requestRecentBlock(final Bytes32 blockRoot) {
     if (pendingBlocksPool.contains(blockRoot)) {
       // We've already got this block
       return;
@@ -124,8 +123,7 @@ class FetchRecentBlocksService extends Service {
     queueTask(task);
   }
 
-  @VisibleForTesting
-  void handleRequiredBlockRootDropped(final Bytes32 blockRoot) {
+  public void cancelRecentBlockRequest(final Bytes32 blockRoot) {
     final FetchBlockTask task = allTasks.get(blockRoot);
     if (task != null) {
       task.cancel();

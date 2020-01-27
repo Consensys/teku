@@ -21,10 +21,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
@@ -163,6 +165,38 @@ public class BlockPropagationManagerTest {
     // Import next block, causing remaining blocks to be imported
     assertThat(blockImporter.importBlock(blocks.get(0)).isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactlyElementsOf(blocks);
+    assertThat(pendingBlocks.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void onBlockImportFailure_withPendingDependantBlocks() throws Exception {
+    final int invalidChainDepth = 3;
+    final List<SignedBeaconBlock> invalidBlockDescendants = new ArrayList<>(invalidChainDepth);
+
+    final SignedBeaconBlock invalidBlock =
+        remoteChain.createBlockAtSlotFromInvalidProposer(incrementSlot());
+    Bytes32 parentBlockRoot = invalidBlock.getMessage().hash_tree_root();
+    for (int i = 0; i < invalidChainDepth; i++) {
+      final UnsignedLong nextSlot = incrementSlot();
+      final SignedBeaconBlock block =
+          DataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot, i);
+      invalidBlockDescendants.add(block);
+      parentBlockRoot = block.getMessage().hash_tree_root();
+    }
+
+    // Gossip all blocks except the first
+    invalidBlockDescendants.stream().map(GossipedBlockEvent::new).forEach(localEventBus::post);
+    assertThat(importedBlocks.get()).isEmpty();
+    assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth);
+
+    // Gossip next block, causing dependent blocks to be dropped when the import fails
+    localEventBus.post(new GossipedBlockEvent(invalidBlock));
+    assertThat(importedBlocks.get()).isEmpty();
+    assertThat(pendingBlocks.size()).isEqualTo(0);
+
+    // If any invalid block is again gossiped, it should be ignored
+    invalidBlockDescendants.stream().map(GossipedBlockEvent::new).forEach(localEventBus::post);
+    assertThat(importedBlocks.get()).isEmpty();
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 

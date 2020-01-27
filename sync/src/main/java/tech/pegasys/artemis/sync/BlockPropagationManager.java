@@ -15,7 +15,9 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,6 +32,8 @@ import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.collections.LimitedSet;
+import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 
 public class BlockPropagationManager extends Service {
   private static final Logger LOG = LogManager.getLogger();
@@ -40,6 +44,8 @@ public class BlockPropagationManager extends Service {
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final FetchRecentBlocksService recentBlockFetcher;
+  private final Set<Bytes32> invalidBlockRoots =
+      LimitedSet.create(500, Mode.DROP_LEAST_RECENTLY_ACCESSED);
 
   BlockPropagationManager(
       final EventBus eventBus,
@@ -87,6 +93,7 @@ public class BlockPropagationManager extends Service {
   @SuppressWarnings("unused")
   void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
     final SignedBeaconBlock block = gossipedBlockEvent.getBlock();
+    recentBlockFetcher.cancelRecentBlockRequest(block.getMessage().hash_tree_root());
     if (blockIsKnown(block)) {
       // Nothing to do
       return;
@@ -102,7 +109,7 @@ public class BlockPropagationManager extends Service {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     pendingBlocks.remove(block);
-    final List<SignedBeaconBlock> children = pendingBlocks.childrenOf(blockRoot);
+    final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);
     children.forEach(pendingBlocks::remove);
     children.forEach(this::importBlock);
   }
@@ -114,7 +121,8 @@ public class BlockPropagationManager extends Service {
 
   private boolean blockIsKnown(final SignedBeaconBlock block) {
     return pendingBlocks.contains(block)
-        || storageClient.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent();
+        || storageClient.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent()
+        || invalidBlockRoots.contains(block.getMessage().hash_tree_root());
   }
 
   private void importBlock(final SignedBeaconBlock block) {
@@ -128,6 +136,20 @@ public class BlockPropagationManager extends Service {
     } else {
       LOG.trace(
           "Unable to import gossiped block for reason {}: {}", result.getFailureReason(), block);
+      dropInvalidBlock(block);
     }
+  }
+
+  private void dropInvalidBlock(final SignedBeaconBlock block) {
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
+    final Set<SignedBeaconBlock> blocksToDrop = new HashSet<>();
+    blocksToDrop.add(block);
+    blocksToDrop.addAll(pendingBlocks.getItemsDependingOn(blockRoot, true));
+
+    blocksToDrop.forEach(
+        blockToDrop -> {
+          invalidBlockRoots.add(blockToDrop.getMessage().hash_tree_root());
+          pendingBlocks.remove(blockToDrop);
+        });
   }
 }
