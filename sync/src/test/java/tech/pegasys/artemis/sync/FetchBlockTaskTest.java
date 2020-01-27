@@ -140,7 +140,7 @@ public class FetchBlockTaskTest {
     // Add another peer
     final Eth2Peer peer2 = registerNewPeer();
     when(peer2.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
-    when(peer.getOutstandingRequests()).thenReturn(0);
+    when(peer2.getOutstandingRequests()).thenReturn(0);
 
     // We should choose the peer that is less busy, which successfully returns the block
     final SafeFuture<FetchBlockResult> result = task.run();
