@@ -81,6 +81,7 @@ class FetchBlockTask {
     final Eth2Peer peer = maybePeer.get();
 
     numberOfRuns.incrementAndGet();
+    queriedPeers.add(peer.getId());
     return peer.requestBlockByRoot(blockRoot)
         .thenApply(FetchBlockResult::createSuccessful)
         .exceptionally(
