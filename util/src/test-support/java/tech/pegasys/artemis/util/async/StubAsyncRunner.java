@@ -28,19 +28,19 @@ public class StubAsyncRunner implements AsyncRunner {
   public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();
     queuedActions.add(
-            () -> {
-              try {
-                propagateResult(action.get(), result);
-              } catch (final Throwable t) {
-                result.completeExceptionally(t);
-              }
-            });
+        () -> {
+          try {
+            propagateResult(action.get(), result);
+          } catch (final Throwable t) {
+            result.completeExceptionally(t);
+          }
+        });
     return result;
   }
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-          Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
+      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
     return runAsync(action, null); // Executor is ignored anyway.
   }
 

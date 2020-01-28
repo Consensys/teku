@@ -29,10 +29,8 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -48,8 +46,8 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.EventSink;
-import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
 
@@ -201,7 +199,8 @@ public class Eth1DataManagerTest {
   @Test
   void onTick_startupNotDone() {
     eventBus = mock(EventBus.class);
-    eth1DataManager = new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner, timeProvider);
+    eth1DataManager =
+        new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner, timeProvider);
     verifyNoInteractions(eventBus);
   }
 
