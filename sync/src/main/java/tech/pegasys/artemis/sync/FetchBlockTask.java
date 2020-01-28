@@ -34,7 +34,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 class FetchBlockTask {
   private static final Logger LOG = LogManager.getLogger();
   private static final Comparator<Eth2Peer> SHUFFLING_COMPARATOR =
-      Comparator.comparing(p -> Math.random() - .5);
+      Comparator.comparing(p -> Math.random());
 
   private final Eth2Network eth2Network;
   private final Bytes32 blockRoot;
