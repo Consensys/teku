@@ -73,7 +73,7 @@ public class Eth1DataCacheTest {
         .thenReturn(testStartTime.minus(UnsignedLong.valueOf(1000)));
     when(genesisState.getSlot()).thenReturn(UnsignedLong.ZERO);
 
-    timeProvider = new StubTimeProvider(testStartTime);
+    timeProvider = StubTimeProvider.withTimeInSeconds(testStartTime);
     eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
   }
 

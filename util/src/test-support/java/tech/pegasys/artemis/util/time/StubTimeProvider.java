@@ -14,29 +14,34 @@
 package tech.pegasys.artemis.util.time;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.concurrent.TimeUnit;
 
-public class StubTimeProvider extends TimeProvider {
+public class StubTimeProvider implements TimeProvider {
 
-  private UnsignedLong timeInSeconds;
+  private UnsignedLong timeInMillis;
 
-  public StubTimeProvider() {
-    this(UnsignedLong.valueOf(29842948));
+  private StubTimeProvider(final UnsignedLong timeInMillis) {
+    this.timeInMillis = timeInMillis;
   }
 
-  public StubTimeProvider(final long timeInSeconds) {
-    this(UnsignedLong.valueOf(timeInSeconds));
+  public static StubTimeProvider withTimeInSeconds(final long timeInSeconds) {
+    return withTimeInMillis(TimeUnit.SECONDS.toMillis(timeInSeconds));
   }
 
-  public StubTimeProvider(final UnsignedLong timeInSeconds) {
-    this.timeInSeconds = timeInSeconds;
+  public static StubTimeProvider withTimeInSeconds(final UnsignedLong timeInSeconds) {
+    return withTimeInMillis(timeInSeconds.longValue());
+  }
+
+  public static StubTimeProvider withTimeInMillis(final long timeInMillis) {
+    return new StubTimeProvider(UnsignedLong.valueOf(timeInMillis));
   }
 
   public void advanceTimeBySeconds(final long seconds) {
-    this.timeInSeconds = timeInSeconds.plus(UnsignedLong.valueOf(seconds));
+    this.timeInMillis = timeInMillis.plus(UnsignedLong.valueOf(TimeUnit.SECONDS.toMillis(seconds)));
   }
 
   @Override
-  public UnsignedLong getTimeInSeconds() {
-    return timeInSeconds;
+  public UnsignedLong getTimeInMillis() {
+    return timeInMillis;
   }
 }

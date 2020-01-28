@@ -23,6 +23,7 @@ import com.google.common.eventbus.SubscriberExceptionHandler;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,6 +40,8 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.ClockTimeProvider;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class BeaconNode {
 
@@ -58,9 +61,10 @@ public class BeaconNode {
 
     this.eventBus = new AsyncEventBus(threadPool, new EventBusExceptionHandler(STDOUT));
 
+    final TimeProvider timeProvider = new ClockTimeProvider(Clock.systemUTC());
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     this.serviceConfig =
-        new ServiceConfig(eventBus, vertx, metricsEndpoint.getMetricsSystem(), config);
+        new ServiceConfig(timeProvider, eventBus, metricsEndpoint.getMetricsSystem(), config);
     Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDir();

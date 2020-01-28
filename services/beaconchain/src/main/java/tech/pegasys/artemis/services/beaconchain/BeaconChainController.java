@@ -62,6 +62,7 @@ import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
@@ -69,6 +70,7 @@ public class BeaconChainController {
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
   private Runnable networkTask;
   private final ArtemisConfiguration config;
+  private final TimeProvider timeProvider;
   private EventBus eventBus;
   private Timer timer;
   private ChainStorageClient chainStorageClient;
@@ -86,7 +88,11 @@ public class BeaconChainController {
   private AttestationManager attestationManager;
 
   public BeaconChainController(
-      EventBus eventBus, MetricsSystem metricsSystem, ArtemisConfiguration config) {
+      TimeProvider timeProvider,
+      EventBus eventBus,
+      MetricsSystem metricsSystem,
+      ArtemisConfiguration config) {
+    this.timeProvider = timeProvider;
     this.eventBus = eventBus;
     this.config = config;
     this.metricsSystem = metricsSystem;
@@ -141,7 +147,12 @@ public class BeaconChainController {
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
     new ValidatorCoordinator(
-        eventBus, chainStorageClient, attestationAggregator, blockAttestationsPool, config);
+        timeProvider,
+        eventBus,
+        chainStorageClient,
+        attestationAggregator,
+        blockAttestationsPool,
+        config);
   }
 
   public void initStateProcessor() {
