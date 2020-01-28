@@ -16,15 +16,11 @@ package tech.pegasys.artemis.validator.coordinator;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGenericAttestationData;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.getSignature;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
@@ -34,32 +30,23 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import org.apache.commons.lang3.tuple.MutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.blocks.Eth1DataWithIndexAndDeposits;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -92,7 +79,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates the activity between the validator clients and the the beacon chain */
 public class ValidatorCoordinator {
@@ -104,6 +91,7 @@ public class ValidatorCoordinator {
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
+  private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
   //  maps slots to Lists of attestation informations
@@ -111,7 +99,6 @@ public class ValidatorCoordinator {
   private Map<UnsignedLong, List<AttesterInformation>> committeeAssignments = new HashMap<>();
 
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
-  private HashMap<UnsignedLong, Eth1DataWithIndexAndDeposits> eth1DataCache = new HashMap<>();
 
   public ValidatorCoordinator(
       EventBus eventBus,
@@ -126,8 +113,10 @@ public class ValidatorCoordinator {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
+    this.eth1DataCache = new Eth1DataCache(eventBus, new TimeProvider());
     this.eventBus.register(this);
   }
+
   /*
   @Subscribe
   public void checkIfIncomingBlockObeysSlashingConditions(BeaconBlock block) {
@@ -170,7 +159,6 @@ public class ValidatorCoordinator {
     }
     this.store.addUnprocessedBlockHeader(proposerIndex, blockHeader);
   }
-
   */
 
   @Subscribe
@@ -187,6 +175,7 @@ public class ValidatorCoordinator {
 
     this.committeeAssignmentManager =
         new CommitteeAssignmentManager(validators, committeeAssignments);
+    eth1DataCache.startBeaconChainMode(genesisState);
 
     // Update committee assignments and subscribe to required committee indices for the next 2
     // epochs
@@ -332,10 +321,18 @@ public class ValidatorCoordinator {
       final SSZList<Deposit> deposits = getDepositsForBlock();
 
       final Signer signer = getSigner(proposer);
+      Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
       final Bytes32 parentRoot = previousBlock.hash_tree_root();
       newBlock =
           blockCreator.createNewBlock(
-              signer, newSlot, newState, parentRoot, attestations, slashingsInBlock, deposits);
+              signer,
+              newSlot,
+              newState,
+              parentRoot,
+              eth1Data,
+              attestations,
+              slashingsInBlock,
+              deposits);
 
       this.eventBus.post(new BlockProposedEvent(newBlock));
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
@@ -390,111 +387,6 @@ public class ValidatorCoordinator {
 
   private Signer getSigner(BLSPublicKey signer) {
     return (message, domain) -> getSignature(validators, message, domain, signer);
-  }
-
-  public Eth1Data get_eth1_vote(BeaconState state, UnsignedLong previous_eth1_distance) {
-    processEth1DataCache();
-    List<Eth1Data> new_eth1_data =
-        LongStream.range(
-                ETH1_FOLLOW_DISTANCE.longValue(),
-                ETH1_FOLLOW_DISTANCE.times(UnsignedLong.valueOf(2)).longValue())
-            .mapToObj(value -> get_eth1_data(UnsignedLong.valueOf(value)))
-            .collect(Collectors.toList());
-    List<Eth1Data> all_eth1_data =
-        LongStream.range(ETH1_FOLLOW_DISTANCE.longValue(), previous_eth1_distance.longValue())
-            .mapToObj(value -> get_eth1_data(UnsignedLong.valueOf(value)))
-            .collect(Collectors.toList());
-
-    boolean period_tail =
-        state
-                .getSlot()
-                .mod(UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD))
-                .compareTo(integer_squareroot(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)))
-            >= 0;
-
-    List<Eth1Data> votes_to_consider;
-    if (period_tail) {
-      votes_to_consider = all_eth1_data;
-    } else {
-      votes_to_consider = new_eth1_data;
-    }
-
-    List<Eth1Data> valid_votes = new ArrayList<>();
-
-    for (Eth1Data vote : state.getEth1_data_votes()) {
-      if (votes_to_consider.contains(vote)) {
-        valid_votes.add(vote);
-      }
-    }
-
-    return valid_votes.stream()
-        .map(
-            vote ->
-                new MutablePair<>(
-                    Collections.frequency(valid_votes, vote) - all_eth1_data.indexOf(vote), vote))
-        .max(Comparator.comparing(MutablePair::getLeft))
-        .map(Pair::getRight)
-        .orElseGet(() -> get_eth1_data(ETH1_FOLLOW_DISTANCE));
-  }
-
-  @Subscribe
-  public void updateEth1DataCache(tech.pegasys.artemis.pow.event.Deposit deposit) {
-    UnsignedLong blockNumber = UnsignedLong.valueOf(deposit.getResponse().log.getBlockNumber());
-    Bytes32 blockHash = Bytes32.fromHexString(deposit.getResponse().log.getBlockHash());
-
-    // removes a deposit in the event of a reorg
-    if (deposit.getResponse().log.isRemoved()) {
-      List<DepositWithIndex> deposits =
-          eth1DataCache.get(blockNumber).getDeposits().stream()
-              .filter(
-                  item ->
-                      !item.getLog()
-                          .getTransactionHash()
-                          .equals(deposit.getResponse().log.getTransactionHash()))
-              .collect(Collectors.toList());
-      eth1DataCache.get(blockNumber).setDeposits(deposits);
-    }
-
-    DepositWithIndex depositWithIndex = DepositUtil.convertDepositEventToOperationDeposit(deposit);
-    Eth1DataWithIndexAndDeposits eth1Data = eth1DataCache.get(blockNumber);
-    if (eth1Data == null) {
-      eth1Data = new Eth1DataWithIndexAndDeposits(blockNumber, new ArrayList<>(), blockHash);
-      eth1DataCache.put(blockNumber, eth1Data);
-    }
-    if (!eth1Data.getBlock_hash().equals(blockHash)) {
-      eth1Data.setBlock_hash(blockHash);
-      eth1Data.setDeposits(new ArrayList<DepositWithIndex>());
-    }
-    eth1Data.getDeposits().add(depositWithIndex);
-    eth1DataCache.put(blockNumber, eth1Data);
-  }
-
-  public void processEth1DataCache() {
-    List<Eth1DataWithIndexAndDeposits> eth1DataWithIndexAndDeposits =
-        eth1DataCache.values().stream().sorted().collect(Collectors.toList());
-
-    List<DepositWithIndex> accumulatedDeposits = new ArrayList<>();
-    for (final Eth1DataWithIndexAndDeposits item : eth1DataWithIndexAndDeposits) {
-      accumulatedDeposits.addAll(item.getDeposits());
-      Collections.sort(accumulatedDeposits);
-      item.setDeposit_root(
-          HashTreeUtil.hash_tree_root(
-              HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE,
-              accumulatedDeposits.size(),
-              accumulatedDeposits));
-      item.setDeposit_count(UnsignedLong.valueOf(accumulatedDeposits.size()));
-    }
-    eth1DataCache.clear();
-    eth1DataWithIndexAndDeposits.forEach(item -> eth1DataCache.put(item.getBlockNumber(), item));
-  }
-
-  public Eth1Data get_eth1_data(UnsignedLong distance) {
-    UnsignedLong cacheSize =
-        UnsignedLong.valueOf(
-            eth1DataCache.entrySet().stream()
-                .filter(item -> item.getValue().getDeposit_root() != null)
-                .count());
-    return eth1DataCache.get(cacheSize.minus(distance).minus(UnsignedLong.ONE));
   }
 
   @VisibleForTesting

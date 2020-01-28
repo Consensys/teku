@@ -25,6 +25,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
@@ -55,6 +56,7 @@ public class BlockProposalUtil {
       final UnsignedLong newSlot,
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
+      final Eth1Data eth1Data,
       final SSZList<Attestation> attestations,
       final SSZList<ProposerSlashing> slashings,
       final SSZList<Deposit> deposits)
@@ -64,11 +66,12 @@ public class BlockProposalUtil {
 
     // Create block body
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
-    beaconBlockBody.setEth1_data(StartupUtil.get_eth1_data_stub(newState, newEpoch));
+    beaconBlockBody.setEth1_data(eth1Data);
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     beaconBlockBody.setProposer_slashings(slashings);
     beaconBlockBody.setRandao_reveal(get_epoch_signature(newState, newEpoch, signer));
+
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     final BeaconBlock newBlock =
@@ -93,11 +96,13 @@ public class BlockProposalUtil {
       final BeaconState previousState,
       final Bytes32 parentBlockRoot)
       throws StateTransitionException {
+    final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     return createNewBlock(
         signer,
         newSlot,
         previousState,
         parentBlockRoot,
+        StartupUtil.get_eth1_data_stub(previousState, newEpoch),
         BeaconBlockBodyLists.createAttestations(),
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());
@@ -110,11 +115,13 @@ public class BlockProposalUtil {
       final Bytes32 parentBlockSigningRoot,
       final SSZList<Attestation> attestations)
       throws StateTransitionException {
+    final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     return createNewBlock(
         signer,
         newSlot,
         previousState,
         parentBlockSigningRoot,
+        StartupUtil.get_eth1_data_stub(previousState, newEpoch),
         attestations,
         BeaconBlockBodyLists.createProposerSlashings(),
         BeaconBlockBodyLists.createDeposits());
