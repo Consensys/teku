@@ -32,10 +32,12 @@ import tech.pegasys.artemis.pow.event.Deposit;
 
 public class DepositContractListener {
   private final Disposable subscriptionNewDeposit;
+  private final Web3j web3j;
   private DepositContract contract;
   private volatile Optional<EthBlock.Block> cachedBlock = Optional.empty();
 
   public DepositContractListener(Web3j web3j, EventBus eventBus, DepositContract contract) {
+    this.web3j = web3j;
     this.contract = contract;
 
     // Filter by the contract address and by begin/end blocks
@@ -51,12 +53,11 @@ public class DepositContractListener {
     subscriptionNewDeposit =
         contract
             .depositEventEventFlowable(depositEventFilter)
-            .flatMap(event -> convertToDeposit(web3j, event))
+            .flatMap(this::convertToDeposit)
             .subscribe(eventBus::post);
   }
 
-  private Flowable<Deposit> convertToDeposit(
-      final Web3j web3j, final DepositEventEventResponse event) {
+  private Flowable<Deposit> convertToDeposit(final DepositEventEventResponse event) {
     return getBlockByHash(web3j, event.log.getBlockHash())
         .map(block -> new Deposit(event, UnsignedLong.valueOf(block.getTimestamp())));
   }
