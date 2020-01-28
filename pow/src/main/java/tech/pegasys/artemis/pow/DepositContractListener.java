@@ -58,11 +58,11 @@ public class DepositContractListener {
   }
 
   private Flowable<Deposit> convertToDeposit(final DepositEventEventResponse event) {
-    return getBlockByHash(web3j, event.log.getBlockHash())
+    return getBlockByHash(event.log.getBlockHash())
         .map(block -> new Deposit(event, UnsignedLong.valueOf(block.getTimestamp())));
   }
 
-  private Flowable<Block> getBlockByHash(final Web3j web3j, final String blockHash) {
+  private Flowable<Block> getBlockByHash(final String blockHash) {
     return cachedBlock
         .filter(block -> block.getHash().equals(blockHash))
         .map(Flowable::just)
