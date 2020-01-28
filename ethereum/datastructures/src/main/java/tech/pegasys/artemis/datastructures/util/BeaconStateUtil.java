@@ -671,14 +671,20 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_beacon_proposer_index</a>
    */
   public static int get_beacon_proposer_index(BeaconState state) {
-    UnsignedLong epoch = get_current_epoch(state);
-    Bytes32 seed =
-        Hash.sha2_256(
-            Bytes.concatenate(
-                get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
-                int_to_bytes(state.getSlot().longValue(), 8)));
-    List<Integer> indices = get_active_validator_indices(state, epoch);
-    return compute_proposer_index(state, indices, seed);
+    return BeaconStateWithCache.getTransitionCaches(state)
+        .getBeaconProposerIndex()
+        .get(
+            state.getSlot(),
+            slot -> {
+              UnsignedLong epoch = get_current_epoch(state);
+              Bytes32 seed =
+                  Hash.sha2_256(
+                      Bytes.concatenate(
+                          get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
+                          int_to_bytes(state.getSlot().longValue(), 8)));
+              List<Integer> indices = get_active_validator_indices(state, epoch);
+              return compute_proposer_index(state, indices, seed);
+            });
   }
 
   /**
