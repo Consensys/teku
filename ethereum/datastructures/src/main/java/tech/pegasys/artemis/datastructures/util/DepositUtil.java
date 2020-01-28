@@ -19,15 +19,12 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
@@ -176,7 +173,8 @@ public class DepositUtil {
             event.getWithdrawal_credentials(),
             event.getAmount(),
             event.getSignature());
-    return new DepositWithIndex(data, event.getMerkle_tree_index(), event.getResponse().log);
+    return new DepositWithIndex(
+        data, event.getMerkle_tree_index(), event.getResponse().log, event.getBlockTimestamp());
   }
 
   // deprecated, being used until a new validators_test_data.json can be generated
@@ -193,13 +191,6 @@ public class DepositUtil {
     response.amount = Arrays.copyOfRange(data, 80, 88);
     response.signature = Arrays.copyOfRange(data, 88, 184);
     response.index = index;
-    return new tech.pegasys.artemis.pow.event.Deposit(response);
-  }
-
-  public static UnsignedLong getEpochBlockTimeByDepositBlockHash(Bytes32 blockHash, String provider)
-      throws IOException {
-    Web3j web3 = Web3j.build(new HttpService(provider));
-    return UnsignedLong.valueOf(
-        web3.ethGetBlockByHash(blockHash.toHexString(), false).send().getBlock().getTimestamp());
+    return new tech.pegasys.artemis.pow.event.Deposit(response, UnsignedLong.ZERO);
   }
 }
