@@ -42,7 +42,7 @@ public class ProfilingRun {
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
     BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
 
-    int validatorsCount = 3 * 1024;
+    int validatorsCount = 1 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -51,12 +51,6 @@ public class ProfilingRun {
             + validatorsCount
             + ".ssz.gz";
 
-    System.out.println("Start blocks import from " + blocksFile);
-    try (Reader blockReader = BlockIO.createResourceReader(blocksFile)) {
-      for (SignedBeaconBlock block : blockReader) {
-        System.out.println(block);
-      }
-    }
     System.out.println("Generating keypairs...");
     //    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(validatorsCount);
     //    List<BLSKeyPair> validatorKeys =
