@@ -33,6 +33,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 class FetchBlockTask {
   private static final Logger LOG = LogManager.getLogger();
+  private static final Comparator<Eth2Peer> SHUFFLING_COMPARATOR =
+      Comparator.comparing(p -> Math.random() - .5);
 
   private final Eth2Network eth2Network;
   private final Bytes32 blockRoot;
@@ -73,7 +75,7 @@ class FetchBlockTask {
             .filter(p -> !queriedPeers.contains(p.getId()))
             .min(
                 Comparator.comparing(Eth2Peer::getOutstandingRequests)
-                    .thenComparing(p -> Math.random() - .5));
+                    .thenComparing(SHUFFLING_COMPARATOR));
 
     if (maybePeer.isEmpty()) {
       return SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.NO_AVAILABLE_PEERS));
