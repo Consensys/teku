@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -31,8 +30,10 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -41,7 +42,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -65,6 +65,7 @@ public class Eth1DataManagerTest {
 
   private EventBus eventBus;
   private Eth1DataManager eth1DataManager;
+  private EventCapture eventCapture;
 
   private static final Bytes32 HEX_STRING = Bytes32.fromHexString("0xdeadbeef");
 
@@ -92,7 +93,8 @@ public class Eth1DataManagerTest {
 
   @BeforeEach
   void setUp() {
-    eventBus = mock(EventBus.class);
+    eventBus = new EventBus();
+    eventCapture = new EventCapture(eventBus);
 
     when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime);
     when(depositContractListener.getDepositCount(any()))
@@ -137,12 +139,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.start();
 
-    ArgumentCaptor<CacheEth1BlockEvent> eventArgumentCaptor =
-        ArgumentCaptor.forClass(CacheEth1BlockEvent.class);
-    verify(eventBus, times(8)).post(eventArgumentCaptor.capture());
+    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(8);
 
     List<Integer> eth1BlockTimestamps =
-        eventArgumentCaptor.getAllValues().stream()
+        eventCapture.getEth1BlockEvents().stream()
             .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
@@ -172,12 +172,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.start();
 
-    ArgumentCaptor<CacheEth1BlockEvent> eventArgumentCaptor =
-        ArgumentCaptor.forClass(CacheEth1BlockEvent.class);
-    verify(eventBus, times(3)).post(eventArgumentCaptor.capture());
+    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(3);
 
     List<Integer> eth1BlockTimestamps =
-        eventArgumentCaptor.getAllValues().stream()
+        eventCapture.getEth1BlockEvents().stream()
             .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
@@ -210,7 +208,6 @@ public class Eth1DataManagerTest {
 
   @Test
   void onTick_startupDoneGetNewBlocks() {
-    eventBus = mock(EventBus.class);
     eth1DataManager =
         new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner, timeProvider);
 
@@ -241,12 +238,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.onTick(new Date());
 
-    ArgumentCaptor<CacheEth1BlockEvent> eventArgumentCaptor =
-        ArgumentCaptor.forClass(CacheEth1BlockEvent.class);
-    verify(eventBus, atLeast(3)).post(eventArgumentCaptor.capture());
+    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(9);
 
     List<Integer> eth1BlockTimestamps =
-        eventArgumentCaptor.getAllValues().stream()
+        eventCapture.getEth1BlockEvents().stream()
             .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
@@ -258,7 +253,6 @@ public class Eth1DataManagerTest {
 
   @Test
   void onTick_startupDone_LatestTimestampStillHigherThanUpperBound() {
-    eventBus = mock(EventBus.class);
     eth1DataManager =
         new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner, timeProvider);
 
@@ -287,12 +281,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.onTick(new Date());
 
-    ArgumentCaptor<CacheEth1BlockEvent> eventArgumentCaptor =
-        ArgumentCaptor.forClass(CacheEth1BlockEvent.class);
-    verify(eventBus, atLeast(3)).post(eventArgumentCaptor.capture());
+    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(8);
 
     List<Integer> eth1BlockTimestamps =
-        eventArgumentCaptor.getAllValues().stream()
+        eventCapture.getEth1BlockEvents().stream()
             .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
@@ -366,6 +358,24 @@ public class Eth1DataManagerTest {
       Request mockRequest = mock(Request.class);
       when(mockRequest.sendAsync()).thenReturn(CompletableFuture.completedFuture(block));
       return mockRequest;
+    }
+  }
+
+  private static class EventCapture {
+
+    private final List<CacheEth1BlockEvent> eth1BlockEvents = new ArrayList<>();
+
+    public EventCapture(EventBus eventBus) {
+      eventBus.register(this);
+    }
+
+    @Subscribe
+    public void onEth1BlockEvent(final CacheEth1BlockEvent event) {
+      eth1BlockEvents.add(event);
+    }
+
+    public List<CacheEth1BlockEvent> getEth1BlockEvents() {
+      return eth1BlockEvents;
     }
   }
 }
