@@ -25,15 +25,19 @@ public class StubTimeProvider implements TimeProvider {
   }
 
   public static StubTimeProvider withTimeInSeconds(final long timeInSeconds) {
-    return withTimeInMillis(TimeUnit.SECONDS.toMillis(timeInSeconds));
+    return withTimeInSeconds(UnsignedLong.valueOf(timeInSeconds));
   }
 
   public static StubTimeProvider withTimeInSeconds(final UnsignedLong timeInSeconds) {
-    return withTimeInMillis(timeInSeconds.longValue());
+    return withTimeInMillis(timeInSeconds.times(MILLIS_PER_SECOND));
   }
 
   public static StubTimeProvider withTimeInMillis(final long timeInMillis) {
-    return new StubTimeProvider(UnsignedLong.valueOf(timeInMillis));
+    return withTimeInMillis(UnsignedLong.valueOf(timeInMillis));
+  }
+
+  public static StubTimeProvider withTimeInMillis(final UnsignedLong timeInMillis) {
+    return new StubTimeProvider(timeInMillis);
   }
 
   public void advanceTimeBySeconds(final long seconds) {
