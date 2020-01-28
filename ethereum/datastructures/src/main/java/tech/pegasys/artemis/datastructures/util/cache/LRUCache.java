@@ -14,11 +14,10 @@
 package tech.pegasys.artemis.datastructures.util.cache;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
+import tech.pegasys.artemis.util.collections.LimitedHashMap;
 
 /**
  * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is
@@ -43,21 +42,12 @@ public class LRUCache<K, V> implements Cache<K, V> {
 
   private LRUCache(int capacity, Map<K, V> initialCachedContent) {
     this.maxCapacity = capacity;
-    this.cacheData =
-        Collections.synchronizedMap(
-            new LinkedHashMap<>(maxCapacity + 1) {
-              {
-                synchronized (initialCachedContent) {
-                  putAll(initialCachedContent);
-                }
-              }
-
-              // This method is called just after a new entry has been added
-              @Override
-              protected boolean removeEldestEntry(Entry<K, V> eldest) {
-                return size() > maxCapacity;
-              }
-            });
+    LimitedHashMap<K, V> cacheMap = new LimitedHashMap<>(maxCapacity);
+    // copy safely, initialCachedContent is always a SynchronizedMap instance
+    synchronized (initialCachedContent) {
+      cacheMap.putAll(initialCachedContent);
+    }
+    this.cacheData = Collections.synchronizedMap(cacheMap);
   }
 
   @Override

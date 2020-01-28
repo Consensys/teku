@@ -392,13 +392,12 @@ public final class BlockProcessorUtil {
 
       attestations.stream()
           .parallel()
-          .forEach(
-              attestation -> {
-                // Check signature
-                checkArgument(
-                    is_valid_indexed_attestation(
-                        state, get_indexed_attestation(state, attestation)),
-                    "process_attestations: Check signature");
+          .filter(a -> !is_valid_indexed_attestation(state, get_indexed_attestation(state, a)))
+          .findAny()
+          .ifPresent(
+              invalidAttestation -> {
+                throw new IllegalArgumentException(
+                    "Invalid attestation signature: " + invalidAttestation);
               });
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());
