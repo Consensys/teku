@@ -18,11 +18,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_REQUEST_BUFFER;
@@ -49,8 +47,8 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.async.AsyncRunnerTest;
+import tech.pegasys.artemis.util.EventSink;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
@@ -59,13 +57,13 @@ import tech.pegasys.artemis.util.time.StubTimeProvider;
 public class Eth1DataManagerTest {
 
   private final Web3j web3j = mock(Web3j.class);
-  private final AsyncRunner asyncRunner = new AsyncRunnerTest();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final DepositContractListener depositContractListener =
       mock(DepositContractListener.class);
 
   private EventBus eventBus;
   private Eth1DataManager eth1DataManager;
-  private EventCapture eventCapture;
+  private List<CacheEth1BlockEvent> eventSink;
   private StubTimeProvider timeProvider;
 
   private static final Bytes32 HEX_STRING = Bytes32.fromHexString("0xdeadbeef");
@@ -95,7 +93,7 @@ public class Eth1DataManagerTest {
   @BeforeEach
   void setUp() {
     eventBus = new EventBus();
-    eventCapture = new EventCapture(eventBus);
+    eventSink = EventSink.capture(eventBus, CacheEth1BlockEvent.class);
     timeProvider = new StubTimeProvider(testStartTime);
 
     when(depositContractListener.getDepositCount(any()))
@@ -140,10 +138,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.start();
 
-    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(8);
+    assertThat(eventSink.size()).isEqualTo(8);
 
     List<Integer> eth1BlockTimestamps =
-        eventCapture.getEth1BlockEvents().stream()
+        eventSink.stream()
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
@@ -172,10 +170,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.start();
 
-    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(3);
+    assertThat(eventSink.size()).isEqualTo(3);
 
     List<Integer> eth1BlockTimestamps =
-        eventCapture.getEth1BlockEvents().stream()
+        eventSink.stream()
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
@@ -190,8 +188,14 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.start();
 
-    verify(web3j, times(Math.toIntExact(Constants.ETH1_CACHE_STARTUP_RETRY_GIVEUP)))
-        .ethGetBlockByNumber(any(), eq(false));
+    verify(web3j).ethGetBlockByNumber(any(), eq(false)); // First failed attempt
+
+    for (int i = 2; i <= Constants.ETH1_CACHE_STARTUP_RETRY_GIVEUP; i++) {
+      asyncRunner.executeQueuedActions();
+      verify(web3j, times(i)).ethGetBlockByNumber(any(), eq(false));
+    }
+
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
 
   @Test
@@ -233,10 +237,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.onTick(new Date());
 
-    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(9);
+    assertThat(eventSink.size()).isEqualTo(9);
 
     List<Integer> eth1BlockTimestamps =
-        eventCapture.getEth1BlockEvents().stream()
+        eventSink.stream()
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
@@ -275,10 +279,10 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.onTick(new Date());
 
-    assertThat(eventCapture.getEth1BlockEvents().size()).isEqualTo(8);
+    assertThat(eventSink.size()).isEqualTo(8);
 
     List<Integer> eth1BlockTimestamps =
-        eventCapture.getEth1BlockEvents().stream()
+        eventSink.stream()
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
@@ -351,24 +355,6 @@ public class Eth1DataManagerTest {
       Request mockRequest = mock(Request.class);
       when(mockRequest.sendAsync()).thenReturn(CompletableFuture.completedFuture(block));
       return mockRequest;
-    }
-  }
-
-  private static class EventCapture {
-
-    private final List<CacheEth1BlockEvent> eth1BlockEvents = new ArrayList<>();
-
-    public EventCapture(EventBus eventBus) {
-      eventBus.register(this);
-    }
-
-    @Subscribe
-    public void onEth1BlockEvent(final CacheEth1BlockEvent event) {
-      eth1BlockEvents.add(event);
-    }
-
-    public List<CacheEth1BlockEvent> getEth1BlockEvents() {
-      return eth1BlockEvents;
     }
   }
 }

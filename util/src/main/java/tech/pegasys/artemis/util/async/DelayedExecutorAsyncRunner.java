@@ -20,15 +20,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-public class AsyncRunnerTest implements AsyncRunner {
-
-  public AsyncRunnerTest() {}
+public class DelayedExecutorAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();
     try {
-      propagateResult(action.get(), result);
+      executor.execute(() -> propagateResult(action.get(), result));
     } catch (final Throwable t) {
       result.completeExceptionally(t);
     }

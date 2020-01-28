@@ -43,7 +43,7 @@ import tech.pegasys.artemis.pow.Eth1DataManager;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.artemis.util.async.AsyncRunnerProd;
+import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
@@ -112,7 +112,7 @@ public class PowchainService implements ServiceInterface {
       }
       Eth1DataManager eth1DataManager =
           new Eth1DataManager(
-              web3j, eventBus, depositContractListener, new AsyncRunnerProd(), new TimeProvider());
+              web3j, eventBus, depositContractListener, new DelayedExecutorAsyncRunner(), new TimeProvider());
       eth1DataManager.start();
     } else if (depositMode.equals(DEPOSIT_SIM)) {
       try {
@@ -138,7 +138,7 @@ public class PowchainService implements ServiceInterface {
           DepositContractListenerFactory.eth1DepositContract(web3j, eventBus, contractAddr);
       Eth1DataManager eth1DataManager =
           new Eth1DataManager(
-              web3j, eventBus, depositContractListener, new AsyncRunnerProd(), new TimeProvider());
+              web3j, eventBus, depositContractListener, new DelayedExecutorAsyncRunner(), new TimeProvider());
       eth1DataManager.start();
     }
   }

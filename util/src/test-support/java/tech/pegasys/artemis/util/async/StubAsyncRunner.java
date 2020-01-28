@@ -15,30 +15,42 @@ package tech.pegasys.artemis.util.async;
 
 import static tech.pegasys.artemis.util.async.SafeFuture.propagateResult;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-public class AsyncRunnerProd implements AsyncRunner {
-
-  public AsyncRunnerProd() {}
+public class StubAsyncRunner implements AsyncRunner {
+  private List<Runnable> queuedActions = new ArrayList<>();
 
   @Override
   public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();
-    try {
-      executor.execute(() -> propagateResult(action.get(), result));
-    } catch (final Throwable t) {
-      result.completeExceptionally(t);
-    }
+    queuedActions.add(
+            () -> {
+              try {
+                propagateResult(action.get(), result);
+              } catch (final Throwable t) {
+                result.completeExceptionally(t);
+              }
+            });
     return result;
   }
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
-    Executor delayed = CompletableFuture.delayedExecutor(delayAmount, delayUnit);
-    return runAsync(action, delayed);
+          Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
+    return runAsync(action, null); // Executor is ignored anyway.
+  }
+
+  public void executeQueuedActions() {
+    final List<Runnable> actionsToExecute = queuedActions;
+    queuedActions = new ArrayList<>();
+    actionsToExecute.forEach(Runnable::run);
+  }
+
+  public boolean hasDelayedActions() {
+    return !queuedActions.isEmpty();
   }
 }

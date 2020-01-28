@@ -28,13 +28,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-public class AsyncRunnerProdTest {
+public class DelayedExecutorAsyncRunnerTest {
 
   private AsyncRunner asyncRunner;
 
   @BeforeEach
   void setUp() {
-    asyncRunner = new AsyncRunnerProd();
+    asyncRunner = new DelayedExecutorAsyncRunner();
   }
 
   @SuppressWarnings("unchecked")
