@@ -201,6 +201,46 @@ public class BlockPropagationManagerTest {
   }
 
   @Test
+  public void onBlockImportFailure_withUnconnectedPendingDependantBlocks() throws Exception {
+    final int invalidChainDepth = 3;
+    final List<SignedBeaconBlock> invalidBlockDescendants = new ArrayList<>(invalidChainDepth);
+
+    final SignedBeaconBlock invalidBlock =
+        remoteChain.createBlockAtSlotFromInvalidProposer(incrementSlot());
+    Bytes32 parentBlockRoot = invalidBlock.getMessage().hash_tree_root();
+    for (int i = 0; i < invalidChainDepth; i++) {
+      final UnsignedLong nextSlot = incrementSlot();
+      final SignedBeaconBlock block =
+          DataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot, i);
+      invalidBlockDescendants.add(block);
+      parentBlockRoot = block.getMessage().hash_tree_root();
+    }
+
+    // Gossip all blocks except the first
+    invalidBlockDescendants.subList(1, invalidChainDepth).stream()
+        .map(GossipedBlockEvent::new)
+        .forEach(localEventBus::post);
+    assertThat(importedBlocks.get()).isEmpty();
+    assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
+
+    // Gossip invalid block, which should fail to import and be marked invalid
+    localEventBus.post(new GossipedBlockEvent(invalidBlock));
+    assertThat(importedBlocks.get()).isEmpty();
+    assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
+
+    // Gossip the child of the invalid block, which should also be marked invalid causing
+    // the rest of the chain to be marked invalid and dropped
+    localEventBus.post(new GossipedBlockEvent(invalidBlockDescendants.get(0)));
+    assertThat(importedBlocks.get()).isEmpty();
+    assertThat(pendingBlocks.size()).isEqualTo(0);
+
+    // If any invalid block is again gossiped, it should be ignored
+    invalidBlockDescendants.stream().map(GossipedBlockEvent::new).forEach(localEventBus::post);
+    assertThat(importedBlocks.get()).isEmpty();
+    assertThat(pendingBlocks.size()).isEqualTo(0);
+  }
+
+  @Test
   public void onBlockImported_withPendingFutureBlocks() throws Exception {
     final int blockCount = 3;
     final List<SignedBeaconBlock> blocks = new ArrayList<>(blockCount);

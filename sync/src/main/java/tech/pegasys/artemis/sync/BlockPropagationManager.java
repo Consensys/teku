@@ -98,7 +98,6 @@ public class BlockPropagationManager extends Service {
       // Nothing to do
       return;
     }
-
     importBlock(block);
   }
 
@@ -119,13 +118,22 @@ public class BlockPropagationManager extends Service {
     futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
   }
 
+  private boolean blockIsInvalid(final SignedBeaconBlock block) {
+    return invalidBlockRoots.contains(block.getMessage().hash_tree_root())
+        || invalidBlockRoots.contains(block.getParent_root());
+  }
+
   private boolean blockIsKnown(final SignedBeaconBlock block) {
     return pendingBlocks.contains(block)
-        || storageClient.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent()
-        || invalidBlockRoots.contains(block.getMessage().hash_tree_root());
+        || storageClient.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent();
   }
 
   private void importBlock(final SignedBeaconBlock block) {
+    if (blockIsInvalid(block)) {
+      dropInvalidBlock(block);
+      return;
+    }
+
     final BlockImportResult result = blockImporter.importBlock(block);
     if (result.isSuccessful()) {
       LOG.trace("Imported block: {}", block);
