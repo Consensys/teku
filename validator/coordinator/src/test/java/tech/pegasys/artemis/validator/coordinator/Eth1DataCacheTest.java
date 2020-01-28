@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,40 +38,68 @@ import tech.pegasys.artemis.util.time.TimeProvider;
 public class Eth1DataCacheTest {
 
   private final EventBus eventBus = new EventBus();
-  private final UnsignedLong genesisTime = UnsignedLong.valueOf(1000000);
+  private final TimeProvider timeProvider = mock(TimeProvider.class);
+  private final BeaconState genesisState = mock(BeaconState.class);
 
   static {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(11);
-    Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(100);
-    SLOTS_PER_ETH1_VOTING_PERIOD = 12;
-    Constants.SECONDS_PER_SLOT = 8;
+    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(3);
+    Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(5);
+    SLOTS_PER_ETH1_VOTING_PERIOD = 6;
+    Constants.SECONDS_PER_SLOT = 4;
   }
 
-  private final UnsignedLong RANGE_CONSTANT =
-      Constants.SECONDS_PER_ETH1_BLOCK.times(Constants.ETH1_FOLLOW_DISTANCE);
+  private final UnsignedLong START_SLOT = UnsignedLong.valueOf(100);
+  private final UnsignedLong NEXT_VOTING_PERIOD_SLOT = UnsignedLong.valueOf(102);
+  private final UnsignedLong testStartTime = UnsignedLong.valueOf(1000);
+
   private Eth1DataCache eth1DataCache;
-  private BeaconState genesisState;
+
+  // Voting Period Start Time
+  // = genesisTime + ((slot - (slot % slots_per_eth1_voting_period)) * seconds_per_slot)
+  // = 0 + (((100 - (100 % 6)) * 4)
+  // = 384
+  //
+  // Spec Range:
+  //    Lower Bound = 384 - (5 * 3 * 2) = 354
+  //    Upper Bound = 384 - (5 * 3) = 369
+
+  // Next Voting Period Start Slot = 102
+  // Next Voting Period Start Time = 408
+  // Next Voting Period Lower Bound = 378
 
   @BeforeEach
   void setUp() {
-    genesisState = mock(BeaconState.class);
-    when(genesisState.getGenesis_time()).thenReturn(genesisTime);
+    when(genesisState.getGenesis_time())
+        .thenReturn(testStartTime.minus(UnsignedLong.valueOf(1000)));
     when(genesisState.getSlot()).thenReturn(UnsignedLong.ZERO);
-    eth1DataCache = new Eth1DataCache(eventBus, new TimeProvider());
+    when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime);
+
+    eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
+  }
+
+  @Test
+  void checkTimeValues() {
+    eth1DataCache.startBeaconChainMode(genesisState);
+    eventBus.post(new SlotEvent(START_SLOT));
+    assertThat(eth1DataCache.getSpecRangeLowerBound())
+        .isEqualByComparingTo(UnsignedLong.valueOf(354));
+    assertThat(eth1DataCache.getSpecRangeUpperBound())
+        .isEqualByComparingTo(UnsignedLong.valueOf(369));
+    eventBus.post(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
+    assertThat(eth1DataCache.getSpecRangeLowerBound())
+        .isEqualByComparingTo(UnsignedLong.valueOf(378));
   }
 
   @Test
   void majorityVoteWins() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    UnsignedLong slot = UnsignedLong.valueOf(3).times(RANGE_CONSTANT);
-    UnsignedLong currentTime =
-        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
-    eventBus.post(new SlotEvent(slot));
+    eventBus.post(new SlotEvent(START_SLOT));
 
+    // Both Eth1Data timestamp inside the spec range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(361));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -90,15 +117,13 @@ public class Eth1DataCacheTest {
   @Test
   void smallestDistanceWinsIfNoMajority() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    UnsignedLong slot = UnsignedLong.valueOf(3).times(RANGE_CONSTANT);
-    UnsignedLong currentTime =
-        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
-    eventBus.post(new SlotEvent(slot));
+    eventBus.post(new SlotEvent(START_SLOT));
 
+    // Both Eth1Data timestamp inside the spec range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT).minus(UnsignedLong.ONE));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(361));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -117,18 +142,14 @@ public class Eth1DataCacheTest {
   @Test
   void oldVoteDoesNotCount() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    UnsignedLong slot = UnsignedLong.valueOf(300);
-    UnsignedLong currentTime =
-        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
-    eventBus.post(new SlotEvent(slot));
+    eventBus.post(new SlotEvent(START_SLOT));
 
+    // Eth1Data inside the range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(
-            currentTime.minus(RANGE_CONSTANT.times(UnsignedLong.valueOf(2))));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
+    // Eth1Data timestamp lower than the lower bound
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(
-            currentTime.minus(
-                RANGE_CONSTANT.times(UnsignedLong.valueOf(2).plus(UnsignedLong.ONE))));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(352));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -146,15 +167,14 @@ public class Eth1DataCacheTest {
   @Test
   void tooRecentVoteDoesNotCount() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    UnsignedLong slot = UnsignedLong.valueOf(300);
-    UnsignedLong currentTime =
-        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
-    eventBus.post(new SlotEvent(slot));
+    eventBus.post(new SlotEvent(START_SLOT));
 
+    // Eth1Data inside the range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
+    // Eth1Data timestamp greater than the upper bound
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(372));
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
@@ -172,15 +192,13 @@ public class Eth1DataCacheTest {
   @Test
   void noValidVotesInThisPeriod_eth1ChainLive() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    UnsignedLong slot = UnsignedLong.valueOf(300);
-    UnsignedLong currentTime =
-        genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
-    eventBus.post(new SlotEvent(slot));
+    eventBus.post(new SlotEvent(START_SLOT));
 
+    // Both Eth1Data timestamp inside the spec range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(359));
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(currentTime.minus(RANGE_CONSTANT.minus(UnsignedLong.ONE)));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
@@ -189,15 +207,15 @@ public class Eth1DataCacheTest {
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
 
-    Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
-    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
+    // The most recent Eth1Data in getVotesToConsider wins
+    Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
+    assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data2);
   }
 
   @Test
   void noValidVotesInThisPeriod_eth1ChainNotLive() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    UnsignedLong slot = UnsignedLong.valueOf(300);
-    eventBus.post(new SlotEvent(slot));
+    eventBus.post(new SlotEvent(START_SLOT));
 
     Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
 
@@ -210,16 +228,18 @@ public class Eth1DataCacheTest {
 
   @Test
   void pruneBeforeGenesis() {
-    UnsignedLong currentTime = UnsignedLong.valueOf(Instant.now().getEpochSecond());
-    UnsignedLong cacheRangeLowerBound = Eth1DataManager.getCacheRangeLowerBound();
-
-    CacheEth1BlockEvent cacheEth1BlockEvent1 = createRandomCacheEth1BlockEvent(currentTime);
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(Eth1DataManager.getCacheMidRangeTimestamp(testStartTime));
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(cacheRangeLowerBound.minus(UnsignedLong.ONE));
+        createRandomCacheEth1BlockEvent(
+            Eth1DataManager.getCacheRangeLowerBound(testStartTime).minus(UnsignedLong.ONE));
+
+    // Make sure hasBeenApproximately returns true
+    when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime.plus(UnsignedLong.valueOf(2)));
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
-    eventBus.post(new Date(Constants.SECONDS_PER_ETH1_BLOCK.longValue() * 1000));
+    eventBus.post(new Date());
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
 
@@ -231,31 +251,29 @@ public class Eth1DataCacheTest {
   @Test
   void pruneAfterGenesis() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    UnsignedLong slotAtNextVotingPeriodStart = UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD);
-    UnsignedLong timeAtNextVotingPeriodStart =
-        genesisTime.plus(
-            slotAtNextVotingPeriodStart.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    eventBus.post(new SlotEvent(START_SLOT));
 
-    UnsignedLong specRangeLowerBound = eth1DataCache.getSpecRangeLowerBound();
-
+    // First two Eth1Data timestamps inside the spec range for this voting period
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
-        createRandomCacheEth1BlockEvent(timeAtNextVotingPeriodStart.plus(UnsignedLong.ONE));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(359));
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
-        createRandomCacheEth1BlockEvent(specRangeLowerBound.minus(UnsignedLong.ONE));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
+
+    // This Eth1Data timestamp inside the spec range for the next voting period
     CacheEth1BlockEvent cacheEth1BlockEvent3 =
-        createRandomCacheEth1BlockEvent(specRangeLowerBound.minus(UnsignedLong.valueOf(2)));
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(379));
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
     eventBus.post(cacheEth1BlockEvent3);
 
-    eventBus.post(new SlotEvent(slotAtNextVotingPeriodStart));
+    eventBus.post(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
 
-    Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
+    Eth1Data eth1Data3 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent3);
 
     Waiter.waitFor(() -> assertThat(eth1DataCache.getMapForTesting().values().size() == 1));
 
-    assertThat(eth1DataCache.getMapForTesting().values()).containsExactly(eth1Data1);
+    assertThat(eth1DataCache.getMapForTesting().values()).containsExactly(eth1Data3);
   }
 
   private CacheEth1BlockEvent createRandomCacheEth1BlockEvent(UnsignedLong timestamp) {

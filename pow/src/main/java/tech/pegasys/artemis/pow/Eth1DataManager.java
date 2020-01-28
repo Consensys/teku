@@ -153,7 +153,8 @@ public class Eth1DataManager {
   }
 
   private SafeFuture<Void> doCacheStartup() {
-    final UnsignedLong cacheMidRangeTimestamp = getCacheMidRangeTimestamp();
+    final UnsignedLong cacheMidRangeTimestamp =
+        getCacheMidRangeTimestamp(timeProvider.getTimeInSeconds());
 
     SafeFuture<EthBlock> latestEthBlockFuture = getLatestEth1BlockFuture();
 
@@ -378,10 +379,12 @@ public class Eth1DataManager {
     return getCacheRangeUpperBound(timeProvider.getTimeInSeconds());
   }
 
-  UnsignedLong getCacheMidRangeTimestamp() {
+  public static UnsignedLong getCacheMidRangeTimestamp(UnsignedLong currentTime) {
     return UnsignedLong.valueOf(
         IntMath.divide(
-            getCacheRangeUpperBound().plus(getCacheRangeLowerBound()).intValue(),
+            getCacheRangeUpperBound(currentTime)
+                .plus(getCacheRangeLowerBound(currentTime))
+                .intValue(),
             2,
             RoundingMode.HALF_UP));
   }

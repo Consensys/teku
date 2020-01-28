@@ -77,15 +77,17 @@ public class Eth1DataManagerTest {
   }
 
   private final UnsignedLong testStartTime = UnsignedLong.valueOf(200);
+
   // Cache Range:
   //    Lower Bound = 200 - (5 * 2) - (4 * 6 * 2) = 142
   //    Upper Bound = 200 - (4 * 6) + 1 = 177
   //    Mid-Range =  (142 + 177) / 2 = 160 (given that we use Half Up rounding (i.e. normal math
   // rounding))
-  //    Number of blocks to middle
-  //        = (current-time - mid-range) / (seconds_per_eth1_block)
-  //        = (200 - 160) / (6)
-  //        = 7 (here we use
+  //
+  // Number of blocks to middle
+  //    = (current-time - mid-range) / (seconds_per_eth1_block)
+  //    = (200 - 160) / (6)
+  //    = 7 (here we use
   //    i.e. Teku will assume the middle-range block has block number current head - 7
 
   @BeforeEach
@@ -108,7 +110,7 @@ public class Eth1DataManagerTest {
         .isEqualByComparingTo(UnsignedLong.valueOf(142));
     assertThat(eth1DataManager.getCacheRangeUpperBound())
         .isEqualByComparingTo(UnsignedLong.valueOf(177));
-    assertThat(eth1DataManager.getCacheMidRangeTimestamp())
+    assertThat(Eth1DataManager.getCacheMidRangeTimestamp(timeProvider.getTimeInSeconds()))
         .isEqualByComparingTo(UnsignedLong.valueOf(160));
   }
 

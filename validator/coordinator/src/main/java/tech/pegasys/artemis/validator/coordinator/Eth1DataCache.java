@@ -65,8 +65,8 @@ public class Eth1DataCache {
 
   @Subscribe
   public void onTick(Date date) {
-    if (!hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, timeProvider.getTimeInSeconds())
-        || genesisTime.isPresent()) {
+    if (genesisTime.isPresent()
+        || !hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, timeProvider.getTimeInSeconds())) {
       return;
     }
     prune();
