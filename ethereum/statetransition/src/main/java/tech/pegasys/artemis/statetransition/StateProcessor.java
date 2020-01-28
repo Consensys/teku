@@ -24,7 +24,6 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -91,14 +90,7 @@ public class StateProcessor {
     deposits.add(deposit);
 
     final Bytes32 eth1BlockHash = Bytes32.fromHexString(deposit.getLog().getBlockHash());
-    final UnsignedLong eth1_timestamp;
-    try {
-      eth1_timestamp =
-          DepositUtil.getEpochBlockTimeByDepositBlockHash(eth1BlockHash, config.getNodeUrl());
-    } catch (IOException e) {
-      STDOUT.log(Level.FATAL, e.toString());
-      return;
-    }
+    final UnsignedLong eth1_timestamp = deposit.getBlockTimestamp();
 
     // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
     if (isGenesisReasonable(

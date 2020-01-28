@@ -26,10 +26,14 @@ public class TransitionCaches {
   private static int MAX_ACTIVE_VALIDATORS_CACHE = 8;
   private static int MAX_BEACON_PROPOSER_INDEX_CACHE = 1;
   private static int MAX_BEACON_COMMITTEE_CACHE = 64 * 64;
+  private static int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 1;
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
-          NoOpCache.getNoOpCache(), NoOpCache.getNoOpCache(), NoOpCache.getNoOpCache()) {
+          NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache()) {
 
         @Override
         public TransitionCaches copy() {
@@ -50,20 +54,24 @@ public class TransitionCaches {
   private final Cache<UnsignedLong, List<Integer>> activeValidators;
   private final Cache<UnsignedLong, Integer> beaconProposerIndex;
   private final Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee;
+  private final Cache<UnsignedLong, UnsignedLong> totalActiveBalance;
 
   private TransitionCaches() {
     activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = new LRUCache<>(MAX_BEACON_PROPOSER_INDEX_CACHE);
     beaconCommittee = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
+    totalActiveBalance = new LRUCache<>(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
   }
 
   private TransitionCaches(
       Cache<UnsignedLong, List<Integer>> activeValidators,
       Cache<UnsignedLong, Integer> beaconProposerIndex,
-      Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee) {
+      Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee,
+      Cache<UnsignedLong, UnsignedLong> totalActiveBalance) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
+    this.totalActiveBalance = totalActiveBalance;
   }
 
   /** (epoch) -> (active validators) cache */
@@ -81,12 +89,20 @@ public class TransitionCaches {
     return beaconCommittee;
   }
 
+  /** (epoch) -> (total active balance) cache */
+  public Cache<UnsignedLong, UnsignedLong> getTotalActiveBalance() {
+    return totalActiveBalance;
+  }
+
   /**
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance
    */
   public TransitionCaches copy() {
     return new TransitionCaches(
-        activeValidators.copy(), beaconProposerIndex.copy(), beaconCommittee.copy());
+        activeValidators.copy(),
+        beaconProposerIndex.copy(),
+        beaconCommittee.copy(),
+        totalActiveBalance.copy());
   }
 }

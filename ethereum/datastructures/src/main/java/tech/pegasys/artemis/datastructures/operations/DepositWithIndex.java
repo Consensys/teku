@@ -21,39 +21,42 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
 
-  private UnsignedLong index;
-  private Log log;
+  private final UnsignedLong index;
+  private final Log log;
+  private final UnsignedLong blockTimestamp;
 
   public DepositWithIndex(SSZVector<Bytes32> proof, DepositData data, UnsignedLong index) {
     super(proof, data);
     this.index = index;
+    log = null;
+    blockTimestamp = null;
   }
 
   public DepositWithIndex(DepositData data, UnsignedLong index) {
     super(data);
     this.index = index;
+    log = null;
+    blockTimestamp = null;
   }
 
-  public DepositWithIndex(DepositData data, UnsignedLong index, Log log) {
+  public DepositWithIndex(
+      DepositData data, UnsignedLong index, Log log, UnsignedLong blockTimestamp) {
     super(data);
     this.index = index;
     this.log = log;
+    this.blockTimestamp = blockTimestamp;
   }
 
   public UnsignedLong getIndex() {
     return index;
   }
 
-  public void setIndex(UnsignedLong index) {
-    this.index = index;
-  }
-
   public Log getLog() {
     return log;
   }
 
-  public void setLog(Log log) {
-    this.log = log;
+  public UnsignedLong getBlockTimestamp() {
+    return blockTimestamp;
   }
 
   @Override

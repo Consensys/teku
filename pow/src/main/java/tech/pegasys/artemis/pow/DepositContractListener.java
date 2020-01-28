@@ -17,27 +17,32 @@ import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVE
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.disposables.Disposable;
 import java.util.List;
+import java.util.Optional;
+import io.reactivex.Flowable;
+import io.reactivex.disposables.Disposable;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.abi.EventEncoder;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.protocol.Web3j;
+import org.web3j.abi.EventEncoder;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.request.Transaction;
+import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthBlock.Block;
+import org.web3j.protocol.Web3j;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DepositContractListener {
-
   private final Disposable subscriptionNewDeposit;
   private final Web3j web3j;
   private final DepositContract contract;
+  private volatile Optional<EthBlock.Block> cachedBlock = Optional.empty();
 
   public DepositContractListener(Web3j web3j, EventBus eventBus, DepositContract contract) {
     this.web3j = web3j;
@@ -56,11 +61,29 @@ public class DepositContractListener {
     subscriptionNewDeposit =
         contract
             .depositEventEventFlowable(depositEventFilter)
-            .subscribe(
-                response -> {
-                  Deposit deposit = new Deposit(response);
-                  eventBus.post(deposit);
-                });
+            .flatMap(this::convertToDeposit)
+            .subscribe(eventBus::post);
+  }
+
+  private Flowable<Deposit> convertToDeposit(final DepositEventEventResponse event) {
+    return getBlockByHash(event.log.getBlockHash())
+        .map(block -> new Deposit(event, UnsignedLong.valueOf(block.getTimestamp())));
+  }
+
+  private Flowable<Block> getBlockByHash(final String blockHash) {
+    return cachedBlock
+        .filter(block -> block.getHash().equals(blockHash))
+        .map(Flowable::just)
+        .orElseGet(
+            () ->
+                web3j
+                    .ethGetBlockByHash(blockHash, false)
+                    .flowable()
+                    .map(
+                        blockResponse -> {
+                          cachedBlock = Optional.of(blockResponse.getBlock());
+                          return blockResponse.getBlock();
+                        }));
   }
 
   @SuppressWarnings("rawtypes")
