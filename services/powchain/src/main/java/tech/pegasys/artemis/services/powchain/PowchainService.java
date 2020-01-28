@@ -62,11 +62,13 @@ public class PowchainService implements ServiceInterface {
   private String provider;
 
   private String depositSimFile;
+  private TimeProvider timeProvider;
 
   public PowchainService() {}
 
   @Override
   public void init(ServiceConfig config) {
+    timeProvider = config.getTimeProvider();
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.depositMode = config.getConfig().getDepositMode();
@@ -116,7 +118,7 @@ public class PowchainService implements ServiceInterface {
               eventBus,
               depositContractListener,
               new DelayedExecutorAsyncRunner(),
-              new TimeProvider());
+              timeProvider);
       eth1DataManager.start();
     } else if (depositMode.equals(DEPOSIT_SIM)) {
       try {
@@ -146,7 +148,7 @@ public class PowchainService implements ServiceInterface {
               eventBus,
               depositContractListener,
               new DelayedExecutorAsyncRunner(),
-              new TimeProvider());
+              timeProvider);
       eth1DataManager.start();
     }
   }

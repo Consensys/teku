@@ -14,62 +14,41 @@
 package tech.pegasys.artemis.service.serviceutils;
 
 import com.google.common.eventbus.EventBus;
-import io.vertx.core.Vertx;
-import java.util.Objects;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class ServiceConfig {
-  Vertx vertx;
-  EventBus eventBus;
-  MetricsSystem metricsSystem;
-  ArtemisConfiguration config;
+
+  private final TimeProvider timeProvider;
+  private final EventBus eventBus;
+  private final MetricsSystem metricsSystem;
+  private final ArtemisConfiguration config;
 
   public ServiceConfig(
-      EventBus eventBus, Vertx vertx, MetricsSystem metricsSystem, ArtemisConfiguration config) {
+      final TimeProvider timeProvider,
+      final EventBus eventBus,
+      final MetricsSystem metricsSystem,
+      final ArtemisConfiguration config) {
+    this.timeProvider = timeProvider;
     this.eventBus = eventBus;
-    this.vertx = vertx;
     this.metricsSystem = metricsSystem;
     this.config = config;
+  }
+
+  public TimeProvider getTimeProvider() {
+    return timeProvider;
   }
 
   public EventBus getEventBus() {
     return this.eventBus;
   }
 
-  public void setEventBus(EventBus eventBus) {
-    this.eventBus = eventBus;
-  }
-
-  public Vertx getVertx() {
-    return this.vertx;
-  }
-
   public ArtemisConfiguration getConfig() {
     return this.config;
   }
 
-  public void setConfig(ArtemisConfiguration config) {
-    this.config = config;
-  }
-
   public MetricsSystem getMetricsSystem() {
     return metricsSystem;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (o == this) return true;
-    if (!(o instanceof ServiceConfig)) {
-      return false;
-    }
-    ServiceConfig serviceConfig = (ServiceConfig) o;
-    return Objects.equals(eventBus, serviceConfig.eventBus)
-        && Objects.equals(config, serviceConfig.config);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(eventBus, config);
   }
 }
