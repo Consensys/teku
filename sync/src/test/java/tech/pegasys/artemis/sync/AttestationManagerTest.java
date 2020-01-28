@@ -24,9 +24,7 @@ import static tech.pegasys.artemis.statetransition.attestation.AttestationProces
 import static tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult.SUCCESSFUL;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -44,6 +42,7 @@ import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
 import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -56,7 +55,10 @@ class AttestationManagerTest {
 
   private final ForkChoiceAttestationProcessor attestationProcessor =
       mock(ForkChoiceAttestationProcessor.class);
-  private final EventCapture events = new EventCapture();
+  private final List<ProcessedAttestationEvent> processedAttestationEvents =
+      EventSink.capture(eventBus, ProcessedAttestationEvent.class);
+  private final List<ProcessedAggregateEvent> processedAggregateEvents =
+      EventSink.capture(eventBus, ProcessedAggregateEvent.class);
 
   private final AttestationManager attestationManager =
       new AttestationManager(
@@ -67,7 +69,6 @@ class AttestationManagerTest {
   @BeforeEach
   public void setup() {
     assertThat(attestationManager.start()).isCompleted();
-    eventBus.register(events);
   }
 
   @AfterEach
@@ -84,9 +85,9 @@ class AttestationManagerTest {
     verify(attestationProcessor).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(events.processedAttestationEvents)
+    assertThat(processedAttestationEvents)
         .containsExactly(new ProcessedAttestationEvent(attestation));
-    assertThat(events.processedAggregateEvents).isEmpty();
+    assertThat(processedAggregateEvents).isEmpty();
   }
 
   @Test
@@ -99,9 +100,9 @@ class AttestationManagerTest {
     verify(attestationProcessor).processAttestation(aggregateAndProof.getAggregate());
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(events.processedAggregateEvents)
+    assertThat(processedAggregateEvents)
         .containsExactly(new ProcessedAggregateEvent(aggregateAndProof.getAggregate()));
-    assertThat(events.processedAttestationEvents).isEmpty();
+    assertThat(processedAttestationEvents).isEmpty();
   }
 
   @Test
@@ -127,7 +128,7 @@ class AttestationManagerTest {
     verify(attestationProcessor, times(2)).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(events.processedAttestationEvents)
+    assertThat(processedAttestationEvents)
         .containsExactly(new ProcessedAttestationEvent(attestation));
   }
 
@@ -162,7 +163,7 @@ class AttestationManagerTest {
     verify(attestationProcessor, times(2)).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(events.processedAttestationEvents)
+    assertThat(processedAttestationEvents)
         .containsExactly(new ProcessedAttestationEvent(attestation));
   }
 
@@ -220,14 +221,13 @@ class AttestationManagerTest {
     verify(attestationProcessor, times(2)).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
-    assertThat(events.processedAttestationEvents).isEmpty();
-    assertThat(events.processedAggregateEvents)
-        .containsExactly(new ProcessedAggregateEvent(attestation));
+    assertThat(processedAttestationEvents).isEmpty();
+    assertThat(processedAggregateEvents).containsExactly(new ProcessedAggregateEvent(attestation));
   }
 
   private void assertNoProcessedEvents() {
-    assertThat(events.processedAttestationEvents).isEmpty();
-    assertThat(events.processedAggregateEvents).isEmpty();
+    assertThat(processedAttestationEvents).isEmpty();
+    assertThat(processedAggregateEvents).isEmpty();
   }
 
   private Attestation attestationFromSlot(final long slot) {
@@ -244,20 +244,5 @@ class AttestationManagerTest {
             new Checkpoint(UnsignedLong.ZERO, Bytes32.ZERO),
             new Checkpoint(UnsignedLong.ZERO, targetRoot)),
         BLSSignature.empty());
-  }
-
-  private static class EventCapture {
-    private final List<ProcessedAttestationEvent> processedAttestationEvents = new ArrayList<>();
-    private final List<ProcessedAggregateEvent> processedAggregateEvents = new ArrayList<>();
-
-    @Subscribe
-    public void onAttestationProcessed(final ProcessedAttestationEvent event) {
-      processedAttestationEvents.add(event);
-    }
-
-    @Subscribe
-    public void onAggregateProcessed(final ProcessedAggregateEvent event) {
-      processedAggregateEvents.add(event);
-    }
   }
 }
