@@ -222,8 +222,7 @@ class AttestationManagerTest {
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
     assertThat(processedAttestationEvents).isEmpty();
-    assertThat(processedAggregateEvents)
-        .containsExactly(new ProcessedAggregateEvent(attestation));
+    assertThat(processedAggregateEvents).containsExactly(new ProcessedAggregateEvent(attestation));
   }
 
   private void assertNoProcessedEvents() {
