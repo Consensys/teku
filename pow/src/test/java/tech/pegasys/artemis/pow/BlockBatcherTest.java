@@ -99,9 +99,11 @@ class BlockBatcherTest {
   private Block block(int blockNumber) {
     final Bytes32 blockNumberBytes =
         Bytes32.leftPad(Bytes.fromHexStringLenient(Integer.toHexString(blockNumber)));
+    final UnsignedLong blockTimestamp = UnsignedLong.valueOf(blockNumber + 10000);
     final Block block = new Block();
     block.setNumber(blockNumberBytes.toShortHexString());
     block.setHash(blockNumberBytes.toHexString());
+    block.setTimestamp("0x" + blockTimestamp.toString(16));
     return block;
   }
 
