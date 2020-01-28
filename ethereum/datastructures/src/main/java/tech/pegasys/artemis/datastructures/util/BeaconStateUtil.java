@@ -50,9 +50,9 @@ import static tech.pegasys.artemis.util.config.Constants.WHISTLEBLOWER_REWARD_QU
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -314,12 +314,11 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_balance</a>
    */
-  public static UnsignedLong get_total_balance(BeaconState state, List<Integer> indices) {
+  public static UnsignedLong get_total_balance(BeaconState state, Collection<Integer> indices) {
     UnsignedLong sum = UnsignedLong.ZERO;
-    Iterator<Integer> itr = indices.iterator();
     List<Validator> validator_registry = state.getValidators();
-    while (itr.hasNext()) {
-      sum = sum.plus(validator_registry.get(itr.next()).getEffective_balance());
+    for (Integer index : indices) {
+      sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
     return max(sum, UnsignedLong.ONE);
   }
