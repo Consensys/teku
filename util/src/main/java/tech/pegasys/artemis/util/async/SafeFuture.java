@@ -15,13 +15,11 @@ package tech.pegasys.artemis.util.async;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,26 +60,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return safeFuture;
   }
 
-  public static <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
-    Executor delayed = CompletableFuture.delayedExecutor(delayAmount, delayUnit);
-    return runAsync(action, delayed);
-  }
-
-  public static <U> SafeFuture<U> runAsync(
-      final Supplier<SafeFuture<U>> action, final Executor delayed) {
-    final SafeFuture<U> result = new SafeFuture<>();
-    try {
-      delayed.execute(() -> propagateResult(action.get(), result));
-    } catch (final Throwable t) {
-      result.completeExceptionally(t);
-    }
-    return result;
-  }
-
   @SuppressWarnings("FutureReturnValueIgnored")
-  private static <U> void propagateResult(
-      final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
+  static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
         (result, error) -> {
           if (error != null) {
