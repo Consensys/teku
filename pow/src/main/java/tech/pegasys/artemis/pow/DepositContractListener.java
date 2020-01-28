@@ -16,19 +16,28 @@ package tech.pegasys.artemis.pow;
 import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVENT;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
+import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
+import java.util.Optional;
 import org.web3j.abi.EventEncoder;
+import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.artemis.pow.event.Deposit;
 
 public class DepositContractListener {
-
   private final Disposable subscriptionNewDeposit;
+  private final Web3j web3j;
   private DepositContract contract;
+  private volatile Optional<EthBlock.Block> cachedBlock = Optional.empty();
 
-  public DepositContractListener(EventBus eventBus, DepositContract contract) {
+  public DepositContractListener(Web3j web3j, EventBus eventBus, DepositContract contract) {
+    this.web3j = web3j;
     this.contract = contract;
 
     // Filter by the contract address and by begin/end blocks
@@ -44,11 +53,29 @@ public class DepositContractListener {
     subscriptionNewDeposit =
         contract
             .depositEventEventFlowable(depositEventFilter)
-            .subscribe(
-                response -> {
-                  Deposit deposit = new Deposit(response);
-                  eventBus.post(deposit);
-                });
+            .flatMap(this::convertToDeposit)
+            .subscribe(eventBus::post);
+  }
+
+  private Flowable<Deposit> convertToDeposit(final DepositEventEventResponse event) {
+    return getBlockByHash(event.log.getBlockHash())
+        .map(block -> new Deposit(event, UnsignedLong.valueOf(block.getTimestamp())));
+  }
+
+  private Flowable<Block> getBlockByHash(final String blockHash) {
+    return cachedBlock
+        .filter(block -> block.getHash().equals(blockHash))
+        .map(Flowable::just)
+        .orElseGet(
+            () ->
+                web3j
+                    .ethGetBlockByHash(blockHash, false)
+                    .flowable()
+                    .map(
+                        blockResponse -> {
+                          cachedBlock = Optional.of(blockResponse.getBlock());
+                          return blockResponse.getBlock();
+                        }));
   }
 
   public DepositContract getContract() {
