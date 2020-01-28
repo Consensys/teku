@@ -17,21 +17,21 @@ import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVE
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import java.util.List;
-import java.util.Optional;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
+import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.EventEncoder;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
-import org.web3j.protocol.Web3j;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.artemis.pow.event.Deposit;
