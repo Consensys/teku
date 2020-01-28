@@ -25,10 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
-import tech.pegasys.artemis.networking.eth2.NodeManager;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -47,8 +44,8 @@ public class BlockPropagationIntegrationTest {
   public void shouldFetchUnknownAncestorsOfPropagatedBlock() throws Exception {
     UnsignedLong currentSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
-    // Setup network 1
-    NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
+    // Setup node 1
+    SyncingNodeManager node1 = SyncingNodeManager.create(networkFactory, validatorKeys);
     node1.chainUtil().setSlot(currentSlot);
 
     // Add some blocks to node1, which node 2 will need to fetch
@@ -60,17 +57,8 @@ public class BlockPropagationIntegrationTest {
       blocksToFetch.add(record.getBlock());
     }
 
-    // Setup network 2
-    NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
-    node2.chainUtil().setSlot(currentSlot);
-    // Set up sync service
-    SyncService syncService =
-        new SyncService(
-            node2.eventBus(),
-            node2.network(),
-            node2.storageClient(),
-            new BlockImporter(node2.storageClient(), node2.eventBus()));
-    syncService.start().join();
+    // Setup node 2
+    SyncingNodeManager node2 = SyncingNodeManager.create(networkFactory, validatorKeys);
 
     // Connect networks
     waitFor(node1.network().connect(node2.network().getNodeAddress()));
@@ -83,12 +71,12 @@ public class BlockPropagationIntegrationTest {
     // TODO: debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
-    // Update slot and propagate a new block from network 1
+    // Update slot so that blocks can be imported
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
-    node1.eventBus().post(new SlotEvent(currentSlot));
-    node2.eventBus().post(new SlotEvent(currentSlot));
-    node1.chainUtil().setSlot(currentSlot);
-    node2.chainUtil().setSlot(currentSlot);
+    node1.setSlot(currentSlot);
+    node2.setSlot(currentSlot);
+
+    // Propagate new block
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(currentSlot);
     node1.eventBus().post(new BlockProposedEvent(newBlock));
 
