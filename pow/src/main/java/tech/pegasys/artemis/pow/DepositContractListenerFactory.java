@@ -44,8 +44,7 @@ public class DepositContractListenerFactory {
   }
 
   public static DepositContractListener eth1DepositContract(
-      EventBus eventBus, String provider, String address) {
-    Web3j web3j = Web3j.build(new HttpService(provider));
+      Web3j web3j, EventBus eventBus, String address) {
     DepositContract contract =
         DepositContract.load(
             address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
