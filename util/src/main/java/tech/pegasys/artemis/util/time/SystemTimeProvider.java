@@ -16,12 +16,12 @@ package tech.pegasys.artemis.util.time;
 import com.google.common.primitives.UnsignedLong;
 import java.time.Clock;
 
-public class ClockTimeProvider implements TimeProvider {
+public class SystemTimeProvider implements TimeProvider {
 
   private final Clock clock;
 
-  public ClockTimeProvider(final Clock clock) {
-    this.clock = clock;
+  public SystemTimeProvider() {
+    this.clock = Clock.systemUTC();
   }
 
   @Override
