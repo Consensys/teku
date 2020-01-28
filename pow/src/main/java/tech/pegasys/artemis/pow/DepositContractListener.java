@@ -16,8 +16,10 @@ package tech.pegasys.artemis.pow;
 import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVENT;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
+import java.util.Date;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.web3j.abi.EventEncoder;
@@ -34,12 +36,13 @@ public class DepositContractListener {
   private final Web3j web3j;
   private DepositContract contract;
   private volatile Optional<EthBlock.Block> cachedBlock = Optional.empty();
-  private final BlockBatcher batcher;
+  private final ForcePusher batcher;
 
   public DepositContractListener(Web3j web3j, EventBus eventBus, DepositContract contract) {
     this.web3j = web3j;
     this.contract = contract;
-    batcher = new BlockBatcher(eventBus::post);
+    batcher = new ForcePusher(new BlockBatcher(eventBus::post));
+    eventBus.register(batcher);
 
     // Filter by the contract address and by begin/end blocks
     EthFilter depositEventFilter =
@@ -83,5 +86,28 @@ public class DepositContractListener {
 
   public void stop() {
     subscriptionNewDeposit.dispose();
+  }
+
+  private static final class ForcePusher {
+    private static final int EVENT_TIMEOUT = 5000;
+    private final BlockBatcher batcher;
+    private long lastPublishTime = 0;
+
+    private ForcePusher(final BlockBatcher batcher) {
+      this.batcher = batcher;
+    }
+
+    public synchronized void onDepositEvent(final Block block, final Deposit deposit) {
+      batcher.onDepositEvent(block, deposit);
+      lastPublishTime = System.currentTimeMillis();
+    }
+
+    @Subscribe
+    public synchronized void onTick(final Date date) {
+      if (lastPublishTime != 0 && date.getTime() - lastPublishTime > EVENT_TIMEOUT) {
+        batcher.forcePublishPendingBlock();
+        lastPublishTime = 0;
+      }
+    }
   }
 }

@@ -36,13 +36,18 @@ class BlockBatcher {
     this.eventConsumer = eventConsumer;
   }
 
-  public void onDepositEvent(final EthBlock.Block block, final Deposit event) {
+  public synchronized void onDepositEvent(final EthBlock.Block block, final Deposit event) {
     LOG.trace(
         "Received deposit from block {} with index {}",
         block.getNumber(),
         event.getMerkle_tree_index());
     publishCompletedBlocks(block);
     deposits.add(event);
+  }
+
+  public synchronized void forcePublishPendingBlock() {
+    currentBlock.ifPresent(this::publishPendingBlock);
+    currentBlock = Optional.empty();
   }
 
   private void publishCompletedBlocks(final EthBlock.Block newBlock) {
@@ -54,6 +59,11 @@ class BlockBatcher {
     if (block.getHash().equals(newBlock.getHash())) {
       return;
     }
+    publishPendingBlock(block);
+    currentBlock = Optional.of(newBlock);
+  }
+
+  private void publishPendingBlock(final Block block) {
     LOG.trace("Publishing {} deposits for block {}", deposits::size, block::getNumber);
     eventConsumer.accept(
         new DepositsFromBlockEvent(
@@ -62,6 +72,5 @@ class BlockBatcher {
             UnsignedLong.valueOf(block.getTimestamp()),
             deposits));
     deposits = new ArrayList<>();
-    currentBlock = Optional.of(newBlock);
   }
 }
