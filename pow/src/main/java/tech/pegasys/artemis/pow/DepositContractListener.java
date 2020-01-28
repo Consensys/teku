@@ -51,11 +51,11 @@ public class DepositContractListener {
     subscriptionNewDeposit =
         contract
             .depositEventEventFlowable(depositEventFilter)
-            .flatMap(event -> getBlockTimestamp(web3j, event))
+            .flatMap(event -> convertToDeposit(web3j, event))
             .subscribe(eventBus::post);
   }
 
-  private Flowable<Deposit> getBlockTimestamp(
+  private Flowable<Deposit> convertToDeposit(
       final Web3j web3j, final DepositEventEventResponse event) {
     return getBlockByHash(web3j, event.log.getBlockHash())
         .map(block -> new Deposit(event, UnsignedLong.valueOf(block.getTimestamp())));
