@@ -52,12 +52,11 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.AsyncRunnerTest;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class Eth1DataManagerTest {
 
-  private final TimeProvider timeProvider = mock(TimeProvider.class);
   private final Web3j web3j = mock(Web3j.class);
   private final AsyncRunner asyncRunner = new AsyncRunnerTest();
   private final DepositContractListener depositContractListener =
@@ -66,6 +65,7 @@ public class Eth1DataManagerTest {
   private EventBus eventBus;
   private Eth1DataManager eth1DataManager;
   private EventCapture eventCapture;
+  private StubTimeProvider timeProvider;
 
   private static final Bytes32 HEX_STRING = Bytes32.fromHexString("0xdeadbeef");
 
@@ -95,6 +95,7 @@ public class Eth1DataManagerTest {
   void setUp() {
     eventBus = new EventBus();
     eventCapture = new EventCapture(eventBus);
+    timeProvider = new StubTimeProvider(testStartTime);
 
     when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime);
     when(depositContractListener.getDepositCount(any()))
@@ -234,7 +235,7 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.start();
 
-    when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime.plus(UnsignedLong.valueOf(4)));
+    timeProvider.advanceTimeBySeconds(4);
 
     eth1DataManager.onTick(new Date());
 
@@ -277,7 +278,7 @@ public class Eth1DataManagerTest {
 
     eth1DataManager.start();
 
-    when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime.plus(UnsignedLong.valueOf(4)));
+    timeProvider.advanceTimeBySeconds(4);
 
     eth1DataManager.onTick(new Date());
 

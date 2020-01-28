@@ -33,12 +33,11 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class Eth1DataCacheTest {
 
   private final EventBus eventBus = new EventBus();
-  private final TimeProvider timeProvider = mock(TimeProvider.class);
   private final BeaconState genesisState = mock(BeaconState.class);
 
   static {
@@ -52,6 +51,7 @@ public class Eth1DataCacheTest {
   private final UnsignedLong NEXT_VOTING_PERIOD_SLOT = UnsignedLong.valueOf(102);
   private final UnsignedLong testStartTime = UnsignedLong.valueOf(1000);
 
+  private StubTimeProvider timeProvider;
   private Eth1DataCache eth1DataCache;
 
   // Voting Period Start Time
@@ -72,8 +72,8 @@ public class Eth1DataCacheTest {
     when(genesisState.getGenesis_time())
         .thenReturn(testStartTime.minus(UnsignedLong.valueOf(1000)));
     when(genesisState.getSlot()).thenReturn(UnsignedLong.ZERO);
-    when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime);
 
+    timeProvider = new StubTimeProvider(testStartTime);
     eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
   }
 
@@ -235,7 +235,7 @@ public class Eth1DataCacheTest {
             Eth1DataManager.getCacheRangeLowerBound(testStartTime).minus(UnsignedLong.ONE));
 
     // Make sure hasBeenApproximately returns true
-    when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime.plus(UnsignedLong.valueOf(2)));
+    timeProvider.advanceTimeBySeconds(2);
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
