@@ -22,6 +22,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_REQUEST_BUFFER;
@@ -97,7 +98,6 @@ public class Eth1DataManagerTest {
     eventCapture = new EventCapture(eventBus);
     timeProvider = new StubTimeProvider(testStartTime);
 
-    when(timeProvider.getTimeInSeconds()).thenReturn(testStartTime);
     when(depositContractListener.getDepositCount(any()))
         .thenReturn(SafeFuture.completedFuture(UnsignedLong.valueOf(1234)));
     when(depositContractListener.getDepositRoot(any()))
@@ -196,13 +196,9 @@ public class Eth1DataManagerTest {
 
   @Test
   void onTick_startupNotDone() {
-    eventBus = spy(new EventBus());
-    eth1DataManager =
-        spy(
-            new Eth1DataManager(
-                web3j, eventBus, depositContractListener, asyncRunner, timeProvider));
-    eventBus.post(new Date());
-    verifyNoInteractions(eth1DataManager);
+    eventBus = mock(EventBus.class);
+    eth1DataManager = new Eth1DataManager(web3j, eventBus, depositContractListener, asyncRunner, timeProvider);
+    verifyNoInteractions(eventBus);
   }
 
   @Test
