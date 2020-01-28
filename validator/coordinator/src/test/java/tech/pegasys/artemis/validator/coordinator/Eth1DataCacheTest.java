@@ -243,7 +243,7 @@ public class Eth1DataCacheTest {
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
 
-    Waiter.waitFor(() -> assertThat(eth1DataCache.getMapForTesting().values().size() == 1));
+    Waiter.waitFor(() -> assertThat(eth1DataCache.getMapForTesting().values().size()).isEqualTo(1));
 
     assertThat(eth1DataCache.getMapForTesting().values()).containsExactly(eth1Data1);
   }
@@ -271,7 +271,7 @@ public class Eth1DataCacheTest {
 
     Eth1Data eth1Data3 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent3);
 
-    Waiter.waitFor(() -> assertThat(eth1DataCache.getMapForTesting().values().size() == 1));
+    Waiter.waitFor(() -> assertThat(eth1DataCache.getMapForTesting().values().size()).isEqualTo(1));
 
     assertThat(eth1DataCache.getMapForTesting().values()).containsExactly(eth1Data3);
   }
