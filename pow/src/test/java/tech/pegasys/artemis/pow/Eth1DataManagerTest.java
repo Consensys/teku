@@ -144,7 +144,6 @@ public class Eth1DataManagerTest {
 
     List<Integer> eth1BlockTimestamps =
         eventCapture.getEth1BlockEvents().stream()
-            .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
@@ -177,7 +176,6 @@ public class Eth1DataManagerTest {
 
     List<Integer> eth1BlockTimestamps =
         eventCapture.getEth1BlockEvents().stream()
-            .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
@@ -243,7 +241,6 @@ public class Eth1DataManagerTest {
 
     List<Integer> eth1BlockTimestamps =
         eventCapture.getEth1BlockEvents().stream()
-            .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
@@ -286,7 +283,6 @@ public class Eth1DataManagerTest {
 
     List<Integer> eth1BlockTimestamps =
         eventCapture.getEth1BlockEvents().stream()
-            .filter(event -> event.getClass().equals(CacheEth1BlockEvent.class))
             .map(CacheEth1BlockEvent::getBlockTimestamp)
             .map(UnsignedLong::intValue)
             .collect(Collectors.toList());
