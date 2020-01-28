@@ -19,12 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -56,7 +52,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.mikuli.G2Point;
 
 public class MapObjectUtil {
 
@@ -84,7 +79,6 @@ public class MapObjectUtil {
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
     else if (classtype.equals(Fork.class)) return getFork((Map) object);
-    else if (classtype.equals(G2Point.class)) return getG2Point(object);
     else if (classtype.equals(HistoricalBatch.class)) return getHistoricalBatch((Map) object);
     else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
     else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
@@ -102,62 +96,6 @@ public class MapObjectUtil {
     } else if (classtype.equals(Boolean.class)) return Boolean.valueOf(object.toString());
 
     return null;
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static G2Point getG2Point(Object object) {
-    if (object.getClass() == ArrayList.class) {
-      List list = (List) object;
-      // If we have only two elements then these are the compressed X_im and X_re coordinates
-      if (list.size() == 2) {
-        return G2Point.fromBytesCompressed(
-            Bytes.concatenate(
-                Bytes48.leftPad(Bytes.fromHexString(list.get(0).toString())),
-                Bytes48.leftPad(Bytes.fromHexString(list.get(1).toString()))));
-      }
-
-      // If we have three elements then these are the uncompressed complex X, Y and Z coords
-      BIG xRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(0).toString()))
-                  .toArray());
-      BIG xIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(1).toString()))
-                  .toArray());
-      BIG yRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(0).toString()))
-                  .toArray());
-      BIG yIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(1).toString()))
-                  .toArray());
-      BIG zRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(0).toString()))
-                  .toArray());
-      BIG zIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(1).toString()))
-                  .toArray());
-
-      FP2 x = new FP2(xRe, xIm);
-      FP2 y = new FP2(yRe, yIm);
-      FP2 z = new FP2(zRe, zIm);
-
-      // Normalise the point (affine transformation) so that Z = 1
-      z.inverse();
-      x.mul(z);
-      x.reduce();
-      y.mul(z);
-      y.reduce();
-
-      return new G2Point(new ECP2(x, y));
-    } else {
-      Map map = (Map) object;
-      return G2Point.hashToG2(Bytes.fromHexString(map.get("message").toString()));
-    }
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
