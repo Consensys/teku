@@ -26,13 +26,13 @@ import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 
-class BlockBatcher {
+class BatchByBlockDepositHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final Consumer<DepositsFromBlockEvent> eventConsumer;
   private Optional<Block> currentBlock = Optional.empty();
   private List<Deposit> deposits = new ArrayList<>();
 
-  BlockBatcher(final Consumer<DepositsFromBlockEvent> eventConsumer) {
+  BatchByBlockDepositHandler(final Consumer<DepositsFromBlockEvent> eventConsumer) {
     this.eventConsumer = eventConsumer;
   }
 
@@ -45,7 +45,7 @@ class BlockBatcher {
     deposits.add(event);
   }
 
-  public synchronized void forcePublishPendingBlock() {
+  public synchronized void publishPendingBlock() {
     currentBlock.ifPresent(this::publishPendingBlock);
     currentBlock = Optional.empty();
   }

@@ -33,12 +33,12 @@ import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class BlockBatcherTest {
+class BatchByBlockDepositHandlerTest {
   @SuppressWarnings("unchecked")
   private final Consumer<DepositsFromBlockEvent> eventPublisher = mock(Consumer.class);
 
   private byte depositIndex = 0;
-  private final BlockBatcher batcher = new BlockBatcher(eventPublisher);
+  private final BatchByBlockDepositHandler batcher = new BatchByBlockDepositHandler(eventPublisher);
 
   @Test
   public void shouldPublishSingleDepositWhenDepositFromNextBlockReceived() {

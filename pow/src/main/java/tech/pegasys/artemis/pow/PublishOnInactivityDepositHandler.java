@@ -17,25 +17,29 @@ import com.google.common.eventbus.Subscribe;
 import java.util.Date;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
-final class DepositBlockTimeout {
-  private static final int EVENT_TIMEOUT = 5000;
-  private final BlockBatcher batcher;
+final class PublishOnInactivityDepositHandler {
+  static final int EVENT_TIMEOUT_MILLIS = 5000;
+  private final TimeProvider timeProvider;
+  private final BatchByBlockDepositHandler batcher;
   private long lastPublishTime = 0;
 
-  DepositBlockTimeout(final BlockBatcher batcher) {
+  PublishOnInactivityDepositHandler(
+      final TimeProvider timeProvider, final BatchByBlockDepositHandler batcher) {
+    this.timeProvider = timeProvider;
     this.batcher = batcher;
   }
 
   public synchronized void onDepositEvent(final Block block, final Deposit deposit) {
     batcher.onDepositEvent(block, deposit);
-    lastPublishTime = System.currentTimeMillis();
+    lastPublishTime = timeProvider.getTimeInMillis().longValue();
   }
 
   @Subscribe
   public synchronized void onTick(final Date date) {
-    if (lastPublishTime != 0 && date.getTime() - lastPublishTime > EVENT_TIMEOUT) {
-      batcher.forcePublishPendingBlock();
+    if (lastPublishTime != 0 && date.getTime() - lastPublishTime >= EVENT_TIMEOUT_MILLIS) {
+      batcher.publishPendingBlock();
       lastPublishTime = 0;
     }
   }
