@@ -31,6 +31,8 @@ import org.apache.tuweni.config.SchemaBuilder;
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
 
+  private static final int NO_VALUE = -1;
+
   @SuppressWarnings({"DoubleBraceInitialization"})
   static final Schema createSchema() {
     SchemaBuilder builder =
@@ -45,7 +47,7 @@ public class ArtemisConfiguration {
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
     builder.addInteger(
         "node.advertisedPort",
-        9000,
+        NO_VALUE,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addString("node.discovery", "", "static or discv5", null);
@@ -195,7 +197,8 @@ public class ArtemisConfiguration {
 
   /** @return the port this node will advertise as its own */
   public int getAdvertisedPort() {
-    return config.getInteger("node.advertisedPort");
+    final int advertisedPort = config.getInteger("node.advertisedPort");
+    return advertisedPort == NO_VALUE ? getPort() : advertisedPort;
   }
 
   /** @return the network interface this node will bind to */

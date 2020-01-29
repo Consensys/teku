@@ -52,6 +52,7 @@ import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.genesis.PreGenesisDepositHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
@@ -64,6 +65,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeEvents;
+import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
@@ -72,6 +74,7 @@ public class BeaconChainController {
   private EventChannel<TimeEvents> timeEventChannel;
   private Runnable networkTask;
   private final ArtemisConfiguration config;
+  private final TimeProvider timeProvider;
   private EventBus eventBus;
   private Timer timer;
   private ChainStorageClient chainStorageClient;
@@ -89,7 +92,11 @@ public class BeaconChainController {
   private AttestationManager attestationManager;
 
   public BeaconChainController(
-      EventBus eventBus, MetricsSystem metricsSystem, ArtemisConfiguration config) {
+      TimeProvider timeProvider,
+      EventBus eventBus,
+      MetricsSystem metricsSystem,
+      ArtemisConfiguration config) {
+    this.timeProvider = timeProvider;
     this.eventBus = eventBus;
     this.config = config;
     this.metricsSystem = metricsSystem;
@@ -104,6 +111,7 @@ public class BeaconChainController {
     initAttestationAggregator();
     initBlockAttestationsPool();
     initValidatorCoordinator();
+    initDepositHandler();
     initStateProcessor();
     initAttestationPropagationManager();
     initP2PNetwork();
@@ -146,12 +154,22 @@ public class BeaconChainController {
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
     new ValidatorCoordinator(
-        eventBus, chainStorageClient, attestationAggregator, blockAttestationsPool, config);
+        timeProvider,
+        eventBus,
+        chainStorageClient,
+        attestationAggregator,
+        blockAttestationsPool,
+        config);
   }
 
   public void initStateProcessor() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
-    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient, config);
+    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient);
+  }
+
+  private void initDepositHandler() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositHandler()");
+    eventBus.register(new PreGenesisDepositHandler(config, chainStorageClient));
   }
 
   private void initAttestationPropagationManager() {
@@ -285,21 +303,19 @@ public class BeaconChainController {
   }
 
   private void onTick(Date date) {
-    if (!testMode && !stateProcessor.isGenesisReady()) {
+    if (chainStorageClient.isPreGenesis()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
-    if (chainStorageClient.getStore() != null) {
-      final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
-      on_tick(transaction, currentTime);
-      transaction.commit().join();
-      final UnsignedLong nextSlotStartTime =
-          chainStorageClient
-              .getGenesisTime()
-              .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-      if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
-        processSlot();
-      }
+    final Store.Transaction transaction = chainStorageClient.startStoreTransaction();
+    on_tick(transaction, currentTime);
+    transaction.commit().join();
+    final UnsignedLong nextSlotStartTime =
+        chainStorageClient
+            .getGenesisTime()
+            .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
+      processSlot();
     }
   }
 

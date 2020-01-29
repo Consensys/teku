@@ -31,10 +31,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class CommitteeUtil {
 
@@ -152,20 +154,27 @@ public class CommitteeUtil {
    */
   public static List<Integer> get_beacon_committee(
       BeaconState state, UnsignedLong slot, UnsignedLong index) {
-    UnsignedLong epoch = compute_epoch_at_slot(slot);
-    UnsignedLong committees_per_slot = get_committee_count_at_slot(state, slot);
-    int committeeIndex =
-        toIntExact(
-            slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
-                .times(committees_per_slot)
-                .plus(index)
-                .longValue());
-    int count =
-        toIntExact(committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).longValue());
-    return compute_committee(
-        get_active_validator_indices(state, epoch),
-        get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),
-        committeeIndex,
-        count);
+    return BeaconStateWithCache.getTransitionCaches(state)
+        .getBeaconCommittee()
+        .get(
+            Pair.of(slot, index),
+            p -> {
+              UnsignedLong epoch = compute_epoch_at_slot(slot);
+              UnsignedLong committees_per_slot = get_committee_count_at_slot(state, slot);
+              int committeeIndex =
+                  toIntExact(
+                      slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+                          .times(committees_per_slot)
+                          .plus(index)
+                          .longValue());
+              int count =
+                  toIntExact(
+                      committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).longValue());
+              return compute_committee(
+                  get_active_validator_indices(state, epoch),
+                  get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),
+                  committeeIndex,
+                  count);
+            });
   }
 }

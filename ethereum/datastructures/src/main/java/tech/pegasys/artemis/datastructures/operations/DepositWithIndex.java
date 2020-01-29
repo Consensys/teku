@@ -21,17 +21,19 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
 
-  private UnsignedLong index;
-  private Log log;
+  private final UnsignedLong index;
+  private final Log log;
 
   public DepositWithIndex(SSZVector<Bytes32> proof, DepositData data, UnsignedLong index) {
     super(proof, data);
     this.index = index;
+    log = null;
   }
 
   public DepositWithIndex(DepositData data, UnsignedLong index) {
     super(data);
     this.index = index;
+    log = null;
   }
 
   public DepositWithIndex(DepositData data, UnsignedLong index, Log log) {
@@ -44,16 +46,8 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
     return index;
   }
 
-  public void setIndex(UnsignedLong index) {
-    this.index = index;
-  }
-
   public Log getLog() {
     return log;
-  }
-
-  public void setLog(Log log) {
-    this.log = log;
   }
 
   @Override

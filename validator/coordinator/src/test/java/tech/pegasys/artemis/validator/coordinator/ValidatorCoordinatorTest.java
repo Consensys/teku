@@ -39,14 +39,17 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class ValidatorCoordinatorTest {
 
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private BlockAttestationsPool blockAttestationsPool;
   private AttestationAggregator attestationAggregator;
   private EventBus eventBus;
   private ChainStorageClient storageClient;
   private ArtemisConfiguration config;
+  private BeaconChainUtil chainUtil;
 
   private static final int NUM_VALIDATORS = 12;
 
@@ -69,8 +72,7 @@ public class ValidatorCoordinatorTest {
     storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
-    final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
-    chainUtil.initializeStorage();
+    chainUtil = BeaconChainUtil.create(storageClient, blsKeyPairList);
   }
 
   @Test
@@ -112,8 +114,17 @@ public class ValidatorCoordinatorTest {
 
   private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
     when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
-    return new ValidatorCoordinator(
-        eventBus, storageClient, attestationAggregator, blockAttestationsPool, config);
+    ValidatorCoordinator vc =
+        new ValidatorCoordinator(
+            timeProvider,
+            eventBus,
+            storageClient,
+            attestationAggregator,
+            blockAttestationsPool,
+            config);
+
+    chainUtil.initializeStorage();
+    return vc;
   }
 
   private Object blockWithSlot(final UnsignedLong slotNumber) {

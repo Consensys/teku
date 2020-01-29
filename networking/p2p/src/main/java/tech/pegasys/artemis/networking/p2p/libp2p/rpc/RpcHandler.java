@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.libp2p.rpc;
 
 import io.libp2p.core.Connection;
-import io.libp2p.core.P2PAbstractChannel;
+import io.libp2p.core.P2PChannel;
 import io.libp2p.core.multistream.Mode;
 import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
@@ -50,10 +50,10 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       Connection connection, Bytes initialPayload, RpcRequestHandler handler) {
     return SafeFuture.of(
             connection
-                .getMuxerSession()
+                .muxerSession()
                 .createStream(
                     Multistream.create(this.toInitiator(rpcMethod.getId())).toStreamHandler())
-                .getControler())
+                .getController())
         .thenCompose(
             ctr -> {
               ctr.setRequestHandler(handler);
@@ -77,15 +77,15 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
   @NotNull
   @Override
-  public SafeFuture<Controller> initChannel(P2PAbstractChannel channel, String s) {
+  public SafeFuture<Controller> initChannel(P2PChannel channel, String s) {
     // TODO timeout handlers
-    final Connection connection = ((io.libp2p.core.Stream) channel).getConn();
-    final NodeId nodeId = new LibP2PNodeId(connection.getSecureSession().getRemoteId());
+    final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
+    final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
     Controller controller = new Controller(nodeId);
     if (!channel.isInitiator()) {
       controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
     }
-    channel.getNettyChannel().pipeline().addLast(controller);
+    channel.pushHandler(controller);
     return controller.activeFuture;
   }
 
