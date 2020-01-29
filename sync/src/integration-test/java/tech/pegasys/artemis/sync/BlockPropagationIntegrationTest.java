@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -61,7 +60,7 @@ public class BlockPropagationIntegrationTest {
     SyncingNodeManager node2 = SyncingNodeManager.create(networkFactory, validatorKeys);
 
     // Connect networks
-    waitFor(node1.network().connect(node2.network().getNodeAddress()));
+    Waiter.waitFor(node1.network().connect(node2.network().getNodeAddress()));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
