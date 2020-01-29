@@ -39,9 +39,11 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class ValidatorCoordinatorTest {
 
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private BlockAttestationsPool blockAttestationsPool;
   private AttestationAggregator attestationAggregator;
   private EventBus eventBus;
@@ -114,7 +116,12 @@ public class ValidatorCoordinatorTest {
     when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
     ValidatorCoordinator vc =
         new ValidatorCoordinator(
-            eventBus, storageClient, attestationAggregator, blockAttestationsPool, config);
+            timeProvider,
+            eventBus,
+            storageClient,
+            attestationAggregator,
+            blockAttestationsPool,
+            config);
 
     chainUtil.initializeStorage();
     return vc;

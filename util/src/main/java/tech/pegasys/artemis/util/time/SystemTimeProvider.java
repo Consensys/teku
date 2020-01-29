@@ -14,14 +14,18 @@
 package tech.pegasys.artemis.util.time;
 
 import com.google.common.primitives.UnsignedLong;
+import java.time.Clock;
 
-public interface TimeProvider {
+public class SystemTimeProvider implements TimeProvider {
 
-  UnsignedLong MILLIS_PER_SECOND = UnsignedLong.valueOf(1000);
+  private final Clock clock;
 
-  UnsignedLong getTimeInMillis();
+  public SystemTimeProvider() {
+    this.clock = Clock.systemUTC();
+  }
 
-  default UnsignedLong getTimeInSeconds() {
-    return getTimeInMillis().dividedBy(MILLIS_PER_SECOND);
+  @Override
+  public UnsignedLong getTimeInMillis() {
+    return UnsignedLong.valueOf(clock.millis());
   }
 }
