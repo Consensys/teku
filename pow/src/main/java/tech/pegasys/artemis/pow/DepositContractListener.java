@@ -60,7 +60,6 @@ public class DepositContractListener {
                 contract.getContractAddress().substring(2))
             .addSingleTopic(EventEncoder.encode(DEPOSITEVENT_EVENT));
 
-
     // Subscribe to the event of a validator being registered in the
     // DepositContract
     subscriptionNewDeposit =
