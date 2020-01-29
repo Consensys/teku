@@ -22,7 +22,9 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.math.DoubleMath;
 import com.google.common.math.IntMath;
+import com.google.common.math.LongMath;
 import com.google.common.primitives.UnsignedLong;
 import java.math.RoundingMode;
 import java.util.Date;
@@ -381,10 +383,10 @@ public class Eth1DataManager {
 
   public static UnsignedLong getCacheMidRangeTimestamp(UnsignedLong currentTime) {
     return UnsignedLong.valueOf(
-        IntMath.divide(
+        LongMath.divide(
             getCacheRangeUpperBound(currentTime)
                 .plus(getCacheRangeLowerBound(currentTime))
-                .intValue(),
+                .longValue(),
             2,
             RoundingMode.HALF_UP));
   }
