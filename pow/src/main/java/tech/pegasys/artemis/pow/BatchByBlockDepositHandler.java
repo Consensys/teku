@@ -46,8 +46,11 @@ class BatchByBlockDepositHandler {
   }
 
   public synchronized void publishPendingBlock() {
-    currentBlock.ifPresent(this::publishPendingBlock);
-    currentBlock = Optional.empty();
+    currentBlock.ifPresent(
+        block -> {
+          publishPendingBlock(block);
+          currentBlock = Optional.empty();
+        });
   }
 
   private void publishCompletedBlocks(final EthBlock.Block newBlock) {
