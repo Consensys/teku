@@ -294,7 +294,27 @@ public class Eth1DataManagerTest {
   @Test
   void cacheMidRangeCalculation_noOverflow() {
     assertDoesNotThrow(
-        () -> Eth1DataManager.getCacheMidRangeTimestamp(UnsignedLong.valueOf(1580314596)));
+        () -> Eth1DataManager.getCacheMidRangeTimestamp(UnsignedLong.valueOf(1580314596 * 2L)));
+  }
+
+  @Test
+  void calculateRealSecondsPerEth1BlockFuture_noOverflow() {
+    assertDoesNotThrow(
+        () ->
+            eth1DataManager.calculateRealSecondsPerEth1BlockFuture(
+                SafeFuture.completedFuture(UnsignedLong.valueOf(1580314596L * 2L)),
+                SafeFuture.completedFuture(UnsignedLong.valueOf(4000)),
+                UnsignedLong.valueOf(1500314596L * 2L)));
+  }
+
+  @Test
+  void getApproximatedBlockNumberDiffWithMidRangeBlock_noOverflow() {
+    assertDoesNotThrow(
+        () ->
+            eth1DataManager.getApproximatedBlockNumberDiffWithMidRangeBlock(
+                SafeFuture.completedFuture(UnsignedLong.valueOf(1580314596L * 2L)),
+                SafeFuture.completedFuture(UnsignedLong.valueOf(10)),
+                UnsignedLong.valueOf(1500314596 * 2L)));
   }
 
   private Request mockFailedRequest() {

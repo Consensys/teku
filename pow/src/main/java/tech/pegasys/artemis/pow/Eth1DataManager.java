@@ -247,7 +247,7 @@ public class Eth1DataManager {
         });
   }
 
-  private SafeFuture<UnsignedLong> calculateRealSecondsPerEth1BlockFuture(
+  SafeFuture<UnsignedLong> calculateRealSecondsPerEth1BlockFuture(
       SafeFuture<UnsignedLong> latestBlockTimestampFuture,
       SafeFuture<UnsignedLong> blockNumberDiffFuture,
       UnsignedLong blockTimestamp) {
@@ -297,7 +297,7 @@ public class Eth1DataManager {
     return blockFuture.thenApply(ethBlock -> UnsignedLong.valueOf(ethBlock.getBlock().getNumber()));
   }
 
-  private SafeFuture<UnsignedLong> getApproximatedBlockNumberDiffWithMidRangeBlock(
+  SafeFuture<UnsignedLong> getApproximatedBlockNumberDiffWithMidRangeBlock(
       SafeFuture<UnsignedLong> latestBlockTimestampFuture,
       SafeFuture<UnsignedLong> secondsPerEth1BlockFuture,
       UnsignedLong cacheMidRangeTimestamp) {
