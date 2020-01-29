@@ -41,29 +41,25 @@ class BatchByBlockDepositHandler {
         "Received deposit from block {} with index {}",
         block.getNumber(),
         event.getMerkle_tree_index());
-    publishCompletedBlocks(block);
+    checkForCompletedBlocks(block);
     deposits.add(event);
   }
 
   public synchronized void publishPendingBlock() {
-    currentBlock.ifPresent(
-        block -> {
-          publishPendingBlock(block);
-          currentBlock = Optional.empty();
-        });
+    currentBlock.ifPresent(this::publishPendingBlock);
   }
 
-  private void publishCompletedBlocks(final EthBlock.Block newBlock) {
+  private void checkForCompletedBlocks(final EthBlock.Block blockOfNextDeposit) {
     if (currentBlock.isEmpty()) {
-      currentBlock = Optional.of(newBlock);
+      currentBlock = Optional.of(blockOfNextDeposit);
       return;
     }
     final Block block = currentBlock.get();
-    if (block.getHash().equals(newBlock.getHash())) {
+    if (block.getHash().equals(blockOfNextDeposit.getHash())) {
       return;
     }
     publishPendingBlock(block);
-    currentBlock = Optional.of(newBlock);
+    currentBlock = Optional.of(blockOfNextDeposit);
   }
 
   private void publishPendingBlock(final Block block) {
@@ -75,5 +71,6 @@ class BatchByBlockDepositHandler {
             UnsignedLong.valueOf(block.getTimestamp()),
             deposits));
     deposits = new ArrayList<>();
+    currentBlock = Optional.empty();
   }
 }
