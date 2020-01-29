@@ -14,41 +14,43 @@
 package tech.pegasys.artemis.statetransition;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
+import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 
 public class DepositQueue {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final NavigableSet<DepositWithIndex> pendingDeposits = new TreeSet<>();
-  private final Consumer<DepositWithIndex> depositConsumer;
+  private final NavigableSet<DepositsFromBlockEvent> pendingDeposits =
+      new TreeSet<>(Comparator.comparing(DepositsFromBlockEvent::getFirstDepositIndex));
+  private final Consumer<DepositsFromBlockEvent> depositConsumer;
   private UnsignedLong expectedDepositIndex = UnsignedLong.ZERO;
 
-  public DepositQueue(final Consumer<DepositWithIndex> depositConsumer) {
+  public DepositQueue(final Consumer<DepositsFromBlockEvent> depositConsumer) {
     this.depositConsumer = depositConsumer;
   }
 
-  public void onDeposit(DepositWithIndex deposit) {
-    LOG.trace("New deposit received with index {}", deposit.getIndex());
+  public void onDeposit(final DepositsFromBlockEvent deposit) {
+    LOG.trace("New deposits received from block {}", deposit.getBlockNumber());
     pendingDeposits.add(deposit);
     processPendingDeposits();
   }
 
   private void processPendingDeposits() {
-    for (Iterator<DepositWithIndex> i = pendingDeposits.iterator(); i.hasNext(); ) {
-      final DepositWithIndex deposit = i.next();
-      if (!deposit.getIndex().equals(expectedDepositIndex)) {
+    for (Iterator<DepositsFromBlockEvent> i = pendingDeposits.iterator(); i.hasNext(); ) {
+      final DepositsFromBlockEvent deposits = i.next();
+      if (!deposits.getFirstDepositIndex().equals(expectedDepositIndex)) {
         return;
       }
-      LOG.trace("Processing deposit with index {}", deposit.getIndex());
-      depositConsumer.accept(deposit);
+      LOG.trace("Processing deposits from block {}", deposits.getBlockNumber());
+      depositConsumer.accept(deposits);
       i.remove();
-      expectedDepositIndex = expectedDepositIndex.plus(UnsignedLong.ONE);
+      expectedDepositIndex = deposits.getLastDepositIndex().plus(UnsignedLong.ONE);
     }
   }
 }

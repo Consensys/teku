@@ -83,7 +83,8 @@ public class PowchainService implements ServiceInterface {
     if (depositMode.equals(DEPOSIT_SIM) && depositSimFile == null) {
       controller = new GanacheController(Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT, 6000);
       depositContractListener =
-          DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
+          DepositContractListenerFactory.simulationDeployDepositContract(
+              eventBus, controller, timeProvider);
       Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
       MockStartValidatorKeyPairFactory mockStartValidatorKeyPairFactory =
           new MockStartValidatorKeyPairFactory();
@@ -141,7 +142,8 @@ public class PowchainService implements ServiceInterface {
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
       Web3j web3j = Web3j.build(new HttpService(provider));
       depositContractListener =
-          DepositContractListenerFactory.eth1DepositContract(web3j, eventBus, contractAddr);
+          DepositContractListenerFactory.eth1DepositContract(
+              web3j, eventBus, contractAddr, timeProvider);
       Eth1DataManager eth1DataManager =
           new Eth1DataManager(
               web3j,

@@ -173,8 +173,7 @@ public class DepositUtil {
             event.getWithdrawal_credentials(),
             event.getAmount(),
             event.getSignature());
-    return new DepositWithIndex(
-        data, event.getMerkle_tree_index(), event.getResponse().log, event.getBlockTimestamp());
+    return new DepositWithIndex(data, event.getMerkle_tree_index(), event.getResponse().log);
   }
 
   // deprecated, being used until a new validators_test_data.json can be generated
@@ -191,6 +190,6 @@ public class DepositUtil {
     response.amount = Arrays.copyOfRange(data, 80, 88);
     response.signature = Arrays.copyOfRange(data, 88, 184);
     response.index = index;
-    return new tech.pegasys.artemis.pow.event.Deposit(response, UnsignedLong.ZERO);
+    return new tech.pegasys.artemis.pow.event.Deposit(response);
   }
 }
