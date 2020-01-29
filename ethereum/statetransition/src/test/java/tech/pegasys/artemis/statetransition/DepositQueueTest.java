@@ -16,29 +16,28 @@ package tech.pegasys.artemis.statetransition;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 
 class DepositQueueTest {
-  private int seed = 4892424;
 
   @SuppressWarnings("unchecked")
-  private final Consumer<DepositWithIndex> output = mock(Consumer.class);
+  private final Consumer<DepositsFromBlockEvent> output = mock(Consumer.class);
 
   private final InOrder inOrder = inOrder(output);
 
   private final DepositQueue depositQueue = new DepositQueue(output);
-  private final DepositWithIndex deposit0 = depositWithIndex(0);
-  private final DepositWithIndex deposit1 = depositWithIndex(1);
-  private final DepositWithIndex deposit2 = depositWithIndex(2);
 
   @Test
   public void shouldPassThroughDepositWithNextIndexImmediately() {
+    final DepositsFromBlockEvent deposit0 = eventWithSingleDeposit(0);
+    final DepositsFromBlockEvent deposit1 = eventWithSingleDeposit(1);
+    final DepositsFromBlockEvent deposit2 = eventWithSingleDeposit(2);
     depositQueue.onDeposit(deposit0);
     inOrder.verify(output).accept(deposit0);
     inOrder.verifyNoMoreInteractions();
@@ -54,37 +53,49 @@ class DepositQueueTest {
 
   @Test
   public void shouldDelayDepositUntilEarlierIndicesHaveBeenReceived() {
-    depositQueue.onDeposit(deposit1);
+    final DepositsFromBlockEvent event0 = eventWithDepositIndexRange(0, 5);
+    final DepositsFromBlockEvent event1 = eventWithDepositIndexRange(6, 10);
+    final DepositsFromBlockEvent event2 = eventWithDepositIndexRange(11, 15);
+    depositQueue.onDeposit(event1);
     verifyNoInteractions(output);
 
-    depositQueue.onDeposit(deposit2);
+    depositQueue.onDeposit(event2);
     verifyNoInteractions(output);
 
-    depositQueue.onDeposit(deposit0);
+    depositQueue.onDeposit(event0);
 
-    inOrder.verify(output).accept(deposit0);
-    inOrder.verify(output).accept(deposit1);
-    inOrder.verify(output).accept(deposit2);
+    inOrder.verify(output).accept(event0);
+    inOrder.verify(output).accept(event1);
+    inOrder.verify(output).accept(event2);
     inOrder.verifyNoMoreInteractions();
   }
 
   @Test
   public void shouldOutputDelayedDepositsAsSoonAsPossible() {
-    depositQueue.onDeposit(deposit1);
+    final DepositsFromBlockEvent event0 = eventWithDepositIndexRange(0, 5);
+    final DepositsFromBlockEvent event1 = eventWithDepositIndexRange(6, 10);
+    final DepositsFromBlockEvent event2 = eventWithDepositIndexRange(11, 15);
+    depositQueue.onDeposit(event1);
     verifyNoInteractions(output);
 
-    depositQueue.onDeposit(deposit0);
+    depositQueue.onDeposit(event0);
 
-    inOrder.verify(output).accept(deposit0);
-    inOrder.verify(output).accept(deposit1);
+    inOrder.verify(output).accept(event0);
+    inOrder.verify(output).accept(event1);
 
-    depositQueue.onDeposit(deposit2);
-    inOrder.verify(output).accept(deposit2);
+    depositQueue.onDeposit(event2);
+    inOrder.verify(output).accept(event2);
     inOrder.verifyNoMoreInteractions();
   }
 
-  private DepositWithIndex depositWithIndex(final int index) {
-    return new DepositWithIndex(
-        DataStructureUtil.randomDepositData(seed++), UnsignedLong.valueOf(index));
+  private DepositsFromBlockEvent eventWithSingleDeposit(int index) {
+    return eventWithDepositIndexRange(index, index);
+  }
+
+  private DepositsFromBlockEvent eventWithDepositIndexRange(int start, int end) {
+    final DepositsFromBlockEvent event = mock(DepositsFromBlockEvent.class);
+    when(event.getFirstDepositIndex()).thenReturn(UnsignedLong.valueOf(start));
+    when(event.getLastDepositIndex()).thenReturn(UnsignedLong.valueOf(end));
+    return event;
   }
 }
