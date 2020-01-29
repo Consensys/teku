@@ -36,6 +36,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
+import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
@@ -81,16 +82,18 @@ public class StateProcessor {
   }
 
   @Subscribe
-  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
-    depositQueue.onDeposit(DepositUtil.convertDepositEventToOperationDeposit(event));
+  public void onDeposits(DepositsFromBlockEvent event) {
+    depositQueue.onDeposit(event);
   }
 
-  private void onOrderedDeposit(final DepositWithIndex deposit) {
-    STDOUT.log(Level.DEBUG, "New deposit received");
-    deposits.add(deposit);
+  private void onOrderedDeposit(final DepositsFromBlockEvent event) {
+    STDOUT.log(Level.DEBUG, "New deposits received");
+    event.getDeposits().stream()
+        .map(DepositUtil::convertDepositEventToOperationDeposit)
+        .forEach(deposits::add);
 
-    final Bytes32 eth1BlockHash = Bytes32.fromHexString(deposit.getLog().getBlockHash());
-    final UnsignedLong eth1_timestamp = deposit.getBlockTimestamp();
+    final Bytes32 eth1BlockHash = event.getBlockHash();
+    final UnsignedLong eth1_timestamp = event.getBlockTimestamp();
 
     // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
     if (isGenesisReasonable(

@@ -23,28 +23,23 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
 
   private final UnsignedLong index;
   private final Log log;
-  private final UnsignedLong blockTimestamp;
 
   public DepositWithIndex(SSZVector<Bytes32> proof, DepositData data, UnsignedLong index) {
     super(proof, data);
     this.index = index;
     log = null;
-    blockTimestamp = null;
   }
 
   public DepositWithIndex(DepositData data, UnsignedLong index) {
     super(data);
     this.index = index;
     log = null;
-    blockTimestamp = null;
   }
 
-  public DepositWithIndex(
-      DepositData data, UnsignedLong index, Log log, UnsignedLong blockTimestamp) {
+  public DepositWithIndex(DepositData data, UnsignedLong index, Log log) {
     super(data);
     this.index = index;
     this.log = log;
-    this.blockTimestamp = blockTimestamp;
   }
 
   public UnsignedLong getIndex() {
@@ -53,10 +48,6 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
 
   public Log getLog() {
     return log;
-  }
-
-  public UnsignedLong getBlockTimestamp() {
-    return blockTimestamp;
   }
 
   @Override
