@@ -22,7 +22,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.math.IntMath;
 import com.google.common.math.LongMath;
 import com.google.common.primitives.UnsignedLong;
 import java.math.RoundingMode;
@@ -262,8 +261,10 @@ public class Eth1DataManager {
 
               UnsignedLong actualTimeDiff = latestBlockTimestamp.minus(blockTimestamp);
               return UnsignedLong.valueOf(
-                  IntMath.divide(
-                      actualTimeDiff.intValue(), blockNumberDiff.intValue(), RoundingMode.HALF_UP));
+                  LongMath.divide(
+                      actualTimeDiff.longValue(),
+                      blockNumberDiff.longValue(),
+                      RoundingMode.HALF_UP));
             });
   }
 
@@ -315,8 +316,8 @@ public class Eth1DataManager {
               }
               UnsignedLong timeDiff = latestBlockTimestamp.minus(cacheMidRangeTimestamp);
               return UnsignedLong.valueOf(
-                  IntMath.divide(
-                      timeDiff.intValue(), secondsPerEth1Block.intValue(), RoundingMode.HALF_UP));
+                  LongMath.divide(
+                      timeDiff.longValue(), secondsPerEth1Block.longValue(), RoundingMode.HALF_UP));
             });
   }
 
