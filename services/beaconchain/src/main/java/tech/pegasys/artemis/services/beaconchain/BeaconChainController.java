@@ -51,6 +51,7 @@ import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.genesis.PreGenesisDepositHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
@@ -107,6 +108,7 @@ public class BeaconChainController {
     initAttestationAggregator();
     initBlockAttestationsPool();
     initValidatorCoordinator();
+    initDepositHandler();
     initStateProcessor();
     initAttestationPropagationManager();
     initP2PNetwork();
@@ -157,7 +159,12 @@ public class BeaconChainController {
 
   public void initStateProcessor() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
-    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient, config);
+    this.stateProcessor = new StateProcessor(eventBus, chainStorageClient);
+  }
+
+  private void initDepositHandler() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositHandler()");
+    eventBus.register(new PreGenesisDepositHandler(config, chainStorageClient));
   }
 
   private void initAttestationPropagationManager() {
