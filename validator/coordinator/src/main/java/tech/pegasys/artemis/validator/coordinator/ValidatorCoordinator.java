@@ -101,6 +101,7 @@ public class ValidatorCoordinator {
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
 
   public ValidatorCoordinator(
+      TimeProvider timeProvider,
       EventBus eventBus,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
@@ -113,7 +114,7 @@ public class ValidatorCoordinator {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
-    this.eth1DataCache = new Eth1DataCache(eventBus, new TimeProvider());
+    this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
     this.eventBus.register(this);
   }
 

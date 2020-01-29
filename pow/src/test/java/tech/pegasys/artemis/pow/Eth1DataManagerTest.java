@@ -92,7 +92,7 @@ public class Eth1DataManagerTest {
   void setUp() {
     eventBus = new EventBus();
     eventSink = EventSink.capture(eventBus, CacheEth1BlockEvent.class);
-    timeProvider = new StubTimeProvider(testStartTime);
+    timeProvider = StubTimeProvider.withTimeInSeconds(testStartTime);
 
     when(depositContractListener.getDepositCount(any()))
         .thenReturn(SafeFuture.completedFuture(UnsignedLong.valueOf(1234)));
