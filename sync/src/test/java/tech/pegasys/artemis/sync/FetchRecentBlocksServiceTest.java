@@ -15,14 +15,12 @@ package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,7 +44,6 @@ public class FetchRecentBlocksServiceTest {
 
   @Mock private Eth2Network eth2Network;
   @Mock private PendingPool<SignedBeaconBlock> pendingBlocksPool;
-  @Mock private RetryDelayFunction retryDelayFunction;
   @Mock private FetchBlockTaskFactory fetchBlockTaskFactory;
 
   private final int maxConcurrentRequests = 2;
@@ -66,12 +63,9 @@ public class FetchRecentBlocksServiceTest {
             eth2Network,
             pendingBlocksPool,
             fetchBlockTaskFactory,
-            retryDelayFunction,
             maxConcurrentRequests);
 
     lenient().when(fetchBlockTaskFactory.create(any(), any())).thenAnswer(this::createMockTask);
-    lenient().when(retryDelayFunction.getRetryDelay(anyInt())).thenReturn(Duration.ofSeconds(1));
-
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
   }
 

@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -39,7 +38,7 @@ class FetchRecentBlocksService extends Service {
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;
   private static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(30);
-  private static final RetryDelayFunction DEFAULT_RETRY_DELAY_FUNCTION =
+  private static final RetryDelayFunction RETRY_DELAY_FUNCTION =
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
 
   private final int maxConcurrentRequests;
@@ -51,7 +50,6 @@ class FetchRecentBlocksService extends Service {
   private final Collection<FetchBlockTask> activeTasks = new ConcurrentLinkedQueue<>();
 
   private final FetchBlockTaskFactory fetchBlockTaskFactory;
-  private final RetryDelayFunction retryDelayFunction;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
   private final AsyncRunner asyncRunner;
 
@@ -60,14 +58,12 @@ class FetchRecentBlocksService extends Service {
       final Eth2Network eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final FetchBlockTaskFactory fetchBlockTaskFactory,
-      final RetryDelayFunction retryDelayFunction,
       final int maxConcurrentRequests) {
     this.asyncRunner = asyncRunner;
     this.maxConcurrentRequests = maxConcurrentRequests;
     this.eth2Network = eth2Network;
     this.pendingBlocksPool = pendingBlocksPool;
     this.fetchBlockTaskFactory = fetchBlockTaskFactory;
-    this.retryDelayFunction = retryDelayFunction;
   }
 
   public static FetchRecentBlocksService create(
@@ -77,7 +73,6 @@ class FetchRecentBlocksService extends Service {
         eth2Network,
         pendingBlocksPool,
         FetchBlockTask::create,
-        DEFAULT_RETRY_DELAY_FUNCTION,
         MAX_CONCURRENT_REQUESTS);
   }
 
@@ -183,14 +178,7 @@ class FetchRecentBlocksService extends Service {
   private void removeTask(FetchBlockTask task) {
     // Stop tracking task
     task.cancel();
-    allTasks.compute(
-        task.getBlockRoot(),
-        (root, existingTask) -> {
-          if (Objects.equals(task, existingTask)) {
-            return null;
-          }
-          return existingTask;
-        });
+    allTasks.remove(task.getBlockRoot(), task);
   }
 
   private void queueTask(FetchBlockTask task) {
@@ -213,7 +201,7 @@ class FetchRecentBlocksService extends Service {
   }
 
   private void queueTaskWithRetryDelay(final FetchBlockTask task) {
-    final Duration delay = retryDelayFunction.getRetryDelay(task.getNumberOfRetries());
+    final Duration delay = RETRY_DELAY_FUNCTION.getRetryDelay(task.getNumberOfRetries());
     queueTaskWithDelay(task, delay);
   }
 
