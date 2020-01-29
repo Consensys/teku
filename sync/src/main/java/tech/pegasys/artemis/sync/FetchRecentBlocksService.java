@@ -41,7 +41,6 @@ class FetchRecentBlocksService extends Service {
   private static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(30);
   private static final RetryDelayFunction DEFAULT_RETRY_DELAY_FUNCTION =
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
-  private static final SafeFuture<Void> DELAY_COMPLETE_SIGNAL = SafeFuture.completedFuture(null);
 
   private final int maxConcurrentRequests;
   private final Eth2Network eth2Network;
@@ -201,7 +200,7 @@ class FetchRecentBlocksService extends Service {
 
   private void queueTaskWithDelay(FetchBlockTask task, Duration delay) {
     asyncRunner
-        .runAfterDelay(() -> DELAY_COMPLETE_SIGNAL, delay.getSeconds(), TimeUnit.SECONDS)
+        .getDelayedFuture(delay.getSeconds(), TimeUnit.SECONDS)
         .finish(
             () -> queueTask(task),
             (err) -> {
