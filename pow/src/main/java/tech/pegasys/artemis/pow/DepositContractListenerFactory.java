@@ -23,12 +23,13 @@ import org.web3j.tx.ClientTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class DepositContractListenerFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   public static DepositContractListener simulationDeployDepositContract(
-      EventBus eventBus, GanacheController controller) {
+      EventBus eventBus, GanacheController controller, TimeProvider timeProvider) {
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
     Credentials credentials =
         Credentials.create(controller.getAccounts().get(0).secretKey().bytes().toHexString());
@@ -40,14 +41,25 @@ public class DepositContractListenerFactory {
           "DepositContractListenerFactory.simulationDeployDepositContract: DepositContract failed to deploy in the simulation environment",
           e);
     }
-    return new DepositContractListener(web3j, eventBus, contract);
+    return new DepositContractListener(
+        web3j, contract, createDepositHandler(timeProvider, eventBus));
   }
 
   public static DepositContractListener eth1DepositContract(
-      Web3j web3j, EventBus eventBus, String address) {
+      Web3j web3j, EventBus eventBus, String address, TimeProvider timeProvider) {
     DepositContract contract =
         DepositContract.load(
             address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
-    return new DepositContractListener(web3j, eventBus, contract);
+    return new DepositContractListener(
+        web3j, contract, createDepositHandler(timeProvider, eventBus));
+  }
+
+  private static PublishOnInactivityDepositHandler createDepositHandler(
+      TimeProvider timeProvider, EventBus eventBus) {
+    PublishOnInactivityDepositHandler handler =
+        new PublishOnInactivityDepositHandler(
+            timeProvider, new BatchByBlockDepositHandler(eventBus::post));
+    eventBus.register(handler);
+    return handler;
   }
 }
