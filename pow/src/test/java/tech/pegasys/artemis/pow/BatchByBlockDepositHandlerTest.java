@@ -49,7 +49,7 @@ class BatchByBlockDepositHandlerTest {
     batcher.onDepositEvent(block1, event1);
     batcher.onDepositEvent(block2, event2);
 
-    verify(eventPublisher).accept(eventContaining(event1));
+    verify(eventPublisher).accept(eventContaining(block1, event1));
     verifyNoMoreInteractions(eventPublisher);
   }
 
@@ -64,7 +64,7 @@ class BatchByBlockDepositHandlerTest {
     batcher.onDepositEvent(block1, event2);
     batcher.onDepositEvent(block2, event3);
 
-    verify(eventPublisher).accept(eventContaining(event1, event2));
+    verify(eventPublisher).accept(eventContaining(block1, event1, event2));
     verifyNoMoreInteractions(eventPublisher);
   }
 
@@ -82,18 +82,17 @@ class BatchByBlockDepositHandlerTest {
     batcher.onDepositEvent(block2, event3);
     batcher.onDepositEvent(block3, event4);
 
-    verify(eventPublisher).accept(eventContaining(event1, event2));
-    verify(eventPublisher).accept(eventContaining(event3));
+    verify(eventPublisher).accept(eventContaining(block1, event1, event2));
+    verify(eventPublisher).accept(eventContaining(block2, event3));
     verifyNoMoreInteractions(eventPublisher);
   }
 
-  private DepositsFromBlockEvent eventContaining(final Deposit... deposits) {
-    final UnsignedLong blockNumber =
-        UnsignedLong.valueOf(deposits[0].getResponse().log.getBlockNumber());
-    final String hash = deposits[0].getResponse().log.getBlockHash();
-    final Bytes32 blockHash = Bytes32.fromHexString(hash);
-    final UnsignedLong blockTimestamp = blockNumber.plus(UnsignedLong.valueOf(10000));
-    return new DepositsFromBlockEvent(blockNumber, blockHash, blockTimestamp, asList(deposits));
+  private DepositsFromBlockEvent eventContaining(Block block, final Deposit... deposits) {
+    return new DepositsFromBlockEvent(
+        UnsignedLong.valueOf(block.getNumber()),
+        Bytes32.fromHexString(block.getHash()),
+        UnsignedLong.valueOf(block.getTimestamp()),
+        asList(deposits));
   }
 
   private Block block(int blockNumber) {
