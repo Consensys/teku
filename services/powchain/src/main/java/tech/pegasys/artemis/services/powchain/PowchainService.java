@@ -68,7 +68,7 @@ public class PowchainService implements ServiceInterface {
 
   @Override
   public void init(ServiceConfig config) {
-    timeProvider = config.getTimeProvider();
+    this.timeProvider = config.getTimeProvider();
     this.eventBus = config.getEventBus();
     this.eventBus.register(this);
     this.depositMode = config.getConfig().getDepositMode();
