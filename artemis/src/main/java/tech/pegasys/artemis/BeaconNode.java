@@ -39,6 +39,7 @@ import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.SystemTimeProvider;
 
 public class BeaconNode {
 
@@ -60,7 +61,8 @@ public class BeaconNode {
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     this.serviceConfig =
-        new ServiceConfig(eventBus, vertx, metricsEndpoint.getMetricsSystem(), config);
+        new ServiceConfig(
+            new SystemTimeProvider(), eventBus, metricsEndpoint.getMetricsSystem(), config);
     Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDir();

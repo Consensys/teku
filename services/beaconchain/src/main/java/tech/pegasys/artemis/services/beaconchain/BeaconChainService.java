@@ -26,11 +26,13 @@ public class BeaconChainService implements ServiceInterface {
   public BeaconChainService() {}
 
   @Override
-  @SuppressWarnings("rawtypes")
   public void init(ServiceConfig config) {
     this.controller =
         new BeaconChainController(
-            config.getEventBus(), config.getMetricsSystem(), config.getConfig());
+            config.getTimeProvider(),
+            config.getEventBus(),
+            config.getMetricsSystem(),
+            config.getConfig());
     this.controller.initAll();
   }
 
