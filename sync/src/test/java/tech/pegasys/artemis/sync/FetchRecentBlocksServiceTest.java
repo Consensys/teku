@@ -39,7 +39,7 @@ import tech.pegasys.artemis.sync.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.artemis.sync.FetchBlockTask.FetchBlockResult.Status;
 import tech.pegasys.artemis.sync.FetchRecentBlocksService.FetchBlockTaskFactory;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.executors.MockScheduledExecutor;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 @ExtendWith(MockitoExtension.class)
 public class FetchRecentBlocksServiceTest {
@@ -50,7 +50,7 @@ public class FetchRecentBlocksServiceTest {
   @Mock private FetchBlockTaskFactory fetchBlockTaskFactory;
 
   private final int maxConcurrentRequests = 2;
-  private final MockScheduledExecutor scheduledExecutorService = new MockScheduledExecutor();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final List<FetchBlockTask> tasks = new ArrayList<>();
   private final List<SafeFuture<FetchBlockResult>> taskFutures = new ArrayList<>();
@@ -62,7 +62,7 @@ public class FetchRecentBlocksServiceTest {
   public void setup() {
     recentBlockFetcher =
         new FetchRecentBlocksService(
-            scheduledExecutorService,
+            asyncRunner,
             eth2Network,
             pendingBlocksPool,
             fetchBlockTaskFactory,
@@ -161,12 +161,12 @@ public class FetchRecentBlocksServiceTest {
 
     // Task should be queued for a retry via the scheduled executor
     verify(tasks.get(0)).getNumberOfRetries();
-    assertThat(scheduledExecutorService.getPendingFuturesCount()).isEqualTo(1);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     assertTaskCounts(1, 0, 0);
 
     // Executor should requeue task
     when(tasks.get(0).run()).thenReturn(new SafeFuture<>());
-    scheduledExecutorService.runPendingFutures();
+    asyncRunner.executeQueuedActions();
     assertTaskCounts(1, 1, 0);
   }
 
@@ -183,7 +183,7 @@ public class FetchRecentBlocksServiceTest {
 
     // Task should be queued for a retry via the scheduled executor
     verify(tasks.get(0)).getNumberOfRetries();
-    assertThat(scheduledExecutorService.getPendingFuturesCount()).isEqualTo(1);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     assertTaskCounts(1, 0, 0);
 
     // Cancel task
@@ -193,7 +193,7 @@ public class FetchRecentBlocksServiceTest {
         .thenReturn(SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.CANCELLED)));
 
     // Executor should requeue task, it should complete immediately and be removed
-    scheduledExecutorService.runPendingFutures();
+    asyncRunner.executeQueuedActions();
     assertTaskCounts(0, 0, 0);
   }
 
@@ -210,12 +210,12 @@ public class FetchRecentBlocksServiceTest {
 
     // Task should be queued for a retry via the scheduled executor
     verify(tasks.get(0), never()).getNumberOfRetries();
-    assertThat(scheduledExecutorService.getPendingFuturesCount()).isEqualTo(1);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     assertTaskCounts(1, 0, 0);
 
     // Executor should requeue task
     when(tasks.get(0).run()).thenReturn(new SafeFuture<>());
-    scheduledExecutorService.runPendingFutures();
+    asyncRunner.executeQueuedActions();
     assertTaskCounts(1, 1, 0);
   }
 

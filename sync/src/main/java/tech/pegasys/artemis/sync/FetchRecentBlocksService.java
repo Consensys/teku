@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
@@ -23,8 +21,6 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +29,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.sync.FetchBlockTask.FetchBlockResult;
+import tech.pegasys.artemis.util.async.AsyncRunner;
+import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
@@ -43,6 +41,7 @@ class FetchRecentBlocksService extends Service {
   private static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(30);
   private static final RetryDelayFunction DEFAULT_RETRY_DELAY_FUNCTION =
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
+  private static final SafeFuture<Void> DELAY_COMPLETE_SIGNAL = SafeFuture.completedFuture(null);
 
   private final int maxConcurrentRequests;
   private final Eth2Network eth2Network;
@@ -55,16 +54,16 @@ class FetchRecentBlocksService extends Service {
   private final FetchBlockTaskFactory fetchBlockTaskFactory;
   private final RetryDelayFunction retryDelayFunction;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
-  private final ScheduledExecutorService scheduledExecutorService;
+  private final AsyncRunner asyncRunner;
 
   FetchRecentBlocksService(
-      final ScheduledExecutorService scheduledExecutorService,
+      final AsyncRunner asyncRunner,
       final Eth2Network eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final FetchBlockTaskFactory fetchBlockTaskFactory,
       final RetryDelayFunction retryDelayFunction,
       final int maxConcurrentRequests) {
-    this.scheduledExecutorService = scheduledExecutorService;
+    this.asyncRunner = asyncRunner;
     this.maxConcurrentRequests = maxConcurrentRequests;
     this.eth2Network = eth2Network;
     this.pendingBlocksPool = pendingBlocksPool;
@@ -75,7 +74,7 @@ class FetchRecentBlocksService extends Service {
   public static FetchRecentBlocksService create(
       final Eth2Network eth2Network, final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
     return new FetchRecentBlocksService(
-        new ScheduledThreadPoolExecutor(0),
+        new DelayedExecutorAsyncRunner(),
         eth2Network,
         pendingBlocksPool,
         FetchBlockTask::create,
@@ -91,7 +90,6 @@ class FetchRecentBlocksService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    scheduledExecutorService.shutdownNow();
     return SafeFuture.completedFuture(null);
   }
 
@@ -202,9 +200,17 @@ class FetchRecentBlocksService extends Service {
   }
 
   private void queueTaskWithDelay(FetchBlockTask task, Duration delay) {
-    ignoreFuture(
-        scheduledExecutorService.schedule(
-            () -> queueTask(task), delay.getSeconds(), TimeUnit.SECONDS));
+    asyncRunner
+        .runAfterDelay(() -> DELAY_COMPLETE_SIGNAL, delay.getSeconds(), TimeUnit.SECONDS)
+        .finish(
+            () -> queueTask(task),
+            (err) -> {
+              task.cancel();
+              LOG.error(
+                  "Unable to execute delayed task.  Dropping task to fetch block "
+                      + task.getBlockRoot(),
+                  err);
+            });
   }
 
   private void queueTaskWithRetryDelay(final FetchBlockTask task) {
