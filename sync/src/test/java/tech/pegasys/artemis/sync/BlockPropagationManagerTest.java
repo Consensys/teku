@@ -216,7 +216,7 @@ public class BlockPropagationManagerTest {
       parentBlockRoot = block.getMessage().hash_tree_root();
     }
 
-    // Gossip all blocks except the first
+    // Gossip all blocks except the first two
     invalidBlockDescendants.subList(1, invalidChainDepth).stream()
         .map(GossipedBlockEvent::new)
         .forEach(localEventBus::post);
