@@ -15,12 +15,18 @@ package tech.pegasys.artemis.events;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Override
-  protected void deliverTo(final T subscriber, final Method method, final Object[] args)
-      throws InvocationTargetException, IllegalAccessException {
-    method.invoke(subscriber, args);
+  protected void deliverTo(final T subscriber, final Method method, final Object[] args) {
+    try {
+      method.invoke(subscriber, args);
+    } catch (IllegalAccessException | InvocationTargetException e) {
+      LOG.error("Failed to deliver " + method.getName() + " event to " + subscriber.getClass(), e);
+    }
   }
 }

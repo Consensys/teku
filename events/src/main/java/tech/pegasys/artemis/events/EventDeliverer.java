@@ -37,20 +37,11 @@ abstract class EventDeliverer<T> implements InvocationHandler {
         throw new RuntimeException(e);
       }
     }
-    subscribers.forEach(
-        subscriber -> {
-          try {
-            deliverTo(subscriber, method, args);
-          } catch (IllegalAccessException | InvocationTargetException e) {
-            LOG.error(
-                "Failed to deliver " + method.getName() + " event to " + subscriber.getClass(), e);
-          }
-        });
+    subscribers.forEach(subscriber -> deliverTo(subscriber, method, args));
     return null;
   }
 
-  protected abstract void deliverTo(T subscriber, Method method, Object[] args)
-      throws IllegalAccessException, InvocationTargetException;
+  protected abstract void deliverTo(T subscriber, Method method, Object[] args);
 
   public void stop() {}
 }
