@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.pow;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -288,6 +289,32 @@ public class Eth1DataManagerTest {
 
     assertThat(eth1BlockTimestamps)
         .containsExactlyInAnyOrder(138, 144, 150, 156, 162, 168, 174, 182);
+  }
+
+  @Test
+  void cacheMidRangeCalculation_noOverflow() {
+    assertDoesNotThrow(
+        () -> Eth1DataManager.getCacheMidRangeTimestamp(UnsignedLong.valueOf(1580314596 * 2L)));
+  }
+
+  @Test
+  void calculateRealSecondsPerEth1BlockFuture_noOverflow() {
+    assertDoesNotThrow(
+        () ->
+            eth1DataManager.calculateRealSecondsPerEth1BlockFuture(
+                SafeFuture.completedFuture(UnsignedLong.valueOf(1580314596L * 2L)),
+                SafeFuture.completedFuture(UnsignedLong.valueOf(4000)),
+                UnsignedLong.valueOf(1500314596L * 2L)));
+  }
+
+  @Test
+  void getApproximatedBlockNumberDiffWithMidRangeBlock_noOverflow() {
+    assertDoesNotThrow(
+        () ->
+            eth1DataManager.getApproximatedBlockNumberDiffWithMidRangeBlock(
+                SafeFuture.completedFuture(UnsignedLong.valueOf(1580314596L * 2L)),
+                SafeFuture.completedFuture(UnsignedLong.valueOf(10)),
+                UnsignedLong.valueOf(1500314596 * 2L)));
   }
 
   private Request mockFailedRequest() {
