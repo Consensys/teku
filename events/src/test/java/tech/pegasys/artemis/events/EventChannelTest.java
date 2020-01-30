@@ -124,6 +124,7 @@ class EventChannelTest {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   public void shouldDeliverEventsAsync() throws Exception {
     final ExecutorService executor = mock(ExecutorService.class);
     final EventChannel<EventWithArgument> channel =
