@@ -13,23 +13,20 @@
 
 package tech.pegasys.artemis.util.time;
 
+import com.google.common.eventbus.EventBus;
 import java.util.Date;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.JobListener;
-import org.quartz.Scheduler;
-import org.quartz.Trigger;
-import org.quartz.TriggerListener;
 
 public class ScheduledEvent implements Runnable, Job {
 
-  private TimeEvents eventBus;
+  private EventBus eventBus;
 
   public ScheduledEvent() {}
 
-  public ScheduledEvent(TimeEvents eventBus) {
+  public ScheduledEvent(EventBus eventBus) {
     this.eventBus = eventBus;
   }
 
@@ -45,7 +42,7 @@ public class ScheduledEvent implements Runnable, Job {
    */
   @Override
   public void run() {
-    this.eventBus.onTick(new Date());
+    this.eventBus.post(new Date());
   }
 
   /**
@@ -63,7 +60,7 @@ public class ScheduledEvent implements Runnable, Job {
   @Override
   public void execute(JobExecutionContext context) throws JobExecutionException {
     JobDataMap data = context.getJobDetail().getJobDataMap();
-    this.eventBus = (TimeEvents) data.get(TimeEvents.class.getSimpleName());
-    this.eventBus.onTick(new Date());
+    this.eventBus = (EventBus) data.get(EventBus.class.getSimpleName());
+    this.eventBus.post(new Date());
   }
 }

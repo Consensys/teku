@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceController;
@@ -50,6 +51,7 @@ public class BeaconNode {
 
   private final ServiceController serviceController = new ServiceController();
   private final ServiceConfig serviceConfig;
+  private final EventChannels eventChannels;
   private EventBus eventBus;
   private MetricsEndpoint metricsEndpoint;
 
@@ -57,12 +59,13 @@ public class BeaconNode {
     System.setProperty("logPath", config.getLogPath());
     System.setProperty("rollingFile", config.getLogFile());
 
+    eventChannels = new EventChannels();
     this.eventBus = new AsyncEventBus(threadPool, new EventBusExceptionHandler(STDOUT));
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     this.serviceConfig =
         new ServiceConfig(
-            new SystemTimeProvider(), eventBus, metricsEndpoint.getMetricsSystem(), config);
+            new SystemTimeProvider(), eventBus, eventChannels, metricsEndpoint.getMetricsSystem(), config);
     Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDir();
@@ -102,6 +105,7 @@ public class BeaconNode {
 
   public void stop() {
     serviceController.stopAll();
+    eventChannels.stop();
     metricsEndpoint.stop();
   }
 }

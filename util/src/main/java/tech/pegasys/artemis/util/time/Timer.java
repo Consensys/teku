@@ -34,7 +34,7 @@ public class Timer {
   private int startDelay;
   private int interval;
 
-  public Timer(TimeEvents eventPublisher, Integer startDelay, Integer interval)
+  public Timer(EventBus eventBus, Integer startDelay, Integer interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
     this.startDelay = startDelay;
@@ -44,9 +44,9 @@ public class Timer {
       uuid = UUID.randomUUID();
       job =
           newJob(ScheduledEvent.class)
-              .withIdentity(TimeEvents.class.getSimpleName() + uuid.toString(), "group")
+              .withIdentity(EventBus.class.getSimpleName() + uuid.toString(), "group")
               .build();
-      job.getJobDataMap().put(TimeEvents.class.getSimpleName(), eventPublisher);
+      job.getJobDataMap().put(EventBus.class.getSimpleName(), eventBus);
 
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(
