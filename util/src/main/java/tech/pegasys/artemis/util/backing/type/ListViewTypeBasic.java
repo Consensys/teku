@@ -2,8 +2,9 @@ package tech.pegasys.artemis.util.backing.type;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.backing.MutableListView;
+import tech.pegasys.artemis.util.backing.ListView;
 import tech.pegasys.artemis.util.backing.TreeNode;
+import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.CommitImpl;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
@@ -12,7 +13,7 @@ import tech.pegasys.artemis.util.backing.view.BasicListViews.BitListView;
 import tech.pegasys.artemis.util.backing.view.BasicListViews.BytesListView;
 import tech.pegasys.artemis.util.backing.view.BasicListViews.UInt64ListView;
 
-public abstract class ListViewTypeBasic<C, L extends MutableListView<C>>  extends ListViewType<C, L> {
+public abstract class ListViewTypeBasic<C, L extends ListView<C>>  extends ListViewType<C, L> {
 
   public ListViewTypeBasic(int maxLength, int bitsPerElement) {
     super(maxLength, bitsPerElement);
@@ -23,6 +24,11 @@ public abstract class ListViewTypeBasic<C, L extends MutableListView<C>>  extend
     return createFromTreeNode(new CommitImpl(
         TreeNodeImpl.createZeroTree(treeDepth(), new RootImpl(Bytes32.ZERO)),
         new RootImpl(Bytes32.ZERO)));
+  }
+
+  @Override
+  public ViewType<?> getChildType(int index) {
+    throw new UnsupportedOperationException();
   }
 
   public static class BytesListType extends ListViewTypeBasic<Byte, BasicListViews.BytesListView> {

@@ -6,15 +6,15 @@ import java.nio.ByteOrder;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.backing.MutableListView;
+import tech.pegasys.artemis.util.backing.CompositeViewType;
+import tech.pegasys.artemis.util.backing.ListView;
 import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.TreeNode.Commit;
 import tech.pegasys.artemis.util.backing.View;
-import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 
-public abstract class AbstractListView <C> implements MutableListView<C> {
+public abstract class AbstractListView<C> implements ListView<C> {
   protected final ListViewType<C, ? extends AbstractListView<C>> type;
   protected Commit backingNode;
 
@@ -31,7 +31,7 @@ public abstract class AbstractListView <C> implements MutableListView<C> {
 
   @Override
   public void set(int index, C value) {
-    checkArgument((index >= 0 && index < size()) || (index == size() && index < maxSize()),
+    checkArgument((index >= 0 && index < size()) || (index == size() && index < type.getMaxLength()),
         "Index out of bounds: %s, size=%s", index, size());
 
     if (index == size()) {
@@ -60,18 +60,13 @@ public abstract class AbstractListView <C> implements MutableListView<C> {
   }
 
   @Override
-  public int maxSize() {
-    return type.getMaxLength();
-  }
-
-  @Override
   public int size() {
     Bytes32 lengthBytes = backingNode.right().hashTreeRoot();
     return lengthBytes.slice(0, 4).toInt(ByteOrder.LITTLE_ENDIAN);
   }
 
   @Override
-  public ViewType<? extends View> getType() {
+  public CompositeViewType<? extends View> getType() {
     return type;
   }
 

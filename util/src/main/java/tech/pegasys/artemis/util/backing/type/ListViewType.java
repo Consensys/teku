@@ -1,10 +1,10 @@
 package tech.pegasys.artemis.util.backing.type;
 
-import tech.pegasys.artemis.util.backing.MutableListView;
-import tech.pegasys.artemis.util.backing.Utils;
-import tech.pegasys.artemis.util.backing.ViewType;
+import tech.pegasys.artemis.util.backing.CompositeViewType;
+import tech.pegasys.artemis.util.backing.ListView;
 
-public abstract class ListViewType<C, L extends MutableListView<C>> implements ViewType<L> {
+public abstract class ListViewType<C, L extends ListView<C>> implements
+    CompositeViewType<L> {
   private final int maxLength;
   private final int bitsPerElement;
 
@@ -17,27 +17,13 @@ public abstract class ListViewType<C, L extends MutableListView<C>> implements V
     this(maxLength, 32 * 8);
   }
 
+  @Override
   public int getBitsPerElement() {
     return bitsPerElement;
-  }
-
-  public int getElementsPerNode() {
-    return 32 * 8 / getBitsPerElement();
   }
 
   public int getMaxLength() {
     return maxLength;
   }
 
-  public int maxChunks() {
-    return (getMaxLength() * getBitsPerElement() - 1) / 256 + 1;
-  }
-
-  public int treeDepth() {
-    return Integer.bitCount(Utils.nextPowerOf2(maxChunks()) - 1);
-  }
-
-  public int treeWidth() {
-    return Utils.nextPowerOf2(maxChunks());
-  }
 }

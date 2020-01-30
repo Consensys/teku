@@ -19,6 +19,11 @@ public class ListViewTypeComposite<C extends View> extends ListViewType<C, Compo
   }
 
   @Override
+  public ViewType<?> getChildType(int index) {
+    return getElementType();
+  }
+
+  @Override
   public CompositeListView<C> createDefault() {
     return CompositeListView.createDefault(this);
   }

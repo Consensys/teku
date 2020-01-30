@@ -39,6 +39,8 @@ public class CompositeListView<C extends View> extends AbstractListView<C> {
 
   @Override
   protected TreeNode updateTreeNode(TreeNode srcNode, int index, C newValue) {
+    checkArgument(getType().equals(newValue.getType()),
+        "Wrong child type. Expected: %s, was %s", getType(), newValue.getType());
     return newValue.getBackingNode();
   }
 
