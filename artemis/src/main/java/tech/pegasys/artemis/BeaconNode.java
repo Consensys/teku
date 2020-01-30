@@ -59,7 +59,7 @@ public class BeaconNode {
     System.setProperty("logPath", config.getLogPath());
     System.setProperty("rollingFile", config.getLogFile());
 
-    eventChannels = new EventChannels();
+    this.eventChannels = new EventChannels();
     this.eventBus = new AsyncEventBus(threadPool, new EventBusExceptionHandler(STDOUT));
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
