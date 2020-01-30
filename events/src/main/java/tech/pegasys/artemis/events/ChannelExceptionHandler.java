@@ -17,5 +17,5 @@ import java.lang.reflect.Method;
 
 public interface ChannelExceptionHandler {
 
-  void handleException(Throwable error, Method invokedMethod, Object[] args);
+  void handleException(Throwable error, Object subscriber, Method invokedMethod, Object[] args);
 }

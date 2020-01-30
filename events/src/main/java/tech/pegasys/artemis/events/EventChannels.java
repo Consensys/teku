@@ -22,8 +22,8 @@ public class EventChannels {
   private final ConcurrentMap<Class<?>, EventChannel<?>> channels = new ConcurrentHashMap<>();
   private final Function<Class<?>, EventChannel<?>> eventChannelFactory;
 
-  public EventChannels() {
-    this(EventChannel::createAsync);
+  public EventChannels(final ChannelExceptionHandler exceptionHandler) {
+    this(channelInterface -> EventChannel.createAsync(channelInterface, exceptionHandler));
   }
 
   EventChannels(final Function<Class<?>, EventChannel<?>> eventChannelFactory) {

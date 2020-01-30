@@ -28,9 +28,9 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
     try {
       method.invoke(subscriber, args);
     } catch (IllegalAccessException e) {
-      exceptionHandler.handleException(e, method, args);
+      exceptionHandler.handleException(e, subscriber, method, args);
     } catch (InvocationTargetException e) {
-      exceptionHandler.handleException(e.getTargetException(), method, args);
+      exceptionHandler.handleException(e.getTargetException(), subscriber, method, args);
     }
   }
 }

@@ -100,7 +100,8 @@ class EventChannelTest {
     channel.subscribe(subscriber);
     channel.getPublisher().run();
 
-    verify(exceptionHandler).handleException(exception, Runnable.class.getMethod("run"), null);
+    verify(exceptionHandler)
+        .handleException(exception, subscriber, Runnable.class.getMethod("run"), null);
   }
 
   @Test

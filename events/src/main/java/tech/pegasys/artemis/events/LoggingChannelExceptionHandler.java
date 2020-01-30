@@ -22,10 +22,15 @@ public enum LoggingChannelExceptionHandler implements ChannelExceptionHandler {
 
   @Override
   public void handleException(
-      final Throwable error, final Method invokedMethod, final Object[] args) {
+      final Throwable error,
+      final Object subscriber,
+      final Method invokedMethod,
+      final Object[] args) {
     LogManager.getLogger(invokedMethod.getClass())
         .error(
-            "Unhandled error in "
+            "Unhandled error in subscriber "
+                + subscriber.getClass().getName()
+                + " for method "
                 + invokedMethod.getDeclaringClass().getName()
                 + "."
                 + invokedMethod.getName()
