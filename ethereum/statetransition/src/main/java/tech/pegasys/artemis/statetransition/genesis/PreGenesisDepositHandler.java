@@ -20,7 +20,6 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,6 +30,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
+import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.statetransition.DepositQueue;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
@@ -38,7 +38,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class PreGenesisDepositHandler {
+public class PreGenesisDepositHandler implements DepositEventChannel {
 
   private final ArtemisConfiguration config;
   private final ChainStorageClient chainStorageClient;
@@ -51,8 +51,8 @@ public class PreGenesisDepositHandler {
     this.chainStorageClient = chainStorageClient;
   }
 
-  @Subscribe
-  public void onDeposits(DepositsFromBlockEvent event) {
+  @Override
+  public void notifyDepositsFromBlock(final DepositsFromBlockEvent event) {
     if (!chainStorageClient.isPreGenesis()) {
       return;
     }

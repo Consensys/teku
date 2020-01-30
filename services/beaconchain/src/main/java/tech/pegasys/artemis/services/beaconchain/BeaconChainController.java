@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -43,6 +44,7 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.service.serviceutils.NoopService;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
@@ -70,6 +72,7 @@ import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 public class BeaconChainController {
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
   private Runnable networkTask;
+  private final EventChannels eventChannels;
   private final ArtemisConfiguration config;
   private final TimeProvider timeProvider;
   private EventBus eventBus;
@@ -91,10 +94,12 @@ public class BeaconChainController {
   public BeaconChainController(
       TimeProvider timeProvider,
       EventBus eventBus,
+      EventChannels eventChannels,
       MetricsSystem metricsSystem,
       ArtemisConfiguration config) {
     this.timeProvider = timeProvider;
     this.eventBus = eventBus;
+    this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
     this.testMode = config.getDepositMode().equals(DEPOSIT_TEST);
@@ -120,7 +125,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initTimer()");
     int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
-      this.timer = new Timer(this.eventBus, 0, timerPeriodInMiliseconds);
+      this.timer = new Timer(eventBus, 0, timerPeriodInMiliseconds);
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
@@ -164,7 +169,8 @@ public class BeaconChainController {
 
   private void initDepositHandler() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositHandler()");
-    eventBus.register(new PreGenesisDepositHandler(config, chainStorageClient));
+    eventChannels.subscribe(
+        DepositEventChannel.class, new PreGenesisDepositHandler(config, chainStorageClient));
   }
 
   private void initAttestationPropagationManager() {

@@ -31,6 +31,7 @@ public class BeaconChainService implements ServiceInterface {
         new BeaconChainController(
             config.getTimeProvider(),
             config.getEventBus(),
+            config.getEventChannels(),
             config.getMetricsSystem(),
             config.getConfig());
     this.controller.initAll();
