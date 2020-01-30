@@ -41,7 +41,7 @@ public class Eth1DataCache {
 
   private final EventBus eventBus;
   private final TimeProvider timeProvider;
-  private Optional<UnsignedLong> genesisTime = Optional.empty();
+  private volatile Optional<UnsignedLong> genesisTime = Optional.empty();
 
   private final NavigableMap<UnsignedLong, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
   private volatile UnsignedLong currentVotingPeriodStartTime;
@@ -55,6 +55,7 @@ public class Eth1DataCache {
   public void startBeaconChainMode(BeaconState genesisState) {
     this.genesisTime = Optional.of(genesisState.getGenesis_time());
     this.currentVotingPeriodStartTime = getVotingPeriodStartTime(genesisState.getSlot());
+    this.onSlot(new SlotEvent(genesisState.getSlot()));
   }
 
   @Subscribe
@@ -74,6 +75,10 @@ public class Eth1DataCache {
 
   @Subscribe
   public void onSlot(SlotEvent slotEvent) {
+    if (genesisTime.isEmpty()) {
+      return;
+    }
+
     UnsignedLong slot = slotEvent.getSlot();
     UnsignedLong voting_period_start_time = getVotingPeriodStartTime(slot);
 

@@ -36,6 +36,7 @@ dependencies {
   integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
   integrationTestImplementation 'org.mockito:mockito-core'
 
+  testSupportImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testSupportImplementation project(path: ':networking:p2p', configuration: 'testSupportArtifacts')
   testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
