@@ -21,12 +21,20 @@ import org.apache.logging.log4j.Logger;
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final ChannelExceptionHandler exceptionHandler;
+
+  DirectEventDeliverer(final ChannelExceptionHandler exceptionHandler) {
+    this.exceptionHandler = exceptionHandler;
+  }
+
   @Override
   protected void deliverTo(final T subscriber, final Method method, final Object[] args) {
     try {
       method.invoke(subscriber, args);
-    } catch (IllegalAccessException | InvocationTargetException e) {
-      LOG.error("Failed to deliver " + method.getName() + " event to " + subscriber.getClass(), e);
+    } catch (IllegalAccessException e) {
+      exceptionHandler.handleException(e, method, args);
+    } catch (InvocationTargetException e) {
+      exceptionHandler.handleException(e.getTargetException(), method, args);
     }
   }
 }

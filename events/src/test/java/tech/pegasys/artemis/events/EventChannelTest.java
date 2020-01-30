@@ -15,6 +15,7 @@ package tech.pegasys.artemis.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -29,6 +30,8 @@ import org.mockito.InOrder;
 import tech.pegasys.artemis.events.AsyncEventDeliverer.QueueReader;
 
 class EventChannelTest {
+  private final ChannelExceptionHandler exceptionHandler = mock(ChannelExceptionHandler.class);
+
   @Test
   public void shouldRejectClassesThatAreNotInterfaces() {
     assertThatThrownBy(() -> EventChannel.create(String.class))
@@ -85,6 +88,19 @@ class EventChannelTest {
     channel.getPublisher().method1();
     verify(subscriber).method1();
     verifyNoMoreInteractions(subscriber);
+  }
+
+  @Test
+  public void shouldReportExceptionsToExceptionHandler() throws Exception {
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, exceptionHandler);
+    final Runnable subscriber = mock(Runnable.class);
+    final RuntimeException exception = new RuntimeException("Nope");
+    doThrow(exception).when(subscriber).run();
+
+    channel.subscribe(subscriber);
+    channel.getPublisher().run();
+
+    verify(exceptionHandler).handleException(exception, Runnable.class.getMethod("run"), null);
   }
 
   @Test

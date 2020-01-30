@@ -15,6 +15,7 @@ package tech.pegasys.artemis.events;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.joining;
+import static tech.pegasys.artemis.events.LoggingChannelExceptionHandler.LOGGING_EXCEPTION_HANDLER;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.lang.reflect.Method;
@@ -34,22 +35,40 @@ public class EventChannel<T> {
   }
 
   public static <T> EventChannel<T> create(final Class<T> channelInterface) {
-    return create(channelInterface, new DirectEventDeliverer<>());
+    return create(channelInterface, LOGGING_EXCEPTION_HANDLER);
+  }
+
+  public static <T> EventChannel<T> create(
+      final Class<T> channelInterface, final ChannelExceptionHandler exceptionHandler) {
+    return create(channelInterface, new DirectEventDeliverer<>(exceptionHandler));
   }
 
   public static <T> EventChannel<T> createAsync(final Class<T> channelInterface) {
+    return createAsync(channelInterface, LOGGING_EXCEPTION_HANDLER);
+  }
+
+  public static <T> EventChannel<T> createAsync(
+      final Class<T> channelInterface, final ChannelExceptionHandler exceptionHandler) {
     return createAsync(
         channelInterface,
         Executors.newCachedThreadPool(
             new ThreadFactoryBuilder()
                 .setDaemon(true)
                 .setNameFormat(channelInterface.getSimpleName() + "-%d")
-                .build()));
+                .build()),
+        exceptionHandler);
   }
 
   static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface, final ExecutorService executor) {
-    return create(channelInterface, new AsyncEventDeliverer<>(executor));
+    return createAsync(channelInterface, executor, LOGGING_EXCEPTION_HANDLER);
+  }
+
+  static <T> EventChannel<T> createAsync(
+      final Class<T> channelInterface,
+      final ExecutorService executor,
+      final ChannelExceptionHandler exceptionHandler) {
+    return create(channelInterface, new AsyncEventDeliverer<>(executor, exceptionHandler));
   }
 
   private static <T> EventChannel<T> create(

@@ -35,7 +35,9 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final ExecutorService executor;
 
-  public AsyncEventDeliverer(final ExecutorService executor) {
+  public AsyncEventDeliverer(
+      final ExecutorService executor, final ChannelExceptionHandler exceptionHandler) {
+    super(exceptionHandler);
     this.executor = executor;
   }
 
