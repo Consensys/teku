@@ -5,7 +5,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.backing.MutableListView;
 import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.TreeNode.Commit;
 import tech.pegasys.artemis.util.backing.View;
@@ -13,15 +12,15 @@ import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.CommitImpl;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
-import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.type.ListViewTypeComposite;
 
-public class ListView<C extends View> implements MutableListView<C> {
+public class ListView<C extends View> implements CompositeListView<C> {
 
-  private final ListViewType<C> type;
+  private final ListViewTypeComposite<C> type;
   private Commit backingNode;
 
   public static <C extends View> ListView<C> createDefault(
-      ListViewType<C> type,
+      ListViewTypeComposite<C> type,
       TreeNode fillWith) {
     return new ListView<>(
         type,
@@ -29,13 +28,13 @@ public class ListView<C extends View> implements MutableListView<C> {
             new RootImpl(Bytes32.ZERO)));
   }
 
-  public static <C extends View> ListView<C> createFromTreeNode(ListViewType<C> type, TreeNode listRootNode) {
+  public static <C extends View> ListView<C> createFromTreeNode(ListViewTypeComposite<C> type, TreeNode listRootNode) {
     checkArgument(listRootNode instanceof Commit,
         "Expected Commit node for ListView: ", listRootNode);
     return new ListView<C>(type, (Commit) listRootNode);
   }
 
-  private ListView(ListViewType<C> type, Commit backingNode) {
+  private ListView(ListViewTypeComposite<C> type, Commit backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }

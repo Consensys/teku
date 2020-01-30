@@ -2,9 +2,10 @@ package tech.pegasys.artemis.util.backing;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
-import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.type.ListViewTypeComposite;
 import tech.pegasys.artemis.util.backing.view.ListView;
 
 public class ListViewTest {
@@ -32,7 +33,7 @@ public class ListViewTest {
 
     public TestView(TreeNode node) {
       this.node = node;
-      this.v = node.hashTreeRoot().toInt();
+      this.v = node.hashTreeRoot().trimLeadingZeros().toInt();
     }
 
     @Override
@@ -51,7 +52,7 @@ public class ListViewTest {
 
   @Test
   public void simpleTest1() {
-    ListViewType<TestView> listType = new ListViewType<>(3, testType);
+    ListViewTypeComposite<TestView> listType = new ListViewTypeComposite<>(3, testType);
     ListView<TestView> list = listType.createDefault();
     TreeNode n0 = list.getBackingNode();
     list.set(0, new TestView(0x111));
@@ -67,6 +68,20 @@ public class ListViewTest {
     System.out.println(n2);
     System.out.println(n3);
     System.out.println(n4);
-  }
 
+    Assertions.assertEquals(0, listType.createFromTreeNode(n0).size());
+    Assertions.assertEquals(1, listType.createFromTreeNode(n1).size());
+    Assertions.assertEquals(0x111, listType.createFromTreeNode(n1).get(0).v);
+    Assertions.assertEquals(2, listType.createFromTreeNode(n2).size());
+    Assertions.assertEquals(0x111, listType.createFromTreeNode(n2).get(0).v);
+    Assertions.assertEquals(0x222, listType.createFromTreeNode(n2).get(1).v);
+    Assertions.assertEquals(3, listType.createFromTreeNode(n3).size());
+    Assertions.assertEquals(0x111, listType.createFromTreeNode(n3).get(0).v);
+    Assertions.assertEquals(0x222, listType.createFromTreeNode(n3).get(1).v);
+    Assertions.assertEquals(0x333, listType.createFromTreeNode(n3).get(2).v);
+    Assertions.assertEquals(3, listType.createFromTreeNode(n4).size());
+    Assertions.assertEquals(0x444, listType.createFromTreeNode(n4).get(0).v);
+    Assertions.assertEquals(0x222, listType.createFromTreeNode(n4).get(1).v);
+    Assertions.assertEquals(0x333, listType.createFromTreeNode(n4).get(2).v);
+  }
 }

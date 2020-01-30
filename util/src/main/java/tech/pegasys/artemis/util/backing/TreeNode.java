@@ -2,6 +2,7 @@ package tech.pegasys.artemis.util.backing;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -24,9 +25,9 @@ public interface TreeNode {
     }
 
     @Override
-    default TreeNode set(long target, TreeNode node) {
+    default TreeNode update(long target, Function<TreeNode, TreeNode> nodeUpdater) {
       checkArgument(target == 1, "Invalid root index: %s", target);
-      return node;
+      return nodeUpdater.apply(this);
     }
   }
 
@@ -58,17 +59,17 @@ public interface TreeNode {
     }
 
     @Override
-    default TreeNode set(long target, TreeNode node) {
+    default TreeNode update(long target, Function<TreeNode, TreeNode> nodeUpdater) {
       if (target == 1) {
-        return node;
+        return nodeUpdater.apply(this);
       } else {
         long anchor = Long.highestOneBit(target);
         long pivot = anchor >> 1;
         if (target < (target | pivot)) {
-          TreeNode newLeftChild = left().set(target ^ anchor | pivot, node);
+          TreeNode newLeftChild = left().update(target ^ anchor | pivot, nodeUpdater);
           return rebind(true, newLeftChild);
         } else {
-          TreeNode newRightChild = right().set(target ^ anchor | pivot, node);
+          TreeNode newRightChild = right().update(target ^ anchor | pivot, nodeUpdater);
           return rebind(false, newRightChild);
         }
       }
@@ -79,5 +80,9 @@ public interface TreeNode {
 
   TreeNode get(long generalizedIndex);
 
-  TreeNode set(long generalizedIndex, TreeNode node);
+  TreeNode update(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
+
+  default TreeNode set(long target, TreeNode node) {
+    return update(target, oldNode -> node);
+  }
 }

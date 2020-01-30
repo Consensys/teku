@@ -1,6 +1,6 @@
 package tech.pegasys.artemis.util.backing;
 
-public interface ImmutableListView<C extends View> extends View {
+public interface ImmutableListView<C> extends View {
 
   int maxSize();
 
