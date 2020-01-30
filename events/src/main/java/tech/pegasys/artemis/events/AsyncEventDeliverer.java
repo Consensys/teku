@@ -64,6 +64,7 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
 
   @Override
   public void stop() {
+    stopped.set(true);
     executor.shutdownNow();
   }
 
