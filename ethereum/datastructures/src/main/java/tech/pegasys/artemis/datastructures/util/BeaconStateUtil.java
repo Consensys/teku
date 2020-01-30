@@ -172,7 +172,7 @@ public class BeaconStateUtil {
     process_deposit(state, deposit, null);
   }
 
-  private static void process_deposit(
+  static void process_deposit(
       BeaconState state, Deposit deposit, Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
 
     if (DEPOSIT_PROOFS_ENABLED) {
@@ -186,17 +186,24 @@ public class BeaconStateUtil {
           "process_deposit: Verify the Merkle branch");
     }
 
+    process_deposit_without_checking_merkle_proof(state, deposit, pubKeyToIndexMap);
+  }
+
+  static void process_deposit_without_checking_merkle_proof(
+      final BeaconState state,
+      final Deposit deposit,
+      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
     final BLSPublicKey pubkey = deposit.getData().getPubkey();
     final UnsignedLong amount = deposit.getData().getAmount();
 
-    SSZList<Validator> validators = state.getValidators();
     OptionalInt existingIndex;
     if (pubKeyToIndexMap != null) {
       Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
+      SSZList<Validator> validators = state.getValidators();
       existingIndex =
           IntStream.range(0, validators.size())
               .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
@@ -697,7 +704,6 @@ public class BeaconStateUtil {
    * @param value2
    * @return
    */
-  @VisibleForTesting
   public static UnsignedLong min(UnsignedLong value1, UnsignedLong value2) {
     if (value1.compareTo(value2) <= 0) {
       return value1;
