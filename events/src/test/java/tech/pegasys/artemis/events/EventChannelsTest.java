@@ -25,7 +25,7 @@ class EventChannelsTest {
   private final EventChannels channels = new EventChannels(EventChannel::create);
 
   @Test
-  public void shouldGetPublisherBeforeSubscriber() {
+  public void shouldBeAbleToGetPublisherBeforeSubscriber() {
     final Runnable publisher = channels.getPublisher(Runnable.class);
 
     final Runnable subscriber = mock(Runnable.class);
