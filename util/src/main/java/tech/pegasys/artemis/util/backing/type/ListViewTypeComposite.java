@@ -3,9 +3,9 @@ package tech.pegasys.artemis.util.backing.type;
 import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.View;
 import tech.pegasys.artemis.util.backing.ViewType;
-import tech.pegasys.artemis.util.backing.view.ListView;
+import tech.pegasys.artemis.util.backing.view.CompositeListView;
 
-public class ListViewTypeComposite<C extends View> extends ListViewType<C, ListView<C>> {
+public class ListViewTypeComposite<C extends View> extends ListViewType<C, CompositeListView<C>> {
 
   private final ViewType<C> elementType;
 
@@ -19,12 +19,12 @@ public class ListViewTypeComposite<C extends View> extends ListViewType<C, ListV
   }
 
   @Override
-  public ListView<C> createDefault() {
-    return ListView.createDefault(this, elementType.createDefault().getBackingNode());
+  public CompositeListView<C> createDefault() {
+    return CompositeListView.createDefault(this);
   }
 
   @Override
-  public ListView<C> createFromTreeNode(TreeNode node) {
-    return ListView.createFromTreeNode(this, node);
+  public CompositeListView<C> createFromTreeNode(TreeNode node) {
+    return CompositeListView.createFromTreeNode(this, node);
   }
 }
