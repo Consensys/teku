@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
@@ -274,6 +275,11 @@ public class Eth1DataCacheTest {
     Waiter.waitFor(() -> assertThat(eth1DataCache.getMapForTesting().values().size()).isEqualTo(1));
 
     assertThat(eth1DataCache.getMapForTesting().values()).containsExactly(eth1Data3);
+  }
+
+  @Test
+  void onSlotBeingCalled_withoutGenesisTimeBeingSet() {
+    assertDoesNotThrow(() -> eth1DataCache.onSlot(new SlotEvent(START_SLOT)));
   }
 
   private CacheEth1BlockEvent createRandomCacheEth1BlockEvent(UnsignedLong timestamp) {
