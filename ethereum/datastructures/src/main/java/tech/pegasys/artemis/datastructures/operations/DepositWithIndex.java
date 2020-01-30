@@ -16,38 +16,24 @@ package tech.pegasys.artemis.datastructures.operations;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
 
   private final UnsignedLong index;
-  private final Log log;
 
   public DepositWithIndex(SSZVector<Bytes32> proof, DepositData data, UnsignedLong index) {
     super(proof, data);
     this.index = index;
-    log = null;
   }
 
   public DepositWithIndex(DepositData data, UnsignedLong index) {
     super(data);
     this.index = index;
-    log = null;
-  }
-
-  public DepositWithIndex(DepositData data, UnsignedLong index, Log log) {
-    super(data);
-    this.index = index;
-    this.log = log;
   }
 
   public UnsignedLong getIndex() {
     return index;
-  }
-
-  public Log getLog() {
-    return log;
   }
 
   @Override
