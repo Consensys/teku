@@ -12,4 +12,12 @@ dependencies {
     testImplementation 'org.mockito:mockito-core'
     testImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
     testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
+    testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+    testCompile 'org.mockito:mockito-junit-jupiter:3.2.4'
+
+    integrationTestImplementation 'org.mockito:mockito-core'
+    integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+    integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
+    testSupportImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
 }
