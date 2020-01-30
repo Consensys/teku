@@ -92,13 +92,12 @@ public class BlockPropagationManager extends Service {
   @Subscribe
   @SuppressWarnings("unused")
   void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
-    final SignedBeaconBlock block = gossipedBlockEvent.getBlock();
-    recentBlockFetcher.cancelRecentBlockRequest(block.getMessage().hash_tree_root());
-    if (blockIsKnown(block)) {
-      // Nothing to do
-      return;
-    }
-    importBlock(block);
+    importBlock(gossipedBlockEvent.getBlock());
+  }
+
+  @Subscribe
+  void onSlot(final SlotEvent slotEvent) {
+    futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
   }
 
   @Subscribe
@@ -113,24 +112,9 @@ public class BlockPropagationManager extends Service {
     children.forEach(this::importBlock);
   }
 
-  @Subscribe
-  void onSlot(final SlotEvent slotEvent) {
-    futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
-  }
-
-  private boolean blockIsInvalid(final SignedBeaconBlock block) {
-    return invalidBlockRoots.contains(block.getMessage().hash_tree_root())
-        || invalidBlockRoots.contains(block.getParent_root());
-  }
-
-  private boolean blockIsKnown(final SignedBeaconBlock block) {
-    return pendingBlocks.contains(block)
-        || storageClient.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent();
-  }
-
   private void importBlock(final SignedBeaconBlock block) {
-    if (blockIsInvalid(block)) {
-      dropInvalidBlock(block);
+    recentBlockFetcher.cancelRecentBlockRequest(block.getMessage().hash_tree_root());
+    if (!shouldImportBlock(block)) {
       return;
     }
 
@@ -145,6 +129,28 @@ public class BlockPropagationManager extends Service {
       LOG.trace("Unable to import block for reason {}: {}", result.getFailureReason(), block);
       dropInvalidBlock(block);
     }
+  }
+
+  private boolean shouldImportBlock(final SignedBeaconBlock block) {
+    if (blockIsKnown(block)) {
+      return false;
+    }
+    if (blockIsInvalid(block)) {
+      dropInvalidBlock(block);
+      return false;
+    }
+    return true;
+  }
+
+  private boolean blockIsKnown(final SignedBeaconBlock block) {
+    return pendingBlocks.contains(block)
+        || futureBlocks.contains(block)
+        || storageClient.getBlockByRoot(block.getMessage().hash_tree_root()).isPresent();
+  }
+
+  private boolean blockIsInvalid(final SignedBeaconBlock block) {
+    return invalidBlockRoots.contains(block.getMessage().hash_tree_root())
+        || invalidBlockRoots.contains(block.getParent_root());
   }
 
   private void dropInvalidBlock(final SignedBeaconBlock block) {
