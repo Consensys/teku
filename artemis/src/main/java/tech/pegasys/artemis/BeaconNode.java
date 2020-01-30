@@ -22,6 +22,7 @@ import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +30,8 @@ import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
+import tech.pegasys.artemis.events.ChannelExceptionHandler;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceController;
@@ -50,6 +53,7 @@ public class BeaconNode {
 
   private final ServiceController serviceController = new ServiceController();
   private final ServiceConfig serviceConfig;
+  private final EventChannels eventChannels;
   private EventBus eventBus;
   private MetricsEndpoint metricsEndpoint;
 
@@ -57,12 +61,19 @@ public class BeaconNode {
     System.setProperty("logPath", config.getLogPath());
     System.setProperty("rollingFile", config.getLogFile());
 
-    this.eventBus = new AsyncEventBus(threadPool, new EventBusExceptionHandler(STDOUT));
+    final EventBusExceptionHandler subscriberExceptionHandler =
+        new EventBusExceptionHandler(STDOUT);
+    this.eventChannels = new EventChannels(subscriberExceptionHandler);
+    this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     this.serviceConfig =
         new ServiceConfig(
-            new SystemTimeProvider(), eventBus, metricsEndpoint.getMetricsSystem(), config);
+            new SystemTimeProvider(),
+            eventBus,
+            eventChannels,
+            metricsEndpoint.getMetricsSystem(),
+            config);
     Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDir();
@@ -102,12 +113,14 @@ public class BeaconNode {
 
   public void stop() {
     serviceController.stopAll();
+    eventChannels.stop();
     metricsEndpoint.stop();
   }
 }
 
 @VisibleForTesting
-final class EventBusExceptionHandler implements SubscriberExceptionHandler {
+final class EventBusExceptionHandler
+    implements SubscriberExceptionHandler, ChannelExceptionHandler {
   private final ALogger logger;
 
   EventBusExceptionHandler(final ALogger logger) {
@@ -115,12 +128,46 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
   }
 
   @Override
-  public final void handleException(
-      final Throwable exception, final SubscriberExceptionContext context) {
+  public void handleException(final Throwable exception, final SubscriberExceptionContext context) {
+    handleException(
+        exception,
+        "event '"
+            + context.getEvent().getClass().getName()
+            + "'"
+            + " in handler '"
+            + context.getSubscriber().getClass().getName()
+            + "'"
+            + " (method  '"
+            + context.getSubscriberMethod().getName()
+            + "')");
+  }
+
+  @Override
+  public void handleException(
+      final Throwable error,
+      final Object subscriber,
+      final Method invokedMethod,
+      final Object[] args) {
+    handleException(
+        error,
+        "event '"
+            + invokedMethod.getDeclaringClass()
+            + "."
+            + invokedMethod.getName()
+            + "' in handler '"
+            + subscriber.getClass().getName()
+            + "'");
+  }
+
+  private void handleException(final Throwable exception, final String subscriberDescription) {
     if (isSpecFailure(exception)) {
-      logger.log(Level.WARN, specFailedMessage(exception, context), exception);
+      logger.log(Level.WARN, specFailedMessage(exception, subscriberDescription), exception);
     } else {
-      logger.log(Level.FATAL, unexpectedExceptionMessage(exception, context), exception, Color.RED);
+      logger.log(
+          Level.FATAL,
+          unexpectedExceptionMessage(exception, subscriberDescription),
+          exception,
+          Color.RED);
     }
   }
 
@@ -129,28 +176,15 @@ final class EventBusExceptionHandler implements SubscriberExceptionHandler {
   }
 
   private static String unexpectedExceptionMessage(
-      final Throwable exception, final SubscriberExceptionContext context) {
+      final Throwable exception, final String subscriberDescription) {
     return "PLEASE FIX OR REPORT | Unexpected exception thrown for "
-        + describeSubscriberException(exception, context);
+        + subscriberDescription
+        + ": "
+        + exception;
   }
 
   private static String specFailedMessage(
-      final Throwable exception, final SubscriberExceptionContext context) {
-    return "Spec failed for " + describeSubscriberException(exception, context);
-  }
-
-  private static String describeSubscriberException(
-      final Throwable exception, final SubscriberExceptionContext context) {
-    return "event '"
-        + context.getEvent().getClass().getName()
-        + "'"
-        + " in handler '"
-        + context.getSubscriber().getClass().getName()
-        + "'"
-        + " (method  '"
-        + context.getSubscriberMethod().getName()
-        + "')"
-        + ": "
-        + exception.toString();
+      final Throwable exception, final String subscriberDescription) {
+    return "Spec failed for " + subscriberDescription + ": " + exception;
   }
 }

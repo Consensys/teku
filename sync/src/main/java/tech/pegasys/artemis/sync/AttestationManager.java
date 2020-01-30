@@ -95,7 +95,7 @@ public class AttestationManager extends Service {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     pendingAttestations
-        .childrenOf(blockRoot)
+        .getItemsDependingOn(blockRoot, false)
         .forEach(
             attestation -> {
               pendingAttestations.remove(attestation);

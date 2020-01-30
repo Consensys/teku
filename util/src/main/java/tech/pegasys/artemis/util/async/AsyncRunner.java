@@ -18,9 +18,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public interface AsyncRunner {
+  SafeFuture<Void> DELAY_COMPLETE_SIGNAL = SafeFuture.completedFuture(null);
 
   <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor);
 
   <U> SafeFuture<U> runAfterDelay(
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);
+
+  default SafeFuture<Void> getDelayedFuture(long delayAmount, TimeUnit delayUnit) {
+    return runAfterDelay(() -> DELAY_COMPLETE_SIGNAL, delayAmount, delayUnit);
+  }
 }
