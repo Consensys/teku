@@ -19,7 +19,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-import java.util.function.IntConsumer;
 import org.junit.jupiter.api.Test;
 
 class EventChannelsTest {
@@ -75,10 +74,12 @@ class EventChannelsTest {
   @Test
   public void shouldKeepDifferentChannelsSeparate() {
     final Runnable runnableSubscriber = mock(Runnable.class);
-    final IntConsumer consumerSubscriber = mock(IntConsumer.class);
+    final SimpleConsumer consumerSubscriber = mock(SimpleConsumer.class);
+    channels.subscribe(Runnable.class, runnableSubscriber);
+    channels.subscribe(SimpleConsumer.class, consumerSubscriber);
 
     final Runnable runnablePublisher = channels.getPublisher(Runnable.class);
-    final IntConsumer consumerPublisher = channels.getPublisher(IntConsumer.class);
+    final SimpleConsumer consumerPublisher = channels.getPublisher(SimpleConsumer.class);
 
     runnablePublisher.run();
     verify(runnableSubscriber).run();
@@ -87,5 +88,9 @@ class EventChannelsTest {
     consumerPublisher.accept(1);
     verify(consumerSubscriber).accept(1);
     verifyNoMoreInteractions(runnableSubscriber);
+  }
+
+  private interface SimpleConsumer {
+    void accept(int value);
   }
 }
