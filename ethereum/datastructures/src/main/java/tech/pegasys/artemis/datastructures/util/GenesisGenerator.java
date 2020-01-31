@@ -100,7 +100,12 @@ public class GenesisGenerator {
     }
   }
 
-  public Optional<BeaconStateWithCache> getGenesisState(Predicate<BeaconState> validityCriteria) {
+  public BeaconStateWithCache getGenesisState() {
+    return getGenesisStateIfValid(state -> true).orElseThrow();
+  }
+
+  public Optional<BeaconStateWithCache> getGenesisStateIfValid(
+      Predicate<BeaconState> validityCriteria) {
     if (!validityCriteria.test(state)) {
       return Optional.empty();
     }

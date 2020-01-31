@@ -78,7 +78,7 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
 
     if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
       genesisGenerator
-          .getGenesisState(BeaconStateUtil::is_valid_genesis_stateSim)
+          .getGenesisStateIfValid(BeaconStateUtil::is_valid_genesis_stateSim)
           .ifPresent(
               candidate_state -> {
                 setSimulationGenesisTime(candidate_state);
@@ -86,7 +86,7 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
               });
     } else {
       genesisGenerator
-          .getGenesisState(BeaconStateUtil::is_valid_genesis_state)
+          .getGenesisStateIfValid(BeaconStateUtil::is_valid_genesis_state)
           .ifPresent(candidate_state -> eth2Genesis(new GenesisEvent(candidate_state)));
     }
   }
