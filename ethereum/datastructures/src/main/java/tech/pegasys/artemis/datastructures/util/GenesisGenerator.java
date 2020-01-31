@@ -84,19 +84,21 @@ public class GenesisGenerator {
 
   private void processActivation(final Deposit deposit) {
     final Integer index = keyCache.get(deposit.getData().getPubkey());
-    if (index != null) { // Could be null if the deposit was invalid
-      Validator validator = state.getValidators().get(index);
-      UnsignedLong balance = state.getBalances().get(index);
-      UnsignedLong effective_balance =
-          BeaconStateUtil.min(
-              balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
-              UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
-      validator.setEffective_balance(effective_balance);
+    if (index == null) {
+      // Could be null if the deposit was invalid
+      return;
+    }
+    Validator validator = state.getValidators().get(index);
+    UnsignedLong balance = state.getBalances().get(index);
+    UnsignedLong effective_balance =
+        BeaconStateUtil.min(
+            balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+            UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
+    validator.setEffective_balance(effective_balance);
 
-      if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
-        validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-        validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-      }
+    if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
+      validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+      validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
     }
   }
 
