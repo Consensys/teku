@@ -29,7 +29,6 @@ import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.GenesisGenerator;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.statetransition.DepositQueue;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -39,8 +38,8 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
 
   private final ArtemisConfiguration config;
   private final ChainStorageClient chainStorageClient;
-  private final DepositQueue depositQueue = new DepositQueue(this::onOrderedDeposit);
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
+  private final List<DepositWithIndex> deposits = new ArrayList<>();
 
   public PreGenesisDepositHandler(
       final ArtemisConfiguration config, final ChainStorageClient chainStorageClient) {
@@ -53,20 +52,10 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
     if (!chainStorageClient.isPreGenesis()) {
       return;
     }
-    depositQueue.onDeposit(event);
-  }
 
-  private void eth2Genesis(GenesisEvent genesisEvent) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
-    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
-    chainStorageClient.initializeFromGenesis(initialState);
-    Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
-    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
-  }
-
-  private void onOrderedDeposit(final DepositsFromBlockEvent event) {
-    STDOUT.log(Level.DEBUG, "New deposits received");
+    event.getDeposits().stream()
+        .map(DepositUtil::convertDepositEventToOperationDeposit)
+        .forEach(deposits::add);
 
     final Bytes32 eth1BlockHash = event.getBlockHash();
     final UnsignedLong eth1Timestamp = event.getBlockTimestamp();
@@ -89,6 +78,23 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
           .getGenesisStateIfValid(BeaconStateUtil::is_valid_genesis_state)
           .ifPresent(candidate_state -> eth2Genesis(new GenesisEvent(candidate_state)));
     }
+  }
+
+  private void eth2Genesis(GenesisEvent genesisEvent) {
+    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
+    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
+    chainStorageClient.initializeFromGenesis(initialState);
+    Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
+    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
+    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
+  }
+
+  public boolean isGenesisReasonable(
+      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits, boolean isSimulation) {
+    final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+    if (isSimulation) return sufficientValidators;
+    final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
+    return afterMinGenesisTime && sufficientValidators;
   }
 
   private void setSimulationGenesisTime(BeaconState state) {
