@@ -36,7 +36,6 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -45,8 +44,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 public class GenesisGenerator {
   private final MerkleTree<Bytes32> depositMerkleTree =
       new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH);
-  // We keep modifying the state at the genesis slot so can't use caches.
-  private final BeaconStateWithCache state = new BeaconStateWithCache(TransitionCaches.getNoOp());
+  private final BeaconState state = new BeaconState();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
   private final SSZList<DepositData> depositDataList =
@@ -116,7 +114,7 @@ public class GenesisGenerator {
         .setDeposit_root(
             HashTreeUtil.hash_tree_root(
                 HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, depositDataList));
-    return Optional.of(state);
+    return Optional.of(BeaconStateWithCache.deepCopy(state));
   }
 
   private void calculateDepositProof(final Deposit deposit) {
