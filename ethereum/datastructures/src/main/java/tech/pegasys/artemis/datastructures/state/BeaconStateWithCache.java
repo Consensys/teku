@@ -28,8 +28,11 @@ public final class BeaconStateWithCache extends BeaconState {
   private final TransitionCaches transitionCaches;
 
   public BeaconStateWithCache() {
-    super();
-    transitionCaches = TransitionCaches.createNewEmpty();
+    this(TransitionCaches.createNewEmpty());
+  }
+
+  public BeaconStateWithCache(TransitionCaches transitionCaches) {
+    this.transitionCaches = transitionCaches;
   }
 
   public BeaconStateWithCache(
