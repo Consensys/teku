@@ -74,7 +74,7 @@ public class GenesisGenerator {
           STDOUT.log(Level.DEBUG, "About to process deposit: " + depositDataList.size());
           depositDataList.add(deposit.getData());
 
-          // Skip verifing the merkle proof as we're generating it anyway
+          // Skip verifing the merkle proof as we'll only generate one at the end
           // We do still verify the signature
           process_deposit_without_checking_merkle_proof(state, deposit, keyCache);
 
@@ -110,16 +110,27 @@ public class GenesisGenerator {
       return Optional.empty();
     }
 
-    // Finalise the state
+    finalizeState();
+    return Optional.of(BeaconStateWithCache.deepCopy(state));
+  }
+
+  private void finalizeState() {
+    calculateRandaoMixes();
+    calculateDepositRoot();
+  }
+
+  private void calculateRandaoMixes() {
     for (int i = 0; i < state.getRandao_mixes().size(); i++) {
       state.getRandao_mixes().set(i, state.getEth1_data().getBlock_hash());
     }
+  }
+
+  private void calculateDepositRoot() {
     state
         .getEth1_data()
         .setDeposit_root(
             HashTreeUtil.hash_tree_root(
                 HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, depositDataList));
-    return Optional.of(BeaconStateWithCache.deepCopy(state));
   }
 
   private void calculateDepositProof(final Deposit deposit) {
