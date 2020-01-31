@@ -32,7 +32,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.statetransition.DepositQueue;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -42,7 +41,6 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
 
   private final ArtemisConfiguration config;
   private final ChainStorageClient chainStorageClient;
-  private final DepositQueue depositQueue = new DepositQueue(this::onOrderedDeposit);
   private final List<DepositWithIndex> deposits = new ArrayList<>();
 
   public PreGenesisDepositHandler(
@@ -56,20 +54,6 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
     if (!chainStorageClient.isPreGenesis()) {
       return;
     }
-    depositQueue.onDeposit(event);
-  }
-
-  private void eth2Genesis(GenesisEvent genesisEvent) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
-    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
-    chainStorageClient.initializeFromGenesis(initialState);
-    Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
-    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
-  }
-
-  private void onOrderedDeposit(final DepositsFromBlockEvent event) {
-    STDOUT.log(Level.DEBUG, "New deposits received");
     event.getDeposits().stream()
         .map(DepositUtil::convertDepositEventToOperationDeposit)
         .forEach(deposits::add);
@@ -96,6 +80,15 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
         }
       }
     }
+  }
+
+  private void eth2Genesis(GenesisEvent genesisEvent) {
+    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
+    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
+    chainStorageClient.initializeFromGenesis(initialState);
+    Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
+    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
+    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
   public boolean isGenesisReasonable(
