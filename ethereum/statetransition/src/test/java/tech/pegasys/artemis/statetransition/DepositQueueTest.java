@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.artemis.statetransition.deposit.DepositQueue;
 
 class DepositQueueTest {
 
