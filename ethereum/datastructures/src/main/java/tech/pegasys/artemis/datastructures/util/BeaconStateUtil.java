@@ -22,10 +22,8 @@ import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_b
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
-import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_DEPOSIT;
-import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -40,7 +38,6 @@ import static tech.pegasys.artemis.util.config.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.artemis.util.config.Constants.MIN_SLASHING_PENALTY_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
 import static tech.pegasys.artemis.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_DAY;
 import static tech.pegasys.artemis.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -52,7 +49,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -62,9 +58,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
@@ -76,7 +69,6 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class BeaconStateUtil {
 
@@ -94,70 +86,9 @@ public class BeaconStateUtil {
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
-    UnsignedLong genesis_time =
-        eth1_timestamp
-            .minus(eth1_timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)))
-            .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY)));
-
-    Eth1Data eth1_data = new Eth1Data();
-    eth1_data.setBlock_hash(eth1_block_hash);
-    eth1_data.setDeposit_count(UnsignedLong.valueOf(deposits.size()));
-    BeaconBlockHeader beaconBlockHeader = new BeaconBlockHeader();
-    Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
-    beaconBlockHeader.setBody_root(latestBlockRoot);
-
-    BeaconStateWithCache state = new BeaconStateWithCache();
-    state.setGenesis_time(genesis_time);
-    state.setEth1_data(eth1_data);
-    state.setLatest_block_header(beaconBlockHeader);
-    for (int i = 0; i < state.getRandao_mixes().size(); i++) {
-      state.getRandao_mixes().set(i, eth1_block_hash);
-    }
-
-    // Process deposits
-    Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
-    if (DEPOSIT_PROOFS_ENABLED) {
-      DepositUtil.calcDepositProofs(deposits);
-      long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
-      List<DepositData> leaves =
-          deposits.stream().map(Deposit::getData).collect(Collectors.toList());
-      for (int i = 0; i < deposits.size(); i++) {
-        SSZList<DepositData> deposit_data_list =
-            new SSZList<>(leaves.subList(0, i + 1), depositListLength, DepositData.class);
-        state
-            .getEth1_data()
-            .setDeposit_root(
-                HashTreeUtil.hash_tree_root(
-                    HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, deposit_data_list));
-        STDOUT.log(Level.DEBUG, "About to process deposit: " + i);
-        process_deposit(state, deposits.get(i), keyCache);
-      }
-    } else {
-      STDOUT.log(Level.WARN, "About to process " + deposits.size() + " deposits without proofs.");
-      deposits.forEach(deposit -> process_deposit(state, deposit, keyCache));
-    }
-
-    // Process activations
-    IntStream.range(0, state.getValidators().size())
-        .forEach(
-            index -> {
-              Validator validator = state.getValidators().get(index);
-              UnsignedLong balance = state.getBalances().get(index);
-              UnsignedLong effective_balance =
-                  min(
-                      balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
-                      UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
-              validator.setEffective_balance(effective_balance);
-
-              if (validator
-                  .getEffective_balance()
-                  .equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
-                validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-                validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-              }
-            });
-
-    return state;
+    final GenesisGenerator genesisGenerator = new GenesisGenerator();
+    genesisGenerator.addDepositsFromBlock(eth1_block_hash, eth1_timestamp, deposits);
+    return genesisGenerator.getGenesisState();
   }
 
   /**
@@ -169,12 +100,6 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    process_deposit(state, deposit, null);
-  }
-
-  private static void process_deposit(
-      BeaconState state, Deposit deposit, Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
-
     if (DEPOSIT_PROOFS_ENABLED) {
       checkArgument(
           is_valid_merkle_branch(
@@ -186,17 +111,24 @@ public class BeaconStateUtil {
           "process_deposit: Verify the Merkle branch");
     }
 
+    process_deposit_without_checking_merkle_proof(state, deposit, null);
+  }
+
+  static void process_deposit_without_checking_merkle_proof(
+      final BeaconState state,
+      final Deposit deposit,
+      final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
 
     final BLSPublicKey pubkey = deposit.getData().getPubkey();
     final UnsignedLong amount = deposit.getData().getAmount();
 
-    SSZList<Validator> validators = state.getValidators();
     OptionalInt existingIndex;
     if (pubKeyToIndexMap != null) {
       Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
+      SSZList<Validator> validators = state.getValidators();
       existingIndex =
           IntStream.range(0, validators.size())
               .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
@@ -220,6 +152,10 @@ public class BeaconStateUtil {
                     compute_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
           STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
+          if (pubKeyToIndexMap != null) {
+            // The validator won't be created so the calculated index won't be correct
+            pubKeyToIndexMap.remove(pubkey);
+          }
           return;
         }
       }
@@ -697,7 +633,6 @@ public class BeaconStateUtil {
    * @param value2
    * @return
    */
-  @VisibleForTesting
   public static UnsignedLong min(UnsignedLong value1, UnsignedLong value2) {
     if (value1.compareTo(value2) <= 0) {
       return value1;
