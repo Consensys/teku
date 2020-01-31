@@ -100,12 +100,6 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    process_deposit(state, deposit, null);
-  }
-
-  static void process_deposit(
-      BeaconState state, Deposit deposit, Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
-
     if (DEPOSIT_PROOFS_ENABLED) {
       checkArgument(
           is_valid_merkle_branch(
@@ -117,7 +111,7 @@ public class BeaconStateUtil {
           "process_deposit: Verify the Merkle branch");
     }
 
-    process_deposit_without_checking_merkle_proof(state, deposit, pubKeyToIndexMap);
+    process_deposit_without_checking_merkle_proof(state, deposit, null);
   }
 
   static void process_deposit_without_checking_merkle_proof(
