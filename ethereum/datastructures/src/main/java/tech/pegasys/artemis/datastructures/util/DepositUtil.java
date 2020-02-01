@@ -14,31 +14,17 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
 import java.util.Arrays;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 
 public class DepositUtil {
-
-  public static void calcDepositProofs(List<? extends Deposit> deposits) {
-    MerkleTree<Bytes32> merkleTree = new MerkleTree<>(DEPOSIT_CONTRACT_TREE_DEPTH);
-    deposits.forEach(
-        deposit -> {
-          Bytes32 value = deposit.getData().hash_tree_root();
-          merkleTree.add(value);
-          deposit.setProof(merkleTree.getProofTreeByValue(value));
-        });
-  }
 
   public static DepositWithIndex convertDepositEventToOperationDeposit(
       tech.pegasys.artemis.pow.event.Deposit event) {

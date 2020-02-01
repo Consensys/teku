@@ -31,8 +31,8 @@ public class VoluntaryExit implements Merkleizable, SimpleOffsetSerializable, SS
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private UnsignedLong epoch;
-  private UnsignedLong validator_index;
+  private final UnsignedLong epoch;
+  private final UnsignedLong validator_index;
 
   public VoluntaryExit(UnsignedLong epoch, UnsignedLong validator_index) {
     this.epoch = epoch;
@@ -77,10 +77,6 @@ public class VoluntaryExit implements Merkleizable, SimpleOffsetSerializable, SS
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getEpoch() {
     return epoch;
-  }
-
-  public void setEpoch(UnsignedLong epoch) {
-    this.epoch = epoch;
   }
 
   public UnsignedLong getValidator_index() {

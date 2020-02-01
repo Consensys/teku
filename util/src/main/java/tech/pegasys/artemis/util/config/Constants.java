@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class Constants {
 
@@ -27,7 +26,6 @@ public class Constants {
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static int SECONDS_PER_DAY = 86400;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
-  public static String ENDIANNESS = "little";
 
   // Misc
   public static int MAX_COMMITTEES_PER_SLOT;
@@ -101,26 +99,14 @@ public class Constants {
   // Fork Choice
   public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
 
-  // Validator
-  public static int RANDOM_SUBNETS_PER_VALIDATOR = 1;
-  public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
-
   // Sync
   public static UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
 
-  public static Bytes DEPOSIT_CONTRACT_ADDRESS =
-      Bytes.fromHexString("0x1234567890123456789012345678901234567890");
-
-  public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS;
-
-  public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
 
   public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
 
   // Artemis specific
-  public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
-  public static int DEPOSIT_DATA_SIZE = 512; //
   public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
@@ -134,7 +120,6 @@ public class Constants {
     setConstants("minimal");
   }
 
-  @SuppressWarnings("rawtypes")
   public static void setConstants(String Constants) {
     if (Constants.equals("mainnet")) {
 
@@ -171,7 +156,6 @@ public class Constants {
       MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
       PERSISTENT_COMMITTEE_PERIOD = 2048;
       MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
-      EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 16384;
 
       // State list lengths
       EPOCHS_PER_HISTORICAL_VECTOR = 65536;
@@ -228,7 +212,6 @@ public class Constants {
       MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
       PERSISTENT_COMMITTEE_PERIOD = 2048;
       MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
-      EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS = 4096;
 
       // State list lengths
       EPOCHS_PER_HISTORICAL_VECTOR = 64;

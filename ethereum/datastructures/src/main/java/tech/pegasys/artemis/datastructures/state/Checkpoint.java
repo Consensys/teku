@@ -58,15 +58,6 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
         SSZ.encodeUInt64(epoch.longValue()), SSZ.encode(writer -> writer.writeFixedBytes(root)));
   }
 
-  public static Checkpoint fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new Checkpoint(
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                Bytes32.wrap(reader.readFixedBytes(32))));
-  }
-
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {

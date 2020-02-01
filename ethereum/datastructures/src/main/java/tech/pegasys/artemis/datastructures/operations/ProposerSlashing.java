@@ -33,9 +33,9 @@ public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable,
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
 
-  private UnsignedLong proposer_index;
-  private SignedBeaconBlockHeader header_1;
-  private SignedBeaconBlockHeader header_2;
+  private final UnsignedLong proposer_index;
+  private final SignedBeaconBlockHeader header_1;
+  private final SignedBeaconBlockHeader header_2;
 
   public ProposerSlashing(
       UnsignedLong proposer_index,
@@ -90,24 +90,12 @@ public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable,
     return proposer_index;
   }
 
-  public void setProposer_index(UnsignedLong proposer_index) {
-    this.proposer_index = proposer_index;
-  }
-
   public SignedBeaconBlockHeader getHeader_1() {
     return header_1;
   }
 
-  public void setHeader_1(SignedBeaconBlockHeader header_1) {
-    this.header_1 = header_1;
-  }
-
   public SignedBeaconBlockHeader getHeader_2() {
     return header_2;
-  }
-
-  public void setHeader_2(SignedBeaconBlockHeader header_2) {
-    this.header_2 = header_2;
   }
 
   @Override

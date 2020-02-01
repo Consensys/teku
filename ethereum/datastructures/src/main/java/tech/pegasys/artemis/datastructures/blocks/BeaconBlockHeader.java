@@ -124,16 +124,8 @@ public class BeaconBlockHeader implements Merkleizable, SimpleOffsetSerializable
     return slot;
   }
 
-  public void setSlot(UnsignedLong slot) {
-    this.slot = slot;
-  }
-
   public Bytes32 getParent_root() {
     return parent_root;
-  }
-
-  public void setParent_root(Bytes32 parent_root) {
-    this.parent_root = parent_root;
   }
 
   public Bytes32 getState_root() {

@@ -170,10 +170,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
     return graffiti;
   }
 
-  public void setGraffiti(Bytes32 graffiti) {
-    this.graffiti = graffiti;
-  }
-
   public SSZList<Attestation> getAttestations() {
     return attestations;
   }
@@ -192,10 +188,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
 
   public SSZList<AttesterSlashing> getAttester_slashings() {
     return attester_slashings;
-  }
-
-  public void setAttester_slashings(SSZList<AttesterSlashing> attester_slashings) {
-    this.attester_slashings = attester_slashings;
   }
 
   public SSZList<Deposit> getDeposits() {

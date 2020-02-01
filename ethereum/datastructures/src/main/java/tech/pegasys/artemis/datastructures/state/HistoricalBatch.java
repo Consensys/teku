@@ -34,8 +34,8 @@ public class HistoricalBatch
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private SSZVector<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
-  private SSZVector<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
+  private final SSZVector<Bytes32> block_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
+  private final SSZVector<Bytes32> state_roots; // Vector bounded by SLOTS_PER_HISTORICAL_ROOT
 
   public HistoricalBatch(SSZVector<Bytes32> block_roots, SSZVector<Bytes32> state_roots) {
     this.block_roots = block_roots;
@@ -75,14 +75,6 @@ public class HistoricalBatch
     return new HistoricalBatch(this);
   }
 
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytesVector(block_roots);
-          writer.writeFixedBytesVector(state_roots);
-        });
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(block_roots, state_roots);
@@ -119,16 +111,8 @@ public class HistoricalBatch
     return block_roots;
   }
 
-  public void setBlockRoots(SSZVector<Bytes32> block_roots) {
-    this.block_roots = block_roots;
-  }
-
   public SSZVector<Bytes32> getStateRoots() {
     return state_roots;
-  }
-
-  public void setStateRoots(SSZVector<Bytes32> state_roots) {
-    this.state_roots = state_roots;
   }
 
   @Override

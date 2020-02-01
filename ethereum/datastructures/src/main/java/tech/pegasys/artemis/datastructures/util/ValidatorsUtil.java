@@ -13,11 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -70,28 +67,6 @@ public class ValidatorsUtil {
   }
 
   /**
-   * Returns the list of active validators from the provided list of validators at the given epoch.
-   *
-   * <p><b>This method is defined for convenience and is not mentioned in the spec.</b>
-   *
-   * @param validators - The list of validators under consideration.
-   * @param epoch - The epoch under consideration.
-   * @return A list of active validators for the given epoch.
-   */
-  public static List<Validator> get_active_validators(
-      List<Validator> validators, UnsignedLong epoch) {
-    List<Validator> active_validators = new ArrayList<>();
-    if (validators != null) {
-      for (Validator record : validators) {
-        if (is_active_validator(record, epoch)) {
-          active_validators.add(record);
-        }
-      }
-    }
-    return active_validators;
-  }
-
-  /**
    * Get active validator indices at ``epoch``.
    *
    * @param state - Current BeaconState
@@ -112,23 +87,6 @@ public class ValidatorsUtil {
                   .boxed()
                   .collect(Collectors.toList());
             });
-  }
-
-  /**
-   * find all validators not present in the provided list
-   *
-   * @param validator_indices
-   * @return
-   */
-  public static List<Integer> get_validators_not_present(List<Integer> validator_indices) {
-    List<Integer> all_indices =
-        IntStream.range(0, validator_indices.size()).boxed().collect(Collectors.toList());
-    Set<Integer> set_of_indices = Sets.newHashSet(all_indices);
-    Set<Integer> set_of_validator_indices = Sets.newHashSet(validator_indices);
-    // remove all validator indices provided and we are left with validator indices not present in
-    // the list provided
-    set_of_indices.removeAll(set_of_validator_indices);
-    return new ArrayList<>(set_of_indices);
   }
 
   /**

@@ -103,14 +103,6 @@ public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZC
         });
   }
 
-  public Bytes serialize() {
-    return Bytes.wrap(
-        pubkey.getPublicKey().toBytesCompressed(),
-        withdrawal_credentials,
-        Bytes.ofUnsignedLong(amount.longValue()),
-        signature.toBytes());
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash(pubkey, withdrawal_credentials, amount, signature);

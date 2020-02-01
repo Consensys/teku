@@ -14,13 +14,12 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Committee {
 
-  private UnsignedLong index;
-  private List<Integer> committee;
+  private final UnsignedLong index;
+  private final List<Integer> committee;
 
   public Committee(UnsignedLong index, List<Integer> committee) {
     this.index = index;
@@ -34,10 +33,6 @@ public class Committee {
 
   public List<Integer> getCommittee() {
     return committee;
-  }
-
-  public void setCommittee(ArrayList<Integer> committee) {
-    this.committee = committee;
   }
 
   public int getCommitteeSize() {
