@@ -15,7 +15,6 @@ package tech.pegasys.artemis.util.json;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
@@ -54,8 +53,7 @@ public class BytesModule extends SimpleModule {
   private static class UInt64Deserializer extends JsonDeserializer<UInt64> {
 
     @Override
-    public UInt64 deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
+    public UInt64 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return UInt64.fromHexString(p.getValueAsString());
     }
   }
@@ -92,8 +90,7 @@ public class BytesModule extends SimpleModule {
   private static class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
 
     @Override
-    public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
+    public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return Bytes32.fromHexString(p.getValueAsString());
     }
   }
@@ -110,8 +107,7 @@ public class BytesModule extends SimpleModule {
   private static class BytesDeserializer extends JsonDeserializer<Bytes> {
 
     @Override
-    public Bytes deserialize(JsonParser p, DeserializationContext ctxt)
-        throws IOException, JsonProcessingException {
+    public Bytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return Bytes.fromHexString(p.getValueAsString());
     }
   }

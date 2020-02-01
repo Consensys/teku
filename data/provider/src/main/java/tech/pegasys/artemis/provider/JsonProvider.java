@@ -38,11 +38,7 @@ public class JsonProvider {
         new ExclusionStrategy() {
           @Override
           public boolean shouldSkipField(FieldAttributes field) {
-            if (field.getDeclaringClass() == BeaconStateWithCache.class) {
-              return true;
-            }
-
-            return false;
+            return field.getDeclaringClass() == BeaconStateWithCache.class;
           }
 
           @Override

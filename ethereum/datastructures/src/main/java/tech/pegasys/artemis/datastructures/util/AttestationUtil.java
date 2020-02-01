@@ -229,11 +229,7 @@ public class AttestationUtil {
       if (bitfieldBit == 1) count++;
     }
 
-    if (count == 1) {
-      return true;
-    } else {
-      return false;
-    }
+    return count == 1;
   }
 
   // Get attestation data that does not include attester specific shard or crosslink information

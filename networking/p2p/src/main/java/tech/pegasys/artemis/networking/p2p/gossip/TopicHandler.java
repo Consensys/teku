@@ -23,5 +23,5 @@ public interface TopicHandler {
    * @param bytes The gossip message
    * @return {@code true} if the message is valid, {@code false} otherwise
    */
-  public boolean handleMessage(Bytes bytes);
+  boolean handleMessage(Bytes bytes);
 }

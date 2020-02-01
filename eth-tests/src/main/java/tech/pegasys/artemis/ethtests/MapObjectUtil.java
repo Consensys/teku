@@ -602,7 +602,7 @@ public class MapObjectUtil {
 
   private static String convertUntypedNumericalClassesToString(Object e) {
     if (e.getClass().equals(BigInteger.class)) {
-      return ((BigInteger) e).toString();
+      return e.toString();
     } else if (e.getClass().equals(Long.class)) {
       return ((Long) e).toString();
     } else if (e.getClass().equals(Integer.class)) {

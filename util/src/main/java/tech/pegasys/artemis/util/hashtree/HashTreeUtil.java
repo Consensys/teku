@@ -55,7 +55,7 @@ public final class HashTreeUtil {
     LIST_OF_COMPOSITE,
     BITLIST,
     BITVECTOR
-  };
+  }
 
   private static List<Bytes32> zerohashes = getZerohashes();
 
