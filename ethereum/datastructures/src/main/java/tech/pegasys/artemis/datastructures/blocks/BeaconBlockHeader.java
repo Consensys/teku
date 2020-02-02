@@ -31,8 +31,8 @@ public class BeaconBlockHeader implements Merkleizable, SimpleOffsetSerializable
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 4;
 
-  private UnsignedLong slot;
-  private Bytes32 parent_root;
+  private final UnsignedLong slot;
+  private final Bytes32 parent_root;
   private Bytes32 state_root;
   private Bytes32 body_root;
 
