@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':events')
   implementation project(':networking:p2p')
   implementation project(':services:powchain')
   implementation project(':services:beaconchain')

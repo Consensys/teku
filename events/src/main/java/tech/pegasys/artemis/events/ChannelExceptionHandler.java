@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.event;
+package tech.pegasys.artemis.events;
 
-import tech.pegasys.artemis.pow.api.PowEvent;
+import java.lang.reflect.Method;
 
-public abstract class AbstractEvent<T> implements PowEvent<T> {
+public interface ChannelExceptionHandler {
 
-  private T response;
-
-  public AbstractEvent(T response) {
-    this.response = response;
-  }
-
-  @Override
-  public T getResponse() {
-    return response;
-  }
+  void handleException(Throwable error, Object subscriber, Method invokedMethod, Object[] args);
 }

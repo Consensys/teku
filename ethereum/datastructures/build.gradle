@@ -10,6 +10,8 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
   runtime 'org.apache.logging.log4j:log4j-core'
+
+  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   testImplementation 'com.fasterxml.jackson.core:jackson-databind'
   

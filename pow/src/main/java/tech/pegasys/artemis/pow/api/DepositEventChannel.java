@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.interfaces;
+package tech.pegasys.artemis.pow.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.List;
+import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 
-public interface IRecordAdapter {
-
-  String toJSON() throws JsonProcessingException;
-
-  String toCSV();
-
-  String[] toLabels();
-
-  void filterOutputFields(List<String> outputFields);
+public interface DepositEventChannel {
+  void notifyDepositsFromBlock(DepositsFromBlockEvent event);
 }
