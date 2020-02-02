@@ -15,12 +15,16 @@ package tech.pegasys.artemis.util.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class ConstantsReaderTest {
+  private static final List<String> ZERO_FIELDS = List.of("GENESIS_SLOT", "GENESIS_EPOCH");
 
   @AfterEach
   public void tearDown() {
@@ -40,27 +44,40 @@ class ConstantsReaderTest {
   }
 
   @Test
-  public void shouldLoadMainnetConstants() {
+  public void shouldLoadMainnetConstants() throws Exception {
     Constants.setConstants("mainnet");
 
     // Sanity check a couple of values
     assertThat(Constants.MAX_COMMITTEES_PER_SLOT).isEqualTo(64);
     assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(128);
+    assertAllFieldsSet();
   }
 
   @Test
-  public void shouldLoadMinimalConstants() {
+  public void shouldLoadMinimalConstants() throws Exception {
     Constants.setConstants("minimal");
 
     assertThat(Constants.MAX_COMMITTEES_PER_SLOT).isEqualTo(4);
     assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(4);
+    assertAllFieldsSet();
   }
 
   @Test
-  public void shouldLoadFromUrl() {
-    Constants.setConstants(
-        "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Sapphire(v0.9.4)/config.yaml");
+  public void shouldLoadFromUrl() throws Exception {
+    Constants.setConstants(Constants.class.getResource("mainnet.yaml").toExternalForm());
     assertThat(Constants.TARGET_COMMITTEE_SIZE).isEqualTo(128);
-    assertThat(Constants.JUSTIFICATION_BITS_LENGTH).isEqualTo(4);
+    assertAllFieldsSet();
+  }
+
+  private void assertAllFieldsSet() throws Exception {
+    for (Field field : Constants.class.getFields()) {
+      final Object value = field.get(null);
+      assertThat(value).describedAs(field.getName()).isNotNull();
+      if (!ZERO_FIELDS.contains(field.getName())) {
+        assertThat(value).describedAs(field.getName()).isNotEqualTo(0);
+        assertThat(value).describedAs(field.getName()).isNotEqualTo(0L);
+        assertThat(value).describedAs(field.getName()).isNotEqualTo(UnsignedLong.ZERO);
+      }
+    }
   }
 }

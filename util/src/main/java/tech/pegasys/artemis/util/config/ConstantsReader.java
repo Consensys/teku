@@ -29,7 +29,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 class ConstantsReader {
 
-  private static final Map<Class<?>, Function<String, ?>> PARSERS =
+  private static final ImmutableMap<Class<?>, Function<String, ?>> PARSERS =
       ImmutableMap.<Class<?>, Function<String, ?>>builder()
           .put(Integer.TYPE, ConstantsReader::parseInt)
           .put(Long.TYPE, Long::valueOf)

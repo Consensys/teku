@@ -49,7 +49,7 @@ public class Constants {
   public static long EFFECTIVE_BALANCE_INCREMENT;
 
   // Initial values
-  public static Bytes4 GENESIS_FORK_VERSION;
+  public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
   public static long GENESIS_SLOT;
   public static long GENESIS_EPOCH;
   public static Bytes BLS_WITHDRAWAL_PREFIX;
