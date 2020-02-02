@@ -45,7 +45,8 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
   private Eth1Data eth1_data;
   private final Bytes32 graffiti;
   private SSZList<ProposerSlashing> proposer_slashings; // List bounded by MAX_PROPOSER_SLASHINGS
-  private final SSZList<AttesterSlashing> attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
+  private final SSZList<AttesterSlashing>
+      attester_slashings; // List bounded by MAX_ATTESTER_SLASHINGS
   private SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
   private SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
   private final SSZList<SignedVoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
