@@ -46,6 +46,7 @@ public class Constants {
   public static long EFFECTIVE_BALANCE_INCREMENT;
 
   // Initial values
+  public static Bytes4 GENESIS_FORK_VERSION;
   public static long GENESIS_SLOT;
   public static long GENESIS_EPOCH;
   public static Bytes BLS_WITHDRAWAL_PREFIX;
@@ -157,6 +158,7 @@ public class Constants {
       EFFECTIVE_BALANCE_INCREMENT = 1000000000L;
 
       // Initial values
+      GENESIS_FORK_VERSION = new Bytes4(Bytes.fromHexString("0x00000000"));
       GENESIS_SLOT = 0;
       GENESIS_EPOCH = 0;
       BLS_WITHDRAWAL_PREFIX = Bytes.wrap(new byte[1]);
@@ -214,6 +216,7 @@ public class Constants {
       EFFECTIVE_BALANCE_INCREMENT = 1000000000L;
 
       // Initial values
+      GENESIS_FORK_VERSION = new Bytes4(Bytes.fromHexString("0x00000000"));
       GENESIS_SLOT = 0;
       GENESIS_EPOCH = 0;
       BLS_WITHDRAWAL_PREFIX = Bytes.wrap(new byte[1]);

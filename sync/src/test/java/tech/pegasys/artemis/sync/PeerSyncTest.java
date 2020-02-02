@@ -36,7 +36,6 @@ import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
@@ -62,7 +61,7 @@ public class PeerSyncTest {
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
           new StatusMessage(
-              Fork.VERSION_ZERO,
+              Constants.GENESIS_FORK_VERSION,
               Bytes32.ZERO,
               PEER_FINALIZED_EPOCH,
               PEER_HEAD_BLOCK_ROOT,
@@ -263,7 +262,7 @@ public class PeerSyncTest {
     final PeerStatus peer_status =
         PeerStatus.fromStatusMessage(
             new StatusMessage(
-                Fork.VERSION_ZERO,
+                Constants.GENESIS_FORK_VERSION,
                 Bytes32.ZERO,
                 PEER_FINALIZED_EPOCH,
                 PEER_HEAD_BLOCK_ROOT,

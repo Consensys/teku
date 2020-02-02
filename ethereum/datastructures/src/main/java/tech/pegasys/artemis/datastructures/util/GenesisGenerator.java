@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_DAY;
 
@@ -36,6 +37,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -55,6 +57,8 @@ public class GenesisGenerator {
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
     beaconBlockHeader.setBody_root(latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
+    state.setFork(
+        new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));
   }
 
   public void addDepositsFromBlock(

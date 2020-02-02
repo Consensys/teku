@@ -22,7 +22,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomV
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
@@ -35,7 +34,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
@@ -140,8 +138,8 @@ class BlockProcessorUtilTest {
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
-            new Bytes4(Bytes.ofUnsignedInt(0)),
-            new Bytes4(Bytes.ofUnsignedInt(0)),
+            Constants.GENESIS_FORK_VERSION,
+            Constants.GENESIS_FORK_VERSION,
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     SSZList<Validator> validatorList =
