@@ -14,21 +14,22 @@
 package tech.pegasys.artemis.util.config;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class Constants {
 
   // Non-configurable constants
-  public static long GENESIS_SLOT = 0;
-  public static long GENESIS_EPOCH = 0;
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
   public static int BASE_REWARDS_PER_EPOCH = 4;
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
-  public static String ENDIANNESS = "little";
 
   // Misc
   public static int MAX_COMMITTEES_PER_SLOT;
@@ -47,7 +48,9 @@ public class Constants {
   public static long EFFECTIVE_BALANCE_INCREMENT;
 
   // Initial values
-  public static Bytes4 GENESIS_FORK_VERSION;
+  public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
+  public static long GENESIS_SLOT;
+  public static long GENESIS_EPOCH;
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
@@ -62,6 +65,9 @@ public class Constants {
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
   public static int PERSISTENT_COMMITTEE_PERIOD;
+  public static int MAX_EPOCHS_PER_CROSSLINK;
+  public static int EPOCHS_PER_CUSTODY_PERIOD;
+  public static int CUSTODY_PERIOD_TO_RANDAO_PADDING;
 
   // State list lengths
   public static int EPOCHS_PER_HISTORICAL_VECTOR;
@@ -89,6 +95,9 @@ public class Constants {
   public static Bytes4 DOMAIN_RANDAO = new Bytes4(Bytes.fromHexString("0x02000000"));
   public static Bytes4 DOMAIN_DEPOSIT = new Bytes4(Bytes.fromHexString("0x03000000"));
   public static Bytes4 DOMAIN_VOLUNTARY_EXIT = new Bytes4(Bytes.fromHexString("0x04000000"));
+  public static Bytes4 DOMAIN_CUSTODY_BIT_CHALLENGE = Bytes4.fromHexString("0x06000000");
+  public static Bytes4 DOMAIN_SHARD_PROPOSER = Bytes4.fromHexString("0x80000000");
+  public static Bytes4 DOMAIN_SHARD_ATTESTER = Bytes4.fromHexString("0x81000000");
 
   // Honest Validator
   public static UnsignedLong TARGET_AGGREGATORS_PER_COMMITTEE = UnsignedLong.valueOf(16);
@@ -114,14 +123,17 @@ public class Constants {
 
   public static int EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS;
 
-  public static BLSSignature EMPTY_SIGNATURE = BLSSignature.empty();
   public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
 
   public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
 
+  // Phase 1
+  public static int SHARD_SLOTS_PER_BEACON_SLOT;
+  public static int EPOCHS_PER_SHARD_PERIOD;
+  public static int PHASE_1_FORK_EPOCH;
+  public static int PHASE_1_FORK_SLOT;
+
   // Artemis specific
-  public static String SIM_DEPOSIT_VALUE = "1000000000000000000";
-  public static int DEPOSIT_DATA_SIZE = 512; //
   public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
@@ -135,121 +147,22 @@ public class Constants {
     setConstants("minimal");
   }
 
-  @SuppressWarnings("rawtypes")
-  public static void setConstants(String Constants) {
-    if (Constants.equals("mainnet")) {
+  public static void setConstants(final String source) {
+    try (final InputStream input = createInputStream(source)) {
+      ConstantsReader.loadConstantsFrom(input);
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Failed to load constants from " + source, e);
+    }
+  }
 
-      // Mainnet settings
-
-      // Misc
-      MAX_COMMITTEES_PER_SLOT = 64;
-      TARGET_COMMITTEE_SIZE = 128;
-      MAX_VALIDATORS_PER_COMMITTEE = 2048;
-      MIN_PER_EPOCH_CHURN_LIMIT = 4;
-      CHURN_LIMIT_QUOTIENT = 65536;
-      SHUFFLE_ROUND_COUNT = 90;
-      MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 16384;
-      MIN_GENESIS_TIME = UnsignedLong.valueOf(1578009600);
-
-      // Gwei values
-      MIN_DEPOSIT_AMOUNT = 1000000000L;
-      MAX_EFFECTIVE_BALANCE = 32000000000L;
-      EJECTION_BALANCE = 16000000000L;
-      EFFECTIVE_BALANCE_INCREMENT = 1000000000L;
-
-      // Initial values
-      GENESIS_FORK_VERSION = new Bytes4(Bytes.fromHexString("0x00000000"));
-      BLS_WITHDRAWAL_PREFIX = Bytes.wrap(new byte[1]);
-
-      // Time parameters
-      MIN_GENESIS_DELAY = 86400;
-      SECONDS_PER_SLOT = 12;
-      MIN_ATTESTATION_INCLUSION_DELAY = 1;
-      SLOTS_PER_EPOCH = 32;
-      MIN_SEED_LOOKAHEAD = 1;
-      MAX_SEED_LOOKAHEAD = 4;
-      MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
-      SLOTS_PER_ETH1_VOTING_PERIOD = 1024;
-      SLOTS_PER_HISTORICAL_ROOT = 8192;
-      MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
-      PERSISTENT_COMMITTEE_PERIOD = 2048;
-
-      // State list lengths
-      EPOCHS_PER_HISTORICAL_VECTOR = 65536;
-      EPOCHS_PER_SLASHINGS_VECTOR = 8192;
-      HISTORICAL_ROOTS_LIMIT = 16777216;
-      VALIDATOR_REGISTRY_LIMIT = 1099511627776L;
-
-      // Reward and penalty quotients
-      BASE_REWARD_FACTOR = 64;
-      WHISTLEBLOWER_REWARD_QUOTIENT = 512;
-      PROPOSER_REWARD_QUOTIENT = 8;
-      INACTIVITY_PENALTY_QUOTIENT = 33554432;
-      MIN_SLASHING_PENALTY_QUOTIENT = 32;
-
-      // Max transactions per block
-      MAX_PROPOSER_SLASHINGS = 16;
-      MAX_ATTESTER_SLASHINGS = 1;
-      MAX_ATTESTATIONS = 128;
-      MAX_DEPOSITS = 16;
-      MAX_VOLUNTARY_EXITS = 16;
-
+  private static InputStream createInputStream(final String source) throws IOException {
+    if (source.contains(":")) {
+      return new URL(source).openStream();
+    } else if ("mainnet".equals(source) || "minimal".equals(source)) {
+      return Constants.class.getResourceAsStream(source + ".yaml");
     } else {
-
-      // Minimal settings
-
-      // Misc
-      MAX_COMMITTEES_PER_SLOT = 4;
-      TARGET_COMMITTEE_SIZE = 4;
-      MAX_VALIDATORS_PER_COMMITTEE = 2048;
-      MIN_PER_EPOCH_CHURN_LIMIT = 4;
-      CHURN_LIMIT_QUOTIENT = 65536;
-      SHUFFLE_ROUND_COUNT = 10;
-      MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 64;
-      MIN_GENESIS_TIME = UnsignedLong.ONE;
-
-      // Gwei values
-      MIN_DEPOSIT_AMOUNT = 1000000000L;
-      MAX_EFFECTIVE_BALANCE = 32000000000L;
-      EJECTION_BALANCE = 16000000000L;
-      EFFECTIVE_BALANCE_INCREMENT = 1000000000L;
-
-      // Initial values
-      GENESIS_FORK_VERSION = new Bytes4(Bytes.fromHexString("0x00000001"));
-      BLS_WITHDRAWAL_PREFIX = Bytes.wrap(new byte[1]);
-
-      // Time parameters
-      MIN_GENESIS_DELAY = 300;
-      SECONDS_PER_SLOT = 6;
-      MIN_ATTESTATION_INCLUSION_DELAY = 1;
-      SLOTS_PER_EPOCH = 8;
-      MIN_SEED_LOOKAHEAD = 1;
-      MAX_SEED_LOOKAHEAD = 4;
-      MIN_EPOCHS_TO_INACTIVITY_PENALTY = 4;
-      SLOTS_PER_ETH1_VOTING_PERIOD = 16;
-      SLOTS_PER_HISTORICAL_ROOT = 64;
-      MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
-      PERSISTENT_COMMITTEE_PERIOD = 2048;
-
-      // State list lengths
-      EPOCHS_PER_HISTORICAL_VECTOR = 64;
-      EPOCHS_PER_SLASHINGS_VECTOR = 64;
-      HISTORICAL_ROOTS_LIMIT = 16777216;
-      VALIDATOR_REGISTRY_LIMIT = 1099511627776L;
-
-      // Reward and penalty quotients
-      BASE_REWARD_FACTOR = 64;
-      WHISTLEBLOWER_REWARD_QUOTIENT = 512;
-      PROPOSER_REWARD_QUOTIENT = 8;
-      INACTIVITY_PENALTY_QUOTIENT = 33554432;
-      MIN_SLASHING_PENALTY_QUOTIENT = 32;
-
-      // Max transactions per block
-      MAX_PROPOSER_SLASHINGS = 16;
-      MAX_ATTESTER_SLASHINGS = 1;
-      MAX_ATTESTATIONS = 128;
-      MAX_DEPOSITS = 16;
-      MAX_VOLUNTARY_EXITS = 16;
+      // Treat it as a file
+      return Files.newInputStream(Path.of(source));
     }
   }
 }

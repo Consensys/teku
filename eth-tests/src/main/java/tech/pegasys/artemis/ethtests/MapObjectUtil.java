@@ -535,12 +535,10 @@ public class MapObjectUtil {
   }
 
   private static String convertUntypedNumericalClassesToString(Object e) {
-    if (e.getClass().equals(BigInteger.class)) {
-      return ((BigInteger) e).toString();
-    } else if (e.getClass().equals(Long.class)) {
-      return ((Long) e).toString();
-    } else if (e.getClass().equals(Integer.class)) {
-      return ((Integer) e).toString();
+    if (e.getClass().equals(BigInteger.class)
+        || e.getClass().equals(Long.class)
+        || e.getClass().equals(Integer.class)) {
+      return e.toString();
     }
     return null;
   }

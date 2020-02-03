@@ -50,7 +50,7 @@ public abstract class TestSuite {
   private static final Logger LOG = LogManager.getLogger();
   private static final Path pathToTests =
       Paths.get(
-          System.getProperty("user.dir").toString(),
+          System.getProperty("user.dir"),
           "src",
           "referenceTest",
           "resources",
@@ -117,9 +117,9 @@ public abstract class TestSuite {
           && (testObjects.get(0).getClassName().equals(UnsignedLong.class)
               || testObjects.get(0).getClassName().equals(Boolean.class)
               || testObjects.get(0).getClassName().equals(String.class))) {
-        object = ((String) mapper.readerFor(String.class).readValue(in));
+        object = mapper.readerFor(String.class).readValue(in);
       } else {
-        object = ((Map) mapper.readerFor(Map.class).readValue(in));
+        object = mapper.readerFor(Map.class).readValue(in);
       }
 
     } catch (IOException e) {

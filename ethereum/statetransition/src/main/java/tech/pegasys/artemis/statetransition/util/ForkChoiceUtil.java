@@ -239,15 +239,11 @@ public class ForkChoiceUtil {
         <= 0) {
       return false;
     }
-    if (!get_ancestor(
+    return get_ancestor(
             store,
             new_justified_checkpoint.getRoot(),
             store.getBlock(store.getJustifiedCheckpoint().getRoot()).getSlot())
-        .equals(store.getJustifiedCheckpoint().getRoot())) {
-      return false;
-    }
-
-    return true;
+        .equals(store.getJustifiedCheckpoint().getRoot());
   }
 
   // Fork Choice Event Handlers
@@ -387,11 +383,7 @@ public class ForkChoiceUtil {
     final UnsignedLong finalizedSlot = store.getBlock(finalizedCheckpoint.getRoot()).getSlot();
     final Bytes32 ancestorAtFinalizedSlot =
         get_ancestor(store, block.getParent_root(), finalizedSlot);
-    if (!ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot())) {
-      return false;
-    }
-
-    return true;
+    return ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot());
   }
 
   /**

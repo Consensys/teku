@@ -16,9 +16,15 @@ package tech.pegasys.artemis.util.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 final class ArtemisConfigurationTest {
+
+  @AfterEach
+  public void tearDown() {
+    Constants.setConstants("minimal");
+  }
 
   @Test
   void validMinimum() {

@@ -29,6 +29,10 @@ public class Bytes4 {
     this.bytes = bytes;
   }
 
+  public static Bytes4 fromHexString(String value) {
+    return new Bytes4(Bytes.fromHexString(value));
+  }
+
   /**
    * Left pad a {@link Bytes} value with zero bytes to create a {@link Bytes4}.
    *
