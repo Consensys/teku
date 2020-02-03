@@ -54,7 +54,6 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.config.Constants;
 
 class MockStartBeaconStateGeneratorTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -162,10 +161,7 @@ class MockStartBeaconStateGeneratorTest {
 
   @Test
   @Disabled
-  @SuppressWarnings({"rawtypes"})
   public void printBeaconState() throws Exception {
-    Constants.setConstants("minimal");
-
     final UnsignedLong genesisTime = UnsignedLong.valueOf(1567719788L);
     final int validatorCount = 16;
 

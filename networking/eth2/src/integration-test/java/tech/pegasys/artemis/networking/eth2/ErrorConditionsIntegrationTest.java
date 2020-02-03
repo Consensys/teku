@@ -23,13 +23,13 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
-import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ErrorConditionsIntegrationTest {
 
@@ -63,7 +63,12 @@ public class ErrorConditionsIntegrationTest {
   private static class InvalidStatusMessage extends StatusMessage {
 
     public InvalidStatusMessage() {
-      super(Fork.VERSION_ZERO, Bytes32.ZERO, UnsignedLong.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
+      super(
+          Constants.GENESIS_FORK_VERSION,
+          Bytes32.ZERO,
+          UnsignedLong.ZERO,
+          Bytes32.ZERO,
+          UnsignedLong.ZERO);
     }
 
     @Override

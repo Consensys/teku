@@ -16,7 +16,6 @@ package tech.pegasys.artemis.networking.eth2.peers;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -33,7 +32,7 @@ public class PeerStatusFactory {
   }
 
   public PeerStatus random() {
-    final Bytes4 fork = Fork.VERSION_ZERO;
+    final Bytes4 fork = Constants.GENESIS_FORK_VERSION;
     final Bytes32 finalizedRoot = randomBytes32();
     final UnsignedLong finalizedEpoch = randomLong(0, 10);
     final Bytes32 headRoot = randomBytes32();

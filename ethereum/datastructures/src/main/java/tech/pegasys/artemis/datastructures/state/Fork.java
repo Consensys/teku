@@ -31,7 +31,6 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
-  public static final Bytes4 VERSION_ZERO = new Bytes4(Bytes.of(0, 0, 0, 0));
 
   private final Bytes4 previous_version; // This is a Version type, aliased as a Bytes4
   private final Bytes4 current_version; // This is a Version type, aliased as a Bytes4
