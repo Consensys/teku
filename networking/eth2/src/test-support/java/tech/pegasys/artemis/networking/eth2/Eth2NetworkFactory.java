@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.createNodeRecord;
 
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -25,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -55,6 +55,7 @@ public class Eth2NetworkFactory {
   protected List<DiscoveryPeer> enrpeers = new ArrayList<>();
 
   protected final List<Eth2Network> networks = new ArrayList<>();
+  private static int nextPort;
 
   public Eth2P2PNetworkBuilder builder() {
     return new Eth2P2PNetworkBuilder();
@@ -65,6 +66,7 @@ public class Eth2NetworkFactory {
         n -> {
           n.stop();
         });
+    networks.clear();
   }
 
   protected EventBus eventBus;
@@ -84,7 +86,7 @@ public class Eth2NetworkFactory {
 
     try {
       NodeRecord nodeRecord =
-          Eth2DiscoveryService.createNodeRecord(
+          createNodeRecord(
               networkConfig.getDiscoveryPrivateKey(),
               networkConfig.getNetworkInterface(),
               networkConfig.getAdvertisedPort());
@@ -172,7 +174,7 @@ public class Eth2NetworkFactory {
                     NetworkConfig networkConfig = eth2network.getNetworkConfig();
                     try {
                       NodeRecord nodeRecord =
-                          Eth2DiscoveryService.createNodeRecord(
+                          createNodeRecord(
                               networkConfig.getDiscoveryPrivateKey(),
                               networkConfig.getNetworkInterface(),
                               networkConfig.getAdvertisedPort());
@@ -183,8 +185,9 @@ public class Eth2NetworkFactory {
                   })
               .collect(Collectors.toList());
 
-      final Random random = new Random();
-      final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+      //      final Random random = new Random();
+      //      final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
+      final int port = MIN_PORT + nextPort++;
 
       return new NetworkConfig(
           // generate the key in the test utility to make sure it's available to all

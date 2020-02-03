@@ -65,7 +65,6 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
-  private final Logger logger = LogManager.getLogger(LibP2PNetwork.class);
   private final PrivKey privKey;
   private final NetworkConfig config;
   private final NodeId nodeId;
@@ -106,7 +105,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(method)));
 
     // Setup peers
-    peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers, rpcHandlers);
+    peerManager = new PeerManager(config, scheduler, metricsSystem, peerHandlers, rpcHandlers);
 
     host =
         BuildersJKt.hostJ(
@@ -175,7 +174,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   @Override
   public SafeFuture<?> connect(final String peer) {
-    logger.info("Connecting to " + peer);
     return peerManager.connect(new Multiaddr(peer), host.getNetwork());
   }
 

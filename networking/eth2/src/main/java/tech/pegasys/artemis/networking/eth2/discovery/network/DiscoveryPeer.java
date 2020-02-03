@@ -51,6 +51,10 @@ public class DiscoveryPeer {
     return Secp256k1Kt.unmarshalSecp256k1PublicKey(getNodeId().toArray());
   }
 
+  public Bytes getDiscoveryId() {
+    return nodeRecord.getNodeId();
+  }
+
   public String getNodeIdString() {
     return PeerId.fromPubKey(getPubKey()).toBase58();
   }

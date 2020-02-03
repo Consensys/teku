@@ -14,9 +14,12 @@
 package tech.pegasys.artemis.networking.eth2.discovery.network;
 
 import com.google.common.eventbus.Subscribe;
+import io.libp2p.core.PeerId;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DiscoveryPeerSubscriberImpl implements DiscoveryPeerSubscriber {
@@ -33,25 +36,29 @@ public class DiscoveryPeerSubscriberImpl implements DiscoveryPeerSubscriber {
   @Override
   public void onDiscovery(DiscoveryPeer discoveryPeer) {
     logger.debug("DiscoveryPeer subscriber notified");
-    final String connectString =
-        "/ip4/"
-            + discoveryPeer.getAddress().getHostAddress()
-            + "/tcp/"
-            + discoveryPeer.getUdpPort()
-            + "/p2p/"
-            + discoveryPeer.getNodeIdString();
-    final SafeFuture<?> connect = network.connect(connectString);
-    if (connect != null) {
-      connect.finish(
-          r -> {
-            logger.info("discv5 connected to:" + connectString);
-          },
-          t -> {
-            logger.error("discv5 connect failed: " + t.toString());
-          });
-    } else {
-      logger.error(
-          "connect failed with null, is this a mock? If so, the repo check expects a safe future to be handled, before being able to to test the mock");
-    }
+//    if (network.getPeer(new LibP2PNodeId(new PeerId(discoveryPeer.getNodeId().toArray()))).isPresent()) {
+//      logger.debug("Discovery peer already exists in nodetable");
+//      return;
+//    }
+//    final String connectString =
+//        "/ip4/"
+//            + discoveryPeer.getAddress().getHostAddress()
+//            + "/tcp/"
+//            + discoveryPeer.getUdpPort()
+//            + "/p2p/"
+//            + discoveryPeer.getNodeIdString();
+//    final SafeFuture<?> connect = network.connect(connectString);
+//    if (connect != null) {
+//      connect.finish(
+//          r -> {
+//            logger.info("discv5 connected to:" + connectString);
+//          },
+//          t -> {
+//            logger.error("discv5 connect failed: " + t.toString());
+//          });
+//    } else {
+//      logger.error(
+//          "connect failed with null, is this a mock? If so, the repo check expects a safe future to be handled, before being able to to test the mock");
+//    }
   }
 }

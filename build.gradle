@@ -65,7 +65,8 @@ allprojects {
     jcenter()
     mavenCentral()
     maven { url "https://hyperledger-org.bintray.com/besu-repo/" }
-    maven { url "https://consensys.bintray.com/pegasys-repo" }
+    mavenLocal()
+//    maven { url "https://consensys.bintray.com/pegasys-repo" }
   }
 
   dependencies {
@@ -103,7 +104,7 @@ allprojects {
       '-Xlint:divzero',
       '-Xlint:finally',
       '-Xlint:static',
-      '-Werror',
+//      '-Werror',
     ]
 
     options.errorprone {

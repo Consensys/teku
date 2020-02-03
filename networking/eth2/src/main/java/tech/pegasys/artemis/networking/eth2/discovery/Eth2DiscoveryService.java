@@ -15,12 +15,18 @@ package tech.pegasys.artemis.networking.eth2.discovery;
 
 import static org.ethereum.beacon.discovery.schema.EnrField.IP_V4;
 import static org.ethereum.beacon.discovery.schema.EnrField.UDP_V4;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.createNodeRecord;
+import static org.ethereum.beacon.discovery.schema.NodeRecord.createNodeRecord;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.etc.encode.Base58;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -38,11 +44,13 @@ import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.IdentitySchemaV4Interpreter;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.storage.NodeBucketStorage;
 import org.ethereum.beacon.discovery.storage.NodeSerializerFactory;
 import org.ethereum.beacon.discovery.storage.NodeTable;
 import org.ethereum.beacon.discovery.storage.NodeTableStorage;
 import org.ethereum.beacon.discovery.storage.NodeTableStorageFactoryImpl;
+import org.ethereum.beacon.discovery.task.DiscoveryTaskManager;
 import org.ethereum.beacon.discovery.util.Functions;
 import org.javatuples.Pair;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
@@ -63,6 +71,7 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
   // event bus by which to signal other services
   private final EventBus eventBus;
   private final NetworkConfig config;
+//  private final DiscoveryTaskManager dtm;
 
   public Eth2DiscoveryService(final NetworkConfig networkConfig, final EventBus eventBus) {
     this.config = networkConfig;
@@ -115,6 +124,22 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
               Schedulers.createDefault().newSingleThreadDaemon("server-1"),
               Schedulers.createDefault().newSingleThreadDaemon("client-1"));
 
+      Collection<Consumer<NodeRecord>> consumers = new ArrayList<>();
+      consumers.add(
+          nr -> {
+            logger.debug(() -> String.format("On %s, discovery search found: %s", nodeTable.getHomeNode(), nr));
+            nodeTable.save(NodeRecordInfo.createDefault(nr));
+          });
+//      dtm =
+//          new DiscoveryTaskManager(
+//              dm,
+//              nodeTable,
+//              nodeBucketStorage,
+//              localNodeRecord,
+//              Schedulers.createDefault().newSingleThreadDaemon("discovery-search"),
+//              false,
+//              false,
+//              consumers);
     } catch (Exception e) {
       logger.error("Error constructing local node record: " + e.getMessage());
       throw new RuntimeException("Error constructing DiscoveryService");
@@ -124,6 +149,7 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
   @Override
   public SafeFuture<State> doStart() {
     dm.start();
+//    dtm.start();
     return SafeFuture.completedFuture(this.getState());
   }
 
@@ -138,12 +164,25 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
   }
 
   @Override
-  public void findPeers() {}
+  public void findPeers() {
+//    dtm.start();
+    streamPeers()
+        .forEach(
+            dp -> {
+              logger.info(
+                  () ->
+                      String.format(
+                          "On %s, findpeers, finding noderecord: %s",
+                          nodeTable.getHomeNode(), dp.getNodeRecord()));
+              SafeFuture.of(dm.findNodes(dp.getNodeRecord(), 256)).reportExceptions();
+            });
+
+  }
 
   @Override
   public Stream<DiscoveryPeer> streamPeers() {
     // use logLimit of 0 to retrieve all entries in the node table
-    return nodeTable.findClosestNodes(nodeTable.getHomeNode().getNodeId(), 0).stream()
+    return nodeTable.findClosestNodes(nodeTable.getHomeNode().getNodeId(), 256).stream()
         .map(n -> DiscoveryPeer.fromNodeRecord(n.getNode()));
   }
 
@@ -161,28 +200,8 @@ public class Eth2DiscoveryService extends Service implements DiscoveryNetwork {
     return remoteNodeRecord;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public static NodeRecord createNodeRecord(byte[] privateKey, String networkInterface, int port)
-      throws UnknownHostException {
-    Bytes localAddressBytes =
-        Bytes.wrap(InetAddress.getByName(networkInterface).getAddress()); // 172.18.0.2 // 127.0.0.1
-    Bytes localIp =
-        Bytes.concatenate(Bytes.wrap(new byte[4 - localAddressBytes.size()]), localAddressBytes);
-    NodeRecord nodeRecord =
-        NodeRecordFactory.DEFAULT.createFromValues(
-            UInt64.ZERO,
-            Pair.with(EnrField.ID, IdentitySchema.V4),
-            Pair.with(IP_V4, localIp),
-            Pair.with(
-                EnrFieldV4.PKEY_SECP256K1,
-                Functions.derivePublicKeyFromPrivate(Bytes.wrap(privateKey))),
-            Pair.with(UDP_V4, port));
-    nodeRecord.sign(Bytes.wrap(privateKey));
-    nodeRecord.verify();
-    return nodeRecord;
-  }
-
-  NodeTable getNodeTable() {
+  @VisibleForTesting
+  public NodeTable getNodeTable() {
     return nodeTable;
   }
 }

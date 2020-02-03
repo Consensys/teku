@@ -3,12 +3,15 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
-                pattern="%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n"/>
+                pattern="%sn | %d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %location | %msg%n"/>
         </Console>
     </Appenders>
     <Loggers>
         <Logger name="io.netty" level="INFO"/>
-        <Root level="DEBUG">
+        <Logger name="org.ethereum.beacon.discovery" level="TRACE"/>
+        <Logger name="tech.pegasys.artemis.networking.eth2.rpc" level="INFO"/>
+        <Logger name="tech.pegasys.artemis.networking.eth2.peers" level="INFO"/>
+        <Root level="TRACE">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>

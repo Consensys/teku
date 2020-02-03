@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -45,6 +46,7 @@ import tech.pegasys.artemis.util.events.Subscribers;
 public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final NetworkConfig networkConfig;
   private final ScheduledExecutorService scheduler;
   private static final long RECONNECT_TIMEOUT = 5000;
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
@@ -56,10 +58,12 @@ public class PeerManager implements ConnectionHandler {
       Subscribers.create(true);
 
   public PeerManager(
+      final NetworkConfig networkConfig,
       final ScheduledExecutorService scheduler,
       final MetricsSystem metricsSystem,
       final List<PeerHandler> peerHandlers,
       final Map<RpcMethod, RpcHandler> rpcHandlers) {
+    this.networkConfig = networkConfig;
     this.scheduler = scheduler;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
@@ -82,7 +86,7 @@ public class PeerManager implements ConnectionHandler {
   }
 
   public SafeFuture<?> connect(final Multiaddr peer, final NetworkImpl network) {
-    STDOUT.log(Level.DEBUG, "Connecting to " + peer);
+    STDOUT.log(Level.DEBUG, "On " + networkConfig.getNetworkInterface() + ":" + networkConfig.getListenPort() + "Connecting to " + peer);
     return SafeFuture.of(network.connect(peer))
         .whenComplete(
             (conn, throwable) -> {

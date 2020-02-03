@@ -16,18 +16,30 @@ package tech.pegasys.artemis.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.assertj.core.util.ArrayWrapperList;
+import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.eth2.discovery.Eth2DiscoveryService;
 import tech.pegasys.artemis.networking.eth2.discovery.network.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.util.Waiter;
 
 public class DiscoveryIntegrationTest {
 
+  Logger logger = LogManager.getLogger();
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
 
   @AfterEach
   public void tearDown() {
+    logger.info("Starting teardown");
     networkFactory.stopAll();
   }
 
@@ -46,19 +58,70 @@ public class DiscoveryIntegrationTest {
   }
 
   @Test
+  @RepeatedTest(30)
   public void peersConnectedIndirectlyShouldDiscoveryEachOther() throws Exception {
+    // initially nodeA knows only of bootnode and bootnode knows noone
     final Eth2Network bootnode = networkFactory.builder().startNetwork();
-
-    // Setup network A with bootnode
     final Eth2Network nodeA = networkFactory.builder().discoveryPeer(bootnode).startNetwork();
-    Waiter.waitFor(() -> assertThat(bootnode.getPeer(nodeA.getNodeId()).isPresent()));
+    logger.info("port_bootnode:" + bootnode.getNetworkConfig().getListenPort());
+    logger.info("port_a:" + nodeA.getNetworkConfig().getListenPort());
 
-    // Setup network B with same bootnode
+    // nodeA should look for peers
+    doPeering(nodeA);
+
+    // ensure that bootnode and nodeA know about each other after one search round
+    // i.e., nodeA doing a search against bootnode updates bootnode's known peer set
+    Waiter.waitFor(() -> assertThat(checkPeerTable(nodeA, bootnode)).isPresent());
+    Waiter.waitFor(() -> assertThat(checkPeerTable(bootnode, nodeA)).isPresent());
+
+    // start nodeB with knowledge of bootnode
     final Eth2Network nodeB = networkFactory.builder().discoveryPeer(bootnode).startNetwork();
-    Waiter.waitFor(() -> assertThat(bootnode.getPeer(nodeB.getNodeId()).isPresent()));
+    logger.info("port_b:" + nodeB.getNetworkConfig().getListenPort());
 
-    // A and B should find each other through the bootnode
-    Waiter.waitFor(() -> assertThat(nodeA.getPeer(nodeB.getNodeId())).isPresent());
-    Waiter.waitFor(() -> assertThat(nodeB.getPeer(nodeA.getNodeId())).isPresent());
+    // nodeB conducts one round of search
+    // bootnode's known peer set will add nodeB
+    // nodeB will find nodeA from bootnode's response
+    doPeering(nodeB);
+    // check nodeB and bootnode know each other
+    Waiter.waitFor(() -> assertThat(checkPeerTable(bootnode, nodeB)).isPresent());
+    Waiter.waitFor(() -> assertThat(checkPeerTable(nodeB, bootnode)).isPresent());
+    // check nodeB knows nodeA
+    Waiter.waitFor(() -> assertThat(checkPeerTable(nodeA, nodeB)).isPresent());
+
+    // nodeA should find nodeB (via bootnode)
+    doPeering(nodeA);
+    Waiter.waitFor(() -> assertThat(checkPeerTable(nodeB, nodeA)).isPresent());
+  }
+
+  private Optional<NodeRecordInfo> checkPeerTable(Eth2Network thisnode, Eth2Network nodeB) {
+    return ((Eth2DiscoveryService) nodeB.getDiscoveryService())
+        .getNodeTable()
+        .getNode(
+            ((Eth2DiscoveryService) thisnode.getDiscoveryService())
+                .getNodeTable()
+                .getHomeNode()
+                .getNodeId());
+  }
+
+  private void doPeering(Eth2Network nodeB) throws InterruptedException {
+    nodeB.getDiscoveryService().findPeers();
+  }
+
+  private void checkPeering(Eth2Network thisnode, Eth2Network shouldknowthisnode)
+      throws InterruptedException {
+    Thread.sleep(3000);
+//    Waiter.waitFor(() -> assertThat(thisnode.getPeer(shouldknow.getNodeId())).isPresent());
+    assertThat(thisnode.getPeer(shouldknowthisnode.getNodeId())).isPresent();
+  }
+
+  private void printNodeTable(DiscoveryNetwork discovery, String s) {
+    Eth2DiscoveryService discovery_a = (Eth2DiscoveryService) discovery;
+    logger.info("printnodeTable:" + s);
+    List<NodeRecordInfo> closestNodes_a_2 =
+        discovery_a
+            .getNodeTable()
+            .findClosestNodes(
+                discovery_a.getNodeTable().getHomeNode().getNodeId(), Integer.MAX_VALUE);
+    closestNodes_a_2.forEach(nr -> logger.info(s + ":" + nr.getNode().getPort()));
   }
 }
