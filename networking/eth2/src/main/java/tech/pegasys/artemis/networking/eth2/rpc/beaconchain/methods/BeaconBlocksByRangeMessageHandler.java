@@ -108,7 +108,9 @@ public class BeaconBlocksByRangeMessageHandler
         final ResponseCallback<SignedBeaconBlock> callback) {
       this.headBlockRoot = message.getHeadBlockRoot();
       this.currentSlot = message.getStartSlot();
-      this.remainingBlocks = message.getCount();
+      // Minus 1 to account for sending the block at startSlot.
+      // We only decrement this when moving to the next slot but we're already at the first slot
+      this.remainingBlocks = message.getCount().minus(ONE);
       this.step = message.getStep();
       this.headSlot = headSlot;
       this.callback = callback;
@@ -127,11 +129,11 @@ public class BeaconBlocksByRangeMessageHandler
     }
 
     void sendBlock(final SignedBeaconBlock block) {
-      remainingBlocks = remainingBlocks.minus(ONE);
       callback.respond(block);
     }
 
     void incrementCurrentSlot() {
+      remainingBlocks = remainingBlocks.minus(ONE);
       currentSlot = currentSlot.plus(step);
     }
   }
