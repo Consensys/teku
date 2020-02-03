@@ -14,11 +14,8 @@
 package tech.pegasys.artemis.statetransition.genesis;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,7 +39,6 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
   private final ArtemisConfiguration config;
   private final ChainStorageClient chainStorageClient;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
-  private final List<DepositWithIndex> deposits = new ArrayList<>();
 
   public PreGenesisDepositHandler(
       final ArtemisConfiguration config, final ChainStorageClient chainStorageClient) {
@@ -55,10 +51,6 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
     if (!chainStorageClient.isPreGenesis()) {
       return;
     }
-
-    event.getDeposits().stream()
-        .map(DepositUtil::convertDepositEventToOperationDeposit)
-        .forEach(deposits::add);
 
     final Bytes32 eth1BlockHash = event.getBlockHash();
     final UnsignedLong eth1Timestamp = event.getBlockTimestamp();
@@ -90,14 +82,6 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
-  }
-
-  public boolean isGenesisReasonable(
-      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits, boolean isSimulation) {
-    final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-    if (isSimulation) return sufficientValidators;
-    final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
-    return afterMinGenesisTime && sufficientValidators;
   }
 
   private void setSimulationGenesisTime(BeaconState state) {

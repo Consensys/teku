@@ -452,17 +452,9 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     return randao_mixes;
   }
 
-  public void setRandao_mixes(SSZVector<Bytes32> randao_mixes) {
-    this.randao_mixes = randao_mixes;
-  }
-
   // Slashings
   public SSZVector<UnsignedLong> getSlashings() {
     return slashings;
-  }
-
-  public void setSlashings(SSZVector<UnsignedLong> slashings) {
-    this.slashings = slashings;
   }
 
   // Attestations

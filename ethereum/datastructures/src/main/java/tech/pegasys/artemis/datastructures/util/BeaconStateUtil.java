@@ -44,7 +44,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_RO
 import static tech.pegasys.artemis.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -586,22 +585,6 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Converts byte[] (wrapped by BytesValue) to int.
-   *
-   * @param src byte[] (wrapped by BytesValue)
-   * @param pos Index in Byte[] array
-   * @return converted int
-   * @throws IllegalArgumentException if pos is a negative value.
-   */
-  @VisibleForTesting
-  public static int bytes3ToInt(Bytes src, int pos) {
-    checkArgument(pos >= 0, "Expected positive pos but got %s", pos);
-    return ((src.get(pos) & 0xFF) << 16)
-        | ((src.get(pos + 1) & 0xFF) << 8)
-        | (src.get(pos + 2) & 0xFF);
-  }
-
-  /**
    * Return the beacon proposer index at the current slot.
    *
    * @param state
@@ -689,33 +672,6 @@ public class BeaconStateUtil {
    */
   public static Bytes get_domain(BeaconState state, Bytes4 domain_type) {
     return get_domain(state, domain_type, null);
-  }
-
-  /**
-   * Return the bls domain given by the ``domain_type`` and optional 4 byte ``fork_version``
-   * (defaults to zero).
-   *
-   * @param domain_type
-   * @param fork_version
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#bls_domain</a>
-   */
-  public static int bls_domain(int domain_type, Bytes fork_version) {
-    return (int) bytes_to_int(Bytes.concatenate(int_to_bytes(domain_type, 4), fork_version));
-  }
-
-  /**
-   * Return the bls domain given by the ``domain_type`` and optional 4 byte ``fork_version``
-   * (defaults to zero).
-   *
-   * @param domain_type
-   * @return
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#bls_domain</a>
-   */
-  public static int bls_domain(int domain_type) {
-    return bls_domain(domain_type, Bytes.wrap(new byte[0]));
   }
 
   /**
@@ -837,23 +793,5 @@ public class BeaconStateUtil {
         slot.plus(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT));
     return slot.compareTo(state.getSlot()) < 0
         && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
-  }
-
-  /**
-   * @param m
-   * @param n
-   * @return
-   */
-  public static int safeMod(int m, int n) {
-    return ((n % m) + m) % m;
-  }
-
-  /**
-   * @param m
-   * @param n
-   * @return
-   */
-  public static long safeMod(long m, long n) {
-    return ((n % m) + m) % m;
   }
 }

@@ -141,7 +141,6 @@ public class Constants {
     setConstants("minimal");
   }
 
-  @SuppressWarnings("rawtypes")
   public static void setConstants(final String source) {
     try (final InputStream input = createInputStream(source)) {
       ConstantsReader.loadConstantsFrom(input);
