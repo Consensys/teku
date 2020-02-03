@@ -200,10 +200,6 @@ public class Validator
     return withdrawal_credentials.copy();
   }
 
-  public void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {
-    this.withdrawal_credentials = withdrawal_credentials;
-  }
-
   public UnsignedLong getEffective_balance() {
     return effective_balance;
   }

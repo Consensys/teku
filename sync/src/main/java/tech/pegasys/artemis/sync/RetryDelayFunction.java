@@ -16,7 +16,7 @@ package tech.pegasys.artemis.sync;
 import java.time.Duration;
 
 public interface RetryDelayFunction {
-  public Duration getRetryDelay(final int retryCount);
+  Duration getRetryDelay(final int retryCount);
 
   static RetryDelayFunction createExponentialRetry(
       final float multiplier, final Duration minDuration, final Duration maxDuration) {

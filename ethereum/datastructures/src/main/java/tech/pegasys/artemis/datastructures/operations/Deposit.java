@@ -34,7 +34,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
   public static final int SSZ_FIELD_COUNT = 1;
 
   private SSZVector<Bytes32> proof; // Vector bounded by DEPOSIT_CONTRACT_TREE_DEPTH + 1
-  private DepositData data;
+  private final DepositData data;
 
   public Deposit(SSZVector<Bytes32> proof, DepositData data) {
     this.proof = proof;
@@ -98,10 +98,6 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
 
   public DepositData getData() {
     return data;
-  }
-
-  public void setData(DepositData data) {
-    this.data = data;
   }
 
   @Override

@@ -178,11 +178,7 @@ class MockStartBeaconStateGeneratorTest {
         new ExclusionStrategy() {
           @Override
           public boolean shouldSkipField(FieldAttributes field) {
-            if (field.getDeclaringClass() == BeaconStateWithCache.class) {
-              return true;
-            }
-
-            return false;
+            return field.getDeclaringClass() == BeaconStateWithCache.class;
           }
 
           @Override
@@ -280,12 +276,11 @@ class MockStartBeaconStateGeneratorTest {
     return in;
   }
 
-  @SuppressWarnings({"rawtypes"})
   public static Object getObjectFromYAMLInputStream(InputStream in) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     Object object = null;
     try {
-      object = ((Map) mapper.readerFor(Map.class).readValue(in));
+      object = mapper.readerFor(Map.class).readValue(in);
     } catch (IOException e) {
       LOG.log(Level.WARN, e.toString());
     }

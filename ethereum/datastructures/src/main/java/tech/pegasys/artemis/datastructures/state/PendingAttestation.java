@@ -38,10 +38,10 @@ public class PendingAttestation
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
-  private Bitlist aggregation_bits; // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private AttestationData data;
-  private UnsignedLong inclusion_delay;
-  private UnsignedLong proposer_index;
+  private final Bitlist aggregation_bits; // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private final AttestationData data;
+  private final UnsignedLong inclusion_delay;
+  private final UnsignedLong proposer_index;
 
   public PendingAttestation(
       Bitlist aggregation_bitfield,
@@ -57,6 +57,9 @@ public class PendingAttestation
   public PendingAttestation() {
     this.aggregation_bits =
         new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    this.data = null;
+    this.inclusion_delay = null;
+    this.proposer_index = null;
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
@@ -133,32 +136,16 @@ public class PendingAttestation
     return aggregation_bits;
   }
 
-  public void setAggregation_bits(Bitlist aggregation_bitfield) {
-    this.aggregation_bits = aggregation_bitfield;
-  }
-
   public AttestationData getData() {
     return data;
-  }
-
-  public void setData(AttestationData data) {
-    this.data = data;
   }
 
   public UnsignedLong getInclusion_delay() {
     return inclusion_delay;
   }
 
-  public void setInclusion_delay(UnsignedLong inclusion_delay) {
-    this.inclusion_delay = inclusion_delay;
-  }
-
   public UnsignedLong getProposer_index() {
     return proposer_index;
-  }
-
-  public void setProposer_index(UnsignedLong proposer_index) {
-    this.proposer_index = proposer_index;
   }
 
   @Override
