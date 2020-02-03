@@ -1,22 +1,37 @@
 package tech.pegasys.artemis.util.backing.type;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import tech.pegasys.artemis.util.backing.CompositeViewType;
+import tech.pegasys.artemis.util.backing.ContainerView;
 import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.ViewType;
-import tech.pegasys.artemis.util.backing.view.ContainerView;
+import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 
-public class ContainerViewType implements CompositeViewType<ContainerView> {
+public class ContainerViewType<C extends ContainerView> implements CompositeViewType<C> {
 
   private final List<ViewType<?>> childrenTypes;
+  private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
 
-  public ContainerViewType(List<ViewType<?>> childrenTypes) {
+  public ContainerViewType(
+      List<ViewType<?>> childrenTypes,
+      BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
     this.childrenTypes = childrenTypes;
+    this.instanceCtor = instanceCtor;
   }
 
   @Override
-  public ContainerView createDefault() {
-    return null;
+  public C createDefault() {
+    return createFromTreeNode(createDefaultTree());
+  }
+
+  public TreeNode createDefaultTree() {
+    List<TreeNode> defaultChildren = new ArrayList<>(getMaxLength());
+    for (int i = 0; i < getMaxLength(); i++) {
+      defaultChildren.add(getChildType(i).createDefault().getBackingNode());
+    }
+    return TreeNodeImpl.createTree(defaultChildren);
   }
 
   @Override
@@ -25,8 +40,8 @@ public class ContainerViewType implements CompositeViewType<ContainerView> {
   }
 
   @Override
-  public ContainerView createFromTreeNode(TreeNode node) {
-    return new ContainerView(this, node);
+  public C createFromTreeNode(TreeNode node) {
+    return instanceCtor.apply(this, node);
   }
 
   @Override

@@ -2,16 +2,16 @@ package tech.pegasys.artemis.util.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.artemis.util.backing.CompositeView;
+import tech.pegasys.artemis.util.backing.ContainerView;
 import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.View;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
-public class ContainerView implements CompositeView<View> {
+public class ContainerViewImpl implements ContainerView {
   private final ContainerViewType type;
   private TreeNode backingNode;
 
-  public ContainerView(ContainerViewType type, TreeNode backingNode) {
+  public ContainerViewImpl(ContainerViewType type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }

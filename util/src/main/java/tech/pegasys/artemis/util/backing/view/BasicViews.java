@@ -9,25 +9,14 @@ import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.View;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
+import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 
 public class BasicViews {
-
-  public static final ViewType<UInt64View> UINT64_TYPE = new ViewType<>() {
-    @Override
-    public UInt64View createDefault() {
-      return createFromTreeNode(new RootImpl(Bytes32.ZERO));
-    }
-
-    @Override
-    public UInt64View createFromTreeNode(TreeNode node) {
-      return new UInt64View(node);
-    }
-  };
 
   public static class UInt64View implements BasicView<UnsignedLong> {
     private final TreeNode node;
 
-    private UInt64View(TreeNode node) {
+    public UInt64View(TreeNode node) {
       this.node = node;
     }
 
@@ -43,7 +32,7 @@ public class BasicViews {
 
     @Override
     public ViewType<? extends View> getType() {
-      return UINT64_TYPE;
+      return BasicViewTypes.UINT64_TYPE;
     }
 
     @Override
@@ -52,22 +41,10 @@ public class BasicViews {
     }
   }
 
-  public static final ViewType<Bytes32View> BYTES32_TYPE = new ViewType<>() {
-    @Override
-    public Bytes32View createDefault() {
-      return createFromTreeNode(new RootImpl(Bytes32.ZERO));
-    }
-
-    @Override
-    public Bytes32View createFromTreeNode(TreeNode node) {
-      return new Bytes32View(node);
-    }
-  };
-
   public static class Bytes32View implements BasicView<Bytes32> {
     private final TreeNode node;
 
-    private Bytes32View(TreeNode node) {
+    public Bytes32View(TreeNode node) {
       this.node = node;
     }
 
@@ -82,7 +59,7 @@ public class BasicViews {
 
     @Override
     public ViewType<? extends View> getType() {
-      return BYTES32_TYPE;
+      return BasicViewTypes.BYTES32_TYPE;
     }
 
     @Override
