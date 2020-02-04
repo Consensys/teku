@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.util.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -19,16 +32,20 @@ public class ListViewImpl<C extends View> implements ListView<C> {
   private final ContainerViewImpl container;
 
   public ListViewImpl(VectorView<C> data, int size) {
-    ContainerViewType<ContainerViewImpl> containerViewType = new ContainerViewType<>(
-        Arrays.asList(data.getType(), BasicViewTypes.UNSIGNED_LONG_TYPE), ContainerViewImpl::new);
+    ContainerViewType<ContainerViewImpl> containerViewType =
+        new ContainerViewType<>(
+            Arrays.asList(data.getType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
+            ContainerViewImpl::new);
     container = containerViewType.createDefault();
     container.set(0, data);
     container.set(1, new UnsignedLongView(UnsignedLong.valueOf(size)));
   }
 
   public ListViewImpl(ListViewType<C> type, TreeNode node) {
-    ContainerViewType<ContainerViewImpl> containerViewType = new ContainerViewType<>(
-        Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UNSIGNED_LONG_TYPE), ContainerViewImpl::new);
+    ContainerViewType<ContainerViewImpl> containerViewType =
+        new ContainerViewType<>(
+            Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
+            ContainerViewImpl::new);
     container = containerViewType.createFromTreeNode(node);
   }
 
@@ -48,18 +65,23 @@ public class ListViewImpl<C extends View> implements ListView<C> {
   @Override
   public void set(int index, C value) {
     int size = size();
-    checkArgument((index >= 0 && index < size) || (index == size && index < getType().getMaxLength()),
-        "Index out of bounds: %s, size=%s", index, size());
+    checkArgument(
+        (index >= 0 && index < size) || (index == size && index < getType().getMaxLength()),
+        "Index out of bounds: %s, size=%s",
+        index,
+        size());
 
     if (index == size) {
       container.set(1, new UnsignedLongView(UnsignedLong.valueOf(size + 1)));
     }
 
-    container.update(0, view -> {
-      VectorView<C> vector = (VectorView<C>) view;
-      vector.set(index, value);
-      return vector;
-    });
+    container.update(
+        0,
+        view -> {
+          VectorView<C> vector = (VectorView<C>) view;
+          vector.set(index, value);
+          return vector;
+        });
   }
 
   private VectorView<C> getVector() {

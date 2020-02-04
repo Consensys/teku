@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.util.backing;
 
 import com.google.common.primitives.UnsignedLong;
@@ -12,8 +25,8 @@ public class BasicListViewTest {
 
   @Test
   public void simpleUInt64ListTest() {
-    ListViewType<PackedUnsignedLongView> listType = new ListViewType<>(
-        BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 7);
+    ListViewType<PackedUnsignedLongView> listType =
+        new ListViewType<>(BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 7);
     ListView<PackedUnsignedLongView> listView = listType.createDefault();
     TreeNode n0 = listView.getBackingNode();
     listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x111)));
@@ -62,16 +75,21 @@ public class BasicListViewTest {
     Assertions.assertEquals(0x800, listType.createFromTreeNode(n5).get(0).longValue());
     Assertions.assertEquals(0x222, listType.createFromTreeNode(n5).get(1).longValue());
 
-    Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listType.createFromTreeNode(n3)
-            .set(7, new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
-    Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listType.createFromTreeNode(n3).get(7));
-    Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listType.createFromTreeNode(n3).get(8));
-    Assertions.assertThrows(IllegalArgumentException.class,
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            listType
+                .createFromTreeNode(n3)
+                .set(7, new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> listType.createFromTreeNode(n3).get(7));
+    Assertions.assertThrows(
+        IllegalArgumentException.class, () -> listType.createFromTreeNode(n3).get(8));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
         () -> listView.set(7, new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
-    Assertions.assertThrows(IllegalArgumentException.class,
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
         () -> listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
   }
 }

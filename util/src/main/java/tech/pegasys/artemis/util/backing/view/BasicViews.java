@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.util.backing.view;
 
 import com.google.common.primitives.UnsignedLong;
@@ -36,11 +49,13 @@ public class BasicViews {
       super(value, BasicViewTypes.BIT_TYPE);
     }
   }
+
   public static class ByteView extends PackedBasicView<Byte> {
     public ByteView(Byte value) {
       super(value, BasicViewTypes.BYTE_TYPE);
     }
   }
+
   public static class PackedUnsignedLongView extends PackedBasicView<UnsignedLong> {
     public PackedUnsignedLongView(UnsignedLong value) {
       super(value, BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE);
@@ -62,14 +77,15 @@ public class BasicViews {
     }
 
     public UnsignedLongView(UnsignedLong val) {
-      this(new RootImpl(
-          Bytes32.rightPad(Bytes.ofUnsignedLong(val.longValue(), ByteOrder.LITTLE_ENDIAN))));
+      this(
+          new RootImpl(
+              Bytes32.rightPad(Bytes.ofUnsignedLong(val.longValue(), ByteOrder.LITTLE_ENDIAN))));
     }
 
     @Override
     public UnsignedLong get() {
-      return UnsignedLong
-          .valueOf(getBackingNode().hashTreeRoot().slice(0, 8).toLong(ByteOrder.LITTLE_ENDIAN));
+      return UnsignedLong.valueOf(
+          getBackingNode().hashTreeRoot().slice(0, 8).toLong(ByteOrder.LITTLE_ENDIAN));
     }
   }
 

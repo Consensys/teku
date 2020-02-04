@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.util.backing;
 
 import com.google.common.primitives.UnsignedLong;
@@ -13,36 +26,37 @@ import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 
 public class ContainerViewTest {
 
-//  public interface TestContainerRead {
-//
-//    UnsignedLong getLong1();
-//
-//    UnsignedLong getLong2();
-//
-//    ListView<UnsignedLong> getList1();
-//  }
-//
-//  public interface TestContainerWrite extends TestContainerRead {
-//
-//    void setLong1(UnsignedLong val);
-//
-//    void setLong2(UnsignedLong val);
-//
-//    void setList1(ListView<UnsignedLong> val);
-//
-//    default void updateList1(int index, Function<UnsignedLong, UnsignedLong> updater) {
-//      getList1().update(index, updater);
-//      setList1(getList1());
-//    }
-//  }
+  //  public interface TestContainerRead {
+  //
+  //    UnsignedLong getLong1();
+  //
+  //    UnsignedLong getLong2();
+  //
+  //    ListView<UnsignedLong> getList1();
+  //  }
+  //
+  //  public interface TestContainerWrite extends TestContainerRead {
+  //
+  //    void setLong1(UnsignedLong val);
+  //
+  //    void setLong2(UnsignedLong val);
+  //
+  //    void setList1(ListView<UnsignedLong> val);
+  //
+  //    default void updateList1(int index, Function<UnsignedLong, UnsignedLong> updater) {
+  //      getList1().update(index, updater);
+  //      setList1(getList1());
+  //    }
+  //  }
 
   public static class TestSubContainerImpl extends ContainerViewImpl {
-    public static final ContainerViewType<TestSubContainerImpl> TYPE = new ContainerViewType<>(Arrays.asList(
-        BasicViewTypes.UNSIGNED_LONG_TYPE,
-        BasicViewTypes.UNSIGNED_LONG_TYPE
-    ), TestSubContainerImpl::new);
+    public static final ContainerViewType<TestSubContainerImpl> TYPE =
+        new ContainerViewType<>(
+            Arrays.asList(BasicViewTypes.UNSIGNED_LONG_TYPE, BasicViewTypes.UNSIGNED_LONG_TYPE),
+            TestSubContainerImpl::new);
 
-    private TestSubContainerImpl(ContainerViewType<TestSubContainerImpl> type, TreeNode backingNode) {
+    private TestSubContainerImpl(
+        ContainerViewType<TestSubContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -65,25 +79,28 @@ public class ContainerViewTest {
     }
   }
 
-  public static class TestContainerImpl extends ContainerViewImpl /*implements TestContainerWrite*/{
-    public static final ContainerViewType<TestContainerImpl> TYPE = new ContainerViewType<>(Arrays.asList(
-        BasicViewTypes.UNSIGNED_LONG_TYPE,
-        BasicViewTypes.UNSIGNED_LONG_TYPE,
-        TestSubContainerImpl.TYPE,
-        new ListViewType<>(BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 10),
-        new ListViewType<>(TestSubContainerImpl.TYPE, 2)
-    ), TestContainerImpl::new);
+  public static class TestContainerImpl
+      extends ContainerViewImpl /*implements TestContainerWrite*/ {
+    public static final ContainerViewType<TestContainerImpl> TYPE =
+        new ContainerViewType<>(
+            Arrays.asList(
+                BasicViewTypes.UNSIGNED_LONG_TYPE,
+                BasicViewTypes.UNSIGNED_LONG_TYPE,
+                TestSubContainerImpl.TYPE,
+                new ListViewType<>(BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 10),
+                new ListViewType<>(TestSubContainerImpl.TYPE, 2)),
+            TestContainerImpl::new);
 
     public TestContainerImpl(ContainerViewType<TestContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
-//    @Override
+    //    @Override
     public UnsignedLong getLong1() {
       return ((UnsignedLongView) get(0)).get();
     }
 
-//    @Override
+    //    @Override
     public UnsignedLong getLong2() {
       return ((UnsignedLongView) get(1)).get();
     }
@@ -92,7 +109,7 @@ public class ContainerViewTest {
       return (TestSubContainerImpl) get(2);
     }
 
-//    @Override
+    //    @Override
     public ListView<PackedUnsignedLongView> getList1() {
       return (ListView<PackedUnsignedLongView>) get(3);
     }
@@ -101,12 +118,12 @@ public class ContainerViewTest {
       return (ListView<TestSubContainerImpl>) get(4);
     }
 
-//    @Override
+    //    @Override
     public void setLong1(UnsignedLong val) {
       set(0, new UnsignedLongView(val));
     }
 
-//    @Override
+    //    @Override
     public void setLong2(UnsignedLong val) {
       set(1, new UnsignedLongView(val));
     }
@@ -115,7 +132,7 @@ public class ContainerViewTest {
       set(2, val);
     }
 
-//    @Override
+    //    @Override
     public void setList1(ListView<PackedUnsignedLongView> val) {
       set(3, val);
     }
@@ -135,5 +152,4 @@ public class ContainerViewTest {
     c1.setList1(list1);
     Utils.dumpBinaryTree(c1.getBackingNode());
   }
-
 }
