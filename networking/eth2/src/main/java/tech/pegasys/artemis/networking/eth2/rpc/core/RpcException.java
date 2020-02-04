@@ -38,7 +38,7 @@ public class RpcException extends Exception {
   private final String errorMessage;
 
   RpcException(final byte responseCode, final String errorMessage) {
-    super("[Code " + ((int) responseCode) + "] " +   errorMessage);
+    super("[Code " + ((int) responseCode) + "] " + errorMessage);
     this.responseCode = responseCode;
     this.errorMessage = errorMessage;
   }
