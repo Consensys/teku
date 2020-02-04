@@ -22,7 +22,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_P
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.math.IntMath;
+import com.google.common.math.LongMath;
 import com.google.common.primitives.UnsignedLong;
 import java.math.RoundingMode;
 import java.util.Date;
@@ -247,7 +247,7 @@ public class Eth1DataManager {
         });
   }
 
-  private SafeFuture<UnsignedLong> calculateRealSecondsPerEth1BlockFuture(
+  SafeFuture<UnsignedLong> calculateRealSecondsPerEth1BlockFuture(
       SafeFuture<UnsignedLong> latestBlockTimestampFuture,
       SafeFuture<UnsignedLong> blockNumberDiffFuture,
       UnsignedLong blockTimestamp) {
@@ -261,8 +261,10 @@ public class Eth1DataManager {
 
               UnsignedLong actualTimeDiff = latestBlockTimestamp.minus(blockTimestamp);
               return UnsignedLong.valueOf(
-                  IntMath.divide(
-                      actualTimeDiff.intValue(), blockNumberDiff.intValue(), RoundingMode.HALF_UP));
+                  LongMath.divide(
+                      actualTimeDiff.longValue(),
+                      blockNumberDiff.longValue(),
+                      RoundingMode.HALF_UP));
             });
   }
 
@@ -295,7 +297,7 @@ public class Eth1DataManager {
     return blockFuture.thenApply(ethBlock -> UnsignedLong.valueOf(ethBlock.getBlock().getNumber()));
   }
 
-  private SafeFuture<UnsignedLong> getApproximatedBlockNumberDiffWithMidRangeBlock(
+  SafeFuture<UnsignedLong> getApproximatedBlockNumberDiffWithMidRangeBlock(
       SafeFuture<UnsignedLong> latestBlockTimestampFuture,
       SafeFuture<UnsignedLong> secondsPerEth1BlockFuture,
       UnsignedLong cacheMidRangeTimestamp) {
@@ -314,8 +316,8 @@ public class Eth1DataManager {
               }
               UnsignedLong timeDiff = latestBlockTimestamp.minus(cacheMidRangeTimestamp);
               return UnsignedLong.valueOf(
-                  IntMath.divide(
-                      timeDiff.intValue(), secondsPerEth1Block.intValue(), RoundingMode.HALF_UP));
+                  LongMath.divide(
+                      timeDiff.longValue(), secondsPerEth1Block.longValue(), RoundingMode.HALF_UP));
             });
   }
 
@@ -381,10 +383,10 @@ public class Eth1DataManager {
 
   public static UnsignedLong getCacheMidRangeTimestamp(UnsignedLong currentTime) {
     return UnsignedLong.valueOf(
-        IntMath.divide(
+        LongMath.divide(
             getCacheRangeUpperBound(currentTime)
                 .plus(getCacheRangeLowerBound(currentTime))
-                .intValue(),
+                .longValue(),
             2,
             RoundingMode.HALF_UP));
   }

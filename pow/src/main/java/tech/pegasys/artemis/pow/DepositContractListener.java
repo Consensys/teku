@@ -15,12 +15,12 @@ package tech.pegasys.artemis.pow;
 
 import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVENT;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.reactivex.Flowable;
 import io.reactivex.disposables.Disposable;
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.abi.EventEncoder;
@@ -33,7 +33,6 @@ import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -43,10 +42,15 @@ public class DepositContractListener {
   private final Web3j web3j;
   private final DepositContract contract;
   private volatile Optional<EthBlock.Block> cachedBlock = Optional.empty();
+  private final PublishOnInactivityDepositHandler depositHandler;
 
-  public DepositContractListener(Web3j web3j, EventBus eventBus, DepositContract contract) {
+  public DepositContractListener(
+      Web3j web3j,
+      DepositContract contract,
+      final PublishOnInactivityDepositHandler depositHandler) {
     this.web3j = web3j;
     this.contract = contract;
+    this.depositHandler = depositHandler;
 
     // Filter by the contract address and by begin/end blocks
     EthFilter depositEventFilter =
@@ -61,13 +65,11 @@ public class DepositContractListener {
     subscriptionNewDeposit =
         contract
             .depositEventEventFlowable(depositEventFilter)
-            .flatMap(this::convertToDeposit)
-            .subscribe(eventBus::post);
-  }
-
-  private Flowable<Deposit> convertToDeposit(final DepositEventEventResponse event) {
-    return getBlockByHash(event.log.getBlockHash())
-        .map(block -> new Deposit(event, UnsignedLong.valueOf(block.getTimestamp())));
+            .flatMap(
+                event ->
+                    getBlockByHash(event.log.getBlockHash())
+                        .map(block -> Pair.of(block, new Deposit(event))))
+            .subscribe(pair -> this.depositHandler.onDepositEvent(pair.getLeft(), pair.getRight()));
   }
 
   private Flowable<Block> getBlockByHash(final String blockHash) {

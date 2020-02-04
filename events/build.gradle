@@ -1,0 +1,11 @@
+dependencies {
+  implementation project(':util')
+  implementation 'com.google.guava:guava'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.commons:commons-lang3'
+
+  testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testImplementation 'org.junit.jupiter:junit-jupiter-params'
+  testImplementation 'org.mockito:mockito-core'
+}

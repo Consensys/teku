@@ -33,8 +33,8 @@ public final class Eth1DataVote
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
 
-  private Eth1Data eth1_data;
-  private UnsignedLong vote_count;
+  private final Eth1Data eth1_data;
+  private final UnsignedLong vote_count;
 
   public Eth1DataVote(Eth1Data eth1_data, UnsignedLong vote_count) {
     this.eth1_data = eth1_data;
@@ -110,19 +110,9 @@ public final class Eth1DataVote
     return eth1_data;
   }
 
-  /** @param eth1_data the eth1_data to set */
-  public void setEth1_data(Eth1Data eth1_data) {
-    this.eth1_data = eth1_data;
-  }
-
   /** @return the vote_count */
   public UnsignedLong getVote_count() {
     return vote_count;
-  }
-
-  /** @param vote_count the vote_count to set */
-  public void setVote_count(UnsignedLong vote_count) {
-    this.vote_count = vote_count;
   }
 
   @Override

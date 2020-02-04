@@ -53,4 +53,8 @@ public class StubAsyncRunner implements AsyncRunner {
   public boolean hasDelayedActions() {
     return !queuedActions.isEmpty();
   }
+
+  public int countDelayedActions() {
+    return queuedActions.size();
+  }
 }

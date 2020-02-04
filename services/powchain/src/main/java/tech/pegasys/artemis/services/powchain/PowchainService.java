@@ -40,6 +40,7 @@ import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.DepositContractListener;
 import tech.pegasys.artemis.pow.DepositContractListenerFactory;
 import tech.pegasys.artemis.pow.Eth1DataManager;
+import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
@@ -54,7 +55,6 @@ public class PowchainService implements ServiceInterface {
   public static final String USER_DIR = "user.dir";
   private EventBus eventBus;
 
-  private GanacheController controller;
   private DepositContractListener depositContractListener;
 
   private String depositMode;
@@ -63,6 +63,7 @@ public class PowchainService implements ServiceInterface {
 
   private String depositSimFile;
   private TimeProvider timeProvider;
+  private DepositEventChannel depositEventChannel;
 
   public PowchainService() {}
 
@@ -70,7 +71,7 @@ public class PowchainService implements ServiceInterface {
   public void init(ServiceConfig config) {
     this.timeProvider = config.getTimeProvider();
     this.eventBus = config.getEventBus();
-    this.eventBus.register(this);
+    this.depositEventChannel = config.getEventChannels().getPublisher(DepositEventChannel.class);
     this.depositMode = config.getConfig().getDepositMode();
     if (config.getConfig().getInputFile() != null)
       this.depositSimFile = System.getProperty(USER_DIR) + "/" + config.getConfig().getInputFile();
@@ -81,9 +82,11 @@ public class PowchainService implements ServiceInterface {
   @Override
   public void run() {
     if (depositMode.equals(DEPOSIT_SIM) && depositSimFile == null) {
-      controller = new GanacheController(Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT, 6000);
+      final GanacheController controller =
+          new GanacheController(Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT, 6000);
       depositContractListener =
-          DepositContractListenerFactory.simulationDeployDepositContract(eventBus, controller);
+          DepositContractListenerFactory.simulationDeployDepositContract(
+              eventBus, depositEventChannel, controller, timeProvider);
       Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
       MockStartValidatorKeyPairFactory mockStartValidatorKeyPairFactory =
           new MockStartValidatorKeyPairFactory();
@@ -141,7 +144,8 @@ public class PowchainService implements ServiceInterface {
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
       Web3j web3j = Web3j.build(new HttpService(provider));
       depositContractListener =
-          DepositContractListenerFactory.eth1DepositContract(web3j, eventBus, contractAddr);
+          DepositContractListenerFactory.eth1DepositContract(
+              web3j, eventBus, depositEventChannel, contractAddr, timeProvider);
       Eth1DataManager eth1DataManager =
           new Eth1DataManager(
               web3j,

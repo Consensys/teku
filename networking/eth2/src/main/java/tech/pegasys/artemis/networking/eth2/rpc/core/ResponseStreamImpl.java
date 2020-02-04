@@ -76,4 +76,13 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
   public void completeWithError(final Throwable error) {
     completionFuture.completeExceptionally(error);
   }
+
+  public void subscribeCompleted(RequestCompleteSubscriber subscriber) {
+    completionFuture.finish(
+        res -> subscriber.onRequestComplete(true), err -> subscriber.onRequestComplete(false));
+  }
+
+  public interface RequestCompleteSubscriber {
+    void onRequestComplete(boolean successful);
+  }
 }

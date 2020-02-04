@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -33,6 +34,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.artemis.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
+import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStreamImpl;
 import tech.pegasys.artemis.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -43,6 +45,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private AtomicBoolean chainValidated = new AtomicBoolean(false);
+  private AtomicInteger outstandingRequests = new AtomicInteger(0);
 
   public Eth2Peer(
       final Peer peer,
@@ -64,6 +67,10 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public PeerStatus getStatus() {
     return remoteStatus.orElseThrow();
+  }
+
+  public int getOutstandingRequests() {
+    return outstandingRequests.get();
   }
 
   public boolean hasStatus() {
@@ -92,8 +99,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
     final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodByeMethod = rpcMethods.goodBye();
-    return sendRequest(goodByeMethod, new GoodbyeMessage(reason))
-        .thenCompose(ResponseStream::expectNoResponse);
+    return sendMessage(goodByeMethod, new GoodbyeMessage(reason));
   }
 
   public SafeFuture<Void> requestBlocksByRoot(
@@ -110,7 +116,13 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
             headBlockRoot, slot, UnsignedLong.ONE, UnsignedLong.ONE);
-    return sendRequest(blocksByRange, request).thenCompose(ResponseStream::expectSingleResponse);
+    return requestSingleItem(blocksByRange, request);
+  }
+
+  public SafeFuture<SignedBeaconBlock> requestBlockByRoot(final Bytes32 blockRoot) {
+    final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
+        rpcMethods.beaconBlocksByRoot();
+    return requestSingleItem(blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
   }
 
   public SafeFuture<Void> requestBlocksByRange(
@@ -125,6 +137,16 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         blocksByRange,
         new BeaconBlocksByRangeRequestMessage(headBlockRoot, startSlot, count, step),
         listener);
+  }
+
+  private <I extends RpcRequest, O> SafeFuture<Void> sendMessage(
+      final Eth2RpcMethod<I, O> method, final I request) {
+    return sendRequest(method, request).thenCompose(ResponseStream::expectNoResponse);
+  }
+
+  private <I extends RpcRequest, O> SafeFuture<O> requestSingleItem(
+      final Eth2RpcMethod<I, O> method, final I request) {
+    return sendRequest(method, request).thenCompose(ResponseStream::expectSingleResponse);
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> requestStream(
@@ -142,7 +164,13 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
     return this.sendRequest(method, payload, handler)
         .thenAccept(handler::handleInitialPayloadSent)
-        .thenApply(res -> handler.getResponseStream());
+        .thenApply(
+            res -> {
+              final ResponseStreamImpl<O> stream = handler.getResponseStream();
+              outstandingRequests.incrementAndGet();
+              stream.subscribeCompleted((__) -> outstandingRequests.decrementAndGet());
+              return stream;
+            });
   }
 
   @Override

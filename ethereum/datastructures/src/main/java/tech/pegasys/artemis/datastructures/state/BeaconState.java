@@ -159,7 +159,9 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     this.slot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
     this.fork =
         new Fork(
-            Fork.VERSION_ZERO, Fork.VERSION_ZERO, UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+            Constants.GENESIS_FORK_VERSION,
+            Constants.GENESIS_FORK_VERSION,
+            UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     // History
     this.latest_block_header = new BeaconBlockHeader();
@@ -450,17 +452,9 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     return randao_mixes;
   }
 
-  public void setRandao_mixes(SSZVector<Bytes32> randao_mixes) {
-    this.randao_mixes = randao_mixes;
-  }
-
   // Slashings
   public SSZVector<UnsignedLong> getSlashings() {
     return slashings;
-  }
-
-  public void setSlashings(SSZVector<UnsignedLong> slashings) {
-    this.slashings = slashings;
   }
 
   // Attestations

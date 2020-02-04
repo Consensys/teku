@@ -24,7 +24,6 @@ import static tech.pegasys.artemis.storage.Store.get_genesis_store;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -43,11 +42,6 @@ class ChainStorageClientTest {
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private int seed = 428942;
-
-  @BeforeAll
-  public static void beforeAll() {
-    Constants.setConstants("minimal");
-  }
 
   @Test
   public void initialize_setupInitialState() {

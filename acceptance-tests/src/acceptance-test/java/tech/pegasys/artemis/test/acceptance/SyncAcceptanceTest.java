@@ -24,7 +24,7 @@ import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 public class SyncAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  @Disabled("This test doesn't work yet.  Need to debug node connectivity issues.")
+  @Disabled("This test currently takes too long to run.")
   public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
     final int validatorCount = 2;
     final GenesisStateConfig genesisStateConfig = GenesisStateConfig.create(validatorCount);

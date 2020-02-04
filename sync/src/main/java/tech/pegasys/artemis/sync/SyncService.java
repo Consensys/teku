@@ -32,7 +32,7 @@ public class SyncService extends Service {
       final BlockImporter blockImporter) {
     this.syncManager = SyncManager.create(network, storageClient, blockImporter);
     this.blockPropagationManager =
-        BlockPropagationManager.create(eventBus, storageClient, blockImporter);
+        BlockPropagationManager.create(eventBus, network, storageClient, blockImporter);
   }
 
   @Override

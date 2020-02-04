@@ -24,18 +24,14 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
-import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -55,15 +51,15 @@ public class GossipMessageHandlerIntegrationTest {
     final UnsignedLong blockSlot = UnsignedLong.valueOf(2L);
 
     // Setup network 1
-    NodeManager node1 = NodeManager.build(networkFactory, validatorKeys);
+    NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
     node1.chainUtil().setSlot(blockSlot);
 
     // Setup network 2
-    NodeManager node2 = NodeManager.build(networkFactory, validatorKeys);
+    NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
-    NodeManager node3 = NodeManager.build(networkFactory, validatorKeys);
+    NodeManager node3 = NodeManager.create(networkFactory, validatorKeys);
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
@@ -100,15 +96,15 @@ public class GossipMessageHandlerIntegrationTest {
     final UnsignedLong blockSlot = UnsignedLong.valueOf(2L);
 
     // Setup network 1
-    NodeManager node1 = NodeManager.build(networkFactory, validatorKeys);
+    NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
     node1.chainUtil().setSlot(blockSlot);
 
     // Setup network 2
-    NodeManager node2 = NodeManager.build(networkFactory, validatorKeys);
+    NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
-    NodeManager node3 = NodeManager.build(networkFactory, validatorKeys);
+    NodeManager node3 = NodeManager.create(networkFactory, validatorKeys);
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
@@ -141,11 +137,11 @@ public class GossipMessageHandlerIntegrationTest {
   @Test
   public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet() throws Exception {
     // Setup network 1
-    final NodeManager node1 = NodeManager.build(networkFactory, validatorKeys);
+    final NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
     final Eth2Network network1 = node1.network();
 
     // Setup network 2
-    final NodeManager node2 = NodeManager.build(networkFactory, validatorKeys);
+    final NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
@@ -171,11 +167,11 @@ public class GossipMessageHandlerIntegrationTest {
   @Test
   public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
     // Setup network 1
-    final NodeManager node1 = NodeManager.build(networkFactory, validatorKeys);
+    final NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
     final Eth2Network network1 = node1.network();
 
     // Setup network 2
-    final NodeManager node2 = NodeManager.build(networkFactory, validatorKeys);
+    final NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
@@ -216,11 +212,11 @@ public class GossipMessageHandlerIntegrationTest {
   @Test
   public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
     // Setup network 1
-    final NodeManager node1 = NodeManager.build(networkFactory, validatorKeys);
+    final NodeManager node1 = NodeManager.create(networkFactory, validatorKeys);
     final Eth2Network network1 = node1.network();
 
     // Setup network 2
-    final NodeManager node2 = NodeManager.build(networkFactory, validatorKeys);
+    final NodeManager node2 = NodeManager.create(networkFactory, validatorKeys);
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
@@ -304,64 +300,5 @@ public class GossipMessageHandlerIntegrationTest {
 
   private void waitForMessageToBeDelivered() throws Exception {
     Thread.sleep(1000);
-  }
-
-  private static class NodeManager {
-    private final EventBus eventBus;
-    private final ChainStorageClient storageClient;
-    private final BeaconChainUtil chainUtil;
-    private final Eth2Network eth2Network;
-
-    private NodeManager(
-        final EventBus eventBus,
-        final ChainStorageClient storageClient,
-        final BeaconChainUtil chainUtil,
-        final Eth2Network eth2Network) {
-      this.eventBus = eventBus;
-      this.storageClient = storageClient;
-      this.chainUtil = chainUtil;
-      this.eth2Network = eth2Network;
-    }
-
-    public static NodeManager build(
-        Eth2NetworkFactory networkFactory, final List<BLSKeyPair> validatorKeys) throws Exception {
-      return build(networkFactory, validatorKeys, c -> {});
-    }
-
-    public static NodeManager build(
-        Eth2NetworkFactory networkFactory,
-        final List<BLSKeyPair> validatorKeys,
-        Consumer<Eth2P2PNetworkBuilder> configureNetwork)
-        throws Exception {
-      final EventBus eventBus = new EventBus();
-      final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
-      final Eth2P2PNetworkBuilder networkBuilder =
-          networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
-
-      configureNetwork.accept(networkBuilder);
-
-      final Eth2Network eth2Network = networkBuilder.startNetwork();
-
-      final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, validatorKeys);
-      chainUtil.initializeStorage();
-
-      return new NodeManager(eventBus, storageClient, chainUtil, eth2Network);
-    }
-
-    public EventBus eventBus() {
-      return eventBus;
-    }
-
-    public BeaconChainUtil chainUtil() {
-      return chainUtil;
-    }
-
-    public Eth2Network network() {
-      return eth2Network;
-    }
-
-    public ChainStorageClient storageClient() {
-      return storageClient;
-    }
   }
 }

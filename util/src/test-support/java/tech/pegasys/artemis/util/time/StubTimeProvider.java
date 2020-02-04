@@ -41,7 +41,11 @@ public class StubTimeProvider implements TimeProvider {
   }
 
   public void advanceTimeBySeconds(final long seconds) {
-    this.timeInMillis = timeInMillis.plus(UnsignedLong.valueOf(TimeUnit.SECONDS.toMillis(seconds)));
+    advanceTimeByMillis(TimeUnit.SECONDS.toMillis(seconds));
+  }
+
+  public void advanceTimeByMillis(final long millis) {
+    this.timeInMillis = timeInMillis.plus(UnsignedLong.valueOf(millis));
   }
 
   @Override

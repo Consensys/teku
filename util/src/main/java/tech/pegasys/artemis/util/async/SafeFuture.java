@@ -101,6 +101,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     finish(result -> onSuccess.run(), onError);
   }
 
+  /**
+   * Run final logic on success or error
+   *
+   * @param onFinished Task to run when future completes successfully or exceptionally
+   */
+  public void always(final Runnable onFinished) {
+    finish(res -> onFinished.run(), err -> onFinished.run());
+  }
+
   public void finish(final Consumer<T> onSuccess, final Consumer<Throwable> onError) {
     handle(
             (result, error) -> {

@@ -19,13 +19,11 @@ import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.util.config.Constants;
 
 class JsonProviderTest {
 
   @Test
   void beaconStateJsonTest() {
-    Constants.setConstants("minimal");
     BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
     String jsonState = JsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);

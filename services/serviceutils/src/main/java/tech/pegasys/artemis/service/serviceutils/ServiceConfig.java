@@ -15,6 +15,7 @@ package tech.pegasys.artemis.service.serviceutils;
 
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
@@ -22,16 +23,19 @@ public class ServiceConfig {
 
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
+  private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final ArtemisConfiguration config;
 
   public ServiceConfig(
       final TimeProvider timeProvider,
       final EventBus eventBus,
+      final EventChannels eventChannels,
       final MetricsSystem metricsSystem,
       final ArtemisConfiguration config) {
     this.timeProvider = timeProvider;
     this.eventBus = eventBus;
+    this.eventChannels = eventChannels;
     this.metricsSystem = metricsSystem;
     this.config = config;
   }
@@ -42,6 +46,10 @@ public class ServiceConfig {
 
   public EventBus getEventBus() {
     return this.eventBus;
+  }
+
+  public EventChannels getEventChannels() {
+    return eventChannels;
   }
 
   public ArtemisConfiguration getConfig() {

@@ -19,15 +19,15 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.config.Constants;
 
 class StatusMessageTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final StatusMessage message =
         new StatusMessage(
-            Fork.VERSION_ZERO,
+            Constants.GENESIS_FORK_VERSION,
             Bytes32.fromHexStringLenient("0x01"),
             UnsignedLong.valueOf(2),
             Bytes32.fromHexStringLenient("0x03"),

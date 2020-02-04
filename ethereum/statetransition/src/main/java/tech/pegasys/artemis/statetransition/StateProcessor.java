@@ -13,37 +13,19 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_stateSim;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_TIME;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
-import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.Constants;
 
 /** Class to manage the state tree and initiate state transitions */
 public class StateProcessor {
@@ -51,25 +33,11 @@ public class StateProcessor {
 
   private final BlockImporter blockImporter;
   private final ChainStorageClient chainStorageClient;
-  private final ArtemisConfiguration config;
-  private final DepositQueue depositQueue = new DepositQueue(this::onOrderedDeposit);
-  private final List<DepositWithIndex> deposits = new ArrayList<>();
 
-  public StateProcessor(
-      EventBus eventBus, ChainStorageClient chainStorageClient, ArtemisConfiguration config) {
-    this.config = config;
+  public StateProcessor(EventBus eventBus, ChainStorageClient chainStorageClient) {
     this.chainStorageClient = chainStorageClient;
     this.blockImporter = new BlockImporter(chainStorageClient, eventBus);
     eventBus.register(this);
-  }
-
-  public void eth2Genesis(GenesisEvent genesisEvent) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
-    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
-    chainStorageClient.initializeFromGenesis(initialState);
-    Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
-    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
   public Bytes32 processHead() {
@@ -78,47 +46,6 @@ public class StateProcessor {
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     chainStorageClient.updateBestBlock(headBlockRoot, headBlock.getSlot());
     return headBlockRoot;
-  }
-
-  @Subscribe
-  public void onDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
-    depositQueue.onDeposit(DepositUtil.convertDepositEventToOperationDeposit(event));
-  }
-
-  private void onOrderedDeposit(final DepositWithIndex deposit) {
-    STDOUT.log(Level.DEBUG, "New deposit received");
-    deposits.add(deposit);
-
-    final Bytes32 eth1BlockHash = Bytes32.fromHexString(deposit.getLog().getBlockHash());
-    final UnsignedLong eth1_timestamp = deposit.getBlockTimestamp();
-
-    // Approximation to save CPU cycles of creating new BeaconState on every Deposit captured
-    if (isGenesisReasonable(
-        eth1_timestamp, deposits, config.getDepositMode().equals(Constants.DEPOSIT_SIM))) {
-      if (config.getDepositMode().equals(Constants.DEPOSIT_SIM)) {
-        BeaconStateWithCache candidate_state =
-            initialize_beacon_state_from_eth1(eth1BlockHash, eth1_timestamp, deposits);
-        if (is_valid_genesis_stateSim(candidate_state)) {
-          setSimulationGenesisTime(candidate_state);
-          eth2Genesis(new GenesisEvent(candidate_state));
-        }
-
-      } else {
-        BeaconStateWithCache candidate_state =
-            initialize_beacon_state_from_eth1(eth1BlockHash, eth1_timestamp, deposits);
-        if (is_valid_genesis_state(candidate_state)) {
-          eth2Genesis(new GenesisEvent(candidate_state));
-        }
-      }
-    }
-  }
-
-  public boolean isGenesisReasonable(
-      UnsignedLong eth1_timestamp, List<DepositWithIndex> deposits, boolean isSimulation) {
-    final boolean sufficientValidators = deposits.size() >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-    if (isSimulation) return sufficientValidators;
-    final boolean afterMinGenesisTime = eth1_timestamp.compareTo(MIN_GENESIS_TIME) >= 0;
-    return afterMinGenesisTime && sufficientValidators;
   }
 
   @Subscribe
@@ -136,11 +63,5 @@ public class StateProcessor {
               + blockProposedEvent,
           result.getFailureCause().orElse(null));
     }
-  }
-
-  private void setSimulationGenesisTime(BeaconState state) {
-    Date date = new Date();
-    state.setGenesis_time(
-        UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));
   }
 }
