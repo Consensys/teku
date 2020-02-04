@@ -3,11 +3,12 @@ package tech.pegasys.artemis.util.backing;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.backing.type.ListViewTypeBasic.UInt64ListType;
-import tech.pegasys.artemis.util.backing.type.ListViewTypeComposite;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUnsignedLongView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UnsignedLongView;
 import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 
 public class ContainerViewTest {
@@ -37,8 +38,8 @@ public class ContainerViewTest {
 
   public static class TestSubContainerImpl extends ContainerViewImpl {
     public static final ContainerViewType<TestSubContainerImpl> TYPE = new ContainerViewType<>(Arrays.asList(
-        BasicViewTypes.UINT64_TYPE,
-        BasicViewTypes.UINT64_TYPE
+        BasicViewTypes.UNSIGNED_LONG_TYPE,
+        BasicViewTypes.UNSIGNED_LONG_TYPE
     ), TestSubContainerImpl::new);
 
     private TestSubContainerImpl(ContainerViewType<TestSubContainerImpl> type, TreeNode backingNode) {
@@ -46,31 +47,31 @@ public class ContainerViewTest {
     }
 
     public UnsignedLong getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((UnsignedLongView) get(0)).get();
     }
 
     //    @Override
     public UnsignedLong getLong2() {
-      return ((UInt64View) get(1)).get();
+      return ((UnsignedLongView) get(1)).get();
     }
 
     public void setLong1(UnsignedLong val) {
-      set(0, new UInt64View(val));
+      set(0, new UnsignedLongView(val));
     }
 
     //    @Override
     public void setLong2(UnsignedLong val) {
-      set(1, new UInt64View(val));
+      set(1, new UnsignedLongView(val));
     }
   }
 
   public static class TestContainerImpl extends ContainerViewImpl /*implements TestContainerWrite*/{
     public static final ContainerViewType<TestContainerImpl> TYPE = new ContainerViewType<>(Arrays.asList(
-        BasicViewTypes.UINT64_TYPE,
-        BasicViewTypes.UINT64_TYPE,
+        BasicViewTypes.UNSIGNED_LONG_TYPE,
+        BasicViewTypes.UNSIGNED_LONG_TYPE,
         TestSubContainerImpl.TYPE,
-        new UInt64ListType(10),
-        new ListViewTypeComposite<>(2, TestSubContainerImpl.TYPE)
+        new ListViewType<>(BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 10),
+        new ListViewType<>(TestSubContainerImpl.TYPE, 2)
     ), TestContainerImpl::new);
 
     public TestContainerImpl(ContainerViewType<TestContainerImpl> type, TreeNode backingNode) {
@@ -79,12 +80,12 @@ public class ContainerViewTest {
 
 //    @Override
     public UnsignedLong getLong1() {
-      return ((UInt64View) get(0)).get();
+      return ((UnsignedLongView) get(0)).get();
     }
 
 //    @Override
     public UnsignedLong getLong2() {
-      return ((UInt64View) get(1)).get();
+      return ((UnsignedLongView) get(1)).get();
     }
 
     public TestSubContainerImpl getContainer() {
@@ -92,8 +93,8 @@ public class ContainerViewTest {
     }
 
 //    @Override
-    public ListView<UnsignedLong> getList1() {
-      return (ListView<UnsignedLong>) get(3);
+    public ListView<PackedUnsignedLongView> getList1() {
+      return (ListView<PackedUnsignedLongView>) get(3);
     }
 
     public ListView<TestSubContainerImpl> getList2() {
@@ -102,12 +103,12 @@ public class ContainerViewTest {
 
 //    @Override
     public void setLong1(UnsignedLong val) {
-      set(0, new UInt64View(val));
+      set(0, new UnsignedLongView(val));
     }
 
 //    @Override
     public void setLong2(UnsignedLong val) {
-      set(1, new UInt64View(val));
+      set(1, new UnsignedLongView(val));
     }
 
     public void setContainer(TestSubContainerImpl val) {
@@ -115,7 +116,7 @@ public class ContainerViewTest {
     }
 
 //    @Override
-    public void setList1(ListView<UnsignedLong> val) {
+    public void setList1(ListView<PackedUnsignedLongView> val) {
       set(3, val);
     }
 
@@ -129,8 +130,8 @@ public class ContainerViewTest {
     TestContainerImpl c1 = TestContainerImpl.TYPE.createDefault();
     c1.setLong1(UnsignedLong.valueOf(0x111));
     c1.setLong2(UnsignedLong.valueOf(0x222));
-    ListView<UnsignedLong> list1 = c1.getList1();
-    list1.append(UnsignedLong.valueOf(0x333));
+    ListView<PackedUnsignedLongView> list1 = c1.getList1();
+    list1.append(PackedUnsignedLongView.fromLong(0x333));
     c1.setList1(list1);
     Utils.dumpBinaryTree(c1.getBackingNode());
   }

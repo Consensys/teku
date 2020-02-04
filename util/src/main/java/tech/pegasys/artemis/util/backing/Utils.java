@@ -1,7 +1,8 @@
 package tech.pegasys.artemis.util.backing;
 
-import tech.pegasys.artemis.util.backing.TreeNode.Commit;
-import tech.pegasys.artemis.util.backing.TreeNode.Root;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.Root;
 
 public class Utils {
 

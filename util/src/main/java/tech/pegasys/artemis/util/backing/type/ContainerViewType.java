@@ -2,11 +2,11 @@ package tech.pegasys.artemis.util.backing.type;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiFunction;
-import tech.pegasys.artemis.util.backing.CompositeViewType;
 import tech.pegasys.artemis.util.backing.ContainerView;
-import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.ViewType;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 
 public class ContainerViewType<C extends ContainerView> implements CompositeViewType<C> {
@@ -47,5 +47,27 @@ public class ContainerViewType<C extends ContainerView> implements CompositeView
   @Override
   public int getMaxLength() {
     return childrenTypes.size();
+  }
+
+  @Override
+  public int getBitsPerElement() {
+    return 256;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    ContainerViewType<?> that = (ContainerViewType<?>) o;
+    return childrenTypes.equals(that.childrenTypes);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(childrenTypes);
   }
 }

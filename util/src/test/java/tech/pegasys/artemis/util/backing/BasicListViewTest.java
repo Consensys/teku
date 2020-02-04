@@ -3,33 +3,36 @@ package tech.pegasys.artemis.util.backing;
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.util.backing.type.ListViewTypeBasic.UInt64ListType;
-import tech.pegasys.artemis.util.backing.view.BasicListViews.UInt64ListView;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUnsignedLongView;
 
 public class BasicListViewTest {
 
   @Test
   public void simpleUInt64ListTest() {
-    UInt64ListType listType = new UInt64ListType(7);
-    UInt64ListView listView = listType.createDefault();
+    ListViewType<PackedUnsignedLongView> listType = new ListViewType<>(
+        BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 7);
+    ListView<PackedUnsignedLongView> listView = listType.createDefault();
     TreeNode n0 = listView.getBackingNode();
-    listView.append(UnsignedLong.valueOf(0x111));
+    listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x111)));
     TreeNode n1 = listView.getBackingNode();
-    listView.append(UnsignedLong.valueOf(0x222));
-    listView.append(UnsignedLong.valueOf(0x333));
-    listView.append(UnsignedLong.valueOf(0x444));
+    listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x222)));
+    listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x333)));
+    listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x444)));
     TreeNode n2 = listView.getBackingNode();
-    listView.append(UnsignedLong.valueOf(0x555));
+    listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x555)));
     TreeNode n3 = listView.getBackingNode();
-    listView.append(UnsignedLong.valueOf(0x666));
-    listView.append(UnsignedLong.valueOf(0x777));
+    listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x666)));
+    listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x777)));
     TreeNode n4 = listView.getBackingNode();
-    listView.set(0, UnsignedLong.valueOf(0x800));
+    listView.set(0, new PackedUnsignedLongView(UnsignedLong.valueOf(0x800)));
     TreeNode n5 = listView.getBackingNode();
-    listView.set(1, UnsignedLong.valueOf(0x801));
-    listView.set(2, UnsignedLong.valueOf(0x802));
-    listView.set(3, UnsignedLong.valueOf(0x803));
-    listView.set(4, UnsignedLong.valueOf(0x804));
+    listView.set(1, new PackedUnsignedLongView(UnsignedLong.valueOf(0x801)));
+    listView.set(2, new PackedUnsignedLongView(UnsignedLong.valueOf(0x802)));
+    listView.set(3, new PackedUnsignedLongView(UnsignedLong.valueOf(0x803)));
+    listView.set(4, new PackedUnsignedLongView(UnsignedLong.valueOf(0x804)));
     TreeNode n6 = listView.getBackingNode();
     System.out.println(n0);
     System.out.println(n1);
@@ -60,14 +63,15 @@ public class BasicListViewTest {
     Assertions.assertEquals(0x222, listType.createFromTreeNode(n5).get(1).longValue());
 
     Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listType.createFromTreeNode(n3).set(7, UnsignedLong.valueOf(0xaaa)));
+        () -> listType.createFromTreeNode(n3)
+            .set(7, new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
     Assertions.assertThrows(IllegalArgumentException.class,
         () -> listType.createFromTreeNode(n3).get(7));
     Assertions.assertThrows(IllegalArgumentException.class,
         () -> listType.createFromTreeNode(n3).get(8));
     Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listView.set(7, UnsignedLong.valueOf(0xaaa)));
+        () -> listView.set(7, new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
     Assertions.assertThrows(IllegalArgumentException.class,
-        () -> listView.append(UnsignedLong.valueOf(0xaaa)));
+        () -> listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
   }
 }

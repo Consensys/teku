@@ -3,8 +3,8 @@ package tech.pegasys.artemis.util.backing.view;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.artemis.util.backing.ContainerView;
-import tech.pegasys.artemis.util.backing.TreeNode;
 import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
 public class ContainerViewImpl implements ContainerView {

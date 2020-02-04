@@ -5,10 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.backing.TreeNode;
-import tech.pegasys.artemis.util.backing.TreeNode.Commit;
-import tech.pegasys.artemis.util.backing.TreeNode.Root;
 import tech.pegasys.artemis.util.backing.Utils;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.Root;
 
 public class TreeNodeImpl {
 

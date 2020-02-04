@@ -1,4 +1,8 @@
-package tech.pegasys.artemis.util.backing;
+package tech.pegasys.artemis.util.backing.type;
+
+import tech.pegasys.artemis.util.backing.CompositeView;
+import tech.pegasys.artemis.util.backing.Utils;
+import tech.pegasys.artemis.util.backing.ViewType;
 
 public interface CompositeViewType<V extends CompositeView> extends ViewType<V> {
 
@@ -6,11 +10,9 @@ public interface CompositeViewType<V extends CompositeView> extends ViewType<V> 
 
   ViewType<?> getChildType(int index);
 
-  default int getBitsPerElement() {
-    return 256;
-  }
+  int getBitsPerElement();
 
-  default int getElementsPerNode() {
+  default int getElementsPerChunk() {
     return 256 / getBitsPerElement();
   }
 

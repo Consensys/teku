@@ -4,9 +4,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
-import tech.pegasys.artemis.util.backing.type.ListViewTypeComposite;
-import tech.pegasys.artemis.util.backing.view.CompositeListView;
+import tech.pegasys.artemis.util.backing.type.ListViewType;
 
 public class CompositeListViewTest {
 
@@ -52,8 +52,8 @@ public class CompositeListViewTest {
 
   @Test
   public void simpleTest1() {
-    ListViewTypeComposite<TestView> listType = new ListViewTypeComposite<>(3, testType);
-    CompositeListView<TestView> list = listType.createDefault();
+    ListViewType<TestView> listType = new ListViewType<>(testType, 3);
+    ListView<TestView> list = listType.createDefault();
     TreeNode n0 = list.getBackingNode();
     list.set(0, new TestView(0x111));
     TreeNode n1 = list.getBackingNode();

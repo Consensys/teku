@@ -1,4 +1,4 @@
-package tech.pegasys.artemis.util.backing;
+package tech.pegasys.artemis.util.backing.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

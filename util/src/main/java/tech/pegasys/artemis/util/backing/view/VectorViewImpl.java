@@ -3,42 +3,39 @@ package tech.pegasys.artemis.util.backing.view;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Function;
-import tech.pegasys.artemis.util.backing.CompositeViewType;
-import tech.pegasys.artemis.util.backing.TreeNode;
-import tech.pegasys.artemis.util.backing.TreeNode.Commit;
 import tech.pegasys.artemis.util.backing.VectorView;
 import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
+import tech.pegasys.artemis.util.backing.type.VectorViewType;
 
-public abstract class AbstractVectorView<C> implements VectorView<C> {
-  protected final CompositeViewType<? extends AbstractVectorView<C>> type;
+public class VectorViewImpl<C extends View> implements VectorView<C> {
+  protected final VectorViewType<C> type;
   protected TreeNode backingNode;
 
-  public AbstractVectorView(
-      CompositeViewType<? extends AbstractVectorView<C>> type,
+  public VectorViewImpl(
+      VectorViewType<C> type,
       TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }
-
-  protected abstract C fromTreeNode(TreeNode node, int index);
-
-  protected abstract TreeNode updateTreeNode(TreeNode srcNode, int index, C newValue);
 
   @Override
   public void set(int index, C value) {
     checkArgument(index >= 0 && index < type.getMaxLength(),
         "Index out of bounds: %s, size=%s", index, size());
 
-    backingNode = updateNode(index / type.getElementsPerNode(),
-        oldBytes -> updateTreeNode(oldBytes, index, value));
+    backingNode = updateNode(index / type.getElementsPerChunk(),
+        oldBytes -> type.getElementType()
+            .updateTreeNode(oldBytes, index % type.getElementsPerChunk(), value));
   }
 
   @Override
   public C get(int index) {
     checkArgument(index >= 0 && index < type.getMaxLength(),
         "Index out of bounds: %s, size=%s", index, size());
-    TreeNode node = getNode(index / type.getElementsPerNode());
-    return fromTreeNode(node, index);
+    TreeNode node = getNode(index / type.getElementsPerChunk());
+    return type.getElementType().createFromTreeNode(node, index % type.getElementsPerChunk());
   }
 
   private Commit updateNode(int listIndex, Function<TreeNode, TreeNode> nodeUpdater) {
@@ -50,7 +47,7 @@ public abstract class AbstractVectorView<C> implements VectorView<C> {
   }
 
   @Override
-  public CompositeViewType<? extends View> getType() {
+  public VectorViewType<C> getType() {
     return type;
   }
 
