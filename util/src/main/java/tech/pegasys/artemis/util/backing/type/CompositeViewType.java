@@ -15,9 +15,10 @@ package tech.pegasys.artemis.util.backing.type;
 
 import tech.pegasys.artemis.util.backing.CompositeView;
 import tech.pegasys.artemis.util.backing.Utils;
+import tech.pegasys.artemis.util.backing.View;
 import tech.pegasys.artemis.util.backing.ViewType;
 
-public interface CompositeViewType<V extends CompositeView> extends ViewType<V> {
+public interface CompositeViewType<V extends CompositeView<? extends View>> extends ViewType<V> {
 
   int getMaxLength();
 

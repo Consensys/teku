@@ -66,8 +66,8 @@ public interface TreeNode {
         long anchor = Long.highestOneBit(target);
         long pivot = anchor >> 1;
         return target < (target | pivot)
-            ? left().get(target ^ anchor | pivot)
-            : right().get(target ^ anchor | pivot);
+            ? left().get((target ^ anchor) | pivot)
+            : right().get((target ^ anchor) | pivot);
       }
     }
 
@@ -79,10 +79,10 @@ public interface TreeNode {
         long anchor = Long.highestOneBit(target);
         long pivot = anchor >> 1;
         if (target < (target | pivot)) {
-          TreeNode newLeftChild = left().update(target ^ anchor | pivot, nodeUpdater);
+          TreeNode newLeftChild = left().update((target ^ anchor) | pivot, nodeUpdater);
           return rebind(true, newLeftChild);
         } else {
-          TreeNode newRightChild = right().update(target ^ anchor | pivot, nodeUpdater);
+          TreeNode newRightChild = right().update((target ^ anchor) | pivot, nodeUpdater);
           return rebind(false, newRightChild);
         }
       }

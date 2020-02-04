@@ -41,9 +41,9 @@ public class BasicViewTypes {
           int bitIndex = idx % 8;
           byte b = dest.get(byteIndex);
           if (newValue.get()) {
-            b |= 1 << (8 - bitIndex);
+            b = (byte) (b | (1 << (8 - bitIndex)));
           } else {
-            b &= ~(1 << (8 - bitIndex));
+            b = (byte) (b & ~(1 << (8 - bitIndex)));
           }
           dest.set(byteIndex, b);
           return new RootImpl(dest);

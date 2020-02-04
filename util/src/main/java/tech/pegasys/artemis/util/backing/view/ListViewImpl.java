@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import tech.pegasys.artemis.util.backing.ContainerView;
 import tech.pegasys.artemis.util.backing.ListView;
 import tech.pegasys.artemis.util.backing.VectorView;
 import tech.pegasys.artemis.util.backing.View;
@@ -29,10 +30,10 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.UnsignedLongView;
 
 public class ListViewImpl<C extends View> implements ListView<C> {
 
-  private final ContainerViewImpl container;
+  private final ContainerView container;
 
   public ListViewImpl(VectorView<C> data, int size) {
-    ContainerViewType<ContainerViewImpl> containerViewType =
+    ContainerViewType<ContainerView> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(data.getType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
             ContainerViewImpl::new);
@@ -42,7 +43,7 @@ public class ListViewImpl<C extends View> implements ListView<C> {
   }
 
   public ListViewImpl(ListViewType<C> type, TreeNode node) {
-    ContainerViewType<ContainerViewImpl> containerViewType =
+    ContainerViewType<ContainerView> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
             ContainerViewImpl::new);
@@ -78,12 +79,14 @@ public class ListViewImpl<C extends View> implements ListView<C> {
     container.update(
         0,
         view -> {
+          @SuppressWarnings("unchecked")
           VectorView<C> vector = (VectorView<C>) view;
           vector.set(index, value);
           return vector;
         });
   }
 
+  @SuppressWarnings("unchecked")
   private VectorView<C> getVector() {
     return (VectorView<C>) container.get(0);
   }

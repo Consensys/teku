@@ -24,11 +24,12 @@ public abstract class CollectionViewType<C extends View, L extends CompositeView
   private final int maxLength;
   private final ViewType<C> elementType;
 
-  public CollectionViewType(int maxLength, ViewType<C> elementType) {
+  CollectionViewType(int maxLength, ViewType<C> elementType) {
     this.maxLength = maxLength;
     this.elementType = elementType;
   }
 
+  @Override
   public int getMaxLength() {
     return maxLength;
   }

@@ -19,15 +19,15 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 public abstract class AbstractBasicView<C> implements BasicView<C> {
   private final TreeNode node;
-  private final ViewType<? extends AbstractBasicView> type;
+  private final ViewType<? extends AbstractBasicView<C>> type;
 
-  public AbstractBasicView(TreeNode node, ViewType<? extends AbstractBasicView> type) {
+  public AbstractBasicView(TreeNode node, ViewType<? extends AbstractBasicView<C>> type) {
     this.node = node;
     this.type = type;
   }
 
   @Override
-  public ViewType<? extends AbstractBasicView> getType() {
+  public ViewType<? extends AbstractBasicView<C>> getType() {
     return type;
   }
 

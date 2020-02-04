@@ -21,16 +21,16 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
 public class ContainerViewImpl implements ContainerView {
-  private final ContainerViewType type;
+  private final ContainerViewType<? extends ContainerView> type;
   private TreeNode backingNode;
 
-  public ContainerViewImpl(ContainerViewType type, TreeNode backingNode) {
+  public ContainerViewImpl(ContainerViewType<? extends ContainerView> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }
 
   @Override
-  public ContainerViewType getType() {
+  public ContainerViewType<? extends ContainerView> getType() {
     return type;
   }
 

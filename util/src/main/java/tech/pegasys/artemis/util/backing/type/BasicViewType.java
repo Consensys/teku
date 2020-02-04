@@ -23,10 +23,11 @@ public abstract class BasicViewType<C extends View> implements ViewType<C> {
 
   private final int bitsSize;
 
-  public BasicViewType(int bitsSize) {
+  BasicViewType(int bitsSize) {
     this.bitsSize = bitsSize;
   }
 
+  @Override
   public int getBitsSize() {
     return bitsSize;
   }
