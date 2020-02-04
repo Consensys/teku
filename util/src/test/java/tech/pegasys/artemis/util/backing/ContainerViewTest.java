@@ -110,10 +110,12 @@ public class ContainerViewTest {
     }
 
     //    @Override
+    @SuppressWarnings("unchecked")
     public ListView<PackedUnsignedLongView> getList1() {
       return (ListView<PackedUnsignedLongView>) get(3);
     }
 
+    @SuppressWarnings("unchecked")
     public ListView<TestSubContainerImpl> getList2() {
       return (ListView<TestSubContainerImpl>) get(4);
     }
