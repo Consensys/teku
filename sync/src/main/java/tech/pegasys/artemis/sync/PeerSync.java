@@ -21,13 +21,11 @@ import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
-import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
@@ -81,18 +79,11 @@ public class PeerSync {
     }
 
     LOG.debug("Request {} blocks starting at {} from peer {}", count, startSlot, peer);
-    final AtomicLong latestSlotImported = new AtomicLong(-1);
     return peer.requestBlocksByRange(
-            status.getHeadRoot(), startSlot, count, STEP, blockResponseListener(latestSlotImported))
+            status.getHeadRoot(), startSlot, count, STEP, this::blockResponseListener)
         .thenCompose(
             res -> {
-              if (latestSlotImported.get() < 0) {
-                // Last request returned no blocks
-                // This doesn't necessarily mean the peer has misbehaved - it's possible its chain
-                // may have progressed and the blocks we're requesting are no longer available
-                return SafeFuture.completedFuture(PeerSyncResult.IMPORT_STALLED);
-              }
-              final UnsignedLong nextSlot = UnsignedLong.valueOf(latestSlotImported.get() + 1);
+              final UnsignedLong nextSlot = startSlot.plus(count);
               return executeSync(peer, status, nextSlot);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
@@ -129,6 +120,10 @@ public class PeerSync {
     if (storageClient.getFinalizedEpoch().compareTo(status.getFinalizedEpoch()) >= 0) {
       return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
     } else {
+      LOG.debug(
+          "Disconnecting from peer ({}) due to inaccurate advertised finalized block at {}",
+          peer,
+          status.getFinalizedEpoch());
       disconnectFromPeer(peer);
       return SafeFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
     }
@@ -147,19 +142,15 @@ public class PeerSync {
         : diff;
   }
 
-  private ResponseListener<SignedBeaconBlock> blockResponseListener(
-      final AtomicLong lastImportedSlot) {
-    return (block) -> {
-      if (stopped.get()) {
-        throw new CancellationException("Peer sync was cancelled");
-      }
-      final BlockImportResult result = blockImporter.importBlock(block);
-      LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
-      if (!result.isSuccessful()) {
-        throw new FailedBlockImportException(block, result);
-      }
-      lastImportedSlot.set(block.getMessage().getSlot().longValue());
-    };
+  private void blockResponseListener(final SignedBeaconBlock block) {
+    if (stopped.get()) {
+      throw new CancellationException("Peer sync was cancelled");
+    }
+    final BlockImportResult result = blockImporter.importBlock(block);
+    LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
+    if (!result.isSuccessful()) {
+      throw new FailedBlockImportException(block, result);
+    }
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
