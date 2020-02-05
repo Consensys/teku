@@ -19,7 +19,7 @@ import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 
-public abstract class BasicViewType<C extends View> implements ViewType<C> {
+public abstract class BasicViewType<C extends View> implements ViewType {
 
   private final int bitsSize;
 
@@ -40,5 +40,13 @@ public abstract class BasicViewType<C extends View> implements ViewType<C> {
   @Override
   public C createFromTreeNode(TreeNode node) {
     return createFromTreeNode(node, 0);
+  }
+
+  @Override
+  public abstract C createFromTreeNode(TreeNode node, int internalIndex);
+
+  @Override
+  public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, View newValue) {
+    return null;
   }
 }

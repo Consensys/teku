@@ -20,9 +20,9 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
 
-public class VectorViewType<C extends View> extends CollectionViewType<C, VectorView<C>> {
+public class VectorViewType<C extends View> extends CollectionViewType<C> {
 
-  VectorViewType(ViewType<C> elementType, int maxLength) {
+  VectorViewType(ViewType elementType, int maxLength) {
     super(maxLength, elementType);
   }
 

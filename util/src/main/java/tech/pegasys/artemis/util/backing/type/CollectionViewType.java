@@ -14,17 +14,16 @@
 package tech.pegasys.artemis.util.backing.type;
 
 import java.util.Objects;
-import tech.pegasys.artemis.util.backing.CompositeView;
 import tech.pegasys.artemis.util.backing.View;
 import tech.pegasys.artemis.util.backing.ViewType;
 
-public abstract class CollectionViewType<C extends View, L extends CompositeView<C>>
-    implements CompositeViewType<L> {
+public abstract class CollectionViewType<C extends View>
+    implements CompositeViewType {
 
   private final int maxLength;
-  private final ViewType<C> elementType;
+  private final ViewType elementType;
 
-  CollectionViewType(int maxLength, ViewType<C> elementType) {
+  CollectionViewType(int maxLength, ViewType elementType) {
     this.maxLength = maxLength;
     this.elementType = elementType;
   }
@@ -34,12 +33,12 @@ public abstract class CollectionViewType<C extends View, L extends CompositeView
     return maxLength;
   }
 
-  public ViewType<C> getElementType() {
+  public ViewType getElementType() {
     return elementType;
   }
 
   @Override
-  public ViewType<?> getChildType(int index) {
+  public ViewType getChildType(int index) {
     return getElementType();
   }
 
@@ -56,7 +55,7 @@ public abstract class CollectionViewType<C extends View, L extends CompositeView
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    CollectionViewType<?, ?> that = (CollectionViewType<?, ?>) o;
+    CollectionViewType<?> that = (CollectionViewType<?>) o;
     return maxLength == that.maxLength && elementType.equals(that.elementType);
   }
 

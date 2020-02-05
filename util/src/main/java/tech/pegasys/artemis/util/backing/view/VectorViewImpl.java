@@ -55,7 +55,7 @@ public class VectorViewImpl<C extends View> implements VectorView<C> {
         index,
         size());
     TreeNode node = getNode(index / type.getElementsPerChunk());
-    return type.getElementType().createFromTreeNode(node, index % type.getElementsPerChunk());
+    return (C) type.getElementType().createFromTreeNode(node, index % type.getElementsPerChunk());
   }
 
   private Commit updateNode(int listIndex, Function<TreeNode, TreeNode> nodeUpdater) {

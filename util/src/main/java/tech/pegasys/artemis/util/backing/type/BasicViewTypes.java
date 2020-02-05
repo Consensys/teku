@@ -17,6 +17,7 @@ import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes32;
+import tech.pegasys.artemis.util.backing.View;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
@@ -35,12 +36,12 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int idx, BitView newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int idx, View newValue) {
           MutableBytes32 dest = srcNode.hashTreeRoot().mutableCopy();
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
           byte b = dest.get(byteIndex);
-          if (newValue.get()) {
+          if (((BitView)newValue).get()) {
             b = (byte) (b | (1 << (8 - bitIndex)));
           } else {
             b = (byte) (b & ~(1 << (8 - bitIndex)));
@@ -58,9 +59,9 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, ByteView newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int index, View newValue) {
           byte[] bytes = srcNode.hashTreeRoot().toArray();
-          bytes[index] = newValue.get();
+          bytes[index] = ((ByteView)newValue).get();
           return new RootImpl(Bytes32.wrap(bytes));
         }
       };
@@ -75,13 +76,13 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateTreeNode(
-            TreeNode srcNode, int index, PackedUnsignedLongView newValue) {
+            TreeNode srcNode, int index, View newValue) {
           Bytes32 originalChunk = srcNode.hashTreeRoot();
           return new RootImpl(
               Bytes32.wrap(
                   Bytes.concatenate(
                       originalChunk.slice(0, index * 8),
-                      Bytes.ofUnsignedLong(newValue.longValue(), ByteOrder.LITTLE_ENDIAN),
+                      Bytes.ofUnsignedLong(((PackedUnsignedLongView)newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
                       originalChunk.slice((index + 1) * 8))));
         }
       };
@@ -94,7 +95,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, UnsignedLongView newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int index, View newValue) {
           throw new UnsupportedOperationException();
         }
       };
@@ -107,7 +108,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, Bytes32View newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int index, View newValue) {
           throw new UnsupportedOperationException();
         }
       };

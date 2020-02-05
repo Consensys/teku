@@ -18,7 +18,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 public interface View {
 
-  ViewType<? extends View> getType();
+  ViewType getType();
 
   TreeNode getBackingNode();
 

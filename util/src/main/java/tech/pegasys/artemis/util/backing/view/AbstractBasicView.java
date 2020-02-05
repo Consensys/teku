@@ -14,20 +14,20 @@
 package tech.pegasys.artemis.util.backing.view;
 
 import tech.pegasys.artemis.util.backing.BasicView;
-import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.BasicViewType;
 
 public abstract class AbstractBasicView<C> implements BasicView<C> {
   private final TreeNode node;
-  private final ViewType<? extends AbstractBasicView<C>> type;
+  private final BasicViewType<?> type;
 
-  public AbstractBasicView(TreeNode node, ViewType<? extends AbstractBasicView<C>> type) {
+  public AbstractBasicView(TreeNode node, BasicViewType<?> type) {
     this.node = node;
     this.type = type;
   }
 
   @Override
-  public ViewType<? extends AbstractBasicView<C>> getType() {
+  public BasicViewType<?> getType() {
     return type;
   }
 

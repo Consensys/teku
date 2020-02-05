@@ -22,13 +22,13 @@ import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 
-public class ContainerViewType<C extends ContainerView> implements CompositeViewType<C> {
+public class ContainerViewType<C extends ContainerView> implements CompositeViewType {
 
-  private final List<ViewType<?>> childrenTypes;
+  private final List<ViewType> childrenTypes;
   private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
 
   public ContainerViewType(
-      List<ViewType<?>> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
+      List<ViewType> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
     this.childrenTypes = childrenTypes;
     this.instanceCtor = instanceCtor;
   }
@@ -47,7 +47,7 @@ public class ContainerViewType<C extends ContainerView> implements CompositeView
   }
 
   @Override
-  public ViewType<?> getChildType(int index) {
+  public ViewType getChildType(int index) {
     return childrenTypes.get(index);
   }
 

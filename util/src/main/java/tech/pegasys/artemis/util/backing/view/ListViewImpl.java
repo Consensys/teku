@@ -23,7 +23,6 @@ import tech.pegasys.artemis.util.backing.VectorView;
 import tech.pegasys.artemis.util.backing.View;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
-import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UnsignedLongView;
@@ -92,7 +91,7 @@ public class ListViewImpl<C extends View> implements ListView<C> {
   }
 
   @Override
-  public CompositeViewType<? extends ListView<C>> getType() {
+  public ListViewType<C> getType() {
     return new ListViewType<>(getVector().getType());
   }
 

@@ -15,17 +15,17 @@ package tech.pegasys.artemis.util.backing;
 
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
-public interface ViewType<V extends View> {
+public interface ViewType {
 
-  V createDefault();
+  View createDefault();
 
-  V createFromTreeNode(TreeNode node);
+  View createFromTreeNode(TreeNode node);
 
-  default V createFromTreeNode(TreeNode node, int internalIndex) {
+  default View createFromTreeNode(TreeNode node, int internalIndex) {
     return createFromTreeNode(node);
   }
 
-  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, V newValue) {
+  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, View newValue) {
     return newValue.getBackingNode();
   }
 

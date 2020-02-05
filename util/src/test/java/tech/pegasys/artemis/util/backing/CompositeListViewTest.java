@@ -23,8 +23,8 @@ import tech.pegasys.artemis.util.backing.type.ListViewType;
 
 public class CompositeListViewTest {
 
-  static ViewType<TestView> testType =
-      new ViewType<>() {
+  static ViewType testType =
+      new ViewType() {
 
         @Override
         public TestView createDefault() {
@@ -51,7 +51,7 @@ public class CompositeListViewTest {
     }
 
     @Override
-    public ViewType<TestView> getType() {
+    public ViewType getType() {
       return testType;
     }
 

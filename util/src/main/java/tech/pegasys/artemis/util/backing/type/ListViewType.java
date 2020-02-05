@@ -19,13 +19,13 @@ import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.view.ListViewImpl;
 
-public class ListViewType<C extends View> extends CollectionViewType<C, ListView<C>> {
+public class ListViewType<C extends View> extends CollectionViewType<C> {
 
   public ListViewType(VectorViewType<C> vectorType) {
     this(vectorType.getElementType(), vectorType.getMaxLength());
   }
 
-  public ListViewType(ViewType<C> elementType, int maxLength) {
+  public ListViewType(ViewType elementType, int maxLength) {
     super(maxLength, elementType);
   }
 
