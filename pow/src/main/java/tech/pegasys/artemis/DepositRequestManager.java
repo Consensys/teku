@@ -19,12 +19,12 @@ import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import com.google.common.primitives.UnsignedLong;
 import io.reactivex.disposables.Disposable;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Consumer;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,30 +32,36 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class DepositRequestManager {
 
   private final Web3j web3j;
-  private final Consumer<DepositsFromBlockEvent> depositsFromBlockEventConsumer;
+  private final DepositEventChannel depositEventChannel;
   private final DepositContract depositContract;
   private static final Logger LOG = LogManager.getLogger();
+  private final AsyncRunner asyncRunner;
 
+  private volatile Disposable newBlockSubscription;
   private boolean active = false;
   private boolean requestQueued = false;
   private BigInteger latestCanonicalBlockNumber;
   private BigInteger latestSuccessfullyQueriedBlockNumber = BigInteger.ZERO;
-  private Disposable newBlockSubscription;
 
   public DepositRequestManager(
       Web3j web3j,
-      Consumer<DepositsFromBlockEvent> depositsFromBlockEventConsumer,
+      AsyncRunner asyncRunner,
+      DepositEventChannel depositEventChannel,
       DepositContract depositContract) {
     this.web3j = web3j;
-    this.depositsFromBlockEventConsumer = depositsFromBlockEventConsumer;
+    this.asyncRunner = asyncRunner;
+    this.depositEventChannel = depositEventChannel;
     this.depositContract = depositContract;
   }
 
@@ -69,6 +75,7 @@ public class DepositRequestManager {
             .subscribe(
                 this::updateLatestCanonicalBlockNumber,
                 err -> {
+                  newBlockSubscription.dispose();
                   LOG.warn("New block subscription failed, retrying.", err);
                   start();
                 });
@@ -90,7 +97,9 @@ public class DepositRequestManager {
   }
 
   private void getLatestDeposits() {
-    requestQueued = false;
+    synchronized (DepositRequestManager.this) {
+      requestQueued = false;
+    }
 
     DefaultBlockParameter fromBlock =
         DefaultBlockParameter.valueOf(latestSuccessfullyQueriedBlockNumber);
@@ -105,24 +114,33 @@ public class DepositRequestManager {
 
     fetchAndPublishDepositEventsInBlockRange(fromBlock, toBlock)
         .finish(
-            () -> {
-              this.latestSuccessfullyQueriedBlockNumber = latestCanonicalBlockNumberAtRequestStart;
-              synchronized (DepositRequestManager.this) {
-                active = false;
-                if (requestQueued) {
-                  getLatestDeposits();
-                }
-              }
-            },
-            (err) -> {
-              LOG.warn(
-                  "Failed to fetch deposit events for block numbers in the range ({},{}): {}",
-                  latestSuccessfullyQueriedBlockNumber,
-                  latestCanonicalBlockNumberAtRequestStart,
-                  err);
-              // TODO: add delayed processing
-              getLatestDeposits();
-            });
+            () -> onDepositRequestSuccessful(latestCanonicalBlockNumberAtRequestStart),
+            (err) -> onDepositRequestFailed(err, latestCanonicalBlockNumberAtRequestStart));
+  }
+
+  private void onDepositRequestSuccessful(BigInteger latestCanonicalBlockNumberAtRequestStart) {
+    this.latestSuccessfullyQueriedBlockNumber = latestCanonicalBlockNumberAtRequestStart;
+    synchronized (DepositRequestManager.this) {
+      active = false;
+      if (requestQueued) {
+        getLatestDeposits();
+      }
+    }
+  }
+
+  private void onDepositRequestFailed(
+      Throwable err, BigInteger latestCanonicalBlockNumberAtRequestStart) {
+    LOG.warn(
+        "Failed to fetch deposit events for block numbers in the range ({},{}): {}",
+        latestSuccessfullyQueriedBlockNumber,
+        latestCanonicalBlockNumberAtRequestStart,
+        err);
+
+    asyncRunner
+        .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
+        .finish(
+            this::getLatestDeposits,
+            (error) -> LOG.warn("Unable to execute delayed request. Dropping request", error));
   }
 
   private SafeFuture<Void> fetchAndPublishDepositEventsInBlockRange(
@@ -131,16 +149,16 @@ public class DepositRequestManager {
         depositContract.depositEventEventsInRange(fromBlock, toBlock);
 
     return eventsFuture
-        .thenApply(this::groupDepositEventResponsesByBlockNumber)
+        .thenApply(this::groupDepositEventResponsesByBlockHash)
         .thenCompose(
-            groupedDepositEventResponses -> {
+            groupedDepositEventResponsesByBlockHash -> {
               Map<String, SafeFuture<EthBlock.Block>> neededBlocksByHash =
-                  getMapOfEthBlockFutures(groupedDepositEventResponses);
+                  getMapOfEthBlockFutures(groupedDepositEventResponsesByBlockHash.keySet());
               return SafeFuture.allOf(neededBlocksByHash.values().toArray(SafeFuture[]::new))
                   .thenApply(
                       done ->
                           constructDepositsFromBlockEvents(
-                              neededBlocksByHash, groupedDepositEventResponses));
+                              neededBlocksByHash, groupedDepositEventResponsesByBlockHash));
             })
         .thenAccept(
             (depositsFromBlockEventList) ->
@@ -151,13 +169,16 @@ public class DepositRequestManager {
 
   private List<DepositsFromBlockEvent> constructDepositsFromBlockEvents(
       Map<String, SafeFuture<EthBlock.Block>> blockFutureByBlockHash,
-      List<List<DepositContract.DepositEventEventResponse>> groupedDepositEventResponses) {
-    return groupedDepositEventResponses.stream()
+      Map<String, List<DepositContract.DepositEventEventResponse>> groupedDepositEventResponses) {
+    return groupedDepositEventResponses.entrySet().stream()
         .map(
-            groupedDepositEventResponse -> {
-              String blockHash = groupedDepositEventResponse.get(0).log.getBlockHash();
+            (entry) -> {
+              String blockHash = entry.getKey();
+              List<DepositContract.DepositEventEventResponse> groupedDepositEventResponse =
+                  entry.getValue();
               EthBlock.Block block =
                   checkNotNull(blockFutureByBlockHash.get(blockHash).getNow(null));
+
               return new DepositsFromBlockEvent(
                   UnsignedLong.valueOf(block.getNumber()),
                   Bytes32.fromHexString(block.getHash()),
@@ -170,9 +191,8 @@ public class DepositRequestManager {
   }
 
   private Map<String, SafeFuture<EthBlock.Block>> getMapOfEthBlockFutures(
-      List<List<DepositContract.DepositEventEventResponse>> groupedDepositEventResponses) {
-    return groupedDepositEventResponses.stream()
-        .map(groupOfSameBlockDeposits -> groupOfSameBlockDeposits.get(0).log.getBlockHash())
+      Set<String> neededBlockHashes) {
+    return neededBlockHashes.stream()
         .collect(Collectors.toUnmodifiableMap(k -> k, this::getEthBlockFuture));
   }
 
@@ -183,18 +203,16 @@ public class DepositRequestManager {
         .thenApply(EthBlock::getBlock);
   }
 
-  private List<List<DepositContract.DepositEventEventResponse>>
-      groupDepositEventResponsesByBlockNumber(
+  private Map<String, List<DepositContract.DepositEventEventResponse>>
+      groupDepositEventResponsesByBlockHash(
           List<DepositContract.DepositEventEventResponse> events) {
-    return new ArrayList<>(
-        events.stream()
-            .collect(
-                Collectors.groupingBy(
-                    event -> event.log.getBlockNumber(), TreeMap::new, Collectors.toList()))
-            .values());
+    return events.stream()
+        .collect(
+            Collectors.groupingBy(
+                event -> event.log.getBlockHash(), TreeMap::new, Collectors.toList()));
   }
 
   private void publishDeposits(DepositsFromBlockEvent event) {
-    depositsFromBlockEventConsumer.accept(event);
+    depositEventChannel.notifyDepositsFromBlock(event);
   }
 }
