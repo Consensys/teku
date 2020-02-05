@@ -54,6 +54,7 @@ public class SyncManager extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    LOG.trace("Start {}", this.getClass().getSimpleName());
     peerConnectSubscriptionId = network.subscribeConnect(this::onNewPeer);
     startOrScheduleSync();
     return completedFuture(null);
@@ -61,6 +62,7 @@ public class SyncManager extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
+    LOG.trace("Stop {}", this.getClass().getSimpleName());
     network.unsubscribeConnect(peerConnectSubscriptionId);
     synchronized (this) {
       syncQueued = false;
@@ -72,17 +74,17 @@ public class SyncManager extends Service {
   private void startOrScheduleSync() {
     synchronized (this) {
       if (syncActive) {
-        syncQueued = true;
+        if (!syncQueued) {
+          LOG.trace("Queue sync");
+          syncQueued = true;
+        }
         return;
       }
       syncActive = true;
     }
+
+    LOG.trace("Start sync");
     executeSync()
-        .exceptionally(
-            error -> {
-              LOG.error("Error during sync", error);
-              return null;
-            })
         .finish(
             () -> {
               synchronized (SyncManager.this) {
@@ -106,10 +108,17 @@ public class SyncManager extends Service {
   }
 
   private SafeFuture<Void> executeSync() {
-    return findBestSyncPeer().map(this::syncToPeer).orElseGet(() -> completedFuture(null));
+    return findBestSyncPeer()
+        .map(this::syncToPeer)
+        .orElseGet(
+            () -> {
+              LOG.trace("No suitable peers (out of {}) found for sync.", network.getPeerCount());
+              return completedFuture(null);
+            });
   }
 
   private SafeFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
+    LOG.trace("Sync to peer {}", syncPeer);
     return peerSync
         .sync(syncPeer)
         .thenCompose(
@@ -119,6 +128,12 @@ public class SyncManager extends Service {
               } else {
                 return completedFuture(null);
               }
+            })
+        .exceptionally(
+            error -> {
+              LOG.error("Error during sync to peer " + syncPeer, error);
+              startOrScheduleSync();
+              return null;
             });
   }
 
