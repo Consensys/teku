@@ -13,12 +13,18 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface ListView<C extends View> extends CompositeView<C> {
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
-  @Override
-  int size();
+public interface ViewWrite extends ViewRead {
 
-  default void append(C value) {
-    set(size(), value);
+  ViewType getType();
+
+  default ViewRead commitChanges() {
+    throw new RuntimeException("Not supported yet");
+  }
+
+  default TreeNode getBackingNode() {
+    throw new UnsupportedOperationException(
+        "Backing tree node should be accessed from ViewRead only");
   }
 }

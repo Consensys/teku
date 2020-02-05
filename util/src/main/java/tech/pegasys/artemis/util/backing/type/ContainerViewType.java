@@ -17,12 +17,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
-import tech.pegasys.artemis.util.backing.ContainerView;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 
-public class ContainerViewType<C extends ContainerView> implements CompositeViewType {
+public class ContainerViewType<C extends ContainerViewWrite> implements CompositeViewType {
 
   private final List<ViewType> childrenTypes;
   private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;

@@ -17,7 +17,7 @@ import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes32;
-import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
@@ -36,7 +36,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int idx, View newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int idx, ViewRead newValue) {
           MutableBytes32 dest = srcNode.hashTreeRoot().mutableCopy();
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
@@ -59,7 +59,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, View newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
           byte[] bytes = srcNode.hashTreeRoot().toArray();
           bytes[index] = ((ByteView)newValue).get();
           return new RootImpl(Bytes32.wrap(bytes));
@@ -76,7 +76,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateTreeNode(
-            TreeNode srcNode, int index, View newValue) {
+            TreeNode srcNode, int index, ViewRead newValue) {
           Bytes32 originalChunk = srcNode.hashTreeRoot();
           return new RootImpl(
               Bytes32.wrap(
@@ -95,7 +95,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, View newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
           throw new UnsupportedOperationException();
         }
       };
@@ -108,7 +108,7 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, View newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
           throw new UnsupportedOperationException();
         }
       };

@@ -13,23 +13,20 @@
 
 package tech.pegasys.artemis.util.backing;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
-public interface ViewType {
+public interface ViewRead {
 
-  ViewRead createDefault();
-
-  ViewRead createFromTreeNode(TreeNode node);
-
-  default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
-    return createFromTreeNode(node);
+  default ViewWrite createWritableCopy() {
+    throw new RuntimeException("Not supported yet");
   }
 
-  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-    return newValue.getBackingNode();
-  }
+  ViewType getType();
 
-  default int getBitsSize() {
-    return 256;
+  TreeNode getBackingNode();
+
+  default Bytes32 hashTreeRoot() {
+    return getBackingNode().hashTreeRoot();
   }
 }

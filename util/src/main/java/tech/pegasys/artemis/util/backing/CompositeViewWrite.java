@@ -13,10 +13,14 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import tech.pegasys.artemis.util.backing.type.VectorViewType;
+public interface CompositeViewWrite<W extends ViewWrite, R extends ViewRead>
+    extends ViewWrite, CompositeViewRead<W> {
 
-public interface VectorView<C extends View> extends CompositeView<C> {
+  void set(int index, R value);
 
-  @Override
-  VectorViewType<C> getType();
+  W get(int index);
+
+//  default void update(int index, Function<R, R> mutator) {
+//    set(index, mutator.apply(get(index)));
+//  }
 }

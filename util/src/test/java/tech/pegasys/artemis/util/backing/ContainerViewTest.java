@@ -28,28 +28,53 @@ import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 
 public class ContainerViewTest {
 
-  //  public interface TestContainerRead {
-  //
-  //    UnsignedLong getLong1();
-  //
-  //    UnsignedLong getLong2();
-  //
-  //    ListView<UnsignedLong> getList1();
-  //  }
-  //
-  //  public interface TestContainerWrite extends TestContainerRead {
-  //
-  //    void setLong1(UnsignedLong val);
-  //
-  //    void setLong2(UnsignedLong val);
-  //
-  //    void setList1(ListView<UnsignedLong> val);
-  //
-  //    default void updateList1(int index, Function<UnsignedLong, UnsignedLong> updater) {
-  //      getList1().update(index, updater);
-  //      setList1(getList1());
-  //    }
-  //  }
+  public interface TestSubContainerRead<C extends ViewRead> extends ContainerViewRead<C> {
+
+    UnsignedLong getLong1();
+
+    UnsignedLong getLong2();
+
+    @Override
+    TestSubContainerWrite createWritableCopy();
+  }
+
+  public interface TestSubContainerWrite extends TestSubContainerRead<ViewWrite>, ContainerViewWrite {
+
+    void setLong1(UnsignedLong val);
+
+    void setLong2(UnsignedLong val);
+
+    @Override
+    TestSubContainerRead<ViewRead> commitChanges();
+  }
+
+  public interface TestContainerRead<C extends ViewRead> extends ContainerViewRead<C>{
+
+      UnsignedLong getLong1();
+
+      UnsignedLong getLong2();
+
+      ListViewRead<PackedUnsignedLongView> getList1();
+
+      ListViewRead<? extends TestSubContainerRead> getList2();
+
+    @Override
+    TestContainerWrite createWritableCopy();
+  }
+
+    public interface TestContainerWrite extends TestContainerRead<ViewWrite>, ContainerViewWrite {
+
+      void setLong1(UnsignedLong val);
+
+      void setLong2(UnsignedLong val);
+
+      ListViewWrite<PackedUnsignedLongView> getList1();
+
+      ListViewWrite<TestSubContainerWrite> getList2();
+
+      @Override
+      TestContainerRead<ViewRead> commitChanges();
+    }
 
   public static class TestSubContainerImpl extends ContainerViewImpl {
     public static final ContainerViewType<TestSubContainerImpl> TYPE =
@@ -82,7 +107,7 @@ public class ContainerViewTest {
   }
 
   public static class TestContainerImpl
-      extends ContainerViewImpl /*implements TestContainerWrite*/ {
+      extends ContainerViewImpl implements TestContainerWrite {
     public static final ContainerViewType<TestContainerImpl> TYPE =
         new ContainerViewType<>(
             Arrays.asList(
@@ -113,13 +138,13 @@ public class ContainerViewTest {
 
     //    @Override
     @SuppressWarnings("unchecked")
-    public ListView<PackedUnsignedLongView> getList1() {
-      return (ListView<PackedUnsignedLongView>) get(3);
+    public ListViewWrite<PackedUnsignedLongView> getList1() {
+      return (ListViewWrite<PackedUnsignedLongView>) get(3);
     }
 
     @SuppressWarnings("unchecked")
-    public ListView<TestSubContainerImpl> getList2() {
-      return (ListView<TestSubContainerImpl>) get(4);
+    public ListViewWrite<TestSubContainerWrite> getList2() {
+      return (ListViewWrite<TestSubContainerWrite>) get(4);
     }
 
     //    @Override
@@ -137,13 +162,31 @@ public class ContainerViewTest {
     }
 
     //    @Override
-    public void setList1(ListView<PackedUnsignedLongView> val) {
+    public void setList1(ListViewWrite<PackedUnsignedLongView> val) {
       set(3, val);
     }
 
-    public void setList2(ListView<TestSubContainerImpl> val) {
+    public void setList2(ListViewWrite<TestSubContainerImpl> val) {
       set(4, val);
     }
+
+    @Override
+    public TestContainerWrite createWritableCopy() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TestContainerRead<ViewRead> commitChanges() {
+      throw new UnsupportedOperationException();
+    }
+  }
+
+  @Test
+  public void readWriteContainerTest() {
+    TestContainerRead c1 = TestContainerImpl.TYPE.createDefault();
+    TestContainerWrite c1w = c1.createWritableCopy();
+    c1w.setLong1(UnsignedLong.valueOf(0x111));
+//    c1w.getList2().append();
   }
 
   @Test
@@ -151,7 +194,7 @@ public class ContainerViewTest {
     TestContainerImpl c1 = TestContainerImpl.TYPE.createDefault();
     c1.setLong1(UnsignedLong.valueOf(0x111));
     c1.setLong2(UnsignedLong.valueOf(0x222));
-    ListView<PackedUnsignedLongView> list1 = c1.getList1();
+    ListViewWrite<PackedUnsignedLongView> list1 = c1.getList1();
     list1.append(PackedUnsignedLongView.fromLong(0x333));
     c1.setList1(list1);
     dumpBinaryTree(c1.getBackingNode());

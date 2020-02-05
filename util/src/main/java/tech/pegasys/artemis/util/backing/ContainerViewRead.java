@@ -13,23 +13,4 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
-
-public interface ViewType {
-
-  ViewRead createDefault();
-
-  ViewRead createFromTreeNode(TreeNode node);
-
-  default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
-    return createFromTreeNode(node);
-  }
-
-  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-    return newValue.getBackingNode();
-  }
-
-  default int getBitsSize() {
-    return 256;
-  }
-}
+public interface ContainerViewRead<C extends ViewRead> extends CompositeViewRead<C> {}

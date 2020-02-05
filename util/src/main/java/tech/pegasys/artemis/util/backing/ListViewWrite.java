@@ -13,23 +13,23 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
+public interface ListViewWrite<W extends ViewWrite, R extends ViewRead> extends
+    CompositeViewWrite<W, R>, ListViewRead<W> {
 
-public interface ViewType {
+  @Override
+  void set(int index, R value);
 
-  ViewRead createDefault();
-
-  ViewRead createFromTreeNode(TreeNode node);
-
-  default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
-    return createFromTreeNode(node);
+  default void append(R value) {
+    set(size(), value);
   }
 
-  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-    return newValue.getBackingNode();
+  default W append() {
+    append((R) getType().getElementType().createDefault());
+    return get(size() - 1);
   }
 
-  default int getBitsSize() {
-    return 256;
+  @Override
+  default ListViewRead<R> commitChanges() {
+    throw new UnsupportedOperationException();
   }
 }

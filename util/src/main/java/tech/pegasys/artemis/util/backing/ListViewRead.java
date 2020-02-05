@@ -13,4 +13,18 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface ContainerView extends CompositeView<View> {}
+import tech.pegasys.artemis.util.backing.type.ListViewType;
+
+public interface ListViewRead<C extends ViewRead> extends CompositeViewRead<C> {
+
+  @Override
+  default ListViewWrite createWritableCopy() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  ListViewType<C> getType();
+
+  @Override
+  int size();
+}

@@ -16,13 +16,13 @@ package tech.pegasys.artemis.util.backing.view;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Function;
-import tech.pegasys.artemis.util.backing.VectorView;
-import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.VectorViewWrite;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 
-public class VectorViewImpl<C extends View> implements VectorView<C> {
+public class VectorViewImpl<C extends ViewRead> implements VectorViewWrite<C> {
   protected final VectorViewType<C> type;
   protected TreeNode backingNode;
 

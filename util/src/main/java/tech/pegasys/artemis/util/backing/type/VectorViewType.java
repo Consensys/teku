@@ -13,28 +13,28 @@
 
 package tech.pegasys.artemis.util.backing.type;
 
-import tech.pegasys.artemis.util.backing.VectorView;
-import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.VectorViewRead;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
 
-public class VectorViewType<C extends View> extends CollectionViewType<C> {
+public class VectorViewType<C extends ViewRead> extends CollectionViewType<C> {
 
   VectorViewType(ViewType elementType, int maxLength) {
     super(maxLength, elementType);
   }
 
   @Override
-  public VectorView<C> createDefault() {
+  public VectorViewRead<? extends C> createDefault() {
     return createFromTreeNode(
         TreeNodeImpl.createZeroTree(
             treeDepth(), getElementType().createDefault().getBackingNode()));
   }
 
   @Override
-  public VectorView<C> createFromTreeNode(TreeNode node) {
-    return new VectorViewImpl<>(this, node);
+  public VectorViewRead<? extends C> createFromTreeNode(TreeNode node) {
+    return new VectorViewImpl<C>(this, node);
   }
 }

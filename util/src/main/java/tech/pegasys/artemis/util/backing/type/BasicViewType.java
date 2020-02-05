@@ -14,12 +14,13 @@
 package tech.pegasys.artemis.util.backing.type;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
+import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 
-public abstract class BasicViewType<C extends View> implements ViewType {
+public abstract class BasicViewType<C extends ViewWrite> implements ViewType {
 
   private final int bitsSize;
 
@@ -46,7 +47,7 @@ public abstract class BasicViewType<C extends View> implements ViewType {
   public abstract C createFromTreeNode(TreeNode node, int internalIndex);
 
   @Override
-  public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, View newValue) {
+  public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return null;
   }
 }

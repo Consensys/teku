@@ -13,16 +13,18 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
+public interface VectorViewWrite<W extends ViewWrite, R extends ViewRead>
+    extends CompositeViewWrite<W, R>, VectorViewRead<W> {
 
-public interface View {
+  @Override
+  default VectorViewRead<W> commitChanges() {
+    throw new UnsupportedOperationException();
+  }
 
-  ViewType getType();
-
-  TreeNode getBackingNode();
-
-  default Bytes32 hashTreeRoot() {
-    return getBackingNode().hashTreeRoot();
+  public static void main(String[] args) throws Exception {
+    VectorViewRead<ContainerViewRead<ViewRead>> v1 = null;
+    ListViewWrite<? extends ViewWrite, ContainerViewRead<ViewRead>> v2 = v1
+        .createWritableCopy();
+    ListViewRead<ContainerViewRead<ViewRead>> v3 = v2.commitChanges();
   }
 }

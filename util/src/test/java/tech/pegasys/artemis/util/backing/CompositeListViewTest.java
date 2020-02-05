@@ -37,7 +37,7 @@ public class CompositeListViewTest {
         }
       };
 
-  static class TestView implements View {
+  static class TestView implements ViewWrite {
     TreeNode node;
     public final int v;
 
@@ -67,7 +67,7 @@ public class CompositeListViewTest {
   @Test
   public void simpleTest1() {
     ListViewType<TestView> listType = new ListViewType<>(testType, 3);
-    ListView<TestView> list = listType.createDefault();
+    ListViewWrite<TestView> list = listType.createDefault();
     TreeNode n0 = list.getBackingNode();
     list.set(0, new TestView(0x111));
     TreeNode n1 = list.getBackingNode();

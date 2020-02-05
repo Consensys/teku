@@ -15,22 +15,22 @@ package tech.pegasys.artemis.util.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.artemis.util.backing.ContainerView;
-import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
-public class ContainerViewImpl implements ContainerView {
-  private final ContainerViewType<? extends ContainerView> type;
+public class ContainerViewImpl implements ContainerViewWrite {
+  private final ContainerViewType<? extends ContainerViewWrite> type;
   private TreeNode backingNode;
 
-  public ContainerViewImpl(ContainerViewType<? extends ContainerView> type, TreeNode backingNode) {
+  public ContainerViewImpl(ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }
 
   @Override
-  public ContainerViewType<? extends ContainerView> getType() {
+  public ContainerViewType<? extends ContainerViewWrite> getType() {
     return type;
   }
 
@@ -40,14 +40,14 @@ public class ContainerViewImpl implements ContainerView {
   }
 
   @Override
-  public View get(int index) {
+  public ViewWrite get(int index) {
     checkIndex(index);
     TreeNode node = backingNode.get(type.treeWidth() + index);
-    return type.getChildType(index).createFromTreeNode(node);
+    return (ViewWrite) type.getChildType(index).createFromTreeNode(node);
   }
 
   @Override
-  public void set(int index, View child) {
+  public void set(int index, ViewWrite child) {
     checkIndex(index);
     checkArgument(
         child.getType().equals(type.getChildType(index)),

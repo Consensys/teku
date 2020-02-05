@@ -13,23 +13,16 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 
-public interface ViewType {
+public interface CompositeViewRead<C extends ViewRead> extends ViewRead {
 
-  ViewRead createDefault();
-
-  ViewRead createFromTreeNode(TreeNode node);
-
-  default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
-    return createFromTreeNode(node);
+  default int size() {
+    return getType().getMaxLength();
   }
 
-  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-    return newValue.getBackingNode();
-  }
+  C get(int index);
 
-  default int getBitsSize() {
-    return 256;
-  }
+  @Override
+  CompositeViewType getType();
 }

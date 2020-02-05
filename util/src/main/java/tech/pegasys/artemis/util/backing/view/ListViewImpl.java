@@ -17,22 +17,23 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
-import tech.pegasys.artemis.util.backing.ContainerView;
-import tech.pegasys.artemis.util.backing.ListView;
-import tech.pegasys.artemis.util.backing.VectorView;
-import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ListViewWrite;
+import tech.pegasys.artemis.util.backing.VectorViewRead;
+import tech.pegasys.artemis.util.backing.VectorViewWrite;
+import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UnsignedLongView;
 
-public class ListViewImpl<C extends View> implements ListView<C> {
+public class ListViewImpl<C extends ViewWrite> implements ListViewWrite<C> {
 
-  private final ContainerView container;
+  private final ContainerViewWrite container;
 
-  public ListViewImpl(VectorView<C> data, int size) {
-    ContainerViewType<ContainerView> containerViewType =
+  public ListViewImpl(VectorViewRead<C> data, int size) {
+    ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(data.getType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
             ContainerViewImpl::new);
@@ -42,7 +43,7 @@ public class ListViewImpl<C extends View> implements ListView<C> {
   }
 
   public ListViewImpl(ListViewType<C> type, TreeNode node) {
-    ContainerViewType<ContainerView> containerViewType =
+    ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
             ContainerViewImpl::new);
@@ -79,15 +80,15 @@ public class ListViewImpl<C extends View> implements ListView<C> {
         0,
         view -> {
           @SuppressWarnings("unchecked")
-          VectorView<C> vector = (VectorView<C>) view;
+          VectorViewWrite<C> vector = (VectorViewWrite<C>) view;
           vector.set(index, value);
           return vector;
         });
   }
 
   @SuppressWarnings("unchecked")
-  private VectorView<C> getVector() {
-    return (VectorView<C>) container.get(0);
+  private VectorViewWrite<C> getVector() {
+    return (VectorViewWrite<C>) container.get(0);
   }
 
   @Override

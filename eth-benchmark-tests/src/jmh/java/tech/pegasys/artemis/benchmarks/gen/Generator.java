@@ -56,7 +56,7 @@ public class Generator {
     BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
 
     System.out.println("Generating keypairs...");
-    int validatorsCount = 10 * 1024;
+    int validatorsCount = 1 * 1024;
 
     List<BLSKeyPair> validatorKeys =
         BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")

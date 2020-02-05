@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.util.backing.type;
 
 import java.util.Objects;
-import tech.pegasys.artemis.util.backing.View;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 
-public abstract class CollectionViewType<C extends View>
+public abstract class CollectionViewType<C extends ViewRead>
     implements CompositeViewType {
 
   private final int maxLength;

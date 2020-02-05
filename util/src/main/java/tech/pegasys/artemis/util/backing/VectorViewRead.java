@@ -13,23 +13,15 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.VectorViewType;
 
-public interface ViewType {
+public interface VectorViewRead<C extends ViewRead> extends CompositeViewRead<C> {
 
-  ViewRead createDefault();
-
-  ViewRead createFromTreeNode(TreeNode node);
-
-  default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
-    return createFromTreeNode(node);
+  @Override
+  default ListViewWrite<? extends ViewWrite, C> createWritableCopy() {
+    throw new UnsupportedOperationException();
   }
 
-  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-    return newValue.getBackingNode();
-  }
-
-  default int getBitsSize() {
-    return 256;
-  }
+  @Override
+  VectorViewType<C> getType();
 }
