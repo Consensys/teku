@@ -1,8 +1,5 @@
 dependencies {
     implementation project(':util')
-    implementation project(':data')
-    implementation project(':ethereum:datastructures')
-    implementation project(':pow')
 
     implementation 'io.vertx:vertx-core'
     implementation 'io.vertx:vertx-web'
