@@ -27,7 +27,7 @@ public interface CompositeView<C extends View> extends View {
   void set(int index, C value);
 
   @Override
-  CompositeViewType<? extends CompositeView<C>> getType();
+  CompositeViewType getType();
 
   default void update(int index, Function<C, C> mutator) {
     set(index, mutator.apply(get(index)));
