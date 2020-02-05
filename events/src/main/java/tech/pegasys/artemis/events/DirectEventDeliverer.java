@@ -24,6 +24,7 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
   private final ChannelExceptionHandler exceptionHandler;
   private final LabelledMetric<Counter> consumedEventCounter;
+  private final LabelledMetric<Counter> failedEventCounter;
 
   DirectEventDeliverer(
       final ChannelExceptionHandler exceptionHandler, final MetricsSystem metricsSystem) {
@@ -36,19 +37,34 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
             "Total number of events consumed",
             "channel",
             "subscriber");
+    failedEventCounter =
+        metricsSystem.createLabelledCounter(
+            EVENTBUS,
+            "event_failed_count",
+            "Number of events which failed to be processed",
+            "channel",
+            "subscriber");
   }
 
   @Override
   protected void deliverTo(final T subscriber, final Method method, final Object[] args) {
     try {
       method.invoke(subscriber, args);
-      consumedEventCounter
-          .labels(method.getDeclaringClass().getSimpleName(), subscriber.getClass().getSimpleName())
-          .inc();
     } catch (IllegalAccessException e) {
+      incrementCounter(failedEventCounter, subscriber, method);
       exceptionHandler.handleException(e, subscriber, method, args);
     } catch (InvocationTargetException e) {
+      incrementCounter(failedEventCounter, subscriber, method);
       exceptionHandler.handleException(e.getTargetException(), subscriber, method, args);
+    } finally {
+      incrementCounter(consumedEventCounter, subscriber, method);
     }
+  }
+
+  private void incrementCounter(
+      final LabelledMetric<Counter> counter, final T subscriber, final Method method) {
+    counter
+        .labels(method.getDeclaringClass().getSimpleName(), subscriber.getClass().getSimpleName())
+        .inc();
   }
 }
