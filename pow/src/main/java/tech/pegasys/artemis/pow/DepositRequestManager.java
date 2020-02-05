@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis;
+package tech.pegasys.artemis.pow;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
@@ -42,7 +41,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class DepositRequestManager {
 
-  private final Web3j web3j;
+  private final Eth1Provider eth1Provider;
   private final DepositEventChannel depositEventChannel;
   private final DepositContract depositContract;
   private static final Logger LOG = LogManager.getLogger();
@@ -55,11 +54,11 @@ public class DepositRequestManager {
   private BigInteger latestSuccessfullyQueriedBlockNumber = BigInteger.ZERO;
 
   public DepositRequestManager(
-      Web3j web3j,
+      Eth1Provider eth1Provider,
       AsyncRunner asyncRunner,
       DepositEventChannel depositEventChannel,
       DepositContract depositContract) {
-    this.web3j = web3j;
+    this.eth1Provider = eth1Provider;
     this.asyncRunner = asyncRunner;
     this.depositEventChannel = depositEventChannel;
     this.depositContract = depositContract;
@@ -67,18 +66,20 @@ public class DepositRequestManager {
 
   public void start() {
     newBlockSubscription =
-        web3j
-            .blockFlowable(false)
-            .map(EthBlock::getBlock)
+        eth1Provider
+            .getLatestBlockFlowable()
             .map(EthBlock.Block::getNumber)
             .map(number -> number.subtract(ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
-            .subscribe(
-                this::updateLatestCanonicalBlockNumber,
-                err -> {
-                  newBlockSubscription.dispose();
-                  LOG.warn("New block subscription failed, retrying.", err);
-                  start();
-                });
+            .subscribe(this::updateLatestCanonicalBlockNumber, this::onSubscriptionFailed);
+  }
+
+  private void onSubscriptionFailed(Throwable err) {
+    Disposable subscription = newBlockSubscription;
+    if (subscription != null) {
+      subscription.dispose();
+    }
+    LOG.warn("New block subscription failed, retrying.", err);
+    start();
   }
 
   public void stop() {
@@ -88,22 +89,28 @@ public class DepositRequestManager {
   private synchronized void updateLatestCanonicalBlockNumber(
       BigInteger latestCanonicalBlockNumber) {
     this.latestCanonicalBlockNumber = latestCanonicalBlockNumber;
-    if (active) {
-      requestQueued = true;
-    } else {
-      active = true;
-      getLatestDeposits();
-    }
+    getLatestDeposits();
   }
 
   private void getLatestDeposits() {
+    final BigInteger latestCanonicalBlockNumberAtRequestStart;
+    final BigInteger latestSuccessfullyQueriedBlockNumberAtRequestStart;
     synchronized (DepositRequestManager.this) {
-      requestQueued = false;
+      if (active) {
+        requestQueued = true;
+        return;
+      } else {
+        active = true;
+        requestQueued = false;
+      }
+
+      latestCanonicalBlockNumberAtRequestStart = this.latestCanonicalBlockNumber;
+      latestSuccessfullyQueriedBlockNumberAtRequestStart =
+          this.latestSuccessfullyQueriedBlockNumber;
     }
 
     DefaultBlockParameter fromBlock =
-        DefaultBlockParameter.valueOf(latestSuccessfullyQueriedBlockNumber);
-    final BigInteger latestCanonicalBlockNumberAtRequestStart = this.latestCanonicalBlockNumber;
+        DefaultBlockParameter.valueOf(latestSuccessfullyQueriedBlockNumberAtRequestStart);
     DefaultBlockParameter toBlock =
         DefaultBlockParameter.valueOf(latestCanonicalBlockNumberAtRequestStart);
 
@@ -118,13 +125,12 @@ public class DepositRequestManager {
             (err) -> onDepositRequestFailed(err, latestCanonicalBlockNumberAtRequestStart));
   }
 
-  private void onDepositRequestSuccessful(BigInteger latestCanonicalBlockNumberAtRequestStart) {
+  private synchronized void onDepositRequestSuccessful(
+      BigInteger latestCanonicalBlockNumberAtRequestStart) {
     this.latestSuccessfullyQueriedBlockNumber = latestCanonicalBlockNumberAtRequestStart;
-    synchronized (DepositRequestManager.this) {
-      active = false;
-      if (requestQueued) {
-        getLatestDeposits();
-      }
+    active = false;
+    if (requestQueued) {
+      getLatestDeposits();
     }
   }
 
@@ -193,14 +199,8 @@ public class DepositRequestManager {
   private Map<String, SafeFuture<EthBlock.Block>> getMapOfEthBlockFutures(
       Set<String> neededBlockHashes) {
     return neededBlockHashes.stream()
-        .collect(Collectors.toUnmodifiableMap(k -> k, this::getEthBlockFuture));
-  }
-
-  // TODO: pass in web3j as an argument and share this code with Eth1DataManager to avoid
-  // duplication
-  private SafeFuture<EthBlock.Block> getEthBlockFuture(String blockHash) {
-    return SafeFuture.of(web3j.ethGetBlockByHash(blockHash, false).sendAsync())
-        .thenApply(EthBlock::getBlock);
+        .collect(
+            Collectors.toUnmodifiableMap(blockHash -> blockHash, eth1Provider::getEth1BlockFuture));
   }
 
   private Map<String, List<DepositContract.DepositEventEventResponse>>
