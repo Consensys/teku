@@ -21,11 +21,11 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
 import io.libp2p.core.multiformats.Multiaddr;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
@@ -39,14 +39,15 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ScheduledExecutorService scheduler;
-  private static final long RECONNECT_TIMEOUT = 5000;
+  private final AsyncRunner asynRunner;
+  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(30);
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
@@ -56,11 +57,11 @@ public class PeerManager implements ConnectionHandler {
       Subscribers.create(true);
 
   public PeerManager(
-      final ScheduledExecutorService scheduler,
+      final AsyncRunner asynRunner,
       final MetricsSystem metricsSystem,
       final List<PeerHandler> peerHandlers,
       final Map<RpcMethod, RpcHandler> rpcHandlers) {
-    this.scheduler = scheduler;
+    this.asynRunner = asynRunner;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
@@ -84,34 +85,29 @@ public class PeerManager implements ConnectionHandler {
   public SafeFuture<?> connect(final Multiaddr peer, final Network network) {
     STDOUT.log(Level.DEBUG, "Connecting to " + peer);
     return SafeFuture.of(network.connect(peer))
-        .whenComplete(
-            (conn, throwable) -> {
-              if (throwable != null) {
-                STDOUT.log(
-                    Level.DEBUG,
-                    "Connection to " + peer + " failed. Will retry shortly: " + throwable);
-                ignoreFuture(
-                    scheduler.schedule(
-                        () -> connect(peer, network).reportExceptions(),
-                        RECONNECT_TIMEOUT,
-                        TimeUnit.MILLISECONDS));
-              } else {
-                STDOUT.log(
-                    Level.DEBUG,
-                    "Connection to peer: "
-                        + conn.secureSession().getRemoteId()
-                        + " was successful");
-                SafeFuture.of(conn.closeFuture())
-                    .finish(
-                        () -> {
-                          LOG.debug("Connection to {} closed. Will retry shortly", peer);
-                          ignoreFuture(
-                              scheduler.schedule(
-                                  () -> connect(peer, network).reportExceptions(),
-                                  RECONNECT_TIMEOUT,
-                                  TimeUnit.MILLISECONDS));
-                        });
-              }
+        .thenCompose(
+            conn -> {
+              LOG.debug("Connection to peer {} was successful", conn.secureSession().getRemoteId());
+              return SafeFuture.of(conn.closeFuture());
+            })
+        .exceptionally(
+            (err) -> {
+              LOG.debug("Connection to {} failed: {}", peer, err);
+              return null;
+            })
+        .thenAccept(
+            (res) -> {
+              LOG.debug(
+                  "Connection to {} was closed. Will retry in {} sec",
+                  peer,
+                  RECONNECT_TIMEOUT.toSeconds());
+
+              final SafeFuture<?> retryFuture =
+                  asynRunner.runAfterDelay(
+                      () -> connect(peer, network),
+                      RECONNECT_TIMEOUT.toMillis(),
+                      TimeUnit.MILLISECONDS);
+              ignoreFuture(retryFuture);
             });
   }
 
