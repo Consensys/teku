@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2.rpc.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,9 +23,9 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 public class MessageBuffer {
-
   private List<ByteBuf> buffers = new ArrayList<>();
   private Bytes currentData = Bytes.EMPTY;
+  private int bytesToTrim = 0;
 
   public void appendData(final ByteBuf data) {
     data.retain();
@@ -42,25 +43,32 @@ public class MessageBuffer {
         // Can't parse any messages, wait for more data to arrive.
         return;
       }
-      trimParsedData(consumedBytes);
+
+      bytesToTrim += consumedBytes;
+      currentData = currentData.slice(consumedBytes);
+      trimParsedData();
     }
   }
 
-  private void trimParsedData(final int totalMessageLength) {
-    currentData = currentData.slice(totalMessageLength);
-    int bytesToTrim = totalMessageLength;
+  private void trimParsedData() {
     for (final Iterator<ByteBuf> i = buffers.iterator(); i.hasNext() && bytesToTrim > 0; ) {
       final ByteBuf buffer = i.next();
-      if (buffer.capacity() <= bytesToTrim) {
-        bytesToTrim -= buffer.capacity();
-        i.remove();
-        buffer.release();
+      if (buffer.capacity() > bytesToTrim) {
+        break;
       }
+      bytesToTrim -= buffer.capacity();
+      i.remove();
+      buffer.release();
     }
   }
 
   public boolean isEmpty() {
     return currentData.isEmpty();
+  }
+
+  @VisibleForTesting
+  boolean buffersAreEmpty() {
+    return buffers.isEmpty();
   }
 
   public void close() {
