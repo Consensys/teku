@@ -122,6 +122,33 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
+  public void shouldOnlyReturnBlockAtStartSlotWhenCountIsOne() {
+    final int startBlock = 3;
+    final int count = 1;
+    final int skip = 1;
+    final SignedBeaconBlock headBlock = BLOCKS.get(10);
+    final Bytes32 headBlockRoot = headBlock.getMessage().hash_tree_root();
+
+    withCanonicalHeadBlock(headBlock);
+
+    BLOCKS.forEach(
+        block ->
+            when(storageClient.getBlockAtSlotExact(block.getSlot(), headBlockRoot))
+                .thenReturn(completedFuture(Optional.of(block))));
+
+    handler.onIncomingMessage(
+        peer,
+        new BeaconBlocksByRangeRequestMessage(
+            headBlockRoot,
+            UnsignedLong.valueOf(startBlock),
+            UnsignedLong.valueOf(count),
+            UnsignedLong.valueOf(skip)),
+        listener);
+
+    verifyBlocksReturned(3);
+  }
+
+  @Test
   public void shouldReturnRequestedNumberOfBlocksWhenStepIsGreaterThanOne() {
     // Asking for every second block from 2 onwards, up to 5 blocks.
     final int startBlock = 2;
@@ -149,7 +176,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldReturnRequestedNumberOfBlocksWhenSomeSlotsAreEmpty() {
+  public void shouldReturnFewerBlocksWhenSomeSlotsAreEmpty() {
     // Asking for every block from 2 onwards, up to 5 blocks.
     final int startBlock = 2;
     final int count = 5;
@@ -175,12 +202,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
             UnsignedLong.valueOf(skip)),
         listener);
 
-    // Slot 4 is empty but we still respond with 5 blocks.
-    verifyBlocksReturned(2, 3, 5, 6, 7);
+    // Slot 4 is empty so we only return 4 blocks
+    verifyBlocksReturned(2, 3, 5, 6);
   }
 
   @Test
-  public void shouldReturnRequestedNumberOfBlocksWhenStepIsGreaterThanOneAndSomeSlotsAreEmpty() {
+  public void shouldReturnFewerBlocksWhenStepIsGreaterThanOneAndSomeSlotsAreEmpty() {
     final int startBlock = 2;
     final int count = 4;
     final int skip = 2;
@@ -207,8 +234,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
             UnsignedLong.valueOf(skip)),
         listener);
 
-    // Respond with the requested number of blocks despite the empty slot
-    verifyBlocksReturned(2, 6, 8, 10);
+    // Slot 4 is empty so we only wind up returning 3 blocks, not 4.
+    verifyBlocksReturned(2, 6, 8);
   }
 
   @Test
