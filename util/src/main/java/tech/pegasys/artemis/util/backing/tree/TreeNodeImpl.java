@@ -75,7 +75,7 @@ public class TreeNodeImpl {
 
     @Override
     public Bytes32 hashTreeRoot() {
-      if (cachedHash != null) {
+      if (cachedHash == null) {
         cachedHash = Commit.super.hashTreeRoot();
       }
       return cachedHash;
