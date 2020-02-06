@@ -18,7 +18,7 @@ import tech.pegasys.artemis.util.backing.ViewType;
 
 public interface CompositeViewType extends ViewType {
 
-  int getMaxLength();
+  long getMaxLength();
 
   ViewType getChildType(int index);
 
@@ -28,15 +28,15 @@ public interface CompositeViewType extends ViewType {
     return 256 / getBitsPerElement();
   }
 
-  default int maxChunks() {
+  default long maxChunks() {
     return (getMaxLength() * getBitsPerElement() - 1) / 256 + 1;
   }
 
   default int treeDepth() {
-    return Integer.bitCount(Utils.nextPowerOf2(maxChunks()) - 1);
+    return Long.bitCount(Utils.nextPowerOf2(maxChunks()) - 1);
   }
 
-  default int treeWidth() {
+  default long treeWidth() {
     return Utils.nextPowerOf2(maxChunks());
   }
 }

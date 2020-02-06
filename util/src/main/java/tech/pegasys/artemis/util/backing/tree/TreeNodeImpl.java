@@ -96,7 +96,7 @@ public class TreeNodeImpl {
   }
 
   public static TreeNode createTree(List<TreeNode> leafNodes) {
-    int treeWidth = Utils.nextPowerOf2(leafNodes.size());
+    int treeWidth = (int) Utils.nextPowerOf2(leafNodes.size());
     List<TreeNode> nodes = new ArrayList<>(leafNodes);
     nodes.addAll(Collections.nCopies(treeWidth - leafNodes.size(), ZERO_LEAF));
     while (nodes.size() > 1) {

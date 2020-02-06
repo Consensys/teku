@@ -39,7 +39,7 @@ public class ContainerViewType<C extends ContainerViewWrite> implements Composit
   }
 
   public TreeNode createDefaultTree() {
-    List<TreeNode> defaultChildren = new ArrayList<>(getMaxLength());
+    List<TreeNode> defaultChildren = new ArrayList<>((int)getMaxLength());
     for (int i = 0; i < getMaxLength(); i++) {
       defaultChildren.add(getChildType(i).createDefault().getBackingNode());
     }
@@ -57,7 +57,7 @@ public class ContainerViewType<C extends ContainerViewWrite> implements Composit
   }
 
   @Override
-  public int getMaxLength() {
+  public long getMaxLength() {
     return childrenTypes.size();
   }
 

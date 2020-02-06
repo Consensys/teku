@@ -22,7 +22,7 @@ import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
 
 public class VectorViewType<C extends ViewRead> extends CollectionViewType<C> {
 
-  VectorViewType(ViewType elementType, int maxLength) {
+  VectorViewType(ViewType elementType, long maxLength) {
     super(maxLength, elementType);
   }
 

@@ -18,7 +18,7 @@ import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 public interface CompositeViewRead<C extends ViewRead> extends ViewRead {
 
   default int size() {
-    return getType().getMaxLength();
+    return (int) getType().getMaxLength();
   }
 
   C get(int index);

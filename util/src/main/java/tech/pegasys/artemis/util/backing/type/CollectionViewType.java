@@ -20,16 +20,16 @@ import tech.pegasys.artemis.util.backing.ViewType;
 public abstract class CollectionViewType<C extends ViewRead>
     implements CompositeViewType {
 
-  private final int maxLength;
+  private final long maxLength;
   private final ViewType elementType;
 
-  CollectionViewType(int maxLength, ViewType elementType) {
+  CollectionViewType(long maxLength, ViewType elementType) {
     this.maxLength = maxLength;
     this.elementType = elementType;
   }
 
   @Override
-  public int getMaxLength() {
+  public long getMaxLength() {
     return maxLength;
   }
 

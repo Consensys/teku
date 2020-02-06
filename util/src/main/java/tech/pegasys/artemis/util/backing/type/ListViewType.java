@@ -25,7 +25,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<C> {
     this(vectorType.getElementType(), vectorType.getMaxLength());
   }
 
-  public ListViewType(ViewType elementType, int maxLength) {
+  public ListViewType(ViewType elementType, long maxLength) {
     super(maxLength, elementType);
   }
 
