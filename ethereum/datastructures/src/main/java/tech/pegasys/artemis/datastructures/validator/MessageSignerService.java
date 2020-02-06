@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,28 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.services.adapter.dto;
+package tech.pegasys.artemis.datastructures.validator;
 
-public class RemoteCallResponse {
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-  private boolean success;
+public interface MessageSignerService {
 
-  private Throwable errorCause;
-
-  public RemoteCallResponse(boolean success, Throwable errorCause) {
-    this.success = success;
-    this.errorCause = errorCause;
-  }
-
-  public RemoteCallResponse(boolean success) {
-    this(success, null);
-  }
-
-  public boolean isSuccess() {
-    return success;
-  }
-
-  public Throwable getErrorCause() {
-    return errorCause;
-  }
+  SafeFuture<BLSSignature> sign(Bytes message, Bytes domain);
 }

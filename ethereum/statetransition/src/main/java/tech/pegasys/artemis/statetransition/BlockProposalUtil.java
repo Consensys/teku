@@ -33,7 +33,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.datastructures.validator.Signer;
+import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -52,7 +52,7 @@ public class BlockProposalUtil {
   }
 
   public SignedBeaconBlock createNewBlock(
-      final Signer signer,
+      final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
@@ -91,7 +91,7 @@ public class BlockProposalUtil {
   }
 
   public SignedBeaconBlock createEmptyBlock(
-      final Signer signer,
+      final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
       final Bytes32 parentBlockRoot)
@@ -109,7 +109,7 @@ public class BlockProposalUtil {
   }
 
   public SignedBeaconBlock createBlockWithAttestations(
-      final Signer signer,
+      final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
@@ -153,7 +153,7 @@ public class BlockProposalUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
    */
   private BLSSignature getBlockSignature(
-      final BeaconState state, final BeaconBlock block, final Signer signer) {
+      final BeaconState state, final BeaconBlock block, final MessageSignerService signer) {
     final Bytes domain =
         get_domain(
             state,
@@ -162,7 +162,7 @@ public class BlockProposalUtil {
 
     final Bytes32 blockRoot = block.hash_tree_root();
 
-    return signer.sign(blockRoot, domain);
+    return signer.sign(blockRoot, domain).join();
   }
 
   /**
@@ -176,10 +176,10 @@ public class BlockProposalUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
    */
   public BLSSignature get_epoch_signature(
-      final BeaconState state, final UnsignedLong epoch, final Signer signer) {
+      final BeaconState state, final UnsignedLong epoch, final MessageSignerService signer) {
     Bytes32 messageHash =
         HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
     Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
-    return signer.sign(messageHash, domain);
+    return signer.sign(messageHash, domain).join();
   }
 }
