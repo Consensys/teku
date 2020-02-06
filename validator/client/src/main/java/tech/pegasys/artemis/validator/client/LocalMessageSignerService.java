@@ -11,12 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.validator;
+package tech.pegasys.artemis.validator.client;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
-@FunctionalInterface
-public interface Signer {
-  BLSSignature sign(Bytes message, Bytes domain);
+public class LocalMessageSignerService implements MessageSignerService {
+  private final BLSKeyPair keypair;
+
+  public LocalMessageSignerService(final BLSKeyPair keypair) {
+    this.keypair = keypair;
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> sign(final Bytes message, final Bytes domain) {
+    return SafeFuture.completedFuture(BLSSignature.sign(keypair, message, domain));
+  }
 }
