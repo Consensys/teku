@@ -23,32 +23,39 @@ import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class EventChannel<T> {
 
   private final T publisher;
   private final EventDeliverer<T> invoker;
 
-  public EventChannel(final T publisher, final EventDeliverer<T> invoker) {
+  private EventChannel(final T publisher, final EventDeliverer<T> invoker) {
     this.publisher = publisher;
     this.invoker = invoker;
   }
 
-  public static <T> EventChannel<T> create(final Class<T> channelInterface) {
-    return create(channelInterface, LOGGING_EXCEPTION_HANDLER);
+  public static <T> EventChannel<T> create(
+      final Class<T> channelInterface, final MetricsSystem metricsSystem) {
+    return create(channelInterface, LOGGING_EXCEPTION_HANDLER, metricsSystem);
   }
 
   public static <T> EventChannel<T> create(
-      final Class<T> channelInterface, final ChannelExceptionHandler exceptionHandler) {
-    return create(channelInterface, new DirectEventDeliverer<>(exceptionHandler));
-  }
-
-  public static <T> EventChannel<T> createAsync(final Class<T> channelInterface) {
-    return createAsync(channelInterface, LOGGING_EXCEPTION_HANDLER);
+      final Class<T> channelInterface,
+      final ChannelExceptionHandler exceptionHandler,
+      final MetricsSystem metricsSystem) {
+    return create(channelInterface, new DirectEventDeliverer<>(exceptionHandler, metricsSystem));
   }
 
   public static <T> EventChannel<T> createAsync(
-      final Class<T> channelInterface, final ChannelExceptionHandler exceptionHandler) {
+      final Class<T> channelInterface, final MetricsSystem metricsSystem) {
+    return createAsync(channelInterface, LOGGING_EXCEPTION_HANDLER, metricsSystem);
+  }
+
+  public static <T> EventChannel<T> createAsync(
+      final Class<T> channelInterface,
+      final ChannelExceptionHandler exceptionHandler,
+      final MetricsSystem metricsSystem) {
     return createAsync(
         channelInterface,
         Executors.newCachedThreadPool(
@@ -56,19 +63,24 @@ public class EventChannel<T> {
                 .setDaemon(true)
                 .setNameFormat(channelInterface.getSimpleName() + "-%d")
                 .build()),
-        exceptionHandler);
-  }
-
-  static <T> EventChannel<T> createAsync(
-      final Class<T> channelInterface, final ExecutorService executor) {
-    return createAsync(channelInterface, executor, LOGGING_EXCEPTION_HANDLER);
+        exceptionHandler,
+        metricsSystem);
   }
 
   static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ExecutorService executor,
-      final ChannelExceptionHandler exceptionHandler) {
-    return create(channelInterface, new AsyncEventDeliverer<>(executor, exceptionHandler));
+      final MetricsSystem metricsSystem) {
+    return createAsync(channelInterface, executor, LOGGING_EXCEPTION_HANDLER, metricsSystem);
+  }
+
+  static <T> EventChannel<T> createAsync(
+      final Class<T> channelInterface,
+      final ExecutorService executor,
+      final ChannelExceptionHandler exceptionHandler,
+      final MetricsSystem metricsSystem) {
+    return create(
+        channelInterface, new AsyncEventDeliverer<>(executor, exceptionHandler, metricsSystem));
   }
 
   private static <T> EventChannel<T> create(
