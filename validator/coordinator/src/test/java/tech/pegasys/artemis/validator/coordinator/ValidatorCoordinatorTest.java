@@ -56,7 +56,6 @@ public class ValidatorCoordinatorTest {
   @BeforeEach
   void setup() {
     config = mock(ArtemisConfiguration.class);
-    when(config.getNaughtinessPercentage()).thenReturn(0);
     when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
     when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);

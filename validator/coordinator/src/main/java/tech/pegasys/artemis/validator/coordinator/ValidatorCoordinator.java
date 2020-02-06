@@ -336,12 +336,6 @@ public class ValidatorCoordinator {
 
       this.eventBus.post(new BlockProposedEvent(newBlock));
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
-
-      if (validators.get(proposer).isNaughty()) {
-        final SignedBeaconBlock naughtyBlock =
-            blockCreator.createEmptyBlock(signer, newSlot, newState, parentRoot);
-        this.eventBus.post(naughtyBlock);
-      }
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
       STDOUT.log(Level.ERROR, "Error during block creation " + e.toString());
     }
