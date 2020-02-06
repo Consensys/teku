@@ -14,6 +14,9 @@
 package tech.pegasys.artemis.pow;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -192,25 +194,23 @@ public class DepositRequestManager {
                   groupedDepositEventResponse.stream()
                       .map(Deposit::new)
                       .sorted(Comparator.comparing(Deposit::getMerkle_tree_index))
-                      .collect(Collectors.toList()));
+                      .collect(toList()));
             })
-        .collect(Collectors.toList());
+        .collect(toList());
   }
 
   private Map<String, SafeFuture<EthBlock.Block>> getMapOfEthBlockFutures(
       Set<String> neededBlockHashes) {
     return neededBlockHashes.stream()
-        .collect(
-            Collectors.toUnmodifiableMap(blockHash -> blockHash, eth1Provider::getEth1BlockFuture));
+            .collect(toUnmodifiableMap(blockHash -> blockHash, eth1Provider::getEth1BlockFuture));
   }
 
   private Map<String, List<DepositContract.DepositEventEventResponse>>
       groupDepositEventResponsesByBlockHash(
           List<DepositContract.DepositEventEventResponse> events) {
     return events.stream()
-        .collect(
-            Collectors.groupingBy(
-                event -> event.log.getBlockHash(), TreeMap::new, Collectors.toList()));
+            .collect(groupingBy(
+                    event -> event.log.getBlockHash(), TreeMap::new, toList()));
   }
 
   private void publishDeposits(DepositsFromBlockEvent event) {
