@@ -198,21 +198,17 @@ public class DepositRequestManager {
   private Map<String, SafeFuture<EthBlock.Block>> getMapOfEthBlockFutures(
       Set<String> neededBlockHashes) {
     return neededBlockHashes.stream()
-            .collect(toUnmodifiableMap(blockHash -> blockHash, eth1Provider::getEth1BlockFuture));
+        .collect(toUnmodifiableMap(blockHash -> blockHash, eth1Provider::getEth1BlockFuture));
   }
 
   private Map<String, List<DepositContract.DepositEventEventResponse>>
       groupDepositEventResponsesByBlockHash(
           List<DepositContract.DepositEventEventResponse> events) {
     return events.stream()
-            .collect(groupingBy(
-                    event -> event.log.getBlockHash(), TreeMap::new, toList()));
+        .collect(groupingBy(event -> event.log.getBlockHash(), TreeMap::new, toList()));
   }
 
   private void publishDeposits(DepositsFromBlockEvent event) {
-    for (int i = 0; i < event.getDeposits().size(); i++) {
-      System.out.println(event.getDeposits().get(i));
-    }
     depositEventChannel.notifyDepositsFromBlock(event);
   }
 }
