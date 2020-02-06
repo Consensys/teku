@@ -43,8 +43,7 @@ class ValidatorLoader {
       final LocalMessageSignerService signerService = new LocalMessageSignerService(keypair);
       STDOUT.log(Level.DEBUG, "Validator " + i + ": " + keypair.getPublicKey().toString());
 
-      validators.put(
-          keypair.getPublicKey(), new ValidatorInfo(signerService));
+      validators.put(keypair.getPublicKey(), new ValidatorInfo(signerService));
     }
     return validators;
   }
