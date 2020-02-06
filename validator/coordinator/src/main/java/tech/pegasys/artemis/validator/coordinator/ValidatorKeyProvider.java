@@ -19,8 +19,4 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public interface ValidatorKeyProvider {
   List<BLSKeyPair> loadValidatorKeys(ArtemisConfiguration config);
-
-  default int getValidatorPortStartIndex() {
-    return 0;
-  }
 }
