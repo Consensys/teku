@@ -36,20 +36,22 @@ public class BeaconChainHeadHandler implements BeaconRestApiHandler {
     return "/beacon/chainhead";
   }
 
-  // TODO: make sure finalized and justified root/epoch methods return null if
+  // TODO: make sure finalized and justified root methods return null if
   // we don't have them in store yet. So that we can handle them better instead of
   // returning zero.
   @Override
   public Object handleRequest(RequestParams params) {
     Bytes32 head_block_root = client.getBestBlockRoot();
-    if (head_block_root == null) {
-      return null;
-    }
+
     UnsignedLong head_block_slot = client.getBestSlot();
     UnsignedLong finalized_epoch = client.getFinalizedEpoch();
     Bytes32 finalized_root = client.getFinalizedRoot();
     UnsignedLong justified_epoch = client.getJustifiedEpoch();
     Bytes32 justified_root = client.getJustifiedRoot();
+
+    if (head_block_root == null || finalized_root == null || justified_root == null) {
+      return null;
+    }
 
     Map<String, Object> jsonObject = new HashMap<>();
     jsonObject.put("headSlot", head_block_slot.longValue());

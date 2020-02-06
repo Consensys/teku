@@ -66,7 +66,7 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
               ? client.getStore().getBlock(blockRootAtSlot.get())
               : null;
     } else {
-      throw new ForbiddenResponse("Off limits.");
+      return null;
     }
     jsonObject.put("block", block);
     jsonObject.put("blockRoot", blockRoot.toHexString());
