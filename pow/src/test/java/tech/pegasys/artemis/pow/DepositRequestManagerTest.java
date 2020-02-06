@@ -46,5 +46,8 @@ public class DepositRequestManagerTest {
   }
 
   @Test
-  void shouldProcessDepositsInOrder() {}
+  void shouldProcessDepositsInOrder() {
+    depositRequestManager.start();
+    depositRequestManager.stop();
+  }
 }
