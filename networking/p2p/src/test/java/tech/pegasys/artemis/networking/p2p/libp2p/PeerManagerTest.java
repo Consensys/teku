@@ -20,18 +20,18 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class PeerManagerTest {
 
-  private final ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
+  private final StubAsyncRunner asynRunner = new StubAsyncRunner();
   private final PeerManager peerManager =
       new PeerManager(
-          scheduler, new NoOpMetricsSystem(), Collections.emptyList(), Collections.emptyMap());
+          asynRunner, new NoOpMetricsSystem(), Collections.emptyList(), Collections.emptyMap());
 
   @Test
   public void subscribeConnect_singleListener() {
