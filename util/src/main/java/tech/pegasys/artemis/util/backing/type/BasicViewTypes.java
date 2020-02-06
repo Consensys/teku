@@ -23,8 +23,8 @@ import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUnsignedLongView;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UnsignedLongView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUInt64View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
 public class BasicViewTypes {
 
@@ -66,11 +66,11 @@ public class BasicViewTypes {
         }
       };
 
-  public static final BasicViewType<PackedUnsignedLongView> PACKED_UNSIGNED_LONG_TYPE =
+  public static final BasicViewType<PackedUInt64View> PACKED_UINT64_TYPE =
       new BasicViewType<>(64) {
         @Override
-        public PackedUnsignedLongView createFromTreeNode(TreeNode node, int internalIndex) {
-          return PackedUnsignedLongView.fromLong(
+        public PackedUInt64View createFromTreeNode(TreeNode node, int internalIndex) {
+          return PackedUInt64View.fromLong(
               node.hashTreeRoot().slice(internalIndex * 8, 8).toLong(ByteOrder.LITTLE_ENDIAN));
         }
 
@@ -82,16 +82,16 @@ public class BasicViewTypes {
               Bytes32.wrap(
                   Bytes.concatenate(
                       originalChunk.slice(0, index * 8),
-                      Bytes.ofUnsignedLong(((PackedUnsignedLongView)newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
+                      Bytes.ofUnsignedLong(((PackedUInt64View)newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
                       originalChunk.slice((index + 1) * 8))));
         }
       };
 
-  public static final BasicViewType<UnsignedLongView> UNSIGNED_LONG_TYPE =
+  public static final BasicViewType<UInt64View> UINT64_TYPE =
       new BasicViewType<>(64) {
         @Override
-        public UnsignedLongView createFromTreeNode(TreeNode node, int internalIndex) {
-          return new UnsignedLongView(node);
+        public UInt64View createFromTreeNode(TreeNode node, int internalIndex) {
+          return new UInt64View(node);
         }
 
         @Override

@@ -27,7 +27,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UnsignedLongView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
 public class ListViewImpl<C extends ViewRead> implements ListViewWrite<C> {
 
@@ -36,24 +36,24 @@ public class ListViewImpl<C extends ViewRead> implements ListViewWrite<C> {
   public ListViewImpl(VectorViewRead<C> data, int size) {
     ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
         new ContainerViewType<>(
-            Arrays.asList(data.getType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
+            Arrays.asList(data.getType(), BasicViewTypes.UINT64_TYPE),
             ContainerViewImpl::new);
     container = containerViewType.createDefault();
     container.set(0, data);
-    container.set(1, new UnsignedLongView(UnsignedLong.valueOf(size)));
+    container.set(1, new UInt64View(UnsignedLong.valueOf(size)));
   }
 
   public ListViewImpl(ListViewType<C> type, TreeNode node) {
     ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
         new ContainerViewType<>(
-            Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
+            Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
             ContainerViewImpl::new);
     container = containerViewType.createFromTreeNode(node);
   }
 
   @Override
   public int size() {
-    UnsignedLongView sizeView = (UnsignedLongView) container.get(1);
+    UInt64View sizeView = (UInt64View) container.get(1);
     return sizeView.get().intValue();
   }
 
@@ -74,7 +74,7 @@ public class ListViewImpl<C extends ViewRead> implements ListViewWrite<C> {
         size());
 
     if (index == size) {
-      container.set(1, new UnsignedLongView(UnsignedLong.valueOf(size + 1)));
+      container.set(1, new UInt64View(UnsignedLong.valueOf(size + 1)));
     }
 
     container.update(

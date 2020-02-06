@@ -56,30 +56,37 @@ public class BasicViews {
     }
   }
 
-  public static class PackedUnsignedLongView extends PackedBasicView<UnsignedLong> {
-    public PackedUnsignedLongView(UnsignedLong value) {
-      super(value, BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE);
+  public static class PackedUInt64View extends PackedBasicView<UnsignedLong> {
+    public static PackedUInt64View fromLong(long val) {
+      return new PackedUInt64View(UnsignedLong.valueOf(val));
+    }
+    public PackedUInt64View(UnsignedLong value) {
+      super(value, BasicViewTypes.PACKED_UINT64_TYPE);
     }
 
     public long longValue() {
       return get().longValue();
     }
-
-    public static PackedUnsignedLongView fromLong(long val) {
-      return new PackedUnsignedLongView(UnsignedLong.valueOf(val));
-    }
   }
 
-  public static class UnsignedLongView extends AbstractBasicView<UnsignedLong> {
+  public static class UInt64View extends AbstractBasicView<UnsignedLong> {
 
-    public UnsignedLongView(TreeNode node) {
-      super(node, BasicViewTypes.UNSIGNED_LONG_TYPE);
+    public static UInt64View fromLong(long val) {
+      return new UInt64View(UnsignedLong.valueOf(val));
     }
 
-    public UnsignedLongView(UnsignedLong val) {
+    public UInt64View(TreeNode node) {
+      super(node, BasicViewTypes.UINT64_TYPE);
+    }
+
+    public UInt64View(UnsignedLong val) {
       this(
           new RootImpl(
               Bytes32.rightPad(Bytes.ofUnsignedLong(val.longValue(), ByteOrder.LITTLE_ENDIAN))));
+    }
+
+    public long longValue() {
+      return get().longValue();
     }
 
     @Override

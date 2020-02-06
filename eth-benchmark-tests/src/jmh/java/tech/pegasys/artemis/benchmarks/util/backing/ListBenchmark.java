@@ -29,7 +29,7 @@ import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
-import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUnsignedLongView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUInt64View;
 
 @State(Scope.Thread)
 public class ListBenchmark {
@@ -40,17 +40,17 @@ public class ListBenchmark {
   private int getListMaxSize() {
     return listMaxSizeM * 1024 * 1024;
   }
-  ListViewWrite<PackedUnsignedLongView> l1w;
-  ListViewRead<PackedUnsignedLongView> l2r;
+  ListViewWrite<PackedUInt64View> l1w;
+  ListViewRead<PackedUInt64View> l2r;
 
   public ListBenchmark() {
-    ListViewType<PackedUnsignedLongView> type = new ListViewType<>(
-        BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 100_000_000);
-    ListViewRead<PackedUnsignedLongView> l1 = type.createDefault();
+    ListViewType<PackedUInt64View> type = new ListViewType<>(
+        BasicViewTypes.PACKED_UINT64_TYPE, 100_000_000);
+    ListViewRead<PackedUInt64View> l1 = type.createDefault();
 
-    ListViewWrite<PackedUnsignedLongView> l2w = l1.createWritableCopy();
+    ListViewWrite<PackedUInt64View> l2w = l1.createWritableCopy();
     for (int i = 0; i < 1000000; i++) {
-      l2w.append(new PackedUnsignedLongView(UnsignedLong.valueOf(1121212)));
+      l2w.append(new PackedUInt64View(UnsignedLong.valueOf(1121212)));
     }
     l2r = l2w.commitChanges();
 
@@ -61,15 +61,15 @@ public class ListBenchmark {
 
   @Setup(Level.Iteration)
   public void init() throws Exception {
-    ListViewType<PackedUnsignedLongView> type = new ListViewType<>(
-        BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, getListMaxSize());
-    ListViewRead<PackedUnsignedLongView> l1 = type.createDefault();
+    ListViewType<PackedUInt64View> type = new ListViewType<>(
+        BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
+    ListViewRead<PackedUInt64View> l1 = type.createDefault();
     l1w = l1.createWritableCopy();
   }
 
   @TearDown(Level.Iteration)
   public void cleanup() throws Exception {
-    ListViewRead<PackedUnsignedLongView> l1r = l1w.commitChanges();
+    ListViewRead<PackedUInt64View> l1r = l1w.commitChanges();
 //    System.out.println(
 //        "Tree nodes count: " + TreeUtil.estimateNonDefaultNodes(l1r.getBackingNode()) + ", size: "
 //            + l1r.size());
@@ -79,9 +79,9 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void createDefaultUIntList(Blackhole bh) {
-    ListViewType<PackedUnsignedLongView> type = new ListViewType<>(
-        BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, getListMaxSize());
-    ListViewRead<PackedUnsignedLongView> l1 = type.createDefault();
+    ListViewType<PackedUInt64View> type = new ListViewType<>(
+        BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
+    ListViewRead<PackedUInt64View> l1 = type.createDefault();
     bh.consume(l1);
   }
 
@@ -89,16 +89,16 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void append(Blackhole bh) {
-    l1w.append(new PackedUnsignedLongView(UnsignedLong.valueOf(1121212)));
+    l1w.append(new PackedUInt64View(UnsignedLong.valueOf(1121212)));
   }
 
   @Benchmark
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void incrementalHash(Blackhole bh) {
-    ListViewWrite<PackedUnsignedLongView> l2w = l2r.createWritableCopy();
-    l2w.set(12345, new PackedUnsignedLongView(UnsignedLong.valueOf(77777)));
-    ListViewRead<PackedUnsignedLongView> l2r_ = l2w.commitChanges();
+    ListViewWrite<PackedUInt64View> l2w = l2r.createWritableCopy();
+    l2w.set(12345, new PackedUInt64View(UnsignedLong.valueOf(77777)));
+    ListViewRead<PackedUInt64View> l2r_ = l2w.commitChanges();
     l2r_.hashTreeRoot();
   }
 }
