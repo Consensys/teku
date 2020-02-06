@@ -13,8 +13,6 @@ dependencyManagement {
 
     dependency 'com.google.guava:guava:28.1-jre'
     dependency 'com.google.code.gson:gson:2.8.6'
-    dependency 'com.google.protobuf:protobuf-java:3.10.0'
-    dependency 'com.google.protobuf:protoc:3.9.2'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1'
 
@@ -26,13 +24,6 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.0.4'
 
-    dependency 'io.grpc:protoc-gen-grpc-java:1.25.0'
-    dependency 'io.grpc:grpc-netty-shaded:1.25.0'
-    dependency 'io.grpc:grpc-protobuf:1.25.0'
-    dependency 'io.grpc:grpc-stub:1.25.0'
-
-    dependency 'io.grpc:grpc-core:1.25.0'
-    dependency 'io.grpc:grpc-netty:1.25.0'
     dependency 'io.javalin:javalin:3.6.0'
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'

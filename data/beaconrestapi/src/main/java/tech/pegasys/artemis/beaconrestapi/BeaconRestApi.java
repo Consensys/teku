@@ -19,6 +19,7 @@ import io.javalin.Javalin;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
@@ -46,6 +47,7 @@ public class BeaconRestApi {
 
     handlers.add(new GenesisTimeHandler(chainStorageClient));
     handlers.add(new BeaconHeadHandler(chainStorageClient));
+    handlers.add(new BeaconChainHeadHandler(chainStorageClient));
     handlers.add(new BeaconBlockHandler(chainStorageClient));
     handlers.add(new BeaconStateHandler(chainStorageClient));
     handlers.add(new FinalizedCheckpointHandler(chainStorageClient));

@@ -52,11 +52,6 @@ public class ArtemisConfiguration {
         PropertyValidator.inRange(0, 65535));
     builder.addString("node.discovery", "", "static or discv5", null);
     builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
-    builder.addInteger(
-        "node.naughtinessPercentage",
-        0,
-        "Percentage of Validator Clients that are naughty",
-        PropertyValidator.inRange(0, 101));
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
     builder.addInteger(
@@ -172,10 +167,6 @@ public class ArtemisConfiguration {
               .map(error -> error.position() + " " + error.toString())
               .collect(Collectors.joining("\n")));
     }
-  }
-
-  public int getNaughtinessPercentage() {
-    return config.getInteger("node.naughtinessPercentage");
   }
 
   public String getTimer() {

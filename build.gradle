@@ -332,13 +332,6 @@ subprojects {
   apply plugin: 'maven-publish'
 
   sourceSets {
-    // Add generated protobuf Java files to main/java sourceSet to appease Buildship.
-    main {
-      java {
-        srcDir file('gen/main/java')
-        srcDir file('gen/main/grpc')
-      }
-    }
     // test-support can be consumed as a library by other projects in their tests
     testSupport {
       java {
