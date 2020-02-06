@@ -13,18 +13,16 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import tech.pegasys.artemis.util.backing.type.ListViewType;
-
-public interface ListViewRead<C extends ViewRead> extends CompositeViewRead<C> {
+public interface ListViewWriteRef<R extends ViewRead, W extends R> extends
+    CompositeViewWriteRef<R, W>, ListViewWrite<R> {
 
   @Override
-  default ListViewWrite<C> createWritableCopy() {
-    throw new UnsupportedOperationException();
+  W get(int index);
+
+  default W append() {
+    @SuppressWarnings("unchecked")
+    R newElement = (R) getType().getElementType().createDefault();
+    append(newElement);
+    return get(size() - 1);
   }
-
-  @Override
-  ListViewType<C> getType();
-
-  @Override
-  int size();
 }

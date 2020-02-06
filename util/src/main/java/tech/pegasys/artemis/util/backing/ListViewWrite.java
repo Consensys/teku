@@ -13,19 +13,14 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface ListViewWrite<W extends ViewWrite, R extends ViewRead> extends
-    CompositeViewWrite<W, R>, ListViewRead<W> {
+public interface ListViewWrite<R extends ViewRead> extends
+    CompositeViewWrite<R>, ListViewRead<R> {
 
   @Override
   void set(int index, R value);
 
   default void append(R value) {
     set(size(), value);
-  }
-
-  default W append() {
-    append((R) getType().getElementType().createDefault());
-    return get(size() - 1);
   }
 
   @Override

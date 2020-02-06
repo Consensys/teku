@@ -16,11 +16,10 @@ package tech.pegasys.artemis.util.backing.type;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
-import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 
-public abstract class BasicViewType<C extends ViewWrite> implements ViewType {
+public abstract class BasicViewType<C extends ViewRead> implements ViewType {
 
   private final int bitsSize;
 

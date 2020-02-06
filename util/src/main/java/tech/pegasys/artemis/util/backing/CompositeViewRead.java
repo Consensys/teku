@@ -25,8 +25,4 @@ public interface CompositeViewRead<C extends ViewRead> extends ViewRead {
 
   @Override
   CompositeViewType getType();
-
-  default void update(int index, Function<C, C> mutator) {
-    set(index, mutator.apply(get(index)));
-  }
 }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface BasicView<C> extends ViewWrite {
+public interface BasicView<C> extends ViewRead {
 
   C get();
 }

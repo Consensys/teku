@@ -38,7 +38,7 @@ public class ContainerViewTest {
     TestSubContainerWrite createWritableCopy();
   }
 
-  public interface TestSubContainerWrite extends TestSubContainerRead<ViewWrite>, ContainerViewWrite {
+  public interface TestSubContainerWrite extends TestSubContainerRead<ViewRead>, ContainerViewWrite<ViewRead> {
 
     void setLong1(UnsignedLong val);
 
@@ -48,7 +48,7 @@ public class ContainerViewTest {
     TestSubContainerRead<ViewRead> commitChanges();
   }
 
-  public interface TestContainerRead<C extends ViewRead> extends ContainerViewRead<C>{
+  public interface TestContainerRead extends ContainerViewRead<ViewRead>{
 
       UnsignedLong getLong1();
 
@@ -62,7 +62,8 @@ public class ContainerViewTest {
     TestContainerWrite createWritableCopy();
   }
 
-    public interface TestContainerWrite extends TestContainerRead<ViewWrite>, ContainerViewWrite {
+    public interface TestContainerWrite extends TestContainerRead,
+        ContainerViewWriteRef<ViewRead, ViewWrite> {
 
       void setLong1(UnsignedLong val);
 
@@ -70,10 +71,10 @@ public class ContainerViewTest {
 
       ListViewWrite<PackedUnsignedLongView> getList1();
 
-      ListViewWrite<TestSubContainerWrite> getList2();
+      ListViewWrite<TestSubContainerRead> getList2();
 
       @Override
-      TestContainerRead<ViewRead> commitChanges();
+      TestContainerRead commitChanges();
     }
 
   public static class TestSubContainerImpl extends ContainerViewImpl {
@@ -143,8 +144,8 @@ public class ContainerViewTest {
     }
 
     @SuppressWarnings("unchecked")
-    public ListViewWrite<TestSubContainerWrite> getList2() {
-      return (ListViewWrite<TestSubContainerWrite>) get(4);
+    public ListViewWrite<TestSubContainerRead> getList2() {
+      return (ListViewWrite<TestSubContainerRead>) get(4);
     }
 
     //    @Override
@@ -172,12 +173,12 @@ public class ContainerViewTest {
 
     @Override
     public TestContainerWrite createWritableCopy() {
-      throw new UnsupportedOperationException();
+      return this;
     }
 
     @Override
-    public TestContainerRead<ViewRead> commitChanges() {
-      throw new UnsupportedOperationException();
+    public TestContainerRead commitChanges() {
+      return this;
     }
   }
 
@@ -186,6 +187,8 @@ public class ContainerViewTest {
     TestContainerRead c1 = TestContainerImpl.TYPE.createDefault();
     TestContainerWrite c1w = c1.createWritableCopy();
     c1w.setLong1(UnsignedLong.valueOf(0x111));
+    TestContainerRead c1r = c1w.commitChanges();
+    dumpBinaryTree(c1r.getBackingNode());
 //    c1w.getList2().append();
   }
 

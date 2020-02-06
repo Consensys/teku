@@ -18,22 +18,23 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
-import tech.pegasys.artemis.util.backing.ViewWrite;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UnsignedLongView;
 
-public class ListViewImpl<C extends ViewWrite> implements ListViewWrite<C> {
+public class ListViewImpl<C extends ViewRead> implements ListViewWrite<C> {
 
-  private final ContainerViewWrite container;
+  private final ContainerViewWrite<ViewRead> container;
 
   public ListViewImpl(VectorViewRead<C> data, int size) {
-    ContainerViewType<ContainerViewWrite> containerViewType =
+    ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(data.getType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
             ContainerViewImpl::new);
@@ -43,7 +44,7 @@ public class ListViewImpl<C extends ViewWrite> implements ListViewWrite<C> {
   }
 
   public ListViewImpl(ListViewType<C> type, TreeNode node) {
-    ContainerViewType<ContainerViewWrite> containerViewType =
+    ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UNSIGNED_LONG_TYPE),
             ContainerViewImpl::new);
@@ -99,5 +100,15 @@ public class ListViewImpl<C extends ViewWrite> implements ListViewWrite<C> {
   @Override
   public TreeNode getBackingNode() {
     return container.getBackingNode();
+  }
+
+  @Override
+  public ListViewRead<C> commitChanges() {
+    return this;
+  }
+
+  @Override
+  public ListViewWrite<C> createWritableCopy() {
+    return this;
   }
 }

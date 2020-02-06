@@ -16,11 +16,13 @@ package tech.pegasys.artemis.util.backing.view;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
-public class ContainerViewImpl implements ContainerViewWrite {
+public class ContainerViewImpl implements ContainerViewWriteRef<ViewRead, ViewWrite> {
   private final ContainerViewType<? extends ContainerViewWrite> type;
   private TreeNode backingNode;
 
@@ -40,14 +42,19 @@ public class ContainerViewImpl implements ContainerViewWrite {
   }
 
   @Override
-  public ViewWrite get(int index) {
+  public ViewRead get(int index) {
     checkIndex(index);
     TreeNode node = backingNode.get(type.treeWidth() + index);
-    return (ViewWrite) type.getChildType(index).createFromTreeNode(node);
+    return type.getChildType(index).createFromTreeNode(node);
   }
 
   @Override
-  public void set(int index, ViewWrite child) {
+  public ViewWrite getByRef(int index) {
+    return get(index).createWritableCopy();
+  }
+
+  @Override
+  public void set(int index, ViewRead child) {
     checkIndex(index);
     checkArgument(
         child.getType().equals(type.getChildType(index)),

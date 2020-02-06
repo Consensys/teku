@@ -27,14 +27,14 @@ public class VectorViewType<C extends ViewRead> extends CollectionViewType<C> {
   }
 
   @Override
-  public VectorViewRead<? extends C> createDefault() {
+  public VectorViewRead<C> createDefault() {
     return createFromTreeNode(
         TreeNodeImpl.createZeroTree(
             treeDepth(), getElementType().createDefault().getBackingNode()));
   }
 
   @Override
-  public VectorViewRead<? extends C> createFromTreeNode(TreeNode node) {
+  public VectorViewRead<C> createFromTreeNode(TreeNode node) {
     return new VectorViewImpl<C>(this, node);
   }
 }

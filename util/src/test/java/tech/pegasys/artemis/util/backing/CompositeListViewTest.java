@@ -67,7 +67,7 @@ public class CompositeListViewTest {
   @Test
   public void simpleTest1() {
     ListViewType<TestView> listType = new ListViewType<>(testType, 3);
-    ListViewWrite<TestView> list = listType.createDefault();
+    ListViewWrite<TestView> list = listType.createDefault().createWritableCopy();
     TreeNode n0 = list.getBackingNode();
     list.set(0, new TestView(0x111));
     TreeNode n1 = list.getBackingNode();

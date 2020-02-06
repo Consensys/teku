@@ -29,16 +29,14 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType<C> {
     super(maxLength, elementType);
   }
 
-
-
   @Override
   public ListViewRead<C> createDefault() {
-    return new ListViewImpl(getCompatibleVectorType().createDefault(), 0);
+    return new ListViewImpl<>(getCompatibleVectorType().createDefault(), 0);
   }
 
   @Override
   public ListViewRead<C> createFromTreeNode(TreeNode node) {
-    return new ListViewImpl<C>(this, node);
+    return new ListViewImpl<>(this, node);
   }
 
   public VectorViewType<C> getCompatibleVectorType() {

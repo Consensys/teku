@@ -13,18 +13,11 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface VectorViewWrite<W extends ViewWrite, R extends ViewRead>
-    extends CompositeViewWrite<W, R>, VectorViewRead<W> {
+public interface VectorViewWrite<R extends ViewRead>
+    extends CompositeViewWrite<R>, VectorViewRead<R> {
 
   @Override
-  default VectorViewRead<W> commitChanges() {
+  default VectorViewRead<R> commitChanges() {
     throw new UnsupportedOperationException();
-  }
-
-  public static void main(String[] args) throws Exception {
-    VectorViewRead<ContainerViewRead<ViewRead>> v1 = null;
-    ListViewWrite<? extends ViewWrite, ContainerViewRead<ViewRead>> v2 = v1
-        .createWritableCopy();
-    ListViewRead<ContainerViewRead<ViewRead>> v3 = v2.commitChanges();
   }
 }

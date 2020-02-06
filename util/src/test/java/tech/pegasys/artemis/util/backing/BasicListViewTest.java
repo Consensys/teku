@@ -27,7 +27,7 @@ public class BasicListViewTest {
   public void simpleUInt64ListTest() {
     ListViewType<PackedUnsignedLongView> listType =
         new ListViewType<>(BasicViewTypes.PACKED_UNSIGNED_LONG_TYPE, 7);
-    ListViewWrite<PackedUnsignedLongView> listView = listType.createDefault();
+    ListViewWrite<PackedUnsignedLongView> listView = listType.createDefault().createWritableCopy();
     TreeNode n0 = listView.getBackingNode();
     listView.append(new PackedUnsignedLongView(UnsignedLong.valueOf(0x111)));
     TreeNode n1 = listView.getBackingNode();
@@ -80,6 +80,7 @@ public class BasicListViewTest {
         () ->
             listType
                 .createFromTreeNode(n3)
+                .createWritableCopy()
                 .set(7, new PackedUnsignedLongView(UnsignedLong.valueOf(0xaaa))));
     Assertions.assertThrows(
         IllegalArgumentException.class, () -> listType.createFromTreeNode(n3).get(7));
