@@ -19,10 +19,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 
 class EventChannelsTest {
-  private final EventChannels channels = new EventChannels(EventChannel::create);
+  private final EventChannels channels =
+      new EventChannels(channel -> EventChannel.create(channel, new NoOpMetricsSystem()));
 
   @Test
   public void shouldBeAbleToGetPublisherBeforeSubscriber() {
