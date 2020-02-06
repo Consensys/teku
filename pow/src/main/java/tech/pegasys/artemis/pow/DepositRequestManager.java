@@ -109,15 +109,15 @@ public class DepositRequestManager {
           this.latestSuccessfullyQueriedBlockNumber;
     }
 
+    LOG.trace(
+        "Attempting to fetch deposit events for block numbers in the range ({}, {})",
+        latestSuccessfullyQueriedBlockNumberAtRequestStart,
+        latestCanonicalBlockNumberAtRequestStart);
+
     DefaultBlockParameter fromBlock =
         DefaultBlockParameter.valueOf(latestSuccessfullyQueriedBlockNumberAtRequestStart);
     DefaultBlockParameter toBlock =
         DefaultBlockParameter.valueOf(latestCanonicalBlockNumberAtRequestStart);
-
-    LOG.trace(
-        "Attempting to fetch deposit events for block numbers in the range ({}, {})",
-        latestSuccessfullyQueriedBlockNumber,
-        latestCanonicalBlockNumberAtRequestStart);
 
     fetchAndPublishDepositEventsInBlockRange(fromBlock, toBlock)
         .finish(
@@ -191,6 +191,7 @@ public class DepositRequestManager {
                   UnsignedLong.valueOf(block.getTimestamp()),
                   groupedDepositEventResponse.stream()
                       .map(Deposit::new)
+                      .sorted(Comparator.comparing(Deposit::getMerkle_tree_index))
                       .collect(Collectors.toList()));
             })
         .collect(Collectors.toList());
@@ -213,6 +214,9 @@ public class DepositRequestManager {
   }
 
   private void publishDeposits(DepositsFromBlockEvent event) {
+    for (int i = 0; i < event.getDeposits().size(); i++) {
+      System.out.println(event.getDeposits().get(i));
+    }
     depositEventChannel.notifyDepositsFromBlock(event);
   }
 }
