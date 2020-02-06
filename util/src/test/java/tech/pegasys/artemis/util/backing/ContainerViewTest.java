@@ -17,8 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.Root;
+import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
@@ -188,7 +187,7 @@ public class ContainerViewTest {
     TestContainerWrite c1w = c1.createWritableCopy();
     c1w.setLong1(UnsignedLong.valueOf(0x111));
     TestContainerRead c1r = c1w.commitChanges();
-    dumpBinaryTree(c1r.getBackingNode());
+    TreeUtil.dumpBinaryTree(c1r.getBackingNode());
 //    c1w.getList2().append();
   }
 
@@ -200,35 +199,8 @@ public class ContainerViewTest {
     ListViewWrite<PackedUnsignedLongView> list1 = c1.getList1();
     list1.append(PackedUnsignedLongView.fromLong(0x333));
     c1.setList1(list1);
-    dumpBinaryTree(c1.getBackingNode());
+    TreeUtil.dumpBinaryTree(c1.getBackingNode());
   }
 
-  public static void dumpBinaryTree(TreeNode node) {
-    dumpBinaryTreeRec(node, "", false);
-  }
 
-  private static void dumpBinaryTreeRec(TreeNode node, String prefix, boolean printCommit) {
-    if (node instanceof Root) {
-      Root rootNode = (Root) node;
-      System.out.println(prefix + rootNode);
-    } else {
-      Commit commitNode = (Commit) node;
-      String s = "├─┐";
-      if (printCommit) {
-        s += " " + commitNode;
-      }
-      if (commitNode.left() instanceof Root) {
-        System.out.println(prefix + "├─" + commitNode.left());
-      } else {
-        System.out.println(prefix + s);
-        dumpBinaryTreeRec(commitNode.left(), prefix + "│ ", printCommit);
-      }
-      if (commitNode.right() instanceof Root) {
-        System.out.println(prefix + "└─" + commitNode.right());
-      } else {
-        System.out.println(prefix + "└─┐");
-        dumpBinaryTreeRec(commitNode.right(), prefix + "  ", printCommit);
-      }
-    }
-  }
 }
