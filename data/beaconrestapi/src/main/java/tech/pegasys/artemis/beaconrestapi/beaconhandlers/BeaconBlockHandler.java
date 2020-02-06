@@ -16,7 +16,6 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
-import io.javalin.http.ForbiddenResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

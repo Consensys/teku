@@ -267,7 +267,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   public Bytes32 getFinalizedRoot() {
-    return store == null ? null: store.getFinalizedCheckpoint().getRoot();
+    return store == null ? null : store.getFinalizedCheckpoint().getRoot();
   }
 
   public UnsignedLong getJustifiedEpoch() {
