@@ -27,10 +27,6 @@ import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
 class ValidatorLoader {
 
   static Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
-    int naughtinessPercentage = config.getNaughtinessPercentage();
-    int numValidators = config.getNumValidators();
-
-    long numNaughtyValidators = Math.round((naughtinessPercentage * numValidators) / 100.0);
     ValidatorKeyProvider keyProvider;
     if (config.getValidatorsKeyFile() != null) {
       keyProvider = new YamlValidatorKeyProvider();
@@ -48,8 +44,7 @@ class ValidatorLoader {
       STDOUT.log(Level.DEBUG, "Validator " + i + ": " + keypair.getPublicKey().toString());
 
       validators.put(
-          keypair.getPublicKey(), new ValidatorInfo(numNaughtyValidators > 0, signerService));
-      numNaughtyValidators--;
+          keypair.getPublicKey(), new ValidatorInfo(signerService));
     }
     return validators;
   }

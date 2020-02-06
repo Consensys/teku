@@ -19,17 +19,12 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorInfo {
-  private final boolean naughty;
+
   private final MessageSignerService signerService;
   private int validatorIndex = -1;
 
-  public ValidatorInfo(final boolean naughty, final MessageSignerService signerService) {
-    this.naughty = naughty;
+  public ValidatorInfo(final MessageSignerService signerService) {
     this.signerService = signerService;
-  }
-
-  public boolean isNaughty() {
-    return naughty;
   }
 
   public MessageSignerService getSignerService() {
