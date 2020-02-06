@@ -51,7 +51,6 @@ public class DepositRequestManager {
 
   private volatile Disposable newBlockSubscription;
   private boolean active = false;
-  private boolean requestQueued = false;
   private BigInteger latestCanonicalBlockNumber;
   private BigInteger latestSuccessfullyQueriedBlockNumber = BigInteger.ZERO;
 
@@ -99,12 +98,9 @@ public class DepositRequestManager {
     final BigInteger latestSuccessfullyQueriedBlockNumberAtRequestStart;
     synchronized (DepositRequestManager.this) {
       if (active) {
-        requestQueued = true;
         return;
-      } else {
-        active = true;
-        requestQueued = false;
       }
+      active = true;
 
       latestCanonicalBlockNumberAtRequestStart = this.latestCanonicalBlockNumber;
       latestSuccessfullyQueriedBlockNumberAtRequestStart =
@@ -131,7 +127,7 @@ public class DepositRequestManager {
       BigInteger latestCanonicalBlockNumberAtRequestStart) {
     this.latestSuccessfullyQueriedBlockNumber = latestCanonicalBlockNumberAtRequestStart;
     active = false;
-    if (requestQueued) {
+    if (latestCanonicalBlockNumber.compareTo(latestSuccessfullyQueriedBlockNumber) > 0) {
       getLatestDeposits();
     }
   }
