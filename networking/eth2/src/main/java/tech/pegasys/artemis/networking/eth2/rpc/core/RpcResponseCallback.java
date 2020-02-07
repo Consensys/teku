@@ -34,13 +34,13 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
 
   @Override
   public void completeSuccessfully() {
-    rpcStream.disconnect().reportExceptions();
+    rpcStream.closeWriteStream().reportExceptions();
   }
 
   @Override
   public void completeWithError(final RpcException error) {
     LOG.debug("Responding to RPC request with error: {}", error.getErrorMessage());
     rpcStream.writeBytes(rpcEncoder.encodeErrorResponse(error)).reportExceptions();
-    rpcStream.disconnect().reportExceptions();
+    rpcStream.closeWriteStream().reportExceptions();
   }
 }
