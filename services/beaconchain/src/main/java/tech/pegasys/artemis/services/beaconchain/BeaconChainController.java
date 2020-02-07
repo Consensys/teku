@@ -184,10 +184,13 @@ public class BeaconChainController {
       this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
-      PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
+      Optional<PrivKey> pk =
+          bytes.isEmpty()
+              ? Optional.empty()
+              : Optional.of(KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe()));
       NetworkConfig p2pConfig =
           new NetworkConfig(
-              Optional.of(pk),
+              pk,
               config.getNetworkInterface(),
               config.getPort(),
               config.getAdvertisedPort(),
