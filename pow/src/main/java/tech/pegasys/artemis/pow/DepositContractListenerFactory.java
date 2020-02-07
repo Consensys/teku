@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.pow;
 
-import com.google.common.eventbus.EventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
@@ -24,16 +23,13 @@ import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 
 public class DepositContractListenerFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   public static DepositContractListener simulationDeployDepositContract(
-      EventBus eventBus,
-      DepositEventChannel depositEventChannel,
-      GanacheController controller,
-      TimeProvider timeProvider) {
+      DepositEventChannel depositEventChannel, GanacheController controller) {
     Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
     Credentials credentials =
         Credentials.create(controller.getAccounts().get(0).secretKey().bytes().toHexString());
@@ -46,29 +42,24 @@ public class DepositContractListenerFactory {
           e);
     }
     return new DepositContractListener(
-        web3j, contract, createDepositHandler(timeProvider, eventBus, depositEventChannel));
+        web3j, contract, createDepositRequestManager(web3j, depositEventChannel, contract));
   }
 
   public static DepositContractListener eth1DepositContract(
-      Web3j web3j,
-      EventBus eventBus,
-      DepositEventChannel depositEventChannel,
-      String address,
-      TimeProvider timeProvider) {
+      Web3j web3j, DepositEventChannel depositEventChannel, String address) {
     DepositContract contract =
         DepositContract.load(
             address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
     return new DepositContractListener(
-        web3j, contract, createDepositHandler(timeProvider, eventBus, depositEventChannel));
+        web3j, contract, createDepositRequestManager(web3j, depositEventChannel, contract));
   }
 
-  private static PublishOnInactivityDepositHandler createDepositHandler(
-      TimeProvider timeProvider, EventBus eventBus, DepositEventChannel depositEventChannel) {
-    PublishOnInactivityDepositHandler handler =
-        new PublishOnInactivityDepositHandler(
-            timeProvider,
-            new BatchByBlockDepositHandler(depositEventChannel::notifyDepositsFromBlock));
-    eventBus.register(handler);
-    return handler;
+  private static DepositRequestManager createDepositRequestManager(
+      Web3j web3j, DepositEventChannel depositEventChannel, DepositContract depositContract) {
+    return new DepositRequestManager(
+        new Eth1Provider(web3j),
+        new DelayedExecutorAsyncRunner(),
+        depositEventChannel,
+        depositContract);
   }
 }
