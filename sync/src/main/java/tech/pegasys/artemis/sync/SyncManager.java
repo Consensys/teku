@@ -52,11 +52,11 @@ public class SyncManager extends Service {
   private final Set<NodeId> peersWithSyncErrors = new HashSet<>();
 
   SyncManager(
-      final AsyncRunner asynRunner,
+      final AsyncRunner asyncRunner,
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final PeerSync peerSync) {
-    this.asyncRunner = asynRunner;
+    this.asyncRunner = asyncRunner;
     this.network = network;
     this.storageClient = storageClient;
     this.peerSync = peerSync;
@@ -66,11 +66,12 @@ public class SyncManager extends Service {
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
+    final AsyncRunner asyncRunner = new DelayedExecutorAsyncRunner();
     return new SyncManager(
-        new DelayedExecutorAsyncRunner(),
+        asyncRunner,
         network,
         storageClient,
-        new PeerSync(storageClient, blockImporter));
+        new PeerSync(asyncRunner, storageClient, blockImporter));
   }
 
   @Override

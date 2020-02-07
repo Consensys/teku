@@ -45,6 +45,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerSyncTest {
@@ -67,6 +68,7 @@ public class PeerSyncTest {
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
 
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private PeerSync peerSync;
 
   @SuppressWarnings("unchecked")
@@ -83,7 +85,7 @@ public class PeerSyncTest {
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
     when(blockImporter.importBlock(any()))
         .thenReturn(BlockImportResult.successful(processingRecord));
-    peerSync = new PeerSync(storageClient, blockImporter);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
   }
 
   @Test
@@ -245,7 +247,7 @@ public class PeerSyncTest {
                 peerHeadSlot));
 
     when(peer.getStatus()).thenReturn(peer_status);
-    peerSync = new PeerSync(storageClient, blockImporter);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
 
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
     final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
@@ -277,6 +279,7 @@ public class PeerSyncTest {
     // Signal the request for data from the peer is complete.
     requestFuture1.complete(null);
 
+    asyncRunner.executeQueuedActions();
     final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     verify(peer)
         .requestBlocksByRange(
@@ -319,7 +322,7 @@ public class PeerSyncTest {
                 peerHeadSlot));
 
     when(peer.getStatus()).thenReturn(peer_status);
-    peerSync = new PeerSync(storageClient, blockImporter);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
 
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
     final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
@@ -343,6 +346,7 @@ public class PeerSyncTest {
     requestFuture1.complete(null);
     verify(blockImporter, never()).importBlock(any());
 
+    asyncRunner.executeQueuedActions();
     final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     verify(peer)
         .requestBlocksByRange(
