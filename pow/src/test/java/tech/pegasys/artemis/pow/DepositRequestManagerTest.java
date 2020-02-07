@@ -182,8 +182,6 @@ public class DepositRequestManagerTest {
 
     firstRequestFuture.completeExceptionally(new RuntimeException("Nope"));
 
-    System.out.println(asyncRunner.hasDelayedActions());
-
     SafeFuture<List<DepositContract.DepositEventEventResponse>> secondRequestFuture =
         mockContractEventsInRange(0, 10);
 
