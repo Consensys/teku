@@ -63,7 +63,7 @@ class CommitteeAssignmentManagerTest {
   @BeforeEach
   void setup() {
     // Own only one validator
-    validators.put(validatorKeys.get(0).getPublicKey(), new ValidatorInfo(false, null));
+    validators.put(validatorKeys.get(0).getPublicKey(), new ValidatorInfo(null));
 
     getIndicesOfOurValidators(state, validators);
     committeeAssignments = new HashMap<>();

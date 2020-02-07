@@ -237,7 +237,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
         .orElse(false);
   }
 
-  private Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
+  public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
     if (store == null || Bytes32.ZERO.equals(bestBlockRoot)) {
       LOG.trace("No block root at slot {} because store or best block root is not set", slot);
       return Optional.empty();
@@ -261,8 +261,21 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     return Optional.of(BeaconStateUtil.get_block_root_at_slot(bestState, slot));
   }
 
+  // TODO: These methods should not return zero if null. We should handle this better
   public UnsignedLong getFinalizedEpoch() {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
+  }
+
+  public Bytes32 getFinalizedRoot() {
+    return store == null ? null : store.getFinalizedCheckpoint().getRoot();
+  }
+
+  public UnsignedLong getJustifiedEpoch() {
+    return store == null ? UnsignedLong.ZERO : store.getJustifiedCheckpoint().getEpoch();
+  }
+
+  public Bytes32 getJustifiedRoot() {
+    return store == null ? null : store.getJustifiedCheckpoint().getRoot();
   }
 
   @Override

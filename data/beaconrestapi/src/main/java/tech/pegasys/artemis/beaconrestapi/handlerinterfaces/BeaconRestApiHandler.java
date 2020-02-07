@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.beaconrestapi.handlerinterfaces;
 
 import io.javalin.http.Context;
+import java.util.List;
+import java.util.Map;
 
 public interface BeaconRestApiHandler {
   String getPath();
@@ -29,6 +31,14 @@ public interface BeaconRestApiHandler {
 
     public String getQueryParam(String name) {
       return javalinContext.queryParam(name);
+    }
+
+    public String getQueryString() {
+      return javalinContext.queryString();
+    }
+
+    public Map<String, List<String>> getQueryParamMap() {
+      return javalinContext.queryParamMap();
     }
   }
 }

@@ -26,7 +26,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.validator.Signer;
+import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
@@ -182,7 +182,7 @@ public class BeaconChainUtil {
     final int proposerIndex =
         withValidProposer ? correctProposerIndex : getWrongProposerIndex(correctProposerIndex);
 
-    final Signer signer = getSigner(proposerIndex);
+    final MessageSignerService signer = getSigner(proposerIndex);
     if (attestations.isPresent()) {
       return blockCreator.createBlockWithAttestations(
           signer, slot, preState, bestBlockRoot, attestations.get());
@@ -220,8 +220,9 @@ public class BeaconChainUtil {
     return actualProposerIndex == 0 ? 1 : actualProposerIndex - 1;
   }
 
-  private Signer getSigner(final int proposerIndex) {
+  private MessageSignerService getSigner(final int proposerIndex) {
     BLSKeyPair proposerKey = validatorKeys.get(proposerIndex);
-    return (message, domain) -> BLSSignature.sign(proposerKey, message, domain);
+    return (message, domain) ->
+        SafeFuture.completedFuture(BLSSignature.sign(proposerKey, message, domain));
   }
 }

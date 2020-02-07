@@ -13,24 +13,26 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import io.grpc.ManagedChannel;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorInfo {
-  private final boolean naughty;
-  private final ManagedChannel channel;
+
+  private final MessageSignerService signerService;
   private int validatorIndex = -1;
 
-  public ValidatorInfo(final boolean naughty, final ManagedChannel channel) {
-    this.naughty = naughty;
-    this.channel = channel;
+  public ValidatorInfo(final MessageSignerService signerService) {
+    this.signerService = signerService;
   }
 
-  public boolean isNaughty() {
-    return naughty;
+  public MessageSignerService getSignerService() {
+    return signerService;
   }
 
-  public ManagedChannel getChannel() {
-    return channel;
+  public SafeFuture<BLSSignature> sign(final Bytes message, final Bytes domain) {
+    return signerService.sign(message, domain);
   }
 
   public int getValidatorIndex() {

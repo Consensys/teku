@@ -8,7 +8,6 @@ port = 9000
 discovery = "static"
 bootnodes = ""
 advertisedPort = 9000
-naughtinessPercentage = 0
 constants = "minimal"
 
 [interop]
