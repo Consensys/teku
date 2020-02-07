@@ -3,7 +3,6 @@
 *.bat -text
 *.pcap binary
 *.blocks binary
-validator_test_data.json filter=lfs diff=lfs merge=lfs -text
 *.dylib binary
 *.so binary
 *.gz binary
