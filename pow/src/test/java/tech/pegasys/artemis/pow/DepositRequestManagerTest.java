@@ -13,34 +13,31 @@
 
 package tech.pegasys.artemis.pow;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
 import com.google.common.primitives.Longs;
-import com.google.common.primitives.UnsignedLong;
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.subjects.PublishSubject;
 import java.math.BigInteger;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.web3j.protocol.core.DefaultBlockParameter;
+import org.mockito.ArgumentMatcher;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.utils.Numeric;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
@@ -49,9 +46,10 @@ public class DepositRequestManagerTest {
   private Eth1Provider eth1Provider;
   private DepositEventChannel depositEventChannel;
   private DepositContract depositContract;
-  private AsyncRunner asyncRunner;
+  private StubAsyncRunner asyncRunner;
 
   private DepositRequestManager depositRequestManager;
+  private PublishSubject<EthBlock.Block> blockPublisher;
 
   @BeforeEach
   void setUp() {
@@ -61,75 +59,49 @@ public class DepositRequestManagerTest {
     asyncRunner = new StubAsyncRunner();
 
     depositRequestManager =
-        spy(
-            new DepositRequestManager(
-                eth1Provider, asyncRunner, depositEventChannel, depositContract));
+        new DepositRequestManager(eth1Provider, asyncRunner, depositEventChannel, depositContract);
+
+    blockPublisher = mockFlowablePublisher();
   }
 
   @Test
   void restartOnSubscriptionFailure() {
-    mockLatestCanonicalBlockNumber(1);
+    blockPublisher.onError(new RuntimeException("Nope"));
     depositRequestManager.start();
-    verify(depositRequestManager, atLeast(2)).start();
-  }
+    verify(eth1Provider).getLatestBlockFlowable();
 
-  @Test
-  void checkTheRangeAskedForIsCorrect() {
-    mockLatestCanonicalBlockNumber(10);
-    depositRequestManager.start();
-    ArgumentCaptor<DefaultBlockParameter> fromBlockArgumentCaptor =
-        ArgumentCaptor.forClass(DefaultBlockParameter.class);
-    ArgumentCaptor<DefaultBlockParameter> toBlockArgumentCaptor =
-        ArgumentCaptor.forClass(DefaultBlockParameter.class);
-    verify(depositContract)
-        .depositEventEventsInRange(
-            fromBlockArgumentCaptor.capture(), toBlockArgumentCaptor.capture());
+    asyncRunner.executeQueuedActions();
 
-    assertThat(Numeric.decodeQuantity(fromBlockArgumentCaptor.getValue().getValue())).isEqualTo(0);
-    assertThat(Numeric.decodeQuantity(toBlockArgumentCaptor.getValue().getValue())).isEqualTo(10);
+    verify(eth1Provider, times(2)).getLatestBlockFlowable();
   }
 
   @Test
   void depositsInConsecutiveBlocks() {
-    mockLatestCanonicalBlockNumber(10);
-
-    mockContractEventsInRange(
-        0,
-        10,
-        List.of(
-            mockDepositEventEventResponse(1, "0x1234", 1),
-            mockDepositEventEventResponse(2, "0x1234", 1),
-            mockDepositEventEventResponse(3, "0x2345", 2)));
+    SafeFuture<List<DepositContract.DepositEventEventResponse>> depositEventsFuture =
+        mockContractEventsInRange(0, 10);
 
     mockBlockForEth1Provider("0x1234", 1, 1000);
     mockBlockForEth1Provider("0x2345", 2, 1014);
 
     depositRequestManager.start();
 
-    ArgumentCaptor<DepositsFromBlockEvent> eventArgumentCaptor =
-        ArgumentCaptor.forClass(DepositsFromBlockEvent.class);
-    verify(depositEventChannel, times(2)).notifyDepositsFromBlock(eventArgumentCaptor.capture());
-    assertThat(eventArgumentCaptor.getAllValues()).hasSize(2);
-    assertThat(
-            eventArgumentCaptor.getAllValues().stream()
-                .map(DepositsFromBlockEvent::getBlockNumber)
-                .map(UnsignedLong::longValue)
-                .collect(Collectors.toList()))
-        .containsExactly(1L, 2L);
+    pushLatestCanonicalBlockWithNumber(10);
+
+    depositEventsFuture.complete(
+        List.of(
+            mockDepositEventEventResponse(1, "0x1234", 1),
+            mockDepositEventEventResponse(2, "0x1234", 1),
+            mockDepositEventEventResponse(3, "0x2345", 2)));
+
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 2)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
+    verifyNoMoreInteractions(depositEventChannel);
   }
 
   @Test
   void noDepositsInSomeBlocksInRange() {
-    mockLatestCanonicalBlockNumber(10);
-
-    mockContractEventsInRange(
-        0,
-        10,
-        List.of(
-            mockDepositEventEventResponse(1, "0x1234", 1),
-            mockDepositEventEventResponse(2, "0x1234", 1),
-            mockDepositEventEventResponse(3, "0x2345", 2),
-            mockDepositEventEventResponse(4, "0x4567", 4)));
+    SafeFuture<List<DepositContract.DepositEventEventResponse>> depositEventsFuture =
+        mockContractEventsInRange(0, 10);
 
     mockBlockForEth1Provider("0x1234", 1, 1000);
     mockBlockForEth1Provider("0x2345", 2, 1014);
@@ -137,16 +109,94 @@ public class DepositRequestManagerTest {
 
     depositRequestManager.start();
 
-    ArgumentCaptor<DepositsFromBlockEvent> eventArgumentCaptor =
-        ArgumentCaptor.forClass(DepositsFromBlockEvent.class);
-    verify(depositEventChannel, times(3)).notifyDepositsFromBlock(eventArgumentCaptor.capture());
-    assertThat(eventArgumentCaptor.getAllValues()).hasSize(3);
-    assertThat(
-            eventArgumentCaptor.getAllValues().stream()
-                .map(DepositsFromBlockEvent::getBlockNumber)
-                .map(UnsignedLong::longValue)
-                .collect(Collectors.toList()))
-        .containsExactly(1L, 2L, 4L);
+    pushLatestCanonicalBlockWithNumber(10);
+
+    depositEventsFuture.complete(
+        List.of(
+            mockDepositEventEventResponse(1, "0x1234", 1),
+            mockDepositEventEventResponse(2, "0x2345", 2),
+            mockDepositEventEventResponse(3, "0x4567", 4)));
+
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 1)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(4, 1)));
+    verifyNoMoreInteractions(depositEventChannel);
+  }
+
+  @Test
+  void doesAnotherRequestWhenTheLatestCanonicalBlockGetsUpdatedDuringCurrentRequest() {
+
+    SafeFuture<List<DepositContract.DepositEventEventResponse>> firstRequestFuture =
+        mockContractEventsInRange(0, 10);
+
+    SafeFuture<List<DepositContract.DepositEventEventResponse>> secondRequestFuture =
+        mockContractEventsInRange(11, 22);
+
+    mockBlockForEth1Provider("0x0001", 1, 1000);
+    mockBlockForEth1Provider("0x0002", 2, 1014);
+    mockBlockForEth1Provider("0x0004", 4, 1042);
+    mockBlockForEth1Provider("0x0010", 10, 1140);
+    mockBlockForEth1Provider("0x0011", 11, 1154);
+    mockBlockForEth1Provider("0x0014", 14, 1196);
+
+    depositRequestManager.start();
+
+    pushLatestCanonicalBlockWithNumber(10);
+
+    firstRequestFuture.complete(
+        List.of(
+            mockDepositEventEventResponse(1, "0x0001", 1),
+            mockDepositEventEventResponse(2, "0x0001", 1),
+            mockDepositEventEventResponse(3, "0x0002", 2),
+            mockDepositEventEventResponse(4, "0x0004", 4),
+            mockDepositEventEventResponse(5, "0x0010", 10)));
+
+    pushLatestCanonicalBlockWithNumber(22);
+
+    secondRequestFuture.complete(
+        List.of(
+            mockDepositEventEventResponse(6, "0x0011", 11),
+            mockDepositEventEventResponse(7, "0x0014", 14)));
+
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 2)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(4, 1)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(10, 1)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(11, 1)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(14, 1)));
+    verifyNoMoreInteractions(depositEventChannel);
+  }
+
+  @Test
+  void runSecondAttemptWhenFirstAttemptFails() {
+
+    SafeFuture<List<DepositContract.DepositEventEventResponse>> firstRequestFuture =
+        mockContractEventsInRange(0, 10);
+
+    mockBlockForEth1Provider("0x0001", 1, 1000);
+    mockBlockForEth1Provider("0x0002", 2, 1014);
+
+    depositRequestManager.start();
+
+    pushLatestCanonicalBlockWithNumber(10);
+
+    firstRequestFuture.completeExceptionally(new RuntimeException("Nope"));
+
+    System.out.println(asyncRunner.hasDelayedActions());
+
+    SafeFuture<List<DepositContract.DepositEventEventResponse>> secondRequestFuture =
+        mockContractEventsInRange(0, 10);
+
+    secondRequestFuture.complete(
+        List.of(
+            mockDepositEventEventResponse(1, "0x0001", 1),
+            mockDepositEventEventResponse(2, "0x0002", 2)));
+
+    asyncRunner.executeQueuedActions();
+
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 1)));
+    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
+    verifyNoMoreInteractions(depositEventChannel);
   }
 
   private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {
@@ -157,20 +207,20 @@ public class DepositRequestManagerTest {
     when(eth1Provider.getEth1BlockFuture(blockHash)).thenReturn(SafeFuture.completedFuture(block));
   }
 
-  private void mockLatestCanonicalBlockNumber(long latestBlockNumber) {
+  private void pushLatestCanonicalBlockWithNumber(long latestBlockNumber) {
     EthBlock.Block block = mock(EthBlock.Block.class);
     when(block.getNumber())
         .thenReturn(
             BigInteger.valueOf(latestBlockNumber).add(ETH1_FOLLOW_DISTANCE.bigIntegerValue()));
-    Flowable<EthBlock.Block> blockFlowable = Flowable.just(block);
-    when(eth1Provider.getLatestBlockFlowable()).thenReturn(blockFlowable);
+    blockPublisher.onNext(block);
   }
 
-  private void mockContractEventsInRange(
-      long fromBlockNumber,
-      long toBlockNumber,
-      List<DepositContract.DepositEventEventResponse> listOfEventResponsesToReturn) {
-    when(depositContract.depositEventEventsInRange(
+  private SafeFuture<List<DepositContract.DepositEventEventResponse>> mockContractEventsInRange(
+      long fromBlockNumber, long toBlockNumber) {
+    SafeFuture<List<DepositContract.DepositEventEventResponse>> safeFuture = new SafeFuture<>();
+    doReturn(safeFuture)
+        .when(depositContract)
+        .depositEventEventsInRange(
             argThat(
                 argument ->
                     Numeric.decodeQuantity(argument.getValue())
@@ -178,8 +228,8 @@ public class DepositRequestManagerTest {
             argThat(
                 argument ->
                     Numeric.decodeQuantity(argument.getValue())
-                        .equals(BigInteger.valueOf(toBlockNumber)))))
-        .thenReturn(SafeFuture.completedFuture(listOfEventResponsesToReturn));
+                        .equals(BigInteger.valueOf(toBlockNumber))));
+    return safeFuture;
   }
 
   private DepositContract.DepositEventEventResponse mockDepositEventEventResponse(
@@ -200,7 +250,17 @@ public class DepositRequestManagerTest {
     return depositEventEventResponse;
   }
 
-  private DefaultBlockParameter blockNum(long i) {
-    return DefaultBlockParameter.valueOf(BigInteger.valueOf(i));
+  private PublishSubject<EthBlock.Block> mockFlowablePublisher() {
+    PublishSubject<EthBlock.Block> ps = PublishSubject.create();
+    Flowable<EthBlock.Block> blockFlowable = ps.toFlowable(BackpressureStrategy.LATEST);
+    when(eth1Provider.getLatestBlockFlowable()).thenReturn(blockFlowable);
+    return ps;
+  }
+
+  private ArgumentMatcher<DepositsFromBlockEvent> isEvent(
+      final long expectedBlockNumber, final long expectedNumberOfDeposits) {
+    return argument ->
+        argument.getBlockNumber().longValue() == expectedBlockNumber
+            && argument.getDeposits().size() == expectedNumberOfDeposits;
   }
 }

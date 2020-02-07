@@ -51,7 +51,7 @@ public class DepositRequestManager {
 
   private volatile Disposable newBlockSubscription;
   private boolean active = false;
-  private BigInteger latestCanonicalBlockNumber;
+  private BigInteger latestCanonicalBlockNumber = BigInteger.ZERO;
   private BigInteger latestSuccessfullyQueriedBlockNumber = BigInteger.ZERO;
 
   public DepositRequestManager(
@@ -80,7 +80,14 @@ public class DepositRequestManager {
       subscription.dispose();
     }
     LOG.warn("New block subscription failed, retrying.", err);
-    start();
+    asyncRunner
+        .getDelayedFuture(Constants.ETH1_SUBSCRIPTION_RETRY_TIMEOUT, TimeUnit.SECONDS)
+        .finish(
+            this::start,
+            (error) ->
+                LOG.warn(
+                    "Unable to subscribe to the Eth1Node. Node won't have access to new deposits.",
+                    error));
   }
 
   public void stop() {
@@ -89,6 +96,9 @@ public class DepositRequestManager {
 
   private synchronized void updateLatestCanonicalBlockNumber(
       BigInteger latestCanonicalBlockNumber) {
+    if (latestCanonicalBlockNumber.compareTo(this.latestCanonicalBlockNumber) <= 0) {
+      return;
+    }
     this.latestCanonicalBlockNumber = latestCanonicalBlockNumber;
     getLatestDeposits();
   }
@@ -125,17 +135,19 @@ public class DepositRequestManager {
 
   private synchronized void onDepositRequestSuccessful(
       BigInteger latestCanonicalBlockNumberAtRequestStart) {
-    this.latestSuccessfullyQueriedBlockNumber = latestCanonicalBlockNumberAtRequestStart;
+    this.latestSuccessfullyQueriedBlockNumber =
+        latestCanonicalBlockNumberAtRequestStart.add(BigInteger.ONE);
     active = false;
     if (latestCanonicalBlockNumber.compareTo(latestSuccessfullyQueriedBlockNumber) > 0) {
       getLatestDeposits();
     }
   }
 
-  private void onDepositRequestFailed(
+  private synchronized void onDepositRequestFailed(
       Throwable err, BigInteger latestCanonicalBlockNumberAtRequestStart) {
+    active = false;
     LOG.warn(
-        "Failed to fetch deposit events for block numbers in the range ({},{}): {}",
+        "Failed to fetch deposit events for block numbers in the range ({}, {})",
         latestSuccessfullyQueriedBlockNumber,
         latestCanonicalBlockNumberAtRequestStart,
         err);
