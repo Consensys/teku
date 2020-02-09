@@ -133,9 +133,9 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @param errorHandler the function returning a new CompletionStage
    * @return the SafeFuture
    */
-  @SuppressWarnings("FutureReturnValueIgnored")
+  @SuppressWarnings({"FutureReturnValueIgnored", "MissingOverride"})
   public SafeFuture<T> exceptionallyCompose(
-      final Function<Throwable, CompletionStage<T>> errorHandler) {
+      final Function<Throwable, ? extends CompletionStage<T>> errorHandler) {
     final SafeFuture<T> result = new SafeFuture<>();
     whenComplete(
         (value, error) -> {
