@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
+import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,7 @@ public class BeaconRestApi {
   public BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
+      EventBus eventBus,
       final int requestedPortNumber) {
     app = Javalin.create();
     app.server().setServerPort(requestedPortNumber);
@@ -48,7 +50,7 @@ public class BeaconRestApi {
     handlers.add(new GenesisTimeHandler(chainStorageClient));
     handlers.add(new BeaconHeadHandler(chainStorageClient));
     handlers.add(new BeaconChainHeadHandler(chainStorageClient));
-    handlers.add(new BeaconBlockHandler(chainStorageClient));
+    handlers.add(new BeaconBlockHandler(chainStorageClient, eventBus));
     handlers.add(new BeaconStateHandler(chainStorageClient));
     handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
     handlers.add(new PeerIdHandler(p2pNetwork));
