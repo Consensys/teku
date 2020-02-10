@@ -22,7 +22,6 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.artemis.util.backing.ListViewRead;
@@ -66,15 +65,6 @@ public class ListBenchmark {
         new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
     ListViewRead<PackedUInt64View> l1 = type.createDefault();
     l1w = l1.createWritableCopy();
-  }
-
-  @TearDown(Level.Iteration)
-  public void cleanup() throws Exception {
-    ListViewRead<PackedUInt64View> l1r = l1w.commitChanges();
-    //    System.out.println(
-    //        "Tree nodes count: " + TreeUtil.estimateNonDefaultNodes(l1r.getBackingNode()) + ",
-    // size: "
-    //            + l1r.size());
   }
 
   @Benchmark
