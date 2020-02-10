@@ -1,7 +1,6 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':pow')
-  implementation project(':proto')
   implementation project(':ethereum:datastructures')
   implementation project(':util')
   implementation project(':data')
@@ -13,8 +12,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'io.grpc:grpc-stub'
-  implementation 'com.google.protobuf:protobuf-java'
 
   implementation 'com.google.code.gson:gson'
   implementation 'com.google.guava:guava'

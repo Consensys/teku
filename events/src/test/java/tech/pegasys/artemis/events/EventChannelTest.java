@@ -24,35 +24,38 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.artemis.events.AsyncEventDeliverer.QueueReader;
 
 class EventChannelTest {
+  private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final ChannelExceptionHandler exceptionHandler = mock(ChannelExceptionHandler.class);
 
   @Test
   public void shouldRejectClassesThatAreNotInterfaces() {
-    assertThatThrownBy(() -> EventChannel.create(String.class))
+    assertThatThrownBy(() -> EventChannel.create(String.class, metricsSystem))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void shouldRejectInterfacesWithNonVoidMethods() {
-    assertThatThrownBy(() -> EventChannel.create(Supplier.class))
+    assertThatThrownBy(() -> EventChannel.create(Supplier.class, metricsSystem))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void shouldRejectInterfacesWithDeclaredExceptions() {
-    assertThatThrownBy(() -> EventChannel.create(WithException.class))
+    assertThatThrownBy(() -> EventChannel.create(WithException.class, metricsSystem))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void shouldDeliverCallsToSubscribers() {
-    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class);
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
     final Runnable subscriber = mock(Runnable.class);
     channel.subscribe(subscriber);
 
@@ -63,7 +66,7 @@ class EventChannelTest {
 
   @Test
   public void shouldDeliverCallsToMultipleSubscribers() {
-    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class);
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
     final Runnable subscriber1 = mock(Runnable.class);
     final Runnable subscriber2 = mock(Runnable.class);
     channel.subscribe(subscriber1);
@@ -77,7 +80,8 @@ class EventChannelTest {
 
   @Test
   public void shouldDeliverCallsToCorrectMethod() {
-    final EventChannel<MultipleMethods> channel = EventChannel.create(MultipleMethods.class);
+    final EventChannel<MultipleMethods> channel =
+        EventChannel.create(MultipleMethods.class, metricsSystem);
     final MultipleMethods subscriber = mock(MultipleMethods.class);
     channel.subscribe(subscriber);
 
@@ -92,7 +96,8 @@ class EventChannelTest {
 
   @Test
   public void shouldReportExceptionsToExceptionHandler() throws Exception {
-    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, exceptionHandler);
+    final EventChannel<Runnable> channel =
+        EventChannel.create(Runnable.class, exceptionHandler, metricsSystem);
     final Runnable subscriber = mock(Runnable.class);
     final RuntimeException exception = new RuntimeException("Nope");
     doThrow(exception).when(subscriber).run();
@@ -106,7 +111,7 @@ class EventChannelTest {
 
   @Test
   public void shouldNotProxyToString() {
-    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class);
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
     final Runnable publisher = channel.getPublisher();
     final String toString = publisher.toString();
     assertThat(toString).contains(DirectEventDeliverer.class.getName());
@@ -115,11 +120,12 @@ class EventChannelTest {
   @Test
   public void publisherShouldNotBeEqualToAnything() {
     // Mostly we just want it to not throw exceptions when equals is called.
-    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class);
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
     final Runnable publisher = channel.getPublisher();
     assertThat(publisher).isNotEqualTo("Foo");
     assertThat(publisher).isNotEqualTo(null);
-    assertThat(publisher).isNotEqualTo(EventChannel.create(Runnable.class).getPublisher());
+    assertThat(publisher)
+        .isNotEqualTo(EventChannel.create(Runnable.class, metricsSystem).getPublisher());
     assertThat(publisher).isNotEqualTo(publisher);
   }
 
@@ -128,7 +134,7 @@ class EventChannelTest {
   public void shouldDeliverEventsAsync() throws Exception {
     final ExecutorService executor = mock(ExecutorService.class);
     final EventChannel<EventWithArgument> channel =
-        EventChannel.createAsync(EventWithArgument.class, executor);
+        EventChannel.createAsync(EventWithArgument.class, executor, metricsSystem);
     final EventWithArgument subscriber = mock(EventWithArgument.class);
     channel.subscribe(subscriber);
 

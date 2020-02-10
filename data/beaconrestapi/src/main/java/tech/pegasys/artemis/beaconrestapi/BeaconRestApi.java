@@ -19,6 +19,7 @@ import io.javalin.Javalin;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
@@ -31,6 +32,7 @@ import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 
 public class BeaconRestApi {
 
@@ -40,13 +42,15 @@ public class BeaconRestApi {
   public BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
+      HistoricalChainData historicalChainData,
       final int requestedPortNumber) {
     app = Javalin.create();
     app.server().setServerPort(requestedPortNumber);
 
     handlers.add(new GenesisTimeHandler(chainStorageClient));
     handlers.add(new BeaconHeadHandler(chainStorageClient));
-    handlers.add(new BeaconBlockHandler(chainStorageClient));
+    handlers.add(new BeaconChainHeadHandler(chainStorageClient));
+    handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
     handlers.add(new BeaconStateHandler(chainStorageClient));
     handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
     handlers.add(new PeerIdHandler(p2pNetwork));

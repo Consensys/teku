@@ -13,16 +13,28 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 
 public class BeaconBlockHandler implements BeaconRestApiHandler {
 
   private final ChainStorageClient client;
+  private final HistoricalChainData historicalChainData;
 
-  public BeaconBlockHandler(ChainStorageClient client) {
+  public BeaconBlockHandler(ChainStorageClient client, HistoricalChainData historicalChainData) {
     this.client = client;
+    this.historicalChainData = historicalChainData;
   }
 
   @Override
@@ -32,7 +44,37 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
 
   @Override
   public Object handleRequest(RequestParams param) {
-    Bytes32 root = Bytes32.fromHexString(param.getQueryParam("root"));
-    return client.getStore() != null ? client.getStore().getBlock(root) : null;
+    Map<String, List<String>> queryParamMap = param.getQueryParamMap();
+    if (queryParamMap.containsKey("root")) {
+      Bytes32 root = Bytes32.fromHexString(param.getQueryParam("root"));
+      return client.getStore() != null ? client.getStore().getBlock(root) : null;
+    }
+
+    UnsignedLong slot;
+    if (queryParamMap.containsKey("epoch")) {
+      slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(param.getQueryParam("epoch")));
+    } else if (queryParamMap.containsKey("slot")) {
+      slot = UnsignedLong.valueOf(param.getQueryParam("slot"));
+    } else {
+      return null;
+    }
+
+    return getBlockBySlot(slot)
+        .map(
+            block ->
+                ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root().toHexString()))
+        .orElse(null);
   }
+
+  private Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
+    return client
+        .getBlockRootBySlot(slot)
+        .map(root -> client.getStore().getBlock(root))
+        .or(
+            () -> {
+              Optional<SignedBeaconBlock> signedBeaconBlock =
+                  historicalChainData.getFinalizedBlockAtSlot(slot).join();
+              return signedBeaconBlock.map(SignedBeaconBlock::getMessage);
+            });
+  };
 }

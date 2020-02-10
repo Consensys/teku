@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
-import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.getSignature;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
@@ -55,7 +54,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.datastructures.validator.Signer;
+import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
@@ -198,7 +197,7 @@ public class ValidatorCoordinator {
     // Copy state so that state transition during block creation
     // does not manipulate headState in storage
     if (!isGenesis(slot)) {
-      createBlockIfNecessary(BeaconStateWithCache.fromBeaconState(headState), headBlock, slot);
+      createBlockIfNecessary(headState, headBlock, slot);
     }
   }
 
@@ -292,14 +291,14 @@ public class ValidatorCoordinator {
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
 
-    BLSSignature signature = getSignature(validators, attestationMessage, domain, attester);
+    BLSSignature signature = validators.get(attester).sign(attestationMessage, domain).join();
     Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
     attestationAggregator.addOwnValidatorAttestation(new Attestation(attestation));
     this.eventBus.post(attestation);
   }
 
   private void createBlockIfNecessary(
-      BeaconStateWithCache previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
+      BeaconState previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
     try {
 
       BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(previousState);
@@ -321,7 +320,7 @@ public class ValidatorCoordinator {
       // Collect deposits
       final SSZList<Deposit> deposits = getDepositsForBlock();
 
-      final Signer signer = getSigner(proposer);
+      final MessageSignerService signer = getSigner(proposer);
       Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
       final Bytes32 parentRoot = previousBlock.hash_tree_root();
       newBlock =
@@ -337,12 +336,6 @@ public class ValidatorCoordinator {
 
       this.eventBus.post(new BlockProposedEvent(newBlock));
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
-
-      if (validators.get(proposer).isNaughty()) {
-        final SignedBeaconBlock naughtyBlock =
-            blockCreator.createEmptyBlock(signer, newSlot, newState, parentRoot);
-        this.eventBus.post(naughtyBlock);
-      }
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
       STDOUT.log(Level.ERROR, "Error during block creation " + e.toString());
     }
@@ -386,8 +379,8 @@ public class ValidatorCoordinator {
     return deposits;
   }
 
-  private Signer getSigner(BLSPublicKey signer) {
-    return (message, domain) -> getSignature(validators, message, domain, signer);
+  private MessageSignerService getSigner(BLSPublicKey signer) {
+    return validators.get(signer).getSignerService();
   }
 
   @VisibleForTesting

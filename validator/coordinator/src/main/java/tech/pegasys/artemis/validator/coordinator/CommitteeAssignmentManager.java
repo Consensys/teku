@@ -22,7 +22,6 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_
 import static tech.pegasys.artemis.util.config.Constants.COMMITTEE_INDEX_SUBSCRIPTION_LENGTH;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
-import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.getSignature;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -157,7 +156,7 @@ public class CommitteeAssignmentManager {
     Bytes32 slot_hash =
         HashTreeUtil.hash_tree_root(
             HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue()));
-    return getSignature(validators, slot_hash, domain, signer);
+    return validators.get(signer).sign(slot_hash, domain).join();
   }
 
   boolean is_aggregator(

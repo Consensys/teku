@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.DynamicBytes;
@@ -38,6 +39,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 /**
  * Auto generated code.
@@ -127,6 +129,35 @@ public class DepositContract extends Contract {
     return responses;
   }
 
+  public SafeFuture<List<DepositEventEventResponse>> depositEventEventsInRange(
+      DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+    final EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+    filter.addSingleTopic(EventEncoder.encode(DEPOSITEVENT_EVENT));
+    return SafeFuture.of(
+        web3j
+            .ethGetLogs(filter)
+            .sendAsync()
+            .thenApply(
+                logs ->
+                    logs.getLogs().stream()
+                        .map(log -> (Log) log.get())
+                        .map(this::convertLogToDepositEventEventResponse)
+                        .collect(Collectors.toList())));
+  }
+
+  private DepositEventEventResponse convertLogToDepositEventEventResponse(final Log log) {
+    EventValuesWithLog eventValues = extractEventParametersWithLog(DEPOSITEVENT_EVENT, log);
+    DepositEventEventResponse typedResponse = new DepositEventEventResponse();
+    typedResponse.log = log;
+    typedResponse.pubkey = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+    typedResponse.withdrawal_credentials =
+        (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+    typedResponse.amount = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+    typedResponse.signature = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+    typedResponse.index = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+    return typedResponse;
+  }
+
   public Flowable<DepositEventEventResponse> depositEventEventFlowable(EthFilter filter) {
     return web3j
         .ethLogFlowable(filter)
@@ -134,18 +165,7 @@ public class DepositContract extends Contract {
             new Function<Log, DepositEventEventResponse>() {
               @Override
               public DepositEventEventResponse apply(Log log) {
-                Contract.EventValuesWithLog eventValues =
-                    extractEventParametersWithLog(DEPOSITEVENT_EVENT, log);
-                DepositEventEventResponse typedResponse = new DepositEventEventResponse();
-                typedResponse.log = log;
-                typedResponse.pubkey = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.withdrawal_credentials =
-                    (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
-                typedResponse.amount = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
-                typedResponse.signature =
-                    (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
-                typedResponse.index = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
-                return typedResponse;
+                return convertLogToDepositEventEventResponse(log);
               }
             });
   }
