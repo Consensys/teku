@@ -25,7 +25,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.artemis.datastructures.util.SimpleMerkleTree;
 
-public class OptimizedMerkleTreeTests {
+public class OptimizedMerkleTreeTest {
 
   private int seed = 0;
 
@@ -67,65 +67,5 @@ public class OptimizedMerkleTreeTests {
         (leaf) ->
             assertThat(optimizedMT.getProofTreeByValue(leaf))
                 .isEqualTo(simpleMT.getProofTreeByValue(leaf)));
-  }
-
-  @Test
-  void benchmarkAddingLeafAndGettingProof() {
-    List<Bytes32> leaves =
-        IntStream.range(0, 1000)
-            .mapToObj(i -> DataStructureUtil.randomBytes32(seed++))
-            .collect(Collectors.toList());
-
-    long startOfSimpleRun = System.currentTimeMillis();
-    leaves.forEach(
-        leaf -> {
-          simpleMT.add(leaf);
-          simpleMT.getProofTreeByValue(leaf);
-        });
-    long lengthOfSimpleRun = System.currentTimeMillis() - startOfSimpleRun;
-
-    long startOfOptimizedRun = System.currentTimeMillis();
-    leaves.forEach(
-        leaf -> {
-          optimizedMT.add(leaf);
-          optimizedMT.getProofTreeByValue(leaf);
-        });
-    long lengthOfOptimizedRun = System.currentTimeMillis() - startOfOptimizedRun;
-
-    System.out.println(
-        "Length of optimized run: "
-            + lengthOfOptimizedRun
-            + "\nLength of simple run: "
-            + lengthOfSimpleRun);
-  }
-
-  @Test
-  void benchmarkOnSingleAddition() {
-    List<Bytes32> leaves =
-        IntStream.range(0, 100000)
-            .mapToObj(i -> DataStructureUtil.randomBytes32(seed++))
-            .collect(Collectors.toList());
-    leaves.forEach(
-        leaf -> {
-          simpleMT.add(leaf);
-          optimizedMT.add(leaf);
-        });
-
-    Bytes32 lastLeaf = DataStructureUtil.randomBytes32(seed++);
-    long startOfSimpleRun = System.currentTimeMillis();
-    simpleMT.add(lastLeaf);
-    simpleMT.getProofTreeByValue(lastLeaf);
-    long lengthOfSimpleRun = System.currentTimeMillis() - startOfSimpleRun;
-
-    long startOfOptimizedRun = System.currentTimeMillis();
-    optimizedMT.add(lastLeaf);
-    optimizedMT.getProofTreeByValue(lastLeaf);
-    long lengthOfOptimizedRun = System.currentTimeMillis() - startOfOptimizedRun;
-
-    System.out.println(
-        "Length of optimized run: "
-            + lengthOfOptimizedRun
-            + "\nLength of simple run: "
-            + lengthOfSimpleRun);
   }
 }

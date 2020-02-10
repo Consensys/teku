@@ -44,8 +44,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {
-  private final OptimizedMerkleTree merkleTree =
-      new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
+  private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
   private final BeaconState state = new BeaconState();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
@@ -141,8 +140,8 @@ public class GenesisGenerator {
 
   private void calculateDepositProof(final Deposit deposit) {
     final Bytes32 value = deposit.getData().hash_tree_root();
-    merkleTree.add(value);
-    deposit.setProof(merkleTree.getProofTreeByValue(value));
+    depositMerkleTree.add(value);
+    deposit.setProof(depositMerkleTree.getProofTreeByValue(value));
   }
 
   private void updateGenesisTime(final UnsignedLong eth1Timestamp) {
