@@ -26,6 +26,7 @@ public class SimpleMerkleTree extends MerkleTree {
     super(treeDepth);
   }
 
+  @Override
   public void add(Bytes32 leaf) {
     dirty = true;
     tree.get(0).add(leaf);

@@ -24,6 +24,7 @@ public class OptimizedMerkleTree extends MerkleTree {
     super(treeDepth);
   }
 
+  @Override
   public void add(Bytes32 leaf) {
     if (!tree.get(0).isEmpty() && tree.get(0).get(tree.get(0).size() - 1) == zeroHashes.get(0)) {
       tree.get(0).remove(tree.get(0).size() - 1);

@@ -48,15 +48,17 @@ public class OptimizedMerkleTreeTests {
   }
 
   @Test
-  void makeSureAllProofsMatch() {
+  void makeSureAllProofsAndRootsMatch() {
 
     List<Bytes32> leaves =
-        IntStream.range(0, 10000)
+        IntStream.range(0, 1000)
             .mapToObj(
                 i -> {
                   Bytes32 leaf = DataStructureUtil.randomBytes32(seed++);
                   optimizedMT.add(leaf);
                   simpleMT.add(leaf);
+
+                  assertThat(optimizedMT.getRoot()).isEqualTo(simpleMT.getRoot());
                   return leaf;
                 })
             .collect(Collectors.toList());
@@ -68,9 +70,9 @@ public class OptimizedMerkleTreeTests {
   }
 
   @Test
-  void checkSpeed() {
+  void benchmarkAddingLeafAndGettingProof() {
     List<Bytes32> leaves =
-        IntStream.range(0, 10000)
+        IntStream.range(0, 1000)
             .mapToObj(i -> DataStructureUtil.randomBytes32(seed++))
             .collect(Collectors.toList());
 
@@ -88,6 +90,36 @@ public class OptimizedMerkleTreeTests {
           optimizedMT.add(leaf);
           optimizedMT.getProofTreeByValue(leaf);
         });
+    long lengthOfOptimizedRun = System.currentTimeMillis() - startOfOptimizedRun;
+
+    System.out.println(
+        "Length of optimized run: "
+            + lengthOfOptimizedRun
+            + "\nLength of simple run: "
+            + lengthOfSimpleRun);
+  }
+
+  @Test
+  void benchmarkOnSingleAddition() {
+    List<Bytes32> leaves =
+        IntStream.range(0, 100000)
+            .mapToObj(i -> DataStructureUtil.randomBytes32(seed++))
+            .collect(Collectors.toList());
+    leaves.forEach(
+        leaf -> {
+          simpleMT.add(leaf);
+          optimizedMT.add(leaf);
+        });
+
+    Bytes32 lastLeaf = DataStructureUtil.randomBytes32(seed++);
+    long startOfSimpleRun = System.currentTimeMillis();
+    simpleMT.add(lastLeaf);
+    simpleMT.getProofTreeByValue(lastLeaf);
+    long lengthOfSimpleRun = System.currentTimeMillis() - startOfSimpleRun;
+
+    long startOfOptimizedRun = System.currentTimeMillis();
+    optimizedMT.add(lastLeaf);
+    optimizedMT.getProofTreeByValue(lastLeaf);
     long lengthOfOptimizedRun = System.currentTimeMillis() - startOfOptimizedRun;
 
     System.out.println(
