@@ -84,7 +84,8 @@ public class PeerManager implements ConnectionHandler {
 
   public SafeFuture<?> connect(final Multiaddr peer, final Network network) {
     STDOUT.log(Level.DEBUG, "Connecting to " + peer);
-    return SafeFuture.of(network.connect(peer))
+    final SafeFuture<Connection> initialConnectionFuture = SafeFuture.of(network.connect(peer));
+    initialConnectionFuture
         .thenCompose(
             conn -> {
               LOG.debug("Connection to peer {} was successful", conn.secureSession().getRemoteId());
@@ -109,6 +110,7 @@ public class PeerManager implements ConnectionHandler {
                       TimeUnit.MILLISECONDS);
               ignoreFuture(retryFuture);
             });
+    return initialConnectionFuture;
   }
 
   public Optional<Peer> getPeer(NodeId id) {
