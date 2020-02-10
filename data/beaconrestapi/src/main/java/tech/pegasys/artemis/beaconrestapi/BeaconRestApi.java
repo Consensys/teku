@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
-import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import java.util.ArrayList;
 import java.util.List;

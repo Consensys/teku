@@ -16,13 +16,10 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -63,16 +60,18 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
     }
 
     return getBlockBySlot(slot)
-            .map(block -> ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root()))
-            .orElse(null);
+        .map(block -> ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root()))
+        .orElse(null);
   }
 
   private Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
-    return client.getBlockRootBySlot(slot)
-            .map(root -> client.getStore().getBlock(root))
-            .or(() -> {
+    return client
+        .getBlockRootBySlot(slot)
+        .map(root -> client.getStore().getBlock(root))
+        .or(
+            () -> {
               Optional<SignedBeaconBlock> signedBeaconBlock =
-                      historicalChainData.getFinalizedBlockAtSlot(slot).join();
+                  historicalChainData.getFinalizedBlockAtSlot(slot).join();
               return signedBeaconBlock.map(SignedBeaconBlock::getMessage);
             });
   };
