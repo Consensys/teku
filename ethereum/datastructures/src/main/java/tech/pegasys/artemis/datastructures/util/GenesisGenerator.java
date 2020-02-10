@@ -53,9 +53,9 @@ public class GenesisGenerator {
       new SSZList<>(DepositData.class, depositListLength);
 
   public GenesisGenerator() {
-    BeaconBlockHeader beaconBlockHeader = new BeaconBlockHeader();
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
-    beaconBlockHeader.setBody_root(latestBlockRoot);
+    BeaconBlockHeader beaconBlockHeader =
+        new BeaconBlockHeader(UnsignedLong.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
     state.setFork(
         new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));

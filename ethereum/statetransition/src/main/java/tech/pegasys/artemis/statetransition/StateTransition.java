@@ -41,6 +41,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
@@ -186,8 +187,15 @@ public class StateTransition {
     state.getState_roots().set(index, previous_state_root);
 
     // Cache latest block header state root
-    if (state.getLatest_block_header().getState_root().equals(ZERO_HASH)) {
-      state.getLatest_block_header().setState_root(previous_state_root);
+    BeaconBlockHeader latest_block_header = state.getLatest_block_header();
+    if (latest_block_header.getState_root().equals(ZERO_HASH)) {
+      BeaconBlockHeader latest_block_header_new =
+          new BeaconBlockHeader(
+              latest_block_header.getSlot(),
+              latest_block_header.getParent_root(),
+              previous_state_root,
+              latest_block_header.getBody_root());
+      state.setLatest_block_header(latest_block_header_new);
     }
 
     // Cache block root
