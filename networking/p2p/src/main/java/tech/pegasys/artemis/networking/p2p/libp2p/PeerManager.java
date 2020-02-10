@@ -85,31 +85,32 @@ public class PeerManager implements ConnectionHandler {
   public SafeFuture<?> connect(final Multiaddr peer, final Network network) {
     STDOUT.log(Level.DEBUG, "Connecting to " + peer);
     final SafeFuture<Connection> initialConnectionFuture = SafeFuture.of(network.connect(peer));
-    initialConnectionFuture
-        .thenCompose(
-            conn -> {
-              LOG.debug("Connection to peer {} was successful", conn.secureSession().getRemoteId());
-              return SafeFuture.of(conn.closeFuture());
-            })
-        .exceptionally(
-            (err) -> {
-              LOG.debug("Connection to {} failed: {}", peer, err);
-              return null;
-            })
-        .thenAccept(
-            (res) -> {
-              LOG.debug(
-                  "Connection to {} was closed. Will retry in {} sec",
-                  peer,
-                  RECONNECT_TIMEOUT.toSeconds());
+    final SafeFuture<?> retryLoop =
+        initialConnectionFuture
+            .thenCompose(
+                conn -> {
+                  LOG.debug(
+                      "Connection to peer {} was successful", conn.secureSession().getRemoteId());
+                  return SafeFuture.of(conn.closeFuture());
+                })
+            .exceptionally(
+                (err) -> {
+                  LOG.debug("Connection to {} failed: {}", peer, err);
+                  return null;
+                })
+            .thenCompose(
+                (res) -> {
+                  LOG.debug(
+                      "Connection to {} was closed. Will retry in {} sec",
+                      peer,
+                      RECONNECT_TIMEOUT.toSeconds());
 
-              final SafeFuture<?> retryFuture =
-                  asynRunner.runAfterDelay(
+                  return asynRunner.runAfterDelay(
                       () -> connect(peer, network),
                       RECONNECT_TIMEOUT.toMillis(),
                       TimeUnit.MILLISECONDS);
-              ignoreFuture(retryFuture);
-            });
+                });
+    ignoreFuture(retryLoop);
     return initialConnectionFuture;
   }
 
