@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
@@ -34,9 +35,9 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
   private final ChainStorageClient client;
   private final HistoricalChainData historicalChainData;
 
-  public BeaconBlockHandler(ChainStorageClient client, EventBus eventBus) {
+  public BeaconBlockHandler(ChainStorageClient client, HistoricalChainData historicalChainData) {
     this.client = client;
-    this.historicalChainData = new HistoricalChainData(eventBus);
+    this.historicalChainData = historicalChainData;
   }
 
   @Override
@@ -61,33 +62,18 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
       return null;
     }
 
-    Optional<Pair<BeaconBlock, Bytes32>> blockAndRoot = getBlockBySlot(slot);
-    if (blockAndRoot.isEmpty()) {
-      return null;
-    }
-
-    Map<String, Object> jsonObject = new HashMap<>();
-    jsonObject.put("blockRoot", blockAndRoot.get().getRight().toHexString());
-    jsonObject.put("block", blockAndRoot.get().getLeft());
-
-    return jsonObject;
+    return getBlockBySlot(slot)
+            .map(block -> ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root()))
+            .orElse(null);
   }
 
-  private Optional<Pair<BeaconBlock, Bytes32>> getBlockBySlot(UnsignedLong slot) {
-    Optional<Bytes32> blockRootAtSlot = client.getBlockRootBySlot(slot);
-    return blockRootAtSlot
-        .flatMap(root -> Optional.of(Pair.of(client.getStore().getBlock(root), root)))
-        .or(
-            () -> {
+  private Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
+    return client.getBlockRootBySlot(slot)
+            .map(root -> client.getStore().getBlock(root))
+            .or(() -> {
               Optional<SignedBeaconBlock> signedBeaconBlock =
-                  historicalChainData.getFinalizedBlockAtSlot(slot).join();
-              if (signedBeaconBlock.isPresent()) {
-                Bytes32 historicalBlockRoot = signedBeaconBlock.get().getMessage().hash_tree_root();
-                return Optional.of(
-                    Pair.of(signedBeaconBlock.get().getMessage(), historicalBlockRoot));
-              } else {
-                return Optional.empty();
-              }
+                      historicalChainData.getFinalizedBlockAtSlot(slot).join();
+              return signedBeaconBlock.map(SignedBeaconBlock::getMessage);
             });
   };
 }
