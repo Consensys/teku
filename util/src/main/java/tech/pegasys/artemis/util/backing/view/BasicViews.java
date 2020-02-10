@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
@@ -94,6 +95,22 @@ public class BasicViews {
     public UnsignedLong get() {
       return UnsignedLong.valueOf(
           getBackingNode().hashTreeRoot().slice(0, 8).toLong(ByteOrder.LITTLE_ENDIAN));
+    }
+  }
+
+  public static class Bytes4View extends AbstractBasicView<Bytes4> {
+
+    public Bytes4View(TreeNode node) {
+      super(node, BasicViewTypes.BYTES4_TYPE);
+    }
+
+    public Bytes4View(Bytes4 val) {
+      this(new RootImpl(Bytes32.rightPad(val.getWrappedBytes())));
+    }
+
+    @Override
+    public Bytes4 get() {
+      return new Bytes4(getBackingNode().hashTreeRoot().slice(0, 4));
     }
   }
 

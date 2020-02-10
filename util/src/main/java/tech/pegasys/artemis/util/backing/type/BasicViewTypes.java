@@ -23,6 +23,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUInt64View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
@@ -87,29 +88,38 @@ public class BasicViewTypes {
         }
       };
 
+  private abstract static class NonpackedBasicType<C extends ViewRead> extends BasicViewType<C> {
+    public NonpackedBasicType(int bitsSize) {
+      super(bitsSize);
+    }
+
+    @Override
+    public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
+      throw new UnsupportedOperationException();
+    }
+  }
+
   public static final BasicViewType<UInt64View> UINT64_TYPE =
-      new BasicViewType<>(64) {
+      new NonpackedBasicType<>(64) {
         @Override
         public UInt64View createFromTreeNode(TreeNode node, int internalIndex) {
           return new UInt64View(node);
         }
+      };
 
+  public static final BasicViewType<Bytes4View> BYTES4_TYPE =
+      new NonpackedBasicType<>(32) {
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
-          throw new UnsupportedOperationException();
+        public Bytes4View createFromTreeNode(TreeNode node, int internalIndex) {
+          return new Bytes4View(node);
         }
       };
 
   public static final BasicViewType<Bytes32View> BYTES32_TYPE =
-      new BasicViewType<>(256) {
+      new NonpackedBasicType<>(256) {
         @Override
         public Bytes32View createFromTreeNode(TreeNode node, int internalIndex) {
           return new Bytes32View(node);
-        }
-
-        @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
-          throw new UnsupportedOperationException();
         }
       };
 }

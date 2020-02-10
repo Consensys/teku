@@ -30,6 +30,10 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
   private final ContainerViewType<? extends ContainerViewWrite<ViewRead>> type;
   private TreeNode backingNode;
 
+  public ContainerViewImpl(ContainerViewType<? extends ContainerViewWrite<ViewRead>> type) {
+    this(type, type.createDefaultTree());
+  }
+
   public ContainerViewImpl(
       ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
     this.type = type;
