@@ -71,8 +71,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
     W writableCopy = (W) get(index).createWritableCopy();
 
     if (writableCopy instanceof CompositeViewWrite) {
-      ((CompositeViewWrite<?>) writableCopy)
-          .setIvalidator(viewWrite -> set(index, writableCopy));
+      ((CompositeViewWrite<?>) writableCopy).setIvalidator(viewWrite -> set(index, writableCopy));
     }
     return writableCopy;
   }
