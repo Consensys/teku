@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ abstract class MerkleTree {
   protected final int treeDepth;
 
   protected MerkleTree(int treeDepth) {
+    checkArgument(treeDepth > 1, "MerkleTree: treeDepth must be greater than 1");
     this.treeDepth = treeDepth;
-    assert (treeDepth > 1);
     tree = new ArrayList<>();
     for (int i = 0; i <= treeDepth; i++) {
       tree.add(new ArrayList<>());
