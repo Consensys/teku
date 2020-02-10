@@ -16,23 +16,27 @@ package tech.pegasys.artemis.util.backing.view;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Function;
-import tech.pegasys.artemis.util.backing.VectorViewWrite;
+import tech.pegasys.artemis.util.backing.CompositeViewWrite;
+import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 
-public class VectorViewImpl<C extends ViewRead> implements VectorViewWrite<C> {
-  protected final VectorViewType<C> type;
-  protected TreeNode backingNode;
+public class VectorViewImpl<R extends ViewRead, W extends R>
+    extends AbstractCompositeViewWrite<VectorViewImpl<R, W>, R>
+    implements VectorViewWriteRef<R, W> {
 
-  public VectorViewImpl(VectorViewType<C> type, TreeNode backingNode) {
+  protected final VectorViewType<R> type;
+  private TreeNode backingNode;
+
+  public VectorViewImpl(VectorViewType<R> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }
 
   @Override
-  public void set(int index, C value) {
+  public void set(int index, R value) {
     checkArgument(
         index >= 0 && index < type.getMaxLength(),
         "Index out of bounds: %s, size=%s",
@@ -45,17 +49,32 @@ public class VectorViewImpl<C extends ViewRead> implements VectorViewWrite<C> {
             oldBytes ->
                 type.getElementType()
                     .updateTreeNode(oldBytes, index % type.getElementsPerChunk(), value));
+    invalidate();
   }
 
   @Override
-  public C get(int index) {
+  public R get(int index) {
     checkArgument(
         index >= 0 && index < type.getMaxLength(),
         "Index out of bounds: %s, size=%s",
         index,
         size());
     TreeNode node = getNode(index / type.getElementsPerChunk());
-    return (C) type.getElementType().createFromTreeNode(node, index % type.getElementsPerChunk());
+    @SuppressWarnings("unchecked")
+    R ret = (R) type.getElementType().createFromTreeNode(node, index % type.getElementsPerChunk());
+    return ret;
+  }
+
+  @Override
+  public W getByRef(int index) {
+    @SuppressWarnings("unchecked")
+    W writableCopy = (W) get(index).createWritableCopy();
+
+    if (writableCopy instanceof CompositeViewWrite) {
+      ((CompositeViewWrite<?>) writableCopy)
+          .setIvalidator(viewWrite -> set(index, writableCopy));
+    }
+    return writableCopy;
   }
 
   private Commit updateNode(int listIndex, Function<TreeNode, TreeNode> nodeUpdater) {
@@ -67,7 +86,7 @@ public class VectorViewImpl<C extends ViewRead> implements VectorViewWrite<C> {
   }
 
   @Override
-  public VectorViewType<C> getType() {
+  public VectorViewType<R> getType() {
     return type;
   }
 

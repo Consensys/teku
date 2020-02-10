@@ -13,16 +13,22 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface ListViewWriteRef<R extends ViewRead, W extends R> extends
-    CompositeViewWriteRef<R, W>, ListViewWrite<R> {
+import java.util.function.Consumer;
+
+public interface ListViewWriteRef<R extends ViewRead, W extends R>
+    extends CompositeViewWriteRef<R, W>, ListViewWrite<R> {
 
   @Override
-  W get(int index);
+  W getByRef(int index);
 
   default W append() {
     @SuppressWarnings("unchecked")
     R newElement = (R) getType().getElementType().createDefault();
     append(newElement);
-    return get(size() - 1);
+    return getByRef(size() - 1);
+  }
+
+  default void append(Consumer<W> mutator) {
+    mutator.accept(append());
   }
 }

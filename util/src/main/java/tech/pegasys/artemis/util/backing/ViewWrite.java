@@ -17,12 +17,14 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 public interface ViewWrite extends ViewRead {
 
+  @Override
   ViewType getType();
 
   default ViewRead commitChanges() {
     throw new RuntimeException("Not supported yet");
   }
 
+  @Override
   default TreeNode getBackingNode() {
     throw new UnsupportedOperationException(
         "Backing tree node should be accessed from ViewRead only");

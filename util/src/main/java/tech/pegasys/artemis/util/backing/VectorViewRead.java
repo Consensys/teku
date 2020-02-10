@@ -18,7 +18,7 @@ import tech.pegasys.artemis.util.backing.type.VectorViewType;
 public interface VectorViewRead<C extends ViewRead> extends CompositeViewRead<C> {
 
   @Override
-  default ListViewWrite<C> createWritableCopy() {
+  default VectorViewWrite<C> createWritableCopy() {
     throw new UnsupportedOperationException();
   }
 

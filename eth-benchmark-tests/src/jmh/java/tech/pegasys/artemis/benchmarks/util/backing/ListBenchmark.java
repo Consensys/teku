@@ -40,12 +40,13 @@ public class ListBenchmark {
   private int getListMaxSize() {
     return listMaxSizeM * 1024 * 1024;
   }
+
   ListViewWrite<PackedUInt64View> l1w;
   ListViewRead<PackedUInt64View> l2r;
 
   public ListBenchmark() {
-    ListViewType<PackedUInt64View> type = new ListViewType<>(
-        BasicViewTypes.PACKED_UINT64_TYPE, 100_000_000);
+    ListViewType<PackedUInt64View> type =
+        new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, 100_000_000);
     ListViewRead<PackedUInt64View> l1 = type.createDefault();
 
     ListViewWrite<PackedUInt64View> l2w = l1.createWritableCopy();
@@ -56,13 +57,13 @@ public class ListBenchmark {
 
     long s = System.nanoTime();
     l2r.hashTreeRoot();
-    System.out.println("Initial hash calc: " + (System.nanoTime() - s) / 1000 + " us" );
+    System.out.println("Initial hash calc: " + (System.nanoTime() - s) / 1000 + " us");
   }
 
   @Setup(Level.Iteration)
   public void init() throws Exception {
-    ListViewType<PackedUInt64View> type = new ListViewType<>(
-        BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
+    ListViewType<PackedUInt64View> type =
+        new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
     ListViewRead<PackedUInt64View> l1 = type.createDefault();
     l1w = l1.createWritableCopy();
   }
@@ -70,17 +71,18 @@ public class ListBenchmark {
   @TearDown(Level.Iteration)
   public void cleanup() throws Exception {
     ListViewRead<PackedUInt64View> l1r = l1w.commitChanges();
-//    System.out.println(
-//        "Tree nodes count: " + TreeUtil.estimateNonDefaultNodes(l1r.getBackingNode()) + ", size: "
-//            + l1r.size());
+    //    System.out.println(
+    //        "Tree nodes count: " + TreeUtil.estimateNonDefaultNodes(l1r.getBackingNode()) + ",
+    // size: "
+    //            + l1r.size());
   }
 
   @Benchmark
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void createDefaultUIntList(Blackhole bh) {
-    ListViewType<PackedUInt64View> type = new ListViewType<>(
-        BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
+    ListViewType<PackedUInt64View> type =
+        new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
     ListViewRead<PackedUInt64View> l1 = type.createDefault();
     bh.consume(l1);
   }

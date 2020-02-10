@@ -103,43 +103,63 @@ public class CompositeListViewTest {
     Assertions.assertEquals(0x333, listType.createFromTreeNode(n4).get(2).v);
 
     Assertions.assertEquals(
-        sha2_256(concatenate(
-            sha2_256(concatenate(
-                sha2_256(concatenate(ZERO, ZERO)),
-                sha2_256(concatenate(ZERO, ZERO)))),
-            ZERO))
-        , n0.hashTreeRoot());
+        sha2_256(
+            concatenate(
+                sha2_256(
+                    concatenate(
+                        sha2_256(concatenate(ZERO, ZERO)), sha2_256(concatenate(ZERO, ZERO)))),
+                ZERO)),
+        n0.hashTreeRoot());
 
     Assertions.assertEquals(
-        sha2_256(concatenate(
-            sha2_256(concatenate(
-                sha2_256(concatenate(
-                    Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000111"),
-                    ZERO)),
-                sha2_256(concatenate(ZERO, ZERO)))),
-            Bytes32.fromHexString("0x0100000000000000000000000000000000000000000000000000000000000000")))
-        , n1.hashTreeRoot());
+        sha2_256(
+            concatenate(
+                sha2_256(
+                    concatenate(
+                        sha2_256(
+                            concatenate(
+                                Bytes32.fromHexString(
+                                    "0x0000000000000000000000000000000000000000000000000000000000000111"),
+                                ZERO)),
+                        sha2_256(concatenate(ZERO, ZERO)))),
+                Bytes32.fromHexString(
+                    "0x0100000000000000000000000000000000000000000000000000000000000000"))),
+        n1.hashTreeRoot());
 
     Assertions.assertEquals(
-        sha2_256(concatenate(
-            sha2_256(concatenate(
-                sha2_256(concatenate(
-                    Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000111"),
-                    Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000222"))),
-                sha2_256(concatenate(ZERO, ZERO)))),
-            Bytes32.fromHexString("0x0200000000000000000000000000000000000000000000000000000000000000")))
-        , n2.hashTreeRoot());
+        sha2_256(
+            concatenate(
+                sha2_256(
+                    concatenate(
+                        sha2_256(
+                            concatenate(
+                                Bytes32.fromHexString(
+                                    "0x0000000000000000000000000000000000000000000000000000000000000111"),
+                                Bytes32.fromHexString(
+                                    "0x0000000000000000000000000000000000000000000000000000000000000222"))),
+                        sha2_256(concatenate(ZERO, ZERO)))),
+                Bytes32.fromHexString(
+                    "0x0200000000000000000000000000000000000000000000000000000000000000"))),
+        n2.hashTreeRoot());
 
     Assertions.assertEquals(
-        sha2_256(concatenate(
-            sha2_256(concatenate(
-                sha2_256(concatenate(
-                    Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000111"),
-                    Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000222"))),
-                sha2_256(concatenate(
-                    Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000333"),
-                    ZERO)))),
-            Bytes32.fromHexString("0x0300000000000000000000000000000000000000000000000000000000000000")))
-        , n3.hashTreeRoot());
+        sha2_256(
+            concatenate(
+                sha2_256(
+                    concatenate(
+                        sha2_256(
+                            concatenate(
+                                Bytes32.fromHexString(
+                                    "0x0000000000000000000000000000000000000000000000000000000000000111"),
+                                Bytes32.fromHexString(
+                                    "0x0000000000000000000000000000000000000000000000000000000000000222"))),
+                        sha2_256(
+                            concatenate(
+                                Bytes32.fromHexString(
+                                    "0x0000000000000000000000000000000000000000000000000000000000000333"),
+                                ZERO)))),
+                Bytes32.fromHexString(
+                    "0x0300000000000000000000000000000000000000000000000000000000000000"))),
+        n3.hashTreeRoot());
   }
 }

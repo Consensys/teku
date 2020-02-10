@@ -60,6 +60,7 @@ public class BasicViews {
     public static PackedUInt64View fromLong(long val) {
       return new PackedUInt64View(UnsignedLong.valueOf(val));
     }
+
     public PackedUInt64View(UnsignedLong value) {
       super(value, BasicViewTypes.PACKED_UINT64_TYPE);
     }

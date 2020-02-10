@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.util.backing;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
-public interface CompositeViewWrite<R extends ViewRead>
-    extends ViewWrite, CompositeViewRead<R> {
+public interface CompositeViewWrite<R extends ViewRead> extends ViewWrite, CompositeViewRead<R> {
+
+  void setIvalidator(Consumer<ViewWrite> listener);
 
   void set(int index, R value);
 

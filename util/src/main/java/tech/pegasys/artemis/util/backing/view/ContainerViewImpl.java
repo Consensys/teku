@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
@@ -22,17 +23,33 @@ import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
-public class ContainerViewImpl implements ContainerViewWriteRef<ViewRead, ViewWrite> {
-  private final ContainerViewType<? extends ContainerViewWrite> type;
+public class ContainerViewImpl<C extends ContainerViewImpl<C>>
+    extends AbstractCompositeViewWrite<C, ViewRead>
+    implements ContainerViewWriteRef<ViewRead, ViewWrite> {
+
+  private final ContainerViewType<? extends ContainerViewWrite<ViewRead>> type;
   private TreeNode backingNode;
 
-  public ContainerViewImpl(ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
+  public ContainerViewImpl(
+      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }
 
+  public ContainerViewImpl(
+      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, ViewRead... memberValues) {
+    this(type, type.createDefaultTree());
+    checkArgument(
+        memberValues.length == getType().getMaxLength(),
+        "Wrong number of member values: %s",
+        memberValues.length);
+    for (int i = 0; i < memberValues.length; i++) {
+      set(i, memberValues[i]);
+    }
+  }
+
   @Override
-  public ContainerViewType<? extends ContainerViewWrite> getType() {
+  public ContainerViewType<? extends ContainerViewWrite<ViewRead>> getType() {
     return type;
   }
 
@@ -50,7 +67,11 @@ public class ContainerViewImpl implements ContainerViewWriteRef<ViewRead, ViewWr
 
   @Override
   public ViewWrite getByRef(int index) {
-    return get(index).createWritableCopy();
+    ViewWrite writableCopy = get(index).createWritableCopy();
+    if (writableCopy instanceof CompositeViewWrite) {
+      ((CompositeViewWrite<?>) writableCopy).setIvalidator(viewWrite -> set(index, viewWrite));
+    }
+    return writableCopy;
   }
 
   @Override
@@ -63,6 +84,7 @@ public class ContainerViewImpl implements ContainerViewWriteRef<ViewRead, ViewWr
         type.getChildType(index),
         child.getType());
     backingNode = backingNode.set(type.treeWidth() + index, child.getBackingNode());
+    invalidate();
   }
 
   private void checkIndex(int index) {

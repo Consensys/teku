@@ -17,8 +17,7 @@ import java.util.Objects;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 
-public abstract class CollectionViewType<C extends ViewRead>
-    implements CompositeViewType {
+public abstract class CollectionViewType<C extends ViewRead> implements CompositeViewType {
 
   private final long maxLength;
   private final ViewType elementType;

@@ -17,9 +17,9 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
-import tech.pegasys.artemis.util.backing.ListViewRead;
-import tech.pegasys.artemis.util.backing.ListViewWrite;
+import tech.pegasys.artemis.util.backing.ListViewWriteRef;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
@@ -29,21 +29,21 @@ import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
-public class ListViewImpl<C extends ViewRead> implements ListViewWrite<C> {
+public class ListViewImpl<R extends ViewRead, W extends R>
+    extends AbstractCompositeViewWrite<ListViewImpl<R, W>, R> implements ListViewWriteRef<R, W> {
 
   private final ContainerViewWrite<ViewRead> container;
 
-  public ListViewImpl(VectorViewRead<C> data, int size) {
+  public ListViewImpl(VectorViewRead<R> data, int size) {
     ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
         new ContainerViewType<>(
-            Arrays.asList(data.getType(), BasicViewTypes.UINT64_TYPE),
-            ContainerViewImpl::new);
+            Arrays.asList(data.getType(), BasicViewTypes.UINT64_TYPE), ContainerViewImpl::new);
     container = containerViewType.createDefault();
     container.set(0, data);
     container.set(1, new UInt64View(UnsignedLong.valueOf(size)));
   }
 
-  public ListViewImpl(ListViewType<C> type, TreeNode node) {
+  public ListViewImpl(ListViewType<R> type, TreeNode node) {
     ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
@@ -58,14 +58,25 @@ public class ListViewImpl<C extends ViewRead> implements ListViewWrite<C> {
   }
 
   @Override
-  public C get(int index) {
+  public R get(int index) {
     int size = size();
     checkArgument(index >= 0 && index < size, "Index out of bounds: %s, size=%s", index, size);
     return getVector().get(index);
   }
 
   @Override
-  public void set(int index, C value) {
+  public W getByRef(int index) {
+    @SuppressWarnings("unchecked")
+    W writableCopy = (W) get(index).createWritableCopy();
+
+    if (writableCopy instanceof CompositeViewWrite) {
+      ((CompositeViewWrite<?>) writableCopy).setIvalidator(viewWrite -> set(index, writableCopy));
+    }
+    return writableCopy;
+  }
+
+  @Override
+  public void set(int index, R value) {
     int size = size();
     checkArgument(
         (index >= 0 && index < size) || (index == size && index < getType().getMaxLength()),
@@ -81,34 +92,26 @@ public class ListViewImpl<C extends ViewRead> implements ListViewWrite<C> {
         0,
         view -> {
           @SuppressWarnings("unchecked")
-          VectorViewWrite<C> vector = (VectorViewWrite<C>) view;
+          VectorViewWrite<R> vector = (VectorViewWrite<R>) view;
           vector.set(index, value);
           return vector;
         });
+
+    invalidate();
   }
 
   @SuppressWarnings("unchecked")
-  private VectorViewWrite<C> getVector() {
-    return (VectorViewWrite<C>) container.get(0);
+  private VectorViewWrite<R> getVector() {
+    return (VectorViewWrite<R>) container.get(0);
   }
 
   @Override
-  public ListViewType<C> getType() {
+  public ListViewType<R> getType() {
     return new ListViewType<>(getVector().getType());
   }
 
   @Override
   public TreeNode getBackingNode() {
     return container.getBackingNode();
-  }
-
-  @Override
-  public ListViewRead<C> commitChanges() {
-    return this;
-  }
-
-  @Override
-  public ListViewWrite<C> createWritableCopy() {
-    return this;
   }
 }

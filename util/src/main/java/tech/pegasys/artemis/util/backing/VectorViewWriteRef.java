@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface VectorViewWriteRef<R extends ViewRead, W extends R> extends
-    CompositeViewWriteRef<R, W>, VectorViewWrite<R> {
+public interface VectorViewWriteRef<R extends ViewRead, W extends R>
+    extends CompositeViewWriteRef<R, W>, VectorViewWrite<R> {
 
   @Override
-  W get(int index);
+  W getByRef(int index);
 }

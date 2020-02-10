@@ -22,7 +22,7 @@ import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
 
 public class VectorViewType<C extends ViewRead> extends CollectionViewType<C> {
 
-  VectorViewType(ViewType elementType, long maxLength) {
+  public VectorViewType(ViewType elementType, long maxLength) {
     super(maxLength, elementType);
   }
 
@@ -35,6 +35,6 @@ public class VectorViewType<C extends ViewRead> extends CollectionViewType<C> {
 
   @Override
   public VectorViewRead<C> createFromTreeNode(TreeNode node) {
-    return new VectorViewImpl<C>(this, node);
+    return new VectorViewImpl<>(this, node);
   }
 }

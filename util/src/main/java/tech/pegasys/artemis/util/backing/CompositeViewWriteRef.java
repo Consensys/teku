@@ -16,5 +16,5 @@ package tech.pegasys.artemis.util.backing;
 public interface CompositeViewWriteRef<R extends ViewRead, W extends R /* & ViewWrite */>
     extends CompositeViewWrite<R> {
 
-  W get(int index);
+  W getByRef(int index);
 }

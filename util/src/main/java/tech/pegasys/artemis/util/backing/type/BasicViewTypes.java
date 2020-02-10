@@ -41,7 +41,7 @@ public class BasicViewTypes {
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
           byte b = dest.get(byteIndex);
-          if (((BitView)newValue).get()) {
+          if (((BitView) newValue).get()) {
             b = (byte) (b | (1 << (8 - bitIndex)));
           } else {
             b = (byte) (b & ~(1 << (8 - bitIndex)));
@@ -61,7 +61,7 @@ public class BasicViewTypes {
         @Override
         public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
           byte[] bytes = srcNode.hashTreeRoot().toArray();
-          bytes[index] = ((ByteView)newValue).get();
+          bytes[index] = ((ByteView) newValue).get();
           return new RootImpl(Bytes32.wrap(bytes));
         }
       };
@@ -75,14 +75,14 @@ public class BasicViewTypes {
         }
 
         @Override
-        public TreeNode updateTreeNode(
-            TreeNode srcNode, int index, ViewRead newValue) {
+        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
           Bytes32 originalChunk = srcNode.hashTreeRoot();
           return new RootImpl(
               Bytes32.wrap(
                   Bytes.concatenate(
                       originalChunk.slice(0, index * 8),
-                      Bytes.ofUnsignedLong(((PackedUInt64View)newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
+                      Bytes.ofUnsignedLong(
+                          ((PackedUInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
                       originalChunk.slice((index + 1) * 8))));
         }
       };
