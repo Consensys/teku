@@ -38,13 +38,22 @@ public class Fork extends ContainerViewImpl<Fork>
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
+  @SuppressWarnings("unused")
+  private final Bytes4 previous_version = null; // This is a Version type, aliased as a Bytes4
+
+  @SuppressWarnings("unused")
+  private final Bytes4 current_version = null; // This is a Version type, aliased as a Bytes4
+
+  @SuppressWarnings("unused")
+  private final UnsignedLong epoch = null;
+
   public static final ContainerViewType<Fork> TYPE =
       new ContainerViewType<>(
           List.of(
               BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES4_TYPE, BasicViewTypes.UINT64_TYPE),
           Fork::new);
 
-  public Fork(
+  private Fork(
       ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
     super(type, backingNode);
   }
