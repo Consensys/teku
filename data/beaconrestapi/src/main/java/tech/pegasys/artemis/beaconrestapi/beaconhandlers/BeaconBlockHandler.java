@@ -60,7 +60,7 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
     }
 
     return getBlockBySlot(slot)
-        .map(block -> ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root()))
+        .map(block -> ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root().toHexString()))
         .orElse(null);
   }
 
