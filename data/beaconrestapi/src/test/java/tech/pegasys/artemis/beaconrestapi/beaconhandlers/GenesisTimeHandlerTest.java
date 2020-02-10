@@ -17,26 +17,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler.RequestParams;
+import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-class GenesisTimeHandlerTest {
-  private final RequestParams requestParams = Mockito.mock(RequestParams.class);
+public class GenesisTimeHandlerTest {
+  private final Context context = Mockito.mock(Context.class);
+
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());
-  private final GenesisTimeHandler handler = new GenesisTimeHandler(storageClient);
 
   @Test
   public void shouldReturnEmptyObjectWhenGenesisTimeIsNotSet() {
-    assertThat(handler.handleRequest(requestParams)).isEqualTo(null);
+    BeaconRestApi.getInstance(null, null, 12345);
+    //    when(context.status(any(Integer.class))).thenReturn(context);
+
+    //    GenesisTimeHandler.handleRequest(context);
+    //
+    //    Mockito.verify(context).result("not found");
   }
 
   @Test
   public void shouldReturnGenesisTimeWhenSet() {
     final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
     storageClient.setGenesisTime(genesisTime);
-    assertThat(handler.handleRequest(requestParams)).isEqualTo(genesisTime);
+    BeaconRestApi.getInstance(storageClient, null, 12345);
+
+    GenesisTimeHandler.handleRequest(context);
+    assertThat(context.resultString()).isEqualTo(genesisTime.toString());
+
+    Mockito.verify(context).result(JsonProvider.objectToJSON(genesisTime));
   }
 }

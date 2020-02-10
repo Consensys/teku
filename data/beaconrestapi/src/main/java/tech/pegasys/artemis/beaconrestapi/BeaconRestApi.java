@@ -16,6 +16,11 @@ package tech.pegasys.artemis.beaconrestapi;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import io.javalin.Javalin;
+import io.javalin.plugin.openapi.OpenApiOptions;
+import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.javalin.plugin.openapi.ui.SwaggerOptions;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
@@ -37,23 +42,44 @@ public class BeaconRestApi {
 
   private List<BeaconRestApiHandler> handlers = new ArrayList<>();
   private Javalin app;
+  private final ChainStorageClient chainStorageClient;
+  private final P2PNetwork<?> p2pNetwork;
 
-  public BeaconRestApi(
+  @SuppressWarnings("unchecked")
+  private static BeaconRestApi beaconRestApi;
+
+  public static BeaconRestApi getInstance(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
       final int requestedPortNumber) {
-    app = Javalin.create();
+    BeaconRestApi.beaconRestApi =
+        new BeaconRestApi(chainStorageClient, p2pNetwork, requestedPortNumber);
+
+    return beaconRestApi;
+  }
+
+  public static BeaconRestApi getInstance() {
+    return beaconRestApi;
+  }
+  private BeaconRestApi(
+      ChainStorageClient chainStorageClient,
+      P2PNetwork<?> p2pNetwork,
+      final int requestedPortNumber) {
+    this.chainStorageClient = chainStorageClient;
+    this.p2pNetwork = p2pNetwork;
+
+    app =
+        Javalin.create(
+            config -> {
+              config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
+              config.defaultContentType = "application/json";
+            });
     app.server().setServerPort(requestedPortNumber);
 
-    handlers.add(new GenesisTimeHandler(chainStorageClient));
-    handlers.add(new BeaconHeadHandler(chainStorageClient));
-    handlers.add(new BeaconChainHeadHandler(chainStorageClient));
-    handlers.add(new BeaconBlockHandler(chainStorageClient));
-    handlers.add(new BeaconStateHandler(chainStorageClient));
-    handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
-    handlers.add(new PeerIdHandler(p2pNetwork));
-    handlers.add(new PeersHandler(p2pNetwork));
-    handlers.add(new ENRHandler());
+    addNodeHandlers();
+    addBeaconHandlers();
+    addNetworkHandlers();
+
   }
 
   public int getPort() {
@@ -61,7 +87,6 @@ public class BeaconRestApi {
   }
 
   public void start() {
-    app.start();
     handlers.forEach(
         handler ->
             app.get(
@@ -75,6 +100,56 @@ public class BeaconRestApi {
                     ctx.status(SC_NOT_FOUND).result(JsonProvider.objectToJSON("Not found"));
                   }
                 }));
+
+    app.start();
+  }
+
+  private OpenApiOptions getOpenApiOptions() {
+    Info applicationInfo =
+        new Info()
+            .version("0.1.0")
+            .title("Minimal Beacon Nodea API for Validator")
+            .description(
+                "A minimal API specification for the beacon node, which enables a validator "
+                    + "to connect and perform its obligations on the Ethereum 2.0 phase 0 beacon chain.")
+            .license(
+                new License()
+                    .name("Apache 2.0")
+                    .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
+    OpenApiOptions options =
+        new OpenApiOptions(applicationInfo)
+            .activateAnnotationScanningFor("tech.pegasys.artemis.beaconrestapi")
+            .path("/swagger-docs")
+            .swagger(new SwaggerOptions("/swagger-ui"));
+    return options;
+  }
+
+
+  private void addNodeHandlers() {
+    app.get("/node/genesis_time", GenesisTimeHandler::handleRequest);
+  }
+
+  private void addBeaconHandlers() {
+    handlers.add(new BeaconHeadHandler(chainStorageClient));
+    handlers.add(new BeaconChainHeadHandler(chainStorageClient));
+    handlers.add(new BeaconBlockHandler(chainStorageClient));
+    handlers.add(new BeaconStateHandler(chainStorageClient));
+    handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
+  }
+
+  private void addNetworkHandlers() {
+    handlers.add(new PeerIdHandler(p2pNetwork));
+    handlers.add(new PeersHandler(p2pNetwork));
+    handlers.add(new ENRHandler());
+
+  }
+
+  public ChainStorageClient getChainStorageClient() {
+    return chainStorageClient;
+  }
+
+  public P2PNetwork<?> getP2pNetwork() {
+    return p2pNetwork;
   }
 
   public void stop() {

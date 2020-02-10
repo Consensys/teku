@@ -221,7 +221,8 @@ public class BeaconChainController {
   public void initRestAPI() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
     beaconRestAPI =
-        new BeaconRestApi(chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
+        BeaconRestApi.getInstance(
+            chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
   }
 
   public void initSyncManager() {
