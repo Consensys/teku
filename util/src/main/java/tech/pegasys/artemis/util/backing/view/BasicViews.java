@@ -93,7 +93,7 @@ public class BasicViews {
 
     @Override
     public UnsignedLong get() {
-      return UnsignedLong.valueOf(
+      return UnsignedLong.fromLongBits(
           getBackingNode().hashTreeRoot().slice(0, 8).toLong(ByteOrder.LITTLE_ENDIAN));
     }
   }
