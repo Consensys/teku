@@ -78,12 +78,16 @@ public class ContainerViewTest {
 
     void setLong2(UnsignedLong val);
 
+    @Override
     SubContainerWrite getSub1();
 
+    @Override
     ListViewWrite<PackedUInt64View> getList1();
 
+    @Override
     ListViewWriteRef<SubContainerRead, SubContainerWrite> getList2();
 
+    @Override
     VectorViewWrite<ImmutableSubContainer> getList3();
 
     @Override
@@ -182,6 +186,7 @@ public class ContainerViewTest {
       return ((UInt64View) get(1)).get();
     }
 
+    @Override
     public SubContainerImpl getSub1() {
       return (SubContainerImpl) getByRef(2);
     }
