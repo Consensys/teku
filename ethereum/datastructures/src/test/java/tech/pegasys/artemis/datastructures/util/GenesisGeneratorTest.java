@@ -121,9 +121,6 @@ class GenesisGeneratorTest {
     genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, INITIAL_DEPOSITS);
     final BeaconStateWithCache state = genesisGenerator.getGenesisState();
 
-    // All deposits should have a proof
-    INITIAL_DEPOSITS.forEach(deposit -> assertThat(deposit.getProof()).isNotEmpty());
-
     // All deposits should have been added into the state
     assertThat(state.getEth1_deposit_index())
         .isEqualTo(UnsignedLong.valueOf(INITIAL_DEPOSITS.size()));
