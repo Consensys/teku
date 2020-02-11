@@ -27,7 +27,7 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
   private final RpcEncoding encoding;
   private final Class<TRequest> requestType;
   private final Class<TResponse> responseType;
-  private final boolean closeNotification;
+  private final boolean expectResponseToRequest;
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final PeerLookup peerLookup;
@@ -39,10 +39,10 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
       final RpcEncoding encoding,
       final Class<TRequest> requestType,
       final Class<TResponse> responseType,
-      final boolean closeNotification,
+      final boolean expectResponseToRequest,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
-    this.closeNotification = closeNotification;
+    this.expectResponseToRequest = expectResponseToRequest;
     this.methodMultistreamId = methodMultistreamId + "/" + encoding.getName();
     this.encoding = encoding;
     this.requestType = requestType;
@@ -99,8 +99,8 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
     return methodMultistreamId;
   }
 
-  public boolean getCloseNotification() {
-    return closeNotification;
+  public boolean shouldReceiveResponse() {
+    return expectResponseToRequest;
   }
 
   @Override

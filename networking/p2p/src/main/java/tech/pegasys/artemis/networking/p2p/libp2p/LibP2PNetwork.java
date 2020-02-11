@@ -16,7 +16,6 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
@@ -41,8 +40,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
@@ -59,6 +56,7 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -68,7 +66,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final NodeId nodeId;
 
   private final Host host;
-  private final ScheduledExecutorService scheduler;
   private final PeerManager peerManager;
   private final Multiaddr advertisedAddr;
   private final Gossip gossip;
@@ -90,9 +87,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.config = config;
 
     advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
-    scheduler =
-        Executors.newSingleThreadScheduledExecutor(
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("libp2p-%d").build());
 
     // Setup gossip
     gossip = new Gossip();
@@ -103,7 +97,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(method)));
 
     // Setup peers
-    peerManager = new PeerManager(scheduler, metricsSystem, peerHandlers, rpcHandlers);
+    peerManager =
+        new PeerManager(new DelayedExecutorAsyncRunner(), metricsSystem, peerHandlers, rpcHandlers);
 
     host =
         BuilderJKt.hostJ(
@@ -208,7 +203,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     }
     STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
     reportExceptions(host.stop());
-    scheduler.shutdownNow();
   }
 
   @Override
