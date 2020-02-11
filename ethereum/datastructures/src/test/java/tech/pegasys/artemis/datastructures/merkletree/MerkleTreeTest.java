@@ -40,7 +40,7 @@ public class MerkleTreeTest {
           .collect(Collectors.toList());
 
   @Test
-  void ifProofsMerkleValidSimpleTree() {
+  void ProofSimpleTree() {
     merkleTree1 = new SimpleMerkleTree(treeDepth);
 
     for (int index = 0; index < numDeposits; index++) {
@@ -51,7 +51,7 @@ public class MerkleTreeTest {
       assertThat(
               is_valid_merkle_branch(
                   leaf,
-                  merkleTree1.getProofTreeByValue(leaf),
+                  merkleTree1.getProof(leaf),
                   treeDepth + 1, // Add 1 for the `List` length mix-in
                   index,
                   root))
@@ -60,7 +60,7 @@ public class MerkleTreeTest {
   }
 
   @Test
-  void ifProofsMerkleValidOptimizedTree() {
+  void ProofOptimizedTree() {
     merkleTree1 = new OptimizedMerkleTree(treeDepth);
 
     for (int index = 0; index < numDeposits; index++) {
@@ -71,7 +71,7 @@ public class MerkleTreeTest {
       assertThat(
               is_valid_merkle_branch(
                   leaf,
-                  merkleTree1.getProofTreeByValue(leaf),
+                  merkleTree1.getProof(leaf),
                   treeDepth + 1, // Add 1 for the `List` length mix-in
                   index,
                   root))
@@ -80,7 +80,7 @@ public class MerkleTreeTest {
   }
 
   @Test
-  void ifProofsWithViewBoundaryIsMerkleValidBranchSimpleTree() {
+  void ProofsWithViewBoundarySimpleTree() {
     merkleTree1 = new SimpleMerkleTree(treeDepth);
     merkleTree2 = new SimpleMerkleTree(treeDepth);
 
@@ -105,7 +105,7 @@ public class MerkleTreeTest {
   }
 
   @Test
-  void ifProofsWithViewBoundaryIsMerkleValidBranchOptimizedTree() {
+  void ProofsWithViewBoundaryOptimizedTree() {
     merkleTree1 = new OptimizedMerkleTree(treeDepth);
     merkleTree2 = new OptimizedMerkleTree(treeDepth);
 

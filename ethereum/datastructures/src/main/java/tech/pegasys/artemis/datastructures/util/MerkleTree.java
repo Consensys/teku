@@ -52,12 +52,12 @@ public abstract class MerkleTree {
     return zeroHashes;
   }
 
-  public SSZVector<Bytes32> getProofTreeByValue(Bytes32 value) {
+  public SSZVector<Bytes32> getProof(Bytes32 value) {
     int index = tree.get(0).indexOf(value);
-    return getProofTreeByIndex(index);
+    return getProof(index);
   }
 
-  public SSZVector<Bytes32> getProofTreeByIndex(int index) {
+  public SSZVector<Bytes32> getProof(int index) {
     List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
       index = index % 2 == 1 ? index - 1 : index + 1;

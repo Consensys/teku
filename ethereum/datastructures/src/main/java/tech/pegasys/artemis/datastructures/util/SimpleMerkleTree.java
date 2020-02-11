@@ -53,9 +53,9 @@ public class SimpleMerkleTree extends MerkleTree {
   }
 
   @Override
-  public SSZVector<Bytes32> getProofTreeByIndex(int index) {
+  public SSZVector<Bytes32> getProof(int index) {
     if (dirty) calcBranches();
-    return super.getProofTreeByIndex(index);
+    return super.getProof(index);
   }
 
   @Override
