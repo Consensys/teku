@@ -53,9 +53,9 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       STDOUT.log(Level.TRACE, "Requester received " + bytes.capacity() + " bytes.");
       responseHandler.onDataReceived(bytes);
       if (responseStream.getResponseChunkCount() == maximumResponseChunks) {
+        rpcStream.close().reportExceptions();
         responseHandler.close();
         responseStream.completeSuccessfully();
-        rpcStream.disconnect().reportExceptions();
       }
     } catch (final InvalidResponseException e) {
       LOG.debug("Peer responded with invalid data", e);
@@ -84,11 +84,13 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   public void handleInitialPayloadSent(RpcStream stream) {
-    if (method.getCloseNotification()) {
-      stream.closeStream().reportExceptions();
-      responseStream.completeSuccessfully();
+    if (method.shouldReceiveResponse()) {
+      // Close the write side of the stream
+      stream.closeWriteStream().reportExceptions();
     } else {
-      stream.disconnect().reportExceptions();
+      // If we're not expecting any response, close the stream altogether
+      stream.close().reportExceptions();
+      responseStream.completeSuccessfully();
     }
   }
 

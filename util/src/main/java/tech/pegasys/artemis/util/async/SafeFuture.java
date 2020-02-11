@@ -26,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 public class SafeFuture<T> extends CompletableFuture<T> {
   private static final Logger LOG = LogManager.getLogger();
 
+  public static SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
+
   public static void reportExceptions(final CompletionStage<?> future) {
     future.exceptionally(
         error -> {

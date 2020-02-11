@@ -17,6 +17,8 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.PeerId;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -27,6 +29,7 @@ import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class LibP2PPeer implements Peer {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
   private final Connection connection;
@@ -39,7 +42,7 @@ public class LibP2PPeer implements Peer {
 
     final PeerId peerId = connection.secureSession().getRemoteId();
     nodeId = new LibP2PNodeId(peerId);
-    SafeFuture.of(connection.closeFuture()).finish(res -> connected.set(false));
+    SafeFuture.of(connection.closeFuture()).finish(this::handleConnectionClosed);
   }
 
   @Override
@@ -77,5 +80,10 @@ public class LibP2PPeer implements Peer {
   @Override
   public boolean connectionInitiatedRemotely() {
     return !connectionInitiatedLocally();
+  }
+
+  private void handleConnectionClosed() {
+    LOG.debug("Disconnected from peer {}", this);
+    connected.set(false);
   }
 }
