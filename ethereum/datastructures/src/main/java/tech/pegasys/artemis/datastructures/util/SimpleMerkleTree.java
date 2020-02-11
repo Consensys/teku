@@ -48,7 +48,7 @@ public class SimpleMerkleTree extends MerkleTree {
   }
 
   @Override
-  protected int getNumberOfLeaves() {
+  public int getNumberOfLeaves() {
     return tree.get(0).size();
   }
 
@@ -56,6 +56,18 @@ public class SimpleMerkleTree extends MerkleTree {
   public SSZVector<Bytes32> getProofTreeByIndex(int index) {
     if (dirty) calcBranches();
     return super.getProofTreeByIndex(index);
+  }
+
+  @Override
+  public SSZVector<Bytes32> getProofWithViewBoundary(Bytes32 leaf, int viewLimit) {
+    if (dirty) calcBranches();
+    return super.getProofWithViewBoundary(leaf, viewLimit);
+  }
+
+  @Override
+  public SSZVector<Bytes32> getProofWithViewBoundary(int index, int viewLimit) {
+    if (dirty) calcBranches();
+    return super.getProofWithViewBoundary(index, viewLimit);
   }
 
   @Override
