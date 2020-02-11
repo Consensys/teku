@@ -46,7 +46,7 @@ public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AsyncRunner asyncRunner;
-  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(30);
+  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
