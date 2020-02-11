@@ -28,7 +28,7 @@ import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
-import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUInt64View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
 @State(Scope.Thread)
 public class ListBenchmark {
@@ -40,17 +40,16 @@ public class ListBenchmark {
     return listMaxSizeM * 1024 * 1024;
   }
 
-  ListViewWrite<PackedUInt64View> l1w;
-  ListViewRead<PackedUInt64View> l2r;
+  ListViewWrite<UInt64View> l1w;
+  ListViewRead<UInt64View> l2r;
 
   public ListBenchmark() {
-    ListViewType<PackedUInt64View> type =
-        new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, 100_000_000);
-    ListViewRead<PackedUInt64View> l1 = type.createDefault();
+    ListViewType<UInt64View> type = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 100_000_000);
+    ListViewRead<UInt64View> l1 = type.createDefault();
 
-    ListViewWrite<PackedUInt64View> l2w = l1.createWritableCopy();
+    ListViewWrite<UInt64View> l2w = l1.createWritableCopy();
     for (int i = 0; i < 1000000; i++) {
-      l2w.append(new PackedUInt64View(UnsignedLong.valueOf(1121212)));
+      l2w.append(new UInt64View(UnsignedLong.valueOf(1121212)));
     }
     l2r = l2w.commitChanges();
 
@@ -61,9 +60,9 @@ public class ListBenchmark {
 
   @Setup(Level.Iteration)
   public void init() throws Exception {
-    ListViewType<PackedUInt64View> type =
-        new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
-    ListViewRead<PackedUInt64View> l1 = type.createDefault();
+    ListViewType<UInt64View> type =
+        new ListViewType<>(BasicViewTypes.UINT64_TYPE, getListMaxSize());
+    ListViewRead<UInt64View> l1 = type.createDefault();
     l1w = l1.createWritableCopy();
   }
 
@@ -71,9 +70,9 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void createDefaultUIntList(Blackhole bh) {
-    ListViewType<PackedUInt64View> type =
-        new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, getListMaxSize());
-    ListViewRead<PackedUInt64View> l1 = type.createDefault();
+    ListViewType<UInt64View> type =
+        new ListViewType<>(BasicViewTypes.UINT64_TYPE, getListMaxSize());
+    ListViewRead<UInt64View> l1 = type.createDefault();
     bh.consume(l1);
   }
 
@@ -81,16 +80,16 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void append(Blackhole bh) {
-    l1w.append(new PackedUInt64View(UnsignedLong.valueOf(1121212)));
+    l1w.append(new UInt64View(UnsignedLong.valueOf(1121212)));
   }
 
   @Benchmark
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void incrementalHash(Blackhole bh) {
-    ListViewWrite<PackedUInt64View> l2w = l2r.createWritableCopy();
-    l2w.set(12345, new PackedUInt64View(UnsignedLong.valueOf(77777)));
-    ListViewRead<PackedUInt64View> l2r_ = l2w.commitChanges();
+    ListViewWrite<UInt64View> l2w = l2r.createWritableCopy();
+    l2w.set(12345, new UInt64View(UnsignedLong.valueOf(77777)));
+    ListViewRead<UInt64View> l2r_ = l2w.commitChanges();
     l2r_.hashTreeRoot();
   }
 }

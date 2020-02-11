@@ -26,7 +26,6 @@ import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUInt64View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 
@@ -61,7 +60,7 @@ public class ContainerViewTest {
 
     SubContainerRead getSub1();
 
-    ListViewRead<PackedUInt64View> getList1();
+    ListViewRead<UInt64View> getList1();
 
     ListViewRead<SubContainerRead> getList2();
 
@@ -82,7 +81,7 @@ public class ContainerViewTest {
     SubContainerWrite getSub1();
 
     @Override
-    ListViewWrite<PackedUInt64View> getList1();
+    ListViewWrite<UInt64View> getList1();
 
     @Override
     ListViewWriteRef<SubContainerRead, SubContainerWrite> getList2();
@@ -163,7 +162,7 @@ public class ContainerViewTest {
                 BasicViewTypes.UINT64_TYPE,
                 BasicViewTypes.UINT64_TYPE,
                 SubContainerImpl.TYPE,
-                new ListViewType<>(BasicViewTypes.PACKED_UINT64_TYPE, 10),
+                new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
                 new ListViewType<>(SubContainerImpl.TYPE, 2),
                 new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
             ContainerImpl::new);
@@ -193,8 +192,8 @@ public class ContainerViewTest {
 
     @Override
     @SuppressWarnings("unchecked")
-    public ListViewWrite<PackedUInt64View> getList1() {
-      return (ListViewWrite<PackedUInt64View>) getByRef(3);
+    public ListViewWrite<UInt64View> getList1() {
+      return (ListViewWrite<UInt64View>) getByRef(3);
     }
 
     @Override
@@ -246,8 +245,8 @@ public class ContainerViewTest {
     c1w.getSub1().setLong1(UnsignedLong.valueOf(0x111));
     c1w.getSub1().setLong2(UnsignedLong.valueOf(0x222));
 
-    c1w.getList1().append(PackedUInt64View.fromLong(0x333));
-    c1w.getList1().append(PackedUInt64View.fromLong(0x444));
+    c1w.getList1().append(UInt64View.fromLong(0x333));
+    c1w.getList1().append(UInt64View.fromLong(0x444));
 
     c1w.getList2()
         .append(
@@ -359,8 +358,8 @@ public class ContainerViewTest {
     ContainerImpl c1 = ContainerImpl.TYPE.createDefault();
     c1.setLong1(UnsignedLong.valueOf(0x111));
     c1.setLong2(UnsignedLong.valueOf(0x222));
-    ListViewWrite<PackedUInt64View> list1 = c1.getList1();
-    list1.append(PackedUInt64View.fromLong(0x333));
+    ListViewWrite<UInt64View> list1 = c1.getList1();
+    list1.append(UInt64View.fromLong(0x333));
     //    c1.setList1(list1);
     TreeUtil.dumpBinaryTree(c1.getBackingNode());
   }
