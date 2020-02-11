@@ -35,7 +35,7 @@ public class BasicViewTypes {
       new BasicViewType<>(1) {
         @Override
         public BitView createFromTreeNode(TreeNode node, int idx) {
-          return new BitView((node.hashTreeRoot().get(idx / 8) & (1 << (8 - (idx % 8)))) != 0);
+          return new BitView((node.hashTreeRoot().get(idx / 8) & (1 << (7 - (idx % 8)))) != 0);
         }
 
         @Override
