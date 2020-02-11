@@ -28,10 +28,11 @@ import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GenesisTimeHandler {
   private static final Logger LOG = LogManager.getLogger();
+
   @OpenApi(
       path = "/node/genesis_time",
       method = HttpMethod.GET,
-      summary = "Get version string of the running beacon node.",
+      summary = "Get the genesis_time parameter from beacon node configuration.",
       tags = {"MinimalSet"},
       description =
           "Requests the genesis_time parameter from the beacon node, which should be consistent across all beacon nodes that follow the same beacon chain.",
@@ -40,7 +41,8 @@ public class GenesisTimeHandler {
         @OpenApiResponse(status = "500")
       })
   public static void handleRequest(Context ctx) {
-    if (BeaconRestApi.getInstance() == null || BeaconRestApi.getInstance().getChainStorageClient() == null) {
+    if (BeaconRestApi.getInstance() == null
+        || BeaconRestApi.getInstance().getChainStorageClient() == null) {
       LOG.debug("Failed to get genesis time - chainStorageClient not found.");
       ctx.status(SC_INTERNAL_SERVER_ERROR).result(JsonProvider.objectToJSON("Not found"));
       return;

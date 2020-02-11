@@ -61,6 +61,7 @@ public class BeaconRestApi {
   public static BeaconRestApi getInstance() {
     return beaconRestApi;
   }
+
   private BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
@@ -79,7 +80,7 @@ public class BeaconRestApi {
     addNodeHandlers();
     addBeaconHandlers();
     addNetworkHandlers();
-
+    addValidatorHandlers();
   }
 
   public int getPort() {
@@ -124,12 +125,19 @@ public class BeaconRestApi {
     return options;
   }
 
-
   private void addNodeHandlers() {
     app.get("/node/genesis_time", GenesisTimeHandler::handleRequest);
+    /*
+     * TODO:
+     *    /node/version
+     *    /node/syncing
+     *  Optional:
+     *    /node/fork
+     */
   }
 
   private void addBeaconHandlers() {
+    // not in Minimal or optional specified set
     handlers.add(new BeaconHeadHandler(chainStorageClient));
     handlers.add(new BeaconChainHeadHandler(chainStorageClient));
     handlers.add(new BeaconBlockHandler(chainStorageClient));
@@ -137,11 +145,22 @@ public class BeaconRestApi {
     handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
   }
 
+  private void addValidatorHandlers() {
+    /*
+     * TODO:
+     *   reference: https://ethereum.github.io/eth2.0-APIs/#/
+     *   /validator/{pubkey}
+     *   /validator/duties
+     *   /validator/block (GET/POST)
+     *   /validator/attestation (GET/POST)
+     **/
+  }
+
   private void addNetworkHandlers() {
+    // not in Minimal or optional specified set
     handlers.add(new PeerIdHandler(p2pNetwork));
     handlers.add(new PeersHandler(p2pNetwork));
     handlers.add(new ENRHandler());
-
   }
 
   public ChainStorageClient getChainStorageClient() {
