@@ -13,10 +13,13 @@
 
 package tech.pegasys.artemis.util.backing.type;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.nio.ByteOrder;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes32;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
@@ -24,7 +27,6 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes4View;
-import tech.pegasys.artemis.util.backing.view.BasicViews.PackedUInt64View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
 public class BasicViewTypes {
@@ -67,11 +69,11 @@ public class BasicViewTypes {
         }
       };
 
-  public static final BasicViewType<PackedUInt64View> PACKED_UINT64_TYPE =
+  public static final BasicViewType<UInt64View> UINT64_TYPE =
       new BasicViewType<>(64) {
         @Override
-        public PackedUInt64View createFromTreeNode(TreeNode node, int internalIndex) {
-          return PackedUInt64View.fromLong(
+        public UInt64View createFromTreeNode(TreeNode node, int internalIndex) {
+          return UInt64View.fromLong(
               node.hashTreeRoot().slice(internalIndex * 8, 8).toLong(ByteOrder.LITTLE_ENDIAN));
         }
 
@@ -83,43 +85,54 @@ public class BasicViewTypes {
                   Bytes.concatenate(
                       originalChunk.slice(0, index * 8),
                       Bytes.ofUnsignedLong(
-                          ((PackedUInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
+                          ((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN),
                       originalChunk.slice((index + 1) * 8))));
         }
       };
 
-  private abstract static class NonpackedBasicType<C extends ViewRead> extends BasicViewType<C> {
-    public NonpackedBasicType(int bitsSize) {
-      super(bitsSize);
-    }
-
-    @Override
-    public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
-      throw new UnsupportedOperationException();
-    }
-  }
-
-  public static final BasicViewType<UInt64View> UINT64_TYPE =
-      new NonpackedBasicType<>(64) {
-        @Override
-        public UInt64View createFromTreeNode(TreeNode node, int internalIndex) {
-          return new UInt64View(node);
-        }
-      };
+  //  private abstract static class NonpackedBasicType<C extends ViewRead> extends BasicViewType<C>
+  // {
+  //    public NonpackedBasicType(int bitsSize) {
+  //      super(bitsSize);
+  //    }
+  //
+  //    @Override
+  //    public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
+  //      throw new UnsupportedOperationException();
+  //    }
+  //  }
 
   public static final BasicViewType<Bytes4View> BYTES4_TYPE =
-      new NonpackedBasicType<>(32) {
+      new BasicViewType<>(32) {
         @Override
         public Bytes4View createFromTreeNode(TreeNode node, int internalIndex) {
-          return new Bytes4View(node);
+          return new Bytes4View(new Bytes4(node.hashTreeRoot().slice(internalIndex * 4, 4)));
+        }
+
+        @Override
+        public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+          checkArgument(
+              internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
+          Bytes32 originalChunk = srcNode.hashTreeRoot();
+          return new RootImpl(
+              Bytes32.wrap(
+                  Bytes.concatenate(
+                      originalChunk.slice(0, internalIndex * 4),
+                      ((Bytes4View) newValue).get().getWrappedBytes(),
+                      originalChunk.slice((internalIndex + 1) * 4))));
         }
       };
 
   public static final BasicViewType<Bytes32View> BYTES32_TYPE =
-      new NonpackedBasicType<>(256) {
+      new BasicViewType<>(256) {
         @Override
         public Bytes32View createFromTreeNode(TreeNode node, int internalIndex) {
-          return new Bytes32View(node);
+          return new Bytes32View(node.hashTreeRoot());
+        }
+
+        @Override
+        public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+          return new RootImpl(((Bytes32View) newValue).get());
         }
       };
 }
