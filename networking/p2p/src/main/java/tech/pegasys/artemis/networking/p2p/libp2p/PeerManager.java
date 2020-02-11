@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-import static tech.pegasys.artemis.util.async.FutureUtil.ignoreFuture;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.Connection;
@@ -46,7 +45,7 @@ import tech.pegasys.artemis.util.events.Subscribers;
 public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final AsyncRunner asynRunner;
+  private final AsyncRunner asyncRunner;
   private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(30);
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
@@ -57,11 +56,11 @@ public class PeerManager implements ConnectionHandler {
       Subscribers.create(true);
 
   public PeerManager(
-      final AsyncRunner asynRunner,
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final List<PeerHandler> peerHandlers,
       final Map<RpcMethod, RpcHandler> rpcHandlers) {
-    this.asynRunner = asynRunner;
+    this.asyncRunner = asyncRunner;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
@@ -83,34 +82,34 @@ public class PeerManager implements ConnectionHandler {
   }
 
   public SafeFuture<?> connect(final Multiaddr peer, final Network network) {
-    STDOUT.log(Level.DEBUG, "Connecting to " + peer);
+    LOG.debug("Connecting to {}", peer);
     final SafeFuture<Connection> initialConnectionFuture = SafeFuture.of(network.connect(peer));
-    final SafeFuture<?> retryLoop =
-        initialConnectionFuture
-            .thenCompose(
-                conn -> {
-                  LOG.debug(
-                      "Connection to peer {} was successful", conn.secureSession().getRemoteId());
-                  return SafeFuture.of(conn.closeFuture());
-                })
-            .exceptionally(
-                (err) -> {
-                  LOG.debug("Connection to {} failed: {}", peer, err);
-                  return null;
-                })
-            .thenCompose(
-                (res) -> {
-                  LOG.debug(
-                      "Connection to {} was closed. Will retry in {} sec",
-                      peer,
-                      RECONNECT_TIMEOUT.toSeconds());
 
-                  return asynRunner.runAfterDelay(
-                      () -> connect(peer, network),
-                      RECONNECT_TIMEOUT.toMillis(),
-                      TimeUnit.MILLISECONDS);
-                });
-    ignoreFuture(retryLoop);
+    // Retry if peer disconnects or we fail to connect
+    initialConnectionFuture
+        .thenCompose(
+            conn -> {
+              LOG.debug("Connection to peer {} was successful", conn.secureSession().getRemoteId());
+              return SafeFuture.of(conn.closeFuture());
+            })
+        .exceptionally(
+            (err) -> {
+              LOG.debug("Connection to {} failed: {}", peer, err);
+              return null;
+            })
+        .thenCompose(
+            (res) -> {
+              LOG.debug(
+                  "Connection to {} was closed. Will retry in {} sec",
+                  peer,
+                  RECONNECT_TIMEOUT.toSeconds());
+              return asyncRunner.runAfterDelay(
+                  () -> connect(peer, network).exceptionally(err -> null),
+                  RECONNECT_TIMEOUT.toMillis(),
+                  TimeUnit.MILLISECONDS);
+            })
+        .reportExceptions();
+
     return initialConnectionFuture;
   }
 
