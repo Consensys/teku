@@ -305,46 +305,52 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldPersistOnDisk(@TempDirectory final Path tempDir) throws Exception {
-    database = MapDbDatabase.createOnDisk(tempDir.toFile(), false);
-    database.storeGenesis(store);
+    try {
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), false);
+      database.storeGenesis(store);
 
-    final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
-    final SignedBeaconBlock block2 = blockAtSlot(2, block1);
-    final SignedBeaconBlock block3 = blockAtSlot(3, block2);
-    // Few skipped slots
-    final SignedBeaconBlock block7 = blockAtSlot(7, block3);
-    final SignedBeaconBlock block8 = blockAtSlot(8, block7);
-    final SignedBeaconBlock block9 = blockAtSlot(9, block8);
+      final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
+      final SignedBeaconBlock block2 = blockAtSlot(2, block1);
+      final SignedBeaconBlock block3 = blockAtSlot(3, block2);
+      // Few skipped slots
+      final SignedBeaconBlock block7 = blockAtSlot(7, block3);
+      final SignedBeaconBlock block8 = blockAtSlot(8, block7);
+      final SignedBeaconBlock block9 = blockAtSlot(9, block8);
 
-    // Create some blocks on a different fork
-    final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
-    final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
-    final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
-    final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
+      // Create some blocks on a different fork
+      final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
+      final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
+      final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
+      final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
 
-    addBlocks(
-        block1,
-        block2,
-        block3,
-        block7,
-        block8,
-        block9,
-        forkBlock6,
-        forkBlock7,
-        forkBlock8,
-        forkBlock9);
-    assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
+      addBlocks(
+          block1,
+          block2,
+          block3,
+          block7,
+          block8,
+          block9,
+          forkBlock6,
+          forkBlock7,
+          forkBlock8,
+          forkBlock9);
+      assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
 
-    finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
+      finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
 
-    // Close and re-read from disk store.
-    database.close();
-    database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
-    assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
-    assertBlocksFinalized(block1, block2, block3, block7);
+      // Close and re-read from disk store.
+      database.close();
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
+      assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
+      assertBlocksFinalized(block1, block2, block3, block7);
 
-    // Should still be able to retrieve finalized blocks by root
-    assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
+      // Should still be able to retrieve finalized blocks by root
+      assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
+    } finally {
+      // Close and re-read from disk store.
+      database.close();
+      database = MapDbDatabase.createInMemory();
+    }
   }
 
   private void assertBlocksFinalized(final SignedBeaconBlock... blocks) {
