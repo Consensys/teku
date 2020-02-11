@@ -128,7 +128,6 @@ public class Constants {
   public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
 
   // Artemis specific
-  public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
