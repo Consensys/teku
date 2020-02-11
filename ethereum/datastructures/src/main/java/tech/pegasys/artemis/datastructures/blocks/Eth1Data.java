@@ -22,36 +22,59 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Eth1Data implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+public class Eth1Data extends ContainerViewImpl<Eth1Data>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   private static final int SSZ_FIELD_COUNT = 3;
 
-  private Bytes32 deposit_root;
-  private UnsignedLong deposit_count;
-  private Bytes32 block_hash;
+  public static final ContainerViewType<Eth1Data> TYPE =
+      new ContainerViewType<>(
+          List.of(
+              BasicViewTypes.BYTES32_TYPE, BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
+          Eth1Data::new);
+
+  @SuppressWarnings("unused")
+  private final Bytes32 deposit_root = null;
+
+  @SuppressWarnings("unused")
+  private final UnsignedLong deposit_count = null;
+
+  @SuppressWarnings("unused")
+  private final Bytes32 block_hash = null;
+
+  private Eth1Data(
+      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public Eth1Data(Bytes32 deposit_root, UnsignedLong deposit_count, Bytes32 block_hash) {
-    this.deposit_root = deposit_root;
-    this.deposit_count = deposit_count;
-    this.block_hash = block_hash;
+    super(
+        TYPE,
+        new Bytes32View(deposit_root),
+        new UInt64View(deposit_count),
+        new Bytes32View(block_hash));
   }
 
   public Eth1Data() {
-    this.deposit_root = Bytes32.ZERO;
-    this.deposit_count = UnsignedLong.ZERO;
-    this.block_hash = Bytes32.ZERO;
+    super(TYPE);
   }
 
   public Eth1Data(Eth1Data eth1Data) {
-    this.deposit_root = eth1Data.getDeposit_root();
-    this.deposit_count = eth1Data.getDeposit_count();
-    this.block_hash = eth1Data.getBlock_hash();
+    super(TYPE, eth1Data.getBackingNode());
   }
 
   @Override
@@ -62,9 +85,9 @@ public class Eth1Data implements Merkleizable, SimpleOffsetSerializable, SSZCont
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(deposit_root)),
-        SSZ.encodeUInt64(deposit_count.longValue()),
-        SSZ.encode(writer -> writer.writeFixedBytes(block_hash)));
+        SSZ.encode(writer -> writer.writeFixedBytes(getDeposit_root())),
+        SSZ.encodeUInt64(getDeposit_count().longValue()),
+        SSZ.encode(writer -> writer.writeFixedBytes(getBlock_hash())));
   }
 
   public static Eth1Data fromBytes(Bytes bytes) {
@@ -80,15 +103,15 @@ public class Eth1Data implements Merkleizable, SimpleOffsetSerializable, SSZCont
   public Bytes toBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytes(deposit_root);
-          writer.writeUInt64(deposit_count.longValue());
-          writer.writeFixedBytes(block_hash);
+          writer.writeFixedBytes(getDeposit_root());
+          writer.writeUInt64(getDeposit_count().longValue());
+          writer.writeFixedBytes(getBlock_hash());
         });
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(deposit_root, deposit_count, block_hash);
+    return Objects.hash(getDeposit_root(), getDeposit_count(), getBlock_hash());
   }
 
   @Override
@@ -113,48 +136,34 @@ public class Eth1Data implements Merkleizable, SimpleOffsetSerializable, SSZCont
 
   /** @return the deposit_root */
   public Bytes32 getDeposit_root() {
-    return deposit_root;
-  }
-
-  /** @param deposit_root the deposit_root to set */
-  public void setDeposit_root(Bytes32 deposit_root) {
-    this.deposit_root = deposit_root;
+    return ((Bytes32View) get(0)).get();
   }
 
   public UnsignedLong getDeposit_count() {
-    return deposit_count;
-  }
-
-  public void setDeposit_count(UnsignedLong deposit_count) {
-    this.deposit_count = deposit_count;
+    return ((UInt64View) get(1)).get();
   }
 
   /** @return the block_hash */
   public Bytes32 getBlock_hash() {
-    return block_hash;
-  }
-
-  /** @param block_hash the block_hash to set */
-  public void setBlock_hash(Bytes32 block_hash) {
-    this.block_hash = block_hash;
+    return ((Bytes32View) get(2)).get();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, deposit_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, getDeposit_root()),
             HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(deposit_count.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, block_hash)));
+                SSZTypes.BASIC, SSZ.encodeUInt64(getDeposit_count().longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, getBlock_hash())));
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("deposit_root", deposit_root)
-        .add("deposit_count", deposit_count)
-        .add("block_hash", block_hash)
+        .add("deposit_root", getDeposit_root())
+        .add("deposit_count", getDeposit_count())
+        .add("block_hash", getBlock_hash())
         .toString();
   }
 }

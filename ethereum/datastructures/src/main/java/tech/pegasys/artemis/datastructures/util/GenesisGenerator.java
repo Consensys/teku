@@ -65,9 +65,11 @@ public class GenesisGenerator {
       Bytes32 eth1BlockHash, UnsignedLong eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
-    final Eth1Data eth1Data = state.getEth1_data();
-    eth1Data.setBlock_hash(eth1BlockHash);
-    eth1Data.setDeposit_count(UnsignedLong.valueOf(depositDataList.size() + deposits.size()));
+    state.setEth1_data(
+        new Eth1Data(
+            Bytes32.ZERO,
+            UnsignedLong.valueOf(depositDataList.size() + deposits.size()),
+            eth1BlockHash));
 
     // Process deposits
     deposits.forEach(
@@ -132,11 +134,13 @@ public class GenesisGenerator {
   }
 
   private void calculateDepositRoot() {
-    state
-        .getEth1_data()
-        .setDeposit_root(
+    Eth1Data eth1Data = state.getEth1_data();
+    state.setEth1_data(
+        new Eth1Data(
             HashTreeUtil.hash_tree_root(
-                HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, depositDataList));
+                HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, depositDataList),
+            eth1Data.getDeposit_count(),
+            eth1Data.getBlock_hash()));
   }
 
   private void calculateDepositProof(final Deposit deposit) {
