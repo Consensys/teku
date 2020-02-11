@@ -20,7 +20,6 @@ import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 
 public class VectorViewImpl<R extends ViewRead, W extends R>
@@ -76,8 +75,8 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
     return writableCopy;
   }
 
-  private Commit updateNode(int listIndex, Function<TreeNode, TreeNode> nodeUpdater) {
-    return (Commit) backingNode.update(type.treeWidth() + listIndex, nodeUpdater);
+  private TreeNode updateNode(int listIndex, Function<TreeNode, TreeNode> nodeUpdater) {
+    return backingNode.update(type.treeWidth() + listIndex, nodeUpdater);
   }
 
   private TreeNode getNode(int listIndex) {
