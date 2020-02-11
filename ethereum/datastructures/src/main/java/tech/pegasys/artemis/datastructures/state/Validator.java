@@ -35,7 +35,7 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
-import tech.pegasys.artemis.util.backing.view.VectorViewBytes;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
@@ -110,7 +110,7 @@ public class Validator extends ContainerViewImpl<Validator>
       UnsignedLong withdrawable_epoch) {
     super(
         TYPE,
-        VectorViewBytes.createFromBytes(pubkey.toBytes()),
+        ViewUtils.createVectorFromBytes(pubkey.toBytes()),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(effective_balance),
         new BitView(slashed),
@@ -226,12 +226,12 @@ public class Validator extends ContainerViewImpl<Validator>
   public BLSPublicKey getPubkey() {
     @SuppressWarnings("unchecked")
     VectorViewRead<ByteView> bytesView = (VectorViewRead<ByteView>) get(0);
-    return BLSPublicKey.fromBytes(VectorViewBytes.getAllBytes(bytesView));
+    return BLSPublicKey.fromBytes(ViewUtils.getAllBytes(bytesView));
   }
 
   @Override
   public void setPubkey(BLSPublicKey pubkey) {
-    set(0, VectorViewBytes.createFromBytes(pubkey.toBytes()));
+    set(0, ViewUtils.createVectorFromBytes(pubkey.toBytes()));
   }
 
   @Override

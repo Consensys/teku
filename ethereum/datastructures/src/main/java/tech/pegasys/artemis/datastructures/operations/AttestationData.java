@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -23,25 +22,54 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class AttestationData implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
+public class AttestationData extends ContainerViewImpl<AttestationData>
+    implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
-  private final UnsignedLong slot;
-  private final UnsignedLong index;
+  public static final ContainerViewType<AttestationData> TYPE =
+      new ContainerViewType<>(
+          List.of(
+              BasicViewTypes.UINT64_TYPE,
+              BasicViewTypes.UINT64_TYPE,
+              BasicViewTypes.BYTES32_TYPE,
+              Checkpoint.TYPE,
+              Checkpoint.TYPE),
+          AttestationData::new);
+
+  @SuppressWarnings("unused")
+  private final UnsignedLong slot = null;
+
+  @SuppressWarnings("unused")
+  private final UnsignedLong index = null;
 
   // LMD GHOST vote
-  private final Bytes32 beacon_block_root;
+  @SuppressWarnings("unused")
+  private final Bytes32 beacon_block_root = null;
 
   // FFG vote
-  private final Checkpoint source;
-  private final Checkpoint target;
+  @SuppressWarnings("unused")
+  private final Checkpoint source = null;
+
+  @SuppressWarnings("unused")
+  private final Checkpoint target = null;
+
+  public AttestationData(
+      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public AttestationData(
       UnsignedLong slot,
@@ -49,24 +77,22 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
       Bytes32 beacon_block_root,
       Checkpoint source,
       Checkpoint target) {
-    this.slot = slot;
-    this.index = index;
-    this.beacon_block_root = beacon_block_root;
-    this.source = source;
-    this.target = target;
+    super(
+        TYPE,
+        new UInt64View(slot),
+        new UInt64View(index),
+        new Bytes32View(beacon_block_root),
+        source,
+        target);
   }
 
   public AttestationData(UnsignedLong slot, AttestationData data) {
-    this.slot = slot;
-    this.index = data.getIndex();
-    this.beacon_block_root = data.getBeacon_block_root();
-    this.source = data.getSource();
-    this.target = data.getTarget();
+    this(slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
   }
 
   @Override
   public int getSSZFieldCount() {
-    return SSZ_FIELD_COUNT + source.getSSZFieldCount() + target.getSSZFieldCount();
+    return SSZ_FIELD_COUNT + getSource().getSSZFieldCount() + getTarget().getSSZFieldCount();
   }
 
   @Override
@@ -74,11 +100,11 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
     List<Bytes> fixedPartsList = new ArrayList<>();
     fixedPartsList.addAll(
         List.of(
-            SSZ.encodeUInt64(slot.longValue()),
-            SSZ.encodeUInt64(index.longValue()),
-            SSZ.encode(writer -> writer.writeFixedBytes(beacon_block_root))));
-    fixedPartsList.addAll(source.get_fixed_parts());
-    fixedPartsList.addAll(target.get_fixed_parts());
+            SSZ.encodeUInt64(getSlot().longValue()),
+            SSZ.encodeUInt64(getIndex().longValue()),
+            SSZ.encode(writer -> writer.writeFixedBytes(getBeacon_block_root()))));
+    fixedPartsList.addAll(getSource().get_fixed_parts());
+    fixedPartsList.addAll(getTarget().get_fixed_parts());
     return fixedPartsList;
   }
 
@@ -91,51 +117,45 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
       return false;
     }
     final AttestationData that = (AttestationData) o;
-    return Objects.equals(slot, that.slot)
-        && Objects.equals(index, that.index)
-        && Objects.equals(beacon_block_root, that.beacon_block_root)
-        && Objects.equals(source, that.source)
-        && Objects.equals(target, that.target);
+    return Objects.equals(getSlot(), that.getSlot())
+        && Objects.equals(getIndex(), that.getIndex())
+        && Objects.equals(getBeacon_block_root(), that.getBeacon_block_root())
+        && Objects.equals(getSource(), that.getSource())
+        && Objects.equals(getTarget(), that.getTarget());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(slot, index, beacon_block_root, source, target);
+    return Objects.hash(getSlot(), getIndex(), getBeacon_block_root(), getSource(), getTarget());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
   public UnsignedLong getSlot() {
-    return slot;
+    return ((UInt64View) get(0)).get();
   }
 
   public UnsignedLong getIndex() {
-    return index;
+    return ((UInt64View) get(1)).get();
   }
 
   public Bytes32 getBeacon_block_root() {
-    return beacon_block_root;
+    return ((Bytes32View) get(2)).get();
   }
 
   public Checkpoint getSource() {
-    return source;
+    return ((Checkpoint) get(3));
   }
 
   public Checkpoint getTarget() {
-    return target;
+    return ((Checkpoint) get(4));
   }
 
   public AttestationData withIndex(final UnsignedLong index) {
-    return new AttestationData(slot, index, beacon_block_root, source, target);
+    return new AttestationData(getSlot(), index, getBeacon_block_root(), getSource(), getTarget());
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, beacon_block_root),
-            source.hash_tree_root(),
-            target.hash_tree_root()));
+    return hashTreeRoot();
   }
 }
