@@ -132,12 +132,26 @@ public class PeerChainValidator {
 
     // Check whether finalized checkpoints are compatible
     if (finalizedEpoch.compareTo(remoteFinalizedEpoch) == 0) {
+      LOG.trace(
+          "Finalized epoch for peer {} matches our own finalized epoch {}, verify blocks roots match",
+          peer.getId(),
+          finalizedEpoch);
       return verifyFinalizedCheckpointsAreTheSame(finalizedCheckpoint);
     } else if (finalizedEpoch.compareTo(remoteFinalizedEpoch) > 0) {
       // We're ahead of our peer, check that we agree with our peer's finalized epoch
+      LOG.trace(
+          "Our finalized epoch {} is ahead of our peer's ({}) finalized epoch {}, check that we consider our peer's finalized block to be canonical.",
+          finalizedEpoch,
+          peer.getId(),
+          remoteFinalizedEpoch);
       return verifyPeersFinalizedCheckpointIsCanonical();
     } else {
       // Our peer is ahead of us, check that they agree on our finalized epoch
+      LOG.trace(
+          "Our finalized epoch {} is behind of our peer's ({}) finalized epoch {}, check that our peer considers our latest finalized block to be canonical.",
+          finalizedEpoch,
+          peer.getId(),
+          remoteFinalizedEpoch);
       return verifyPeerAgreesWithOurFinalizedCheckpoint(finalizedCheckpoint);
     }
   }
@@ -174,12 +188,17 @@ public class PeerChainValidator {
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint) {
     final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochSlot();
-
     return historicalChainData
         .getFinalizedBlockAtSlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
-        .thenCompose(blockSlot -> peer.requestBlockBySlot(status.getHeadRoot(), blockSlot))
-        .thenApply(block -> validateBlockRootsMatch(block, finalizedCheckpoint.getRoot()));
+        .thenCompose(
+            blockSlot -> {
+              return peer.requestBlockBySlot(status.getHeadRoot(), blockSlot)
+                  .thenApply(
+                      block ->
+                          validateRemoteBlockMatchesOurFinalizedBlock(
+                              block, finalizedCheckpoint.getRoot(), blockSlot));
+            });
   }
 
   private SignedBeaconBlock toBlock(
@@ -196,6 +215,22 @@ public class PeerChainValidator {
             () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
   }
 
+  private boolean validateRemoteBlockMatchesOurFinalizedBlock(
+      final SignedBeaconBlock block, final Bytes32 root, final UnsignedLong slot) {
+    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    if (slot.equals(genesisSlot) && block.getSlot().compareTo(genesisSlot) > 0) {
+      // Account for prysm's special handling of genesis block
+      // As of 2020-02-07, queries for the genesis block will return the first non-genesis block
+      LOG.trace(
+          "Query for genesis block at {} returned block at slot {}.  Bypass check and accept peer {}.",
+          genesisSlot,
+          block.getSlot(),
+          peer.getId());
+      return true;
+    }
+    return validateBlockRootsMatch(block, root);
+  }
+
   private boolean validateBlockRootsMatch(final SignedBeaconBlock block, final Bytes32 root) {
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final boolean rootsMatch = Objects.equals(blockRoot, root);
@@ -203,7 +238,11 @@ public class PeerChainValidator {
       LOG.trace("Verified finalized blocks match for peer: {}", peer);
     } else {
       LOG.warn(
-          "Detected peer with inconsistent finalized block at slot {}: {}", block.getSlot(), peer);
+          "Detected peer with inconsistent finalized block at slot {} for peer {}.  Block roots {} and {} do not match",
+          block.getSlot(),
+          peer,
+          blockRoot,
+          root);
     }
     return rootsMatch;
   }

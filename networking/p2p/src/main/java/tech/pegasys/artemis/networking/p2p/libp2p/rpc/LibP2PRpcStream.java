@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p.rpc;
 
+import io.libp2p.core.P2PChannel;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -22,16 +23,19 @@ import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class LibP2PRpcStream implements RpcStream {
-  private ChannelHandlerContext ctx;
-  private AtomicBoolean closed = new AtomicBoolean(false);
 
-  public LibP2PRpcStream(final ChannelHandlerContext ctx) {
+  private final P2PChannel p2pChannel;
+  private ChannelHandlerContext ctx;
+  private AtomicBoolean writeStreamClosed = new AtomicBoolean(false);
+
+  public LibP2PRpcStream(final P2PChannel p2pChannel, final ChannelHandlerContext ctx) {
+    this.p2pChannel = p2pChannel;
     this.ctx = ctx;
   }
 
   @Override
   public SafeFuture<Void> writeBytes(final Bytes bytes) throws StreamClosedException {
-    if (closed.get()) {
+    if (writeStreamClosed.get()) {
       throw new StreamClosedException();
     }
     final ByteBuf reqByteBuf = ctx.alloc().buffer();
@@ -41,14 +45,14 @@ public class LibP2PRpcStream implements RpcStream {
   }
 
   @Override
-  public SafeFuture<Void> closeStream() {
-    closed.set(true);
-    return toSafeFuture(ctx.channel().close());
+  public SafeFuture<Void> close() {
+    writeStreamClosed.set(true);
+    return SafeFuture.of(p2pChannel.close()).thenApply((res) -> null);
   }
 
   @Override
-  public SafeFuture<Void> disconnect() {
-    closed.set(true);
+  public SafeFuture<Void> closeWriteStream() {
+    writeStreamClosed.set(true);
     return toSafeFuture(ctx.channel().disconnect());
   }
 

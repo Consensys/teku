@@ -81,7 +81,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     // TODO timeout handlers
     final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
-    Controller controller = new Controller(nodeId);
+    Controller controller = new Controller(nodeId, channel);
     if (!channel.isInitiator()) {
       controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
     }
@@ -91,19 +91,21 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
   static class Controller extends SimpleChannelInboundHandler<ByteBuf> {
     private final NodeId nodeId;
+    private final P2PChannel p2pChannel;
     private RpcRequestHandler rpcRequestHandler;
     private RpcStream rpcStream;
     private List<ByteBuf> bufferedData = new ArrayList<>();
 
     protected final SafeFuture<Controller> activeFuture = new SafeFuture<>();
 
-    private Controller(final NodeId nodeId) {
+    private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
+      this.p2pChannel = p2pChannel;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-      rpcStream = new LibP2PRpcStream(ctx);
+      rpcStream = new LibP2PRpcStream(p2pChannel, ctx);
       activeFuture.complete(this);
     }
 
@@ -136,7 +138,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       LOG.error("Unhandled error while processes req/response", cause);
       final IllegalStateException exception = new IllegalStateException("Channel exception", cause);
       activeFuture.completeExceptionally(exception);
-      rpcStream.closeStream().reportExceptions();
+      close();
     }
 
     @Override
@@ -144,9 +146,16 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
       // If handler is removed before channel is activated, update future
       activeFuture.completeExceptionally(new IllegalStateException("Stream closed."));
+      close();
+    }
 
-      ctx.channel().close();
-      rpcRequestHandler.onRequestComplete();
+    private void close() {
+      if (rpcStream != null) {
+        rpcStream.close().reportExceptions();
+      }
+      if (rpcRequestHandler != null) {
+        rpcRequestHandler.onRequestComplete();
+      }
     }
   }
 }

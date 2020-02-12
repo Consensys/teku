@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 import java.util.ArrayList;
@@ -22,40 +23,34 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
-public class MerkleTree<T> {
-  private final List<List<Bytes32>> tree;
-  private final List<Bytes32> zeroHashes;
-  private final int height;
-  private boolean dirty = true;
+abstract class MerkleTree {
+  protected final List<List<Bytes32>> tree;
+  protected final List<Bytes32> zeroHashes;
+  protected final int treeDepth;
 
-  public MerkleTree(int height) {
-    assert (height > 1);
-    this.height = height;
-    tree = new ArrayList<List<Bytes32>>();
-    for (int i = 0; i <= height; i++) {
-      tree.add(new ArrayList<Bytes32>());
+  protected MerkleTree(int treeDepth) {
+    checkArgument(treeDepth > 1, "MerkleTree: treeDepth must be greater than 1");
+    this.treeDepth = treeDepth;
+    tree = new ArrayList<>();
+    for (int i = 0; i <= treeDepth; i++) {
+      tree.add(new ArrayList<>());
     }
-    zeroHashes = generateZeroHashes(height);
+    zeroHashes = generateZeroHashes(treeDepth);
   }
 
-  public void add(Bytes32 leaf) {
-    dirty = true;
-    tree.get(0).add(leaf);
-  }
+  abstract void add(Bytes32 leaf);
 
-  private void calcBranches() {
+  protected abstract int getNumberOfLeaves();
+
+  protected static List<Bytes32> generateZeroHashes(int height) {
+    List<Bytes32> zeroHashes = new ArrayList<>();
     for (int i = 0; i < height; i++) {
-      List<Bytes32> parent = tree.get(i + 1);
-      List<Bytes32> child = tree.get(i);
-      for (int j = 0; j < child.size(); j += 2) {
-        Bytes32 leftNode = child.get(j);
-        Bytes32 rightNode = (j + 1 < child.size()) ? child.get(j + 1) : zeroHashes.get(i);
-        if (parent.size() <= j / 2)
-          parent.add(Hash.sha2_256(Bytes.concatenate(leftNode, rightNode)));
-        else parent.set(j / 2, Hash.sha2_256(Bytes.concatenate(leftNode, rightNode)));
-      }
+      zeroHashes.add(Bytes32.ZERO);
     }
-    dirty = false;
+    for (int i = 0; i < height - 1; i++) {
+      zeroHashes.set(i + 1, Hash.sha2_256(Bytes.concatenate(zeroHashes.get(i), zeroHashes.get(i))));
+    }
+    return zeroHashes;
   }
 
   public SSZVector<Bytes32> getProofTreeByValue(Bytes32 value) {
@@ -64,34 +59,24 @@ public class MerkleTree<T> {
   }
 
   public SSZVector<Bytes32> getProofTreeByIndex(int index) {
-    if (dirty) calcBranches();
-    List<Bytes32> proof = new ArrayList<Bytes32>();
-    for (int i = 0; i < height; i++) {
+    List<Bytes32> proof = new ArrayList<>();
+    for (int i = 0; i < treeDepth; i++) {
       index = index % 2 == 1 ? index - 1 : index + 1;
       if (index < tree.get(i).size()) proof.add(tree.get(i).get(index));
       else proof.add(zeroHashes.get(i));
       index /= 2;
     }
     proof.add(calcMixInValue());
-    return new SSZVector<Bytes32>(proof, Bytes32.class);
+    return new SSZVector<>(proof, Bytes32.class);
   }
 
   private Bytes32 calcMixInValue() {
     return (Bytes32)
         Bytes.concatenate(
-            Bytes.ofUnsignedLong(tree.get(0).size(), LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
-  }
-
-  public static List<Bytes32> generateZeroHashes(int height) {
-    List<Bytes32> zeroHashes = new ArrayList<Bytes32>();
-    for (int i = 0; i < height; i++) zeroHashes.add(Bytes32.ZERO);
-    for (int i = 0; i < height - 1; i++)
-      zeroHashes.set(i + 1, Hash.sha2_256(Bytes.concatenate(zeroHashes.get(i), zeroHashes.get(i))));
-    return zeroHashes;
+            Bytes.ofUnsignedLong(getNumberOfLeaves(), LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
   }
 
   public Bytes32 getRoot() {
-    if (dirty) calcBranches();
-    return tree.get(height).get(0);
+    return tree.get(treeDepth).get(0);
   }
 }
