@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collections;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -295,6 +296,12 @@ public class MapDbDatabase implements Database {
   @Override
   public Optional<Bytes32> getFinalizedRootAtSlot(final UnsignedLong slot) {
     return Optional.ofNullable(finalizedRootsBySlot.get(slot));
+  }
+
+  @Override
+  public Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot) {
+    return Optional.ofNullable(finalizedRootsBySlot.headMap(slot, true).lastEntry())
+        .map(Entry::getValue);
   }
 
   @Override
