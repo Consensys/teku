@@ -85,7 +85,7 @@ public class BeaconStateUtil {
 
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
-    final GenesisGenerator genesisGenerator = new GenesisGenerator();
+    final GenesisGenerator genesisGenerator = new GenesisGenerator(DEPOSIT_PROOFS_ENABLED);
     genesisGenerator.addDepositsFromBlock(eth1_block_hash, eth1_timestamp, deposits);
     return genesisGenerator.getGenesisState();
   }

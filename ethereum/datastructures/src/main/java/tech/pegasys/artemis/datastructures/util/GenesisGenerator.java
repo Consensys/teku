@@ -51,8 +51,14 @@ public class GenesisGenerator {
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
   private final SSZList<DepositData> depositDataList =
       new SSZList<>(DepositData.class, depositListLength);
+  private final boolean depositProofsEnabled;
 
   public GenesisGenerator() {
+    this(true);
+  }
+
+  public GenesisGenerator(boolean depositProofsEnabled) {
+    this.depositProofsEnabled = depositProofsEnabled;
     BeaconBlockHeader beaconBlockHeader = new BeaconBlockHeader();
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
     beaconBlockHeader.setBody_root(latestBlockRoot);
@@ -72,7 +78,7 @@ public class GenesisGenerator {
     // Process deposits
     deposits.forEach(
         deposit -> {
-          if (BeaconStateUtil.DEPOSIT_PROOFS_ENABLED) {
+          if (depositProofsEnabled) {
             calculateDepositProof(deposit);
           }
           STDOUT.log(Level.DEBUG, "About to process deposit: " + depositDataList.size());
@@ -122,7 +128,9 @@ public class GenesisGenerator {
 
   private void finalizeState() {
     calculateRandaoMixes();
-    calculateDepositRoot();
+    if (depositProofsEnabled) {
+      calculateDepositRoot();
+    }
   }
 
   private void calculateRandaoMixes() {
