@@ -33,6 +33,7 @@ import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class SyncManagerTest {
@@ -41,7 +42,8 @@ public class SyncManagerTest {
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private Eth2Network network = mock(Eth2Network.class);
   private final PeerSync peerSync = mock(PeerSync.class);
-  private SyncManager syncManager = new SyncManager(network, storageClient, peerSync);
+  private final StubAsyncRunner asynRunnner = new StubAsyncRunner();
+  private SyncManager syncManager = new SyncManager(asynRunnner, network, storageClient, peerSync);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
@@ -130,6 +132,7 @@ public class SyncManagerTest {
     when(peerSync.sync(peer2)).thenReturn(new SafeFuture<>());
     syncFuture.complete(PeerSyncResult.FAULTY_ADVERTISEMENT);
 
+    asynRunnner.executeQueuedActions();
     verify(peerSync).sync(peer2);
     assertThat(syncManager.isSyncActive()).isTrue();
     assertThat(syncManager.isSyncQueued()).isFalse();

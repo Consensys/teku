@@ -20,9 +20,20 @@ public interface RpcStream {
 
   SafeFuture<Void> writeBytes(Bytes bytes) throws StreamClosedException;
 
-  SafeFuture<Void> closeStream();
+  /**
+   * Close the stream altogether, allowing no further reads or writes.
+   *
+   * @return A future completing when the stream is closed.
+   */
+  SafeFuture<Void> close();
 
-  SafeFuture<Void> disconnect();
+  /**
+   * Close the write side of the stream. When both sides of the stream close their write stream, the
+   * entire stream will be closed.
+   *
+   * @return A future completing when the write stream is closed.
+   */
+  SafeFuture<Void> closeWriteStream();
 
   class StreamClosedException extends RuntimeException {}
 }

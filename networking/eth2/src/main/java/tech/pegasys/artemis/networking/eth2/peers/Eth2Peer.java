@@ -69,6 +69,10 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return remoteStatus.orElseThrow();
   }
 
+  public UnsignedLong finalizedEpoch() {
+    return getStatus().getFinalizedEpoch();
+  }
+
   public int getOutstandingRequests() {
     return outstandingRequests.get();
   }

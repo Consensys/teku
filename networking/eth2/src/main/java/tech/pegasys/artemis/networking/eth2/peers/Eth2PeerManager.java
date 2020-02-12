@@ -78,7 +78,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     if (peer.connectionInitiatedLocally()) {
-      eth2Peer.sendStatus().reportExceptions();
+      eth2Peer
+          .sendStatus()
+          .finish(
+              () -> LOG.trace("Sent status to {}", peer.getId()),
+              (err) -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err));
     }
     eth2Peer.subscribeInitialStatus(
         (status) ->
