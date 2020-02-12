@@ -54,18 +54,31 @@ public abstract class MerkleTree {
 
   public SSZVector<Bytes32> getProof(Bytes32 value) {
     int index = tree.get(0).indexOf(value);
+    if (index == -1) {
+      throw new IllegalArgumentException("Leaf value is missing from the MerkleTree");
+    }
     return getProof(index);
   }
 
   public SSZVector<Bytes32> getProof(int index) {
     List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
+
+      // Get index of sibling node
       index = index % 2 == 1 ? index - 1 : index + 1;
+
+      // If sibling is contained in the tree
       if (index < tree.get(i).size()) {
+
+        // Get the sibling from the tree
         proof.add(tree.get(i).get(index));
       } else {
+
+        // Get the zero hash at the appropriate
+        // depth of the tree as sibling
         proof.add(zeroHashes.get(i));
       }
+
       index /= 2;
     }
     proof.add(calcMixInValue());
@@ -85,12 +98,23 @@ public abstract class MerkleTree {
     }
   }
 
+  /**
+   * @param value of the leaf
+   * @param viewLimit index of the last leaf that is supposed to be in the tree when getting the
+   *     view
+   * @return
+   */
   public SSZVector<Bytes32> getProofWithViewBoundary(Bytes32 value, int viewLimit) {
     return getProofWithViewBoundary(tree.get(0).indexOf(value), viewLimit);
   }
 
+  /**
+   * @param index of the leaf
+   * @param viewLimit ndex of the last leaf that is supposed to be in the tree when getting the view
+   * @return
+   */
   public SSZVector<Bytes32> getProofWithViewBoundary(int index, int viewLimit) {
-    checkArgument(index < viewLimit, "MerkleTree: Index must be within view limit");
+    checkArgument(index <= viewLimit, "MerkleTree: Index must be less than or equal to view limit");
 
     List<Bytes32> proof = new ArrayList<>();
     for (int i = 0; i < treeDepth; i++) {
@@ -107,7 +131,7 @@ public abstract class MerkleTree {
       if (index == limit) {
         // At:
         // Go deeper to partially merkleize in zero-hashes.
-        proof.add(calcViewBoundaryRoot(i, viewLimit));
+        proof.add(calcViewBoundaryRoot(i, viewLimit + 1));
       } else if (index > limit) {
         // Beyond:
         // Just use a zero-hash as effective sibling.
@@ -119,7 +143,7 @@ public abstract class MerkleTree {
       }
       index /= 2;
     }
-    proof.add(calcMixInValue(viewLimit));
+    proof.add(calcMixInValue(viewLimit + 1));
     return new SSZVector<>(proof, Bytes32.class);
   }
 

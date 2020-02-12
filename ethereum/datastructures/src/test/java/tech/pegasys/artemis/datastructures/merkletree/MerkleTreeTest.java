@@ -96,7 +96,7 @@ public class MerkleTreeTest {
       assertThat(
               is_valid_merkle_branch(
                   leaf,
-                  merkleTree2.getProofWithViewBoundary(leaf, index + 1),
+                  merkleTree2.getProofWithViewBoundary(leaf, index),
                   treeDepth + 1, // Add 1 for the `List` length mix-in
                   index,
                   root))
@@ -121,7 +121,7 @@ public class MerkleTreeTest {
       assertThat(
               is_valid_merkle_branch(
                   leaf,
-                  merkleTree2.getProofWithViewBoundary(leaf, index + 1),
+                  merkleTree2.getProofWithViewBoundary(leaf, index),
                   treeDepth + 1, // Add 1 for the `List` length mix-in
                   index,
                   root))
