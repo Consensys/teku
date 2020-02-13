@@ -193,6 +193,7 @@ public class ValidatorCoordinator {
         chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
     BeaconBlock headBlock =
         chainStorageClient.getStore().getBlock(chainStorageClient.getBestBlockRoot());
+    eth1DataCache.onSlot(slotEvent);
 
     // Copy state so that state transition during block creation
     // does not manipulate headState in storage

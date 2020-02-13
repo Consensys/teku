@@ -73,7 +73,7 @@ public class Eth1DataCache {
     prune();
   }
 
-  @Subscribe
+  // Called by ValidatorCoordinator not the event bus to ensure we process slot events in sync
   public void onSlot(SlotEvent slotEvent) {
     if (genesisTime.isEmpty()) {
       return;
