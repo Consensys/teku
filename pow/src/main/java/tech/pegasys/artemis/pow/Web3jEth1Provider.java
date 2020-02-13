@@ -56,7 +56,6 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   private SafeFuture<EthBlock.Block> getEth1BlockFuture(DefaultBlockParameter blockParameter) {
-    LOG.trace("Getting eth1 block {}", blockParameter::getValue);
     return SafeFuture.of(web3j.ethGetBlockByNumber(blockParameter, false).sendAsync())
         .thenApply(EthBlock::getBlock);
   }
