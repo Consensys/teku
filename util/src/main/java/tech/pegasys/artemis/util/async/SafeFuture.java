@@ -103,6 +103,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     finish(result -> onSuccess.run(), onError);
   }
 
+  public void propagateTo(final SafeFuture<T> target) {
+    propagateResult(this, target);
+  }
+
   /**
    * Run final logic on success or error
    *
