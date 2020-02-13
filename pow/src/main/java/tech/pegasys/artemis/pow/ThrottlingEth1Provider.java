@@ -25,7 +25,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public class ThrottlingEth1Provider implements Eth1Provider {
   private final Eth1Provider delegate;
   private final int maximumConcurrentRequests;
-  private final Queue<SafeFuture<Void>> queuedRequests = new ConcurrentLinkedQueue<>();
+  private final Queue<Runnable> queuedRequests = new ConcurrentLinkedQueue<>();
   private int inflightRequestCount = 0;
 
   public ThrottlingEth1Provider(final Eth1Provider delegate, final int maximumConcurrentRequests) {
@@ -60,12 +60,15 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   private <T> SafeFuture<T> queueRequest(final Supplier<SafeFuture<T>> request) {
-    final SafeFuture<Void> queuedFuture = new SafeFuture<>();
-    queuedRequests.add(queuedFuture);
+    final SafeFuture<T> future = new SafeFuture<>();
+    queuedRequests.add(
+        () -> {
+          final SafeFuture<T> requestFuture = request.get();
+          requestFuture.propagateTo(future);
+          requestFuture.always(this::requestComplete);
+        });
     processQueuedRequests();
-    final SafeFuture<T> result = queuedFuture.thenCompose(__ -> request.get());
-    result.always(this::requestComplete);
-    return result;
+    return future;
   }
 
   private synchronized void requestComplete() {
@@ -76,8 +79,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   private synchronized void processQueuedRequests() {
     while (inflightRequestCount < maximumConcurrentRequests && !queuedRequests.isEmpty()) {
       inflightRequestCount++;
-      final SafeFuture<Void> nextSlotWaiter = queuedRequests.poll();
-      nextSlotWaiter.complete(null);
+      queuedRequests.remove().run();
     }
   }
 }

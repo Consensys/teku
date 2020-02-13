@@ -309,6 +309,25 @@ public class SafeFutureTest {
     assertThat(result).isCompletedWithValue("Success");
   }
 
+  @Test
+  public void propagateTo_propagatesSuccessfulResult() {
+    final SafeFuture<String> target = new SafeFuture<>();
+    final SafeFuture<String> source = new SafeFuture<>();
+    source.propagateTo(target);
+    source.complete("Yay");
+    assertThat(target).isCompletedWithValue("Yay");
+  }
+
+  @Test
+  public void propagateTo_propagatesExceptionalResult() {
+    final SafeFuture<String> target = new SafeFuture<>();
+    final SafeFuture<String> source = new SafeFuture<>();
+    source.propagateTo(target);
+    final RuntimeException exception = new RuntimeException("Oh no!");
+    source.completeExceptionally(exception);
+    assertExceptionallyCompletedWith(target, exception);
+  }
+
   private CountingNoOpAppender startCountingReportedUnhandledExceptions() {
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     final Configuration config = ctx.getConfiguration();
