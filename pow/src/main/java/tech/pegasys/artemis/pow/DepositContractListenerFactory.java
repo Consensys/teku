@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.ClientTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.ganache.GanacheController;
@@ -29,8 +28,11 @@ public class DepositContractListenerFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   public static DepositContractListener simulationDeployDepositContract(
-      DepositEventChannel depositEventChannel, GanacheController controller) {
-    Web3j web3j = Web3j.build(new HttpService(controller.getProvider()));
+      Eth1Provider eth1Provider,
+      Web3j web3j,
+      DepositEventChannel depositEventChannel,
+      GanacheController controller) {
+
     Credentials credentials =
         Credentials.create(controller.getAccounts().get(0).secretKey().bytes().toHexString());
     DepositContract contract = null;
@@ -42,24 +44,30 @@ public class DepositContractListenerFactory {
           e);
     }
     return new DepositContractListener(
-        web3j, contract, createDepositRequestManager(web3j, depositEventChannel, contract));
+        eth1Provider,
+        contract,
+        createDepositRequestManager(eth1Provider, depositEventChannel, contract));
   }
 
   public static DepositContractListener eth1DepositContract(
-      Web3j web3j, DepositEventChannel depositEventChannel, String address) {
+      Eth1Provider eth1Provider,
+      Web3j web3j,
+      DepositEventChannel depositEventChannel,
+      String address) {
     DepositContract contract =
         DepositContract.load(
             address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
     return new DepositContractListener(
-        web3j, contract, createDepositRequestManager(web3j, depositEventChannel, contract));
+        eth1Provider,
+        contract,
+        createDepositRequestManager(eth1Provider, depositEventChannel, contract));
   }
 
   private static DepositRequestManager createDepositRequestManager(
-      Web3j web3j, DepositEventChannel depositEventChannel, DepositContract depositContract) {
+      Eth1Provider eth1Provider,
+      DepositEventChannel depositEventChannel,
+      DepositContract depositContract) {
     return new DepositRequestManager(
-        new Eth1Provider(web3j),
-        new DelayedExecutorAsyncRunner(),
-        depositEventChannel,
-        depositContract);
+        eth1Provider, new DelayedExecutorAsyncRunner(), depositEventChannel, depositContract);
   }
 }

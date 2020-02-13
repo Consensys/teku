@@ -15,42 +15,19 @@ package tech.pegasys.artemis.pow;
 
 import com.google.common.primitives.UnsignedLong;
 import io.reactivex.Flowable;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthBlock.Block;
+import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class Eth1Provider {
+public interface Eth1Provider {
 
-  private final Web3j web3j;
+  Flowable<Block> getLatestBlockFlowable();
 
-  public Eth1Provider(Web3j web3j) {
-    this.web3j = web3j;
-  }
+  SafeFuture<Block> getEth1BlockFuture(UnsignedLong blockNumber);
 
-  public Flowable<EthBlock.Block> getLatestBlockFlowable() {
-    return web3j.blockFlowable(false).map(EthBlock::getBlock);
-  }
+  SafeFuture<Block> getEth1BlockFuture(String blockHash);
 
-  public SafeFuture<EthBlock.Block> getEth1BlockFuture(UnsignedLong blockNumber) {
-    DefaultBlockParameter blockParameter =
-        DefaultBlockParameter.valueOf(blockNumber.bigIntegerValue());
-    return getEth1BlockFuture(blockParameter);
-  }
+  SafeFuture<Block> getLatestEth1BlockFuture();
 
-  public SafeFuture<EthBlock.Block> getEth1BlockFuture(String blockHash) {
-    return SafeFuture.of(web3j.ethGetBlockByHash(blockHash, false).sendAsync())
-        .thenApply(EthBlock::getBlock);
-  }
-
-  public SafeFuture<EthBlock.Block> getEth1BlockFuture(DefaultBlockParameter blockParameter) {
-    return SafeFuture.of(web3j.ethGetBlockByNumber(blockParameter, false).sendAsync())
-        .thenApply(EthBlock::getBlock);
-  }
-
-  public SafeFuture<EthBlock.Block> getLatestEth1BlockFuture() {
-    DefaultBlockParameter blockParameter = DefaultBlockParameterName.LATEST;
-    return getEth1BlockFuture(blockParameter);
-  }
+  SafeFuture<EthCall> ethCall(String from, String to, String data, UnsignedLong blockNumber);
 }
