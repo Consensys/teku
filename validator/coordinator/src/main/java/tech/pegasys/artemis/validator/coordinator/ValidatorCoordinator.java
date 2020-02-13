@@ -117,50 +117,6 @@ public class ValidatorCoordinator {
     this.eventBus.register(this);
   }
 
-  /*
-  @Subscribe
-  public void checkIfIncomingBlockObeysSlashingConditions(BeaconBlock block) {
-
-    int proposerIndex =
-        BeaconStateUtil.get_beacon_proposer_index(headState);
-    Validator proposer = headState.getValidator_registry().get(proposerIndex);
-
-    checkArgument(
-        bls_verify(
-            proposer.getPubkey(),
-            block.signing_root("signature"),
-            block.getSignature(),
-            get_domain(
-                headState,
-                Constants.DOMAIN_BEACON_PROPOSER,
-                get_current_epoch(headState))),
-        "Proposer signature is invalid");
-
-    BeaconBlockHeader blockHeader =
-        new BeaconBlockHeader(
-            block.getSlot(),
-            block.getParent_root(),
-            block.getState_root(),
-            block.getBody().hash_tree_root(),
-            block.getSignature());
-    UnsignedLong headerSlot = blockHeader.getSlot();
-    if (store.getBeaconBlockHeaders(proposerIndex).isPresent()) {
-      List<BeaconBlockHeader> headers = store.getBeaconBlockHeaders(proposerIndex).get();
-      headers.forEach(
-          (header) -> {
-            if (header.getSlot().equals(headerSlot)
-                && !header.hash_tree_root().equals(blockHeader.hash_tree_root())
-                && !proposer.isSlashed()) {
-              ProposerSlashing slashing =
-                  new ProposerSlashing(UnsignedLong.valueOf(proposerIndex), blockHeader, header);
-              slashings.add(slashing);
-            }
-          });
-    }
-    this.store.addUnprocessedBlockHeader(proposerIndex, blockHeader);
-  }
-  */
-
   @Subscribe
   public void onStoreInitializedEvent(final StoreInitializedEvent event) {
     // Any deposits pre-genesis can be ignored.
@@ -193,6 +149,7 @@ public class ValidatorCoordinator {
         chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
     BeaconBlock headBlock =
         chainStorageClient.getStore().getBlock(chainStorageClient.getBestBlockRoot());
+    eth1DataCache.onSlot(slotEvent);
 
     // Copy state so that state transition during block creation
     // does not manipulate headState in storage
