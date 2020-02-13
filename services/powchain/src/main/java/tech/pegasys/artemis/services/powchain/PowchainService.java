@@ -17,6 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
+import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import com.google.common.eventbus.EventBus;
@@ -55,7 +56,6 @@ import tech.pegasys.artemis.util.time.TimeProvider;
 public class PowchainService implements ServiceInterface {
 
   private static final Logger LOG = LogManager.getLogger();
-  public static final int MAXIMUM_CONCURRENT_REQUESTS = 5;
   public static final String EVENTS = "events";
   public static final String USER_DIR = "user.dir";
   private EventBus eventBus;
@@ -149,7 +149,8 @@ public class PowchainService implements ServiceInterface {
     } else if (depositMode.equals(DEPOSIT_NORMAL)) {
       Web3j web3j = Web3j.build(new HttpService(provider));
       final Eth1Provider eth1Provider =
-          new ThrottlingEth1Provider(new Web3jEth1Provider(web3j), MAXIMUM_CONCURRENT_REQUESTS);
+          new ThrottlingEth1Provider(
+              new Web3jEth1Provider(web3j), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
       depositContractListener =
           DepositContractListenerFactory.eth1DepositContract(
               eth1Provider, web3j, depositEventChannel, contractAddress);

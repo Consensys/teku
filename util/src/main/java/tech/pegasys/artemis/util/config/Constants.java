@@ -137,6 +137,7 @@ public class Constants {
   public static long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
   public static long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 5; // in sec
   public static long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
+  public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
 
   static {
     setConstants("minimal");
