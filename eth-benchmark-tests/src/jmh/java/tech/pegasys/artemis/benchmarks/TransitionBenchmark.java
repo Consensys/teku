@@ -63,7 +63,6 @@ public abstract class TransitionBenchmark {
   public void init() throws Exception {
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
-    BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
