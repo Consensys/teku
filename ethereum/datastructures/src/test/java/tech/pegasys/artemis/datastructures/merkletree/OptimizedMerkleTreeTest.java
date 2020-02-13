@@ -44,7 +44,7 @@ public class OptimizedMerkleTreeTest {
     Bytes32 leaf = DataStructureUtil.randomBytes32(seed);
     optimizedMT.add(leaf);
     simpleMT.add(leaf);
-    assertThat(optimizedMT.getProofTreeByValue(leaf)).isEqualTo(simpleMT.getProofTreeByValue(leaf));
+    assertThat(optimizedMT.getProof(leaf)).isEqualTo(simpleMT.getProof(leaf));
   }
 
   @Test
@@ -64,8 +64,6 @@ public class OptimizedMerkleTreeTest {
             .collect(Collectors.toList());
 
     leaves.forEach(
-        (leaf) ->
-            assertThat(optimizedMT.getProofTreeByValue(leaf))
-                .isEqualTo(simpleMT.getProofTreeByValue(leaf)));
+        (leaf) -> assertThat(optimizedMT.getProof(leaf)).isEqualTo(simpleMT.getProof(leaf)));
   }
 }

@@ -44,7 +44,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {
-  private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
   private final BeaconState state = new BeaconState();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
@@ -77,13 +76,10 @@ public class GenesisGenerator {
     // Process deposits
     deposits.forEach(
         deposit -> {
-          if (depositProofsEnabled) {
-            calculateDepositProof(deposit);
-          }
           STDOUT.log(Level.DEBUG, "About to process deposit: " + depositDataList.size());
           depositDataList.add(deposit.getData());
 
-          // Skip verifing the merkle proof as we'll only generate one at the end
+          // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
           // We do still verify the signature
           process_deposit_without_checking_merkle_proof(state, deposit, keyCache);
 
@@ -144,12 +140,6 @@ public class GenesisGenerator {
         .setDeposit_root(
             HashTreeUtil.hash_tree_root(
                 HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, depositDataList));
-  }
-
-  private void calculateDepositProof(final Deposit deposit) {
-    final Bytes32 value = deposit.getData().hash_tree_root();
-    depositMerkleTree.add(value);
-    deposit.setProof(depositMerkleTree.getProofTreeByValue(value));
   }
 
   private void updateGenesisTime(final UnsignedLong eth1Timestamp) {
