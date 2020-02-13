@@ -13,42 +13,37 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandlerTest {
-  private final Context context = Mockito.mock(Context.class);
+  private Context mockContext = Mockito.mock(Context.class);
+  private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
 
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());
 
   @Test
-  public void shouldReturnEmptyObjectWhenGenesisTimeIsNotSet() {
-    BeaconRestApi.getInstance(null, null, 12345);
-    //    when(context.status(any(Integer.class))).thenReturn(context);
+  public void shouldReturnEmptyObjectWhenGenesisTimeIsNotSet() throws Exception {
+    GenesisTimeHandler subject = new GenesisTimeHandler(null);
+    subject.handle(mockContext);
 
-    //    GenesisTimeHandler.handleRequest(context);
-    //
-    //    Mockito.verify(context).result("not found");
+    Mockito.verify(mockContext).status(SC_INTERNAL_SERVER_ERROR);
   }
 
   @Test
-  public void shouldReturnGenesisTimeWhenSet() {
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
+  public void shouldReturnGenesisTimeWhenSet() throws Exception {
     storageClient.setGenesisTime(genesisTime);
-    BeaconRestApi.getInstance(storageClient, null, 12345);
+    GenesisTimeHandler subject = new GenesisTimeHandler(storageClient);
+    subject.handle(mockContext);
 
-    GenesisTimeHandler.handleRequest(context);
-    assertThat(context.resultString()).isEqualTo(genesisTime.toString());
-
-    Mockito.verify(context).result(JsonProvider.objectToJSON(genesisTime));
+    Mockito.verify(mockContext).result(JsonProvider.objectToJSON(genesisTime));
   }
 }

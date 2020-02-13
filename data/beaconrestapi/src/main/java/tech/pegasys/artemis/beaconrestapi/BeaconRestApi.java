@@ -45,24 +45,7 @@ public class BeaconRestApi {
   private final ChainStorageClient chainStorageClient;
   private final P2PNetwork<?> p2pNetwork;
 
-  @SuppressWarnings("unchecked")
-  private static BeaconRestApi beaconRestApi;
-
-  public static BeaconRestApi getInstance(
-      ChainStorageClient chainStorageClient,
-      P2PNetwork<?> p2pNetwork,
-      final int requestedPortNumber) {
-    BeaconRestApi.beaconRestApi =
-        new BeaconRestApi(chainStorageClient, p2pNetwork, requestedPortNumber);
-
-    return beaconRestApi;
-  }
-
-  public static BeaconRestApi getInstance() {
-    return beaconRestApi;
-  }
-
-  private BeaconRestApi(
+  public BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
       final int requestedPortNumber) {
@@ -81,10 +64,6 @@ public class BeaconRestApi {
     addBeaconHandlers();
     addNetworkHandlers();
     addValidatorHandlers();
-  }
-
-  public int getPort() {
-    return app.server().getServerPort();
   }
 
   public void start() {
@@ -106,10 +85,11 @@ public class BeaconRestApi {
   }
 
   private OpenApiOptions getOpenApiOptions() {
+    // TODO: Need real values for version etc
     Info applicationInfo =
         new Info()
             .version("0.1.0")
-            .title("Minimal Beacon Nodea API for Validator")
+            .title("Minimal Beacon Node API for Validator")
             .description(
                 "A minimal API specification for the beacon node, which enables a validator "
                     + "to connect and perform its obligations on the Ethereum 2.0 phase 0 beacon chain.")
@@ -122,11 +102,13 @@ public class BeaconRestApi {
             .activateAnnotationScanningFor("tech.pegasys.artemis.beaconrestapi")
             .path("/swagger-docs")
             .swagger(new SwaggerOptions("/swagger-ui"));
+    // TODO: allow swagger-ui to be turned off - ideally still leave swagger-docs, just dont add the
+    // swagger-ui endpoint
     return options;
   }
 
   private void addNodeHandlers() {
-    app.get("/node/genesis_time", GenesisTimeHandler::handleRequest);
+    app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient));
     /*
      * TODO:
      *    /node/version
@@ -137,7 +119,8 @@ public class BeaconRestApi {
   }
 
   private void addBeaconHandlers() {
-    // not in Minimal or optional specified set
+    // TODO: not in Minimal or optional specified set - some are similar to lighthouse
+    // implementation
     handlers.add(new BeaconHeadHandler(chainStorageClient));
     handlers.add(new BeaconChainHeadHandler(chainStorageClient));
     handlers.add(new BeaconBlockHandler(chainStorageClient));
@@ -161,14 +144,6 @@ public class BeaconRestApi {
     handlers.add(new PeerIdHandler(p2pNetwork));
     handlers.add(new PeersHandler(p2pNetwork));
     handlers.add(new ENRHandler());
-  }
-
-  public ChainStorageClient getChainStorageClient() {
-    return chainStorageClient;
-  }
-
-  public P2PNetwork<?> getP2pNetwork() {
-    return p2pNetwork;
   }
 
   public void stop() {

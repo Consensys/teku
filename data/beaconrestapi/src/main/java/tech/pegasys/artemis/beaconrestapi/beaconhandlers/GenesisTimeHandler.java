@@ -17,20 +17,28 @@ import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class GenesisTimeHandler {
-  private static final Logger LOG = LogManager.getLogger();
+public class GenesisTimeHandler implements Handler {
+  private final Logger LOG = LogManager.getLogger();
+  public static final String ROUTE = "/node/genesis_time/";
+  ChainStorageClient chainStorageClient;
+
+  public GenesisTimeHandler(ChainStorageClient chainStorageClient) {
+    this.chainStorageClient = chainStorageClient;
+  }
 
   @OpenApi(
-      path = "/node/genesis_time",
+      path = GenesisTimeHandler.ROUTE,
       method = HttpMethod.GET,
       summary = "Get the genesis_time parameter from beacon node configuration.",
       tags = {"MinimalSet"},
@@ -40,19 +48,14 @@ public class GenesisTimeHandler {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = UnsignedLong.class)),
         @OpenApiResponse(status = "500")
       })
-  public static void handleRequest(Context ctx) {
-    if (BeaconRestApi.getInstance() == null
-        || BeaconRestApi.getInstance().getChainStorageClient() == null) {
-      LOG.debug("Failed to get genesis time - chainStorageClient not found.");
-      ctx.status(SC_INTERNAL_SERVER_ERROR).result(JsonProvider.objectToJSON("Not found"));
-      return;
-    }
+  @Override
+  public void handle(@NotNull Context ctx) throws Exception {
     try {
-      UnsignedLong result = BeaconRestApi.getInstance().getChainStorageClient().getGenesisTime();
+      UnsignedLong result = chainStorageClient.getGenesisTime();
       ctx.result(JsonProvider.objectToJSON(result));
     } catch (Exception exception) {
       LOG.error("Failed to get genesis time", exception);
-      ctx.status(SC_INTERNAL_SERVER_ERROR).result(JsonProvider.objectToJSON("Not found"));
+      ctx.status(SC_INTERNAL_SERVER_ERROR);
     }
   }
 }
