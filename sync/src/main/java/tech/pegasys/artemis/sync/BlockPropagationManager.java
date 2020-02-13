@@ -28,7 +28,7 @@ import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -102,7 +102,7 @@ public class BlockPropagationManager extends Service {
 
   @Subscribe
   @SuppressWarnings("unused")
-  void onBlockImported(BlockImportedEvent blockImportedEvent) {
+  void onBlockImported(ImportedBlockEvent blockImportedEvent) {
     // Check if any pending blocks can now be imported
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();

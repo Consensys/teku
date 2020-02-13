@@ -23,6 +23,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class Deposit {
+
   private final BLSPublicKey pubkey;
   private final Bytes32 withdrawal_credentials;
   private final BLSSignature signature;
@@ -35,6 +36,19 @@ public class Deposit {
     this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
     this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
     this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).reverse().toLong());
+  }
+
+  public Deposit(
+          BLSPublicKey pubkey,
+          Bytes32 withdrawal_credentials,
+          BLSSignature signature,
+          UnsignedLong amount,
+          UnsignedLong merkle_tree_index) {
+    this.pubkey = pubkey;
+    this.withdrawal_credentials = withdrawal_credentials;
+    this.signature = signature;
+    this.amount = amount;
+    this.merkle_tree_index = merkle_tree_index;
   }
 
   public UnsignedLong getMerkle_tree_index() {

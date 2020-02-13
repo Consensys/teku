@@ -28,9 +28,9 @@ import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -91,7 +91,7 @@ public class AttestationManager extends Service {
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBlockImported(final BlockImportedEvent blockImportedEvent) {
+  private void onBlockImported(final ImportedBlockEvent blockImportedEvent) {
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     pendingAttestations

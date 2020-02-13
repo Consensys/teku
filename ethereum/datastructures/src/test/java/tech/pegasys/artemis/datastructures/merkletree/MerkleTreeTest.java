@@ -88,7 +88,7 @@ public class MerkleTreeTest {
       merkleTree2.add(leaves.get(i));
     }
 
-    for (int index = 0; index < numDeposits - 1; index++) {
+    for (int index = 0; index < numDeposits; index++) {
       Bytes32 leaf = leaves.get(index);
       merkleTree1.add(leaf);
       Bytes32 root = merkleTree1.getRoot();
@@ -96,7 +96,7 @@ public class MerkleTreeTest {
       assertThat(
               is_valid_merkle_branch(
                   leaf,
-                  merkleTree2.getProofWithViewBoundary(leaf, index),
+                  merkleTree2.getProofWithViewBoundary(leaf, index + 1),
                   treeDepth + 1, // Add 1 for the `List` length mix-in
                   index,
                   root))
@@ -113,7 +113,7 @@ public class MerkleTreeTest {
       merkleTree2.add(leaves.get(i));
     }
 
-    for (int index = 0; index < numDeposits - 1; index++) {
+    for (int index = 0; index < numDeposits; index++) {
       Bytes32 leaf = leaves.get(index);
       merkleTree1.add(leaf);
       Bytes32 root = merkleTree1.getRoot();
@@ -121,11 +121,41 @@ public class MerkleTreeTest {
       assertThat(
               is_valid_merkle_branch(
                   leaf,
-                  merkleTree2.getProofWithViewBoundary(leaf, index),
+                  merkleTree2.getProofWithViewBoundary(leaf, index + 1),
                   treeDepth + 1, // Add 1 for the `List` length mix-in
                   index,
                   root))
           .isTrue();
+    }
+  }
+
+  @Test
+  void ProofsWithViewBoundary_viewBoundaryAndStartIndex20ItemsApart_OptimizedTree() {
+    merkleTree1 = new OptimizedMerkleTree(treeDepth);
+    merkleTree2 = new OptimizedMerkleTree(treeDepth);
+
+    for (int i = 0; i < numDeposits; i++) {
+      merkleTree2.add(leaves.get(i));
+    }
+
+    for (int i = 0; i < 20; i++) {
+      merkleTree1.add(leaves.get(i));
+    }
+
+    Bytes32 root = merkleTree1.getRoot();
+
+    // fails when index = 0;
+    // runs when index = 17;
+    for (int index = 0; index < 20; index++) {
+      System.out.println(index);
+      assertThat(
+              is_valid_merkle_branch(
+                      leaves.get(index),
+                      merkleTree2.getProofWithViewBoundary(index,  20),
+                      treeDepth + 1, // Add 1 for the `List` length mix-in
+                      index,
+                      root))
+              .isTrue();
     }
   }
 }

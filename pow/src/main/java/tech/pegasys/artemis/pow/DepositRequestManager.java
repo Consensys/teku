@@ -221,6 +221,6 @@ public class DepositRequestManager {
   }
 
   private void publishDeposits(DepositsFromBlockEvent event) {
-    depositEventChannel.notifyDepositsFromBlock(event);
+    depositEventChannel.onDepositsFromBlock(event);
   }
 }

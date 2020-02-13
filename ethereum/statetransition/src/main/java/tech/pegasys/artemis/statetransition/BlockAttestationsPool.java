@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -53,6 +54,23 @@ public class BlockAttestationsPool {
   final Queue<Attestation> aggregateAttesationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
+
+
+  public SSZList<Attestation> getAttestationsForSlot(final UnsignedLong slot) {
+    SSZList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+    if (slot.compareTo(
+            UnsignedLong.valueOf(
+                    Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+            >= 0) {
+
+      UnsignedLong attestation_slot =
+              slot.minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
+
+      attestations = getAggregatedAttestationsForBlockAtSlot(attestation_slot);
+    }
+    return attestations;
+  }
+
 
   public void addUnprocessedAggregateAttestationToQueue(Attestation newAttestation) {
 
@@ -94,7 +112,7 @@ public class BlockAttestationsPool {
     }
   }
 
-  public SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {
+  private SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {
     SSZList<Attestation> attestations =
         new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;

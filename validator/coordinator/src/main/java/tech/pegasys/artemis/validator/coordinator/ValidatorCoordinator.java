@@ -60,12 +60,12 @@ import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
-import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -80,7 +80,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
-/** This class coordinates the activity between the validator clients and the the beacon chain */
+/** This class coordinates validator(s) to act correctly in the beacon chain */
 public class ValidatorCoordinator {
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
@@ -90,6 +90,7 @@ public class ValidatorCoordinator {
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
+  private final DepositProvider depositProvider;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
@@ -105,6 +106,7 @@ public class ValidatorCoordinator {
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
+      DepositProvider depositProvider,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
@@ -113,6 +115,7 @@ public class ValidatorCoordinator {
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
+    this.depositProvider = depositProvider;
     this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
     this.eventBus.register(this);
   }
@@ -212,7 +215,7 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onBlockImported(BlockImportedEvent event) {
+  public void onBlockImported(ImportedBlockEvent event) {
     event
         .getBlock()
         .getMessage()
@@ -314,11 +317,11 @@ public class ValidatorCoordinator {
 
       SignedBeaconBlock newBlock;
       // Collect attestations to include
-      SSZList<Attestation> attestations = getAttestationsForSlot(newSlot);
+      SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
       // Collect slashing to include
       final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(newState);
       // Collect deposits
-      final SSZList<Deposit> deposits = getDepositsForBlock();
+      final SSZList<Deposit> deposits = depositProvider.getDeposits(newState);
 
       final MessageSignerService signer = getSigner(proposer);
       Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
@@ -334,27 +337,11 @@ public class ValidatorCoordinator {
               slashingsInBlock,
               deposits);
 
-      this.eventBus.post(new BlockProposedEvent(newBlock));
+      this.eventBus.post(new ProposedBlockEvent(newBlock));
       STDOUT.log(Level.DEBUG, "Local validator produced a new block");
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
       STDOUT.log(Level.ERROR, "Error during block creation " + e.toString());
     }
-  }
-
-  private SSZList<Attestation> getAttestationsForSlot(final UnsignedLong slot) {
-    SSZList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
-    if (slot.compareTo(
-            UnsignedLong.valueOf(
-                Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-        >= 0) {
-
-      UnsignedLong attestation_slot =
-          slot.minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
-
-      attestations =
-          blockAttestationsPool.getAggregatedAttestationsForBlockAtSlot(attestation_slot);
-    }
-    return attestations;
   }
 
   private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
@@ -370,13 +357,6 @@ public class ValidatorCoordinator {
       slashing = slashings.poll();
     }
     return slashingsForBlock;
-  }
-
-  private SSZList<Deposit> getDepositsForBlock() {
-    // TODO - Look into how deposits should be managed, this seems wrong
-    final SSZList<Deposit> deposits = BeaconBlockBodyLists.createDeposits();
-    deposits.addAll(newDeposits);
-    return deposits;
   }
 
   private MessageSignerService getSigner(BLSPublicKey signer) {

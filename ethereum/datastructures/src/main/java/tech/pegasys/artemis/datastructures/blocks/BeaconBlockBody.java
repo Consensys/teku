@@ -204,6 +204,8 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
   }
 
   public Bytes32 hash_tree_root() {
+    System.out.println("attestations: " + attestations);
+    System.out.println("deposits: " + deposits);
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, randao_reveal.toBytes()),

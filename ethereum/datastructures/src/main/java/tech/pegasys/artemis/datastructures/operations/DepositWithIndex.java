@@ -40,4 +40,11 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
   public int compareTo(@NotNull DepositWithIndex o) {
     return this.getIndex().compareTo(o.getIndex());
   }
+
+  @Override
+  public String toString() {
+    return "DepositWithIndex{" +
+            "index=" + index +
+            '}';
+  }
 }
