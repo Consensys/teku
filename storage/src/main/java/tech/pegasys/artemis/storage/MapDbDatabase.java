@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
@@ -257,10 +256,10 @@ public class MapDbDatabase implements Database {
 
   private void pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
     // TODO: Can we prune blocks from in the finalized epoch as well?
-    final UnsignedLong startOfFinalizedEpoch =
-        compute_start_slot_at_epoch(newFinalizedCheckpoint.getEpoch());
+    SignedBeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newFinalizedCheckpoint.getRoot());
+    final UnsignedLong finalizedSlot = newlyFinalizedBlock.getSlot();
     final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> toRemove =
-        hotRootsBySlotCache.headMap(startOfFinalizedEpoch);
+        hotRootsBySlotCache.headMap(finalizedSlot);
     LOG.trace("Pruning slots {} from non-finalized pool", toRemove::keySet);
     toRemove
         .values()
