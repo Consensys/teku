@@ -81,12 +81,12 @@ public class Eth1DataCacheTest {
   @Test
   void checkTimeValues() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
     assertThat(eth1DataCache.getSpecRangeLowerBound())
         .isEqualByComparingTo(UnsignedLong.valueOf(354));
     assertThat(eth1DataCache.getSpecRangeUpperBound())
         .isEqualByComparingTo(UnsignedLong.valueOf(369));
-    eventBus.post(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
     assertThat(eth1DataCache.getSpecRangeLowerBound())
         .isEqualByComparingTo(UnsignedLong.valueOf(378));
   }
@@ -94,7 +94,7 @@ public class Eth1DataCacheTest {
   @Test
   void majorityVoteWins() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
     // Both Eth1Data timestamp inside the spec range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
@@ -118,7 +118,7 @@ public class Eth1DataCacheTest {
   @Test
   void smallestDistanceWinsIfNoMajority() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
     // Both Eth1Data timestamp inside the spec range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
@@ -143,7 +143,7 @@ public class Eth1DataCacheTest {
   @Test
   void oldVoteDoesNotCount() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
     // Eth1Data inside the range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
@@ -168,7 +168,7 @@ public class Eth1DataCacheTest {
   @Test
   void tooRecentVoteDoesNotCount() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
     // Eth1Data inside the range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
@@ -193,7 +193,7 @@ public class Eth1DataCacheTest {
   @Test
   void noValidVotesInThisPeriod_eth1ChainLive() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
     // Both Eth1Data timestamp inside the spec range
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
@@ -216,7 +216,7 @@ public class Eth1DataCacheTest {
   @Test
   void noValidVotesInThisPeriod_eth1ChainNotLive() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
     Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
 
@@ -252,7 +252,7 @@ public class Eth1DataCacheTest {
   @Test
   void pruneAfterGenesis() {
     eth1DataCache.startBeaconChainMode(genesisState);
-    eventBus.post(new SlotEvent(START_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
     // First two Eth1Data timestamps inside the spec range for this voting period
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
@@ -268,7 +268,7 @@ public class Eth1DataCacheTest {
     eventBus.post(cacheEth1BlockEvent2);
     eventBus.post(cacheEth1BlockEvent3);
 
-    eventBus.post(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
+    eth1DataCache.onSlot(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
 
     Eth1Data eth1Data3 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent3);
 
