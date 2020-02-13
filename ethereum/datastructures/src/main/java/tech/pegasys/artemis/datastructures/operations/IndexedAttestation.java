@@ -52,13 +52,13 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   // Required by SSZ reflection
   public IndexedAttestation() {
     this.attesting_indices =
-        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        SSZList.create(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     data = null;
     signature = null;
   }
 
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
-    this.attesting_indices = new SSZList<>(indexedAttestation.getAttesting_indices());
+    this.attesting_indices = SSZList.create(indexedAttestation.getAttesting_indices());
     this.data = indexedAttestation.getData();
     this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
   }

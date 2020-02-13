@@ -186,9 +186,9 @@ public class DeserializationTest {
   @Test
   void HistoricalBatchTest() {
     SSZVector<Bytes32> block_roots =
-        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+        SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     SSZVector<Bytes32> state_roots =
-        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+        SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {

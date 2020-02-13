@@ -38,7 +38,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorWrite;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -49,7 +49,7 @@ public class GenesisGenerator {
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
   private final SSZList<DepositData> depositDataList =
-      new SSZList<>(DepositData.class, depositListLength);
+      SSZList.create(DepositData.class, depositListLength);
 
   public GenesisGenerator() {
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
@@ -93,7 +93,7 @@ public class GenesisGenerator {
       // Could be null if the deposit was invalid
       return;
     }
-    Validator validator = state.getValidators().get(index);
+    ValidatorWrite validator = state.getValidators().get(index);
     UnsignedLong balance = state.getBalances().get(index);
     UnsignedLong effective_balance =
         BeaconStateUtil.min(

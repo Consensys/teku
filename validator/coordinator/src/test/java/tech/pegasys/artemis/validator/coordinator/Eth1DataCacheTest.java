@@ -32,6 +32,7 @@ import tech.pegasys.artemis.pow.Eth1DataManager;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZListWrite;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
@@ -108,8 +109,8 @@ public class Eth1DataCacheTest {
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
 
-    SSZList<Eth1Data> eth1DataVotes =
-        new SSZList<>(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
+    SSZListWrite<Eth1Data> eth1DataVotes =
+        SSZList.create(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data2);
@@ -129,8 +130,8 @@ public class Eth1DataCacheTest {
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
     Eth1Data eth1Data2 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent2);
 
-    SSZList<Eth1Data> eth1DataVotes =
-        new SSZList<>(List.of(eth1Data1, eth1Data2), 10, Eth1Data.class);
+    SSZListWrite<Eth1Data> eth1DataVotes =
+        SSZList.create(List.of(eth1Data1, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
 
@@ -158,8 +159,8 @@ public class Eth1DataCacheTest {
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
 
-    SSZList<Eth1Data> eth1DataVotes =
-        new SSZList<>(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
+    SSZListWrite<Eth1Data> eth1DataVotes =
+        SSZList.create(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
@@ -183,8 +184,8 @@ public class Eth1DataCacheTest {
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
 
-    SSZList<Eth1Data> eth1DataVotes =
-        new SSZList<>(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
+    SSZListWrite<Eth1Data> eth1DataVotes =
+        SSZList.create(List.of(eth1Data1, eth1Data2, eth1Data2), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     assertThat(eth1DataCache.get_eth1_vote(beaconState)).isEqualTo(eth1Data1);
@@ -204,7 +205,7 @@ public class Eth1DataCacheTest {
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
 
-    SSZList<Eth1Data> eth1DataVotes = new SSZList<>(List.of(), 10, Eth1Data.class);
+    SSZListWrite<Eth1Data> eth1DataVotes = SSZList.create(List.of(), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
 
@@ -220,7 +221,7 @@ public class Eth1DataCacheTest {
 
     Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
 
-    SSZList<Eth1Data> eth1DataVotes = new SSZList<>(List.of(eth1Data), 10, Eth1Data.class);
+    SSZListWrite<Eth1Data> eth1DataVotes = SSZList.create(List.of(eth1Data), 10, Eth1Data.class);
     BeaconState beaconState = mock(BeaconState.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     when(beaconState.getEth1_data()).thenReturn(eth1Data);

@@ -19,7 +19,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {
@@ -33,7 +34,7 @@ public class ValidatorsUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
    *     </a>
    */
-  public static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
+  public static boolean is_active_validator(ValidatorRead validator, UnsignedLong epoch) {
     return validator.getActivation_epoch().compareTo(epoch) <= 0
         && epoch.compareTo(validator.getExit_epoch()) < 0;
   }
@@ -44,7 +45,7 @@ public class ValidatorsUtil {
    * @param validator the validator
    * @return true if eligible for the activation queue otherwise false
    */
-  public static boolean is_eligible_for_activation_queue(Validator validator) {
+  public static boolean is_eligible_for_activation_queue(ValidatorRead validator) {
     return validator.getActivation_eligibility_epoch().equals(Constants.FAR_FUTURE_EPOCH)
         && validator
             .getEffective_balance()
@@ -58,7 +59,7 @@ public class ValidatorsUtil {
    * @param validator the validator
    * @return true if the validator is eligible for activation
    */
-  public static boolean is_eligible_for_activation(BeaconState state, Validator validator) {
+  public static boolean is_eligible_for_activation(BeaconState state, ValidatorRead validator) {
     return validator
                 .getActivation_eligibility_epoch()
                 .compareTo(state.getFinalized_checkpoint().getEpoch())
@@ -81,7 +82,7 @@ public class ValidatorsUtil {
         .get(
             epoch,
             e -> {
-              List<Validator> validators = state.getValidators();
+              SSZListRead<ValidatorRead> validators = state.getValidators();
               return IntStream.range(0, validators.size())
                   .filter(index -> is_active_validator(validators.get(index), epoch))
                   .boxed()
@@ -128,7 +129,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
    */
-  public static boolean is_slashable_validator(Validator validator, UnsignedLong epoch) {
+  public static boolean is_slashable_validator(ValidatorRead validator, UnsignedLong epoch) {
     return !validator.isSlashed()
         && (validator.getActivation_epoch().compareTo(epoch) <= 0
             && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);

@@ -13,46 +13,24 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public class SSZList<T> extends ArrayList<T> {
+public interface SSZList<T> extends List<T> {
 
-  private long maxSize;
-  private Class<T> classInfo;
-
-  public SSZList(Class<T> classInfo, long maxSize) {
-    super();
-    this.classInfo = classInfo;
-    this.maxSize = maxSize;
+  static <T> SSZListWrite<T> create(Class<T> classInfo, long maxSize) {
+    return new SSZArrayList<>(classInfo, maxSize);
   }
 
-  public SSZList(SSZList<T> list) {
-    super(list);
-    maxSize = list.getMaxSize();
-    this.classInfo = list.getElementType();
+  static <T> SSZListWrite<T> create(List<T> list, long maxSize, Class<T> classInfo) {
+    return new SSZArrayList<>(list, maxSize, classInfo);
   }
 
-  public SSZList(List<T> list, long maxSize, Class<T> classInfo) {
-    super(list);
-    this.maxSize = maxSize;
-    this.classInfo = classInfo;
+  static <T> SSZListWrite<T> create(SSZList<T> list) {
+    return new SSZArrayList<>(list, list.getMaxSize(), list.getElementType());
   }
 
-  @Override
-  public boolean add(T object) {
-    if (super.size() < maxSize) {
-      return super.add(object);
-    } else {
-      return false;
-    }
-  }
+  long getMaxSize();
 
-  public long getMaxSize() {
-    return maxSize;
-  }
+  Class<T> getElementType();
 
-  public Class<T> getElementType() {
-    return classInfo;
-  }
 }

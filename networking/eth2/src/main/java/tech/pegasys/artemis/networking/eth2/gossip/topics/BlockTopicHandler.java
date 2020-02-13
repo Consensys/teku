@@ -27,7 +27,7 @@ import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
@@ -106,7 +106,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     }
 
     final int proposerIndex = get_beacon_proposer_index(postState);
-    final Validator proposer = postState.getValidators().get(proposerIndex);
+    final ValidatorRead proposer = postState.getValidators().get(proposerIndex);
     final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
     final BLSSignature signature = block.getSignature();
     return BLSVerify.bls_verify(

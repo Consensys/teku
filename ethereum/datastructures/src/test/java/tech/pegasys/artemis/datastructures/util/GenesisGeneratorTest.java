@@ -34,7 +34,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -164,7 +164,7 @@ class GenesisGeneratorTest {
     assertThat(state.getValidators()).hasSize(deposits.size() - 1);
     // And the validator with an invalid deposit should wind up at index 3, not 0 because their
     // first deposit was completely ignored
-    final Validator validator = state.getValidators().get(expectedIndex);
+    final ValidatorRead validator = state.getValidators().get(expectedIndex);
     assertThat(validator.getPubkey()).isEqualTo(validData.getPubkey());
     assertThat(is_active_validator(validator, GENESIS_EPOCH)).isTrue();
   }

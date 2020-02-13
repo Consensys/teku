@@ -143,12 +143,12 @@ class BlockProcessorUtilTest {
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     SSZList<Validator> validatorList =
-        new SSZList<>(
+        SSZList.create(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             Validator.class);
     SSZList<UnsignedLong> balanceList =
-        new SSZList<>(
+        SSZList.create(
             Arrays.asList(
                 randomUnsignedLong(104), randomUnsignedLong(105), randomUnsignedLong(106)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
@@ -159,8 +159,8 @@ class BlockProcessorUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.setValidators(validatorList);
-    beaconState.setBalances(balanceList);
+    beaconState.getValidators().addAll(validatorList);
+    beaconState.getBalances().addAll(balanceList);
     return beaconState;
   }
 }

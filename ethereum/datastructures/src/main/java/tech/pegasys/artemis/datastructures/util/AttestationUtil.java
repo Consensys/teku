@@ -39,9 +39,10 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
@@ -92,7 +93,7 @@ public class AttestationUtil {
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
 
     return new IndexedAttestation(
-        new SSZList<>(
+        SSZList.create(
             attesting_indices.stream()
                 .sorted()
                 .map(UnsignedLong::valueOf)
@@ -153,7 +154,7 @@ public class AttestationUtil {
       return false;
     }
 
-    List<Validator> validators = state.getValidators();
+    SSZListRead<ValidatorRead> validators = state.getValidators();
     BLSPublicKey pubkey =
         bls_aggregate_pubkeys(
             attesting_indices.stream()

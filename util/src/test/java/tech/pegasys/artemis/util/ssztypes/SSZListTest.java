@@ -24,7 +24,7 @@ class SSZListTest {
 
   @Test
   void add1Test() {
-    SSZList<Bytes32> list = new SSZList<>(Bytes32.class, 10);
+    SSZList<Bytes32> list = SSZList.create(Bytes32.class, 10);
 
     Bytes32 randomBytes32 = Bytes32.random();
     list.add(randomBytes32);
@@ -35,7 +35,7 @@ class SSZListTest {
   @Test
   void limitTest() {
     int maxSize = 10;
-    SSZList<Bytes32> list = new SSZList<>(Bytes32.class, maxSize);
+    SSZList<Bytes32> list = SSZList.create(Bytes32.class, maxSize);
 
     for (int i = 0; i < maxSize; i++) {
       list.add(Bytes32.random());

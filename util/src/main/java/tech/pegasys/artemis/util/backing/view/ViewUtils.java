@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.backing.view;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
@@ -62,6 +63,27 @@ public class ViewUtils {
     Bitlist ret = new Bitlist(bitlistView.size(), bitlistView.getType().getMaxLength());
     for (int i = 0; i < bitlistView.size(); i++) {
       if (bitlistView.get(i).get()) {
+        ret.setBit(i);
+      }
+    }
+    return ret;
+  }
+
+  public static VectorViewRead<BitView> createBitvectorView(Bitvector bitvector) {
+    VectorViewWrite<BitView> viewWrite =
+        new VectorViewType<BitView>(BasicViewTypes.BIT_TYPE, bitvector.getSize())
+            .createDefault()
+            .createWritableCopy();
+    for (int i = 0; i < bitvector.getSize(); i++) {
+      viewWrite.set(i, new BitView(bitvector.getBit(i) > 0));
+    }
+    return viewWrite.commitChanges();
+  }
+
+  public static Bitvector getBitlist(VectorViewRead<BitView> vectorView) {
+    Bitvector ret = new Bitvector(vectorView.size());
+    for (int i = 0; i < vectorView.size(); i++) {
+      if (vectorView.get(i).get()) {
         ret.setBit(i);
       }
     }

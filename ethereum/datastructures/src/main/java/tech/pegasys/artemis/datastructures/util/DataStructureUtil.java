@@ -79,7 +79,7 @@ public final class DataStructureUtil {
 
   public static <T> SSZList<T> randomSSZList(
       Class<T> classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
-    SSZList<T> sszList = new SSZList<>(classInfo, maxSize);
+    SSZList<T> sszList = SSZList.create(classInfo, maxSize);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems).forEach(i -> sszList.add(randomFunction.apply(seed)));
     return sszList;
@@ -87,7 +87,7 @@ public final class DataStructureUtil {
 
   public static <T> SSZVector<T> randomSSZVector(
       T defaultClassObject, long maxSize, Function<Integer, T> randomFunction, int seed) {
-    SSZVector<T> sszvector = new SSZVector<>(toIntExact(maxSize), defaultClassObject);
+    SSZVector<T> sszvector = SSZVector.create(toIntExact(maxSize), defaultClassObject);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems)
         .forEach(i -> sszvector.set(toIntExact(i), randomFunction.apply(seed)));
@@ -243,7 +243,7 @@ public final class DataStructureUtil {
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
     SSZList<UnsignedLong> attesting_indices =
-        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        SSZList.create(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     attesting_indices.add(randomUnsignedLong(seed));
     attesting_indices.add(randomUnsignedLong(seed++));
     attesting_indices.add(randomUnsignedLong(seed++));
@@ -271,7 +271,7 @@ public final class DataStructureUtil {
 
   public static DepositWithIndex randomDepositWithIndex(int seed) {
     return new DepositWithIndex(
-        new SSZVector<>(32, randomBytes32(seed)),
+        SSZVector.create(32, randomBytes32(seed)),
         randomDepositData(seed++),
         randomUnsignedLong(seed++)
             .mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
@@ -279,13 +279,13 @@ public final class DataStructureUtil {
 
   public static Deposit randomDepositWithoutIndex(int seed) {
     return new Deposit(
-        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
+        SSZVector.create(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
         randomDepositData(seed++));
   }
 
   public static Deposit randomDeposit(int seed) {
     return new Deposit(
-        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
+        SSZVector.create(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
         randomDepositData(seed));
   }
 
@@ -320,7 +320,7 @@ public final class DataStructureUtil {
               keypair.getPublicKey());
 
       SSZVector<Bytes32> proof =
-          new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+          SSZVector.create(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
       DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UnsignedLong.valueOf(i));
       deposits.add(deposit);
     }

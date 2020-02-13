@@ -15,11 +15,15 @@ package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
+import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public interface ValidatorRead extends ContainerViewRead<ViewRead> {
+public interface ValidatorRead extends ContainerViewRead<ViewRead>, Merkleizable,
+    SimpleOffsetSerializable, SSZContainer {
 
   BLSPublicKey getPubkey();
 

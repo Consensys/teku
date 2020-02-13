@@ -45,7 +45,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -120,7 +120,7 @@ public class StateTransition {
 
   private static boolean verify_block_signature(
       final BeaconState state, SignedBeaconBlock signed_block) {
-    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+    final ValidatorRead proposer = state.getValidators().get(get_beacon_proposer_index(state));
     final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
     return BLSVerify.bls_verify(
         proposer.getPubkey(),

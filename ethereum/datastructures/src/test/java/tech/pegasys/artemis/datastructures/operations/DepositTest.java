@@ -57,7 +57,7 @@ class DepositTest {
     List<Bytes32> reverseBranch = new ArrayList<>(branch);
     Collections.reverse(reverseBranch);
 
-    Deposit testDeposit = new Deposit(new SSZVector<>(reverseBranch, Bytes32.class), depositData);
+    Deposit testDeposit = new Deposit(SSZVector.create(reverseBranch, Bytes32.class), depositData);
 
     assertNotEquals(deposit, testDeposit);
   }
@@ -96,7 +96,7 @@ class DepositTest {
 
   private SSZVector<Bytes32> setupMerkleBranch() {
     SSZVector<Bytes32> branch =
-        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+        SSZVector.create(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
 
     for (int i = 0; i < branch.size(); ++i) {
       branch.set(i, Bytes32.random());

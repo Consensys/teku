@@ -63,9 +63,11 @@ import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.datastructures.state.ValidatorWrite;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -127,7 +129,7 @@ public class BeaconStateUtil {
       Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
-      SSZList<Validator> validators = state.getValidators();
+      SSZListRead<ValidatorRead> validators = state.getValidators();
       existingIndex =
           IntStream.range(0, validators.size())
               .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
@@ -251,7 +253,7 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_total_balance(BeaconState state, Collection<Integer> indices) {
     UnsignedLong sum = UnsignedLong.ZERO;
-    List<Validator> validator_registry = state.getValidators();
+    SSZListRead<ValidatorRead> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
@@ -376,7 +378,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#initiate_validator_exit</a>
    */
   public static void initiate_validator_exit(BeaconState state, int index) {
-    Validator validator = state.getValidators().get(index);
+    ValidatorWrite validator = state.getValidators().get(index);
     // Return if validator already initiated exit
     if (!validator.getExit_epoch().equals(FAR_FUTURE_EPOCH)) {
       return;
@@ -386,7 +388,7 @@ public class BeaconStateUtil {
     List<UnsignedLong> exit_epochs =
         state.getValidators().stream()
             .filter(v -> !v.getExit_epoch().equals(FAR_FUTURE_EPOCH))
-            .map(Validator::getExit_epoch)
+            .map(ValidatorRead::getExit_epoch)
             .collect(Collectors.toList());
     exit_epochs.add(compute_activation_exit_epoch(get_current_epoch(state)));
     UnsignedLong exit_queue_epoch = Collections.max(exit_epochs);
@@ -422,7 +424,7 @@ public class BeaconStateUtil {
       BeaconState state, int slashed_index, int whistleblower_index) {
     UnsignedLong epoch = get_current_epoch(state);
     initiate_validator_exit(state, slashed_index);
-    Validator validator = state.getValidators().get(slashed_index);
+    ValidatorWrite validator = state.getValidators().get(slashed_index);
     validator.setSlashed(true);
     validator.setWithdrawable_epoch(
         max(

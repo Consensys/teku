@@ -50,7 +50,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
@@ -74,6 +74,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -86,7 +87,7 @@ public class ValidatorCoordinator {
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private final StateTransition stateTransition;
   private final BlockProposalUtil blockCreator;
-  private final SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
+  private final SSZList<Deposit> newDeposits = SSZList.create(Deposit.class, MAX_DEPOSITS);
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
@@ -406,7 +407,7 @@ public class ValidatorCoordinator {
   @VisibleForTesting
   static void getIndicesOfOurValidators(
       BeaconState state, Map<BLSPublicKey, ValidatorInfo> validators) {
-    List<Validator> validatorRegistry = state.getValidators();
+    SSZListRead<ValidatorRead> validatorRegistry = state.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {

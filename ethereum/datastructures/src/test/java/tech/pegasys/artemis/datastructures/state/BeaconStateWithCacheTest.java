@@ -59,7 +59,7 @@ class BeaconStateWithCacheTest {
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
 
     // Test slot
-    state.incrementSlot();
+    state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
     assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
 
     // Test fork
@@ -75,7 +75,7 @@ class BeaconStateWithCacheTest {
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
 
     // Test slot
-    state.incrementSlot();
+    state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
     assertThat(deepCopy.getSlot()).isNotEqualTo(state.getSlot());
   }
 
@@ -97,9 +97,9 @@ class BeaconStateWithCacheTest {
                     UnsignedLong.valueOf(GENESIS_EPOCH),
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO)));
-    state.setValidators(new SSZList<>(new_records, VALIDATOR_REGISTRY_LIMIT, Validator.class));
+    state.getValidators().addAll(SSZList.create(new_records, VALIDATOR_REGISTRY_LIMIT, Validator.class));
     BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
-    Validator validator = deepCopy.getValidators().get(0);
+    ValidatorWrite validator = deepCopy.getValidators().get(0);
     validator.setPubkey(BLSPublicKey.random(9999999));
     assertThat(deepCopy.getValidators().get(0).getPubkey())
         .isNotEqualTo(state.getValidators().get(0).getPubkey());

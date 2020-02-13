@@ -76,7 +76,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   }
 
   @Override
-  public void set(int index, R value) {
+  public R set(int index, R value) {
     int size = size();
     checkArgument(
         (index >= 0 && index < size) || (index == size && index < getType().getMaxLength()),
@@ -98,6 +98,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
         });
 
     invalidate();
+    return null;
   }
 
   @SuppressWarnings("unchecked")

@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -77,7 +77,7 @@ class MockStartBeaconStateGeneratorTest {
 
     final List<BLSPublicKey> actualValidatorPublicKeys =
         initialBeaconState.getValidators().stream()
-            .map(Validator::getPubkey)
+            .map(ValidatorRead::getPubkey)
             .collect(Collectors.toList());
     final List<BLSPublicKey> expectedValidatorPublicKeys =
         validatorKeyPairs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList());

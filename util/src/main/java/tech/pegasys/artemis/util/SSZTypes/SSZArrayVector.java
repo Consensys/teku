@@ -13,21 +13,31 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
-public interface SSZVector<T> extends List<T> {
+class SSZArrayVector<T> extends ArrayList<T> implements SSZVectorWrite<T> {
 
-  static <T> SSZVector<T> create(int size, T object) {
-    return new SSZArrayVector<>(size, object);
+  private final Class<T> classInfo;
+
+  @SuppressWarnings("unchecked")
+  SSZArrayVector(int size, T object) {
+    super(Collections.nCopies(size, object));
+    classInfo = (Class<T>) object.getClass();
   }
 
-  static <T> SSZVector<T> create(List<T> list, Class<T> classInfo) {
-    return new SSZArrayVector<>(list, classInfo);
+  SSZArrayVector(List<T> list, Class<T> classInfo) {
+    super(list);
+    this.classInfo = classInfo;
   }
 
-  static <T> SSZVector<T> copy(SSZVector<T> vector) {
-    return new SSZArrayVector<T>(vector, vector.getElementType());
+  SSZArrayVector(SSZArrayVector<T> list) {
+    super(list);
+    this.classInfo = list.getElementType();
   }
 
-  Class<T> getElementType();
+  public Class<T> getElementType() {
+    return classInfo;
+  }
 }

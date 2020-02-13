@@ -43,19 +43,19 @@ public class HistoricalBatch
   }
 
   public HistoricalBatch() {
-    this.block_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
-    this.state_roots = new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    this.block_roots = SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    this.state_roots = SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
   }
 
   public HistoricalBatch(HistoricalBatch historicalBatch) {
     this.block_roots =
         copyBytesList(
             historicalBatch.getBlockRoots(),
-            new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
+            SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
     this.state_roots =
         copyBytesList(
             historicalBatch.getStateRoots(),
-            new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
+            SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
   }
 
   @Override

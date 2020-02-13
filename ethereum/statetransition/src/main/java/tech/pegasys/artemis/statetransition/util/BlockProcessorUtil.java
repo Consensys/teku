@@ -68,7 +68,7 @@ import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -103,7 +103,7 @@ public final class BlockProcessorUtil {
               block.getBody().hash_tree_root()));
 
       // Only if we are processing blocks (not proposing them)
-      Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+      ValidatorRead proposer = state.getValidators().get(get_beacon_proposer_index(state));
       checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
 
     } catch (IllegalArgumentException e) {
@@ -127,7 +127,7 @@ public final class BlockProcessorUtil {
       UnsignedLong epoch = get_current_epoch(state);
       // Verify RANDAO reveal
       int proposer_index = get_beacon_proposer_index(state);
-      Validator proposer = state.getValidators().get(proposer_index);
+      ValidatorRead proposer = state.getValidators().get(proposer_index);
       Bytes32 messageHash =
           HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
       checkArgument(
@@ -224,7 +224,7 @@ public final class BlockProcessorUtil {
                     .compareTo(proposer_slashing.getProposer_index())
                 > 0,
             "process_proposer_slashings: Invalid proposer index");
-        Validator proposer =
+        ValidatorRead proposer =
             state
                 .getValidators()
                 .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
@@ -446,7 +446,7 @@ public final class BlockProcessorUtil {
             UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
                 > 0,
             "process_voluntary_exits: Invalid validator index");
-        Validator validator =
+        ValidatorRead validator =
             state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
 
         checkArgument(

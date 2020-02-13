@@ -45,13 +45,13 @@ class BeaconBlockBodyTest {
   private Eth1Data eth1Data = randomEth1Data(seed++);
   private Bytes32 graffiti = randomBytes32(seed++);
   private SSZList<ProposerSlashing> proposerSlashings =
-      new SSZList<>(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
+      SSZList.create(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
   private SSZList<AttesterSlashing> attesterSlashings =
-      new SSZList<>(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
-  private SSZList<Attestation> attestations = new SSZList<>(Attestation.class, MAX_ATTESTATIONS);
-  private SSZList<Deposit> deposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
+      SSZList.create(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
+  private SSZList<Attestation> attestations = SSZList.create(Attestation.class, MAX_ATTESTATIONS);
+  private SSZList<Deposit> deposits = SSZList.create(Deposit.class, MAX_DEPOSITS);
   private SSZList<SignedVoluntaryExit> voluntaryExits =
-      new SSZList<>(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);
+      SSZList.create(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);
 
   {
     proposerSlashings.add(randomProposerSlashing(seed++));
@@ -105,7 +105,7 @@ class BeaconBlockBodyTest {
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
     SSZList<ProposerSlashing> reverseProposerSlashings =
-        new SSZList<>(proposerSlashings, MAX_PROPOSER_SLASHINGS, ProposerSlashing.class);
+        SSZList.create(proposerSlashings, MAX_PROPOSER_SLASHINGS, ProposerSlashing.class);
     Collections.reverse(reverseProposerSlashings);
 
     BeaconBlockBody testBeaconBlockBody =
@@ -126,7 +126,7 @@ class BeaconBlockBodyTest {
   void equalsReturnsFalseWhenAttesterSlashingsAreDifferent() {
     // Create copy of attesterSlashings and change the element to ensure it is different.
     SSZList<AttesterSlashing> otherAttesterSlashings =
-        new SSZList<>(attesterSlashings, MAX_ATTESTER_SLASHINGS, AttesterSlashing.class);
+        SSZList.create(attesterSlashings, MAX_ATTESTER_SLASHINGS, AttesterSlashing.class);
     otherAttesterSlashings.add(0, randomAttesterSlashing(seed++));
 
     BeaconBlockBody testBeaconBlockBody =
@@ -147,7 +147,7 @@ class BeaconBlockBodyTest {
   void equalsReturnsFalseWhenAttestationsAreDifferent() {
     // Create copy of attestations and reverse to ensure it is different.
     SSZList<Attestation> reverseAttestations =
-        new SSZList<>(attestations, MAX_ATTESTATIONS, Attestation.class);
+        SSZList.create(attestations, MAX_ATTESTATIONS, Attestation.class);
     Collections.reverse(reverseAttestations);
 
     BeaconBlockBody testBeaconBlockBody =
@@ -167,7 +167,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenDepositsAreDifferent() {
     // Create copy of deposits and reverse to ensure it is different.
-    SSZList<Deposit> reverseDeposits = new SSZList<>(deposits, MAX_DEPOSITS, Deposit.class);
+    SSZList<Deposit> reverseDeposits = SSZList.create(deposits, MAX_DEPOSITS, Deposit.class);
     Collections.reverse(reverseDeposits);
 
     BeaconBlockBody testBeaconBlockBody =
@@ -188,7 +188,7 @@ class BeaconBlockBodyTest {
   void equalsReturnsFalseWhenExitsAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
     SSZList<SignedVoluntaryExit> reverseVoluntaryExits =
-        new SSZList<>(voluntaryExits, MAX_VOLUNTARY_EXITS, SignedVoluntaryExit.class);
+        SSZList.create(voluntaryExits, MAX_VOLUNTARY_EXITS, SignedVoluntaryExit.class);
     Collections.reverse(reverseVoluntaryExits);
 
     BeaconBlockBody testBeaconBlockBody =

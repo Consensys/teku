@@ -15,7 +15,7 @@ package tech.pegasys.artemis.util.backing;
 
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 
-public interface VectorViewRead<C extends ViewRead> extends CompositeViewRead<C> {
+public interface VectorViewRead<C> extends CompositeViewRead<C> {
 
   @Override
   default VectorViewWrite<C> createWritableCopy() {
