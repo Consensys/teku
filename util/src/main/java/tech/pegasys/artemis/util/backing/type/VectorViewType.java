@@ -20,16 +20,24 @@ import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
 import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
 
 public class VectorViewType<C> extends CollectionViewType {
+  private final boolean isListBacking;
 
   public VectorViewType(ViewType elementType, long maxLength) {
+    this(elementType, maxLength, false);
+  }
+
+  VectorViewType(ViewType elementType, long maxLength, boolean isListBacking) {
     super(maxLength, elementType);
+    this.isListBacking = isListBacking;
   }
 
   @Override
   public VectorViewRead<C> createDefault() {
-    return createFromTreeNode(
-        TreeNodeImpl.createZeroTree(
-            treeDepth(), getElementType().createDefault().getBackingNode()));
+    TreeNode backing = isListBacking
+        ? TreeNodeImpl.createZeroTree(maxChunks())
+        : TreeNodeImpl
+            .createDefaultTree((int) maxChunks(), getElementType().createDefault().getBackingNode());
+    return createFromTreeNode(backing);
   }
 
   @Override

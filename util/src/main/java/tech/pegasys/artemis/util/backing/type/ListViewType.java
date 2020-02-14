@@ -40,6 +40,6 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   public VectorViewType<C> getCompatibleVectorType() {
-    return new VectorViewType<>(getElementType(), getMaxLength());
+    return new VectorViewType<>(getElementType(), getMaxLength(), true);
   }
 }

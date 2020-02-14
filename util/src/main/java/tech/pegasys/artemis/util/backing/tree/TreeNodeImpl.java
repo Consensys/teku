@@ -16,6 +16,9 @@ package tech.pegasys.artemis.util.backing.tree;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.Utils;
@@ -51,7 +54,7 @@ public class TreeNodeImpl {
   public static class CommitImpl implements Commit {
     private final TreeNode left;
     private final TreeNode right;
-    private Bytes32 cachedHash = null;
+    private volatile Bytes32 cachedHash = null;
 
     public CommitImpl(TreeNode left, TreeNode right) {
       this.left = left;
@@ -87,8 +90,26 @@ public class TreeNodeImpl {
     }
   }
 
-  public static TreeNode createZeroTree(int depth, TreeNode zeroElement) {
-    TreeNode ret = zeroElement;
+  public static TreeNode createDefaultTree(int maxLength, TreeNode zeroElement) {
+    List<TreeNode> nodes = Stream.concat(
+        IntStream.range(0, maxLength)
+            .mapToObj(i -> zeroElement),
+        IntStream.range(maxLength, (int) Utils.nextPowerOf2(maxLength))
+            .mapToObj(i -> TreeNodeImpl.ZERO_LEAF)
+    ).collect(Collectors.toList());
+    while (nodes.size() > 1) {
+      List<TreeNode> parentNodes = new ArrayList<>(nodes.size() / 2);
+      for (int i = 0; i < nodes.size(); i+=2) {
+        parentNodes.add(new CommitImpl(nodes.get(i), nodes.get(i + 1)));
+      }
+      nodes = parentNodes;
+    }
+    return nodes.get(0);
+  }
+
+  public static TreeNode createZeroTree(long maxLength) {
+    int depth = treeDepth(maxLength);
+    TreeNode ret = TreeNodeImpl.ZERO_LEAF;
     for (int i = 0; i < depth; i++) {
       ret = new CommitImpl(ret, ret);
     }
@@ -107,5 +128,9 @@ public class TreeNodeImpl {
       nodes = upperLevelNodes;
     }
     return nodes.get(0);
+  }
+
+  private static int treeDepth(long maxChunks) {
+    return Long.bitCount(Utils.nextPowerOf2(maxChunks) - 1);
   }
 }
