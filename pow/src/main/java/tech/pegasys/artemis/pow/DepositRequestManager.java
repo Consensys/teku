@@ -171,12 +171,12 @@ public class DepositRequestManager {
         .thenApply(this::groupDepositEventResponsesByBlockHash)
         .thenCompose(
             groupedDepositEventResponsesByBlockHash ->
-                publishNextDepsoitEvent(
+                publishNextDepositEvent(
                     getMapOfEthBlockFutures(groupedDepositEventResponsesByBlockHash.keySet()),
                     groupedDepositEventResponsesByBlockHash));
   }
 
-  private SafeFuture<Void> publishNextDepsoitEvent(
+  private SafeFuture<Void> publishNextDepositEvent(
       List<SafeFuture<Block>> blockRequests,
       Map<BlockNumberAndHash, List<DepositEventEventResponse>> depositEventsByBlock) {
 
@@ -184,7 +184,7 @@ public class DepositRequestManager {
     // Avoid StackOverflowException when there is a long string of requests already completed.
     while (!blockRequests.isEmpty() && blockRequests.get(0).isDone()) {
       final Block block = blockRequests.remove(0).join();
-      publicEventForBlock(block, depositEventsByBlock);
+      publishEventForBlock(block, depositEventsByBlock);
     }
 
     // All requests have completed and been processed.
@@ -195,10 +195,10 @@ public class DepositRequestManager {
     // Reached a block request that isn't complete so wait for it and recurse back into this method.
     return blockRequests
         .get(0)
-        .thenCompose(block -> publishNextDepsoitEvent(blockRequests, depositEventsByBlock));
+        .thenCompose(block -> publishNextDepositEvent(blockRequests, depositEventsByBlock));
   }
 
-  private void publicEventForBlock(
+  private void publishEventForBlock(
       final Block block,
       final Map<BlockNumberAndHash, List<DepositEventEventResponse>> depositEventsByBlock) {
     final List<DepositEventEventResponse> deposits =
