@@ -29,7 +29,21 @@ public interface Database extends Closeable {
 
   Store createMemoryStore();
 
+  /**
+   * Return the root of the finalized block at this slot if such a block exists.
+   *
+   * @param slot The slot to query
+   * @return Returns the root of the finalized block proposed at this slot, if such a block exists
+   */
   Optional<Bytes32> getFinalizedRootAtSlot(UnsignedLong slot);
+
+  /**
+   * Returns the latest finalized root at or prior to the given slot
+   *
+   * @param slot The slot to query
+   * @return Returns the root of the latest finalized block proposed at or prior to the given slot
+   */
+  Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot);
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
