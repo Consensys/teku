@@ -55,22 +55,20 @@ public class BlockAttestationsPool {
       new PriorityBlockingQueue<>(
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
 
-
   public SSZList<Attestation> getAttestationsForSlot(final UnsignedLong slot) {
     SSZList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
     if (slot.compareTo(
             UnsignedLong.valueOf(
-                    Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-            >= 0) {
+                Constants.GENESIS_SLOT + Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+        >= 0) {
 
       UnsignedLong attestation_slot =
-              slot.minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
+          slot.minus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY));
 
       attestations = getAggregatedAttestationsForBlockAtSlot(attestation_slot);
     }
     return attestations;
   }
-
 
   public void addUnprocessedAggregateAttestationToQueue(Attestation newAttestation) {
 

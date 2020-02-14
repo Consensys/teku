@@ -24,7 +24,7 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 public abstract class MerkleTree {
-  public final List<List<Bytes32>> tree;
+  protected final List<List<Bytes32>> tree;
   protected final List<Bytes32> zeroHashes;
   protected final int treeDepth; // Root does not count as depth, i.e. tree height is treeDepth + 1
 
@@ -94,7 +94,8 @@ public abstract class MerkleTree {
     // Check if given the viewLimit at the leaf layer, is root in left or right subtree
     if ((viewLimit & (1 << depth)) != 0) {
       // For the right subtree
-      return Hash.sha2_256(Bytes.concatenate(tree.get(depth).get((viewLimit >> depth) - 1), deeperRoot));
+      return Hash.sha2_256(
+          Bytes.concatenate(tree.get(depth).get((viewLimit >> depth) - 1), deeperRoot));
     } else {
       // For the left subtree
       return Hash.sha2_256(Bytes.concatenate(deeperRoot, zeroHashes.get(depth)));
@@ -127,8 +128,7 @@ public abstract class MerkleTree {
       int limit = viewLimit >> i;
 
       checkArgument(
-              limit <= tree.get(i).size(),
-              "MerkleTree: Tree is too small for given limit at height");
+          limit <= tree.get(i).size(), "MerkleTree: Tree is too small for given limit at height");
 
       // If the sibling is equal to the limit,
       if (siblingIndex == limit) {

@@ -14,12 +14,10 @@
 package tech.pegasys.artemis.datastructures.merkletree;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,7 +30,8 @@ public class MerkleTreeTest {
   private MerkleTree merkleTree2;
   private final int treeDepth = 4;
 
-  private final List<Bytes32> leaves = List.of(
+  private final List<Bytes32> leaves =
+      List.of(
           Bytes32.fromHexString("0x0001"),
           Bytes32.fromHexString("0x0002"),
           Bytes32.fromHexString("0x0003"),
@@ -60,7 +59,8 @@ public class MerkleTreeTest {
       merkleTree1.add(leaf);
       Bytes32 root = merkleTree1.getRoot();
 
-      results.add(is_valid_merkle_branch(
+      results.add(
+          is_valid_merkle_branch(
               leaf,
               merkleTree1.getProof(leaf),
               treeDepth + 1, // Add 1 for the `List` length mix-in
@@ -85,13 +85,13 @@ public class MerkleTreeTest {
       merkleTree1.add(leaf);
       Bytes32 root = merkleTree1.getRoot();
 
-      results.add(is_valid_merkle_branch(
+      results.add(
+          is_valid_merkle_branch(
               leaf,
               merkleTree2.getProofWithViewBoundary(leaf, index + 1),
               treeDepth + 1, // Add 1 for the `List` length mix-in
               index,
               root));
-
     }
     assertThat(results).allSatisfy(Assertions::assertTrue);
   }
@@ -109,12 +109,12 @@ public class MerkleTreeTest {
       merkleTree1.add(leaves.get(i));
     }
 
-
     Bytes32 root = merkleTree1.getRoot();
 
     List<Boolean> results = new ArrayList<>();
     for (int index = 0; index < 10; index++) {
-              results.add(is_valid_merkle_branch(
+      results.add(
+          is_valid_merkle_branch(
               leaves.get(index),
               merkleTree2.getProofWithViewBoundary(index, 10),
               treeDepth + 1, // Add 1 for the `List` length mix-in

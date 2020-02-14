@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -88,12 +87,15 @@ public class OptimizedMerkleTree extends MerkleTree {
   }
 
   private String centerPrint(List<Bytes32> stageItems, int numLeaves) {
-    String emptySpaceOnSide = IntStream.range(0, (numLeaves - stageItems.size()))
-            .mapToObj(i -> "    ").collect(Collectors.joining("    "));
+    String emptySpaceOnSide =
+        IntStream.range(0, (numLeaves - stageItems.size()))
+            .mapToObj(i -> "    ")
+            .collect(Collectors.joining("    "));
     if (numLeaves == stageItems.size()) {
       emptySpaceOnSide = "                ";
     }
-    String stageString = stageItems.stream()
+    String stageString =
+        stageItems.stream()
             .map(item -> item.toHexString().substring(63))
             .collect(Collectors.joining(emptySpaceOnSide));
 

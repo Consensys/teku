@@ -50,7 +50,6 @@ import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
-import tech.pegasys.artemis.statetransition.api.BlockEventChannel;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -161,20 +160,20 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositProvider()");
     depositProvider = new DepositProvider(chainStorageClient);
     eventChannels
-            .subscribe(DepositEventChannel.class, depositProvider)
-            .subscribe(FinalizedCheckpointEventChannel.class, depositProvider);
+        .subscribe(DepositEventChannel.class, depositProvider)
+        .subscribe(FinalizedCheckpointEventChannel.class, depositProvider);
   }
 
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
     new ValidatorCoordinator(
-            timeProvider,
-            eventBus,
-            chainStorageClient,
-            attestationAggregator,
-            blockAttestationsPool,
-            depositProvider,
-            config);
+        timeProvider,
+        eventBus,
+        chainStorageClient,
+        attestationAggregator,
+        blockAttestationsPool,
+        depositProvider,
+        config);
   }
 
   public void initStateProcessor() {

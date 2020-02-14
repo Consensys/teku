@@ -39,11 +39,11 @@ public class Deposit {
   }
 
   public Deposit(
-          BLSPublicKey pubkey,
-          Bytes32 withdrawal_credentials,
-          BLSSignature signature,
-          UnsignedLong amount,
-          UnsignedLong merkle_tree_index) {
+      BLSPublicKey pubkey,
+      Bytes32 withdrawal_credentials,
+      BLSSignature signature,
+      UnsignedLong amount,
+      UnsignedLong merkle_tree_index) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.signature = signature;

@@ -15,8 +15,6 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -31,13 +29,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
-import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.EventSink;
@@ -74,11 +71,9 @@ public class ValidatorCoordinatorTest {
     blockAttestationsPool = mock(BlockAttestationsPool.class);
     depositProvider = mock(DepositProvider.class);
 
-    when(depositProvider.getDeposits(any()))
-            .thenReturn(createDeposits());
+    when(depositProvider.getDeposits(any())).thenReturn(createDeposits());
 
-    when(blockAttestationsPool.getAttestationsForSlot(any()))
-        .thenReturn(createAttestations());
+    when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(createAttestations());
 
     eventBus = new EventBus();
     proposedBlockEvents = EventSink.capture(eventBus, ProposedBlockEvent.class);

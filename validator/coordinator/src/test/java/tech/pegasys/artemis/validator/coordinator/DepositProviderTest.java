@@ -1,7 +1,29 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.validator.coordinator;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,19 +42,6 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
 public class DepositProviderTest {
 
@@ -66,7 +75,6 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(0, 10);
     SSZList<Deposit> deposits = depositProvider.getDeposits(beaconState);
     assertThat(deposits).isEmpty();
-
   }
 
   @Test
@@ -104,13 +112,14 @@ public class DepositProviderTest {
     Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
     mockStateEth1DepositIndex(10);
     mockDepositsFromEth1Block(0, 20);
-    when(chainStorageClient.getBlockState(eq(finalizedBlockRoot))).thenReturn(Optional.ofNullable(beaconState));
+    when(chainStorageClient.getBlockState(eq(finalizedBlockRoot)))
+        .thenReturn(Optional.ofNullable(beaconState));
 
-    depositProvider.onFinalizedCheckpoint(new FinalizedCheckpointEvent(
-            new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot)
-    ));
+    depositProvider.onFinalizedCheckpoint(
+        new FinalizedCheckpointEvent(new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot)));
 
-    assertThat(depositProvider.depositNavigableMap).doesNotContainKeys(
+    assertThat(depositProvider.depositNavigableMap)
+        .doesNotContainKeys(
             UnsignedLong.valueOf(0),
             UnsignedLong.valueOf(1),
             UnsignedLong.valueOf(2),
@@ -124,38 +133,40 @@ public class DepositProviderTest {
   }
 
   private void checkThatDepositProofIsValid(List<Deposit> deposits) {
-    deposits.forEach(deposit -> {
-              assertThat(
-              is_valid_merkle_branch(
+    deposits.forEach(
+        deposit -> {
+          assertThat(
+                  is_valid_merkle_branch(
                       deposit.getData().hash_tree_root(),
                       deposit.getProof(),
                       Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
                       ((DepositWithIndex) deposit).getIndex().intValue(),
-                      depositMerkleTree.getRoot())
-      ).isTrue();
-    });
+                      depositMerkleTree.getRoot()))
+              .isTrue();
+        });
   }
 
   private void createDepositEvents(int n) {
-    allSeenDepositsList =  IntStream.range(0, n)
+    allSeenDepositsList =
+        IntStream.range(0, n)
             .mapToObj(i -> DataStructureUtil.randomDepositEvent(seed++, UnsignedLong.valueOf(i)))
             .collect(Collectors.toList());
   }
 
   private void mockDepositsFromEth1Block(int startIndex, int n) {
     DepositsFromBlockEvent depositsFromBlockEvent = mock(DepositsFromBlockEvent.class);
-    when(depositsFromBlockEvent.getDeposits()).thenReturn(allSeenDepositsList.subList(startIndex, startIndex + n));
+    when(depositsFromBlockEvent.getDeposits())
+        .thenReturn(allSeenDepositsList.subList(startIndex, startIndex + n));
     depositProvider.onDepositsFromBlock(depositsFromBlockEvent);
   }
 
   private void mockEth1DataDepositCount(int n) {
-    allSeenDepositsList.subList(0, n)
-            .stream()
-            .map(DepositUtil::convertDepositEventToOperationDeposit)
-            .peek(System.out::println)
-            .map(Deposit::getData)
-            .map(DepositData::hash_tree_root)
-            .forEachOrdered(depositMerkleTree::add);
+    allSeenDepositsList.subList(0, n).stream()
+        .map(DepositUtil::convertDepositEventToOperationDeposit)
+        .peek(System.out::println)
+        .map(Deposit::getData)
+        .map(DepositData::hash_tree_root)
+        .forEachOrdered(depositMerkleTree::add);
 
     Eth1Data eth1Data = mock(Eth1Data.class);
     when(beaconState.getEth1_data()).thenReturn(eth1Data);

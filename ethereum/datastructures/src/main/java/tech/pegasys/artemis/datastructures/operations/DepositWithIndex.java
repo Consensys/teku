@@ -43,8 +43,6 @@ public class DepositWithIndex extends Deposit implements Comparable<DepositWithI
 
   @Override
   public String toString() {
-    return "DepositWithIndex{" +
-            "index=" + index +
-            '}';
+    return "DepositWithIndex{" + "index=" + index + '}';
   }
 }
