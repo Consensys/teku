@@ -15,7 +15,6 @@ package tech.pegasys.artemis.datastructures.util;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 
@@ -114,32 +113,6 @@ class GenesisGeneratorTest {
     // And caching should be enabled on the final generated state.
     assertThat(BeaconStateWithCache.getTransitionCaches(state.get()))
         .isNotSameAs(TransitionCaches.getNoOp());
-  }
-
-  @Test
-  public void shouldGenerateValidDepositRoot() {
-    genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, INITIAL_DEPOSITS);
-    final BeaconStateWithCache state = genesisGenerator.getGenesisState();
-
-    // All deposits should have a proof
-    INITIAL_DEPOSITS.forEach(deposit -> assertThat(deposit.getProof()).isNotEmpty());
-
-    // All deposits should have been added into the state
-    assertThat(state.getEth1_deposit_index())
-        .isEqualTo(UnsignedLong.valueOf(INITIAL_DEPOSITS.size()));
-
-    // The deposit root is only generated for the last deposit so that's the only one we can
-    // actually check
-    final Deposit deposit = INITIAL_DEPOSITS.get(INITIAL_DEPOSITS.size() - 1);
-    final boolean isProofValid =
-        is_valid_merkle_branch(
-            deposit.getData().hash_tree_root(),
-            deposit.getProof(),
-            Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
-            // -1 because we'd normally check this before incrementing the deposit index
-            INITIAL_DEPOSITS.size() - 1,
-            state.getEth1_data().getDeposit_root());
-    assertThat(isProofValid).isTrue();
   }
 
   @Test

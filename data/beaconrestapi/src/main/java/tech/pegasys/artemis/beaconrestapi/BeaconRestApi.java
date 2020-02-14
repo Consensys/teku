@@ -39,21 +39,19 @@ import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class BeaconRestApi {
 
   private List<BeaconRestApiHandler> handlers = new ArrayList<>();
   private Javalin app;
-  private final ChainStorageClient chainStorageClient;
-  private final P2PNetwork<?> p2pNetwork;
 
   public BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
+      HistoricalChainData historicalChainData,
       final int requestedPortNumber) {
-    this.chainStorageClient = chainStorageClient;
-    this.p2pNetwork = p2pNetwork;
 
     app =
         Javalin.create(
@@ -63,9 +61,9 @@ public class BeaconRestApi {
             });
     app.server().setServerPort(requestedPortNumber);
 
-    addNodeHandlers();
-    addBeaconHandlers();
-    addNetworkHandlers();
+    addNodeHandlers(chainStorageClient);
+    addBeaconHandlers(chainStorageClient, historicalChainData);
+    addNetworkHandlers(p2pNetwork);
     addValidatorHandlers();
   }
 
@@ -108,7 +106,7 @@ public class BeaconRestApi {
     return options;
   }
 
-  private void addNodeHandlers() {
+  private void addNodeHandlers(ChainStorageClient chainStorageClient) {
     app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient));
     app.get(VersionHandler.ROUTE, new VersionHandler());
     /*
@@ -119,14 +117,15 @@ public class BeaconRestApi {
      */
   }
 
-  private void addBeaconHandlers() {
+  private void addBeaconHandlers(
+      ChainStorageClient chainStorageClient, HistoricalChainData historicalChainData) {
     // TODO: not in Minimal or optional specified set - some are similar to lighthouse
     // implementation
     handlers.add(new BeaconHeadHandler(chainStorageClient));
     handlers.add(new BeaconChainHeadHandler(chainStorageClient));
-    handlers.add(new BeaconBlockHandler(chainStorageClient));
     handlers.add(new BeaconStateHandler(chainStorageClient));
     handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
+    handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
   }
 
   private void addValidatorHandlers() {
@@ -140,7 +139,7 @@ public class BeaconRestApi {
      **/
   }
 
-  private void addNetworkHandlers() {
+  private void addNetworkHandlers(P2PNetwork<?> p2pNetwork) {
     // not in Minimal or optional specified set
     handlers.add(new PeerIdHandler(p2pNetwork));
     handlers.add(new PeersHandler(p2pNetwork));

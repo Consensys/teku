@@ -19,22 +19,25 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_BLOCK_BY_RANGE_REQU
 
 import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
+import java.time.Duration;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.PeerStatus;
-import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerSync {
+  private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
+
   private static final Logger LOG = LogManager.getLogger();
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
@@ -42,7 +45,13 @@ public class PeerSync {
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
 
-  public PeerSync(final ChainStorageClient storageClient, final BlockImporter blockImporter) {
+  private final AsyncRunner asyncRunner;
+
+  public PeerSync(
+      final AsyncRunner asyncRunner,
+      final ChainStorageClient storageClient,
+      final BlockImporter blockImporter) {
+    this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
   }
@@ -54,7 +63,7 @@ public class PeerSync {
     final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
 
-    return executeSync(peer, peer.getStatus(), firstNonFinalSlot)
+    return executeSync(peer, peer.getStatus(), firstNonFinalSlot, SafeFuture.COMPLETE)
         .whenComplete(
             (res, err) -> {
               if (err != null) {
@@ -69,8 +78,12 @@ public class PeerSync {
     stopped.set(true);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<PeerSyncResult> executeSync(
-      final Eth2Peer peer, final PeerStatus status, final UnsignedLong startSlot) {
+      final Eth2Peer peer,
+      final PeerStatus status,
+      final UnsignedLong startSlot,
+      final SafeFuture<Void> readyForRequest) {
     if (stopped.get()) {
       return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
@@ -80,20 +93,27 @@ public class PeerSync {
       return completeSyncWithPeer(peer, status);
     }
 
-    LOG.debug("Request {} blocks starting at {} from peer {}", count, startSlot, peer);
-    final AtomicLong latestSlotImported = new AtomicLong(-1);
-    return peer.requestBlocksByRange(
-            status.getHeadRoot(), startSlot, count, STEP, blockResponseListener(latestSlotImported))
+    return readyForRequest
         .thenCompose(
-            res -> {
-              if (latestSlotImported.get() < 0) {
-                // Last request returned no blocks
-                // This doesn't necessarily mean the peer has misbehaved - it's possible its chain
-                // may have progressed and the blocks we're requesting are no longer available
-                return SafeFuture.completedFuture(PeerSyncResult.IMPORT_STALLED);
-              }
-              final UnsignedLong nextSlot = UnsignedLong.valueOf(latestSlotImported.get() + 1);
-              return executeSync(peer, status, nextSlot);
+            (__) -> {
+              LOG.debug(
+                  "Request {} blocks starting at {} from peer {}", count, startSlot, peer.getId());
+              final SafeFuture<Void> readyForNextRequest =
+                  asyncRunner.getDelayedFuture(
+                      NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+              return peer.requestBlocksByRange(
+                      status.getHeadRoot(), startSlot, count, STEP, this::blockResponseListener)
+                  .thenApply((res) -> readyForNextRequest);
+            })
+        .thenCompose(
+            (readyForNextRequest) -> {
+              LOG.trace(
+                  "Completed request for {} blocks starting at {} from peer {}",
+                  count,
+                  startSlot,
+                  peer.getId());
+              final UnsignedLong nextSlot = startSlot.plus(count);
+              return executeSync(peer, status, nextSlot, readyForNextRequest);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }
@@ -129,6 +149,10 @@ public class PeerSync {
     if (storageClient.getFinalizedEpoch().compareTo(status.getFinalizedEpoch()) >= 0) {
       return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
     } else {
+      LOG.debug(
+          "Disconnecting from peer ({}) due to inaccurate advertised finalized block at {}",
+          peer,
+          status.getFinalizedEpoch());
       disconnectFromPeer(peer);
       return SafeFuture.completedFuture(PeerSyncResult.FAULTY_ADVERTISEMENT);
     }
@@ -147,19 +171,15 @@ public class PeerSync {
         : diff;
   }
 
-  private ResponseListener<SignedBeaconBlock> blockResponseListener(
-      final AtomicLong lastImportedSlot) {
-    return (block) -> {
-      if (stopped.get()) {
-        throw new CancellationException("Peer sync was cancelled");
-      }
-      final BlockImportResult result = blockImporter.importBlock(block);
-      LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
-      if (!result.isSuccessful()) {
-        throw new FailedBlockImportException(block, result);
-      }
-      lastImportedSlot.set(block.getMessage().getSlot().longValue());
-    };
+  private void blockResponseListener(final SignedBeaconBlock block) {
+    if (stopped.get()) {
+      throw new CancellationException("Peer sync was cancelled");
+    }
+    final BlockImportResult result = blockImporter.importBlock(block);
+    LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
+    if (!result.isSuccessful()) {
+      throw new FailedBlockImportException(block, result);
+    }
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {

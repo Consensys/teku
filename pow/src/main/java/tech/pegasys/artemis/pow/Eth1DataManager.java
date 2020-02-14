@@ -33,9 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.async.AsyncRunner;
@@ -97,7 +94,7 @@ public class Eth1DataManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Web3j web3j;
+  private final Eth1Provider eth1Provider;
   private final DepositContractListener depositContractListener;
   private final EventBus eventBus;
   private final AsyncRunner asyncRunner;
@@ -108,12 +105,12 @@ public class Eth1DataManager {
   private AtomicBoolean cacheStartupDone = new AtomicBoolean(false);
 
   public Eth1DataManager(
-      Web3j web3j,
+      Eth1Provider eth1Provider,
       EventBus eventBus,
       DepositContractListener depositContractListener,
       AsyncRunner asyncRunner,
       TimeProvider timeProvider) {
-    this.web3j = web3j;
+    this.eth1Provider = eth1Provider;
     this.eventBus = eventBus;
     this.depositContractListener = depositContractListener;
     this.asyncRunner = asyncRunner;
@@ -156,7 +153,7 @@ public class Eth1DataManager {
     final UnsignedLong cacheMidRangeTimestamp =
         getCacheMidRangeTimestamp(timeProvider.getTimeInSeconds());
 
-    SafeFuture<EthBlock> latestEthBlockFuture = getLatestEth1BlockFuture();
+    SafeFuture<EthBlock.Block> latestEthBlockFuture = eth1Provider.getLatestEth1BlockFuture();
 
     SafeFuture<UnsignedLong> latestBlockTimestampFuture =
         getBlockTimestampFuture(latestEthBlockFuture);
@@ -168,15 +165,14 @@ public class Eth1DataManager {
             SafeFuture.completedFuture(SECONDS_PER_ETH1_BLOCK),
             cacheMidRangeTimestamp);
 
-    SafeFuture<EthBlock> blockFuture =
+    SafeFuture<EthBlock.Block> blockFuture =
         getMidRangeBlock(latestBlockNumberFuture, approximatedBlockNumberDiff);
 
     return blockFuture
         .thenCompose(
-            eth1block -> {
-              EthBlock.Block block = eth1block.getBlock();
+            block -> {
               UnsignedLong timestamp = UnsignedLong.valueOf(block.getTimestamp());
-              SafeFuture<EthBlock> middleBlockFuture = blockFuture;
+              SafeFuture<EthBlock.Block> middleBlockFuture = blockFuture;
               if (!isTimestampInRange(timestamp)) {
 
                 SafeFuture<UnsignedLong> realSecondsPerEth1BlockFuture =
@@ -195,8 +191,7 @@ public class Eth1DataManager {
               return middleBlockFuture;
             })
         .thenCompose(
-            middleBlock -> {
-              EthBlock.Block block = middleBlock.getBlock();
+            block -> {
               latestBlockReference.set(block);
               UnsignedLong middleBlockNumber = UnsignedLong.valueOf(block.getNumber());
               postCacheEth1BlockEvent(middleBlockNumber, block).reportExceptions();
@@ -232,11 +227,10 @@ public class Eth1DataManager {
       UnsignedLong blockNumber, final boolean isDirectionUp) {
     blockNumber =
         isDirectionUp ? blockNumber.plus(UnsignedLong.ONE) : blockNumber.minus(UnsignedLong.ONE);
-    SafeFuture<EthBlock> blockFuture = getEth1BlockFuture(blockNumber);
+    SafeFuture<EthBlock.Block> blockFuture = eth1Provider.getEth1BlockFuture(blockNumber);
     UnsignedLong finalBlockNumber = blockNumber;
     return blockFuture.thenCompose(
-        ethBlock -> {
-          EthBlock.Block block = ethBlock.getBlock();
+        block -> {
           if (isDirectionUp) latestBlockReference.set(block);
           UnsignedLong timestamp = UnsignedLong.valueOf(block.getTimestamp());
           postCacheEth1BlockEvent(finalBlockNumber, block).reportExceptions();
@@ -268,7 +262,7 @@ public class Eth1DataManager {
             });
   }
 
-  private SafeFuture<EthBlock> getMidRangeBlock(
+  private SafeFuture<EthBlock.Block> getMidRangeBlock(
       SafeFuture<UnsignedLong> latestBlockNumberFuture,
       SafeFuture<UnsignedLong> blockNumberDiffFuture) {
     return SafeFuture.allOf(latestBlockNumberFuture, blockNumberDiffFuture)
@@ -279,7 +273,7 @@ public class Eth1DataManager {
               UnsignedLong blockNumberDiff = blockNumberDiffFuture.getNow(null);
               checkNotNull(blockNumberDiff);
 
-              return getEth1BlockFuture(latestBlockNumber.minus(blockNumberDiff));
+              return eth1Provider.getEth1BlockFuture(latestBlockNumber.minus(blockNumberDiff));
             });
   }
 
@@ -288,13 +282,12 @@ public class Eth1DataManager {
         && timestamp.compareTo(getCacheRangeUpperBound()) <= 0;
   }
 
-  private SafeFuture<UnsignedLong> getBlockTimestampFuture(SafeFuture<EthBlock> blockFuture) {
-    return blockFuture.thenApply(
-        ethBlock -> UnsignedLong.valueOf(ethBlock.getBlock().getTimestamp()));
+  private SafeFuture<UnsignedLong> getBlockTimestampFuture(SafeFuture<EthBlock.Block> blockFuture) {
+    return blockFuture.thenApply(ethBlock -> UnsignedLong.valueOf(ethBlock.getTimestamp()));
   }
 
-  private SafeFuture<UnsignedLong> getBlockNumberFuture(SafeFuture<EthBlock> blockFuture) {
-    return blockFuture.thenApply(ethBlock -> UnsignedLong.valueOf(ethBlock.getBlock().getNumber()));
+  private SafeFuture<UnsignedLong> getBlockNumberFuture(SafeFuture<EthBlock.Block> blockFuture) {
+    return blockFuture.thenApply(ethBlock -> UnsignedLong.valueOf(ethBlock.getNumber()));
   }
 
   SafeFuture<UnsignedLong> getApproximatedBlockNumberDiffWithMidRangeBlock(
@@ -319,21 +312,6 @@ public class Eth1DataManager {
                   LongMath.divide(
                       timeDiff.longValue(), secondsPerEth1Block.longValue(), RoundingMode.HALF_UP));
             });
-  }
-
-  private SafeFuture<EthBlock> getEth1BlockFuture(UnsignedLong blockNumber) {
-    DefaultBlockParameter blockParameter =
-        DefaultBlockParameter.valueOf(blockNumber.bigIntegerValue());
-    return getEth1BlockFuture(blockParameter);
-  }
-
-  private SafeFuture<EthBlock> getEth1BlockFuture(DefaultBlockParameter blockParameter) {
-    return SafeFuture.of(web3j.ethGetBlockByNumber(blockParameter, false).sendAsync());
-  }
-
-  private SafeFuture<EthBlock> getLatestEth1BlockFuture() {
-    DefaultBlockParameter blockParameter = DefaultBlockParameterName.LATEST;
-    return getEth1BlockFuture(blockParameter);
   }
 
   private SafeFuture<Void> postCacheEth1BlockEvent(UnsignedLong blockNumber, EthBlock.Block block) {

@@ -85,7 +85,7 @@ public class BeaconChainMethods {
         RpcEncoding.SSZ,
         StatusMessage.class,
         StatusMessage.class,
-        false,
+        true,
         statusHandler,
         peerLookup);
   }
@@ -98,7 +98,7 @@ public class BeaconChainMethods {
         RpcEncoding.SSZ,
         GoodbyeMessage.class,
         GoodbyeMessage.class,
-        true,
+        false,
         goodbyeHandler,
         peerLookup);
   }
@@ -113,7 +113,7 @@ public class BeaconChainMethods {
         RpcEncoding.SSZ,
         BeaconBlocksByRootRequestMessage.class,
         SignedBeaconBlock.class,
-        false,
+        true,
         beaconBlocksByRootHandler,
         peerLookup);
   }
@@ -129,7 +129,7 @@ public class BeaconChainMethods {
         RpcEncoding.SSZ,
         BeaconBlocksByRangeRequestMessage.class,
         SignedBeaconBlock.class,
-        false,
+        true,
         beaconBlocksByRangeHandler,
         peerLookup);
   }

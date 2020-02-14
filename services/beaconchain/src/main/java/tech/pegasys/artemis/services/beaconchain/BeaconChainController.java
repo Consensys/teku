@@ -56,6 +56,7 @@ import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.genesis.PreGenesisDepositHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
@@ -184,10 +185,13 @@ public class BeaconChainController {
       this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
-      PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
+      Optional<PrivKey> pk =
+          bytes.isEmpty()
+              ? Optional.empty()
+              : Optional.of(KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe()));
       NetworkConfig p2pConfig =
           new NetworkConfig(
-              Optional.of(pk),
+              pk,
               config.getNetworkInterface(),
               config.getPort(),
               config.getAdvertisedPort(),
@@ -221,7 +225,11 @@ public class BeaconChainController {
   public void initRestAPI() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
     beaconRestAPI =
-        new BeaconRestApi(chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
+        new BeaconRestApi(
+            chainStorageClient,
+            p2pNetwork,
+            new HistoricalChainData(eventBus),
+            config.getBeaconRestAPIPortNumber());
   }
 
   public void initSyncManager() {
