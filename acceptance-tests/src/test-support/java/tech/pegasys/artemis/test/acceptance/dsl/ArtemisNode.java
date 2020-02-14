@@ -125,7 +125,7 @@ public class ArtemisNode extends Node {
   }
 
   private UnsignedLong fetchGenesisTime() throws IOException {
-    return UnsignedLong.valueOf(httpClient.get(getRestApiUrl(), "/node/genesis_time"));
+    return UnsignedLong.valueOf(httpClient.get(getRestApiUrl(), "/v1/node/genesis_time"));
   }
 
   public UnsignedLong getGenesisTime() throws IOException {
