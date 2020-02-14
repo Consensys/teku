@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.SSZTypes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 
 class SSZArrayVector<T> extends ArrayList<T> implements SSZVectorWrite<T> {
 
@@ -39,5 +40,10 @@ class SSZArrayVector<T> extends ArrayList<T> implements SSZVectorWrite<T> {
 
   public Class<T> getElementType() {
     return classInfo;
+  }
+
+  @Override
+  public Bytes32 hash_tree_root() {
+    throw new UnsupportedOperationException();
   }
 }

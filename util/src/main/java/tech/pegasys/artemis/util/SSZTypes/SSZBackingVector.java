@@ -2,6 +2,7 @@ package tech.pegasys.artemis.util.SSZTypes;
 
 import java.util.AbstractList;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
@@ -42,4 +43,7 @@ public class SSZBackingVector<C, R extends ViewRead> extends AbstractList<C>
     return unwrapper.apply(delegate.set(index, wrapper.apply(element)));
   }
 
+  public Bytes32 hash_tree_root() {
+    return delegate.hashTreeRoot();
+  }
 }

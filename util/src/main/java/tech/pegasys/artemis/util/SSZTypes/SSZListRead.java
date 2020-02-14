@@ -1,5 +1,7 @@
 package tech.pegasys.artemis.util.SSZTypes;
 
+import org.apache.tuweni.bytes.Bytes32;
+
 public interface SSZListRead<R> extends SSZList<R> {
 
   @Override
@@ -19,4 +21,6 @@ public interface SSZListRead<R> extends SSZList<R> {
 
   @Override
   R get(int index);
+
+  Bytes32 hash_tree_root();
 }

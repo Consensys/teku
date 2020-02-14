@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.SSZTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class SSZArrayList<T> extends ArrayList<T> implements SSZListWrite<T> {
 
@@ -56,4 +57,8 @@ public class SSZArrayList<T> extends ArrayList<T> implements SSZListWrite<T> {
     return classInfo;
   }
 
+  @Override
+  public Bytes32 hash_tree_root() {
+    throw new UnsupportedOperationException();
+  }
 }

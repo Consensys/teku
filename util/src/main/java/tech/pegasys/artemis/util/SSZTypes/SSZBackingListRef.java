@@ -1,6 +1,7 @@
 package tech.pegasys.artemis.util.SSZTypes;
 
 import java.util.AbstractList;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ListViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
@@ -47,4 +48,7 @@ public class SSZBackingListRef<R extends ViewRead, W extends R> extends Abstract
     return delegate.set(index, element);
   }
 
+  public Bytes32 hash_tree_root() {
+    return delegate.hashTreeRoot();
+  }
 }
