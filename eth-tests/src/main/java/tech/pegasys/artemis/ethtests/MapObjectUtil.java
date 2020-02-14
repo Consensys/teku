@@ -307,7 +307,7 @@ public class MapObjectUtil {
         getCheckpoint((Map) map.get("current_justified_checkpoint"));
     Checkpoint finalized_checkpoint = getCheckpoint((Map) map.get("finalized_checkpoint"));
 
-    return new BeaconStateWithCache(
+    return new BeaconState(
         genesis_time,
         slot,
         fork,

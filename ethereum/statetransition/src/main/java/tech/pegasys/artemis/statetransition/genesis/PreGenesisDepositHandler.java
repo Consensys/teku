@@ -23,7 +23,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.GenesisGenerator;
@@ -77,7 +76,7 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
 
   private void eth2Genesis(GenesisEvent genesisEvent) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
-    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
+    final BeaconState initialState = genesisEvent.getBeaconState();
     chainStorageClient.initializeFromGenesis(initialState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());

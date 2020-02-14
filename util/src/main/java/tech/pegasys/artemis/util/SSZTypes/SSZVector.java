@@ -22,6 +22,10 @@ public interface SSZVector<T> extends List<T> {
     return new SSZArrayVector<>(size, object);
   }
 
+  static <T> SSZVector<T> create(Class<T> classInfo, int size) {
+    return new SSZArrayVector<>(size, classInfo);
+  }
+
   static <T> SSZVector<T> create(List<T> list, Class<T> classInfo) {
     return new SSZArrayVector<>(list, classInfo);
   }

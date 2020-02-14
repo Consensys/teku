@@ -94,32 +94,32 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   // History
   private final BeaconBlockHeader latest_block_header = null;
-  private final SSZVector<Bytes32> block_roots = null; // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  private final SSZVector<Bytes32> state_roots = null; // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  private final SSZList<Bytes32> historical_roots = null; // Bounded by HISTORICAL_ROOTS_LIMIT
+  private final SSZVector<Bytes32> block_roots = SSZVector.create(Bytes32.class, Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  private final SSZVector<Bytes32> state_roots = SSZVector.create(Bytes32.class, Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  private final SSZList<Bytes32> historical_roots = SSZList.create(Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT); // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
   private final Eth1Data eth1_data = null;
-  private final SSZList<Eth1Data> eth1_data_votes = null; // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
+  private final SSZList<Eth1Data> eth1_data_votes = SSZList.create(Eth1Data.class, Constants.SLOTS_PER_ETH1_VOTING_PERIOD); // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
   private final UnsignedLong eth1_deposit_index = null;
 
   // Validator registry
-  private final SSZList<Validator> validators = null; // List Bounded by VALIDATOR_REGISTRY_LIMIT
-  private final SSZList<UnsignedLong> balances = null; // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  private final SSZList<Validator> validators = SSZList.create(Validator.class, Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  private final SSZList<UnsignedLong> balances = SSZList.create(UnsignedLong.class, Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
-  private final SSZVector<Bytes32> randao_mixes = null; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
+  private final SSZVector<Bytes32> randao_mixes = SSZVector.create(Bytes32.class, Constants.EPOCHS_PER_HISTORICAL_VECTOR); // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
-  private final SSZVector<UnsignedLong> slashings = null; // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
+  private final SSZVector<UnsignedLong> slashings = SSZVector.create(UnsignedLong.class, Constants.EPOCHS_PER_SLASHINGS_VECTOR); // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
   private final SSZList<PendingAttestation>
-      previous_epoch_attestations = null; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+      previous_epoch_attestations = SSZList.create(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
   private final SSZList<PendingAttestation>
-      current_epoch_attestations = null; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+      current_epoch_attestations = SSZList.create(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
 
   // Finality
-  private final Bitvector justification_bits = null; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
+  private final Bitvector justification_bits = new Bitvector(Constants.JUSTIFICATION_BITS_LENGTH); // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
   private final Checkpoint previous_justified_checkpoint = null;
   private final Checkpoint current_justified_checkpoint = null;
   private final Checkpoint finalized_checkpoint = null;
@@ -193,6 +193,9 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
     super(TYPE);
   }
 
+  public BeaconState(BeaconState state) {
+    this(TYPE, state.getBackingNode());
+  }
 
   @Override
   public int getSSZFieldCount() {
@@ -395,7 +398,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private VectorViewWrite<Bytes32View> getBlock_roots_view() {
-    return (VectorViewWrite<Bytes32View>) get(4);
+    return (VectorViewWrite<Bytes32View>) getByRef(4);
   }
 
   public SSZVectorWrite<Bytes32> getState_roots() {
@@ -405,7 +408,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private VectorViewWrite<Bytes32View> getState_roots_view() {
-    return (VectorViewWrite<Bytes32View>) get(5);
+    return (VectorViewWrite<Bytes32View>) getByRef(5);
   }
 
   public SSZListWrite<Bytes32> getHistorical_roots() {
@@ -415,7 +418,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private ListViewWrite<Bytes32View> getHistorical_roots_view() {
-    return (ListViewWrite<Bytes32View>) get(6);
+    return (ListViewWrite<Bytes32View>) getByRef(6);
   }
 
   // Eth1
@@ -434,7 +437,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private ListViewWrite<Eth1Data> getEth1_data_votes_view() {
-    return (ListViewWrite<Eth1Data>) get(8);
+    return (ListViewWrite<Eth1Data>) getByRef(8);
   }
 
   public UnsignedLong getEth1_deposit_index() {
@@ -452,7 +455,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private ListViewWriteRef<ValidatorRead, ValidatorWrite> getValidators_view() {
-    return (ListViewWriteRef<ValidatorRead, ValidatorWrite>) get(10);
+    return (ListViewWriteRef<ValidatorRead, ValidatorWrite>) getByRef(10);
   }
 
   public SSZListWrite<UnsignedLong> getBalances() {
@@ -461,7 +464,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
   }
   @SuppressWarnings("unchecked")
   private ListViewWrite<UInt64View> getBalances_view() {
-    return (ListViewWrite<UInt64View>) get(11);
+    return (ListViewWrite<UInt64View>) getByRef(11);
   }
 
   public SSZVectorWrite<Bytes32> getRandao_mixes() {
@@ -471,7 +474,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private VectorViewWrite<Bytes32View> getRandao_mixes_view() {
-    return (VectorViewWrite<Bytes32View>) get(12);
+    return (VectorViewWrite<Bytes32View>) getByRef(12);
   }
 
   // Slashings
@@ -482,7 +485,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private VectorViewWrite<UInt64View> getSlashings_view() {
-    return (VectorViewWrite<UInt64View>) get(13);
+    return (VectorViewWrite<UInt64View>) getByRef(13);
   }
 
   // Attestations
@@ -493,7 +496,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private ListViewWrite<PendingAttestation> getPrevious_epoch_attestations_view() {
-    return (ListViewWrite<PendingAttestation>) get(14);
+    return (ListViewWrite<PendingAttestation>) getByRef(14);
   }
 
   public SSZListWrite<PendingAttestation> getCurrent_epoch_attestations() {
@@ -503,7 +506,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   @SuppressWarnings("unchecked")
   private ListViewWrite<PendingAttestation> getCurrent_epoch_attestations_view() {
-    return (ListViewWrite<PendingAttestation>) get(15);
+    return (ListViewWrite<PendingAttestation>) getByRef(15);
   }
 
   // Finality

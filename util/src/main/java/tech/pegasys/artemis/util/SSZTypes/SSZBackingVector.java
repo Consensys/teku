@@ -40,7 +40,8 @@ public class SSZBackingVector<C, R extends ViewRead> extends AbstractList<C>
 
   @Override
   public C set(int index, C element) {
-    return unwrapper.apply(delegate.set(index, wrapper.apply(element)));
+    delegate.set(index, wrapper.apply(element));
+    return null;
   }
 
   public Bytes32 hash_tree_root() {

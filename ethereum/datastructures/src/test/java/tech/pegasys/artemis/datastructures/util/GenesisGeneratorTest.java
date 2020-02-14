@@ -66,7 +66,7 @@ class GenesisGeneratorTest {
 
     final UnsignedLong genesisTime = UnsignedLong.valueOf(982928293223232L);
 
-    final BeaconStateWithCache expectedState =
+    final BeaconState expectedState =
         BeaconStateUtil.initialize_beacon_state_from_eth1(
             eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
 
@@ -76,7 +76,7 @@ class GenesisGeneratorTest {
     genesisGenerator.addDepositsFromBlock(
         eth1BlockHash2, genesisTime, INITIAL_DEPOSITS.subList(8, INITIAL_DEPOSITS.size()));
 
-    final BeaconStateWithCache actualState = genesisGenerator.getGenesisState();
+    final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isEqualTo(expectedState);
     assertThat(get_active_validator_indices(expectedState, GENESIS_EPOCH))
         .hasSize(VALIDATOR_KEYS.size());
@@ -88,7 +88,7 @@ class GenesisGeneratorTest {
       genesisGenerator.addDepositsFromBlock(
           Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
 
-      final BeaconStateWithCache state = genesisGenerator.getGenesisState();
+      final BeaconState state = genesisGenerator.getGenesisState();
       assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
     }
   }
@@ -107,7 +107,7 @@ class GenesisGeneratorTest {
     // Now we should have two validators, not the 1 that would have been cached before.
     genesisGenerator.addDepositsFromBlock(
         Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(1)));
-    final Optional<BeaconStateWithCache> state =
+    final Optional<BeaconState> state =
         genesisGenerator.getGenesisStateIfValid(validityCriteria);
     assertThat(state).isNotEmpty();
 
@@ -119,7 +119,7 @@ class GenesisGeneratorTest {
   @Test
   public void shouldGenerateValidDepositRoot() {
     genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, INITIAL_DEPOSITS);
-    final BeaconStateWithCache state = genesisGenerator.getGenesisState();
+    final BeaconState state = genesisGenerator.getGenesisState();
 
     // All deposits should have a proof
     INITIAL_DEPOSITS.forEach(deposit -> assertThat(deposit.getProof()).isNotEmpty());
@@ -157,7 +157,7 @@ class GenesisGeneratorTest {
     deposits.add(0, new Deposit(invalidData));
 
     genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
-    final BeaconStateWithCache state = genesisGenerator.getGenesisState();
+    final BeaconState state = genesisGenerator.getGenesisState();
     // All deposits were processed
     assertThat(state.getEth1_deposit_index()).isEqualTo(UnsignedLong.valueOf(deposits.size()));
     // But one didn't result in a new validator

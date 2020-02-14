@@ -53,12 +53,12 @@ public final class StartupUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
-  public static BeaconStateWithCache createMockedStartInitialBeaconState(
+  public static BeaconState createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys) {
     return createMockedStartInitialBeaconState(genesisTime, validatorKeys, true);
   }
 
-  public static BeaconStateWithCache createMockedStartInitialBeaconState(
+  public static BeaconState createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys, boolean signDeposits) {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
@@ -90,7 +90,7 @@ public final class StartupUtil {
       final String startState,
       final List<BLSKeyPair> validatorKeyPairs,
       final boolean signDeposits) {
-    BeaconStateWithCache initialState;
+    BeaconState initialState;
     if (startState != null) {
       try {
         STDOUT.log(Level.INFO, "Loading initial state from " + startState, ALogger.Color.GREEN);

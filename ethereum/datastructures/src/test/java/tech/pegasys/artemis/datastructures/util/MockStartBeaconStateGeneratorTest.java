@@ -69,7 +69,7 @@ class MockStartBeaconStateGeneratorTest {
     final List<DepositData> deposits =
         new MockStartDepositGenerator().createDeposits(validatorKeyPairs);
 
-    final BeaconStateWithCache initialBeaconState =
+    final BeaconState initialBeaconState =
         new MockStartBeaconStateGenerator().createInitialBeaconState(genesisTime, deposits);
 
     assertEquals(validatorCount, initialBeaconState.getValidators().size());

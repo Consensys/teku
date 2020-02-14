@@ -28,6 +28,11 @@ class SSZArrayVector<T> extends ArrayList<T> implements SSZVectorWrite<T> {
     classInfo = (Class<T>) object.getClass();
   }
 
+  SSZArrayVector(int size, Class<T> classInfo) {
+    super(Collections.nCopies(size, null));
+    this.classInfo = classInfo;
+  }
+
   SSZArrayVector(List<T> list, Class<T> classInfo) {
     super(list);
     this.classInfo = classInfo;
