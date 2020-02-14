@@ -73,6 +73,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
               new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT),
               Eth1Data.TYPE,
               new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD),
+              BasicViewTypes.UINT64_TYPE,
               new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
               new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
               new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
