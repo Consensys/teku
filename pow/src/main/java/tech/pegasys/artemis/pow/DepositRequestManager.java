@@ -16,7 +16,6 @@ package tech.pegasys.artemis.pow;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
 import com.google.common.primitives.UnsignedLong;
@@ -25,7 +24,9 @@ import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -33,8 +34,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.contract.DepositContract;
+import tech.pegasys.artemis.pow.contract.DepositContract.DepositEventEventResponse;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.util.async.AsyncRunner;
@@ -107,7 +110,7 @@ public class DepositRequestManager {
     final BigInteger latestCanonicalBlockNumberAtRequestStart;
     final BigInteger latestSuccessfullyQueriedBlockNumberAtRequestStart;
     synchronized (DepositRequestManager.this) {
-      if (active) {
+      if (active || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlockNumber)) {
         return;
       }
       active = true;
@@ -167,60 +170,119 @@ public class DepositRequestManager {
     return eventsFuture
         .thenApply(this::groupDepositEventResponsesByBlockHash)
         .thenCompose(
-            groupedDepositEventResponsesByBlockHash -> {
-              Map<String, SafeFuture<EthBlock.Block>> neededBlocksByHash =
-                  getMapOfEthBlockFutures(groupedDepositEventResponsesByBlockHash.keySet());
-              return SafeFuture.allOf(neededBlocksByHash.values().toArray(SafeFuture[]::new))
-                  .thenApply(
-                      done ->
-                          constructDepositsFromBlockEvents(
-                              neededBlocksByHash, groupedDepositEventResponsesByBlockHash));
-            })
-        .thenAccept(
-            (depositsFromBlockEventList) ->
-                depositsFromBlockEventList.stream()
-                    .sorted(Comparator.comparing(DepositsFromBlockEvent::getBlockNumber))
-                    .forEachOrdered(this::publishDeposits));
+            groupedDepositEventResponsesByBlockHash ->
+                publishNextDepositEvent(
+                    getMapOfEthBlockFutures(groupedDepositEventResponsesByBlockHash.keySet()),
+                    groupedDepositEventResponsesByBlockHash));
   }
 
-  private List<DepositsFromBlockEvent> constructDepositsFromBlockEvents(
-      Map<String, SafeFuture<EthBlock.Block>> blockFutureByBlockHash,
-      Map<String, List<DepositContract.DepositEventEventResponse>> groupedDepositEventResponses) {
-    return groupedDepositEventResponses.entrySet().stream()
-        .map(
-            (entry) -> {
-              String blockHash = entry.getKey();
-              List<DepositContract.DepositEventEventResponse> groupedDepositEventResponse =
-                  entry.getValue();
-              EthBlock.Block block =
-                  checkNotNull(blockFutureByBlockHash.get(blockHash).getNow(null));
+  private SafeFuture<Void> publishNextDepositEvent(
+      List<SafeFuture<Block>> blockRequests,
+      Map<BlockNumberAndHash, List<DepositEventEventResponse>> depositEventsByBlock) {
 
-              return new DepositsFromBlockEvent(
-                  UnsignedLong.valueOf(block.getNumber()),
-                  Bytes32.fromHexString(block.getHash()),
-                  UnsignedLong.valueOf(block.getTimestamp()),
-                  groupedDepositEventResponse.stream()
-                      .map(Deposit::new)
-                      .sorted(Comparator.comparing(Deposit::getMerkle_tree_index))
-                      .collect(toList()));
-            })
+    // First process completed requests using iteration.
+    // Avoid StackOverflowException when there is a long string of requests already completed.
+    while (!blockRequests.isEmpty() && blockRequests.get(0).isDone()) {
+      final Block block = blockRequests.remove(0).join();
+      publishEventForBlock(block, depositEventsByBlock);
+    }
+
+    // All requests have completed and been processed.
+    if (blockRequests.isEmpty()) {
+      return SafeFuture.completedFuture(null);
+    }
+
+    // Reached a block request that isn't complete so wait for it and recurse back into this method.
+    return blockRequests
+        .get(0)
+        .thenCompose(block -> publishNextDepositEvent(blockRequests, depositEventsByBlock));
+  }
+
+  private void publishEventForBlock(
+      final Block block,
+      final Map<BlockNumberAndHash, List<DepositEventEventResponse>> depositEventsByBlock) {
+    final List<DepositEventEventResponse> deposits =
+        depositEventsByBlock.get(new BlockNumberAndHash(block.getNumber(), block.getHash()));
+    checkNotNull(deposits, "Did not find any deposits for block {}", block.getNumber());
+    publishDeposits(createDepositFromBlockEvent(block, deposits));
+  }
+
+  private DepositsFromBlockEvent createDepositFromBlockEvent(
+      final Block block, final List<DepositEventEventResponse> groupedDepositEventResponse) {
+    return new DepositsFromBlockEvent(
+        UnsignedLong.valueOf(block.getNumber()),
+        Bytes32.fromHexString(block.getHash()),
+        UnsignedLong.valueOf(block.getTimestamp()),
+        groupedDepositEventResponse.stream()
+            .map(Deposit::new)
+            .sorted(Comparator.comparing(Deposit::getMerkle_tree_index))
+            .collect(toList()));
+  }
+
+  private List<SafeFuture<Block>> getMapOfEthBlockFutures(
+      Set<BlockNumberAndHash> neededBlockHashes) {
+    return neededBlockHashes.stream()
+        .map(blockInfo -> eth1Provider.getEth1BlockFuture(blockInfo.getHash()))
         .collect(toList());
   }
 
-  private Map<String, SafeFuture<EthBlock.Block>> getMapOfEthBlockFutures(
-      Set<String> neededBlockHashes) {
-    return neededBlockHashes.stream()
-        .collect(toUnmodifiableMap(blockHash -> blockHash, eth1Provider::getEth1BlockFuture));
-  }
-
-  private Map<String, List<DepositContract.DepositEventEventResponse>>
+  private SortedMap<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
       groupDepositEventResponsesByBlockHash(
           List<DepositContract.DepositEventEventResponse> events) {
     return events.stream()
-        .collect(groupingBy(event -> event.log.getBlockHash(), TreeMap::new, toList()));
+        .collect(
+            groupingBy(
+                event ->
+                    new BlockNumberAndHash(event.log.getBlockNumber(), event.log.getBlockHash()),
+                TreeMap::new,
+                toList()));
   }
 
   private void publishDeposits(DepositsFromBlockEvent event) {
     depositEventChannel.notifyDepositsFromBlock(event);
+  }
+
+  private static class BlockNumberAndHash implements Comparable<BlockNumberAndHash> {
+    private static final Comparator<BlockNumberAndHash> COMPARATOR =
+        Comparator.comparing(BlockNumberAndHash::getNumber)
+            .thenComparing(BlockNumberAndHash::getHash);
+
+    private final BigInteger number;
+    private final String hash;
+
+    private BlockNumberAndHash(final BigInteger number, final String hash) {
+      this.number = number;
+      this.hash = hash;
+    }
+
+    public BigInteger getNumber() {
+      return number;
+    }
+
+    public String getHash() {
+      return hash;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final BlockNumberAndHash that = (BlockNumberAndHash) o;
+      return Objects.equals(number, that.number) && Objects.equals(hash, that.hash);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(number, hash);
+    }
+
+    @Override
+    public int compareTo(final BlockNumberAndHash o) {
+      return COMPARATOR.compare(this, o);
+    }
   }
 }
