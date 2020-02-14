@@ -13,7 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -32,7 +36,7 @@ public class OptimizedMerkleTree extends MerkleTree {
     }
     int stageSize = tree.get(0).size();
     tree.get(0).add(leaf);
-    for (int h = 0; h < treeDepth + 1; ++h) {
+    for (int h = 0; h <= treeDepth; h++) {
       List<Bytes32> stage = tree.get(h);
       if (h > 0) {
         // Remove elements that should be modified
@@ -62,5 +66,37 @@ public class OptimizedMerkleTree extends MerkleTree {
       return tree.get(0).size() - 1;
     }
     return tree.get(0).size();
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder returnString = new StringBuilder();
+    int numLeaves = (int) Math.pow(2, treeDepth);
+    int height = 0;
+    int stageFullSize;
+    for (int i = treeDepth; i >= 0; i--) {
+      stageFullSize = (int) Math.pow(2, height);
+      height++;
+      int stageNonZeroSize = tree.get(i).size();
+      List<Bytes32> stageItems = new ArrayList<>(tree.get(i));
+      for (int j = stageNonZeroSize; j < stageFullSize; j++) {
+        stageItems.add(zeroHashes.get(i));
+      }
+      returnString.append("\n").append(centerPrint(stageItems, numLeaves)).append(stageFullSize);
+    }
+    return "MerkleTree{" + "tree=" + returnString + ", treeDepth=" + treeDepth + '}';
+  }
+
+  private String centerPrint(List<Bytes32> stageItems, int numLeaves) {
+    String emptySpaceOnSide = IntStream.range(0, (numLeaves - stageItems.size()))
+            .mapToObj(i -> "    ").collect(Collectors.joining("    "));
+    if (numLeaves == stageItems.size()) {
+      emptySpaceOnSide = "                ";
+    }
+    String stageString = stageItems.stream()
+            .map(item -> item.toHexString().substring(63))
+            .collect(Collectors.joining(emptySpaceOnSide));
+
+    return emptySpaceOnSide.concat(stageString).concat(emptySpaceOnSide);
   }
 }

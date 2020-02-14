@@ -1,5 +1,6 @@
 package tech.pegasys.artemis.validator.coordinator;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -38,7 +39,9 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
 
   private final ChainStorageClient chainStorageClient;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
-  private NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
+
+  @VisibleForTesting
+  NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
 
   public DepositProvider(ChainStorageClient chainStorageClient) {
     this.chainStorageClient = chainStorageClient;

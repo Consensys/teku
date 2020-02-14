@@ -2,6 +2,7 @@ package tech.pegasys.artemis.validator.coordinator;
 
 
 import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
@@ -9,21 +10,27 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
@@ -48,7 +55,7 @@ public class DepositProviderTest {
     depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
     depositProvider = new DepositProvider(chainStorageClient);
 
-    createDepositEvents(100);
+    createDepositEvents(40);
   }
 
   @Test
@@ -64,26 +71,60 @@ public class DepositProviderTest {
 
   @Test
   void numberOfDepositsThatCanBeIncludedLessThanMaxDeposits() {
-    mockStateEth1DepositIndex(10);
-    mockEth1DataDepositCount(15);
-    Constants.MAX_DEPOSITS = 10;
-    mockDepositsFromEth1Block(0, 40);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(20);
+
+    Constants.MAX_DEPOSITS = 16;
+
+    mockDepositsFromEth1Block(0, 10);
+    mockDepositsFromEth1Block(10, 20);
+
     SSZList<Deposit> deposits = depositProvider.getDeposits(beaconState);
-    assertThat(deposits).hasSize(5);
+    assertThat(deposits).hasSize(15);
     checkThatDepositProofIsValid(deposits);
   }
 
   @Test
   void numberOfDepositsThatCanBeIncludedMoreThanMaxDeposits() {
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(20);
+
+    Constants.MAX_DEPOSITS = 10;
+
+    mockDepositsFromEth1Block(0, 10);
+    mockDepositsFromEth1Block(10, 20);
+
+    SSZList<Deposit> deposits = depositProvider.getDeposits(beaconState);
+    assertThat(deposits).hasSize(10);
+    checkThatDepositProofIsValid(deposits);
   }
 
   @Test
   void depositsWithFinalizedIndicesGetPrunedFromMap() {
+    Bytes32 finalizedBlockRoot = Bytes32.fromHexString("0x01");
+    mockStateEth1DepositIndex(10);
+    mockDepositsFromEth1Block(0, 20);
+    when(chainStorageClient.getBlockState(eq(finalizedBlockRoot))).thenReturn(Optional.ofNullable(beaconState));
+
+    depositProvider.onFinalizedCheckpoint(new FinalizedCheckpointEvent(
+            new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot)
+    ));
+
+    assertThat(depositProvider.depositNavigableMap).doesNotContainKeys(
+            UnsignedLong.valueOf(0),
+            UnsignedLong.valueOf(1),
+            UnsignedLong.valueOf(2),
+            UnsignedLong.valueOf(3),
+            UnsignedLong.valueOf(4),
+            UnsignedLong.valueOf(5),
+            UnsignedLong.valueOf(6),
+            UnsignedLong.valueOf(7),
+            UnsignedLong.valueOf(8),
+            UnsignedLong.valueOf(9));
   }
 
   private void checkThatDepositProofIsValid(List<Deposit> deposits) {
     deposits.forEach(deposit -> {
-      System.out.println(((DepositWithIndex) deposit).getIndex().intValue());
               assertThat(
               is_valid_merkle_branch(
                       deposit.getData().hash_tree_root(),
