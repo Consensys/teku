@@ -19,9 +19,9 @@ import java.util.List;
 public class SSZArrayList<T> extends ArrayList<T> implements SSZListWrite<T> {
 
   private long maxSize;
-  private Class<T> classInfo;
+  private Class<? extends T> classInfo;
 
-  SSZArrayList(Class<T> classInfo, long maxSize) {
+  SSZArrayList(Class<? extends T> classInfo, long maxSize) {
     super();
     this.classInfo = classInfo;
     this.maxSize = maxSize;
@@ -33,7 +33,7 @@ public class SSZArrayList<T> extends ArrayList<T> implements SSZListWrite<T> {
     this.classInfo = list.getElementType();
   }
 
-  SSZArrayList(List<T> list, long maxSize, Class<T> classInfo) {
+  SSZArrayList(List<T> list, long maxSize, Class<? extends T> classInfo) {
     super(list);
     this.maxSize = maxSize;
     this.classInfo = classInfo;
@@ -52,7 +52,7 @@ public class SSZArrayList<T> extends ArrayList<T> implements SSZListWrite<T> {
     return maxSize;
   }
 
-  public Class<T> getElementType() {
+  public Class<? extends T> getElementType() {
     return classInfo;
   }
 

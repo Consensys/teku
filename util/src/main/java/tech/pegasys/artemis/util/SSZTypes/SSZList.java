@@ -26,11 +26,15 @@ public interface SSZList<T> extends List<T> {
   }
 
   static <T> SSZListWrite<T> create(SSZList<T> list) {
-    return new SSZArrayList<>(list, list.getMaxSize(), list.getElementType());
+    return new SSZArrayList<T>(list, list.getMaxSize(), list.getElementType());
   }
 
   long getMaxSize();
 
-  Class<T> getElementType();
+  Class<? extends T> getElementType();
 
+  default void setAll(SSZList<? extends T> other) {
+    clear();
+    addAll(other);
+  }
 }

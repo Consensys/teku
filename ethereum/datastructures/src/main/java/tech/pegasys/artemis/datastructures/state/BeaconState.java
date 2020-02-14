@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,19 +28,31 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingList;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingListRef;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZListWrite;
 import tech.pegasys.artemis.util.SSZTypes.SSZListWriteRef;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVectorWrite;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ListViewWrite;
+import tech.pegasys.artemis.util.backing.ListViewWriteRef;
+import tech.pegasys.artemis.util.backing.VectorViewRead;
+import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconState extends ContainerViewImpl<BeaconState> implements
@@ -74,43 +87,43 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
           BeaconState::new);
 
   // Versioning
-  private UnsignedLong genesis_time;
-  private UnsignedLong slot;
-  private Fork fork; // For versioning hard forks
+  private final UnsignedLong genesis_time = null;
+  private final UnsignedLong slot = null;
+  private final Fork fork = null; // For versioning hard forks
 
   // History
-  private BeaconBlockHeader latest_block_header;
-  private SSZVector<Bytes32> block_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  private SSZVector<Bytes32> state_roots; // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  private SSZList<Bytes32> historical_roots; // Bounded by HISTORICAL_ROOTS_LIMIT
+  private final BeaconBlockHeader latest_block_header = null;
+  private final SSZVector<Bytes32> block_roots = null; // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  private final SSZVector<Bytes32> state_roots = null; // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  private final SSZList<Bytes32> historical_roots = null; // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
-  private Eth1Data eth1_data;
-  private SSZList<Eth1Data> eth1_data_votes; // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
-  private UnsignedLong eth1_deposit_index;
+  private final Eth1Data eth1_data = null;
+  private final SSZList<Eth1Data> eth1_data_votes = null; // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
+  private final UnsignedLong eth1_deposit_index = null;
 
   // Validator registry
-  private SSZList<Validator> validators; // List Bounded by VALIDATOR_REGISTRY_LIMIT
-  private SSZList<UnsignedLong> balances; // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  private final SSZList<Validator> validators = null; // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  private final SSZList<UnsignedLong> balances = null; // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
-  private SSZVector<Bytes32> randao_mixes; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
+  private final SSZVector<Bytes32> randao_mixes = null; // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
-  private SSZVector<UnsignedLong> slashings; // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
+  private final SSZVector<UnsignedLong> slashings = null; // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
-  private SSZList<PendingAttestation>
-      previous_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
-  private SSZList<PendingAttestation>
-      current_epoch_attestations; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+  private final SSZList<PendingAttestation>
+      previous_epoch_attestations = null; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+  private final SSZList<PendingAttestation>
+      current_epoch_attestations = null; // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
 
   // Finality
-  private Bitvector justification_bits; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
-  private Checkpoint previous_justified_checkpoint;
-  private Checkpoint current_justified_checkpoint;
-  private Checkpoint finalized_checkpoint;
+  private final Bitvector justification_bits = null; // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
+  private final Checkpoint previous_justified_checkpoint = null;
+  private final Checkpoint current_justified_checkpoint = null;
+  private final Checkpoint finalized_checkpoint = null;
 
-  public BeaconState(
+  private BeaconState(
       ContainerViewType<? extends ContainerViewWrite<ViewRead>> type,
       TreeNode backingNode) {
     super(type, backingNode);
@@ -153,7 +166,26 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
     super(TYPE);
-    // Versioning
+    setGenesis_time(genesis_time);
+    setSlot(slot);
+    setFork(fork);
+    setLatest_block_header(latest_block_header);
+    getBlock_roots().setAll(block_roots);
+    getState_roots().setAll(state_roots);
+    getHistorical_roots().setAll(historical_roots);
+    setEth1_data(eth1_data);
+    getEth1_data_votes().setAll(eth1_data_votes);
+    setEth1_deposit_index(eth1_deposit_index);
+    getValidators().setAll(validators);
+    getBalances().setAll(balances);
+    getRandao_mixes().setAll(randao_mixes);
+    getSlashings().setAll(slashings);
+    getPrevious_epoch_attestations().setAll(previous_epoch_attestations);
+    getCurrent_epoch_attestations().setAll(current_epoch_attestations);
+    setJustification_bits(justification_bits);
+    setPrevious_justified_checkpoint(previous_justified_checkpoint);
+    setCurrent_justified_checkpoint(current_justified_checkpoint);
+    setFinalized_checkpoint(finalized_checkpoint);
   }
 
   public BeaconState() {
@@ -323,129 +355,188 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
 
   // Versioning
   public UnsignedLong getGenesis_time() {
-    return genesis_time;
+    return ((UInt64View) get(0)).get();
   }
 
   public void setGenesis_time(UnsignedLong genesis_time) {
-    this.genesis_time = genesis_time;
+    set(0, new UInt64View(genesis_time));
   }
 
   public UnsignedLong getSlot() {
-    return slot;
+    return ((UInt64View) get(1)).get();
   }
 
   public void setSlot(UnsignedLong slot) {
-    this.slot = slot;
+    set(1, new UInt64View(slot));
   }
 
   public Fork getFork() {
-    return fork;
+    return (Fork) get(2);
   }
 
   public void setFork(Fork fork) {
-    this.fork = fork;
+    set(2, fork);
   }
 
   // History
   public BeaconBlockHeader getLatest_block_header() {
-    return latest_block_header;
+    return (BeaconBlockHeader) get(3);
   }
 
   public void setLatest_block_header(BeaconBlockHeader latest_block_header) {
-    this.latest_block_header = latest_block_header;
+    set(3, latest_block_header);
   }
 
   public SSZVectorWrite<Bytes32> getBlock_roots() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingVector<>
+        (Bytes32.class, getBlock_roots_view(), Bytes32View::new, AbstractBasicView::get);
+  }
+
+  @SuppressWarnings("unchecked")
+  private VectorViewWrite<Bytes32View> getBlock_roots_view() {
+    return (VectorViewWrite<Bytes32View>) get(4);
   }
 
   public SSZVectorWrite<Bytes32> getState_roots() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingVector<>
+        (Bytes32.class, getState_roots_view(), Bytes32View::new, AbstractBasicView::get);
+  }
+
+  @SuppressWarnings("unchecked")
+  private VectorViewWrite<Bytes32View> getState_roots_view() {
+    return (VectorViewWrite<Bytes32View>) get(5);
   }
 
   public SSZListWrite<Bytes32> getHistorical_roots() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingList<>
+        (Bytes32.class, getHistorical_roots_view(), Bytes32View::new, AbstractBasicView::get);
+  }
+
+  @SuppressWarnings("unchecked")
+  private ListViewWrite<Bytes32View> getHistorical_roots_view() {
+    return (ListViewWrite<Bytes32View>) get(6);
   }
 
   // Eth1
   public Eth1Data getEth1_data() {
-    return eth1_data;
+    return (Eth1Data) get(7);
   }
 
   public void setEth1_data(Eth1Data eth1_data) {
-    this.eth1_data = eth1_data;
+    set(7, eth1_data);
   }
 
   public SSZListWrite<Eth1Data> getEth1_data_votes() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingList<>
+        (Eth1Data.class, getEth1_data_votes_view(), Function.identity(), Function.identity());
+  }
+
+  @SuppressWarnings("unchecked")
+  private ListViewWrite<Eth1Data> getEth1_data_votes_view() {
+    return (ListViewWrite<Eth1Data>) get(8);
   }
 
   public UnsignedLong getEth1_deposit_index() {
-    return eth1_deposit_index;
+    return ((UInt64View) get(9)).get();
   }
 
   public void setEth1_deposit_index(UnsignedLong eth1_deposit_index) {
-    this.eth1_deposit_index = eth1_deposit_index;
+    set(9, new UInt64View(eth1_deposit_index));
   }
 
   // Registry
   public SSZListWriteRef<ValidatorRead, ValidatorWrite> getValidators() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingListRef<>(Validator.class, getValidators_view());
+  }
+
+  @SuppressWarnings("unchecked")
+  private ListViewWriteRef<ValidatorRead, ValidatorWrite> getValidators_view() {
+    return (ListViewWriteRef<ValidatorRead, ValidatorWrite>) get(10);
   }
 
   public SSZListWrite<UnsignedLong> getBalances() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingList<>
+        (UnsignedLong.class, getBalances_view(), UInt64View::new, AbstractBasicView::get);
+  }
+  @SuppressWarnings("unchecked")
+  private ListViewWrite<UInt64View> getBalances_view() {
+    return (ListViewWrite<UInt64View>) get(11);
   }
 
   public SSZVectorWrite<Bytes32> getRandao_mixes() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingVector<>
+        (Bytes32.class, getRandao_mixes_view(), Bytes32View::new, AbstractBasicView::get);
+  }
+
+  @SuppressWarnings("unchecked")
+  private VectorViewWrite<Bytes32View> getRandao_mixes_view() {
+    return (VectorViewWrite<Bytes32View>) get(12);
   }
 
   // Slashings
   public SSZVectorWrite<UnsignedLong> getSlashings() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingVector<>
+        (UnsignedLong.class, getSlashings_view(), UInt64View::new, AbstractBasicView::get);
+  }
+
+  @SuppressWarnings("unchecked")
+  private VectorViewWrite<UInt64View> getSlashings_view() {
+    return (VectorViewWrite<UInt64View>) get(13);
   }
 
   // Attestations
   public SSZListWrite<PendingAttestation> getPrevious_epoch_attestations() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingList<>
+        (PendingAttestation.class, getPrevious_epoch_attestations_view(), Function.identity(), Function.identity());
+  }
+
+  @SuppressWarnings("unchecked")
+  private ListViewWrite<PendingAttestation> getPrevious_epoch_attestations_view() {
+    return (ListViewWrite<PendingAttestation>) get(14);
   }
 
   public SSZListWrite<PendingAttestation> getCurrent_epoch_attestations() {
-    throw new UnsupportedOperationException();
+    return new SSZBackingList<>
+        (PendingAttestation.class, getCurrent_epoch_attestations_view(), Function.identity(), Function.identity());
+  }
+
+  @SuppressWarnings("unchecked")
+  private ListViewWrite<PendingAttestation> getCurrent_epoch_attestations_view() {
+    return (ListViewWrite<PendingAttestation>) get(15);
   }
 
   // Finality
+  @SuppressWarnings("unchecked")
   public Bitvector getJustification_bits() {
-    return justification_bits;
+    return ViewUtils.getBitlist((VectorViewRead<BitView>) get(16));
   }
 
   public void setJustification_bits(Bitvector justification_bits) {
-    this.justification_bits = justification_bits;
+    set(16, ViewUtils.createBitvectorView(justification_bits));
   }
 
   public Checkpoint getPrevious_justified_checkpoint() {
-    return previous_justified_checkpoint;
+    return (Checkpoint) get(17);
   }
 
   public void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {
-    this.previous_justified_checkpoint = previous_justified_checkpoint;
+    set(17, previous_justified_checkpoint);
   }
 
   public Checkpoint getCurrent_justified_checkpoint() {
-    return current_justified_checkpoint;
+    return (Checkpoint) get(18);
   }
 
   public void setCurrent_justified_checkpoint(Checkpoint current_justified_checkpoint) {
-    this.current_justified_checkpoint = current_justified_checkpoint;
+    set(18, current_justified_checkpoint);
   }
 
   public Checkpoint getFinalized_checkpoint() {
-    return finalized_checkpoint;
+    return (Checkpoint) get(19);
   }
 
   public void setFinalized_checkpoint(Checkpoint finalized_checkpoint) {
-    this.finalized_checkpoint = finalized_checkpoint;
+    set(19, finalized_checkpoint);
   }
 
   @Override
@@ -477,30 +568,5 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
         .add("current_justified_checkpoint", getCurrent_justified_checkpoint())
         .add("finalized_checkpoint", getFinalized_checkpoint())
         .toString();
-  }
-
-  public void setBlock_roots(
-      SSZVector<Bytes32> block_roots) {
-    this.block_roots = block_roots;
-  }
-
-  public void setState_roots(
-      SSZVector<Bytes32> state_roots) {
-    this.state_roots = state_roots;
-  }
-
-  public void setHistorical_roots(
-      SSZList<Bytes32> historical_roots) {
-    this.historical_roots = historical_roots;
-  }
-
-  public void setRandao_mixes(
-      SSZVector<Bytes32> randao_mixes) {
-    this.randao_mixes = randao_mixes;
-  }
-
-  public void setSlashings(
-      SSZVector<UnsignedLong> slashings) {
-    this.slashings = slashings;
   }
 }

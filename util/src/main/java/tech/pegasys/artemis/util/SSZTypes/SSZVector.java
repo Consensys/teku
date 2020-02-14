@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 
 public interface SSZVector<T> extends List<T> {
@@ -30,4 +31,11 @@ public interface SSZVector<T> extends List<T> {
   }
 
   Class<T> getElementType();
+
+  default void setAll(SSZVector<T> other) {
+    Preconditions.checkArgument(other.size() == size(), "Incompatible vector size");
+    for (int i = 0; i < other.size(); i++) {
+      set(i, other.get(i));
+    }
+  }
 }

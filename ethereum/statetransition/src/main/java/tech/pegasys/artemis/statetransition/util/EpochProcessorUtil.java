@@ -581,8 +581,7 @@ public final class EpochProcessorUtil {
         .plus(UnsignedLong.ONE)
         .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_ETH1_VOTING_PERIOD))
         .equals(UnsignedLong.ZERO)) {
-      state.getEth1_data_votes().clear();
-      state.getEth1_data_votes().addAll(SSZList.create(Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD));
+      state.getEth1_data_votes().setAll(SSZList.create(Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD));
     }
 
     // Update effective balances with hysteresis
@@ -624,10 +623,8 @@ public final class EpochProcessorUtil {
     }
 
     // Rotate current/previous epoch attestations
-    state.getPrevious_epoch_attestations().clear();
-    state.getPrevious_epoch_attestations().addAll(state.getCurrent_epoch_attestations());
-    state.getCurrent_epoch_attestations().clear();
-    state.getCurrent_epoch_attestations().addAll(
+    state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
+    state.getCurrent_epoch_attestations().setAll(
         SSZList.create(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
   }
 }

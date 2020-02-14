@@ -6,7 +6,7 @@ public interface SSZListRead<R> extends SSZList<R> {
   long getMaxSize();
 
   @Override
-  Class<R> getElementType();
+  Class<? extends R> getElementType();
 
   @Override
   int size();

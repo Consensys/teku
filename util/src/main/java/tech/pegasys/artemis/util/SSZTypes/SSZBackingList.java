@@ -2,19 +2,19 @@ package tech.pegasys.artemis.util.SSZTypes;
 
 import java.util.AbstractList;
 import java.util.function.Function;
-import tech.pegasys.artemis.util.backing.VectorViewWrite;
+import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
-public class SSZBasicBackingVector<C, R extends ViewRead> extends AbstractList<C>
-    implements SSZVectorWrite<C> {
+public class SSZBackingList<C, R extends ViewRead> extends AbstractList<C>
+    implements SSZListWrite<C> {
 
   private final Class<C> classInfo;
-  private final VectorViewWrite<R> delegate;
+  private final ListViewWrite<R> delegate;
   private final Function<C, R> wrapper;
   private final Function<R, C> unwrapper;
 
-  public SSZBasicBackingVector(Class<C> classInfo,
-      VectorViewWrite<R> delegate, Function<C, R> wrapper,
+  public SSZBackingList(Class<C> classInfo,
+      ListViewWrite<R> delegate, Function<C, R> wrapper,
       Function<R, C> unwrapper) {
     this.classInfo = classInfo;
     this.delegate = delegate;
@@ -30,6 +30,17 @@ public class SSZBasicBackingVector<C, R extends ViewRead> extends AbstractList<C
   @Override
   public int size() {
     return delegate.size();
+  }
+
+  @Override
+  public long getMaxSize() {
+    return delegate.getType().getMaxLength();
+  }
+
+  @Override
+  public boolean add(C c) {
+    delegate.append(wrapper.apply(c));
+    return true;
   }
 
   @Override

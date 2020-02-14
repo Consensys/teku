@@ -307,6 +307,12 @@ class BeaconStateTest {
   */
 
   @Test
+  void simple1() {
+    BeaconStateRead s1 = new BeaconState();
+    System.out.println(s1.hash_tree_root());
+  }
+
+  @Test
   void vectorLengthsTest() {
     List<Integer> vectorLengths =
         List.of(
