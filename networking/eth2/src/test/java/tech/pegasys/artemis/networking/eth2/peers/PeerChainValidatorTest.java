@@ -218,7 +218,7 @@ public class PeerChainValidatorTest {
     assertPeerChainVerified(result);
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
+    verify(historicalChainData, never()).getLatestFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -236,7 +236,7 @@ public class PeerChainValidatorTest {
     assertPeerChainVerified(result);
     // Verify remaining checks were skipped
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
+    verify(historicalChainData, never()).getLatestFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -249,7 +249,7 @@ public class PeerChainValidatorTest {
     assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
     // Verify other checks were skipped when fork mismatch was detected
     verify(peer, never()).requestBlockBySlot(any(), any());
-    verify(historicalChainData, never()).getFinalizedBlockAtSlot(any());
+    verify(historicalChainData, never()).getLatestFinalizedBlockAtSlot(any());
     verify(store, never()).getFinalizedCheckpoint();
   }
 
@@ -310,7 +310,7 @@ public class PeerChainValidatorTest {
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
@@ -322,7 +322,8 @@ public class PeerChainValidatorTest {
         SafeFuture.completedFuture(Optional.of(genesisBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(genesisSlot)).thenReturn(optionalBlockFuture);
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(genesisSlot))
+        .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), genesisSlot))
         .thenReturn(postGenesisBlock);
   }
@@ -334,7 +335,7 @@ public class PeerChainValidatorTest {
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
@@ -347,7 +348,7 @@ public class PeerChainValidatorTest {
         SafeFuture.completedFuture(Optional.of(earlierBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(earlierCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(earlierEpochSlot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(earlierEpochSlot))
         .thenReturn(optionalBlockFuture);
     when(peer.requestBlockBySlot(remoteStatus.getHeadRoot(), earlierBlockSlot))
         .thenReturn(blockFuture);
@@ -358,7 +359,7 @@ public class PeerChainValidatorTest {
         SafeFuture.completedFuture(Optional.of(remoteFinalizedBlock));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
         .thenReturn(blockResult);
   }
 
@@ -367,7 +368,7 @@ public class PeerChainValidatorTest {
         SafeFuture.completedFuture(Optional.of(randomBlock(remoteFinalizedBlockSlot)));
 
     when(store.getFinalizedCheckpoint()).thenReturn(laterCheckpoint);
-    when(historicalChainData.getFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(remoteFinalizedEpochSlot))
         .thenReturn(blockResult);
   }
 
