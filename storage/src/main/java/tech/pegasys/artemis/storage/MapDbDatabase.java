@@ -255,7 +255,6 @@ public class MapDbDatabase implements Database {
   }
 
   private void pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
-    // TODO: Can we prune blocks from in the finalized epoch as well?
     SignedBeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newFinalizedCheckpoint.getRoot());
     final UnsignedLong finalizedSlot = newlyFinalizedBlock.getSlot();
     final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> toRemove =
