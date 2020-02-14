@@ -88,7 +88,14 @@ public class DepositContractListener {
                 throw new Eth1RequestException(
                     "Eth1 call has failed:" + ethCall.getError().getMessage());
               } else {
-                return ethCall.getValue();
+                String value = ethCall.getValue();
+                if (value == null) {
+                  throw new Eth1RequestException(
+                      "Eth1 call has failed: data at block number "
+                          + blockHeight
+                          + " is unavailable.");
+                }
+                return value;
               }
             });
   }

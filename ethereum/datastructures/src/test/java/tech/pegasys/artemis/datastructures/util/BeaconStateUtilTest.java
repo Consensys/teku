@@ -349,9 +349,4 @@ class BeaconStateUtilTest {
   void ensureVerifyDepositDefaultsToTrue() {
     assertThat(BeaconStateUtil.BLS_VERIFY_DEPOSIT).isTrue();
   }
-
-  @Test
-  void ensureDepositProofsEnabledDefaultsToTrue() {
-    assertThat(BeaconStateUtil.DEPOSIT_PROOFS_ENABLED).isTrue();
-  }
 }

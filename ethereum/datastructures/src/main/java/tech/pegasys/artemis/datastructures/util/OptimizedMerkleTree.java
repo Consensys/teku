@@ -56,7 +56,7 @@ public class OptimizedMerkleTree extends MerkleTree {
   }
 
   @Override
-  protected int getNumberOfLeaves() {
+  public int getNumberOfLeaves() {
     int lastLeafIndex = tree.get(0).size() - 1;
     if (tree.get(0).get(lastLeafIndex).equals(Bytes32.ZERO)) {
       return tree.get(0).size() - 1;

@@ -53,7 +53,6 @@ public class Generator {
     Constants.SLOTS_PER_EPOCH = 6;
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
-    BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
 
     System.out.println("Generating keypairs...");
     int validatorsCount = 1 * 1024;
