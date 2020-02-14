@@ -25,6 +25,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
+import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 class HistoricalChainDataTest {
@@ -39,32 +41,34 @@ class HistoricalChainDataTest {
   }
 
   @Test
-  public void shouldRetrieveBlockBySlot() {
+  public void getFinalizedBlockAtSlot_shouldRetrieveBlockBySlot() {
     final SafeFuture<Optional<SignedBeaconBlock>> result =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
     verify(eventBus).post(new GetFinalizedBlockAtSlotRequest(ONE));
     assertThat(result).isNotDone();
 
-    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
+    historicalChainData.onBlockAtSlotResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
     assertThat(result).isCompletedWithValue(BLOCK);
   }
 
   @Test
-  public void shouldResolveWithEmptyOptionalWhenBlockNotAvailable() {
+  public void getFinalizedBlockAtSlot_shouldResolveWithEmptyOptionalWhenBlockNotAvailable() {
     final SafeFuture<Optional<SignedBeaconBlock>> result =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
 
-    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, Optional.empty()));
+    historicalChainData.onBlockAtSlotResponse(
+        new GetFinalizedBlockAtSlotResponse(ONE, Optional.empty()));
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
   @Test
-  public void shouldIgnoreBlocksThatDoNotMatchOutstandingRequests() {
-    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
+  public void getFinalizedBlockAtSlot_shouldIgnoreBlocksThatDoNotMatchOutstandingRequests() {
+    historicalChainData.onBlockAtSlotResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
   }
 
   @Test
-  public void shouldResolveMultipleRequestsForTheSameSlotWithFirstAvailableData() {
+  public void
+      getFinalizedBlockAtSlot_shouldResolveMultipleRequestsForTheSameSlotWithFirstAvailableData() {
     final SafeFuture<Optional<SignedBeaconBlock>> result1 =
         historicalChainData.getFinalizedBlockAtSlot(ONE);
     final SafeFuture<Optional<SignedBeaconBlock>> result2 =
@@ -73,9 +77,76 @@ class HistoricalChainDataTest {
     assertThat(result1).isNotDone();
     assertThat(result2).isNotDone();
 
-    historicalChainData.onResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
+    historicalChainData.onBlockAtSlotResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
 
     assertThat(result1).isCompletedWithValue(BLOCK);
     assertThat(result2).isCompletedWithValue(BLOCK);
+  }
+
+  @Test
+  public void getLatestFinalizedBlockAtSlot_shouldRetrieveBlockBySlot() {
+    final SafeFuture<Optional<SignedBeaconBlock>> result =
+        historicalChainData.getLatestFinalizedBlockAtSlot(ONE);
+    verify(eventBus).post(new GetLatestFinalizedBlockAtSlotRequest(ONE));
+    assertThat(result).isNotDone();
+
+    historicalChainData.onLatestBlockAtSlotResponse(
+        new GetLatestFinalizedBlockAtSlotResponse(ONE, BLOCK));
+    assertThat(result).isCompletedWithValue(BLOCK);
+  }
+
+  @Test
+  public void getLatestFinalizedBlockAtSlot_shouldResolveWithEmptyOptionalWhenBlockNotAvailable() {
+    final SafeFuture<Optional<SignedBeaconBlock>> result =
+        historicalChainData.getLatestFinalizedBlockAtSlot(ONE);
+
+    historicalChainData.onLatestBlockAtSlotResponse(
+        new GetLatestFinalizedBlockAtSlotResponse(ONE, Optional.empty()));
+    assertThat(result).isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void getLatestFinalizedBlockAtSlot_shouldIgnoreBlocksThatDoNotMatchOutstandingRequests() {
+    historicalChainData.onLatestBlockAtSlotResponse(
+        new GetLatestFinalizedBlockAtSlotResponse(ONE, BLOCK));
+  }
+
+  @Test
+  public void
+      getLatestFinalizedBlockAtSlot_shouldResolveMultipleRequestsForTheSameSlotWithFirstAvailableData() {
+    final SafeFuture<Optional<SignedBeaconBlock>> result1 =
+        historicalChainData.getLatestFinalizedBlockAtSlot(ONE);
+    final SafeFuture<Optional<SignedBeaconBlock>> result2 =
+        historicalChainData.getLatestFinalizedBlockAtSlot(ONE);
+
+    assertThat(result1).isNotDone();
+    assertThat(result2).isNotDone();
+
+    historicalChainData.onLatestBlockAtSlotResponse(
+        new GetLatestFinalizedBlockAtSlotResponse(ONE, BLOCK));
+
+    assertThat(result1).isCompletedWithValue(BLOCK);
+    assertThat(result2).isCompletedWithValue(BLOCK);
+  }
+
+  @Test
+  public void shouldResolveMultipleRequestsOfDifferentTypes() {
+    final SafeFuture<Optional<SignedBeaconBlock>> result1 =
+        historicalChainData.getFinalizedBlockAtSlot(ONE);
+    final SafeFuture<Optional<SignedBeaconBlock>> result2 =
+        historicalChainData.getLatestFinalizedBlockAtSlot(ONE);
+
+    assertThat(result1).isNotDone();
+    assertThat(result2).isNotDone();
+
+    historicalChainData.onLatestBlockAtSlotResponse(
+        new GetLatestFinalizedBlockAtSlotResponse(ONE, BLOCK));
+
+    assertThat(result1).isNotCompleted();
+    assertThat(result2).isCompletedWithValue(BLOCK);
+
+    historicalChainData.onBlockAtSlotResponse(new GetFinalizedBlockAtSlotResponse(ONE, BLOCK));
+
+    assertThat(result1).isCompletedWithValue(BLOCK);
   }
 }

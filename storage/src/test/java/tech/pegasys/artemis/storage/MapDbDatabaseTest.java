@@ -17,8 +17,12 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
+import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.TempDirectory;
@@ -35,6 +39,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(TempDirectoryExtension.class)
 class MapDbDatabaseTest {
@@ -298,6 +303,7 @@ class MapDbDatabaseTest {
 
     assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
     assertBlocksFinalized(block1, block2, block3, block7);
+    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
 
     // Should still be able to retrieve finalized blocks by root
     assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
@@ -342,6 +348,7 @@ class MapDbDatabaseTest {
     database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
     assertOnlyHotBlocks(block8, block9, forkBlock8, forkBlock9);
     assertBlocksFinalized(block1, block2, block3, block7);
+    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
 
     // Should still be able to retrieve finalized blocks by root
     assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
@@ -352,6 +359,41 @@ class MapDbDatabaseTest {
       assertThat(database.getFinalizedRootAtSlot(block.getSlot()))
           .describedAs("Block root at slot %s", block.getSlot())
           .contains(block.getMessage().hash_tree_root());
+    }
+  }
+
+  private void assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(
+      final SignedBeaconBlock... blocks) {
+    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    final Bytes32 genesisRoot = database.getFinalizedRootAtSlot(genesisSlot).get();
+    final SignedBeaconBlock genesisBlock = database.getSignedBlock(genesisRoot).get();
+
+    final List<SignedBeaconBlock> finalizedBlocks =
+        Streams.concat(Stream.of(genesisBlock), Arrays.stream(blocks))
+            .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
+            .collect(toList());
+
+    for (int i = 1; i < finalizedBlocks.size(); i++) {
+      final SignedBeaconBlock currentBlock = finalizedBlocks.get(i - 1);
+      final SignedBeaconBlock nextBlock = finalizedBlocks.get(i);
+      // All slots from the current block up to and excluding the next block should return the
+      // current block
+      for (long slot = currentBlock.getSlot().longValue();
+          slot < nextBlock.getSlot().longValue();
+          slot++) {
+        assertThat(database.getLatestFinalizedRootAtSlot(UnsignedLong.valueOf(slot)))
+            .describedAs("Latest finalized at block root at slot %s", slot)
+            .contains(currentBlock.getMessage().hash_tree_root());
+      }
+    }
+
+    // Check that last block
+    final SignedBeaconBlock lastFinalizedBlock = finalizedBlocks.get(finalizedBlocks.size() - 1);
+    for (int i = 0; i < 10; i++) {
+      final UnsignedLong slot = lastFinalizedBlock.getSlot().plus(UnsignedLong.valueOf(i));
+      assertThat(database.getLatestFinalizedRootAtSlot(slot))
+          .describedAs("Latest finalized at block root at slot %s", slot)
+          .contains(lastFinalizedBlock.getMessage().hash_tree_root());
     }
   }
 
