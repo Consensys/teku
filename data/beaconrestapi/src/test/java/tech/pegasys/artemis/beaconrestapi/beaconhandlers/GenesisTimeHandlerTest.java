@@ -31,7 +31,7 @@ public class GenesisTimeHandlerTest {
       ChainStorageClient.memoryOnlyClient(new EventBus());
 
   @Test
-  public void shouldReturnEmptyObjectWhenGenesisTimeIsNotSet() throws Exception {
+  public void shouldRaiseInternalErrorWhenGenesisTimeIsNotSet() throws Exception {
     GenesisTimeHandler subject = new GenesisTimeHandler(null);
     subject.handle(mockContext);
 

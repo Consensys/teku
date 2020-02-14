@@ -30,7 +30,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandler implements Handler {
   private final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/node/genesis_time/";
+  public static final String ROUTE = "/v1/node/genesis_time/";
   ChainStorageClient chainStorageClient;
 
   public GenesisTimeHandler(ChainStorageClient chainStorageClient) {
@@ -41,7 +41,7 @@ public class GenesisTimeHandler implements Handler {
       path = GenesisTimeHandler.ROUTE,
       method = HttpMethod.GET,
       summary = "Get the genesis_time parameter from beacon node configuration.",
-      tags = {"MinimalSet"},
+      tags = {"Node"},
       description =
           "Requests the genesis_time parameter from the beacon node, which should be consistent across all beacon nodes that follow the same beacon chain.",
       responses = {

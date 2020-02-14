@@ -23,12 +23,14 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler.RequestParams;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
@@ -37,6 +39,7 @@ import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class BeaconRestApi {
 
@@ -85,11 +88,10 @@ public class BeaconRestApi {
   }
 
   private OpenApiOptions getOpenApiOptions() {
-    // TODO: Need real values for version etc
     Info applicationInfo =
         new Info()
-            .version("0.1.0")
-            .title("Minimal Beacon Node API for Validator")
+            .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
+            .version(VersionProvider.IMPLEMENTATION_VERSION)
             .description(
                 "A minimal API specification for the beacon node, which enables a validator "
                     + "to connect and perform its obligations on the Ethereum 2.0 phase 0 beacon chain.")
@@ -99,7 +101,6 @@ public class BeaconRestApi {
                     .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
     OpenApiOptions options =
         new OpenApiOptions(applicationInfo)
-            .activateAnnotationScanningFor("tech.pegasys.artemis.beaconrestapi")
             .path("/swagger-docs")
             .swagger(new SwaggerOptions("/swagger-ui"));
     // TODO: allow swagger-ui to be turned off - ideally still leave swagger-docs, just dont add the
@@ -109,9 +110,9 @@ public class BeaconRestApi {
 
   private void addNodeHandlers() {
     app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient));
+    app.get(VersionHandler.ROUTE, new VersionHandler());
     /*
      * TODO:
-     *    /node/version
      *    /node/syncing
      *  Optional:
      *    /node/fork
