@@ -144,7 +144,7 @@ public abstract class MerkleTree {
       index /= 2;
     }
     proof.add(calcMixInValue(viewLimit + 1));
-    return new SSZVector<>(proof, Bytes32.class);
+    return SSZVector.create(proof, Bytes32.class);
   }
 
   private Bytes32 calcMixInValue(int viewLimit) {
