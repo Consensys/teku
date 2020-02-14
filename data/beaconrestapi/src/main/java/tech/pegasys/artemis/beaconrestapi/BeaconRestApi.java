@@ -52,13 +52,26 @@ public class BeaconRestApi {
       P2PNetwork<?> p2pNetwork,
       HistoricalChainData historicalChainData,
       final int requestedPortNumber) {
-
-    app =
+    this(
+        chainStorageClient,
+        p2pNetwork,
+        historicalChainData,
+        requestedPortNumber,
         Javalin.create(
             config -> {
               config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
               config.defaultContentType = "application/json";
-            });
+            }));
+  }
+
+  BeaconRestApi(
+      ChainStorageClient chainStorageClient,
+      P2PNetwork<?> p2pNetwork,
+      HistoricalChainData historicalChainData,
+      final int requestedPortNumber,
+      Javalin app) {
+
+    this.app = app;
     app.server().setServerPort(requestedPortNumber);
 
     addNodeHandlers(chainStorageClient);
@@ -85,7 +98,7 @@ public class BeaconRestApi {
     app.start();
   }
 
-  private OpenApiOptions getOpenApiOptions() {
+  private static OpenApiOptions getOpenApiOptions() {
     Info applicationInfo =
         new Info()
             .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
