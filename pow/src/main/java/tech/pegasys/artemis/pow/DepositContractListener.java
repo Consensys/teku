@@ -18,21 +18,20 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.methods.request.Transaction;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DepositContractListener {
-  private final Web3j web3j;
+  private final Eth1Provider eth1Provider;
   private final DepositContract contract;
   private final DepositRequestManager depositRequestManager;
 
   public DepositContractListener(
-      Web3j web3j, DepositContract contract, DepositRequestManager depositRequestManager) {
-    this.web3j = web3j;
+      Eth1Provider eth1Provider,
+      DepositContract contract,
+      DepositRequestManager depositRequestManager) {
+    this.eth1Provider = eth1Provider;
     this.contract = contract;
     this.depositRequestManager = depositRequestManager;
   }
@@ -75,13 +74,8 @@ public class DepositContractListener {
 
   private SafeFuture<String> callFunctionAtBlockNumber(
       String encodedFunction, UnsignedLong blockHeight) {
-    return SafeFuture.of(
-            web3j
-                .ethCall(
-                    Transaction.createEthCallTransaction(
-                        null, contract.getContractAddress(), encodedFunction),
-                    DefaultBlockParameter.valueOf(blockHeight.bigIntegerValue()))
-                .sendAsync())
+    return eth1Provider
+        .ethCall(null, contract.getContractAddress(), encodedFunction, blockHeight)
         .thenApply(
             ethCall -> {
               if (ethCall.hasError()) {
