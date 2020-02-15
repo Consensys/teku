@@ -46,7 +46,6 @@ import tech.pegasys.artemis.util.config.Constants;
 public class DepositProviderTest {
 
   private int seed = 0;
-  private int depositCount;
 
   private List<tech.pegasys.artemis.pow.event.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
@@ -56,8 +55,6 @@ public class DepositProviderTest {
 
   @BeforeEach
   void setUp() {
-    depositCount = 0;
-
     chainStorageClient = mock(ChainStorageClient.class);
     beaconState = mock(BeaconState.class);
 
@@ -163,7 +160,6 @@ public class DepositProviderTest {
   private void mockEth1DataDepositCount(int n) {
     allSeenDepositsList.subList(0, n).stream()
         .map(DepositUtil::convertDepositEventToOperationDeposit)
-        .peek(System.out::println)
         .map(Deposit::getData)
         .map(DepositData::hash_tree_root)
         .forEachOrdered(depositMerkleTree::add);
