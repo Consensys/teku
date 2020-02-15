@@ -85,7 +85,6 @@ public class ValidatorCoordinator {
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private final StateTransition stateTransition;
   private final BlockProposalUtil blockCreator;
-  private final SSZList<Deposit> newDeposits = new SSZList<>(Deposit.class, MAX_DEPOSITS);
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
@@ -165,9 +164,6 @@ public class ValidatorCoordinator {
 
   @Subscribe
   public void onStoreInitializedEvent(final StoreInitializedEvent event) {
-    // Any deposits pre-genesis can be ignored.
-    newDeposits.clear();
-
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = chainStorageClient.getBestBlockRoot();
     final BeaconState genesisState = store.getBlockState(head);
@@ -221,13 +217,6 @@ public class ValidatorCoordinator {
         .getBody()
         .getAttestations()
         .forEach(blockAttestationsPool::addAggregateAttestationProcessedInBlock);
-  }
-
-  @Subscribe
-  public void onNewDeposit(tech.pegasys.artemis.pow.event.Deposit event) {
-    STDOUT.log(Level.DEBUG, "New deposit received by ValidatorCoordinator");
-    Deposit deposit = DepositUtil.convertDepositEventToOperationDeposit(event);
-    if (!newDeposits.contains(deposit)) newDeposits.add(deposit);
   }
 
   @Subscribe
