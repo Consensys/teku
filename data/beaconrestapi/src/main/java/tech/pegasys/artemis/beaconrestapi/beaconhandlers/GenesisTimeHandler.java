@@ -30,7 +30,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandler implements Handler {
   private final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/v1/node/genesis_time/";
+  public static final String ROUTE = "/node/genesis_time/";
   ChainStorageClient chainStorageClient;
 
   public GenesisTimeHandler(ChainStorageClient chainStorageClient) {

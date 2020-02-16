@@ -25,7 +25,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class VersionHandler implements Handler {
 
-  public static final String ROUTE = "/v1/node/version/";
+  public static final String ROUTE = "/node/version/";
 
   @OpenApi(
       path = ROUTE,
