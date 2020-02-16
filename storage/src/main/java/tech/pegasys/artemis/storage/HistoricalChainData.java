@@ -21,24 +21,41 @@ import java.util.Optional;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
+import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.AsyncEventTracker;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class HistoricalChainData {
-  private final AsyncEventTracker<UnsignedLong, Optional<SignedBeaconBlock>> eventTracker;
+  private final AsyncEventTracker<UnsignedLong, Optional<SignedBeaconBlock>> blockAtSlotRequests;
+  private final AsyncEventTracker<UnsignedLong, Optional<SignedBeaconBlock>>
+      latestBlockAtSlotRequests;
 
   public HistoricalChainData(final EventBus eventBus) {
-    this.eventTracker = new AsyncEventTracker<>(eventBus);
+    this.blockAtSlotRequests = new AsyncEventTracker<>(eventBus);
+    this.latestBlockAtSlotRequests = new AsyncEventTracker<>(eventBus);
     eventBus.register(this);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
-    return eventTracker.sendRequest(slot, new GetFinalizedBlockAtSlotRequest(slot));
+    return blockAtSlotRequests.sendRequest(slot, new GetFinalizedBlockAtSlotRequest(slot));
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(
+      final UnsignedLong slot) {
+    return latestBlockAtSlotRequests.sendRequest(
+        slot, new GetLatestFinalizedBlockAtSlotRequest(slot));
   }
 
   @Subscribe
   @AllowConcurrentEvents
-  public void onResponse(final GetFinalizedBlockAtSlotResponse response) {
-    eventTracker.onResponse(response.getSlot(), response.getBlock());
+  public void onBlockAtSlotResponse(final GetFinalizedBlockAtSlotResponse response) {
+    blockAtSlotRequests.onResponse(response.getSlot(), response.getBlock());
+  }
+
+  @Subscribe
+  @AllowConcurrentEvents
+  public void onLatestBlockAtSlotResponse(final GetLatestFinalizedBlockAtSlotResponse response) {
+    latestBlockAtSlotRequests.onResponse(response.getSlot(), response.getBlock());
   }
 }
