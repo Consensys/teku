@@ -20,8 +20,11 @@ import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements RpcMethod {
+
+  private final AsyncRunner asyncRunner;
 
   private final String methodMultistreamId;
   private final RpcEncoding encoding;
@@ -35,6 +38,7 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
   private final RpcEncoder rpcEncoder;
 
   public Eth2RpcMethod(
+      final AsyncRunner asyncRunner,
       final String methodMultistreamId,
       final RpcEncoding encoding,
       final Class<TRequest> requestType,
@@ -42,6 +46,7 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
       final boolean expectResponseToRequest,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
+    this.asyncRunner = asyncRunner;
     this.expectResponseToRequest = expectResponseToRequest;
     this.methodMultistreamId = methodMultistreamId + "/" + encoding.getName();
     this.encoding = encoding;
@@ -67,6 +72,10 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
 
   public RpcEncoding getEncoding() {
     return encoding;
+  }
+
+  public RpcEncoder getRpcEncoder() {
+    return rpcEncoder;
   }
 
   public Bytes encodeRequest(TRequest request) {
@@ -110,6 +119,6 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
 
   public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
       final int maximumResponseChunks) {
-    return new Eth2OutgoingRequestHandler<>(this, maximumResponseChunks);
+    return new Eth2OutgoingRequestHandler<>(asyncRunner, this, maximumResponseChunks);
   }
 }
