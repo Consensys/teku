@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static org.mockito.Mockito.verify;
+
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -24,9 +26,9 @@ public class VersionHandlerTest {
 
   @Test
   public void shouldReturnVersionString() throws Exception {
-    VersionHandler subject = new VersionHandler();
-    subject.handle(mockContext);
+    VersionHandler handler = new VersionHandler();
+    handler.handle(mockContext);
 
-    Mockito.verify(mockContext).result(JsonProvider.objectToJSON(VersionProvider.VERSION));
+    verify(mockContext).result(JsonProvider.objectToJSON(VersionProvider.VERSION));
   }
 }

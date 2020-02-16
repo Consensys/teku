@@ -15,13 +15,14 @@ package tech.pegasys.artemis.beaconrestapi;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -29,8 +30,8 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 class BeaconRestApiTest {
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());
-  private final JavalinServer mockServer = Mockito.mock(JavalinServer.class);
-  private final Javalin mockApp = Mockito.mock(Javalin.class);
+  private final JavalinServer mockServer = mock(JavalinServer.class);
+  private final Javalin mockApp = mock(Javalin.class);
   private static final Integer THE_PORT = 12345;
 
   @Test
@@ -38,7 +39,7 @@ class BeaconRestApiTest {
     when(mockApp.server()).thenReturn(mockServer);
     new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
 
-    Mockito.verify(mockServer).setServerPort(THE_PORT);
+    verify(mockServer).setServerPort(THE_PORT);
   }
 
   @Test
@@ -46,7 +47,7 @@ class BeaconRestApiTest {
     when(mockApp.server()).thenReturn(mockServer);
     new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
 
-    Mockito.verify(mockApp).get(eq(GenesisTimeHandler.ROUTE), any(GenesisTimeHandler.class));
+    verify(mockApp).get(eq(GenesisTimeHandler.ROUTE), any(GenesisTimeHandler.class));
   }
 
   @Test
@@ -54,6 +55,6 @@ class BeaconRestApiTest {
     when(mockApp.server()).thenReturn(mockServer);
     new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
 
-    Mockito.verify(mockApp).get(eq(VersionHandler.ROUTE), any(VersionHandler.class));
+    verify(mockApp).get(eq(VersionHandler.ROUTE), any(VersionHandler.class));
   }
 }

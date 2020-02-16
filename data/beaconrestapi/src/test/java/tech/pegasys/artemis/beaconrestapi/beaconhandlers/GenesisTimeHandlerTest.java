@@ -13,37 +13,38 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandlerTest {
-  private Context mockContext = Mockito.mock(Context.class);
+  private Context mockContext = mock(Context.class);
   private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
 
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());
 
   @Test
-  public void shouldRaiseInternalErrorWhenGenesisTimeIsNotSet() throws Exception {
-    GenesisTimeHandler subject = new GenesisTimeHandler(null);
-    subject.handle(mockContext);
+  public void shouldReturnNoContentGenesisTimeIsNotSet() throws Exception {
+    GenesisTimeHandler handler = new GenesisTimeHandler(null);
+    handler.handle(mockContext);
 
-    Mockito.verify(mockContext).status(SC_INTERNAL_SERVER_ERROR);
+    verify(mockContext).status(SC_NO_CONTENT);
   }
 
   @Test
   public void shouldReturnGenesisTimeWhenSet() throws Exception {
     storageClient.setGenesisTime(genesisTime);
-    GenesisTimeHandler subject = new GenesisTimeHandler(storageClient);
-    subject.handle(mockContext);
+    GenesisTimeHandler handler = new GenesisTimeHandler(storageClient);
+    handler.handle(mockContext);
 
-    Mockito.verify(mockContext).result(JsonProvider.objectToJSON(genesisTime));
+    verify(mockContext).result(JsonProvider.objectToJSON(genesisTime));
   }
 }

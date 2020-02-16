@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
@@ -24,7 +24,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
@@ -46,16 +45,16 @@ public class GenesisTimeHandler implements Handler {
           "Requests the genesis_time parameter from the beacon node, which should be consistent across all beacon nodes that follow the same beacon chain.",
       responses = {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = UnsignedLong.class)),
-        @OpenApiResponse(status = "500")
+        @OpenApiResponse(status = "204")
       })
   @Override
-  public void handle(@NotNull Context ctx) throws Exception {
+  public void handle(Context ctx) throws Exception {
     try {
       UnsignedLong result = chainStorageClient.getGenesisTime();
       ctx.result(JsonProvider.objectToJSON(result));
     } catch (Exception exception) {
-      LOG.error("Failed to get genesis time", exception);
-      ctx.status(SC_INTERNAL_SERVER_ERROR);
+      LOG.debug("Failed to get genesis time", exception);
+      ctx.status(SC_NO_CONTENT);
     }
   }
 }
