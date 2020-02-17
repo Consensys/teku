@@ -161,4 +161,14 @@ public class PendingAttestation
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue()))));
   }
+
+  @Override
+  public String toString() {
+    return "PendingAttestation{" +
+        "aggregation_bits=" + aggregation_bits +
+        ", data=" + data +
+        ", inclusion_delay=" + inclusion_delay +
+        ", proposer_index=" + proposer_index +
+        '}';
+  }
 }
