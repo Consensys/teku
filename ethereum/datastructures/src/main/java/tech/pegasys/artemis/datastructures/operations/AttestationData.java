@@ -138,4 +138,15 @@ public class AttestationData implements SimpleOffsetSerializable, Merkleizable, 
             source.hash_tree_root(),
             target.hash_tree_root()));
   }
+
+  @Override
+  public String toString() {
+    return "AttestationData{" +
+        "slot=" + getSlot() +
+        ", index=" + getIndex() +
+        ", beacon_block_root=" + getBeacon_block_root() +
+        ", source=" + getSource() +
+        ", target=" + getTarget() +
+        '}';
+  }
 }
