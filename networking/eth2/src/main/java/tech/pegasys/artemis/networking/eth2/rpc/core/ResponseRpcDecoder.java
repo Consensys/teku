@@ -79,4 +79,13 @@ public class ResponseRpcDecoder<T> {
       throw RpcException.INCORRECT_LENGTH_ERROR;
     }
   }
+
+  /** Close ignoring any unconsumed data */
+  public void closeSilently() {
+    try {
+      close();
+    } catch (RpcException e) {
+      // Ignore
+    }
+  }
 }

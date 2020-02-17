@@ -128,6 +128,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
                 stream.close().reportExceptions();
                 responseStream.completeWithError(
                     new RpcTimeoutException("Timed out waiting for initial response", timeout));
+                responseHandler.closeSilently();
               }
             })
         .reportExceptions();
@@ -149,6 +150,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
                 responseStream.completeWithError(
                     new RpcTimeoutException(
                         "Timed out waiting for response chunk " + currentResponseCount, timeout));
+                responseHandler.closeSilently();
               }
             })
         .reportExceptions();
