@@ -158,4 +158,15 @@ public class AttestationData extends ContainerViewImpl<AttestationData>
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
   }
+
+  @Override
+  public String toString() {
+    return "AttestationData{" +
+        "slot=" + getSlot() +
+        ", index=" + getIndex() +
+        ", beacon_block_root=" + getBeacon_block_root() +
+        ", source=" + getSource() +
+        ", target=" + getTarget() +
+        '}';
+  }
 }
