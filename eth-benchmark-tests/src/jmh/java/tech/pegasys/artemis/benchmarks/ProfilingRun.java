@@ -17,12 +17,15 @@ import static org.mockito.Mockito.mock;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
@@ -30,6 +33,8 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
@@ -71,6 +76,8 @@ public class ProfilingRun {
         long s = System.currentTimeMillis();
         localChain.setSlot(block.getSlot());
         BlockImportResult result = blockImporter.importBlock(block);
+        compareHashes(result.getBlockProcessingRecord().getPostState());
+
         System.out.println(
             "Imported block at #"
                 + block.getSlot()
@@ -80,5 +87,32 @@ public class ProfilingRun {
                 + result);
       }
     }
+  }
+
+  @Test
+  void compareHashes(BeaconState s1) {
+    System.out.println("BS: " + s1.hash_tree_root());
+    System.out.println("getEth1_data: " + s1.getEth1_data().hash_tree_root());
+    System.out.println("getEth1_data: " + s1.getEth1_data().hash_tree_root());
+    System.out.println(
+        "getValidators: " + HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE,
+            Constants.VALIDATOR_REGISTRY_LIMIT, s1.getValidators()));
+    System.out.println("getBlock_roots: " + HashTreeUtil.hash_tree_root(
+        SSZTypes.VECTOR_OF_COMPOSITE, s1.getBlock_roots()));
+
+    System.out.println("getHistorical_roots: " + HashTreeUtil.hash_tree_root(
+        SSZTypes.LIST_OF_COMPOSITE, Constants.HISTORICAL_ROOTS_LIMIT, s1.getHistorical_roots()));
+
+    System.out.println("getEth1_data_votes: " + HashTreeUtil.hash_tree_root(
+        SSZTypes.LIST_OF_COMPOSITE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD, s1.getEth1_data_votes()));
+
+    System.out.println("getBalances: " + HashTreeUtil.hash_tree_root_list_ul(
+        Constants.VALIDATOR_REGISTRY_LIMIT,
+        s1.getBalances().stream()
+            .map(item -> SSZ.encodeUInt64(item.longValue()))
+            .collect(Collectors.toList())));
+
+
+    System.out.println("getJustification_bits: " + HashTreeUtil.hash_tree_root_bitvector(s1.getJustification_bits()));
   }
 }
