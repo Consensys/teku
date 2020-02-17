@@ -13,11 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
-import io.libp2p.core.crypto.KEY_TYPE;
-import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
-import java.util.Optional;
 
 public class NetworkConfig {
 
@@ -31,7 +28,7 @@ public class NetworkConfig {
   private final boolean logMuxFrames;
 
   public NetworkConfig(
-      final Optional<PrivKey> privateKey,
+      final PrivKey privateKey,
       final String networkInterface,
       final int listenPort,
       final int advertisedPort,
@@ -39,8 +36,7 @@ public class NetworkConfig {
       final boolean logWireCipher,
       final boolean logWirePlain,
       final boolean logMuxFrames) {
-    this.privateKey =
-        privateKey.orElseGet(() -> KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1());
+    this.privateKey = privateKey;
     this.networkInterface = networkInterface;
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
