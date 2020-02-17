@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,7 +40,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
 
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
-  private int currentChunkCount = 0;
+  private AtomicInteger currentChunkCount = new AtomicInteger(0);
 
   private ResponseRpcDecoder<TResponse> responseHandler;
 
@@ -69,17 +70,19 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     try {
       if (hasReceivedInitialBytes.compareAndSet(false, true)) {
         // Setup initial chunk timeout
-        ensureNextResponseArrivesInTime(currentChunkCount, rpcStream);
+        ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
       }
       STDOUT.log(Level.TRACE, "Requester received " + bytes.capacity() + " bytes.");
       responseHandler.onDataReceived(bytes);
+
+      final int previousResponseCount = currentChunkCount.get();
+      currentChunkCount.set(responseStream.getResponseChunkCount());
       if (responseStream.getResponseChunkCount() >= maximumResponseChunks) {
         rpcStream.close().reportExceptions();
         responseHandler.close();
         responseStream.completeSuccessfully();
-      } else if (responseStream.getResponseChunkCount() > currentChunkCount) {
-        currentChunkCount = responseStream.getResponseChunkCount();
-        ensureNextResponseArrivesInTime(currentChunkCount, rpcStream);
+      } else if (responseStream.getResponseChunkCount() > previousResponseCount) {
+        ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
       }
     } catch (final InvalidResponseException e) {
       LOG.debug("Peer responded with invalid data", e);
@@ -140,21 +143,23 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   private void ensureNextResponseArrivesInTime(
-      final int currentResponseCount, final RpcStream stream) {
+      final RpcStream stream,
+      final int previousResponseCount,
+      final AtomicInteger currentResponseCount) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
     asyncRunner
         .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
         .thenAccept(
             (__) -> {
-              if (responseStream.getResponseChunkCount() == currentResponseCount) {
+              if (previousResponseCount == currentResponseCount.get()) {
                 LOG.debug(
                     "Failed to receive response chunk {} within {} sec. Close stream.",
-                    currentResponseCount,
+                    previousResponseCount,
                     timeout.getSeconds());
                 stream.close().reportExceptions();
                 responseStream.completeWithError(
                     new RpcTimeoutException(
-                        "Timed out waiting for response chunk " + currentResponseCount, timeout));
+                        "Timed out waiting for response chunk " + previousResponseCount, timeout));
                 responseHandler.closeSilently();
               }
             })
