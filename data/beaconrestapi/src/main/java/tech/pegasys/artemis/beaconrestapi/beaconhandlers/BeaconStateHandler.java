@@ -63,9 +63,9 @@ public class BeaconStateHandler implements Handler {
     String rootParam = ctx.queryParam("root");
     BeaconState result = queryByRootHash(rootParam);
     if (result == null) {
+      LOG.debug("Block root {} not found", rootParam);
       ctx.status(SC_NOT_FOUND);
     } else {
-      LOG.debug("Block root {} not found", rootParam);
       ctx.result(JsonProvider.objectToJSON(result));
     }
   }
