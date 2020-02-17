@@ -17,7 +17,6 @@ import static tech.pegasys.artemis.util.async.SafeFuture.propagateResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -25,7 +24,7 @@ public class StubAsyncRunner implements AsyncRunner {
   private List<Runnable> queuedActions = new ArrayList<>();
 
   @Override
-  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
+  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
     final SafeFuture<U> result = new SafeFuture<>();
     queuedActions.add(
         () -> {
@@ -41,7 +40,7 @@ public class StubAsyncRunner implements AsyncRunner {
   @Override
   public <U> SafeFuture<U> runAfterDelay(
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
-    return runAsync(action, null); // Executor is ignored anyway.
+    return runAsync(action);
   }
 
   public void executeQueuedActions() {

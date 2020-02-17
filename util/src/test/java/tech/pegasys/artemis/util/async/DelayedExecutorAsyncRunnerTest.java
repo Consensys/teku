@@ -30,7 +30,7 @@ import org.mockito.ArgumentCaptor;
 
 public class DelayedExecutorAsyncRunnerTest {
 
-  private AsyncRunner asyncRunner;
+  private DelayedExecutorAsyncRunner asyncRunner;
 
   @BeforeEach
   void setUp() {

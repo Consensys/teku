@@ -13,12 +13,11 @@
 
 package tech.pegasys.artemis.util.async;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public interface AsyncRunner {
-  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor);
+  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action);
 
   <U> SafeFuture<U> runAfterDelay(
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);

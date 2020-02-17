@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.async;
 
 import static tech.pegasys.artemis.util.async.SafeFuture.propagateResult;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -23,14 +24,9 @@ import java.util.function.Supplier;
 public class DelayedExecutorAsyncRunner implements AsyncRunner {
 
   @Override
-  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
-    final SafeFuture<U> result = new SafeFuture<>();
-    try {
-      executor.execute(() -> propagateResult(action.get(), result));
-    } catch (final Throwable t) {
-      result.completeExceptionally(t);
-    }
-    return result;
+  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
+    Executor delayed = CompletableFuture.delayedExecutor(-1, TimeUnit.SECONDS);
+    return runAsync(action, delayed);
   }
 
   @Override
@@ -38,5 +34,16 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
     Executor delayed = CompletableFuture.delayedExecutor(delayAmount, delayUnit);
     return runAsync(action, delayed);
+  }
+
+  @VisibleForTesting
+  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
+    final SafeFuture<U> result = new SafeFuture<>();
+    try {
+      executor.execute(() -> propagateResult(action.get(), result));
+    } catch (final Throwable t) {
+      result.completeExceptionally(t);
+    }
+    return result;
   }
 }
