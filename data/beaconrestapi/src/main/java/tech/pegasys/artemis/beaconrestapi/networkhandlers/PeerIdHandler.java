@@ -37,7 +37,7 @@ public class PeerIdHandler implements Handler {
       method = HttpMethod.GET,
       summary = "Get this beacon node's PeerId.",
       tags = {"Network"},
-      description = "Requests that the beacon node return its PeerID as a base58 encoded String.",
+      description = "Requests that the beacon node return its PeerId as a base58 encoded String.",
       responses = {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = String.class))
       })
