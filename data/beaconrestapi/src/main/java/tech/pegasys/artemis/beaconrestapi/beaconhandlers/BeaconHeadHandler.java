@@ -54,7 +54,7 @@ public class BeaconHeadHandler implements Handler {
   @OpenApi(
       path = BeaconHeadHandler.ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the head of the beacon chain from the nodes perspective.",
+      summary = "Get the head of the beacon chain from the node's perspective.",
       tags = {"Beacon"},
       description = "Requests the context of the best slot and head block from the beacon node.",
       responses = {
