@@ -23,7 +23,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
 public class PeerIdHandlerTest {
   private Context mockContext = mock(Context.class);
-  private P2PNetwork p2PNetwork = mock(P2PNetwork.class);
+  private P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
 
   @Test
   public void shouldReturnPeerId() throws Exception {
