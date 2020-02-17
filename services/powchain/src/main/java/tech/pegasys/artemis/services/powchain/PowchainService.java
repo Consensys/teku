@@ -125,7 +125,7 @@ public class PowchainService implements ServiceInterface {
               new Web3jEth1Provider(web3j),
               eventBus,
               depositContractListener,
-              new DelayedExecutorAsyncRunner(),
+              DelayedExecutorAsyncRunner.create(),
               timeProvider);
       eth1DataManager.start();
     } else if (depositMode.equals(DEPOSIT_SIM)) {
@@ -160,7 +160,7 @@ public class PowchainService implements ServiceInterface {
               new Web3jEth1Provider(web3j),
               eventBus,
               depositContractListener,
-              new DelayedExecutorAsyncRunner(),
+              DelayedExecutorAsyncRunner.create(),
               timeProvider);
       eth1DataManager.start();
     }
