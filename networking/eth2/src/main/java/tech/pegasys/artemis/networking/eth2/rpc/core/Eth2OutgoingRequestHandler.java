@@ -55,6 +55,11 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
+  public void onActivation(final RpcStream rpcStream) {
+    // Nothing to do
+  }
+
+  @Override
   public void onData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf bytes) {
     if (responseHandler == null) {
       STDOUT.log(

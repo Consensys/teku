@@ -19,7 +19,6 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements RpcMethod {
@@ -113,8 +112,8 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
   }
 
   @Override
-  public RpcRequestHandler createIncomingRequestHandler() {
-    return new Eth2IncomingRequestHandler<>(this, peerLookup, localMessageHandler);
+  public Eth2IncomingRequestHandler<TRequest, TResponse> createIncomingRequestHandler() {
+    return new Eth2IncomingRequestHandler<>(asyncRunner, this, peerLookup, localMessageHandler);
   }
 
   public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
