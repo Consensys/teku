@@ -49,7 +49,9 @@ public class BeaconStateHandler implements Handler {
       method = HttpMethod.GET,
       summary = "Get the beacon chain state that matches the specified tree hash root.",
       tags = {"beacon"},
-      queryParams = {@OpenApiParam(name = "root")},
+      queryParams = {
+        @OpenApiParam(name = "root", description = "Tree hash root to query (Bytes32)")
+      },
       description =
           "Request that the node return a beacon chain state that matches the provided criteria.",
       responses = {
