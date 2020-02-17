@@ -60,7 +60,7 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void RestApiShouldHaveBeaconHeadEndpoint() throws Exception {
+  public void restApiShouldHaveBeaconHeadEndpoint() throws Exception {
     when(mockApp.server()).thenReturn(mockServer);
     new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
 
