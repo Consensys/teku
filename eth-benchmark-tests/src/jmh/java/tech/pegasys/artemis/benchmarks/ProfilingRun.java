@@ -41,7 +41,7 @@ public class ProfilingRun {
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
-    int validatorsCount = 10 * 1024;
+    int validatorsCount = 1 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
