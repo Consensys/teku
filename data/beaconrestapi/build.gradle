@@ -1,5 +1,9 @@
 dependencies {
     compile 'io.javalin:javalin'
+    implementation 'io.swagger.core.v3:swagger-core'
+    implementation 'org.webjars:swagger-ui'
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'io.github.classgraph:classgraph'
     implementation project(':util')
     implementation project(':data')
     implementation project(':ethereum:datastructures')

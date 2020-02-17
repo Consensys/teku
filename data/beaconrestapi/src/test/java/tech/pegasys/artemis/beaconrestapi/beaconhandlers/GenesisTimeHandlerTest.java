@@ -13,30 +13,38 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler.RequestParams;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-class GenesisTimeHandlerTest {
-  private final RequestParams requestParams = Mockito.mock(RequestParams.class);
+public class GenesisTimeHandlerTest {
+  private Context mockContext = mock(Context.class);
+  private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
+
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());
-  private final GenesisTimeHandler handler = new GenesisTimeHandler(storageClient);
 
   @Test
-  public void shouldReturnEmptyObjectWhenGenesisTimeIsNotSet() {
-    assertThat(handler.handleRequest(requestParams)).isEqualTo(null);
+  public void shouldReturnNoContentWhenGenesisTimeIsNotSet() throws Exception {
+    GenesisTimeHandler handler = new GenesisTimeHandler(null);
+    handler.handle(mockContext);
+
+    verify(mockContext).status(SC_NO_CONTENT);
   }
 
   @Test
-  public void shouldReturnGenesisTimeWhenSet() {
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
+  public void shouldReturnGenesisTimeWhenSet() throws Exception {
     storageClient.setGenesisTime(genesisTime);
-    assertThat(handler.handleRequest(requestParams)).isEqualTo(genesisTime);
+    GenesisTimeHandler handler = new GenesisTimeHandler(storageClient);
+    handler.handle(mockContext);
+
+    verify(mockContext).result(JsonProvider.objectToJSON(genesisTime));
   }
 }
