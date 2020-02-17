@@ -45,7 +45,7 @@ public class BeaconHeadHandler implements Handler {
     }
     Bytes32 headStateRoot = client.getBestBlockRootState().hash_tree_root();
     return BeaconHeadResponse.builder()
-        .best_slot(client.getBestSlot().longValue())
+        .slot(client.getBestSlot().longValue())
         .block_root(headBlockRoot.toHexString())
         .state_root(headStateRoot.toHexString())
         .build();

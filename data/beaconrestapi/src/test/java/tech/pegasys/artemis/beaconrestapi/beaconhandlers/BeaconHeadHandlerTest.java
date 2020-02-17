@@ -41,7 +41,7 @@ public class BeaconHeadHandlerTest {
     Bytes32 hashTreeRoot = Bytes32.random();
     BeaconHeadResponse head =
         BeaconHeadResponse.builder()
-            .best_slot(bestSlot.longValue())
+            .slot(bestSlot.longValue())
             .block_root(blockRoot.toHexString())
             .state_root(hashTreeRoot.toHexString())
             .build();

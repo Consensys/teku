@@ -23,14 +23,14 @@ public class BeaconHeadResponse {
   }
 
   public static class Builder {
-    private long best_slot;
+    private long slot;
     private String block_root;
     private String state_root;
 
     private Builder() {}
 
-    public Builder best_slot(long slot) {
-      this.best_slot = slot;
+    public Builder slot(long slot) {
+      this.slot = slot;
 
       return this;
     }
@@ -46,7 +46,7 @@ public class BeaconHeadResponse {
     }
 
     public BeaconHeadResponse build() {
-      return new BeaconHeadResponse(best_slot, block_root, state_root);
+      return new BeaconHeadResponse(slot, block_root, state_root);
     }
   }
 
