@@ -16,3 +16,9 @@ Any time a beacon node is in a pre-genesis state, it will be a valid condition t
 genesis time set. For this reason, it was deemed more appropriate to return:
 * 200 code and a numeric
 * 204 (no content)
+
+## /beacon/state
+
+In [Lighthouse]("https://lighthouse-book.sigmaprime.io/http_beacon.html#beaconstate") the beacon state can 
+be queried by slot or root, and only root search is currently implemented in Teku. eth2-api also suggests
+searching by slot.

@@ -22,7 +22,9 @@ import static org.mockito.Mockito.when;
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -56,5 +58,14 @@ class BeaconRestApiTest {
     new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
 
     verify(mockApp).get(eq(VersionHandler.ROUTE), any(VersionHandler.class));
+  }
+
+  @Test
+  @Disabled
+  public void RestApiShouldHavBeaconStateEndpoint() throws Exception {
+    when(mockApp.server()).thenReturn(mockServer);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+
+    verify(mockApp).get(eq(BeaconStateHandler.ROUTE), any(BeaconStateHandler.class));
   }
 }
