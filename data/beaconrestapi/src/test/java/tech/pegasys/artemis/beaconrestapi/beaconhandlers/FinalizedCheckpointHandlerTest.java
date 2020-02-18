@@ -46,7 +46,7 @@ public class FinalizedCheckpointHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenStoreIsNull() throws Exception {
-    GenesisTimeHandler handler = new GenesisTimeHandler(null);
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(null);
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);
