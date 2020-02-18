@@ -13,15 +13,15 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createAttestations;
+import static tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists.createDeposits;
 import static tech.pegasys.artemis.util.Waiter.ensureConditionRemainsMet;
 
 import com.google.common.eventbus.EventBus;
@@ -33,12 +33,14 @@ import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class ValidatorCoordinatorTest {
@@ -46,7 +48,9 @@ public class ValidatorCoordinatorTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private BlockAttestationsPool blockAttestationsPool;
   private AttestationAggregator attestationAggregator;
+  private DepositProvider depositProvider;
   private EventBus eventBus;
+  private List<ProposedBlockEvent> proposedBlockEvents;
   private ChainStorageClient storageClient;
   private ArtemisConfiguration config;
   private BeaconChainUtil chainUtil;
@@ -55,6 +59,8 @@ public class ValidatorCoordinatorTest {
 
   @BeforeEach
   void setup() {
+    Constants.GENESIS_SLOT = 0;
+    Constants.MIN_ATTESTATION_INCLUSION_DELAY = 0;
     config = mock(ArtemisConfiguration.class);
     when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
@@ -63,11 +69,14 @@ public class ValidatorCoordinatorTest {
 
     attestationAggregator = mock(AttestationAggregator.class);
     blockAttestationsPool = mock(BlockAttestationsPool.class);
+    depositProvider = mock(DepositProvider.class);
 
-    when(blockAttestationsPool.getAggregatedAttestationsForBlockAtSlot(any()))
-        .thenReturn(createAttestations());
+    when(depositProvider.getDeposits(any())).thenReturn(createDeposits());
 
-    eventBus = spy(new EventBus());
+    when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(createAttestations());
+
+    eventBus = new EventBus();
+    proposedBlockEvents = EventSink.capture(eventBus, ProposedBlockEvent.class);
     storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
     List<BLSKeyPair> blsKeyPairList =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, NUM_VALIDATORS);
@@ -92,7 +101,7 @@ public class ValidatorCoordinatorTest {
     createValidatorCoordinator(NUM_VALIDATORS);
     UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
     eventBus.post(new SlotEvent(newBlockSlot));
-    verify(eventBus, atLeastOnce()).post(blockWithSlot(newBlockSlot));
+    assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
   }
 
   @Test
@@ -100,7 +109,7 @@ public class ValidatorCoordinatorTest {
     createValidatorCoordinator(NUM_VALIDATORS);
     UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(2));
     eventBus.post(new SlotEvent(newBlockSlot));
-    verify(eventBus, atLeastOnce()).post(blockWithSlot(newBlockSlot));
+    assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
   }
 
   @Test
@@ -108,7 +117,7 @@ public class ValidatorCoordinatorTest {
     createValidatorCoordinator(NUM_VALIDATORS);
     UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(10));
     eventBus.post(new SlotEvent(newBlockSlot));
-    verify(eventBus, atLeastOnce()).post(blockWithSlot(newBlockSlot));
+    assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
   }
 
   private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
@@ -120,20 +129,10 @@ public class ValidatorCoordinatorTest {
             storageClient,
             attestationAggregator,
             blockAttestationsPool,
+            depositProvider,
             config);
 
     chainUtil.initializeStorage();
     return vc;
-  }
-
-  private Object blockWithSlot(final UnsignedLong slotNumber) {
-    return argThat(
-        argument -> {
-          if (!(argument instanceof BlockProposedEvent)) {
-            return false;
-          }
-          final BlockProposedEvent block = (BlockProposedEvent) argument;
-          return block.getBlock().getMessage().getSlot().equals(slotNumber);
-        });
   }
 }

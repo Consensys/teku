@@ -38,9 +38,9 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
 import tech.pegasys.artemis.statetransition.attestation.ForkChoiceAttestationProcessor;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAggregateEvent;
-import tech.pegasys.artemis.statetransition.events.ProcessedAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregateEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -155,11 +155,11 @@ class AttestationManagerTest {
     assertNoProcessedEvents();
 
     // Importing a different block shouldn't cause the attestation to be processed
-    eventBus.post(new BlockImportedEvent(DataStructureUtil.randomSignedBeaconBlock(2, seed++)));
+    eventBus.post(new ImportedBlockEvent(DataStructureUtil.randomSignedBeaconBlock(2, seed++)));
     verifyNoMoreInteractions(attestationProcessor);
     assertNoProcessedEvents();
 
-    eventBus.post(new BlockImportedEvent(block));
+    eventBus.post(new ImportedBlockEvent(block));
     verify(attestationProcessor, times(2)).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();

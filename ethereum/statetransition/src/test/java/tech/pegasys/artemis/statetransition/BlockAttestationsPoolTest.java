@@ -110,7 +110,7 @@ class BlockAttestationsPoolTest {
     pool.addAggregateAttestationProcessedInBlock(attestation);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
 
-    assertEquals(pool.getAggregatedAttestationsForBlockAtSlot(UnsignedLong.MAX_VALUE).size(), 0);
+    assertEquals(pool.getAttestationsForSlot(UnsignedLong.MAX_VALUE).size(), 0);
   }
 
   @Test
@@ -121,9 +121,7 @@ class BlockAttestationsPoolTest {
       pool.addUnprocessedAggregateAttestationToQueue(attestation);
     }
 
-    assertEquals(
-        pool.getAggregatedAttestationsForBlockAtSlot(UnsignedLong.MAX_VALUE).size(),
-        MAX_ATTESTATIONS);
+    assertEquals(pool.getAttestationsForSlot(UnsignedLong.MAX_VALUE).size(), MAX_ATTESTATIONS);
   }
 
   @Test
@@ -136,7 +134,7 @@ class BlockAttestationsPoolTest {
     }
 
     UnsignedLong CUTOFF_SLOT = UnsignedLong.valueOf(5);
-    pool.getAggregatedAttestationsForBlockAtSlot(CUTOFF_SLOT)
+    pool.getAttestationsForSlot(CUTOFF_SLOT)
         .forEach(
             attestation -> {
               assertTrue(attestation.getData().getSlot().compareTo(CUTOFF_SLOT) <= 0);
