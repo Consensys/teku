@@ -28,8 +28,8 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconHeadHandlerTest {
-  private Context mockContext = mock(Context.class);
-  private BeaconState mockRootState = mock(BeaconState.class);
+  private Context context = mock(Context.class);
+  private BeaconState rootState = mock(BeaconState.class);
   private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);
 
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
@@ -47,21 +47,21 @@ public class BeaconHeadHandlerTest {
             .build();
 
     when(storageClient.getBestBlockRoot()).thenReturn(blockRoot);
-    when(storageClient.getBestBlockRootState()).thenReturn(mockRootState);
-    when(mockRootState.hash_tree_root()).thenReturn(hashTreeRoot);
+    when(storageClient.getBestBlockRootState()).thenReturn(rootState);
+    when(rootState.hash_tree_root()).thenReturn(hashTreeRoot);
     when(storageClient.getBestSlot()).thenReturn(bestSlot);
 
-    handler.handle(mockContext);
+    handler.handle(context);
 
-    verify(mockContext).result(JsonProvider.objectToJSON(head));
+    verify(context).result(JsonProvider.objectToJSON(head));
   }
 
   @Test
   public void shouldReturnNoContentIfBlockRootNotSet() throws Exception {
     BeaconHeadHandler handler = new BeaconHeadHandler(storageClient);
     when(storageClient.getBestBlockRoot()).thenReturn(null);
-    handler.handle(mockContext);
+    handler.handle(context);
 
-    verify(mockContext).status(SC_NO_CONTENT);
+    verify(context).status(SC_NO_CONTENT);
   }
 }
