@@ -17,14 +17,12 @@ import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
@@ -42,8 +40,7 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
   private final ChainStorageClient chainStorageClient;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
 
-  @VisibleForTesting
-  NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
+  private NavigableMap<UnsignedLong, DepositWithIndex> depositNavigableMap = new TreeMap<>();
 
   public DepositProvider(ChainStorageClient chainStorageClient) {
     this.chainStorageClient = chainStorageClient;
@@ -53,21 +50,24 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
   public void onDepositsFromBlock(DepositsFromBlockEvent event) {
     event.getDeposits().stream()
         .map(DepositUtil::convertDepositEventToOperationDeposit)
-        .peek(deposit -> depositNavigableMap.put(deposit.getIndex(), deposit))
-        .map(Deposit::getData)
-        .map(DepositData::hash_tree_root)
-        .forEachOrdered(depositMerkleTree::add);
+        .forEach(
+            deposit -> {
+              synchronized (DepositProvider.this) {
+                depositNavigableMap.put(deposit.getIndex(), deposit);
+                depositMerkleTree.add(deposit.getData().hash_tree_root());
+              }
+            });
   }
 
   @Override
-  public void onFinalizedCheckpoint(FinalizedCheckpointEvent event) {
+  public synchronized void onFinalizedCheckpoint(FinalizedCheckpointEvent event) {
     BeaconState finalizedState =
         chainStorageClient
             .getBlockState(event.getCheckpoint().getRoot())
             .orElseThrow(
-                () -> new IllegalArgumentException("Finalized Checkpoint state can not be find."));
+                () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));
 
-    depositNavigableMap = depositNavigableMap.tailMap(finalizedState.getEth1_deposit_index(), true);
+    depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
   }
 
   public SSZList<Deposit> getDeposits(BeaconState state) {
@@ -88,6 +88,10 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
         Deposit.class);
   }
 
+  public int getDepositMapSize() {
+    return depositNavigableMap.size();
+  }
+
   // TODO: switch the MerkleTree to use UnsignedLongs instead of using toIntExact() here,
   //  it will result in an overflow at some point
   /**
@@ -96,15 +100,16 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
    * @return
    */
-  private List<Deposit> getDepositsWithProof(
+  private synchronized List<Deposit> getDepositsWithProof(
       UnsignedLong fromDepositIndex, UnsignedLong toDepositIndex, UnsignedLong eth1DepositCount) {
     return depositNavigableMap.subMap(fromDepositIndex, toDepositIndex).values().stream()
-        .peek(
+        .map(
             deposit ->
-                deposit.setProof(
+                new Deposit(
                     depositMerkleTree.getProofWithViewBoundary(
                         toIntExact(deposit.getIndex().longValue()),
-                        toIntExact(eth1DepositCount.longValue()))))
+                        toIntExact(eth1DepositCount.longValue())),
+                    deposit.getData()))
         .map(Deposit.class::cast)
         .collect(Collectors.toList());
   }

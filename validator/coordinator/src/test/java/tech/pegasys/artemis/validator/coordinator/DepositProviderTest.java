@@ -112,21 +112,12 @@ public class DepositProviderTest {
     when(chainStorageClient.getBlockState(eq(finalizedBlockRoot)))
         .thenReturn(Optional.ofNullable(beaconState));
 
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
+
     depositProvider.onFinalizedCheckpoint(
         new FinalizedCheckpointEvent(new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot)));
 
-    assertThat(depositProvider.depositNavigableMap)
-        .doesNotContainKeys(
-            UnsignedLong.valueOf(0),
-            UnsignedLong.valueOf(1),
-            UnsignedLong.valueOf(2),
-            UnsignedLong.valueOf(3),
-            UnsignedLong.valueOf(4),
-            UnsignedLong.valueOf(5),
-            UnsignedLong.valueOf(6),
-            UnsignedLong.valueOf(7),
-            UnsignedLong.valueOf(8),
-            UnsignedLong.valueOf(9));
+    assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
   }
 
   private void checkThatDepositProofIsValid(List<Deposit> deposits) {
