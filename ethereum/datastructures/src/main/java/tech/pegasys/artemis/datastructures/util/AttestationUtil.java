@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -38,11 +37,10 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
@@ -154,12 +152,10 @@ public class AttestationUtil {
       return false;
     }
 
-    SSZListRead<ValidatorRead> validators = state.getValidators();
     BLSPublicKey pubkey =
         bls_aggregate_pubkeys(
             attesting_indices.stream()
-                .map(i -> toIntExact(i.longValue()))
-                .map(i -> validators.get(i).getPubkey())
+                .map(i -> getValidatorPubKey(state, i))
                 .collect(Collectors.toList()));
 
     Bytes32 message_hash = indexed_attestation.getData().hash_tree_root();
@@ -174,6 +170,11 @@ public class AttestationUtil {
       return false;
     }
     return true;
+  }
+
+  private static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
+    return BeaconStateWithCache.getTransitionCaches(state).getValidatorsPubKeys()
+        .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
   }
 
   // Set bits of the newAttestation on the oldBitlist
