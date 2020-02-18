@@ -52,7 +52,7 @@ public class ProfilingRun {
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
-    int validatorsCount = 1 * 1024;
+    int validatorsCount = 10 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -82,7 +82,7 @@ public class ProfilingRun {
         long s = System.currentTimeMillis();
         localChain.setSlot(block.getSlot());
         BlockImportResult result = blockImporter.importBlock(block);
-        compareHashes(result.getBlockProcessingRecord().getPostState());
+//        compareHashes(result.getBlockProcessingRecord().getPostState());
         System.out.println(
             "Imported block at #"
                 + block.getSlot()

@@ -77,6 +77,11 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   @Override
   public R set(int index, R value) {
     int size = size();
+
+    // TODO temp workaround
+    if (index >= getType().getMaxLength()) {
+      return null;
+    }
     checkArgument(
         (index >= 0 && index < size) || (index == size && index < getType().getMaxLength()),
         "Index out of bounds: %s, size=%s",
