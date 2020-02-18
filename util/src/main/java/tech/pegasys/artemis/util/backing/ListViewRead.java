@@ -15,7 +15,7 @@ package tech.pegasys.artemis.util.backing;
 
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 
-public interface ListViewRead<C extends ViewRead> extends ListRead<C> {
+public interface ListViewRead<C extends ViewRead> extends CompositeViewRead<C> {
 
   @Override
   default ListViewWrite<C> createWritableCopy() {
@@ -24,4 +24,12 @@ public interface ListViewRead<C extends ViewRead> extends ListRead<C> {
 
   @Override
   ListViewType<C> getType();
+
+  @Override
+  int size();
+
+  default boolean isEmpty() {
+    return size() == 0;
+  }
+
 }
