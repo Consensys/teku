@@ -29,6 +29,7 @@ import tech.pegasys.artemis.beaconrestapi.schema.BeaconStateResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 
 public class BeaconStateHandler implements Handler {
   public static final String ROUTE = "/beacon/state/";
@@ -41,7 +42,11 @@ public class BeaconStateHandler implements Handler {
 
   private BeaconState queryByRootHash(String root) {
     Bytes32 root32 = Bytes32.fromHexString(root);
-    return client.getStore().getBlockState(root32);
+    Store store = client.getStore();
+    if (store == null) {
+      return client.getBlockState(root32).orElse(null);
+    }
+    return store.getBlockState(root32);
   }
 
   @OpenApi(
@@ -65,7 +70,7 @@ public class BeaconStateHandler implements Handler {
     String rootParam = ctx.queryParam("root");
     BeaconState result = queryByRootHash(rootParam);
     if (result == null) {
-      LOG.debug("Block root {} not found", rootParam);
+      LOG.trace("Block root {} not found", rootParam);
       ctx.status(SC_NOT_FOUND);
     } else {
       ctx.result(JsonProvider.objectToJSON(result));

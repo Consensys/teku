@@ -28,35 +28,35 @@ import tech.pegasys.artemis.storage.Store;
 
 public class BeaconStateHandlerTest {
 
-  private final ChainStorageClient mockStorageClient = mock(ChainStorageClient.class);
-  private final Store mockStore = mock(Store.class);
+  private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private final Store store = mock(Store.class);
   private final Bytes32 blockRoot = Bytes32.random();
-  private final Context mockContext = mock(Context.class);
-  private final BeaconState mockBeaconState = mock(BeaconState.class);
+  private final Context context = mock(Context.class);
+  private final BeaconState beaconState = mock(BeaconState.class);
 
   @Test
   public void shouldReturnNotFoundWhenQueryAgainstMissingRootObject() throws Exception {
-    BeaconStateHandler handler = new BeaconStateHandler(mockStorageClient);
+    BeaconStateHandler handler = new BeaconStateHandler(storageClient);
 
-    when(mockStorageClient.getStore()).thenReturn(mockStore);
-    when(mockStore.getBlockState(blockRoot)).thenReturn(null);
-    when(mockContext.queryParam("root")).thenReturn(blockRoot.toHexString());
+    when(storageClient.getStore()).thenReturn(store);
+    when(store.getBlockState(blockRoot)).thenReturn(null);
+    when(context.queryParam("root")).thenReturn(blockRoot.toHexString());
 
-    handler.handle(mockContext);
+    handler.handle(context);
 
-    verify(mockContext).status(SC_NOT_FOUND);
+    verify(context).status(SC_NOT_FOUND);
   }
 
   @Test
   public void shouldReturnBeaconStateObjectWhenFound() throws Exception {
-    BeaconStateHandler handler = new BeaconStateHandler(mockStorageClient);
+    BeaconStateHandler handler = new BeaconStateHandler(storageClient);
 
-    when(mockStorageClient.getStore()).thenReturn(mockStore);
-    when(mockStore.getBlockState(blockRoot)).thenReturn(mockBeaconState);
-    when(mockContext.queryParam("root")).thenReturn(blockRoot.toHexString());
+    when(storageClient.getStore()).thenReturn(store);
+    when(store.getBlockState(blockRoot)).thenReturn(beaconState);
+    when(context.queryParam("root")).thenReturn(blockRoot.toHexString());
 
-    handler.handle(mockContext);
+    handler.handle(context);
 
-    verify(mockContext).result(JsonProvider.objectToJSON(mockBeaconState));
+    verify(context).result(JsonProvider.objectToJSON(beaconState));
   }
 }
