@@ -20,6 +20,9 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomA
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBitlist;
 
 import com.google.common.primitives.UnsignedLong;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;

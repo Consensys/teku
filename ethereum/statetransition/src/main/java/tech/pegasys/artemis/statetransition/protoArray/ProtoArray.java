@@ -18,16 +18,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+import com.google.common.primitives.UnsignedLong;
+import org.apache.commons.lang3.builder.Diff;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.state.Validator;
 
-public class ProtoArray {
+import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getParticipantIndices;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_balance;
+import static tech.pegasys.artemis.statetransition.protoArray.DiffArray.createDiffArray;
+
+public class ProtoArray  {
 
   private List<ProtoBlock> array = new ArrayList<>();
-  private Map<Bytes32, Integer> blockRootToBlockIndex = new HashMap<>();
+  private Map<Bytes32, Integer> blockRootToIndex = new HashMap<>();
   private Map<Integer, Integer> validatorToLastVotedBlockIndex = new HashMap<>();
-  private Map<Integer, Integer> validatorToEffectiveBalance = new HashMap<>();
+  private Map<Integer, UnsignedLong> validatorToEffectiveBalance = new HashMap<>();
+  private int finalizedBlockIndex = 0;
+
+  public ProtoArray(BeaconState state) {
+    updateValidatorsEffectiveBalances(state);
+  }
 
   public synchronized void onBlock(SignedBeaconBlock signedBeaconBlock) {
     BeaconBlock beaconBlock = signedBeaconBlock.getMessage();
@@ -49,7 +65,7 @@ public class ProtoArray {
     ProtoBlock newProtoBlock = ProtoBlock.createNewProtoBlock(blockIndex, blockRoot, parentRoot);
     array.add(newProtoBlock);
 
-    blockRootToBlockIndex.put(blockRoot, blockIndex);
+    blockRootToIndex.put(blockRoot, blockIndex);
 
     // If block’s parent has a best child already, return
     Optional<Integer> maybeParentsBestChildIndex = parentProtoBlock.getBestChildIndex();
@@ -60,7 +76,120 @@ public class ProtoArray {
     parentProtoBlock.setBestDescendantIndex(blockIndex);
   }
 
+  public synchronized void onAttestations(BeaconState state, Attestation attestation) {
+    DiffArray diffArray = createDiffArray(finalizedBlockIndex, array.size());
+
+    if (getBlockIndex(attestation.getData().getBeacon_block_root()).isEmpty()) {
+      return;
+    }
+
+    int blockIndex = getBlockIndex(attestation.getData().getBeacon_block_root()).get();
+
+    List<Integer> participants = getParticipantIndices(state, attestation);
+
+    participants
+            .parallelStream()
+            .forEach(participantIndex -> {
+              clearParticipantsPreviousVoteWeights(diffArray, participantIndex);
+              updateLatestBlockVoteForValidator(participantIndex, blockIndex);
+            });
+
+    long totalWeightOfAttestation = get_total_balance(state, participants).longValue();
+    diffArray.noteChange(blockIndex, totalWeightOfAttestation);
+    applyDiffArray(diffArray);
+  }
+
+  public void onJustifiedCheckpoint(BeaconState state, Checkpoint justifiedCheckpoint) {
+    DiffArray diffArray = createDiffArray(finalizedBlockIndex, array.size());
+  }
+
+  private void applyDiffArray(DiffArray diffArray) {
+    for (int blockIndex = finalizedBlockIndex + array.size() - 1;
+         blockIndex >= 0;
+         blockIndex--) {
+      long weightDiff = diffArray.get(blockIndex);
+      if (weightDiff == 0L) {
+        continue;
+      }
+
+      ProtoBlock protoBlock = this.get(blockIndex);
+      protoBlock.modifyWeight(weightDiff);
+
+      getParentBlock(protoBlock).ifPresent(parentBlock -> {
+        maybeUpdateBestChild(protoBlock, parentBlock);
+        parentBlock.modifyWeight(weightDiff);
+      });
+    }
+  }
+
+  private Optional<ProtoBlock> getParentBlock(ProtoBlock childBlock) {
+    // Check if parent block is still in the array
+    Integer parentBlockIndex = blockRootToIndex.get(childBlock.getParentRoot());
+    if (parentBlockIndex == null) {
+      return Optional.empty();
+    }
+
+    return Optional.of(this.get(parentBlockIndex));
+  }
+
+  private void maybeUpdateBestChild(ProtoBlock protoBlock, ProtoBlock parentBlock) {
+    int blockIndex = blockRootToIndex.get(protoBlock.getRoot());
+    Integer bestChildIndex = parentBlock.getBestChildIndex().orElse(-1);
+    if (bestChildIndex == blockIndex) {
+      return;
+    }
+
+    // If the parent block does not have a best child yet or the best child has lower
+    // weight than the current block:
+    // - set parent's best child to current block
+    // - set parent's best descendant to current block's best descendant
+    if (bestChildIndex == -1 ||
+            protoBlock.getWeight().compareTo(this.get(bestChildIndex).getWeight()) > 0) {
+      parentBlock.setBestChildIndex(blockIndex);
+      parentBlock.setBestDescendantIndex(protoBlock.getBestDescendantIndex());
+    }
+  }
+
+  private ProtoBlock get(int blockIndex) {
+    return array.get(blockIndex - finalizedBlockIndex);
+  }
+
+  private void set(int blockIndex, ProtoBlock block) {
+    array.set(blockIndex - finalizedBlockIndex, block);
+  }
+
   private Optional<ProtoBlock> getProtoBlock(Bytes32 root) {
-    return Optional.ofNullable(blockRootToBlockIndex.get(root)).map(index -> array.get(index));
+    return Optional.ofNullable(blockRootToIndex.get(root)).map(index -> array.get(index));
+  }
+
+  private void updateLatestBlockVoteForValidator(int validatorIndex, int blockIndex) {
+    validatorToLastVotedBlockIndex.put(validatorIndex, blockIndex);
+  }
+
+  private Optional<Integer> getBlockIndex(Bytes32 blockRoot) {
+    return Optional.ofNullable(blockRootToIndex.get(blockRoot));
+  }
+
+  private Optional<Integer> getParentIndex(Bytes32 blockRoot) {
+    return Optional.ofNullable(blockRootToIndex.get(blockRoot));
+  }
+
+  private void clearParticipantsPreviousVoteWeights(
+          DiffArray diffArray,
+          int validatorIndex) {
+    int latestVotedBlockIndex = validatorToLastVotedBlockIndex.get(validatorIndex);
+    long effectiveBalance = validatorToEffectiveBalance.get(validatorIndex).longValue();
+    diffArray.noteChange(latestVotedBlockIndex, -effectiveBalance);
+  }
+
+  private void updateValidatorsEffectiveBalances(BeaconState newState) {
+    List<Validator> validatorList = newState.getValidators();
+    for (int validatorIndex = 0;
+         validatorIndex < validatorList.size();
+         validatorIndex++) {
+      validatorToEffectiveBalance.put(
+              validatorIndex,
+              validatorList.get(validatorIndex).getEffective_balance());
+    }
   }
 }

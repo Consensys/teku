@@ -73,6 +73,14 @@ public class ProtoBlock {
     this.weight = weight;
   }
 
+  public void modifyWeight(long weightChange) {
+    if (weightChange < 0) {
+      weight = weight.minus(UnsignedLong.valueOf(-weightChange));
+    } else {
+      weight = weight.plus(UnsignedLong.valueOf(weightChange));
+    }
+  }
+
   public Bytes32 getRoot() {
     return root;
   }

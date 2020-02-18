@@ -32,7 +32,9 @@
 
 #### `ApplyDiffArray(DiffArray)`:
 - iterate from the head of the array down until the latest finalized block:
-    - whenever you see a weight change noted on the diff array, apply that change to the weight of the element in the proto-array
+    - whenever you see a weight change noted on the diff array:
+        - apply that change to the weight of the element in the proto-array
+        - apply that change to the weight of the parent of that element in the proto-array
     - check if the best child of the parent is a different block:
         - if yes, compare the new weight of the current block with the best child:
             - if the current block has higher weight:
