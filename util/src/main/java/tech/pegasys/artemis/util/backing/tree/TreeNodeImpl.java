@@ -86,7 +86,9 @@ public class TreeNodeImpl {
 
     @Override
     public String toString() {
-      return "(" + left + ", " + right + ')';
+      return "(" +
+          (left == right ? "default" : left + ", " + right)
+          + ')';
     }
   }
 
