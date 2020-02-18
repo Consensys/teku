@@ -43,8 +43,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
@@ -119,7 +120,7 @@ public class StateTransition {
   }
 
   private static boolean verify_block_signature(
-      final BeaconState state, SignedBeaconBlock signed_block) {
+      final BeaconStateRead state, SignedBeaconBlock signed_block) {
     final ValidatorRead proposer = state.getValidators().get(get_beacon_proposer_index(state));
     final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
     return BLSVerify.bls_verify(
@@ -160,7 +161,7 @@ public class StateTransition {
    * @param state
    * @throws EpochProcessingException
    */
-  private static void process_epoch(BeaconStateWithCache state) throws EpochProcessingException {
+  private static void process_epoch(BeaconStateWrite state) throws EpochProcessingException {
     // Note: the lines with @ label here will be inserted here in a future phase
     process_justification_and_finalization(state);
     process_rewards_and_penalties(state);
@@ -180,7 +181,7 @@ public class StateTransition {
    *
    * @param state
    */
-  private static void process_slot(BeaconState state) {
+  private static void process_slot(BeaconStateWrite state) {
     // Cache state root
     Bytes32 previous_state_root = state.hash_tree_root();
     int index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
@@ -213,7 +214,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public void process_slots(BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
+  public void process_slots(BeaconStateWrite state, UnsignedLong slot, boolean printEnabled)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(

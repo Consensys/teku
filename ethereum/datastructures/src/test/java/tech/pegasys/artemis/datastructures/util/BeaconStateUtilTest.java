@@ -39,7 +39,8 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -140,7 +141,7 @@ class BeaconStateUtilTest {
   @Test
   void getTotalBalanceAddsAndReturnsEffectiveTotalBalancesCorrectly() {
     // Data Setup
-    BeaconState state = createBeaconState();
+    BeaconStateRead state = createBeaconState();
     Committee committee = new Committee(UnsignedLong.ONE, Arrays.asList(0, 1, 2));
 
     // Calculate Expected Results
@@ -160,7 +161,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
-    BeaconState beaconState = createBeaconState();
+    BeaconStateWrite beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
@@ -169,7 +170,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
-    BeaconState beaconState = createBeaconState();
+    BeaconStateWrite beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
@@ -178,7 +179,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
-    BeaconState beaconState = createBeaconState();
+    BeaconStateWrite beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(
         UnsignedLong.valueOf(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH));
     assertEquals(
@@ -188,7 +189,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
-    BeaconState beaconState = createBeaconState();
+    BeaconStateWrite beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
@@ -269,13 +270,13 @@ class BeaconStateUtilTest {
     // assertThat(is_power_of_two(UnsignedLong.fromLongBits(0x8000000000000000L))).isEqualTo(true);
   }
 
-  private BeaconState createBeaconState() {
+  private BeaconStateRead createBeaconState() {
     return createBeaconState(false, null, null);
   }
 
-  private BeaconState createBeaconState(
+  private BeaconStateRead createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
-    BeaconState beaconState = new BeaconState();
+    BeaconStateWrite beaconState = BeaconStateRead.createEmpty().createWritableCopy();
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
@@ -299,7 +300,7 @@ class BeaconStateUtilTest {
         SSZList.create(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
     beaconState.getBalances().addAll(
         SSZList.create(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
-    return beaconState;
+    return beaconState.commitChanges();
   }
 
   // *************** START Shuffling Tests ***************
@@ -338,7 +339,7 @@ class BeaconStateUtilTest {
   void processDepositsShouldIgnoreInvalidSignedDeposits() {
     ArrayList<DepositWithIndex> deposits = randomDeposits(3, 100);
     deposits.get(1).getData().setSignature(BLSSignature.empty());
-    BeaconState state =
+    BeaconStateRead state =
         initialize_beacon_state_from_eth1(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
     assertEquals(2, state.getValidators().size());
     assertEquals(deposits.get(0).getData().getPubkey(), state.getValidators().get(0).getPubkey());

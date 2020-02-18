@@ -41,6 +41,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
@@ -223,7 +224,7 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static BeaconState getBeaconState(Map map) {
+  private static BeaconStateRead getBeaconState(Map map) {
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     Fork fork = getFork((Map) map.get("fork"));
@@ -307,7 +308,7 @@ public class MapObjectUtil {
         getCheckpoint((Map) map.get("current_justified_checkpoint"));
     Checkpoint finalized_checkpoint = getCheckpoint((Map) map.get("finalized_checkpoint"));
 
-    return new BeaconState(
+    return BeaconStateRead.create(
         genesis_time,
         slot,
         fork,

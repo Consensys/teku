@@ -30,6 +30,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.StateTransition;
@@ -124,7 +125,7 @@ public class TransitionCommand implements Runnable {
 
       final StateTransition stateTransition = new StateTransition(false);
       try {
-        BeaconState result = transition.applyTransition(state, stateTransition);
+        BeaconStateRead result = transition.applyTransition(state, stateTransition);
         out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
       } catch (final StateTransitionException
           | EpochProcessingException
@@ -185,7 +186,7 @@ public class TransitionCommand implements Runnable {
   }
 
   private interface StateTransitionFunction {
-    BeaconState applyTransition(BeaconStateWithCache state, StateTransition stateTransition)
+    BeaconStateRead applyTransition(BeaconStateWithCache state, StateTransition stateTransition)
         throws StateTransitionException, EpochProcessingException, SlotProcessingException,
             IOException;
   }

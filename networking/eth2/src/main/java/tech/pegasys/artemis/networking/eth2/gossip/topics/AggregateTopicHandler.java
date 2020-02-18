@@ -24,7 +24,7 @@ import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
@@ -53,7 +53,7 @@ public class AggregateTopicHandler extends Eth2TopicHandler<AggregateAndProof> {
   @Override
   protected boolean validateData(final AggregateAndProof aggregateAndProof) {
     final Attestation attestation = aggregateAndProof.getAggregate();
-    final BeaconState state =
+    final BeaconStateRead state =
         chainStorageClient.getStore().getBlockState(attestation.getData().getBeacon_block_root());
     if (state == null) {
       LOG.trace(

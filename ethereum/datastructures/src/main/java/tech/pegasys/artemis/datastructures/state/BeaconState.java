@@ -130,7 +130,7 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
     super(type, backingNode);
   }
 
-  public BeaconState(
+  BeaconState(
       // Versioning
       UnsignedLong genesis_time,
       UnsignedLong slot,
@@ -189,11 +189,11 @@ public class BeaconState extends ContainerViewImpl<BeaconState> implements
     setFinalized_checkpoint(finalized_checkpoint);
   }
 
-  public BeaconState() {
+  BeaconState() {
     super(TYPE);
   }
 
-  public BeaconState(BeaconState state) {
+  BeaconState(BeaconStateRead state) {
     this(TYPE, state.getBackingNode());
   }
 

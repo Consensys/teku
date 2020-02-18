@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -43,7 +44,7 @@ public class initialization extends TestSuite {
       Bytes32 eth1_block_hash,
       String testName,
       List<? extends Deposit> deposits) {
-    BeaconState beaconState =
+    BeaconStateRead beaconState =
         initialize_beacon_state_from_eth1(eth1_block_hash, eth1_timestamp, deposits);
     Assertions.assertEquals(state, beaconState);
   }

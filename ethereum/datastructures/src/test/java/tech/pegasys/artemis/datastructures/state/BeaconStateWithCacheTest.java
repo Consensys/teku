@@ -37,12 +37,12 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateWithCacheTest {
 
-  private BeaconState newState(int numDeposits) {
+  private BeaconStateRead newState(int numDeposits) {
 
     try {
 
       // Initialize state
-      BeaconState state =
+      BeaconStateRead state =
           initialize_beacon_state_from_eth1(
               Bytes32.ZERO, UnsignedLong.ZERO, randomDeposits(numDeposits, 100));
 

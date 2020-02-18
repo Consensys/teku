@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
@@ -71,7 +71,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
       return false;
     }
 
-    final BeaconState preState =
+    final BeaconStateRead preState =
         chainStorageClient.getStore().getBlockState(block.getMessage().getParent_root());
     if (preState == null) {
       // Post event even if we don't have the prestate
@@ -94,7 +94,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     return true;
   }
 
-  private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconState preState) {
+  private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconStateRead preState) {
     final StateTransition stateTransition = new StateTransition(false);
     final BeaconStateWithCache postState = BeaconStateWithCache.fromBeaconState(preState);
 

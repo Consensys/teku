@@ -19,8 +19,6 @@ import com.google.common.eventbus.EventBus;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.tuweni.ssz.SSZ;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Disabled;
@@ -29,16 +27,12 @@ import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.backing.ListViewRead;
-import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
-import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -54,7 +48,7 @@ public class ProfilingRun {
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
-    int validatorsCount = 1 * 1024;
+    int validatorsCount = 10 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -97,7 +91,7 @@ public class ProfilingRun {
   }
 
   @Test
-  void compareHashes(BeaconState s1) {
+  void compareHashes(BeaconStateRead s1) {
     for (int i = 0; i < s1.size(); i++) {
       Bytes32 hash = s1.get(i).hashTreeRoot();
       System.out.println(i + ": " + hash);
@@ -133,7 +127,7 @@ public class ProfilingRun {
     System.out.println("getJustification_bits: " + HashTreeUtil.hash_tree_root_bitvector(s1.getJustification_bits()));
   }
 
-  public Bytes32 old_hash_tree_root(BeaconState s) {
+  public Bytes32 old_hash_tree_root(BeaconStateRead s) {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             // Versioning

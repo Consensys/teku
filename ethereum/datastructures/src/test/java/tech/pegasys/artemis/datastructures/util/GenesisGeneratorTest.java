@@ -30,8 +30,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
@@ -65,7 +66,7 @@ class GenesisGeneratorTest {
 
     final UnsignedLong genesisTime = UnsignedLong.valueOf(982928293223232L);
 
-    final BeaconState expectedState =
+    final BeaconStateRead expectedState =
         BeaconStateUtil.initialize_beacon_state_from_eth1(
             eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
 
@@ -75,7 +76,7 @@ class GenesisGeneratorTest {
     genesisGenerator.addDepositsFromBlock(
         eth1BlockHash2, genesisTime, INITIAL_DEPOSITS.subList(8, INITIAL_DEPOSITS.size()));
 
-    final BeaconState actualState = genesisGenerator.getGenesisState();
+    final BeaconStateRead actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isEqualTo(expectedState);
     assertThat(get_active_validator_indices(expectedState, GENESIS_EPOCH))
         .hasSize(VALIDATOR_KEYS.size());
@@ -87,7 +88,7 @@ class GenesisGeneratorTest {
       genesisGenerator.addDepositsFromBlock(
           Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
 
-      final BeaconState state = genesisGenerator.getGenesisState();
+      final BeaconStateRead state = genesisGenerator.getGenesisState();
       assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
     }
   }
@@ -96,7 +97,7 @@ class GenesisGeneratorTest {
   public void shouldNotCacheActiveValidators() {
     // get_active_validator_indices caches the results based on the epoch. Since we keep adding
     // validators to the genesis epoch we must ensure they aren't cached.
-    final Predicate<BeaconState> validityCriteria =
+    final Predicate<BeaconStateRead> validityCriteria =
         candidate -> get_active_validator_indices(candidate, GENESIS_EPOCH).size() == 2;
 
     genesisGenerator.addDepositsFromBlock(
@@ -106,7 +107,7 @@ class GenesisGeneratorTest {
     // Now we should have two validators, not the 1 that would have been cached before.
     genesisGenerator.addDepositsFromBlock(
         Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(1)));
-    final Optional<BeaconState> state =
+    final Optional<BeaconStateWrite> state =
         genesisGenerator.getGenesisStateIfValid(validityCriteria);
     assertThat(state).isNotEmpty();
 
@@ -130,7 +131,7 @@ class GenesisGeneratorTest {
     deposits.add(0, new Deposit(invalidData));
 
     genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
-    final BeaconState state = genesisGenerator.getGenesisState();
+    final BeaconStateRead state = genesisGenerator.getGenesisState();
     // All deposits were processed
     assertThat(state.getEth1_deposit_index()).isEqualTo(UnsignedLong.valueOf(deposits.size()));
     // But one didn't result in a new validator

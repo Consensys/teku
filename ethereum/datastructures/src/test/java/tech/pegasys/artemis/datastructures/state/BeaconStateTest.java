@@ -16,15 +16,11 @@ package tech.pegasys.artemis.datastructures.state;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
@@ -309,40 +305,6 @@ class BeaconStateTest {
     }
   }
   */
-
-
-  @Test
-  void compareHashes() {
-    BeaconState s1 = new BeaconState();
-    System.out.println("BS: " + s1.hash_tree_root());
-    System.out.println("getEth1_data: " + s1.getEth1_data().hash_tree_root());
-    System.out.println("getValidators: " + s1.getValidators().hash_tree_root());
-    System.out.println(
-        "getValidators: " + HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE,
-            Constants.VALIDATOR_REGISTRY_LIMIT, s1.getValidators()));
-    System.out.println("getBlock_roots: " + s1.getBlock_roots().hash_tree_root());
-    System.out.println("getBlock_roots: " + HashTreeUtil.hash_tree_root(
-        SSZTypes.VECTOR_OF_COMPOSITE, s1.getBlock_roots()));
-
-    System.out.println("getHistorical_roots: " + s1.getHistorical_roots().hash_tree_root());
-    System.out.println("getHistorical_roots: " + HashTreeUtil.hash_tree_root(
-        SSZTypes.LIST_OF_COMPOSITE, Constants.HISTORICAL_ROOTS_LIMIT, s1.getHistorical_roots()));
-
-    System.out.println("getEth1_data_votes: " + s1.getEth1_data_votes().hash_tree_root());
-    System.out.println("getEth1_data_votes: " + HashTreeUtil.hash_tree_root(
-        SSZTypes.LIST_OF_COMPOSITE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD, s1.getEth1_data_votes()));
-
-    System.out.println("getBalances: " + s1.getBalances().hash_tree_root());
-    System.out.println("getBalances: " + HashTreeUtil.hash_tree_root_list_ul(
-        Constants.VALIDATOR_REGISTRY_LIMIT,
-        s1.getBalances().stream()
-            .map(item -> SSZ.encodeUInt64(item.longValue()))
-            .collect(Collectors.toList())));
-
-
-    System.out.println("getJustification_bits: " + HashTreeUtil.hash_tree_root_bitvector(s1.getJustification_bits()));
-  }
-
 
   @Test
   void vectorLengthsTest() {

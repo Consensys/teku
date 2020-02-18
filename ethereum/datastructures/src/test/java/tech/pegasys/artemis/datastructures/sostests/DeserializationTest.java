@@ -36,6 +36,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -156,7 +157,7 @@ public class DeserializationTest {
 
   @Test
   void BeaconStateTest() {
-    BeaconState beaconState = randomBeaconState(100);
+    BeaconStateRead beaconState = randomBeaconState(100);
     Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
     BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconState.class);
     assertEquals(beaconState, state);

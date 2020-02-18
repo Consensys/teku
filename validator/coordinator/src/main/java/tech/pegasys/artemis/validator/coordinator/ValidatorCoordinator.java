@@ -47,7 +47,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.ValidatorRead;
@@ -125,7 +125,7 @@ public class ValidatorCoordinator {
 
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = chainStorageClient.getBestBlockRoot();
-    final BeaconState genesisState = store.getBlockState(head);
+    final BeaconStateRead genesisState = store.getBlockState(head);
 
     // Get validator indices of our own validators
     getIndicesOfOurValidators(genesisState, validators);
@@ -146,7 +146,7 @@ public class ValidatorCoordinator {
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
     UnsignedLong slot = slotEvent.getSlot();
-    BeaconState headState =
+    BeaconStateRead headState =
         chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
     BeaconBlock headBlock =
         chainStorageClient.getStore().getBlock(chainStorageClient.getBestBlockRoot());
@@ -191,7 +191,7 @@ public class ValidatorCoordinator {
     try {
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
-      BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
+      BeaconStateRead headState = store.getBlockState(event.getHeadBlockRoot());
       UnsignedLong slot = event.getNodeSlot();
 
       if (!isGenesis(slot) && isEpochStart(slot)) {
@@ -236,7 +236,7 @@ public class ValidatorCoordinator {
   }
 
   private void produceAttestations(
-      BeaconState state,
+      BeaconStateRead state,
       BLSPublicKey attester,
       int indexIntoCommittee,
       Committee committee,
@@ -256,7 +256,7 @@ public class ValidatorCoordinator {
   }
 
   private void createBlockIfNecessary(
-      BeaconState previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
+      BeaconStateRead previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
     try {
 
       BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(previousState);
@@ -315,7 +315,7 @@ public class ValidatorCoordinator {
     return attestations;
   }
 
-  private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
+  private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconStateRead state) {
     SSZList<ProposerSlashing> slashingsForBlock = BeaconBlockBodyLists.createProposerSlashings();
     ProposerSlashing slashing = slashings.poll();
     while (slashing != null) {
@@ -344,7 +344,7 @@ public class ValidatorCoordinator {
   @VisibleForTesting
   void asyncProduceAttestations(
       List<AttesterInformation> attesterInformations,
-      BeaconState state,
+      BeaconStateRead state,
       AttestationData genericAttestationData) {
     reportExceptions(
         CompletableFuture.runAsync(
@@ -363,7 +363,7 @@ public class ValidatorCoordinator {
 
   @VisibleForTesting
   static void getIndicesOfOurValidators(
-      BeaconState state, Map<BLSPublicKey, ValidatorInfo> validators) {
+      BeaconStateRead state, Map<BLSPublicKey, ValidatorInfo> validators) {
     SSZListRead<ValidatorRead> validatorRegistry = state.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(

@@ -41,7 +41,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.statetransition.StateTransition;
@@ -101,7 +101,7 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_latest_attesting_balance</a>
    */
   public static UnsignedLong get_latest_attesting_balance(Store store, Bytes32 root) {
-    BeaconState state = store.getCheckpointState(store.getJustifiedCheckpoint());
+    BeaconStateRead state = store.getCheckpointState(store.getJustifiedCheckpoint());
     List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
     return UnsignedLong.valueOf(
         active_indices.stream()
@@ -140,7 +140,7 @@ public class ForkChoiceUtil {
       return false;
     }
 
-    BeaconState head_state = store.getBlockState(block_root);
+    BeaconStateRead head_state = store.getBlockState(block_root);
     boolean correct_justified =
         store.getJustifiedCheckpoint().getEpoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))
             || head_state.getCurrent_justified_checkpoint().equals(store.getJustifiedCheckpoint());
@@ -289,7 +289,7 @@ public class ForkChoiceUtil {
   public static BlockImportResult on_block(
       Store.Transaction store, SignedBeaconBlock signed_block, StateTransition st) {
     final BeaconBlock block = signed_block.getMessage();
-    final BeaconState preState = store.getBlockState(block.getParent_root());
+    final BeaconStateRead preState = store.getBlockState(block.getParent_root());
 
     // Return early if precondition checks fail;
     final Optional<BlockImportResult> maybeFailure =
@@ -352,7 +352,7 @@ public class ForkChoiceUtil {
   }
 
   private static Optional<BlockImportResult> checkOnBlockPreconditions(
-      final BeaconBlock block, final BeaconState preState, final ReadOnlyStore store) {
+      final BeaconBlock block, final BeaconStateRead preState, final ReadOnlyStore store) {
     if (preState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
     }
@@ -457,7 +457,7 @@ public class ForkChoiceUtil {
     }
 
     // Store target checkpoint state if not yet seen
-    BeaconState targetRootState = store.getBlockState(target.getRoot());
+    BeaconStateRead targetRootState = store.getBlockState(target.getRoot());
     try {
       storeCheckpointState(store, stateTransition, target, targetRootState);
     } catch (SlotProcessingException e) {
@@ -465,7 +465,7 @@ public class ForkChoiceUtil {
     } catch (EpochProcessingException e) {
       return AttestationProcessingResult.failedStateTransition(e);
     }
-    BeaconState target_state = store.getCheckpointState(target);
+    BeaconStateRead target_state = store.getCheckpointState(target);
 
     // Get state at the `target` to validate attestation and calculate the committees
     IndexedAttestation indexed_attestation = get_indexed_attestation(target_state, attestation);
@@ -488,10 +488,10 @@ public class ForkChoiceUtil {
       final Transaction store,
       final StateTransition stateTransition,
       final Checkpoint target,
-      final BeaconState targetRootState)
+      final BeaconStateRead targetRootState)
       throws SlotProcessingException, EpochProcessingException {
     if (!store.containsCheckpointState(target)) {
-      final BeaconState targetState;
+      final BeaconStateRead targetState;
       if (target.getEpochSlot().equals(targetRootState.getSlot())) {
         targetState = targetRootState;
       } else {

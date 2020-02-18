@@ -33,7 +33,7 @@ import tech.pegasys.artemis.benchmarks.gen.BlockIO.Writer;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -50,12 +50,13 @@ public class Generator {
   @Test
   public void generateBlocks() throws Exception {
 
-    Constants.SLOTS_PER_EPOCH = 6;
+    Constants.setConstants("mainnet");
+//    Constants.SLOTS_PER_EPOCH = 6;
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     System.out.println("Generating keypairs...");
-    int validatorsCount = 1 * 1024;
+    int validatorsCount = 32 * 1024;
 
     List<BLSKeyPair> validatorKeys =
         BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
@@ -108,7 +109,7 @@ public class Generator {
                   + " ms");
         }
 
-        Optional<BeaconState> bestState =
+        Optional<BeaconStateRead> bestState =
             localStorage.getBlockState(localStorage.getBestBlockRoot());
         System.out.println("Epoch done: " + bestState);
       }
@@ -143,7 +144,7 @@ public class Generator {
     }
   }
 
-  String getCommittees(BeaconState state) {
+  String getCommittees(BeaconStateRead state) {
     UnsignedLong cnt = get_committee_count_at_slot(state, state.getSlot());
     List<List<Integer>> committees = new ArrayList<>();
     for (UnsignedLong index = UnsignedLong.ZERO;

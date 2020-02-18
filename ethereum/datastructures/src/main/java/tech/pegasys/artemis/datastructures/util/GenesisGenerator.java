@@ -35,8 +35,8 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.ValidatorWrite;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -44,7 +44,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {
-  private final BeaconState state = new BeaconState();
+  private final BeaconStateWrite state = BeaconStateRead.createEmpty().createWritableCopy();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
   private final SSZList<DepositData> depositDataList =
@@ -103,18 +103,18 @@ public class GenesisGenerator {
     }
   }
 
-  public BeaconState getGenesisState() {
+  public BeaconStateWrite getGenesisState() {
     return getGenesisStateIfValid(state -> true).orElseThrow();
   }
 
-  public Optional<BeaconState> getGenesisStateIfValid(
-      Predicate<BeaconState> validityCriteria) {
+  public Optional<BeaconStateWrite> getGenesisStateIfValid(
+      Predicate<BeaconStateRead> validityCriteria) {
     if (!validityCriteria.test(state)) {
       return Optional.empty();
     }
 
     finalizeState();
-    return Optional.of(BeaconStateWithCache.deepCopy(state));
+    return Optional.of(state);
   }
 
   private void finalizeState() {

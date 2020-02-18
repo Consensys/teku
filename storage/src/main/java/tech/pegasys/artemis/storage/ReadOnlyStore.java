@@ -18,7 +18,7 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
 public interface ReadOnlyStore {
@@ -41,11 +41,11 @@ public interface ReadOnlyStore {
 
   Set<Bytes32> getBlockRoots();
 
-  BeaconState getBlockState(Bytes32 blockRoot);
+  BeaconStateRead getBlockState(Bytes32 blockRoot);
 
   boolean containsBlockState(Bytes32 blockRoot);
 
-  BeaconState getCheckpointState(Checkpoint checkpoint);
+  BeaconStateRead getCheckpointState(Checkpoint checkpoint);
 
   boolean containsCheckpointState(Checkpoint checkpoint);
 

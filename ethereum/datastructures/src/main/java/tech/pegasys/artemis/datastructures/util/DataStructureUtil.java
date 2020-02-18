@@ -42,7 +42,8 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
@@ -346,8 +347,8 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed++));
   }
 
-  public static BeaconState randomBeaconState(int seed) {
-    return new BeaconState(
+  public static BeaconStateRead randomBeaconState(int seed) {
+    return BeaconStateRead.create(
         randomUnsignedLong(seed),
         randomUnsignedLong(seed++),
         randomFork(seed++),
@@ -394,9 +395,9 @@ public final class DataStructureUtil {
         randomCheckpoint(seed++));
   }
 
-  public static BeaconState randomBeaconState(UnsignedLong slot, int seed) {
-    BeaconState randomBeaconState = randomBeaconState(seed);
+  public static BeaconStateRead randomBeaconState(UnsignedLong slot, int seed) {
+    BeaconStateWrite randomBeaconState = randomBeaconState(seed).createWritableCopy();
     randomBeaconState.setSlot(slot);
-    return randomBeaconState;
+    return randomBeaconState.commitChanges();
   }
 }

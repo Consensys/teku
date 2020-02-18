@@ -22,12 +22,12 @@ public final class BeaconStateWithCache extends BeaconState {
     transitionCaches = state.transitionCaches;
   }
 
-  private BeaconStateWithCache(BeaconState state) {
+  private BeaconStateWithCache(BeaconStateRead state) {
     super(state);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
-  public static BeaconStateWithCache deepCopy(BeaconState state) {
+  public static BeaconStateWithCache deepCopy(BeaconStateRead state) {
     if (state instanceof BeaconStateWithCache) {
       return new BeaconStateWithCache((BeaconStateWithCache) state);
     } else {
@@ -41,7 +41,7 @@ public final class BeaconStateWithCache extends BeaconState {
    * @param state state to create from
    * @return created state with empty caches
    */
-  public static BeaconStateWithCache fromBeaconState(BeaconState state) {
+  public static BeaconStateWithCache fromBeaconState(BeaconStateRead state) {
     if (state instanceof BeaconStateWithCache) {
       return (BeaconStateWithCache) state;
     } else {
@@ -49,7 +49,7 @@ public final class BeaconStateWithCache extends BeaconState {
     }
   }
 
-  public static TransitionCaches getTransitionCaches(BeaconState state) {
+  public static TransitionCaches getTransitionCaches(BeaconStateRead state) {
     return state instanceof BeaconStateWithCache
         ? ((BeaconStateWithCache) state).getTransitionCaches()
         : TransitionCaches.getNoOp();

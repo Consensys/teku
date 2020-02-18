@@ -30,7 +30,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -51,7 +52,7 @@ class BlockProcessorUtilTest {
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = deposit.getData().getAmount();
 
-    BeaconState beaconState = createBeaconState();
+    BeaconStateWrite beaconState = createBeaconState().createWritableCopy();
 
     int originalValidatorRegistrySize = beaconState.getValidators().size();
     int originalValidatorBalancesSize = beaconState.getBalances().size();
@@ -102,7 +103,7 @@ class BlockProcessorUtilTest {
             Constants.FAR_FUTURE_EPOCH,
             Constants.FAR_FUTURE_EPOCH);
 
-    BeaconState beaconState = createBeaconState(amount, knownValidator);
+    BeaconStateWrite beaconState = createBeaconState(amount, knownValidator).createWritableCopy();
 
     int originalValidatorRegistrySize = beaconState.getValidators().size();
     int originalValidatorBalancesSize = beaconState.getBalances().size();
@@ -123,17 +124,17 @@ class BlockProcessorUtilTest {
         beaconState.getBalances().get(originalValidatorBalancesSize - 1));
   }
 
-  private BeaconState createBeaconState() {
+  private BeaconStateRead createBeaconState() {
     return createBeaconState(false, null, null);
   }
 
-  private BeaconState createBeaconState(UnsignedLong amount, Validator knownValidator) {
+  private BeaconStateRead createBeaconState(UnsignedLong amount, Validator knownValidator) {
     return createBeaconState(true, amount, knownValidator);
   }
 
-  private BeaconState createBeaconState(
+  private BeaconStateRead createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
-    BeaconState beaconState = new BeaconState();
+    BeaconStateWrite beaconState = BeaconStateRead.createEmpty().createWritableCopy();
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
@@ -160,6 +161,6 @@ class BlockProcessorUtilTest {
 
     beaconState.getValidators().addAll(validatorList);
     beaconState.getBalances().addAll(balanceList);
-    return beaconState;
+    return beaconState.commitChanges();
   }
 }

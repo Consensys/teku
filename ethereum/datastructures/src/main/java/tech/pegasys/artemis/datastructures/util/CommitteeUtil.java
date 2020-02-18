@@ -35,7 +35,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 
 public class CommitteeUtil {
@@ -97,7 +97,7 @@ public class CommitteeUtil {
    * @param seed
    * @return
    */
-  public static int compute_proposer_index(BeaconState state, List<Integer> indices, Bytes32 seed) {
+  public static int compute_proposer_index(BeaconStateRead state, List<Integer> indices, Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
     UnsignedLong MAX_RANDOM_BYTE = UnsignedLong.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
@@ -153,7 +153,7 @@ public class CommitteeUtil {
    * @return
    */
   public static List<Integer> get_beacon_committee(
-      BeaconState state, UnsignedLong slot, UnsignedLong index) {
+      BeaconStateRead state, UnsignedLong slot, UnsignedLong index) {
     return BeaconStateWithCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(

@@ -37,7 +37,7 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.DBMaker.Maker;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
@@ -55,11 +55,11 @@ public class MapDbDatabase implements Database {
 
   private final ConcurrentNavigableMap<UnsignedLong, Bytes32> finalizedRootsBySlot;
   private final ConcurrentMap<Bytes32, SignedBeaconBlock> finalizedBlocksByRoot;
-  private final ConcurrentMap<Bytes32, BeaconState> finalizedStatesByRoot;
+  private final ConcurrentMap<Bytes32, BeaconStateRead> finalizedStatesByRoot;
   private final ConcurrentMap<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
-  private final ConcurrentMap<Bytes32, BeaconState> hotStatesByRoot;
+  private final ConcurrentMap<Bytes32, BeaconStateRead> hotStatesByRoot;
 
-  private final ConcurrentMap<Checkpoint, BeaconState> checkpointStates;
+  private final ConcurrentMap<Checkpoint, BeaconStateRead> checkpointStates;
   private final ConcurrentMap<UnsignedLong, Checkpoint> latestMessages;
 
   // In memory only
@@ -107,7 +107,7 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "finalizedStatsByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<>(BeaconStateRead.class))
             .createOrOpen();
 
     hotBlocksByRoot =
@@ -120,14 +120,14 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "hotStatesByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<>(BeaconStateRead.class))
             .createOrOpen();
 
     checkpointStates =
         db.hashMap(
                 "checkpointStates",
                 new MapDBSerializer<>(Checkpoint.class),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<>(BeaconStateRead.class))
             .createOrOpen();
 
     latestMessages =
@@ -154,7 +154,7 @@ public class MapDbDatabase implements Database {
           .forEach(
               root -> {
                 final SignedBeaconBlock block = store.getSignedBlock(root);
-                final BeaconState state = store.getBlockState(root);
+                final BeaconStateRead state = store.getBlockState(root);
                 addHotBlock(root, block);
                 hotStatesByRoot.put(root, state);
                 finalizedRootsBySlot.put(block.getSlot(), root);
@@ -226,7 +226,7 @@ public class MapDbDatabase implements Database {
           newlyFinalizedBlockRoot);
       finalizedRootsBySlot.put(newlyFinalizedBlock.getSlot(), newlyFinalizedBlockRoot);
       finalizedBlocksByRoot.put(newlyFinalizedBlockRoot, newlyFinalizedBlock);
-      final Optional<BeaconState> finalizedState = getState(newlyFinalizedBlockRoot);
+      final Optional<BeaconStateRead> finalizedState = getState(newlyFinalizedBlockRoot);
       if (finalizedState.isPresent()) {
         finalizedStatesByRoot.put(newlyFinalizedBlockRoot, finalizedState.get());
       } else {
@@ -306,7 +306,7 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public Optional<BeaconState> getState(final Bytes32 root) {
+  public Optional<BeaconStateRead> getState(final Bytes32 root) {
     return Optional.ofNullable(hotStatesByRoot.get(root));
   }
 

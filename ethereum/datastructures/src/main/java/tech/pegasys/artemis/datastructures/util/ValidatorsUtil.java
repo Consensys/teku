@@ -17,8 +17,9 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
 import tech.pegasys.artemis.util.config.Constants;
@@ -59,7 +60,7 @@ public class ValidatorsUtil {
    * @param validator the validator
    * @return true if the validator is eligible for activation
    */
-  public static boolean is_eligible_for_activation(BeaconState state, ValidatorRead validator) {
+  public static boolean is_eligible_for_activation(BeaconStateRead state, ValidatorRead validator) {
     return validator
                 .getActivation_eligibility_epoch()
                 .compareTo(state.getFinalized_checkpoint().getEpoch())
@@ -76,7 +77,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
-  public static List<Integer> get_active_validator_indices(BeaconState state, UnsignedLong epoch) {
+  public static List<Integer> get_active_validator_indices(BeaconStateRead state, UnsignedLong epoch) {
     return BeaconStateWithCache.getTransitionCaches(state)
         .getActiveValidators()
         .get(
@@ -99,7 +100,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
-  public static void decrease_balance(BeaconState state, int index, UnsignedLong delta) {
+  public static void decrease_balance(BeaconStateWrite state, int index, UnsignedLong delta) {
     UnsignedLong newBalance =
         delta.compareTo(state.getBalances().get(index)) > 0
             ? UnsignedLong.ZERO
@@ -116,7 +117,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
-  public static void increase_balance(BeaconState state, int index, UnsignedLong delta) {
+  public static void increase_balance(BeaconStateWrite state, int index, UnsignedLong delta) {
     state.getBalances().set(index, state.getBalances().get(index).plus(delta));
   }
 

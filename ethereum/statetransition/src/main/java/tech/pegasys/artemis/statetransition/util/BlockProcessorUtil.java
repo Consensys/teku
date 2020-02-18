@@ -66,7 +66,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.util.config.Constants;
@@ -84,7 +84,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
-  public static void process_block_header(BeaconState state, BeaconBlock block)
+  public static void process_block_header(BeaconStateWrite state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       checkArgument(
@@ -121,7 +121,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#randao</a>
    */
-  public static void process_randao(BeaconState state, BeaconBlockBody body, boolean validateRandao)
+  public static void process_randao(BeaconStateWrite state, BeaconBlockBody body, boolean validateRandao)
       throws BlockProcessingException {
     try {
       UnsignedLong epoch = get_current_epoch(state);
@@ -157,7 +157,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#eth1-data</a>
    */
-  public static void process_eth1_data(BeaconState state, BeaconBlockBody body) {
+  public static void process_eth1_data(BeaconStateWrite state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
     long vote_count =
         state.getEth1_data_votes().stream()
@@ -177,7 +177,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
-  public static void process_operations(BeaconState state, BeaconBlockBody body)
+  public static void process_operations(BeaconStateWrite state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
 
@@ -215,7 +215,7 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
   public static void process_proposer_slashings(
-      BeaconState state, List<ProposerSlashing> proposerSlashings) throws BlockProcessingException {
+      BeaconStateWrite state, List<ProposerSlashing> proposerSlashings) throws BlockProcessingException {
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : proposerSlashings) {
@@ -287,7 +287,7 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attester-slashings</a>
    */
   public static void process_attester_slashings(
-      BeaconState state, List<AttesterSlashing> attesterSlashings) throws BlockProcessingException {
+      BeaconStateWrite state, List<AttesterSlashing> attesterSlashings) throws BlockProcessingException {
     try {
 
       // For each attester_slashing in block.body.attester_slashings:
@@ -337,7 +337,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
-  public static void process_attestations(BeaconState state, List<Attestation> attestations)
+  public static void process_attestations(BeaconStateWrite state, List<Attestation> attestations)
       throws BlockProcessingException {
     try {
 
@@ -414,7 +414,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
-  public static void process_deposits(BeaconState state, List<? extends Deposit> deposits)
+  public static void process_deposits(BeaconStateWrite state, List<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
@@ -435,7 +435,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
-  public static void process_voluntary_exits(BeaconState state, List<SignedVoluntaryExit> exits)
+  public static void process_voluntary_exits(BeaconStateWrite state, List<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     try {
 
