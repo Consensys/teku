@@ -50,6 +50,13 @@ public class StubAsyncRunner implements AsyncRunner {
     actionsToExecute.forEach(Runnable::run);
   }
 
+  public void executeQueuedActions(int limit) {
+    final List<Runnable> actionsToExecute = queuedActions.subList(0, limit);
+    final List<Runnable> rest = queuedActions.subList(limit, queuedActions.size());
+    queuedActions = new ArrayList<>(rest);
+    actionsToExecute.forEach(Runnable::run);
+  }
+
   public boolean hasDelayedActions() {
     return !queuedActions.isEmpty();
   }

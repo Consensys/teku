@@ -30,6 +30,8 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RequestRpcDecoder;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.async.AsyncRunner;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class BeaconChainMethodsTest {
 
@@ -46,12 +48,14 @@ public class BeaconChainMethodsTest {
           UnsignedLong.ZERO);
 
   private final PeerLookup peerLookup = mock(PeerLookup.class);
+  final AsyncRunner asyncRunner = new StubAsyncRunner();
   final CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   final ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
   final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(chainStorageClient);
   private final BeaconChainMethods beaconChainMethods =
       BeaconChainMethods.create(
+          asyncRunner,
           peerLookup,
           combinedChainDataClient,
           chainStorageClient,
