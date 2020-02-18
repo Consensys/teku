@@ -51,6 +51,7 @@ public class FinalizedCheckpointHandler implements Handler {
     Store store = client.getStore();
     if (store == null) {
       ctx.status(SC_NO_CONTENT);
+      return;
     }
     Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
     ctx.result(JsonProvider.objectToJSON(finalizedCheckpoint));
