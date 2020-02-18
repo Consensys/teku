@@ -19,6 +19,8 @@ import com.google.common.eventbus.EventBus;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.tuweni.ssz.SSZ;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Disabled;
@@ -52,7 +54,7 @@ public class ProfilingRun {
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
-    int validatorsCount = 10 * 1024;
+    int validatorsCount = 1 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -129,21 +131,6 @@ public class ProfilingRun {
 
 
     System.out.println("getJustification_bits: " + HashTreeUtil.hash_tree_root_bitvector(s1.getJustification_bits()));
-  }
-
-  @Test
-  void bitlistHashTest() {
-    Bitlist bitlist = new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE,
-        Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    for (int i = 0; i < 44; i++) {
-      bitlist.setBit(i);
-    }
-    Bytes32 hashOld = HashTreeUtil.hash_tree_root_bitlist(bitlist);
-
-    ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
-    Bytes32 hashNew = bitlistView.hashTreeRoot();
-
-    System.out.println("" + hashOld + ", " + hashNew);
   }
 
   public Bytes32 old_hash_tree_root(BeaconState s) {

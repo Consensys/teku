@@ -102,7 +102,11 @@ public class Eth1DataManagerTest {
 
     eth1DataManager =
         new Eth1DataManager(
-            new Eth1Provider(web3j), eventBus, depositContractListener, asyncRunner, timeProvider);
+            new Web3jEth1Provider(web3j),
+            eventBus,
+            depositContractListener,
+            asyncRunner,
+            timeProvider);
   }
 
   @Test
@@ -203,7 +207,11 @@ public class Eth1DataManagerTest {
     eventBus = mock(EventBus.class);
     eth1DataManager =
         new Eth1DataManager(
-            new Eth1Provider(web3j), eventBus, depositContractListener, asyncRunner, timeProvider);
+            new Web3jEth1Provider(web3j),
+            eventBus,
+            depositContractListener,
+            asyncRunner,
+            timeProvider);
     verifyNoInteractions(eventBus);
   }
 
@@ -211,7 +219,11 @@ public class Eth1DataManagerTest {
   void onTick_startupDoneGetNewBlocks() {
     eth1DataManager =
         new Eth1DataManager(
-            new Eth1Provider(web3j), eventBus, depositContractListener, asyncRunner, timeProvider);
+            new Web3jEth1Provider(web3j),
+            eventBus,
+            depositContractListener,
+            asyncRunner,
+            timeProvider);
 
     List<MockBlock> eth1Blocks =
         Arrays.asList(
@@ -256,7 +268,11 @@ public class Eth1DataManagerTest {
   void onTick_startupDone_LatestTimestampStillHigherThanUpperBound() {
     eth1DataManager =
         new Eth1DataManager(
-            new Eth1Provider(web3j), eventBus, depositContractListener, asyncRunner, timeProvider);
+            new Web3jEth1Provider(web3j),
+            eventBus,
+            depositContractListener,
+            asyncRunner,
+            timeProvider);
 
     List<MockBlock> eth1Blocks =
         Arrays.asList(
