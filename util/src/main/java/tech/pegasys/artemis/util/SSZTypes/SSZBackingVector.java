@@ -44,6 +44,11 @@ public class SSZBackingVector<C, R extends ViewRead> extends AbstractList<C>
     return null;
   }
 
+  @Override
+  public void clear() {
+    delegate.clear();
+  }
+
   public Bytes32 hash_tree_root() {
     return delegate.hashTreeRoot();
   }

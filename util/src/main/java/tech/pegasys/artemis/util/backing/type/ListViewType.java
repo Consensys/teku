@@ -36,7 +36,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
 
   @Override
   public ListViewRead<C> createDefault() {
-    return new ListViewImpl<C, C>(getCompatibleVectorType().createDefault(), 0);
+    return new ListViewImpl<>(getCompatibleVectorType());
   }
 
   @Override

@@ -92,6 +92,11 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
     return null;
   }
 
+  @Override
+  public void clear() {
+    backingNode = getType().createDefaultTree();
+  }
+
   private void checkIndex(int index) {
     checkArgument(index >= 0 && index < type.getMaxLength(), "Index out of bounds: %s", index);
   }

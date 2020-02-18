@@ -54,6 +54,11 @@ public class SSZBackingList<C, R extends ViewRead> extends AbstractList<C>
     return unwrapper.apply(delegate.set(index, wrapper.apply(element)));
   }
 
+  @Override
+  public void clear() {
+    delegate.clear();
+  }
+
   public Bytes32 hash_tree_root() {
     return delegate.hashTreeRoot();
   }

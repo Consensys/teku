@@ -17,8 +17,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 public interface ViewWrite extends ViewRead {
 
-  @Override
-  ViewType getType();
+  void clear();
 
   default ViewRead commitChanges() {
     throw new RuntimeException("Not supported yet");

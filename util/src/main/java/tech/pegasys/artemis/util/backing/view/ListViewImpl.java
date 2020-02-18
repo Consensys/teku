@@ -17,16 +17,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
+import java.util.List;
 import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewWriteRef;
-import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
 public class ListViewImpl<R extends ViewRead, W extends R>
@@ -34,13 +35,11 @@ public class ListViewImpl<R extends ViewRead, W extends R>
 
   private final ContainerViewWrite<ViewRead> container;
 
-  public ListViewImpl(VectorViewRead<R> data, int size) {
+  public ListViewImpl(VectorViewType<R> vectorType) {
     ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
         new ContainerViewType<>(
-            Arrays.asList(data.getType(), BasicViewTypes.UINT64_TYPE), ContainerViewImpl::new);
+            List.of(vectorType, BasicViewTypes.UINT64_TYPE), ContainerViewImpl::new);
     container = containerViewType.createDefault();
-    container.set(0, data);
-    container.set(1, new UInt64View(UnsignedLong.valueOf(size)));
   }
 
   public ListViewImpl(ListViewType<R> type, TreeNode node) {
@@ -99,6 +98,11 @@ public class ListViewImpl<R extends ViewRead, W extends R>
 
     invalidate();
     return null;
+  }
+
+  @Override
+  public void clear() {
+    container.clear();
   }
 
   @SuppressWarnings("unchecked")

@@ -27,6 +27,11 @@ public class BasicListWrapper<C, V extends ViewRead> implements ListWrite<C> {
   }
 
   @Override
+  public void clear() {
+    wrappedViewList.clear();
+  }
+
+  @Override
   public void setIvalidator(Consumer<ViewWrite> listener) {
     wrappedViewList.setIvalidator(listener);
   }

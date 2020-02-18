@@ -46,7 +46,7 @@ public class CompositeListViewTest {
         }
       };
 
-  static class TestView implements ViewWrite {
+  static class TestView implements ViewRead {
     TreeNode node;
     public final int v;
 

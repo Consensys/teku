@@ -38,6 +38,7 @@ public interface SSZVector<T> extends List<T> {
 
   default void setAll(SSZVector<T> other) {
     Preconditions.checkArgument(other.size() == size(), "Incompatible vector size");
+    clear();
     for (int i = 0; i < other.size(); i++) {
       set(i, other.get(i));
     }

@@ -53,6 +53,11 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   }
 
   @Override
+  public void clear() {
+    backingNode = getType().createDefaultTree();
+  }
+
+  @Override
   public R get(int index) {
     checkArgument(
         index >= 0 && index < type.getMaxLength(),
