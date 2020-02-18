@@ -30,6 +30,11 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   @Override
+  public TreeNode createDefaultTree() {
+    return createDefault().getBackingNode();
+  }
+
+  @Override
   public ListViewRead<C> createDefault() {
     return new ListViewImpl<C, C>(getCompatibleVectorType().createDefault(), 0);
   }

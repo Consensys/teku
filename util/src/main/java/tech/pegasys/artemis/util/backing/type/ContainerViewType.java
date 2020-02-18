@@ -40,6 +40,7 @@ public class ContainerViewType<C extends ContainerViewWrite<ViewRead>>
     return createFromTreeNode(createDefaultTree());
   }
 
+  @Override
   public TreeNode createDefaultTree() {
     List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
     for (int i = 0; i < getMaxLength(); i++) {

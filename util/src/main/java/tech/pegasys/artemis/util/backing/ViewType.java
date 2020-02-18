@@ -17,9 +17,13 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 public interface ViewType {
 
-  ViewRead createDefault();
+  TreeNode createDefaultTree();
 
   ViewRead createFromTreeNode(TreeNode node);
+
+  default ViewRead createDefault() {
+    return createFromTreeNode(createDefaultTree());
+  }
 
   default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
     return createFromTreeNode(node);

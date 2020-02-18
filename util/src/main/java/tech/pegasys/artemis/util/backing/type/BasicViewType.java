@@ -33,8 +33,8 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   }
 
   @Override
-  public C createDefault() {
-    return createFromTreeNode(new RootImpl(Bytes32.ZERO));
+  public TreeNode createDefaultTree() {
+    return new RootImpl(Bytes32.ZERO);
   }
 
   @Override

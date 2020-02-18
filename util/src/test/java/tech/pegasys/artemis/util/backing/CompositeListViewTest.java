@@ -31,6 +31,11 @@ public class CompositeListViewTest {
       new ViewType() {
 
         @Override
+        public TreeNode createDefaultTree() {
+          throw new UnsupportedOperationException();
+        }
+
+        @Override
         public TestView createDefault() {
           return new TestView(0);
         }
