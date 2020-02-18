@@ -21,7 +21,6 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -45,9 +44,10 @@ public class FinalizedCheckpointHandler implements Handler {
       description = "Requests that the beacon node give finalized checkpoint info.",
       responses = {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = Checkpoint.class)),
+        @OpenApiResponse(status = "204")
       })
   @Override
-  public void handle(@NotNull Context ctx) throws Exception {
+  public void handle(Context ctx) throws Exception {
     Store store = client.getStore();
     if (store == null) {
       ctx.status(SC_NO_CONTENT);

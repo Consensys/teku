@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,20 +27,28 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
 public class FinalizedCheckpointHandlerTest {
-  private Context mockContext = Mockito.mock(Context.class);
-  private ChainStorageClient mockClient = Mockito.mock(ChainStorageClient.class);
-  private Store mockStore = Mockito.mock(Store.class);
+  private Context context = Mockito.mock(Context.class);
+  private ChainStorageClient client = Mockito.mock(ChainStorageClient.class);
+  private Store store = Mockito.mock(Store.class);
 
   private final Checkpoint checkpoint = DataStructureUtil.randomCheckpoint(99);
 
   @Test
   public void shouldReturnCheckpoint() throws Exception {
-    when(mockClient.getStore()).thenReturn(mockStore);
-    when(mockStore.getFinalizedCheckpoint()).thenReturn(checkpoint);
+    when(client.getStore()).thenReturn(store);
+    when(store.getFinalizedCheckpoint()).thenReturn(checkpoint);
 
-    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(mockClient);
-    handler.handle(mockContext);
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
+    handler.handle(context);
 
-    verify(mockContext).result(JsonProvider.objectToJSON(checkpoint));
+    verify(context).result(JsonProvider.objectToJSON(checkpoint));
+  }
+
+  @Test
+  public void shouldReturnNoContentWhenStoreIsNull() throws Exception {
+    GenesisTimeHandler handler = new GenesisTimeHandler(null);
+    handler.handle(context);
+
+    verify(context).status(SC_NO_CONTENT);
   }
 }
