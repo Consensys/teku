@@ -6,7 +6,7 @@
 
 Implementation of the Ethereum 2.0 Beacon Chain.
 
-Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs/blob/master/specs/core/0_beacon-chain.md).
+Based on the (evolving) [specification](https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md).
 
 ## Build Instructions
 
