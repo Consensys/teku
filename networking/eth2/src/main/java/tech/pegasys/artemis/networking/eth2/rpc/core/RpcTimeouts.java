@@ -16,7 +16,7 @@ package tech.pegasys.artemis.networking.eth2.rpc.core;
 import java.time.Duration;
 
 /**
- * s This class holds constants related to handling rpc request timeouts. See:
+ * This class holds constants related to handling rpc request timeouts. See:
  * https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/p2p-interface.md#configuration
  */
 public abstract class RpcTimeouts {
