@@ -13,9 +13,16 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-@SuppressWarnings("UnusedVariable")
+import com.google.common.primitives.UnsignedLong;
+
 public class Fork {
-  public Long epoch;
+  public UnsignedLong epoch;
   public String previous_version;
   public String current_version;
+
+  public Fork(tech.pegasys.artemis.datastructures.state.Fork fork) {
+    this.epoch = fork.getEpoch();
+    this.previous_version = fork.getPrevious_version().toString();
+    this.current_version = fork.getCurrent_version().toString();
+  }
 }

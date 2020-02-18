@@ -16,12 +16,15 @@ package tech.pegasys.artemis.beaconrestapi.schema;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class Checkpoint {
-  public UnsignedLong epoch;
-  public Bytes32 root;
+public class AttestationData {
+  public UnsignedLong slot;
+  public UnsignedLong index;
 
-  public Checkpoint(tech.pegasys.artemis.datastructures.state.Checkpoint checkpoint) {
-    this.epoch = checkpoint.getEpoch();
-    this.root = checkpoint.getRoot();
+  public Bytes32 beacon_block_root;
+
+  public AttestationData(tech.pegasys.artemis.datastructures.operations.AttestationData data) {
+    this.slot = data.getSlot();
+    this.index = data.getIndex();
+    this.beacon_block_root = data.getBeacon_block_root();
   }
 }

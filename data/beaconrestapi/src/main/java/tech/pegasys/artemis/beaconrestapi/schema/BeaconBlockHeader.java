@@ -13,10 +13,21 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-@SuppressWarnings("UnusedVariable")
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
+
 public class BeaconBlockHeader {
-  public Long slot;
-  public String parent_root;
-  public String state_root;
-  public String body_root;
+  public final UnsignedLong slot;
+
+  public final Bytes32 parent_root;
+  public final Bytes32 state_root;
+  public final Bytes32 body_root;
+
+  public BeaconBlockHeader(
+      tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader blockHeader) {
+    this.slot = blockHeader.getSlot();
+    this.parent_root = blockHeader.getParent_root();
+    this.state_root = blockHeader.getState_root();
+    this.body_root = blockHeader.getBody_root();
+  }
 }

@@ -13,10 +13,19 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-@SuppressWarnings("UnusedVariable")
+import com.google.common.primitives.UnsignedLong;
+
 public class PendingAttestation {
   public String aggregation_bits;
-  public String data;
-  public Long inclusion_delay;
-  public Long proposer_index;
+  public AttestationData data;
+  public UnsignedLong inclusion_delay;
+  public UnsignedLong proposer_index;
+
+  public PendingAttestation(
+      tech.pegasys.artemis.datastructures.state.PendingAttestation pendingAttestation) {
+    this.aggregation_bits = pendingAttestation.getAggregation_bits().toString();
+    this.data = new AttestationData(pendingAttestation.getData());
+    this.inclusion_delay = pendingAttestation.getInclusion_delay();
+    this.proposer_index = pendingAttestation.getProposer_index();
+  }
 }

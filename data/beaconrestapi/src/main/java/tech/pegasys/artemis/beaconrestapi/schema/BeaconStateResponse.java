@@ -13,36 +13,76 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-import java.util.ArrayList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
-@SuppressWarnings("UnusedVariable")
+import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+
 public class BeaconStateResponse {
 
-  public Long genesis_time;
-  public Long slot;
-  public Fork fork; // For versioning hard forks
+  public UnsignedLong genesis_time;
+  public UnsignedLong slot;
+  public Fork fork;
 
   public BeaconBlockHeader latest_block_header;
-  public ArrayList<String> block_roots;
-  public ArrayList<String> state_roots;
-  public ArrayList<String> historical_roots;
+  public List<Bytes32> block_roots;
+  public List<Bytes32> state_roots;
+  public List<Bytes32> historical_roots;
 
   public Eth1Data eth1_data;
-  public ArrayList<Eth1Data> eth1_data_votes;
-  public Long eth1_deposit_index;
+  public List<Eth1Data> eth1_data_votes;
+  public UnsignedLong eth1_deposit_index;
 
-  public ArrayList<Validator> validators;
-  public ArrayList<Long> balances;
+  public List<Validator> validators;
+  public List<UnsignedLong> balances;
 
-  public ArrayList<String> randao_mixes;
+  public List<Bytes32> randao_mixes;
 
-  public ArrayList<Long> slashings;
+  public List<UnsignedLong> slashings;
 
-  public ArrayList<PendingAttestation> previous_epoch_attestations;
-  public ArrayList<PendingAttestation> current_epoch_attestations;
+  public List<PendingAttestation> previous_epoch_attestations;
+  public List<PendingAttestation> current_epoch_attestations;
 
   public String justification_bits;
   public Checkpoint previous_justified_checkpoint;
   public Checkpoint current_justified_checkpoint;
   public Checkpoint finalized_checkpoint;
+
+  public BeaconStateResponse(BeaconState beaconState) {
+    this.genesis_time = beaconState.getGenesis_time();
+    this.slot = beaconState.getSlot();
+    this.fork = new Fork(beaconState.getFork());
+    this.latest_block_header = new BeaconBlockHeader(beaconState.getLatest_block_header());
+    this.block_roots = beaconState.getBlock_roots();
+    this.state_roots = beaconState.getState_roots();
+    this.historical_roots = beaconState.getHistorical_roots();
+
+    this.eth1_data = new Eth1Data(beaconState.getEth1_data());
+    this.eth1_data_votes =
+        beaconState.getEth1_data_votes().stream().map(Eth1Data::new).collect(toUnmodifiableList());
+    this.eth1_deposit_index = beaconState.getEth1_deposit_index();
+
+    this.validators =
+        beaconState.getValidators().stream().map(Validator::new).collect(toUnmodifiableList());
+    this.balances = beaconState.getBalances();
+    this.randao_mixes = beaconState.getRandao_mixes();
+    this.slashings = beaconState.getSlashings();
+    this.previous_epoch_attestations =
+        beaconState.getPrevious_epoch_attestations().stream()
+            .map(PendingAttestation::new)
+            .collect(toUnmodifiableList());
+    this.current_epoch_attestations =
+        beaconState.getCurrent_epoch_attestations().stream()
+            .map(PendingAttestation::new)
+            .collect(toUnmodifiableList());
+
+    this.justification_bits = beaconState.getJustification_bits().toString();
+    this.previous_justified_checkpoint =
+        new Checkpoint(beaconState.getPrevious_justified_checkpoint());
+    this.current_justified_checkpoint =
+        new Checkpoint(beaconState.getCurrent_justified_checkpoint());
+    this.finalized_checkpoint = new Checkpoint(beaconState.getFinalized_checkpoint());
+  }
 }

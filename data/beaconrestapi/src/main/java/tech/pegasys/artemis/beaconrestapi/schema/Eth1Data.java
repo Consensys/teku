@@ -13,9 +13,17 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-@SuppressWarnings("UnusedVariable")
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
+
 public class Eth1Data {
-  public String deposit_root;
-  public Long deposit_count;
-  public String block_hash;
+  public Bytes32 deposit_root;
+  public UnsignedLong deposit_count;
+  public Bytes32 block_hash;
+
+  public Eth1Data(tech.pegasys.artemis.datastructures.blocks.Eth1Data eth1Data) {
+    this.deposit_root = eth1Data.getDeposit_root();
+    this.deposit_count = eth1Data.getDeposit_count();
+    this.block_hash = eth1Data.getBlock_hash();
+  }
 }

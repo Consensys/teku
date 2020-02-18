@@ -13,14 +13,27 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-@SuppressWarnings("UnusedVariable")
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
+
 public class Validator {
   public String pubkey;
-  public String withdrawal_credentials;
-  public Long effective_balance;
+  public Bytes32 withdrawal_credentials;
+  public UnsignedLong effective_balance;
   public boolean slashed;
-  public Long activation_eligibility_epoch;
-  public Long activation_epoch;
-  public Long exit_epoch;
-  public Long withdrawable_epoch;
+  public UnsignedLong activation_eligibility_epoch;
+  public UnsignedLong activation_epoch;
+  public UnsignedLong exit_epoch;
+  public UnsignedLong withdrawable_epoch;
+
+  public Validator(tech.pegasys.artemis.datastructures.state.Validator validator) {
+    this.pubkey = validator.getPubkey().toString();
+    this.withdrawal_credentials = validator.getWithdrawal_credentials();
+    this.effective_balance = validator.getEffective_balance();
+    this.slashed = validator.isSlashed();
+    this.activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
+    this.activation_epoch = validator.getActivation_epoch();
+    this.exit_epoch = validator.getExit_epoch();
+    this.withdrawable_epoch = validator.getWithdrawable_epoch();
+  }
 }
