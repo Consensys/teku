@@ -44,7 +44,7 @@ public class FinalizedCheckpointHandler implements Handler {
       tags = {"Node"},
       description = "Requests that the beacon node give finalized checkpoint info.",
       responses = {
-        @OpenApiResponse(status = "200", content = @OpenApiContent(from = Object.class)),
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = Checkpoint.class)),
       })
   @Override
   public void handle(@NotNull Context ctx) throws Exception {
