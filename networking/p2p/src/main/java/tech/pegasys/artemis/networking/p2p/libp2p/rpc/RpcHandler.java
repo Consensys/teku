@@ -127,6 +127,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         throw new IllegalStateException("Attempt to set an already set data handler");
       }
       this.rpcRequestHandler = rpcRequestHandler;
+      activeFuture.thenAccept(__ -> rpcRequestHandler.onActivation(rpcStream)).reportExceptions();
       while (!bufferedData.isEmpty()) {
         ByteBuf currentBuffer = bufferedData.remove(0);
         this.rpcRequestHandler.onData(nodeId, rpcStream, currentBuffer);

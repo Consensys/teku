@@ -16,13 +16,19 @@ package tech.pegasys.artemis.networking.eth2.rpc.core;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import io.netty.buffer.ByteBuf;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.artemis.networking.eth2.rpc.core.RpcTimeouts.RpcTimeoutException;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     implements RpcRequestHandler {
@@ -32,14 +38,26 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final int maximumResponseChunks;
   private final ResponseStreamImpl<TResponse> responseStream = new ResponseStreamImpl<>();
 
+  private final AsyncRunner asyncRunner;
+  private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
+  private AtomicInteger currentChunkCount = new AtomicInteger(0);
+
   private ResponseRpcDecoder<TResponse> responseHandler;
 
   public Eth2OutgoingRequestHandler(
-      final Eth2RpcMethod<TRequest, TResponse> method, final int maximumResponseChunks) {
+      final AsyncRunner asyncRunner,
+      final Eth2RpcMethod<TRequest, TResponse> method,
+      final int maximumResponseChunks) {
+    this.asyncRunner = asyncRunner;
     this.method = method;
     this.maximumResponseChunks = maximumResponseChunks;
 
     responseHandler = new ResponseRpcDecoder<>(responseStream::respond, this.method);
+  }
+
+  @Override
+  public void onActivation(final RpcStream rpcStream) {
+    // Nothing to do
   }
 
   @Override
@@ -50,12 +68,21 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       throw new IllegalArgumentException("Some data received prior to request: " + bytes);
     }
     try {
+      if (hasReceivedInitialBytes.compareAndSet(false, true)) {
+        // Setup initial chunk timeout
+        ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
+      }
       STDOUT.log(Level.TRACE, "Requester received " + bytes.capacity() + " bytes.");
       responseHandler.onDataReceived(bytes);
-      if (responseStream.getResponseChunkCount() == maximumResponseChunks) {
+
+      final int previousResponseCount = currentChunkCount.get();
+      currentChunkCount.set(responseStream.getResponseChunkCount());
+      if (responseStream.getResponseChunkCount() >= maximumResponseChunks) {
         rpcStream.close().reportExceptions();
         responseHandler.close();
         responseStream.completeSuccessfully();
+      } else if (responseStream.getResponseChunkCount() > previousResponseCount) {
+        ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
       }
     } catch (final InvalidResponseException e) {
       LOG.debug("Peer responded with invalid data", e);
@@ -83,15 +110,60 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     }
   }
 
-  public void handleInitialPayloadSent(RpcStream stream) {
+  public void handleInitialPayloadSent(final RpcStream stream) {
     if (method.shouldReceiveResponse()) {
       // Close the write side of the stream
       stream.closeWriteStream().reportExceptions();
+      // Start timer for first bytes
+      ensureFirstBytesArriveWithinTimeLimit(stream);
     } else {
       // If we're not expecting any response, close the stream altogether
       stream.close().reportExceptions();
       responseStream.completeSuccessfully();
     }
+  }
+
+  private void ensureFirstBytesArriveWithinTimeLimit(final RpcStream stream) {
+    final Duration timeout = RpcTimeouts.TTFB_TIMEOUT;
+    asyncRunner
+        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .thenAccept(
+            (__) -> {
+              if (!hasReceivedInitialBytes.get()) {
+                LOG.debug(
+                    "Failed to receive initial response within {} sec. Close stream.",
+                    timeout.getSeconds());
+                stream.close().reportExceptions();
+                responseStream.completeWithError(
+                    new RpcTimeoutException("Timed out waiting for initial response", timeout));
+                responseHandler.closeSilently();
+              }
+            })
+        .reportExceptions();
+  }
+
+  private void ensureNextResponseArrivesInTime(
+      final RpcStream stream,
+      final int previousResponseCount,
+      final AtomicInteger currentResponseCount) {
+    final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
+    asyncRunner
+        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .thenAccept(
+            (__) -> {
+              if (previousResponseCount == currentResponseCount.get()) {
+                LOG.debug(
+                    "Failed to receive response chunk {} within {} sec. Close stream.",
+                    previousResponseCount,
+                    timeout.getSeconds());
+                stream.close().reportExceptions();
+                responseStream.completeWithError(
+                    new RpcTimeoutException(
+                        "Timed out waiting for response chunk " + previousResponseCount, timeout));
+                responseHandler.closeSilently();
+              }
+            })
+        .reportExceptions();
   }
 
   public ResponseStreamImpl<TResponse> getResponseStream() {
