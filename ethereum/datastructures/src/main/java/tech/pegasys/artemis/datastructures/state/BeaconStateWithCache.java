@@ -28,7 +28,11 @@ public final class BeaconStateWithCache extends BeaconState {
   }
 
   public static BeaconStateWithCache deepCopy(BeaconState state) {
-    return new BeaconStateWithCache(state);
+    if (state instanceof BeaconStateWithCache) {
+      return new BeaconStateWithCache((BeaconStateWithCache) state);
+    } else {
+      return new BeaconStateWithCache(state);
+    }
   }
 
   /**
