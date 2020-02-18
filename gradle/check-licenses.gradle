@@ -24,6 +24,7 @@ ext.acceptedLicenses = [
     'Eclipse Public License 1.0',
     'Eclipse Public License - v 2.0',
     'MIT License',
+    'The MIT License (MIT)',
     'Apache License, Version 2.0',
     'Bouncy Castle Licence',
     'Public Domain',
@@ -173,7 +174,7 @@ task checkLicenses {
 
   def bads = ""
   doLast {
-    def xml = new XmlParser().parse('build/reports/license/license-dependency.xml')
+    def xml = new XmlParser().parse("${rootProject.buildDir}/reports/license/license-dependency.xml")
     xml.each { license ->
       if (!acceptedLicenses.contains((license.@name).toLowerCase())) {
         def depStrings = []
