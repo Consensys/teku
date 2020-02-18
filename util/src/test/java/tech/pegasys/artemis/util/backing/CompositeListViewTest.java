@@ -71,6 +71,11 @@ public class CompositeListViewTest {
       }
       return node;
     }
+
+    @Override
+    public ViewWrite createWritableCopy() {
+      throw new UnsupportedOperationException();
+    }
   }
 
   @Test

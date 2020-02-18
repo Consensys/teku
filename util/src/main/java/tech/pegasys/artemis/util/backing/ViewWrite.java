@@ -19,9 +19,7 @@ public interface ViewWrite extends ViewRead {
 
   void clear();
 
-  default ViewRead commitChanges() {
-    throw new RuntimeException("Not supported yet");
-  }
+  ViewRead commitChanges();
 
   @Override
   default TreeNode getBackingNode() {

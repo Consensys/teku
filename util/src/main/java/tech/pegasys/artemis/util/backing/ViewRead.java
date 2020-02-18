@@ -18,9 +18,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 public interface ViewRead {
 
-  default ViewWrite createWritableCopy() {
-    throw new RuntimeException("Not supported yet");
-  }
+  ViewWrite createWritableCopy();
 
   ViewType getType();
 

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.backing.view;
 
 import tech.pegasys.artemis.util.backing.BasicView;
+import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewType;
 
@@ -45,5 +46,10 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
   @SuppressWarnings("unchecked")
   protected V getThis() {
     return (V) this;
+  }
+
+  @Override
+  public ViewWrite createWritableCopy() {
+    throw new UnsupportedOperationException("Basic view instances are immutable");
   }
 }
