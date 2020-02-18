@@ -47,7 +47,6 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 import static tech.pegasys.artemis.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import com.google.common.primitives.UnsignedLong;
@@ -66,7 +65,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
@@ -581,7 +579,7 @@ public final class EpochProcessorUtil {
         .plus(UnsignedLong.ONE)
         .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_ETH1_VOTING_PERIOD))
         .equals(UnsignedLong.ZERO)) {
-      state.getEth1_data_votes().setAll(SSZList.create(Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD));
+      state.getEth1_data_votes().clear();
     }
 
     // Update effective balances with hysteresis
