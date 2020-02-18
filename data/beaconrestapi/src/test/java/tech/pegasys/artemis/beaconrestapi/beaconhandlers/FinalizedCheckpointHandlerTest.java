@@ -14,12 +14,12 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -27,9 +27,9 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
 public class FinalizedCheckpointHandlerTest {
-  private Context context = Mockito.mock(Context.class);
-  private ChainStorageClient client = Mockito.mock(ChainStorageClient.class);
-  private Store store = Mockito.mock(Store.class);
+  private Context context = mock(Context.class);
+  private ChainStorageClient client = mock(ChainStorageClient.class);
+  private Store store = mock(Store.class);
 
   private final Checkpoint checkpoint = DataStructureUtil.randomCheckpoint(99);
 
