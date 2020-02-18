@@ -105,12 +105,12 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
     return depositNavigableMap.subMap(fromDepositIndex, toDepositIndex).values().stream()
         .map(
             deposit ->
-                new Deposit(
+                new DepositWithIndex(
                     depositMerkleTree.getProofWithViewBoundary(
                         toIntExact(deposit.getIndex().longValue()),
                         toIntExact(eth1DepositCount.longValue())),
-                    deposit.getData()))
-        .map(Deposit.class::cast)
+                    deposit.getData(),
+                    deposit.getIndex()))
         .collect(Collectors.toList());
   }
 }

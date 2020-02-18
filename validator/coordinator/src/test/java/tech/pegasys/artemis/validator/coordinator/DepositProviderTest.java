@@ -122,16 +122,15 @@ public class DepositProviderTest {
 
   private void checkThatDepositProofIsValid(List<Deposit> deposits) {
     deposits.forEach(
-        deposit -> {
-          assertThat(
-                  is_valid_merkle_branch(
-                      deposit.getData().hash_tree_root(),
-                      deposit.getProof(),
-                      Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
-                      ((DepositWithIndex) deposit).getIndex().intValue(),
-                      depositMerkleTree.getRoot()))
-              .isTrue();
-        });
+        deposit ->
+            assertThat(
+                    is_valid_merkle_branch(
+                        deposit.getData().hash_tree_root(),
+                        deposit.getProof(),
+                        Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1,
+                        ((DepositWithIndex) deposit).getIndex().intValue(),
+                        depositMerkleTree.getRoot()))
+                .isTrue());
   }
 
   private void createDepositEvents(int n) {
