@@ -91,5 +91,8 @@ public class BasicListViewTest {
     Assertions.assertThrows(
         IllegalArgumentException.class,
         () -> listView.append(new UInt64View(UnsignedLong.valueOf(0xaaa))));
+
+    listView.clear();
+    Assertions.assertEquals(n0.hashTreeRoot(), listView.hashTreeRoot());
   }
 }
