@@ -46,7 +46,9 @@ public class FinalizedCheckpointHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenStoreIsNull() throws Exception {
-    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(null);
+    when(client.getStore()).thenReturn(null);
+
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);
