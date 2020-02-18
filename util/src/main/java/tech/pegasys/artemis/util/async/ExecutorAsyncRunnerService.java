@@ -13,21 +13,17 @@
 
 package tech.pegasys.artemis.util.async;
 
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.concurrent.ExecutorService;
 
-public interface AsyncRunner {
+public class ExecutorAsyncRunnerService extends DelegatingAsyncRunner {
+  private final ExecutorService executorService;
 
-  default SafeFuture<Void> runAsync(final Runnable action) {
-    return runAsync(() -> SafeFuture.fromRunnable(action));
+  public ExecutorAsyncRunnerService(final ExecutorService executorService) {
+    super(DelayedExecutorAsyncRunner.create(executorService));
+    this.executorService = executorService;
   }
 
-  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action);
-
-  <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);
-
-  default SafeFuture<Void> getDelayedFuture(long delayAmount, TimeUnit delayUnit) {
-    return runAfterDelay(() -> SafeFuture.COMPLETE, delayAmount, delayUnit);
+  public void shutdown() {
+    executorService.shutdownNow();
   }
 }

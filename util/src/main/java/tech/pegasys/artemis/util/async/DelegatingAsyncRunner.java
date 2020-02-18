@@ -16,18 +16,21 @@ package tech.pegasys.artemis.util.async;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-public interface AsyncRunner {
+public class DelegatingAsyncRunner implements AsyncRunner {
+  private final AsyncRunner asyncRunner;
 
-  default SafeFuture<Void> runAsync(final Runnable action) {
-    return runAsync(() -> SafeFuture.fromRunnable(action));
+  public DelegatingAsyncRunner(final AsyncRunner asyncRunner) {
+    this.asyncRunner = asyncRunner;
   }
 
-  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action);
+  @Override
+  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
+    return asyncRunner.runAsync(action);
+  }
 
-  <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit);
-
-  default SafeFuture<Void> getDelayedFuture(long delayAmount, TimeUnit delayUnit) {
-    return runAfterDelay(() -> SafeFuture.COMPLETE, delayAmount, delayUnit);
+  @Override
+  public <U> SafeFuture<U> runAfterDelay(
+      final Supplier<SafeFuture<U>> action, final long delayAmount, final TimeUnit delayUnit) {
+    return asyncRunner.runAfterDelay(action, delayAmount, delayUnit);
   }
 }

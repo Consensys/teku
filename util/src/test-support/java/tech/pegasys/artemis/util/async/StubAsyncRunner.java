@@ -19,8 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StubAsyncRunner implements AsyncRunner {
+  private static final Logger LOG = LogManager.getLogger();
   private List<Runnable> queuedActions = new ArrayList<>();
 
   @Override
@@ -54,6 +57,25 @@ public class StubAsyncRunner implements AsyncRunner {
     final List<Runnable> rest = queuedActions.subList(limit, queuedActions.size());
     queuedActions = new ArrayList<>(rest);
     actionsToExecute.forEach(Runnable::run);
+  }
+
+  public void executeUntilDone() {
+    executeUntilDone(1000);
+  }
+
+  public void executeUntilDone(final int maxRuns) {
+    for (int i = 0; i < maxRuns; i++) {
+      if (countDelayedActions() == 0) {
+        return;
+      }
+      executeQueuedActions();
+    }
+
+    if (countDelayedActions() != 0) {
+      LOG.debug(
+          "Unable to execute all delayed actions. {} actions remain unexecuted.",
+          countDelayedActions());
+    }
   }
 
   public boolean hasDelayedActions() {

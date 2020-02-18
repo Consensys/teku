@@ -118,6 +118,6 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
 
   public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
       final int maximumResponseChunks) {
-    return new Eth2OutgoingRequestHandler<>(asyncRunner, this, maximumResponseChunks);
+    return new Eth2OutgoingRequestHandler<>(asyncRunner, asyncRunner, this, maximumResponseChunks);
   }
 }
