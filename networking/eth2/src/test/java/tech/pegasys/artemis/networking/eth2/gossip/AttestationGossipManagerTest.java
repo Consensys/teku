@@ -34,8 +34,8 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
-import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AttestationGossipManagerTest {

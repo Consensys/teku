@@ -11,19 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.statetransition.events.attestation;
 
-import java.util.List;
+public class BroadcastAggregatesEvent {
 
-public class CommitteeAssignmentEvent {
-
-  List<Integer> committeeIndices;
-
-  public CommitteeAssignmentEvent(List<Integer> committeeIndices) {
-    this.committeeIndices = committeeIndices;
-  }
-
-  public List<Integer> getCommitteeIndices() {
-    return this.committeeIndices;
-  }
+  public BroadcastAggregatesEvent() {}
 }

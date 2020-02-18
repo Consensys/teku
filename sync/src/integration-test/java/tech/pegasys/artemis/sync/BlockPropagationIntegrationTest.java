@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -77,7 +77,7 @@ public class BlockPropagationIntegrationTest {
 
     // Propagate new block
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(currentSlot);
-    node1.eventBus().post(new BlockProposedEvent(newBlock));
+    node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
     // Verify that node2 fetches required blocks in response
     Waiter.waitFor(
