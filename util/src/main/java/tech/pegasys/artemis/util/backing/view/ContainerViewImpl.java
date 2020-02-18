@@ -95,6 +95,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
   @Override
   public void clear() {
     backingNode = getType().createDefaultTree();
+    invalidate();
   }
 
   private void checkIndex(int index) {

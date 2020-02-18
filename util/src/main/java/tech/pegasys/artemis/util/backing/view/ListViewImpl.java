@@ -103,6 +103,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   @Override
   public void clear() {
     container.clear();
+    invalidate();
   }
 
   @SuppressWarnings("unchecked")
