@@ -23,8 +23,10 @@ import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
+import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 class BeaconRestApiTest {
@@ -56,5 +58,22 @@ class BeaconRestApiTest {
     new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
 
     verify(mockApp).get(eq(VersionHandler.ROUTE), any(VersionHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHavePeerIdEndpoint() {
+    when(mockApp.server()).thenReturn(mockServer);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+
+    verify(mockApp).get(eq(PeerIdHandler.ROUTE), any(PeerIdHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveFinalizedCheckpointEndpoint() {
+    when(mockApp.server()).thenReturn(mockServer);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+
+    verify(mockApp)
+        .get(eq(FinalizedCheckpointHandler.ROUTE), any(FinalizedCheckpointHandler.class));
   }
 }
