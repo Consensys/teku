@@ -33,6 +33,10 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
+import tech.pegasys.artemis.util.backing.ListViewRead;
+import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -92,6 +96,10 @@ public class ProfilingRun {
 
   @Test
   void compareHashes(BeaconState s1) {
+    for (int i = 0; i < s1.size(); i++) {
+      Bytes32 hash = s1.get(i).hashTreeRoot();
+      System.out.println(i + ": " + hash);
+    }
     System.out.println("BS: " + s1.hash_tree_root());
     System.out.println("BS: " + old_hash_tree_root(s1));
     System.out.println("getEth1_data: " + s1.getEth1_data().hash_tree_root());
@@ -121,6 +129,21 @@ public class ProfilingRun {
 
 
     System.out.println("getJustification_bits: " + HashTreeUtil.hash_tree_root_bitvector(s1.getJustification_bits()));
+  }
+
+  @Test
+  void bitlistHashTest() {
+    Bitlist bitlist = new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE,
+        Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    for (int i = 0; i < 44; i++) {
+      bitlist.setBit(i);
+    }
+    Bytes32 hashOld = HashTreeUtil.hash_tree_root_bitlist(bitlist);
+
+    ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
+    Bytes32 hashNew = bitlistView.hashTreeRoot();
+
+    System.out.println("" + hashOld + ", " + hashNew);
   }
 
   public Bytes32 old_hash_tree_root(BeaconState s) {
