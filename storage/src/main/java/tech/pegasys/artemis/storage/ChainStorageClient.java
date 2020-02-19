@@ -150,7 +150,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   /**
-   * Retrives the block chosen by fork choice to build and attest on
+   * Retrieves the block chosen by fork choice to build and attest on
    *
    * @return
    */
@@ -159,7 +159,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   /**
-   * Retrives the state of the block chosen by fork choice to build and attest on
+   * Retrieves the state of the block chosen by fork choice to build and attest on
    *
    * @return
    */
@@ -168,7 +168,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   /**
-   * Retrives the slot of the block chosen by fork choice to build and attest on
+   * Retrieves the slot of the block chosen by fork choice to build and attest on
    *
    * @return
    */
