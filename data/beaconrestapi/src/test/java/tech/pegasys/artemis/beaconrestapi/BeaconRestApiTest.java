@@ -79,9 +79,9 @@ class BeaconRestApiTest {
 
   @Test
   public void RestApiShouldHavePeersEndpoint() {
-    when(mockApp.server()).thenReturn(mockServer);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+    when(app.server()).thenReturn(server);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
-    verify(mockApp).get(eq(PeersHandler.ROUTE), any(PeersHandler.class));
+    verify(app).get(eq(PeersHandler.ROUTE), any(PeersHandler.class));
   }
 }

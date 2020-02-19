@@ -21,22 +21,27 @@ import io.javalin.http.Context;
 import io.libp2p.core.PeerId;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.provider.JsonProvider;
 
+@ExtendWith(MockitoExtension.class)
 public class PeersHandlerTest {
-  private Context mockContext = mock(Context.class);
-  private P2PNetwork<Peer> p2PNetwork = mock(P2PNetwork.class);
+  @Mock private Context mockContext;
+  @Mock private P2PNetwork<Peer> p2PNetwork;
+
+  private final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
 
   @Test
   public void shouldReturnArrayOfPeersIfPresent() throws Exception {
     final Peer peer1 = mock(Peer.class);
     final Peer peer2 = mock(Peer.class);
 
-    final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
     final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
     final PeerId peerId2 = new PeerId(PeerId.random().getBytes());
     final NodeId nodeId1 = new LibP2PNodeId(peerId1);
@@ -55,8 +60,6 @@ public class PeersHandlerTest {
 
   @Test
   public void shouldReturnEmptyPeersArrayIfNoneConnected() throws Exception {
-    final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
-
     when(p2PNetwork.streamPeers()).thenReturn(Stream.empty());
 
     final String response = JsonProvider.objectToJSON(new String[] {});
