@@ -33,6 +33,7 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class BeaconChainMethods {
   private static final String STATUS = "/eth2/beacon_chain/req/status/1";
@@ -65,71 +66,84 @@ public class BeaconChainMethods {
   }
 
   public static BeaconChainMethods create(
+      final AsyncRunner asyncRunner,
       final PeerLookup peerLookup,
       final CombinedChainDataClient combinedChainDataClient,
       final ChainStorageClient chainStorageClient,
       final MetricsSystem metricsSystem,
       final StatusMessageFactory statusMessageFactory) {
     return new BeaconChainMethods(
-        createStatus(statusMessageFactory, peerLookup),
-        createGoodBye(metricsSystem, peerLookup),
-        createBeaconBlocksByRoot(chainStorageClient, peerLookup),
-        createBeaconBlocksByRange(combinedChainDataClient, peerLookup));
+        createStatus(asyncRunner, statusMessageFactory, peerLookup),
+        createGoodBye(asyncRunner, metricsSystem, peerLookup),
+        createBeaconBlocksByRoot(asyncRunner, chainStorageClient, peerLookup),
+        createBeaconBlocksByRange(asyncRunner, combinedChainDataClient, peerLookup));
   }
 
   private static Eth2RpcMethod<StatusMessage, StatusMessage> createStatus(
-      final StatusMessageFactory statusMessageFactory, final PeerLookup peerLookup) {
+      final AsyncRunner asyncRunner,
+      final StatusMessageFactory statusMessageFactory,
+      final PeerLookup peerLookup) {
     final StatusMessageHandler statusHandler = new StatusMessageHandler(statusMessageFactory);
     return new Eth2RpcMethod<>(
+        asyncRunner,
         STATUS,
         RpcEncoding.SSZ,
         StatusMessage.class,
         StatusMessage.class,
-        false,
+        true,
         statusHandler,
         peerLookup);
   }
 
   private static Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> createGoodBye(
-      final MetricsSystem metricsSystem, final PeerLookup peerLookup) {
+      final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem,
+      final PeerLookup peerLookup) {
     final GoodbyeMessageHandler goodbyeHandler = new GoodbyeMessageHandler(metricsSystem);
     return new Eth2RpcMethod<>(
+        asyncRunner,
         GOODBYE,
         RpcEncoding.SSZ,
         GoodbyeMessage.class,
         GoodbyeMessage.class,
-        true,
+        false,
         goodbyeHandler,
         peerLookup);
   }
 
   private static Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRoot(
-          final ChainStorageClient chainStorageClient, final PeerLookup peerLookup) {
+          final AsyncRunner asyncRunner,
+          final ChainStorageClient chainStorageClient,
+          final PeerLookup peerLookup) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
         new BeaconBlocksByRootMessageHandler(chainStorageClient);
     return new Eth2RpcMethod<>(
+        asyncRunner,
         BEACON_BLOCKS_BY_ROOT,
         RpcEncoding.SSZ,
         BeaconBlocksByRootRequestMessage.class,
         SignedBeaconBlock.class,
-        false,
+        true,
         beaconBlocksByRootHandler,
         peerLookup);
   }
 
   private static Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       createBeaconBlocksByRange(
-          final CombinedChainDataClient combinedChainDataClient, final PeerLookup peerLookup) {
+          final AsyncRunner asyncRunner,
+          final CombinedChainDataClient combinedChainDataClient,
+          final PeerLookup peerLookup) {
 
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(combinedChainDataClient);
     return new Eth2RpcMethod<>(
+        asyncRunner,
         BEACON_BLOCKS_BY_RANGE,
         RpcEncoding.SSZ,
         BeaconBlocksByRangeRequestMessage.class,
         SignedBeaconBlock.class,
-        false,
+        true,
         beaconBlocksByRangeHandler,
         peerLookup);
   }

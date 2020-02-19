@@ -13,8 +13,6 @@ dependencyManagement {
 
     dependency 'com.google.guava:guava:28.1-jre'
     dependency 'com.google.code.gson:gson:2.8.6'
-    dependency 'com.google.protobuf:protobuf-java:3.10.0'
-    dependency 'com.google.protobuf:protoc:3.9.2'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1'
 
@@ -26,20 +24,18 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.0.4'
 
-    dependency 'io.grpc:protoc-gen-grpc-java:1.25.0'
-    dependency 'io.grpc:grpc-netty-shaded:1.25.0'
-    dependency 'io.grpc:grpc-protobuf:1.25.0'
-    dependency 'io.grpc:grpc-stub:1.25.0'
-
-    dependency 'io.grpc:grpc-core:1.25.0'
-    dependency 'io.grpc:grpc-netty:1.25.0'
-    dependency 'io.javalin:javalin:3.6.0'
+    dependency 'io.javalin:javalin:3.7.0'
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.3.2-RELEASE'
 
     dependency 'io.pkts:pkts-core:3.0.3'
+
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.10.2'
+    dependency 'io.swagger.core.v3:swagger-core:2.1.1'
+    dependency 'org.webjars:swagger-ui:3.24.3'
+    dependency 'io.github.classgraph:classgraph:4.8.34'
 
     dependencySet(group: 'io.vertx', version: '3.8.3') {
       entry 'vertx-codegen'

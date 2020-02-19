@@ -16,14 +16,18 @@ package tech.pegasys.artemis.events;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class EventChannels {
 
   private final ConcurrentMap<Class<?>, EventChannel<?>> channels = new ConcurrentHashMap<>();
   private final Function<Class<?>, EventChannel<?>> eventChannelFactory;
 
-  public EventChannels(final ChannelExceptionHandler exceptionHandler) {
-    this(channelInterface -> EventChannel.createAsync(channelInterface, exceptionHandler));
+  public EventChannels(
+      final ChannelExceptionHandler exceptionHandler, final MetricsSystem metricsSystem) {
+    this(
+        channelInterface ->
+            EventChannel.createAsync(channelInterface, exceptionHandler, metricsSystem));
   }
 
   EventChannels(final Function<Class<?>, EventChannel<?>> eventChannelFactory) {
@@ -34,8 +38,9 @@ public class EventChannels {
     return getChannel(channelInterface).getPublisher();
   }
 
-  public <T> void subscribe(final Class<T> channelInterface, final T subscriber) {
+  public <T> EventChannels subscribe(final Class<T> channelInterface, final T subscriber) {
     getChannel(channelInterface).subscribe(subscriber);
+    return this;
   }
 
   @SuppressWarnings("unchecked")

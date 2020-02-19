@@ -55,6 +55,67 @@ class MessageBufferTest {
     verify(consumer).consumeData(Bytes.wrapByteBuf(input).slice(3));
     verifyNoMoreInteractions(consumer);
     assertThat(buffer.isEmpty()).isTrue();
+    assertThat(buffer.buffersAreEmpty()).isTrue();
+  }
+
+  @Test
+  public void shouldRemoveConsumedBytes_fromPreviousBuffer() throws Exception {
+    final ByteBuf input2 = Unpooled.wrappedBuffer(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9});
+
+    when(consumer.consumeData(Bytes.wrapByteBuf(input))).thenReturn(3);
+    when(consumer.consumeData(Bytes.wrapByteBuf(input).slice(3))).thenReturn(0);
+    final Bytes lastPayload =
+        Bytes.concatenate(Bytes.wrapByteBuf(input).slice(3), Bytes.wrapByteBuf(input2));
+    when(consumer.consumeData(lastPayload)).thenReturn(lastPayload.size());
+
+    buffer.appendData(input);
+    buffer.consumeData(consumer);
+    buffer.appendData(input2);
+    buffer.consumeData(consumer);
+
+    verify(consumer).consumeData(Bytes.wrapByteBuf(input));
+    verify(consumer).consumeData(Bytes.wrapByteBuf(input).slice(3));
+    verify(consumer).consumeData(lastPayload);
+    verifyNoMoreInteractions(consumer);
+    assertThat(buffer.isEmpty()).isTrue();
+    assertThat(buffer.buffersAreEmpty()).isTrue();
+  }
+
+  @Test
+  public void shouldRemoveConsumedBytes_ignoringUnconsumedBuffers() throws Exception {
+    final ByteBuf smallBuffer = Unpooled.wrappedBuffer(new byte[] {3, 4});
+    final int firstBufferSize = input.capacity();
+
+    final int firstMessageLength = 3;
+    final int secondMessageLength = firstBufferSize - firstMessageLength;
+
+    final Bytes firstPayload =
+        Bytes.concatenate(Bytes.wrapByteBuf(input), Bytes.wrapByteBuf(smallBuffer));
+    final Bytes secondPayload = firstPayload.slice(firstMessageLength);
+    final Bytes thirdPayload = secondPayload.slice(secondMessageLength);
+
+    // After processing 2 messages, we've consumed enough bytes to release the first buffer
+    // But the second buffer should still be retained
+    when(consumer.consumeData(firstPayload)).thenReturn(firstMessageLength);
+    when(consumer.consumeData(secondPayload)).thenReturn(secondMessageLength);
+    when(consumer.consumeData(thirdPayload)).thenReturn(0);
+
+    buffer.appendData(input);
+    buffer.appendData(smallBuffer);
+    buffer.consumeData(consumer);
+
+    verify(consumer).consumeData(firstPayload);
+    verify(consumer).consumeData(secondPayload);
+    verify(consumer).consumeData(thirdPayload);
+    verifyNoMoreInteractions(consumer);
+    assertThat(buffer.isEmpty()).isFalse();
+    assertThat(buffer.buffersAreEmpty()).isFalse();
+
+    // Second buffer should still be retained
+    input.release();
+    smallBuffer.release();
+    assertThat(input.refCnt()).isEqualTo(0);
+    assertThat(smallBuffer.refCnt()).isGreaterThan(0);
   }
 
   @Test

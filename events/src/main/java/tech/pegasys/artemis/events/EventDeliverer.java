@@ -16,10 +16,24 @@ package tech.pegasys.artemis.events;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 abstract class EventDeliverer<T> implements InvocationHandler {
   private final Subscribers<T> subscribers = Subscribers.create(true);
+  private final LabelledMetric<Counter> publishedEventCounter;
+
+  protected EventDeliverer(final MetricsSystem metricsSystem) {
+    publishedEventCounter =
+        metricsSystem.createLabelledCounter(
+            ArtemisMetricCategory.EVENTBUS,
+            "event_published_count",
+            "Total number of events published",
+            "channel");
+  }
 
   void subscribe(T subscriber) {
     subscribers.subscribe(subscriber);
@@ -34,6 +48,7 @@ abstract class EventDeliverer<T> implements InvocationHandler {
         throw new RuntimeException(e);
       }
     }
+    publishedEventCounter.labels(method.getDeclaringClass().getSimpleName()).inc();
     subscribers.forEach(subscriber -> deliverTo(subscriber, method, args));
     return null;
   }

@@ -62,5 +62,5 @@ then
      sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
 fi
 
-cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO
+cd $SCRIPT_DIR/demo/node_0/ && ./teku --config=$CONFIG_DIR/runConfig.0.toml --logging=INFO
 

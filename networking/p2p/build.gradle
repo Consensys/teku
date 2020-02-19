@@ -9,7 +9,6 @@ dependencies {
   implementation project(':validator:coordinator')
   implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'
-  implementation 'com.google.protobuf:protobuf-java'
   implementation 'io.vertx:vertx-core'
 
   implementation 'org.apache.tuweni:tuweni-bytes'

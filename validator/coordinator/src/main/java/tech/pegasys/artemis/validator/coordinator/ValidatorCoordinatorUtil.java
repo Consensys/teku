@@ -17,33 +17,8 @@ import static tech.pegasys.artemis.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
-import com.google.protobuf.ByteString;
-import java.util.Map;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.proto.messagesigner.MessageSignerGrpc;
-import tech.pegasys.artemis.proto.messagesigner.SignatureRequest;
-import tech.pegasys.artemis.proto.messagesigner.SignatureResponse;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ValidatorCoordinatorUtil {
-
-  static BLSSignature getSignature(
-      Map<BLSPublicKey, ValidatorInfo> validators,
-      Bytes message,
-      Bytes domain,
-      BLSPublicKey signer) {
-    SignatureRequest request =
-        SignatureRequest.newBuilder()
-            .setMessage(ByteString.copyFrom(message.toArray()))
-            .setDomain(ByteString.copyFrom(domain.toArray()))
-            .build();
-
-    SignatureResponse response;
-    response =
-        MessageSignerGrpc.newBlockingStub(validators.get(signer).getChannel()).signMessage(request);
-    return BLSSignature.fromBytes(Bytes.wrap(response.getMessage().toByteArray()));
-  }
 
   static boolean isEpochStart(UnsignedLong slot) {
     return slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).equals(UnsignedLong.ZERO);

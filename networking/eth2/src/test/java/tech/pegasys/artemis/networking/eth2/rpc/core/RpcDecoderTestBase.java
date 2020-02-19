@@ -27,13 +27,20 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
+import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
+import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.async.AsyncRunner;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class RpcDecoderTestBase {
 
@@ -48,13 +55,28 @@ public class RpcDecoderTestBase {
       Bytes.wrap(ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8));
   protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
       getLengthPrefix(ERROR_MESSAGE_DATA.size());
-  protected static PeerLookup peerLookup = mock(PeerLookup.class);
+
+  protected static final AsyncRunner asyncRunner = new StubAsyncRunner();
+  protected static final PeerLookup peerLookup = mock(PeerLookup.class);
+  protected static final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
+  protected static final ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
+
+  protected static final BeaconChainMethods BEACON_CHAIN_METHODS =
+      BeaconChainMethods.create(
+          asyncRunner,
+          peerLookup,
+          combinedChainDataClient,
+          chainStorageClient,
+          new NoOpMetricsSystem(),
+          new StatusMessageFactory(chainStorageClient));
 
   @SuppressWarnings("unchecked")
   protected static final Eth2RpcMethod<
           BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>
       METHOD =
           new Eth2RpcMethod<>(
+              asyncRunner,
               "",
               RpcEncoding.SSZ,
               BeaconBlocksByRootRequestMessage.class,

@@ -82,12 +82,6 @@ public class BeaconStateUtil {
    */
   public static boolean BLS_VERIFY_DEPOSIT = true;
 
-  /**
-   * For debug/test purposes only enables/disables deposit root Merkle proofs generation/validation
-   * Setting to <code>false</code> significantly speeds up state initialization
-   */
-  public static boolean DEPOSIT_PROOFS_ENABLED = true;
-
   public static BeaconStateWithCache initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     final GenesisGenerator genesisGenerator = new GenesisGenerator();
@@ -104,16 +98,14 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
   public static void process_deposit(BeaconState state, Deposit deposit) {
-    if (DEPOSIT_PROOFS_ENABLED) {
-      checkArgument(
-          is_valid_merkle_branch(
-              deposit.getData().hash_tree_root(),
-              deposit.getProof(),
-              Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the List length mix-in
-              toIntExact(state.getEth1_deposit_index().longValue()),
-              state.getEth1_data().getDeposit_root()),
-          "process_deposit: Verify the Merkle branch");
-    }
+    checkArgument(
+        is_valid_merkle_branch(
+            deposit.getData().hash_tree_root(),
+            deposit.getProof(),
+            Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the List length mix-in
+            toIntExact(state.getEth1_deposit_index().longValue()),
+            state.getEth1_data().getDeposit_root()),
+        "process_deposit: Verify the Merkle branch");
 
     process_deposit_without_checking_merkle_proof(state, deposit, null);
   }

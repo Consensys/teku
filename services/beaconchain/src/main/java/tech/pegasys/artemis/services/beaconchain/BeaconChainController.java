@@ -51,12 +51,14 @@ import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.statetransition.events.BroadcastAggregatesEvent;
-import tech.pegasys.artemis.statetransition.events.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
+import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.genesis.PreGenesisDepositHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
@@ -67,6 +69,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
+import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainController {
@@ -87,6 +90,7 @@ public class BeaconChainController {
   private BeaconRestApi beaconRestAPI;
   private AttestationAggregator attestationAggregator;
   private BlockAttestationsPool blockAttestationsPool;
+  private DepositProvider depositProvider;
   private Service syncService;
   private boolean testMode;
   private AttestationManager attestationManager;
@@ -112,8 +116,9 @@ public class BeaconChainController {
     initMetrics();
     initAttestationAggregator();
     initBlockAttestationsPool();
+    initDepositProvider();
     initValidatorCoordinator();
-    initDepositHandler();
+    initPreGenesisDepositHandler();
     initStateProcessor();
     initAttestationPropagationManager();
     initP2PNetwork();
@@ -151,6 +156,14 @@ public class BeaconChainController {
             "Latest epoch recorded by the beacon chain");
   }
 
+  public void initDepositProvider() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositProvider()");
+    depositProvider = new DepositProvider(chainStorageClient);
+    eventChannels
+        .subscribe(DepositEventChannel.class, depositProvider)
+        .subscribe(FinalizedCheckpointEventChannel.class, depositProvider);
+  }
+
   public void initValidatorCoordinator() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
     new ValidatorCoordinator(
@@ -159,6 +172,7 @@ public class BeaconChainController {
         chainStorageClient,
         attestationAggregator,
         blockAttestationsPool,
+        depositProvider,
         config);
   }
 
@@ -167,8 +181,8 @@ public class BeaconChainController {
     this.stateProcessor = new StateProcessor(eventBus, chainStorageClient);
   }
 
-  private void initDepositHandler() {
-    STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositHandler()");
+  private void initPreGenesisDepositHandler() {
+    STDOUT.log(Level.DEBUG, "BeaconChainController.initPreGenesisDepositHandler()");
     eventChannels.subscribe(
         DepositEventChannel.class, new PreGenesisDepositHandler(config, chainStorageClient));
   }
@@ -184,10 +198,13 @@ public class BeaconChainController {
       this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
-      PrivKey pk = KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
+      Optional<PrivKey> pk =
+          bytes.isEmpty()
+              ? Optional.empty()
+              : Optional.of(KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe()));
       NetworkConfig p2pConfig =
           new NetworkConfig(
-              Optional.of(pk),
+              pk,
               config.getNetworkInterface(),
               config.getPort(),
               config.getAdvertisedPort(),
@@ -221,7 +238,11 @@ public class BeaconChainController {
   public void initRestAPI() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
     beaconRestAPI =
-        new BeaconRestApi(chainStorageClient, p2pNetwork, config.getBeaconRestAPIPortNumber());
+        new BeaconRestApi(
+            chainStorageClient,
+            p2pNetwork,
+            new HistoricalChainData(eventBus),
+            config.getBeaconRestAPIPortNumber());
   }
 
   public void initSyncManager() {

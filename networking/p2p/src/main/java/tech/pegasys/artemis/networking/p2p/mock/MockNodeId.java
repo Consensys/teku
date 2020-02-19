@@ -29,4 +29,9 @@ public class MockNodeId implements NodeId {
   public String toBase58() {
     return base58;
   }
+
+  @Override
+  public String toString() {
+    return toBase58();
+  }
 }

@@ -62,13 +62,11 @@ public class BlockImporterTest {
   public static void init() {
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
-    BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = false;
   }
 
   @AfterAll
   public static void dispose() {
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = true;
-    BeaconStateUtil.DEPOSIT_PROOFS_ENABLED = true;
   }
 
   @BeforeEach

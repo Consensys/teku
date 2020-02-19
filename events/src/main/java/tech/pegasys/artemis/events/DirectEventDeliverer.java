@@ -13,14 +13,37 @@
 
 package tech.pegasys.artemis.events;
 
+import static tech.pegasys.artemis.metrics.ArtemisMetricCategory.EVENTBUS;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
   private final ChannelExceptionHandler exceptionHandler;
+  private final LabelledMetric<Counter> consumedEventCounter;
+  private final LabelledMetric<Counter> failedEventCounter;
 
-  DirectEventDeliverer(final ChannelExceptionHandler exceptionHandler) {
+  DirectEventDeliverer(
+      final ChannelExceptionHandler exceptionHandler, final MetricsSystem metricsSystem) {
+    super(metricsSystem);
     this.exceptionHandler = exceptionHandler;
+    consumedEventCounter =
+        metricsSystem.createLabelledCounter(
+            EVENTBUS,
+            "event_consumed_count",
+            "Total number of events consumed",
+            "channel",
+            "subscriber");
+    failedEventCounter =
+        metricsSystem.createLabelledCounter(
+            EVENTBUS,
+            "event_failed_count",
+            "Number of events which failed to be processed",
+            "channel",
+            "subscriber");
   }
 
   @Override
@@ -28,9 +51,20 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
     try {
       method.invoke(subscriber, args);
     } catch (IllegalAccessException e) {
+      incrementCounter(failedEventCounter, subscriber, method);
       exceptionHandler.handleException(e, subscriber, method, args);
     } catch (InvocationTargetException e) {
+      incrementCounter(failedEventCounter, subscriber, method);
       exceptionHandler.handleException(e.getTargetException(), subscriber, method, args);
+    } finally {
+      incrementCounter(consumedEventCounter, subscriber, method);
     }
+  }
+
+  private void incrementCounter(
+      final LabelledMetric<Counter> counter, final T subscriber, final Method method) {
+    counter
+        .labels(method.getDeclaringClass().getSimpleName(), subscriber.getClass().getSimpleName())
+        .inc();
   }
 }

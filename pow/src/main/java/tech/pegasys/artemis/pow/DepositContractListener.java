@@ -13,79 +13,31 @@
 
 package tech.pegasys.artemis.pow;
 
-import static tech.pegasys.artemis.pow.contract.DepositContract.DEPOSITEVENT_EVENT;
-
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.Flowable;
-import io.reactivex.disposables.Disposable;
 import java.util.List;
-import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.abi.EventEncoder;
 import org.web3j.abi.datatypes.Type;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.request.EthFilter;
-import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DepositContractListener {
-  private final Disposable subscriptionNewDeposit;
-  private final Web3j web3j;
+  private final Eth1Provider eth1Provider;
   private final DepositContract contract;
-  private volatile Optional<EthBlock.Block> cachedBlock = Optional.empty();
-  private final PublishOnInactivityDepositHandler depositHandler;
+  private final DepositRequestManager depositRequestManager;
 
   public DepositContractListener(
-      Web3j web3j,
+      Eth1Provider eth1Provider,
       DepositContract contract,
-      final PublishOnInactivityDepositHandler depositHandler) {
-    this.web3j = web3j;
+      DepositRequestManager depositRequestManager) {
+    this.eth1Provider = eth1Provider;
     this.contract = contract;
-    this.depositHandler = depositHandler;
-
-    // Filter by the contract address and by begin/end blocks
-    EthFilter depositEventFilter =
-        new EthFilter(
-                DefaultBlockParameterName.EARLIEST,
-                DefaultBlockParameterName.LATEST,
-                contract.getContractAddress().substring(2))
-            .addSingleTopic(EventEncoder.encode(DEPOSITEVENT_EVENT));
-
-    // Subscribe to the event of a validator being registered in the
-    // DepositContract
-    subscriptionNewDeposit =
-        contract
-            .depositEventEventFlowable(depositEventFilter)
-            .flatMap(
-                event ->
-                    getBlockByHash(event.log.getBlockHash())
-                        .map(block -> Pair.of(block, new Deposit(event))))
-            .subscribe(pair -> this.depositHandler.onDepositEvent(pair.getLeft(), pair.getRight()));
+    this.depositRequestManager = depositRequestManager;
   }
 
-  private Flowable<Block> getBlockByHash(final String blockHash) {
-    return cachedBlock
-        .filter(block -> block.getHash().equals(blockHash))
-        .map(Flowable::just)
-        .orElseGet(
-            () ->
-                web3j
-                    .ethGetBlockByHash(blockHash, false)
-                    .flowable()
-                    .map(
-                        blockResponse -> {
-                          cachedBlock = Optional.of(blockResponse.getBlock());
-                          return blockResponse.getBlock();
-                        }));
+  public void start() {
+    depositRequestManager.start();
   }
 
   @SuppressWarnings("rawtypes")
@@ -117,25 +69,27 @@ public class DepositContractListener {
   }
 
   public void stop() {
-    subscriptionNewDeposit.dispose();
+    depositRequestManager.stop();
   }
 
   private SafeFuture<String> callFunctionAtBlockNumber(
       String encodedFunction, UnsignedLong blockHeight) {
-    return SafeFuture.of(
-            web3j
-                .ethCall(
-                    Transaction.createEthCallTransaction(
-                        null, contract.getContractAddress(), encodedFunction),
-                    DefaultBlockParameter.valueOf(blockHeight.bigIntegerValue()))
-                .sendAsync())
+    return eth1Provider
+        .ethCall(null, contract.getContractAddress(), encodedFunction, blockHeight)
         .thenApply(
             ethCall -> {
               if (ethCall.hasError()) {
                 throw new Eth1RequestException(
                     "Eth1 call has failed:" + ethCall.getError().getMessage());
               } else {
-                return ethCall.getValue();
+                String value = ethCall.getValue();
+                if (value == null) {
+                  throw new Eth1RequestException(
+                      "Eth1 call has failed: data at block number "
+                          + blockHeight
+                          + " is unavailable.");
+                }
+                return value;
               }
             });
   }

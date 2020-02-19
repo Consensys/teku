@@ -134,7 +134,6 @@ public class Constants {
   public static int PHASE_1_FORK_SLOT;
 
   // Artemis specific
-  public static int VALIDATOR_CLIENT_PORT_BASE = 50000;
   public static Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
@@ -142,6 +141,9 @@ public class Constants {
   public static UnsignedLong ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10); // in sec
   public static long ETH1_CACHE_STARTUP_RETRY_TIMEOUT = 10; // in sec
   public static long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
+  public static long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 5; // in sec
+  public static long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
+  public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
 
   static {
     setConstants("minimal");

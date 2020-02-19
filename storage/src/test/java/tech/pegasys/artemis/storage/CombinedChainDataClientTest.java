@@ -75,7 +75,7 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(slot);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
-    when(historicalChainData.getFinalizedBlockAtSlot(slot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(slot))
         .thenReturn(completedFuture(Optional.of(block)));
 
     assertThat(client.getBlockAtSlotExact(slot, Bytes32.ZERO))
@@ -88,7 +88,7 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(UnsignedLong.ZERO);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
-    when(historicalChainData.getFinalizedBlockAtSlot(slot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(slot))
         .thenReturn(completedFuture(Optional.of(block)));
 
     assertThat(client.getBlockAtSlotExact(slot, Bytes32.ZERO))
@@ -101,7 +101,7 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(UnsignedLong.ZERO);
     when(store.getBlockState(Bytes32.ZERO)).thenReturn(beaconState(UnsignedLong.valueOf(100)));
     when(recentChainData.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(10));
-    when(historicalChainData.getFinalizedBlockAtSlot(slot))
+    when(historicalChainData.getLatestFinalizedBlockAtSlot(slot))
         .thenReturn(completedFuture(Optional.of(block)));
 
     assertThat(client.getBlockInEffectAtSlot(slot, Bytes32.ZERO))

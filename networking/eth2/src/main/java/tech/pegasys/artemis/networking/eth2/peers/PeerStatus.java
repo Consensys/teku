@@ -20,12 +20,12 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
 public class PeerStatus {
   private final Bytes4 headForkVersion;
-  private final Bytes32 finalizedRoot;
-  private final UnsignedLong finalizedEpoch;
+  private final Checkpoint finalizedCheckpoint;
   private final Bytes32 headRoot;
   private final UnsignedLong headSlot;
 
@@ -47,8 +47,8 @@ public class PeerStatus {
     checkNotNull(status);
     checkNotNull(genesisFork);
     return Objects.equals(status.headForkVersion, genesisFork)
-        && Objects.equals(status.finalizedRoot, Bytes32.ZERO)
-        && Objects.equals(status.finalizedEpoch, UnsignedLong.ZERO)
+        && Objects.equals(status.getFinalizedRoot(), Bytes32.ZERO)
+        && Objects.equals(status.getFinalizedEpoch(), UnsignedLong.ZERO)
         && Objects.equals(status.headRoot, Bytes32.ZERO)
         && Objects.equals(status.headSlot, UnsignedLong.ZERO);
   }
@@ -60,8 +60,7 @@ public class PeerStatus {
       final Bytes32 headRoot,
       final UnsignedLong headSlot) {
     this.headForkVersion = headForkVersion;
-    this.finalizedRoot = finalizedRoot;
-    this.finalizedEpoch = finalizedEpoch;
+    this.finalizedCheckpoint = new Checkpoint(finalizedEpoch, finalizedRoot);
     this.headRoot = headRoot;
     this.headSlot = headSlot;
   }
@@ -71,11 +70,15 @@ public class PeerStatus {
   }
 
   public Bytes32 getFinalizedRoot() {
-    return finalizedRoot;
+    return finalizedCheckpoint.getRoot();
+  }
+
+  public Checkpoint getFinalizedCheckpoint() {
+    return finalizedCheckpoint;
   }
 
   public UnsignedLong getFinalizedEpoch() {
-    return finalizedEpoch;
+    return finalizedCheckpoint.getEpoch();
   }
 
   public Bytes32 getHeadRoot() {
@@ -90,8 +93,8 @@ public class PeerStatus {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("currentFork", headForkVersion)
-        .add("finalizedRoot", finalizedRoot)
-        .add("finalizedEpoch", finalizedEpoch)
+        .add("finalizedRoot", getFinalizedRoot())
+        .add("finalizedEpoch", getFinalizedEpoch())
         .add("headRoot", headRoot)
         .add("headSlot", headSlot)
         .toString();
@@ -107,14 +110,13 @@ public class PeerStatus {
     }
     final PeerStatus that = (PeerStatus) o;
     return Objects.equals(headForkVersion, that.headForkVersion)
-        && Objects.equals(finalizedRoot, that.finalizedRoot)
-        && Objects.equals(finalizedEpoch, that.finalizedEpoch)
+        && Objects.equals(finalizedCheckpoint, that.finalizedCheckpoint)
         && Objects.equals(headRoot, that.headRoot)
         && Objects.equals(headSlot, that.headSlot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headForkVersion, finalizedRoot, finalizedEpoch, headRoot, headSlot);
+    return Objects.hash(headForkVersion, finalizedCheckpoint, headRoot, headSlot);
   }
 }

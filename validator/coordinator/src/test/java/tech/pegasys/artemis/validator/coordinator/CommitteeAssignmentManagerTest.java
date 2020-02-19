@@ -40,8 +40,8 @@ import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -63,7 +63,7 @@ class CommitteeAssignmentManagerTest {
   @BeforeEach
   void setup() {
     // Own only one validator
-    validators.put(validatorKeys.get(0).getPublicKey(), new ValidatorInfo(false, null));
+    validators.put(validatorKeys.get(0).getPublicKey(), new ValidatorInfo(null));
 
     getIndicesOfOurValidators(state, validators);
     committeeAssignments = new HashMap<>();

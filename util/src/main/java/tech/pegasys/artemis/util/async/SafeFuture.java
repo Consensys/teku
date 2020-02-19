@@ -26,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 public class SafeFuture<T> extends CompletableFuture<T> {
   private static final Logger LOG = LogManager.getLogger();
 
+  public static SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
+
   public static void reportExceptions(final CompletionStage<?> future) {
     future.exceptionally(
         error -> {
@@ -101,6 +103,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     finish(result -> onSuccess.run(), onError);
   }
 
+  public void propagateTo(final SafeFuture<T> target) {
+    propagateResult(this, target);
+  }
+
   /**
    * Run final logic on success or error
    *
@@ -133,9 +139,9 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @param errorHandler the function returning a new CompletionStage
    * @return the SafeFuture
    */
-  @SuppressWarnings("FutureReturnValueIgnored")
+  @SuppressWarnings({"FutureReturnValueIgnored", "MissingOverride"})
   public SafeFuture<T> exceptionallyCompose(
-      final Function<Throwable, CompletionStage<T>> errorHandler) {
+      final Function<Throwable, ? extends CompletionStage<T>> errorHandler) {
     final SafeFuture<T> result = new SafeFuture<>();
     whenComplete(
         (value, error) -> {

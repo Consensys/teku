@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 
 public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   private static final Logger LOG = LogManager.getLogger();
@@ -36,8 +37,10 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   private final ExecutorService executor;
 
   public AsyncEventDeliverer(
-      final ExecutorService executor, final ChannelExceptionHandler exceptionHandler) {
-    super(exceptionHandler);
+      final ExecutorService executor,
+      final ChannelExceptionHandler exceptionHandler,
+      final MetricsSystem metricsSystem) {
+    super(exceptionHandler, metricsSystem);
     this.executor = executor;
   }
 

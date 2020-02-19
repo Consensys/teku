@@ -29,9 +29,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeAssignmentEvent;
-import tech.pegasys.artemis.statetransition.events.CommitteeDismissalEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
+import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -77,7 +77,7 @@ public class GossipMessageHandlerIntegrationTest {
 
     // Propagate block from network 1
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(blockSlot);
-    node1.eventBus().post(new BlockProposedEvent(newBlock));
+    node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
     final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
@@ -123,7 +123,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate invalid block from network 1
     final SignedBeaconBlock newBlock =
         node1.chainUtil().createBlockAtSlotFromInvalidProposer(blockSlot);
-    node1.eventBus().post(new BlockProposedEvent(newBlock));
+    node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
     // Listen for new block event to arrive on networks 2 and 3
     final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
