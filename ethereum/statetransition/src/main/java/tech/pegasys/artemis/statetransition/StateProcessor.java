@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
@@ -50,7 +50,7 @@ public class StateProcessor {
 
   @Subscribe
   @SuppressWarnings("unused")
-  private void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
+  private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
     LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
     final BlockImportResult result = blockImporter.importBlock(blockProposedEvent.getBlock());
     if (result.isSuccessful()) {

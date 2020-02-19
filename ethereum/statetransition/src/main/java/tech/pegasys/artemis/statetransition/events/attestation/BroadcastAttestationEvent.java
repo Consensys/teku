@@ -11,19 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.statetransition.events.attestation;
 
-import java.util.List;
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class CommitteeDismissalEvent {
+public class BroadcastAttestationEvent {
 
-  List<Integer> committeeIndices;
+  Bytes32 headBlockRoot;
+  UnsignedLong nodeSlot;
 
-  public CommitteeDismissalEvent(List<Integer> committeeIndices) {
-    this.committeeIndices = committeeIndices;
+  public BroadcastAttestationEvent(Bytes32 headBlockRoot, UnsignedLong nodeSlot) {
+    this.headBlockRoot = headBlockRoot;
+    this.nodeSlot = nodeSlot;
   }
 
-  public List<Integer> getCommitteeIndices() {
-    return this.committeeIndices;
+  public Bytes32 getHeadBlockRoot() {
+    return this.headBlockRoot;
+  }
+
+  public UnsignedLong getNodeSlot() {
+    return nodeSlot;
   }
 }
