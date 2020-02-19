@@ -134,10 +134,10 @@ public class BeaconRestApi {
       ChainStorageClient chainStorageClient, HistoricalChainData historicalChainData) {
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainStorageClient));
     app.get(FinalizedCheckpointHandler.ROUTE, new FinalizedCheckpointHandler(chainStorageClient));
+    app.get(BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient));
     // TODO: not in Minimal or optional specified set - some are similar to lighthouse
     // implementation
     handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
-    handlers.add(new BeaconChainHeadHandler(chainStorageClient));
     handlers.add(new BeaconStateHandler(chainStorageClient));
   }
 
