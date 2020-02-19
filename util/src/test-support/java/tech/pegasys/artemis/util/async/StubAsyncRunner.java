@@ -60,10 +60,14 @@ public class StubAsyncRunner implements AsyncRunner {
   }
 
   public void executeUntilDone() {
-    executeUntilDone(1000);
+    executeRepeatedly(1000, true);
   }
 
-  public void executeUntilDone(final int maxRuns) {
+  public void executeRepeatedly(final int maxRuns) {
+    executeRepeatedly(maxRuns, false);
+  }
+
+  private void executeRepeatedly(final int maxRuns, final boolean shouldFinish) {
     for (int i = 0; i < maxRuns; i++) {
       if (countDelayedActions() == 0) {
         return;
@@ -71,10 +75,11 @@ public class StubAsyncRunner implements AsyncRunner {
       executeQueuedActions();
     }
 
-    if (countDelayedActions() != 0) {
-      LOG.debug(
-          "Unable to execute all delayed actions. {} actions remain unexecuted.",
-          countDelayedActions());
+    if (countDelayedActions() != 0 && shouldFinish) {
+      throw new RuntimeException(
+          "Unable to execute all delayed actions. "
+              + countDelayedActions()
+              + " actions remain unexecuted.");
     }
   }
 

@@ -93,7 +93,7 @@ public class Eth2OutgoingRequestHandlerTest {
       assertThat(finishedProcessingFuture).isNotDone();
     }
 
-    asyncRequestRunner.executeUntilDone(maxChunks - 1);
+    asyncRequestRunner.executeRepeatedly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
 
     asyncRequestRunner.executeUntilDone();
