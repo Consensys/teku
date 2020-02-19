@@ -27,7 +27,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
@@ -45,7 +45,7 @@ public class blocksMainnetValid2 extends TestSuite {
     "sanityVoluntaryExitSetup",
   })
   void sanityProcessBlock(
-      BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
+      BeaconStateImpl pre, BeaconStateImpl post, String testName, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(

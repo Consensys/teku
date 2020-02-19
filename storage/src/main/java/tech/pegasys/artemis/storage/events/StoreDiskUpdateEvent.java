@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
 public class StoreDiskUpdateEvent {
@@ -30,8 +30,8 @@ public class StoreDiskUpdateEvent {
   private final Optional<Checkpoint> finalizedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SignedBeaconBlock> blocks;
-  private final Map<Bytes32, BeaconStateRead> blockStates;
-  private final Map<Checkpoint, BeaconStateRead> checkpointStates;
+  private final Map<Bytes32, BeaconState> blockStates;
+  private final Map<Checkpoint, BeaconState> checkpointStates;
   private final Map<UnsignedLong, Checkpoint> latestMessages;
 
   public StoreDiskUpdateEvent(
@@ -42,8 +42,8 @@ public class StoreDiskUpdateEvent {
       final Optional<Checkpoint> finalizedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final Map<Bytes32, BeaconStateRead> blockStates,
-      final Map<Checkpoint, BeaconStateRead> checkpointStates,
+      final Map<Bytes32, BeaconState> blockStates,
+      final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UnsignedLong, Checkpoint> latestMessages) {
     this.transactionId = transactionId;
     this.time = time;
@@ -85,11 +85,11 @@ public class StoreDiskUpdateEvent {
     return blocks;
   }
 
-  public Map<Bytes32, BeaconStateRead> getBlockStates() {
+  public Map<Bytes32, BeaconState> getBlockStates() {
     return blockStates;
   }
 
-  public Map<Checkpoint, BeaconStateRead> getCheckpointStates() {
+  public Map<Checkpoint, BeaconState> getCheckpointStates() {
     return checkpointStates;
   }
 

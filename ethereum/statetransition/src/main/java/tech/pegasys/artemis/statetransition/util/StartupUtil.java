@@ -29,7 +29,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
@@ -42,7 +42,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public final class StartupUtil {
 
-  public static Eth1Data get_eth1_data_stub(BeaconStateRead state, UnsignedLong current_epoch) {
+  public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
     UnsignedLong epochs_per_period =
         UnsignedLong.valueOf(SLOTS_PER_ETH1_VOTING_PERIOD)
             .dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
@@ -53,12 +53,12 @@ public final class StartupUtil {
         Hash.sha2_256(Hash.sha2_256(SSZ.encodeUInt64(voting_period.longValue()))));
   }
 
-  public static BeaconStateRead createMockedStartInitialBeaconState(
+  public static BeaconState createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys) {
     return createMockedStartInitialBeaconState(genesisTime, validatorKeys, true);
   }
 
-  public static BeaconStateRead createMockedStartInitialBeaconState(
+  public static BeaconState createMockedStartInitialBeaconState(
       final long genesisTime, List<BLSKeyPair> validatorKeys, boolean signDeposits) {
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
@@ -67,10 +67,10 @@ public final class StartupUtil {
         .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
   }
 
-  public static BeaconStateRead loadBeaconStateFromFile(final String stateFile)
+  public static BeaconState loadBeaconStateFromFile(final String stateFile)
       throws IOException {
     return SimpleOffsetSerializer.deserialize(
-            Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconState.class);
+            Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconStateImpl.class);
   }
 
   public static void setupInitialState(
@@ -89,7 +89,7 @@ public final class StartupUtil {
       final String startState,
       final List<BLSKeyPair> validatorKeyPairs,
       final boolean signDeposits) {
-    BeaconStateRead initialState;
+    BeaconState initialState;
     if (startState != null) {
       try {
         STDOUT.log(Level.INFO, "Loading initial state from " + startState, ALogger.Color.GREEN);

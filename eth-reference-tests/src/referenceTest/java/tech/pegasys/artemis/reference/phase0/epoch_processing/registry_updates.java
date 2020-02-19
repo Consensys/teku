@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
@@ -36,7 +36,7 @@ public class registry_updates extends TestSuite {
   @MethodSource({
     "mainnetProcessRegistryUpdates",
   })
-  void mainnetProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
+  void mainnetProcessRegistryUpdates(BeaconStateImpl pre, BeaconStateImpl post, String testName)
       throws Exception {
     EpochProcessorUtil.process_registry_updates(pre);
     assertEquals(pre, post);
@@ -46,7 +46,7 @@ public class registry_updates extends TestSuite {
   @MethodSource({
     "minimalProcessRegistryUpdates",
   })
-  void minimalProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
+  void minimalProcessRegistryUpdates(BeaconStateImpl pre, BeaconStateImpl post, String testName)
       throws Exception {
     EpochProcessorUtil.process_registry_updates(pre);
     assertThat(pre).usingRecursiveComparison().isEqualTo(post);

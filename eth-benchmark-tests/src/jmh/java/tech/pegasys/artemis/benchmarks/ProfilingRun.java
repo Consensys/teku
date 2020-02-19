@@ -27,7 +27,7 @@ import tech.pegasys.artemis.benchmarks.gen.BlockIO;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.artemis.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
@@ -94,7 +94,7 @@ public class ProfilingRun {
   }
 
   @Test
-  void compareHashes(BeaconStateRead s1) {
+  void compareHashes(BeaconState s1) {
     for (int i = 0; i < s1.size(); i++) {
       Bytes32 hash = s1.get(i).hashTreeRoot();
       System.out.println(i + ": " + hash);
@@ -130,7 +130,7 @@ public class ProfilingRun {
     System.out.println("getJustification_bits: " + HashTreeUtil.hash_tree_root_bitvector(s1.getJustification_bits()));
   }
 
-  public Bytes32 old_hash_tree_root(BeaconStateRead s) {
+  public Bytes32 old_hash_tree_root(BeaconState s) {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             // Versioning

@@ -36,7 +36,7 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -86,7 +86,7 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
   public static IndexedAttestation get_indexed_attestation(
-      BeaconStateRead state, Attestation attestation) {
+      BeaconState state, Attestation attestation) {
     List<Integer> attesting_indices =
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
 
@@ -114,7 +114,7 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public static List<Integer> get_attesting_indices(
-      BeaconStateRead state, AttestationData data, Bitlist bits) {
+      BeaconState state, AttestationData data, Bitlist bits) {
     List<Integer> committee = get_beacon_committee(state, data.getSlot(), data.getIndex());
 
     Set<Integer> attesting_indices = new HashSet<>();
@@ -135,7 +135,7 @@ public class AttestationUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
   public static Boolean is_valid_indexed_attestation(
-      BeaconStateRead state, IndexedAttestation indexed_attestation) {
+      BeaconState state, IndexedAttestation indexed_attestation) {
     List<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
     if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
@@ -172,7 +172,7 @@ public class AttestationUtil {
     return true;
   }
 
-  private static BLSPublicKey getValidatorPubKey(BeaconStateRead state, UnsignedLong validatorIndex) {
+  private static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
     return BeaconStateWithCache.getTransitionCaches(state).getValidatorsPubKeys()
         .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
   }
@@ -224,7 +224,7 @@ public class AttestationUtil {
   }
 
   // Get attestation data that does not include attester specific shard or crosslink information
-  public static AttestationData getGenericAttestationData(BeaconStateRead state, BeaconBlock block) {
+  public static AttestationData getGenericAttestationData(BeaconState state, BeaconBlock block) {
     UnsignedLong slot = state.getSlot();
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.hash_tree_root();

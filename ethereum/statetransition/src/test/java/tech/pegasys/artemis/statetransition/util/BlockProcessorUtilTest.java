@@ -30,10 +30,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
@@ -52,7 +52,7 @@ class BlockProcessorUtilTest {
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = deposit.getData().getAmount();
 
-    BeaconStateWrite beaconState = createBeaconState().createWritableCopy();
+    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
 
     int originalValidatorRegistrySize = beaconState.getValidators().size();
     int originalValidatorBalancesSize = beaconState.getBalances().size();
@@ -67,7 +67,7 @@ class BlockProcessorUtilTest {
         beaconState.getBalances().size() == (originalValidatorBalancesSize + 1),
         "No balance was added to the validator balances.");
     assertEquals(
-        new Validator(
+        new ValidatorImpl(
             pubkey,
             withdrawalCredentials,
             UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -92,8 +92,8 @@ class BlockProcessorUtilTest {
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = deposit.getData().getAmount();
 
-    Validator knownValidator =
-        new Validator(
+    ValidatorImpl knownValidator =
+        new ValidatorImpl(
             pubkey,
             withdrawalCredentials,
             UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -103,7 +103,7 @@ class BlockProcessorUtilTest {
             Constants.FAR_FUTURE_EPOCH,
             Constants.FAR_FUTURE_EPOCH);
 
-    BeaconStateWrite beaconState = createBeaconState(amount, knownValidator).createWritableCopy();
+    MutableBeaconState beaconState = createBeaconState(amount, knownValidator).createWritableCopy();
 
     int originalValidatorRegistrySize = beaconState.getValidators().size();
     int originalValidatorBalancesSize = beaconState.getBalances().size();
@@ -124,17 +124,17 @@ class BlockProcessorUtilTest {
         beaconState.getBalances().get(originalValidatorBalancesSize - 1));
   }
 
-  private BeaconStateRead createBeaconState() {
+  private BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
 
-  private BeaconStateRead createBeaconState(UnsignedLong amount, Validator knownValidator) {
+  private BeaconState createBeaconState(UnsignedLong amount, ValidatorImpl knownValidator) {
     return createBeaconState(true, amount, knownValidator);
   }
 
-  private BeaconStateRead createBeaconState(
-      boolean addToList, UnsignedLong amount, Validator knownValidator) {
-    BeaconStateWrite beaconState = BeaconStateRead.createEmpty().createWritableCopy();
+  private BeaconState createBeaconState(
+      boolean addToList, UnsignedLong amount, ValidatorImpl knownValidator) {
+    MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
@@ -142,11 +142,11 @@ class BlockProcessorUtilTest {
             Constants.GENESIS_FORK_VERSION,
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
-    SSZList<Validator> validatorList =
+    SSZList<ValidatorImpl> validatorList =
         SSZList.create(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
-            Validator.class);
+            ValidatorImpl.class);
     SSZList<UnsignedLong> balanceList =
         SSZList.create(
             Arrays.asList(

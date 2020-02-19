@@ -18,7 +18,7 @@ import java.io.Closeable;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 
 public interface Database extends Closeable {
@@ -33,5 +33,5 @@ public interface Database extends Closeable {
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
-  Optional<BeaconStateRead> getState(Bytes32 root);
+  Optional<BeaconState> getState(Bytes32 root);
 }

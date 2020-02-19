@@ -31,7 +31,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
@@ -52,7 +52,7 @@ public class Eth1DataCache {
     this.eventBus.register(this);
   }
 
-  public void startBeaconChainMode(BeaconStateRead genesisState) {
+  public void startBeaconChainMode(BeaconState genesisState) {
     this.genesisTime = Optional.of(genesisState.getGenesis_time());
     this.currentVotingPeriodStartTime = getVotingPeriodStartTime(genesisState.getSlot());
     this.onSlot(new SlotEvent(genesisState.getSlot()));
@@ -90,7 +90,7 @@ public class Eth1DataCache {
     prune();
   }
 
-  public Eth1Data get_eth1_vote(BeaconStateRead state) {
+  public Eth1Data get_eth1_vote(BeaconState state) {
     NavigableMap<UnsignedLong, Eth1Data> votesToConsider = getVotesToConsider();
     Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
 

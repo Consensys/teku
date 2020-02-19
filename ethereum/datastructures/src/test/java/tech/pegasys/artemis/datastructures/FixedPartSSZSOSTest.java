@@ -27,7 +27,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -97,8 +97,8 @@ class FixedPartSSZSOSTest {
     UnsignedLong exit_epoch = randomUnsignedLong(103);
     UnsignedLong withdrawable_epoch = randomUnsignedLong(104);
 
-    Validator validator =
-        new Validator(
+    ValidatorImpl validator =
+        new ValidatorImpl(
             pubkey,
             withdrawal_credentials,
             effective_balance,

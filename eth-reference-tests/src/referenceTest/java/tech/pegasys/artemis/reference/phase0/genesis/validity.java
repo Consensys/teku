@@ -23,7 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -32,7 +32,7 @@ public class validity extends TestSuite {
 
   @ParameterizedTest(name = "{index} root of Merkleizable")
   @MethodSource({"genesisGenericValiditySetup"})
-  void genesisValidity(BeaconState genesis, Boolean is_valid) {
+  void genesisValidity(BeaconStateImpl genesis, Boolean is_valid) {
     // TODO: Proto says this is probably changing
   }
 

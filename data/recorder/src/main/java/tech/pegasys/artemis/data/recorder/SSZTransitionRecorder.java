@@ -24,7 +24,7 @@ import java.nio.file.Path;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
@@ -46,7 +46,7 @@ public class SSZTransitionRecorder {
       return;
     }
     final Bytes32 genesisRoot = finalizedCheckpoint.getRoot();
-    final BeaconStateRead genesisState = store.getBlockState(genesisRoot);
+    final BeaconState genesisState = store.getBlockState(genesisRoot);
     store(outputDirectory.resolve("genesis.ssz"), genesisState);
   }
 

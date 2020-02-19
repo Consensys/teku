@@ -47,8 +47,8 @@ import org.json.simple.JSONObject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -68,7 +68,7 @@ class MockStartBeaconStateGeneratorTest {
     final List<DepositData> deposits =
         new MockStartDepositGenerator().createDeposits(validatorKeyPairs);
 
-    final BeaconStateRead initialBeaconState =
+    final BeaconState initialBeaconState =
         new MockStartBeaconStateGenerator().createInitialBeaconState(genesisTime, deposits);
 
     assertEquals(validatorCount, initialBeaconState.getValidators().size());
@@ -76,7 +76,7 @@ class MockStartBeaconStateGeneratorTest {
 
     final List<BLSPublicKey> actualValidatorPublicKeys =
         initialBeaconState.getValidators().stream()
-            .map(ValidatorRead::getPubkey)
+            .map(Validator::getPubkey)
             .collect(Collectors.toList());
     final List<BLSPublicKey> expectedValidatorPublicKeys =
         validatorKeyPairs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList());
@@ -150,9 +150,9 @@ class MockStartBeaconStateGeneratorTest {
 
   public static class GenesisState {
     Bytes32 root;
-    BeaconStateRead beacon_state;
+    BeaconState beacon_state;
 
-    public GenesisState(Bytes32 root, BeaconStateRead beacon_state) {
+    public GenesisState(Bytes32 root, BeaconState beacon_state) {
       this.root = root;
       this.beacon_state = beacon_state;
     }
@@ -170,14 +170,14 @@ class MockStartBeaconStateGeneratorTest {
     final List<DepositData> deposits =
         new MockStartDepositGenerator().createDeposits(validatorKeyPairs);
 
-    final BeaconStateRead initialBeaconState =
+    final BeaconState initialBeaconState =
         new MockStartBeaconStateGenerator().createInitialBeaconState(genesisTime, deposits);
 
     ExclusionStrategy strategy =
         new ExclusionStrategy() {
           @Override
           public boolean shouldSkipField(FieldAttributes field) {
-            return BeaconStateRead.class.isAssignableFrom(field.getDeclaringClass());
+            return BeaconState.class.isAssignableFrom(field.getDeclaringClass());
           }
 
           @Override

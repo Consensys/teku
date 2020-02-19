@@ -13,16 +13,16 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class GenesisEvent {
-  private final BeaconStateRead beaconState;
+  private final BeaconState beaconState;
 
-  public GenesisEvent(BeaconStateRead beaconState) {
+  public GenesisEvent(BeaconState beaconState) {
     this.beaconState = beaconState;
   }
 
-  public BeaconStateRead getBeaconState() {
+  public BeaconState getBeaconState() {
     return beaconState;
   }
 }

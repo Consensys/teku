@@ -24,7 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
@@ -32,7 +32,7 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 public class justification_and_finalization extends TestSuite {
   @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
   @MethodSource("mainnetProcessJusticationAndFinalizationSetup")
-  void mainnetProcessJusticationAndFinalization(BeaconState pre, BeaconState post)
+  void mainnetProcessJusticationAndFinalization(BeaconStateImpl pre, BeaconStateImpl post)
       throws Exception {
     EpochProcessorUtil.process_justification_and_finalization(pre);
     assertEquals(pre, post);
@@ -40,7 +40,7 @@ public class justification_and_finalization extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process justification and finalization pre={0} -> post={1}")
   @MethodSource("minimalProcessJusticationAndFinalizationSetup")
-  void minimalProcessJusticationAndFinalization(BeaconState pre, BeaconState post)
+  void minimalProcessJusticationAndFinalization(BeaconStateImpl pre, BeaconStateImpl post)
       throws Exception {
     EpochProcessorUtil.process_justification_and_finalization(pre);
     assertEquals(pre, post);

@@ -25,7 +25,7 @@ import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.util.ForkChoiceUtil;
@@ -175,7 +175,7 @@ public class BeaconChainUtil {
         "Must have >1 validator in order to create a block from an invalid proposer.");
     final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
     final BeaconBlock bestBlock = storageClient.getStore().getBlock(bestBlockRoot);
-    final BeaconStateRead preState = storageClient.getBestBlockRootState();
+    final BeaconState preState = storageClient.getBestBlockRootState();
     checkArgument(bestBlock.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
@@ -202,7 +202,7 @@ public class BeaconChainUtil {
 
     while (storageClient.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
-      BeaconStateRead headState =
+      BeaconState headState =
           storageClient.getStore().getBlockState(storageClient.getBestBlockRoot());
       BeaconBlock headBlock = storageClient.getStore().getBlock(storageClient.getBestBlockRoot());
       UnsignedLong slot = storageClient.getBestSlot();

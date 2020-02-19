@@ -29,7 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
@@ -38,7 +38,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @ExtendWith(TempDirectoryExtension.class)
 class MapDbDatabaseTest {
-  private static final BeaconStateRead GENESIS_STATE =
+  private static final BeaconState GENESIS_STATE =
       DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, 1);
   private static final Checkpoint CHECKPOINT1 =
       new Checkpoint(UnsignedLong.valueOf(6), Bytes32.fromHexString("0x1234"));
@@ -91,8 +91,8 @@ class MapDbDatabaseTest {
   @Test
   public void shouldGetHotStateByRoot() {
     final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
-    final BeaconStateRead state1 = DataStructureUtil.randomBeaconState(seed++);
-    final BeaconStateRead state2 = DataStructureUtil.randomBeaconState(seed++);
+    final BeaconState state1 = DataStructureUtil.randomBeaconState(seed++);
+    final BeaconState state2 = DataStructureUtil.randomBeaconState(seed++);
     final Bytes32 block1Root = Bytes32.fromHexString("0x1234");
     final Bytes32 block2Root = Bytes32.fromHexString("0x5822");
     transaction.putBlockState(block1Root, state1);
@@ -209,8 +209,8 @@ class MapDbDatabaseTest {
     final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     final SignedBeaconBlock block1 = blockAtSlot(1);
     final SignedBeaconBlock block2 = blockAtSlot(2);
-    final BeaconStateRead state1 = DataStructureUtil.randomBeaconState(seed++);
-    final BeaconStateRead state2 = DataStructureUtil.randomBeaconState(seed++);
+    final BeaconState state1 = DataStructureUtil.randomBeaconState(seed++);
+    final BeaconState state2 = DataStructureUtil.randomBeaconState(seed++);
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     transaction.putBlock(block1Root, block1);
@@ -236,9 +236,9 @@ class MapDbDatabaseTest {
     final SignedBeaconBlock block2 = blockAtSlot(2);
     final SignedBeaconBlock unfinalizedBlock =
         blockAtSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)).longValue());
-    final BeaconStateRead state1 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1), seed++);
-    final BeaconStateRead state2 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(2), seed++);
-    final BeaconStateRead unfinalizedState =
+    final BeaconState state1 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1), seed++);
+    final BeaconState state2 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(2), seed++);
+    final BeaconState unfinalizedState =
         DataStructureUtil.randomBeaconState(
             compute_start_slot_at_epoch(UnsignedLong.valueOf(2)), seed++);
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();

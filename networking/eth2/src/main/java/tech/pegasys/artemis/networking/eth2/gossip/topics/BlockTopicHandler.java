@@ -25,9 +25,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
-import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.StateTransition;
@@ -71,7 +71,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
       return false;
     }
 
-    final BeaconStateRead preState =
+    final BeaconState preState =
         chainStorageClient.getStore().getBlockState(block.getMessage().getParent_root());
     if (preState == null) {
       // Post event even if we don't have the prestate
@@ -94,9 +94,9 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     return true;
   }
 
-  private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconStateRead preState) {
+  private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconState preState) {
     final StateTransition stateTransition = new StateTransition(false);
-    final BeaconStateWrite postState = preState.createWritableCopy();
+    final MutableBeaconState postState = preState.createWritableCopy();
 
     try {
       stateTransition.process_slots(postState, block.getMessage().getSlot(), false);
@@ -106,7 +106,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
     }
 
     final int proposerIndex = get_beacon_proposer_index(postState);
-    final ValidatorRead proposer = postState.getValidators().get(proposerIndex);
+    final Validator proposer = postState.getValidators().get(proposerIndex);
     final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
     final BLSSignature signature = block.getSignature();
     return BLSVerify.bls_verify(

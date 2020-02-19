@@ -37,12 +37,12 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateWithCacheTest {
 
-  private BeaconStateRead newState(int numDeposits) {
+  private BeaconState newState(int numDeposits) {
 
     try {
 
       // Initialize state
-      BeaconStateRead state =
+      BeaconState state =
           initialize_beacon_state_from_eth1(
               Bytes32.ZERO, UnsignedLong.ZERO, randomDeposits(numDeposits, 100));
 
@@ -56,7 +56,7 @@ class BeaconStateWithCacheTest {
   @Test
   void deepCopyModifyForkDoesNotEqualTest() {
     BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
-    BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
+    BeaconStateImpl deepCopy = BeaconStateWithCache.deepCopy(state);
 
     // Test slot
     state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
@@ -72,7 +72,7 @@ class BeaconStateWithCacheTest {
   @Test
   void deepCopyModifyIncrementSlotDoesNotEqualTest() {
     BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
-    BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
+    BeaconStateImpl deepCopy = BeaconStateWithCache.deepCopy(state);
 
     // Test slot
     state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
@@ -84,11 +84,11 @@ class BeaconStateWithCacheTest {
     BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
 
     // Test validator registry
-    ArrayList<Validator> new_records =
+    ArrayList<ValidatorImpl> new_records =
         new ArrayList<>(
             Collections.nCopies(
                 12,
-                new Validator(
+                new ValidatorImpl(
                     BLSPublicKey.empty(),
                     Bytes32.ZERO,
                     UnsignedLong.ZERO,
@@ -97,9 +97,9 @@ class BeaconStateWithCacheTest {
                     UnsignedLong.valueOf(GENESIS_EPOCH),
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO)));
-    state.getValidators().addAll(SSZList.create(new_records, VALIDATOR_REGISTRY_LIMIT, Validator.class));
-    BeaconState deepCopy = BeaconStateWithCache.deepCopy(state);
-    ValidatorWrite validator = deepCopy.getValidators().get(0);
+    state.getValidators().addAll(SSZList.create(new_records, VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
+    BeaconStateImpl deepCopy = BeaconStateWithCache.deepCopy(state);
+    MutableValidator validator = deepCopy.getValidators().get(0);
     validator.setPubkey(BLSPublicKey.random(9999999));
     assertThat(deepCopy.getValidators().get(0).getPubkey())
         .isNotEqualTo(state.getValidators().get(0).getPubkey());

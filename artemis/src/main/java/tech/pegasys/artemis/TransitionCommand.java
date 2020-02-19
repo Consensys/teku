@@ -30,8 +30,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -108,7 +108,7 @@ public class TransitionCommand implements Runnable {
           if (delta) {
             targetSlot = state.getSlot().plus(targetSlot);
           }
-          BeaconStateWrite stateWrite = state.createWritableCopy();
+          MutableBeaconState stateWrite = state.createWritableCopy();
           stateTransition.process_slots(stateWrite, targetSlot, false);
           return stateWrite.commitChanges();
         });
@@ -120,11 +120,11 @@ public class TransitionCommand implements Runnable {
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
-      BeaconStateRead state = SimpleOffsetSerializer.deserialize(inData, BeaconState.class);
+      BeaconState state = SimpleOffsetSerializer.deserialize(inData, BeaconStateImpl.class);
 
       final StateTransition stateTransition = new StateTransition(false);
       try {
-        BeaconStateRead result = transition.applyTransition(state, stateTransition);
+        BeaconState result = transition.applyTransition(state, stateTransition);
         out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
       } catch (final StateTransitionException
           | EpochProcessingException
@@ -185,7 +185,7 @@ public class TransitionCommand implements Runnable {
   }
 
   private interface StateTransitionFunction {
-    BeaconStateRead applyTransition(BeaconStateRead state, StateTransition stateTransition)
+    BeaconState applyTransition(BeaconState state, StateTransition stateTransition)
         throws StateTransitionException, EpochProcessingException, SlotProcessingException,
             IOException;
   }

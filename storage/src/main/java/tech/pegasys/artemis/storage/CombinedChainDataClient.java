@@ -25,7 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -74,7 +74,7 @@ public class CombinedChainDataClient {
       return BLOCK_NOT_AVAILABLE;
     }
 
-    final BeaconStateRead headState = store.getBlockState(headBlockRoot);
+    final BeaconState headState = store.getBlockState(headBlockRoot);
     if (headState == null) {
       LOG.trace("No block at slot {} because head block root {} is unknown", slot, headBlockRoot);
       return BLOCK_NOT_AVAILABLE;
@@ -99,9 +99,9 @@ public class CombinedChainDataClient {
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotFormHistoricalBlockRoots(
-      final UnsignedLong slot, final Store store, final BeaconStateRead headState) {
+      final UnsignedLong slot, final Store store, final BeaconState headState) {
     final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
-    BeaconStateRead state = headState;
+    BeaconState state = headState;
     while (state != null && !BeaconStateUtil.isBlockRootAvailableFromState(state, slot)) {
       checkState(
           state.getSlot().compareTo(slotsPerHistoricalRoot) >= 0,
@@ -123,7 +123,7 @@ public class CombinedChainDataClient {
     return finalizedSlot.compareTo(slot) >= 0;
   }
 
-  public Optional<BeaconStateRead> getNonfinalizedBlockState(final Bytes32 blockRoot) {
+  public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
     return recentChainData.getBlockState(blockRoot);
   }
 }

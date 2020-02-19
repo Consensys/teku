@@ -14,33 +14,26 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.ContainerViewRead;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.hashtree.Merkleizable;
-import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public interface ValidatorRead extends ContainerViewRead<ViewRead>, Merkleizable,
-    SimpleOffsetSerializable, SSZContainer {
+public interface MutableValidator extends Validator, ContainerViewWrite<ViewRead> {
 
-  BLSPublicKey getPubkey();
+  void setPubkey(BLSPublicKey pubkey);
 
-  Bytes32 getWithdrawal_credentials();
+  void setEffective_balance(UnsignedLong effective_balance);
 
-  UnsignedLong getEffective_balance();
+  void setSlashed(boolean slashed);
 
-  boolean isSlashed();
+  void setActivation_eligibility_epoch(UnsignedLong activation_eligibility_epoch);
 
-  UnsignedLong getActivation_eligibility_epoch();
+  void setActivation_epoch(UnsignedLong activation_epoch);
 
-  UnsignedLong getActivation_epoch();
+  void setExit_epoch(UnsignedLong exit_epoch);
 
-  UnsignedLong getExit_epoch();
-
-  UnsignedLong getWithdrawable_epoch();
+  void setWithdrawable_epoch(UnsignedLong withdrawable_epoch);
 
   @Override
-  ValidatorWrite createWritableCopy();
+  Validator commitChanges();
 }

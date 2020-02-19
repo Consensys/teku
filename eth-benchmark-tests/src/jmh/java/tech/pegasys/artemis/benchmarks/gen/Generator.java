@@ -33,7 +33,7 @@ import tech.pegasys.artemis.benchmarks.gen.BlockIO.Writer;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
@@ -109,7 +109,7 @@ public class Generator {
                   + " ms");
         }
 
-        Optional<BeaconStateRead> bestState =
+        Optional<BeaconState> bestState =
             localStorage.getBlockState(localStorage.getBestBlockRoot());
         System.out.println("Epoch done: " + bestState);
       }
@@ -144,7 +144,7 @@ public class Generator {
     }
   }
 
-  String getCommittees(BeaconStateRead state) {
+  String getCommittees(BeaconState state) {
     UnsignedLong cnt = get_committee_count_at_slot(state, state.getSlot());
     List<List<Integer>> committees = new ArrayList<>();
     for (UnsignedLong index = UnsignedLong.ZERO;

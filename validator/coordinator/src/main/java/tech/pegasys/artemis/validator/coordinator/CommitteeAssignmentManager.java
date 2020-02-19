@@ -36,7 +36,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.statetransition.CommitteeAssignment;
@@ -62,7 +62,7 @@ public class CommitteeAssignmentManager {
   }
 
   void updateCommitteeAssignments(
-      final BeaconStateRead state, final UnsignedLong epoch, EventBus eventBus) {
+      final BeaconState state, final UnsignedLong epoch, EventBus eventBus) {
     Set<Integer> committeeIndicesToRegister = getNewCommitteeAssignments(state, epoch);
     handleCommitteeIndexRegistrations(epoch, committeeIndicesToRegister, eventBus);
     handleCommitteeIndexDeregistrations(epoch, eventBus);
@@ -104,7 +104,7 @@ public class CommitteeAssignmentManager {
 
   // Returns committee indices to subscribe according to the updated committee assignments
   // Fills in committeeAssignments mapping with attester information to produce attestations
-  private Set<Integer> getNewCommitteeAssignments(BeaconStateRead state, UnsignedLong epoch) {
+  private Set<Integer> getNewCommitteeAssignments(BeaconState state, UnsignedLong epoch) {
 
     Set<Integer> committeeIndicesToSubscribe = new HashSet<>();
 
@@ -151,7 +151,7 @@ public class CommitteeAssignmentManager {
     return committeeIndicesToSubscribe;
   }
 
-  BLSSignature slot_signature(BeaconStateRead state, UnsignedLong slot, BLSPublicKey signer) {
+  BLSSignature slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
     Bytes domain = get_domain(state, DOMAIN_BEACON_ATTESTER, compute_epoch_at_slot(slot));
     Bytes32 slot_hash =
         HashTreeUtil.hash_tree_root(
@@ -160,7 +160,7 @@ public class CommitteeAssignmentManager {
   }
 
   boolean is_aggregator(
-      BeaconStateRead state,
+      BeaconState state,
       UnsignedLong slot,
       UnsignedLong committeeIndex,
       BLSSignature slot_signature) {

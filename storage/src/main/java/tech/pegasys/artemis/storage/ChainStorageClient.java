@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -67,7 +67,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     this.eventBus.register(this);
   }
 
-  public void initializeFromGenesis(final BeaconStateRead initialState) {
+  public void initializeFromGenesis(final BeaconState initialState) {
     setGenesisTime(initialState.getGenesis_time());
     final Store store = Store.get_genesis_store(initialState);
     setStore(store);
@@ -81,7 +81,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   public void initializeFromStore(final Store store, final Bytes32 headBlockRoot) {
-    BeaconStateRead state = store.getBlockState(headBlockRoot);
+    BeaconState state = store.getBlockState(headBlockRoot);
     setGenesisTime(state.getGenesis_time());
     setStore(store);
 
@@ -163,7 +163,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    *
    * @return
    */
-  public BeaconStateRead getBestBlockRootState() {
+  public BeaconState getBestBlockRootState() {
     return this.store.getBlockState(this.bestBlockRoot);
   }
 
@@ -211,7 +211,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     return Optional.ofNullable(store.getBlock(root));
   }
 
-  public Optional<BeaconStateRead> getBlockState(final Bytes32 blockRoot) {
+  public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return Optional.empty();
     }
@@ -247,7 +247,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
       return Optional.of(bestBlockRoot);
     }
 
-    final BeaconStateRead bestState = store.getBlockState(bestBlockRoot);
+    final BeaconState bestState = store.getBlockState(bestBlockRoot);
     if (bestState == null) {
       LOG.trace("No block root at slot {} because best state is not available", slot);
       return Optional.empty();

@@ -30,11 +30,11 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
-import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -66,7 +66,7 @@ class GenesisGeneratorTest {
 
     final UnsignedLong genesisTime = UnsignedLong.valueOf(982928293223232L);
 
-    final BeaconStateRead expectedState =
+    final BeaconState expectedState =
         BeaconStateUtil.initialize_beacon_state_from_eth1(
             eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
 
@@ -76,7 +76,7 @@ class GenesisGeneratorTest {
     genesisGenerator.addDepositsFromBlock(
         eth1BlockHash2, genesisTime, INITIAL_DEPOSITS.subList(8, INITIAL_DEPOSITS.size()));
 
-    final BeaconStateRead actualState = genesisGenerator.getGenesisState();
+    final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isEqualTo(expectedState);
     assertThat(get_active_validator_indices(expectedState, GENESIS_EPOCH))
         .hasSize(VALIDATOR_KEYS.size());
@@ -88,7 +88,7 @@ class GenesisGeneratorTest {
       genesisGenerator.addDepositsFromBlock(
           Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
 
-      final BeaconStateRead state = genesisGenerator.getGenesisState();
+      final BeaconState state = genesisGenerator.getGenesisState();
       assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
     }
   }
@@ -97,7 +97,7 @@ class GenesisGeneratorTest {
   public void shouldNotCacheActiveValidators() {
     // get_active_validator_indices caches the results based on the epoch. Since we keep adding
     // validators to the genesis epoch we must ensure they aren't cached.
-    final Predicate<BeaconStateRead> validityCriteria =
+    final Predicate<BeaconState> validityCriteria =
         candidate -> get_active_validator_indices(candidate, GENESIS_EPOCH).size() == 2;
 
     genesisGenerator.addDepositsFromBlock(
@@ -107,7 +107,7 @@ class GenesisGeneratorTest {
     // Now we should have two validators, not the 1 that would have been cached before.
     genesisGenerator.addDepositsFromBlock(
         Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(1)));
-    final Optional<BeaconStateWrite> state =
+    final Optional<MutableBeaconState> state =
         genesisGenerator.getGenesisStateIfValid(validityCriteria);
     assertThat(state).isNotEmpty();
 
@@ -131,14 +131,14 @@ class GenesisGeneratorTest {
     deposits.add(0, new Deposit(invalidData));
 
     genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
-    final BeaconStateRead state = genesisGenerator.getGenesisState();
+    final BeaconState state = genesisGenerator.getGenesisState();
     // All deposits were processed
     assertThat(state.getEth1_deposit_index()).isEqualTo(UnsignedLong.valueOf(deposits.size()));
     // But one didn't result in a new validator
     assertThat(state.getValidators()).hasSize(deposits.size() - 1);
     // And the validator with an invalid deposit should wind up at index 3, not 0 because their
     // first deposit was completely ignored
-    final ValidatorRead validator = state.getValidators().get(expectedIndex);
+    final Validator validator = state.getValidators().get(expectedIndex);
     assertThat(validator.getPubkey()).isEqualTo(validData.getPubkey());
     assertThat(is_active_validator(validator, GENESIS_EPOCH)).isTrue();
   }

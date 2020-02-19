@@ -66,9 +66,9 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -84,7 +84,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
-  public static void process_block_header(BeaconStateWrite state, BeaconBlock block)
+  public static void process_block_header(MutableBeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       checkArgument(
@@ -103,7 +103,7 @@ public final class BlockProcessorUtil {
               block.getBody().hash_tree_root()));
 
       // Only if we are processing blocks (not proposing them)
-      ValidatorRead proposer = state.getValidators().get(get_beacon_proposer_index(state));
+      Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
       checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
 
     } catch (IllegalArgumentException e) {
@@ -121,13 +121,13 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#randao</a>
    */
-  public static void process_randao(BeaconStateWrite state, BeaconBlockBody body, boolean validateRandao)
+  public static void process_randao(MutableBeaconState state, BeaconBlockBody body, boolean validateRandao)
       throws BlockProcessingException {
     try {
       UnsignedLong epoch = get_current_epoch(state);
       // Verify RANDAO reveal
       int proposer_index = get_beacon_proposer_index(state);
-      ValidatorRead proposer = state.getValidators().get(proposer_index);
+      Validator proposer = state.getValidators().get(proposer_index);
       Bytes32 messageHash =
           HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
       checkArgument(
@@ -157,7 +157,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#eth1-data</a>
    */
-  public static void process_eth1_data(BeaconStateWrite state, BeaconBlockBody body) {
+  public static void process_eth1_data(MutableBeaconState state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
     long vote_count =
         state.getEth1_data_votes().stream()
@@ -177,7 +177,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
-  public static void process_operations(BeaconStateWrite state, BeaconBlockBody body)
+  public static void process_operations(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
 
@@ -215,7 +215,7 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
   public static void process_proposer_slashings(
-      BeaconStateWrite state, List<ProposerSlashing> proposerSlashings) throws BlockProcessingException {
+      MutableBeaconState state, List<ProposerSlashing> proposerSlashings) throws BlockProcessingException {
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : proposerSlashings) {
@@ -224,7 +224,7 @@ public final class BlockProcessorUtil {
                     .compareTo(proposer_slashing.getProposer_index())
                 > 0,
             "process_proposer_slashings: Invalid proposer index");
-        ValidatorRead proposer =
+        Validator proposer =
             state
                 .getValidators()
                 .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
@@ -287,7 +287,7 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attester-slashings</a>
    */
   public static void process_attester_slashings(
-      BeaconStateWrite state, List<AttesterSlashing> attesterSlashings) throws BlockProcessingException {
+      MutableBeaconState state, List<AttesterSlashing> attesterSlashings) throws BlockProcessingException {
     try {
 
       // For each attester_slashing in block.body.attester_slashings:
@@ -337,7 +337,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
-  public static void process_attestations(BeaconStateWrite state, List<Attestation> attestations)
+  public static void process_attestations(MutableBeaconState state, List<Attestation> attestations)
       throws BlockProcessingException {
     try {
 
@@ -414,7 +414,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
-  public static void process_deposits(BeaconStateWrite state, List<? extends Deposit> deposits)
+  public static void process_deposits(MutableBeaconState state, List<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
@@ -435,7 +435,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
-  public static void process_voluntary_exits(BeaconStateWrite state, List<SignedVoluntaryExit> exits)
+  public static void process_voluntary_exits(MutableBeaconState state, List<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     try {
 
@@ -446,7 +446,7 @@ public final class BlockProcessorUtil {
             UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
                 > 0,
             "process_voluntary_exits: Invalid validator index");
-        ValidatorRead validator =
+        Validator validator =
             state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
 
         checkArgument(

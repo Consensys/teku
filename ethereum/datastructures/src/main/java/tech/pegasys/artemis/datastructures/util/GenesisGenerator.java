@@ -35,16 +35,16 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.ValidatorWrite;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {
-  private final BeaconStateWrite state = BeaconStateRead.createEmpty().createWritableCopy();
+  private final MutableBeaconState state = BeaconState.createEmpty().createWritableCopy();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
   private final SSZList<DepositData> depositDataList =
@@ -89,7 +89,7 @@ public class GenesisGenerator {
       // Could be null if the deposit was invalid
       return;
     }
-    ValidatorWrite validator = state.getValidators().get(index);
+    MutableValidator validator = state.getValidators().get(index);
     UnsignedLong balance = state.getBalances().get(index);
     UnsignedLong effective_balance =
         BeaconStateUtil.min(
@@ -103,12 +103,12 @@ public class GenesisGenerator {
     }
   }
 
-  public BeaconStateWrite getGenesisState() {
+  public MutableBeaconState getGenesisState() {
     return getGenesisStateIfValid(state -> true).orElseThrow();
   }
 
-  public Optional<BeaconStateWrite> getGenesisStateIfValid(
-      Predicate<BeaconStateRead> validityCriteria) {
+  public Optional<MutableBeaconState> getGenesisStateIfValid(
+      Predicate<BeaconState> validityCriteria) {
     if (!validityCriteria.test(state)) {
       return Optional.empty();
     }

@@ -42,12 +42,12 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -328,8 +328,8 @@ public final class DataStructureUtil {
     return deposits;
   }
 
-  public static Validator randomValidator(int seed) {
-    return new Validator(
+  public static ValidatorImpl randomValidator(int seed) {
+    return new ValidatorImpl(
         randomPublicKey(seed),
         randomBytes32(seed++),
         UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -347,8 +347,8 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed++));
   }
 
-  public static BeaconStateRead randomBeaconState(int seed) {
-    return BeaconStateRead.create(
+  public static BeaconState randomBeaconState(int seed) {
+    return BeaconState.create(
         randomUnsignedLong(seed),
         randomUnsignedLong(seed++),
         randomFork(seed++),
@@ -373,7 +373,7 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed++),
 
         // Can't use the actual maxSize cause it is too big
-        randomSSZList(Validator.class, 1000, DataStructureUtil::randomValidator, seed++),
+        randomSSZList(ValidatorImpl.class, 1000, DataStructureUtil::randomValidator, seed++),
         randomSSZList(UnsignedLong.class, 1000, DataStructureUtil::randomUnsignedLong, seed++),
         randomSSZVector(
             Bytes32.ZERO,
@@ -395,8 +395,8 @@ public final class DataStructureUtil {
         randomCheckpoint(seed++));
   }
 
-  public static BeaconStateRead randomBeaconState(UnsignedLong slot, int seed) {
-    BeaconStateWrite randomBeaconState = randomBeaconState(seed).createWritableCopy();
+  public static BeaconState randomBeaconState(UnsignedLong slot, int seed) {
+    MutableBeaconState randomBeaconState = randomBeaconState(seed).createWritableCopy();
     randomBeaconState.setSlot(slot);
     return randomBeaconState.commitChanges();
   }

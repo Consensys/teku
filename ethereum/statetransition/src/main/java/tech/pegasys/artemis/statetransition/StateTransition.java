@@ -43,9 +43,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
-import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -79,13 +79,13 @@ public class StateTransition {
    * @return
    * @throws StateTransitionException
    */
-  public BeaconStateRead initiate(
-      BeaconStateRead preState,
+  public BeaconState initiate(
+      BeaconState preState,
       SignedBeaconBlock signed_block,
       boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
-      BeaconStateWrite state = preState.createWritableCopy();
+      MutableBeaconState state = preState.createWritableCopy();
       // Process slots (including those with no blocks) since block
       process_slots(state, signed_block.getMessage().getSlot(), printEnabled);
 
@@ -120,8 +120,8 @@ public class StateTransition {
   }
 
   private static boolean verify_block_signature(
-      final BeaconStateRead state, SignedBeaconBlock signed_block) {
-    final ValidatorRead proposer = state.getValidators().get(get_beacon_proposer_index(state));
+      final BeaconState state, SignedBeaconBlock signed_block) {
+    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
     final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
     return BLSVerify.bls_verify(
         proposer.getPubkey(),
@@ -130,7 +130,7 @@ public class StateTransition {
         domain);
   }
 
-  public BeaconStateRead initiate(BeaconStateRead state, SignedBeaconBlock block)
+  public BeaconState initiate(BeaconState state, SignedBeaconBlock block)
       throws StateTransitionException {
     return initiate(state, block, true);
   }
@@ -145,7 +145,7 @@ public class StateTransition {
    * @throws BlockProcessingException
    */
   private void process_block(
-      BeaconStateWrite state, BeaconBlock block, boolean validateStateRootAndSignatures)
+      MutableBeaconState state, BeaconBlock block, boolean validateStateRootAndSignatures)
       throws BlockProcessingException {
     process_block_header(state, block);
     process_randao(state, block.getBody(), validateStateRootAndSignatures);
@@ -161,7 +161,7 @@ public class StateTransition {
    * @param state
    * @throws EpochProcessingException
    */
-  private static void process_epoch(BeaconStateWrite state) throws EpochProcessingException {
+  private static void process_epoch(MutableBeaconState state) throws EpochProcessingException {
     // Note: the lines with @ label here will be inserted here in a future phase
     process_justification_and_finalization(state);
     process_rewards_and_penalties(state);
@@ -181,7 +181,7 @@ public class StateTransition {
    *
    * @param state
    */
-  private static void process_slot(BeaconStateWrite state) {
+  private static void process_slot(MutableBeaconState state) {
     // Cache state root
     Bytes32 previous_state_root = state.hash_tree_root();
     int index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
@@ -214,7 +214,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public void process_slots(BeaconStateWrite state, UnsignedLong slot, boolean printEnabled)
+  public void process_slots(MutableBeaconState state, UnsignedLong slot, boolean printEnabled)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -241,7 +241,7 @@ public class StateTransition {
     }
   }
 
-  private synchronized void recordMetrics(BeaconStateRead state) {
+  private synchronized void recordMetrics(BeaconState state) {
     epochMetrics.ifPresent(
         metrics -> {
           final UnsignedLong currentEpoch = get_current_epoch(state);

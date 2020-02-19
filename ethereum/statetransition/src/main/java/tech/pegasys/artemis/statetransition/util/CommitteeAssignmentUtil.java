@@ -23,7 +23,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.statetransition.CommitteeAssignment;
 
 public class CommitteeAssignmentUtil {
@@ -40,7 +40,7 @@ public class CommitteeAssignmentUtil {
    * @return Optional.of(CommitteeAssignment).
    */
   public static Optional<CommitteeAssignment> get_committee_assignment(
-      BeaconStateRead state, UnsignedLong epoch, int validator_index) {
+      BeaconState state, UnsignedLong epoch, int validator_index) {
     UnsignedLong next_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
     checkArgument(
         epoch.compareTo(next_epoch) <= 0, "get_committe_assignment: Epoch number too high");

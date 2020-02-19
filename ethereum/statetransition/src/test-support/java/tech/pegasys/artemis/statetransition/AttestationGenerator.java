@@ -30,9 +30,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
@@ -154,7 +154,7 @@ public class AttestationGenerator {
       throws EpochProcessingException, SlotProcessingException {
     final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
-    BeaconStateRead state = storageClient.getStore().getBlockState(bestBlockRoot);
+    BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
     return createAttestation(block, state, true);
   }
 
@@ -162,12 +162,12 @@ public class AttestationGenerator {
       throws EpochProcessingException, SlotProcessingException {
     final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
-    BeaconStateRead state = storageClient.getStore().getBlockState(bestBlockRoot);
+    BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
     return createAttestation(block, state, false);
   }
 
   private Attestation createAttestation(
-      final BeaconBlock block, final BeaconStateRead state, final boolean withValidSignature)
+      final BeaconBlock block, final BeaconState state, final boolean withValidSignature)
       throws EpochProcessingException, SlotProcessingException {
     final UnsignedLong epoch = compute_epoch_at_slot(state.getSlot());
     Optional<CommitteeAssignment> committeeAssignment = Optional.empty();
@@ -187,7 +187,7 @@ public class AttestationGenerator {
       throw new IllegalStateException("Unable to find committee assignment among validators");
     }
 
-    final BeaconStateRead postState = processStateToSlot(state, slot.get());
+    final BeaconState postState = processStateToSlot(state, slot.get());
 
     List<Integer> committeeIndices = committeeAssignment.get().getCommittee();
     UnsignedLong committeeIndex = committeeAssignment.get().getCommitteeIndex();
@@ -203,7 +203,7 @@ public class AttestationGenerator {
   }
 
   public List<Attestation> getAttestationsForSlot(
-      final BeaconStateRead state, final BeaconBlock block, final UnsignedLong slot) {
+      final BeaconState state, final BeaconBlock block, final UnsignedLong slot) {
 
     final UnsignedLong epoch = compute_epoch_at_slot(slot);
     List<Attestation> attestations = new ArrayList<>();
@@ -238,17 +238,17 @@ public class AttestationGenerator {
     return attestations;
   }
 
-  private BeaconStateRead processStateToSlot(BeaconStateRead preState, UnsignedLong slot)
+  private BeaconState processStateToSlot(BeaconState preState, UnsignedLong slot)
       throws EpochProcessingException, SlotProcessingException {
     final StateTransition stateTransition = new StateTransition(false);
-    final BeaconStateWrite postState = preState.createWritableCopy();
+    final MutableBeaconState postState = preState.createWritableCopy();
 
     stateTransition.process_slots(postState, slot, false);
     return postState;
   }
 
   private Attestation createAttestation(
-      BeaconStateRead state,
+      BeaconState state,
       BLSKeyPair attesterKeyPair,
       int indexIntoCommittee,
       Committee committee,

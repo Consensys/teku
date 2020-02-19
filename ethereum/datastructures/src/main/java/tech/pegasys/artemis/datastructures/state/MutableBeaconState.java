@@ -12,7 +12,7 @@ import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
 
-public interface BeaconStateWrite extends BeaconStateRead,
+public interface MutableBeaconState extends BeaconState,
     ContainerViewWriteRef<ViewRead, ViewWrite> {
 
   // Versioning
@@ -36,7 +36,7 @@ public interface BeaconStateWrite extends BeaconStateRead,
   void setEth1_deposit_index(UnsignedLong eth1_deposit_index);
 
   // Registry
-  SSZListWriteRef<ValidatorRead, ValidatorWrite> getValidators();
+  SSZListWriteRef<Validator, MutableValidator> getValidators();
 
   SSZListWrite<UnsignedLong> getBalances();
 
@@ -59,5 +59,5 @@ public interface BeaconStateWrite extends BeaconStateRead,
 
   void setFinalized_checkpoint(Checkpoint finalized_checkpoint);
 
-  BeaconStateRead commitChanges();
+  BeaconState commitChanges();
 }

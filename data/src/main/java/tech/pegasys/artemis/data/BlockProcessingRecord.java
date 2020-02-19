@@ -14,21 +14,21 @@
 package tech.pegasys.artemis.data;
 
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class BlockProcessingRecord {
-  private final BeaconStateRead preState;
+  private final BeaconState preState;
   private final SignedBeaconBlock block;
-  private final BeaconStateRead postState;
+  private final BeaconState postState;
 
   public BlockProcessingRecord(
-      final BeaconStateRead preState, final SignedBeaconBlock block, final BeaconStateRead postState) {
+      final BeaconState preState, final SignedBeaconBlock block, final BeaconState postState) {
     this.preState = preState;
     this.block = block;
     this.postState = postState;
   }
 
-  public BeaconStateRead getPreState() {
+  public BeaconState getPreState() {
     return preState;
   }
 
@@ -36,7 +36,7 @@ public class BlockProcessingRecord {
     return block;
   }
 
-  public BeaconStateRead getPostState() {
+  public BeaconState getPostState() {
     return postState;
   }
 }

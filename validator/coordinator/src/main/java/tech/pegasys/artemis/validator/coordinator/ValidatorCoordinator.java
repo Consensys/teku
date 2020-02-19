@@ -47,10 +47,10 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
-import tech.pegasys.artemis.datastructures.state.ValidatorRead;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
@@ -125,7 +125,7 @@ public class ValidatorCoordinator {
 
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = chainStorageClient.getBestBlockRoot();
-    final BeaconStateRead genesisState = store.getBlockState(head);
+    final BeaconState genesisState = store.getBlockState(head);
 
     // Get validator indices of our own validators
     getIndicesOfOurValidators(genesisState, validators);
@@ -146,7 +146,7 @@ public class ValidatorCoordinator {
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
     UnsignedLong slot = slotEvent.getSlot();
-    BeaconStateRead headState =
+    BeaconState headState =
         chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
     BeaconBlock headBlock =
         chainStorageClient.getStore().getBlock(chainStorageClient.getBestBlockRoot());
@@ -191,7 +191,7 @@ public class ValidatorCoordinator {
     try {
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
-      BeaconStateRead headState = store.getBlockState(event.getHeadBlockRoot());
+      BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
       UnsignedLong slot = event.getNodeSlot();
 
       if (!isGenesis(slot) && isEpochStart(slot)) {
@@ -236,7 +236,7 @@ public class ValidatorCoordinator {
   }
 
   private void produceAttestations(
-      BeaconStateRead state,
+      BeaconState state,
       BLSPublicKey attester,
       int indexIntoCommittee,
       Committee committee,
@@ -256,10 +256,10 @@ public class ValidatorCoordinator {
   }
 
   private void createBlockIfNecessary(
-      BeaconStateRead previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
+      BeaconState previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
     try {
 
-      BeaconStateWrite newState = previousState.createWritableCopy();
+      MutableBeaconState newState = previousState.createWritableCopy();
       // Process empty slots up to the new slot
       stateTransition.process_slots(newState, newSlot, false);
 
@@ -315,7 +315,7 @@ public class ValidatorCoordinator {
     return attestations;
   }
 
-  private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconStateRead state) {
+  private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
     SSZList<ProposerSlashing> slashingsForBlock = BeaconBlockBodyLists.createProposerSlashings();
     ProposerSlashing slashing = slashings.poll();
     while (slashing != null) {
@@ -344,7 +344,7 @@ public class ValidatorCoordinator {
   @VisibleForTesting
   void asyncProduceAttestations(
       List<AttesterInformation> attesterInformations,
-      BeaconStateRead state,
+      BeaconState state,
       AttestationData genericAttestationData) {
     reportExceptions(
         CompletableFuture.runAsync(
@@ -363,8 +363,8 @@ public class ValidatorCoordinator {
 
   @VisibleForTesting
   static void getIndicesOfOurValidators(
-      BeaconStateRead state, Map<BLSPublicKey, ValidatorInfo> validators) {
-    SSZListRead<ValidatorRead> validatorRegistry = state.getValidators();
+      BeaconState state, Map<BLSPublicKey, ValidatorInfo> validators) {
+    SSZListRead<Validator> validatorRegistry = state.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {

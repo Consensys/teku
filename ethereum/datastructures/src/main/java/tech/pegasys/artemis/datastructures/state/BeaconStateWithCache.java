@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-public final class BeaconStateWithCache extends BeaconState {
+public final class BeaconStateWithCache extends BeaconStateImpl {
 
   private final TransitionCaches transitionCaches;
 
@@ -22,12 +22,12 @@ public final class BeaconStateWithCache extends BeaconState {
     transitionCaches = state.transitionCaches;
   }
 
-  private BeaconStateWithCache(BeaconStateRead state) {
+  private BeaconStateWithCache(BeaconState state) {
     super(state);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
-  public static BeaconStateWithCache deepCopy(BeaconStateRead state) {
+  public static BeaconStateWithCache deepCopy(BeaconState state) {
     if (state instanceof BeaconStateWithCache) {
       return new BeaconStateWithCache((BeaconStateWithCache) state);
     } else {
@@ -41,7 +41,7 @@ public final class BeaconStateWithCache extends BeaconState {
    * @param state state to create from
    * @return created state with empty caches
    */
-  public static BeaconStateWithCache fromBeaconState(BeaconStateRead state) {
+  public static BeaconStateWithCache fromBeaconState(BeaconState state) {
     if (state instanceof BeaconStateWithCache) {
       return (BeaconStateWithCache) state;
     } else {
@@ -49,7 +49,7 @@ public final class BeaconStateWithCache extends BeaconState {
     }
   }
 
-  public static TransitionCaches getTransitionCaches(BeaconStateRead state) {
+  public static TransitionCaches getTransitionCaches(BeaconState state) {
     return state instanceof BeaconStateWithCache
         ? ((BeaconStateWithCache) state).getTransitionCaches()
         : TransitionCaches.getNoOp();

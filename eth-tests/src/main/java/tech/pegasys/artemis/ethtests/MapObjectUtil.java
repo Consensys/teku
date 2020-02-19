@@ -41,13 +41,13 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -74,7 +74,7 @@ public class MapObjectUtil {
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
     else if (classtype.equals(Bytes32[].class)) return getBytes32Array((List) object);
-    else if (classtype.equals(BeaconState.class)) return getBeaconState((Map) object);
+    else if (classtype.equals(BeaconStateImpl.class)) return getBeaconState((Map) object);
     else if (classtype.equals(BeaconStateWithCache.class))
       return getBeaconStateWithCache((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
@@ -92,7 +92,7 @@ public class MapObjectUtil {
     else if (classtype.equals(SecretKey.class)) return getSecretKey(object.toString());
     else if (classtype.equals(Signature.class)) return getSignature(object.toString());
     else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
-    else if (classtype.equals(Validator.class)) return getValidator((Map) object);
+    else if (classtype.equals(ValidatorImpl.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
     else if (classtype.equals(SignedVoluntaryExit.class))
       return getSignedVoluntaryExit((Map) object);
@@ -224,7 +224,7 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static BeaconStateRead getBeaconState(Map map) {
+  private static BeaconState getBeaconState(Map map) {
     UnsignedLong genesis_time = UnsignedLong.valueOf(map.get("genesis_time").toString());
     UnsignedLong slot = UnsignedLong.valueOf(map.get("slot").toString());
     Fork fork = getFork((Map) map.get("fork"));
@@ -258,12 +258,12 @@ public class MapObjectUtil {
             Eth1Data.class);
     UnsignedLong eth1_deposit_index =
         UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
-    SSZList<Validator> validators =
+    SSZList<ValidatorImpl> validators =
         SSZList.create(
             ((List<Map>) map.get("validators"))
                 .stream().map(e -> getValidator(e)).collect(Collectors.toList()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
-            Validator.class);
+            ValidatorImpl.class);
     SSZList<UnsignedLong> balances =
         SSZList.create(
             new ArrayList<>(
@@ -308,7 +308,7 @@ public class MapObjectUtil {
         getCheckpoint((Map) map.get("current_justified_checkpoint"));
     Checkpoint finalized_checkpoint = getCheckpoint((Map) map.get("finalized_checkpoint"));
 
-    return BeaconStateRead.create(
+    return BeaconState.create(
         genesis_time,
         slot,
         fork,
@@ -350,7 +350,7 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"rawtypes"})
-  private static Validator getValidator(Map map) {
+  private static ValidatorImpl getValidator(Map map) {
     BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
     Bytes32 withdrawal_credentials =
         Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
@@ -363,7 +363,7 @@ public class MapObjectUtil {
     UnsignedLong withdrawable_epoch =
         UnsignedLong.valueOf(map.get("withdrawable_epoch").toString());
 
-    return new Validator(
+    return new ValidatorImpl(
         pubkey,
         withdrawal_credentials,
         effective_balance,

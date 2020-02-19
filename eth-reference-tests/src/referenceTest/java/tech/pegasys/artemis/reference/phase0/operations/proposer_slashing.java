@@ -30,7 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
@@ -39,7 +39,7 @@ public class proposer_slashing extends TestSuite {
 
   @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
   @MethodSource({"mainnetProposerSlashingSetup", "minimalProposerSlashingSetup"})
-  void processProposerSlashing(ProposerSlashing proposerSlashing, BeaconState pre) {
+  void processProposerSlashing(ProposerSlashing proposerSlashing, BeaconStateImpl pre) {
     List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     proposerSlashings.add(proposerSlashing);
     assertThrows(
@@ -49,7 +49,7 @@ public class proposer_slashing extends TestSuite {
   @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
   @MethodSource({"mainnetProposerSlashingSuccessSetup", "minimalProposerSlashingSuccessSetup"})
   void processProposerSlashing(
-      ProposerSlashing proposerSlashing, BeaconState pre, BeaconState post) {
+      ProposerSlashing proposerSlashing, BeaconStateImpl pre, BeaconStateImpl post) {
     List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     proposerSlashings.add(proposerSlashing);
     assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));

@@ -25,7 +25,7 @@ import java.util.HashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
@@ -61,7 +61,7 @@ class StoreTest {
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
     final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
     final SignedBeaconBlock block = randomSignedBeaconBlock(10, 100);
-    final BeaconStateRead state = randomBeaconState(100);
+    final BeaconState state = randomBeaconState(100);
     final UnsignedLong genesisTime = UnsignedLong.valueOf(1);
     final UnsignedLong time = UnsignedLong.valueOf(3);
     transaction.putBlock(blockRoot, block);

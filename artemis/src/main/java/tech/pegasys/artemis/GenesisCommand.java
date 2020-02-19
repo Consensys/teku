@@ -24,7 +24,7 @@ import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -70,7 +70,7 @@ public class GenesisCommand {
       final long genesisTime = params.genesisTime;
       final List<BLSKeyPair> validatorKeys =
           new MockStartValidatorKeyPairFactory().generateKeyPairs(0, params.validatorCount);
-      final BeaconStateRead genesisState =
+      final BeaconState genesisState =
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
 
       if (outputToFile) {

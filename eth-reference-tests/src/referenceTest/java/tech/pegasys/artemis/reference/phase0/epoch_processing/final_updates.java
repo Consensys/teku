@@ -24,7 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
@@ -32,14 +32,14 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 public class final_updates extends TestSuite {
   @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
   @MethodSource("mainnetFinalUpdatesSetup")
-  void mainnetProcessFinalUpdates(BeaconState pre, BeaconState post) throws Exception {
+  void mainnetProcessFinalUpdates(BeaconStateImpl pre, BeaconStateImpl post) throws Exception {
     EpochProcessorUtil.process_final_updates(pre);
     assertEquals(pre, post);
   }
 
   @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
   @MethodSource("minimalFinalUpdatesSetup")
-  void minimalFinalUpdatesSetup(BeaconState pre, BeaconState post) throws Exception {
+  void minimalFinalUpdatesSetup(BeaconStateImpl pre, BeaconStateImpl post) throws Exception {
     EpochProcessorUtil.process_final_updates(pre);
     assertEquals(pre, post);
   }

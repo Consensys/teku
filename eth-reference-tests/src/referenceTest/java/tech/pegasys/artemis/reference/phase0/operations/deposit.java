@@ -30,7 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 
@@ -39,7 +39,7 @@ public class deposit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process deposit success")
   @MethodSource({"mainnetDepositSuccessSetup", "minimalDepositSuccessSetup"})
-  void processDepositSuccess(Deposit deposit, BeaconState pre, BeaconState post) {
+  void processDepositSuccess(Deposit deposit, BeaconStateImpl pre, BeaconStateImpl post) {
     List<Deposit> deposits = new ArrayList<>();
     deposits.add(deposit);
     assertDoesNotThrow(() -> process_deposits(pre, deposits));
@@ -48,7 +48,7 @@ public class deposit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process deposit")
   @MethodSource({"mainnetDepositSetup", "minimalDepositSetup"})
-  void processDeposit(Deposit deposit, BeaconState pre) {
+  void processDeposit(Deposit deposit, BeaconStateImpl pre) {
     List<Deposit> deposits = new ArrayList<>();
     deposits.add(deposit);
     assertThrows(BlockProcessingException.class, () -> process_deposits(pre, deposits));

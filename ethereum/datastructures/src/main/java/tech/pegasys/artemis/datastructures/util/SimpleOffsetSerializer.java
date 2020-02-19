@@ -53,7 +53,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -104,7 +104,7 @@ public class SimpleOffsetSerializer {
         HistoricalBatch.class, new ReflectionInformation(HistoricalBatch.class));
     classReflectionInfo.put(
         PendingAttestation.class, new ReflectionInformation(PendingAttestation.class));
-    classReflectionInfo.put(Validator.class, new ReflectionInformation(Validator.class));
+    classReflectionInfo.put(ValidatorImpl.class, new ReflectionInformation(ValidatorImpl.class));
     classReflectionInfo.put(StatusMessage.class, new ReflectionInformation(StatusMessage.class));
     classReflectionInfo.put(GoodbyeMessage.class, new ReflectionInformation(GoodbyeMessage.class));
     classReflectionInfo.put(

@@ -30,8 +30,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
-import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -54,7 +54,7 @@ public class BlockProposalUtil {
   public SignedBeaconBlock createNewBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
-      final BeaconStateRead state,
+      final BeaconState state,
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final SSZList<Attestation> attestations,
@@ -92,7 +92,7 @@ public class BlockProposalUtil {
   public SignedBeaconBlock createEmptyBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
-      final BeaconStateRead previousState,
+      final BeaconState previousState,
       final Bytes32 parentBlockRoot)
       throws StateTransitionException {
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
@@ -110,7 +110,7 @@ public class BlockProposalUtil {
   public SignedBeaconBlock createBlockWithAttestations(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
-      final BeaconStateRead previousState,
+      final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
       final SSZList<Attestation> attestations)
       throws StateTransitionException {
@@ -126,13 +126,13 @@ public class BlockProposalUtil {
         BeaconBlockBodyLists.createDeposits());
   }
 
-  public BLSPublicKey getProposerForSlot(final BeaconStateRead preState, final UnsignedLong slot) {
+  public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
     int proposerIndex = getProposerIndexForSlot(preState, slot);
     return preState.getValidators().get(proposerIndex).getPubkey();
   }
 
-  public int getProposerIndexForSlot(final BeaconStateRead preState, final UnsignedLong slot) {
-    BeaconStateWrite state = preState.createWritableCopy();
+  public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
+    MutableBeaconState state = preState.createWritableCopy();
     try {
       stateTransition.process_slots(state, slot, false);
     } catch (SlotProcessingException | EpochProcessingException e) {
@@ -152,7 +152,7 @@ public class BlockProposalUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
    */
   private BLSSignature getBlockSignature(
-      final BeaconStateRead state, final BeaconBlock block, final MessageSignerService signer) {
+      final BeaconState state, final BeaconBlock block, final MessageSignerService signer) {
     final Bytes domain =
         get_domain(
             state,
@@ -175,7 +175,7 @@ public class BlockProposalUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#randao-reveal</a>
    */
   public BLSSignature get_epoch_signature(
-      final BeaconStateRead state, final UnsignedLong epoch, final MessageSignerService signer) {
+      final BeaconState state, final UnsignedLong epoch, final MessageSignerService signer) {
     Bytes32 messageHash =
         HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
     Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
