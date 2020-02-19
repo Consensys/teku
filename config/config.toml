@@ -36,8 +36,8 @@ nodeUrl = "http://localhost:8545"
 
 [output]
 logPath = "."
-logFile = "artemis.log"
-transitionRecordDir = "/tmp/artemis"
+logFile = "teku.log"
+#transitionRecordDir = ""
 
 [metrics]
 enabled = false
