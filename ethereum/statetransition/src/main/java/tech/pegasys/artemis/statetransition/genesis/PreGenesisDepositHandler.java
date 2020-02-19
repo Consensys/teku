@@ -47,7 +47,7 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
   }
 
   @Override
-  public void notifyDepositsFromBlock(final DepositsFromBlockEvent event) {
+  public void onDepositsFromBlock(final DepositsFromBlockEvent event) {
     if (!chainStorageClient.isPreGenesis()) {
       return;
     }

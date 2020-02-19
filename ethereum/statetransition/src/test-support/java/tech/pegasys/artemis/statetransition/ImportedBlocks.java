@@ -18,7 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 
 public class ImportedBlocks implements AutoCloseable {
 
@@ -31,7 +31,7 @@ public class ImportedBlocks implements AutoCloseable {
   }
 
   @Subscribe
-  public void onImported(BlockImportedEvent blockImportedEvent) {
+  public void onImported(ImportedBlockEvent blockImportedEvent) {
     importedBlocks.add(blockImportedEvent.getBlock());
   }
 

@@ -13,14 +13,20 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import java.util.HashMap;
-import java.util.Map;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
-public class FinalizedCheckpointHandler implements BeaconRestApiHandler {
+public class FinalizedCheckpointHandler implements Handler {
 
   private final ChainStorageClient client;
 
@@ -28,21 +34,26 @@ public class FinalizedCheckpointHandler implements BeaconRestApiHandler {
     this.client = client;
   }
 
-  @Override
-  public String getPath() {
-    return "/beacon/finalized_checkpoint";
-  }
+  public static final String ROUTE = "/beacon/finalized_checkpoint";
 
+  @OpenApi(
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Finalized checkpoint.",
+      tags = {"Node"},
+      description = "Requests that the beacon node give finalized checkpoint info.",
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = Checkpoint.class)),
+        @OpenApiResponse(status = "204")
+      })
   @Override
-  public Object handleRequest(RequestParams params) {
+  public void handle(Context ctx) throws Exception {
     Store store = client.getStore();
     if (store == null) {
-      return null;
+      ctx.status(SC_NO_CONTENT);
+      return;
     }
     Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
-    Map<String, Object> jsonObject = new HashMap<>();
-    jsonObject.put("epoch", finalizedCheckpoint.getEpoch().longValue());
-    jsonObject.put("root", finalizedCheckpoint.getRoot().toHexString());
-    return jsonObject;
+    ctx.result(JsonProvider.objectToJSON(finalizedCheckpoint));
   }
 }

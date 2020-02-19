@@ -292,6 +292,16 @@ public final class DataStructureUtil {
         randomDepositData(seed));
   }
 
+  public static tech.pegasys.artemis.pow.event.Deposit randomDepositEvent(
+      int seed, UnsignedLong index) {
+    return new tech.pegasys.artemis.pow.event.Deposit(
+        BLSPublicKey.random(seed++),
+        randomBytes32(seed++),
+        BLSSignature.random(seed++),
+        randomUnsignedLong(seed++),
+        index);
+  }
+
   public static ArrayList<DepositWithIndex> randomDeposits(int num, int seed) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 

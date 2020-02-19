@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.statetransition.events.block;
 
 import java.util.Objects;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
 /** This event is emitted when a new block is proposed locally */
-public class BlockProposedEvent {
+public class ProposedBlockEvent {
   private final SignedBeaconBlock block;
 
-  public BlockProposedEvent(final SignedBeaconBlock block) {
+  public ProposedBlockEvent(final SignedBeaconBlock block) {
     this.block = block;
   }
 
@@ -33,10 +33,10 @@ public class BlockProposedEvent {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof BlockProposedEvent)) {
+    if (!(o instanceof ProposedBlockEvent)) {
       return false;
     }
-    final BlockProposedEvent that = (BlockProposedEvent) o;
+    final ProposedBlockEvent that = (ProposedBlockEvent) o;
     return Objects.equals(block, that.block);
   }
 

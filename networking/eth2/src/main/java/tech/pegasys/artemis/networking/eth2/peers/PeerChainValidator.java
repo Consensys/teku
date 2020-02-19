@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.eth2.peers;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_current_slot;
 
 import com.google.common.primitives.UnsignedLong;
@@ -177,10 +176,10 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical() {
-    final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
-    final UnsignedLong remoteFinalizedSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
+    final Checkpoint remoteFinalizedCheckpoint = status.getFinalizedCheckpoint();
+    final UnsignedLong remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochSlot();
     return historicalChainData
-        .getFinalizedBlockAtSlot(remoteFinalizedSlot)
+        .getLatestFinalizedBlockAtSlot(remoteFinalizedSlot)
         .thenApply(maybeBlock -> toBlock(remoteFinalizedSlot, maybeBlock))
         .thenApply((block) -> validateBlockRootsMatch(block, status.getFinalizedRoot()));
   }
@@ -189,7 +188,7 @@ public class PeerChainValidator {
       Checkpoint finalizedCheckpoint) {
     final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochSlot();
     return historicalChainData
-        .getFinalizedBlockAtSlot(finalizedEpochSlot)
+        .getLatestFinalizedBlockAtSlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(
             blockSlot -> {
