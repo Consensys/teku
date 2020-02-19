@@ -246,11 +246,24 @@ distZip {
   }
 }
 
-// rename the top level dir from artemis-<version> to artemis and this makes it really
+application {
+  applicationName = "teku"
+  mainClassName = "tech.pegasys.artemis.Artemis"
+  applicationDefaultJvmArgs = [
+      "-Djava.library.path=TEKU_HOME/native",
+      "-Dvertx.disableFileCPResolving=true",
+      "-Dteku.home=TEKU_HOME",
+      // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
+      // happens during shutdown is not logged.
+      "-Dlog4j.shutdownHookEnabled=false"
+  ]
+}
+
+// rename the top level dir from teku-<version> to teku and this makes it really
 // simple for use in docker
 tasks.register("dockerDistUntar") {
   dependsOn distTar
-  def dockerBuildDir = "build/docker-artemis/"
+  def dockerBuildDir = "build/docker-teku/"
   def distTarFile = distTar.outputs.files.singleFile
   def distTarFileName = distTar.outputs.files.singleFile.name.replace(".tar.gz", "")
 
@@ -260,7 +273,7 @@ tasks.register("dockerDistUntar") {
       from tarTree(distTarFile)
       into(dockerBuildDir)
     }
-    file("${dockerBuildDir}/${distTarFileName}").renameTo("${dockerBuildDir}/artemis")
+    file("${dockerBuildDir}/${distTarFileName}").renameTo("${dockerBuildDir}/teku")
   }
 }
 
@@ -268,8 +281,8 @@ task distDocker(type: Exec) {
   dependsOn dockerDistUntar
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "pegasyseng/artemis:develop"
-  def dockerBuildDir = "build/docker-artemis/"
+  def image = "pegasyseng/teku:develop"
+  def dockerBuildDir = "build/docker-teku/"
   workingDir "${dockerBuildDir}"
 
   doFirst {
@@ -287,8 +300,8 @@ task distDockerWhiteblock(type: Exec) {
   dependsOn installDist
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "pegasyseng/artemis:whiteblock"
-  def dockerBuildDir = "build/docker-artemis-whiteblock/"
+  def image = "pegasyseng/teku:whiteblock"
+  def dockerBuildDir = "build/docker-teku-whiteblock/"
   workingDir "${dockerBuildDir}"
 
   doFirst {
@@ -488,16 +501,6 @@ subprojects {
 
 jar { enabled = false }
 
-mainClassName = "tech.pegasys.artemis.Artemis"
-applicationDefaultJvmArgs = [
-  "-Djava.library.path=ARTEMIS_HOME/native",
-  "-Dvertx.disableFileCPResolving=true",
-  "-Dartemis.home=ARTEMIS_HOME",
-  // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
-  // happens during shutdown is not logged.
-  "-Dlog4j.shutdownHookEnabled=false"
-]
-
 run {
   if(project.hasProperty('generateFlow')){
     def flowJVMArgs = [
@@ -511,14 +514,14 @@ run {
   }
   args project.hasProperty("artemis.run.args") ? project.property("artemis.run.args").toString().split("\\s+") : []
   doFirst {
-    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('ARTEMIS_HOME', "$buildDir/artemis")}
+    applicationDefaultJvmArgs = applicationDefaultJvmArgs.collect{it.replace('TEKU_HOME', "$buildDir/artemis")}
   }
 }
 
 startScripts {
   doLast {
-    unixScript.text = unixScript.text.replace('ARTEMIS_HOME', '\$APP_HOME').replace('APP_NAME=', 'export LD_LIBRARY_PATH="\$APP_HOME/native:\$LD_LIBRARY_PATH"\nAPP_NAME=')
-    windowsScript.text = windowsScript.text.replace('ARTEMIS_HOME', '%~dp0..')
+    unixScript.text = unixScript.text.replace('TEKU_HOME', '\$APP_HOME').replace('APP_NAME=', 'export LD_LIBRARY_PATH="\$APP_HOME/native:\$LD_LIBRARY_PATH"\nAPP_NAME=')
+    windowsScript.text = windowsScript.text.replace('TEKU_HOME', '%~dp0..')
   }
 }
 
@@ -611,7 +614,7 @@ def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintra
 
 def bintrayPackage = bintray.pkg {
   repo = 'pegasys-repo'
-  name = 'artemis'
+  name = 'teku'
   userOrg = 'consensys'
   desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
   licenses = ['Apache-2.0']
@@ -647,7 +650,7 @@ bintrayUpload.mustRunAfter(distZip)
 task dockerUpload(type: Exec) {
   dependsOn([distDocker, distDockerWhiteblock])
   def imageRepos = 'pegasyseng'
-  def imageName = "${imageRepos}/artemis"
+  def imageName = "${imageRepos}/teku"
   def image = "${imageName}:develop"
   def cmd = "docker push ${imageName}:whiteblock"
   def additionalTags = []
