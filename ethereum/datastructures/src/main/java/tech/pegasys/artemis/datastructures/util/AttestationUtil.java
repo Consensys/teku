@@ -173,7 +173,8 @@ public class AttestationUtil {
   }
 
   private static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
-    return BeaconStateWithCache.getTransitionCaches(state).getValidatorsPubKeys()
+    return BeaconStateWithCache.getTransitionCaches(state)
+        .getValidatorsPubKeys()
         .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
   }
 

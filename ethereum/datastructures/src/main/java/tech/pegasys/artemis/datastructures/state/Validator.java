@@ -22,8 +22,8 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public interface Validator extends ContainerViewRead<ViewRead>, Merkleizable,
-    SimpleOffsetSerializable, SSZContainer {
+public interface Validator
+    extends ContainerViewRead<ViewRead>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   static Validator create(
       BLSPublicKey pubkey,
@@ -34,8 +34,15 @@ public interface Validator extends ContainerViewRead<ViewRead>, Merkleizable,
       UnsignedLong activation_epoch,
       UnsignedLong exit_epoch,
       UnsignedLong withdrawable_epoch) {
-    return new ValidatorImpl(pubkey, withdrawal_credentials, effective_balance, slashed,
-        activation_eligibility_epoch, activation_epoch, exit_epoch, withdrawable_epoch);
+    return new ValidatorImpl(
+        pubkey,
+        withdrawal_credentials,
+        effective_balance,
+        slashed,
+        activation_eligibility_epoch,
+        activation_epoch,
+        exit_epoch,
+        withdrawable_epoch);
   }
 
   BLSPublicKey getPubkey();

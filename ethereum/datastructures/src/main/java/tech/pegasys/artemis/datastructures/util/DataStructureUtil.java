@@ -311,7 +311,8 @@ public final class DataStructureUtil {
   }
 
   public static SSZList<DepositWithIndex> newDeposits(int numDeposits) {
-    SSZMutableList<DepositWithIndex> deposits = SSZList.create(DepositWithIndex.class, Constants.MAX_DEPOSITS);
+    SSZMutableList<DepositWithIndex> deposits =
+        SSZList.create(DepositWithIndex.class, Constants.MAX_DEPOSITS);
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {

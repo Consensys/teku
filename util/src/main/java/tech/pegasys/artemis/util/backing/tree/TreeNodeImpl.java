@@ -86,22 +86,20 @@ public class TreeNodeImpl {
 
     @Override
     public String toString() {
-      return "(" +
-          (left == right ? "default" : left + ", " + right)
-          + ')';
+      return "(" + (left == right ? "default" : left + ", " + right) + ')';
     }
   }
 
   public static TreeNode createDefaultTree(int maxLength, TreeNode zeroElement) {
-    List<TreeNode> nodes = Stream.concat(
-        IntStream.range(0, maxLength)
-            .mapToObj(i -> zeroElement),
-        IntStream.range(maxLength, (int) Utils.nextPowerOf2(maxLength))
-            .mapToObj(i -> TreeNodeImpl.ZERO_LEAF)
-    ).collect(Collectors.toList());
+    List<TreeNode> nodes =
+        Stream.concat(
+                IntStream.range(0, maxLength).mapToObj(i -> zeroElement),
+                IntStream.range(maxLength, (int) Utils.nextPowerOf2(maxLength))
+                    .mapToObj(i -> TreeNodeImpl.ZERO_LEAF))
+            .collect(Collectors.toList());
     while (nodes.size() > 1) {
       List<TreeNode> parentNodes = new ArrayList<>(nodes.size() / 2);
-      for (int i = 0; i < nodes.size(); i+=2) {
+      for (int i = 0; i < nodes.size(); i += 2) {
         parentNodes.add(new CommitImpl(nodes.get(i), nodes.get(i + 1)));
       }
       nodes = parentNodes;

@@ -177,7 +177,8 @@ class CombinedChainDataClientTest {
     assertThat(BeaconStateUtil.get_block_root_at_slot(headState, lastSlotInHistoricalWindow))
         .isEqualTo(olderBlockRoot);
 
-    final MutableBeaconState olderState = beaconState(lastSlotInHistoricalWindow).createWritableCopy();
+    final MutableBeaconState olderState =
+        beaconState(lastSlotInHistoricalWindow).createWritableCopy();
     olderState.getBlock_roots().set(historicalIndex, blockRoot);
 
     when(store.getBlockState(headBlockRoot)).thenReturn(headState);

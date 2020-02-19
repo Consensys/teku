@@ -51,7 +51,7 @@ public class Generator {
   public void generateBlocks() throws Exception {
 
     Constants.setConstants("mainnet");
-//    Constants.SLOTS_PER_EPOCH = 6;
+    //    Constants.SLOTS_PER_EPOCH = 6;
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 

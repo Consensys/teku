@@ -154,7 +154,8 @@ public class blocksMinimal extends TestSuite {
     "sanityExpectedDepositInBlockSetup",
     "sanityPrevSlotBlockTransitionSetup"
   })
-  void sanityProcessBlockInvalid(BeaconStateImpl pre, String testName, List<SignedBeaconBlock> blocks) {
+  void sanityProcessBlockInvalid(
+      BeaconStateImpl pre, String testName, List<SignedBeaconBlock> blocks) {
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(

@@ -55,8 +55,8 @@ import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implements
-    MutableBeaconState {
+public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
+    implements MutableBeaconState {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 14;
@@ -68,23 +68,28 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
               BasicViewTypes.UINT64_TYPE,
               Fork.TYPE,
               BeaconBlockHeader.TYPE,
-              new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-              new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
               new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT),
               Eth1Data.TYPE,
               new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD),
               BasicViewTypes.UINT64_TYPE,
               new ListViewType<>(ValidatorImpl.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
               new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
-              new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
-              new VectorViewType<>(BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR),
-              new ListViewType<>(PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
-              new ListViewType<>(PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
+              new VectorViewType<>(
+                  BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
+              new VectorViewType<>(
+                  BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR),
+              new ListViewType<>(
+                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
+              new ListViewType<>(
+                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
               new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.JUSTIFICATION_BITS_LENGTH),
               Checkpoint.TYPE,
               Checkpoint.TYPE,
-              Checkpoint.TYPE
-          ),
+              Checkpoint.TYPE),
           BeaconStateImpl::new);
 
   // Versioning
@@ -94,39 +99,69 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
 
   // History
   private final BeaconBlockHeader latest_block_header = null;
-  private final SSZVector<Bytes32> block_roots = SSZVector.create(Bytes32.class, Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  private final SSZVector<Bytes32> state_roots = SSZVector.create(Bytes32.class, Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
-  private final SSZList<Bytes32> historical_roots = SSZList.create(Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT); // Bounded by HISTORICAL_ROOTS_LIMIT
+  private final SSZVector<Bytes32> block_roots =
+      SSZVector.create(
+          Bytes32.class,
+          Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  private final SSZVector<Bytes32> state_roots =
+      SSZVector.create(
+          Bytes32.class,
+          Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
+  private final SSZList<Bytes32> historical_roots =
+      SSZList.create(
+          Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT); // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
   private final Eth1Data eth1_data = null;
-  private final SSZList<Eth1Data> eth1_data_votes = SSZList.create(Eth1Data.class, Constants.SLOTS_PER_ETH1_VOTING_PERIOD); // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
+  private final SSZList<Eth1Data> eth1_data_votes =
+      SSZList.create(
+          Eth1Data.class,
+          Constants.SLOTS_PER_ETH1_VOTING_PERIOD); // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
   private final UnsignedLong eth1_deposit_index = null;
 
   // Validator registry
-  private final SSZList<ValidatorImpl> validators = SSZList.create(ValidatorImpl.class, Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
-  private final SSZList<UnsignedLong> balances = SSZList.create(UnsignedLong.class, Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  private final SSZList<ValidatorImpl> validators =
+      SSZList.create(
+          ValidatorImpl.class,
+          Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
+  private final SSZList<UnsignedLong> balances =
+      SSZList.create(
+          UnsignedLong.class,
+          Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
-  private final SSZVector<Bytes32> randao_mixes = SSZVector.create(Bytes32.class, Constants.EPOCHS_PER_HISTORICAL_VECTOR); // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
+  private final SSZVector<Bytes32> randao_mixes =
+      SSZVector.create(
+          Bytes32.class,
+          Constants.EPOCHS_PER_HISTORICAL_VECTOR); // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
-  private final SSZVector<UnsignedLong> slashings = SSZVector.create(UnsignedLong.class, Constants.EPOCHS_PER_SLASHINGS_VECTOR); // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
+  private final SSZVector<UnsignedLong> slashings =
+      SSZVector.create(
+          UnsignedLong.class,
+          Constants.EPOCHS_PER_SLASHINGS_VECTOR); // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
-  private final SSZList<PendingAttestation>
-      previous_epoch_attestations = SSZList.create(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
-  private final SSZList<PendingAttestation>
-      current_epoch_attestations = SSZList.create(PendingAttestation.class, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+  private final SSZList<PendingAttestation> previous_epoch_attestations =
+      SSZList.create(
+          PendingAttestation.class,
+          Constants.MAX_ATTESTATIONS
+              * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
+  private final SSZList<PendingAttestation> current_epoch_attestations =
+      SSZList.create(
+          PendingAttestation.class,
+          Constants.MAX_ATTESTATIONS
+              * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
 
   // Finality
-  private final Bitvector justification_bits = new Bitvector(Constants.JUSTIFICATION_BITS_LENGTH); // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
+  private final Bitvector justification_bits =
+      new Bitvector(
+          Constants.JUSTIFICATION_BITS_LENGTH); // Bitvector bounded by JUSTIFICATION_BITS_LENGTH
   private final Checkpoint previous_justified_checkpoint = null;
   private final Checkpoint current_justified_checkpoint = null;
   private final Checkpoint finalized_checkpoint = null;
 
   private BeaconStateImpl(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type,
-      TreeNode backingNode) {
+      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -246,7 +281,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
         List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
-    variablePartsList.add(SSZ.encode(writer -> writer.writeFixedBytesVector(getHistorical_roots().asList())));
+    variablePartsList.add(
+        SSZ.encode(writer -> writer.writeFixedBytesVector(getHistorical_roots().asList())));
     variablePartsList.add(Bytes.EMPTY);
     variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(getEth1_data_votes()));
     variablePartsList.add(Bytes.EMPTY);
@@ -342,20 +378,18 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
         && Objects.equals(this.getRandao_mixes(), other.getRandao_mixes())
         && Objects.equals(this.getSlashings(), other.getSlashings())
         && Objects.equals(
-        this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
+            this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
         && Objects.equals(
-        this.getCurrent_epoch_attestations(), other.getCurrent_epoch_attestations())
+            this.getCurrent_epoch_attestations(), other.getCurrent_epoch_attestations())
         && Objects.equals(this.getJustification_bits(), other.getJustification_bits())
         && Objects.equals(
-        this.getPrevious_justified_checkpoint(), other.getPrevious_justified_checkpoint())
+            this.getPrevious_justified_checkpoint(), other.getPrevious_justified_checkpoint())
         && Objects.equals(
-        this.getCurrent_justified_checkpoint(), other.getCurrent_justified_checkpoint())
+            this.getCurrent_justified_checkpoint(), other.getCurrent_justified_checkpoint())
         && Objects.equals(this.getFinalized_checkpoint(), other.getFinalized_checkpoint());
   }
 
-  /**
-   * ****************** * GETTERS & SETTERS * * *******************
-   */
+  /** ****************** * GETTERS & SETTERS * * ******************* */
 
   // Versioning
   public UnsignedLong getGenesis_time() {
@@ -392,8 +426,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   public SSZMutableVector<Bytes32> getBlock_roots() {
-    return new SSZBackingVector<>
-        (Bytes32.class, getBlock_roots_view(), Bytes32View::new, AbstractBasicView::get);
+    return new SSZBackingVector<>(
+        Bytes32.class, getBlock_roots_view(), Bytes32View::new, AbstractBasicView::get);
   }
 
   @SuppressWarnings("unchecked")
@@ -402,8 +436,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   public SSZMutableVector<Bytes32> getState_roots() {
-    return new SSZBackingVector<>
-        (Bytes32.class, getState_roots_view(), Bytes32View::new, AbstractBasicView::get);
+    return new SSZBackingVector<>(
+        Bytes32.class, getState_roots_view(), Bytes32View::new, AbstractBasicView::get);
   }
 
   @SuppressWarnings("unchecked")
@@ -412,8 +446,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   public SSZMutableList<Bytes32> getHistorical_roots() {
-    return new SSZBackingList<>
-        (Bytes32.class, getHistorical_roots_view(), Bytes32View::new, AbstractBasicView::get);
+    return new SSZBackingList<>(
+        Bytes32.class, getHistorical_roots_view(), Bytes32View::new, AbstractBasicView::get);
   }
 
   @SuppressWarnings("unchecked")
@@ -431,8 +465,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   public SSZMutableList<Eth1Data> getEth1_data_votes() {
-    return new SSZBackingList<>
-        (Eth1Data.class, getEth1_data_votes_view(), Function.identity(), Function.identity());
+    return new SSZBackingList<>(
+        Eth1Data.class, getEth1_data_votes_view(), Function.identity(), Function.identity());
   }
 
   @SuppressWarnings("unchecked")
@@ -459,17 +493,18 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   public SSZMutableList<UnsignedLong> getBalances() {
-    return new SSZBackingList<>
-        (UnsignedLong.class, getBalances_view(), UInt64View::new, AbstractBasicView::get);
+    return new SSZBackingList<>(
+        UnsignedLong.class, getBalances_view(), UInt64View::new, AbstractBasicView::get);
   }
+
   @SuppressWarnings("unchecked")
   private ListViewWrite<UInt64View> getBalances_view() {
     return (ListViewWrite<UInt64View>) getByRef(11);
   }
 
   public SSZMutableVector<Bytes32> getRandao_mixes() {
-    return new SSZBackingVector<>
-        (Bytes32.class, getRandao_mixes_view(), Bytes32View::new, AbstractBasicView::get);
+    return new SSZBackingVector<>(
+        Bytes32.class, getRandao_mixes_view(), Bytes32View::new, AbstractBasicView::get);
   }
 
   @SuppressWarnings("unchecked")
@@ -479,8 +514,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
 
   // Slashings
   public SSZMutableVector<UnsignedLong> getSlashings() {
-    return new SSZBackingVector<>
-        (UnsignedLong.class, getSlashings_view(), UInt64View::new, AbstractBasicView::get);
+    return new SSZBackingVector<>(
+        UnsignedLong.class, getSlashings_view(), UInt64View::new, AbstractBasicView::get);
   }
 
   @SuppressWarnings("unchecked")
@@ -490,8 +525,11 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
 
   // Attestations
   public SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
-    return new SSZBackingList<>
-        (PendingAttestation.class, getPrevious_epoch_attestations_view(), Function.identity(), Function.identity());
+    return new SSZBackingList<>(
+        PendingAttestation.class,
+        getPrevious_epoch_attestations_view(),
+        Function.identity(),
+        Function.identity());
   }
 
   @SuppressWarnings("unchecked")
@@ -500,8 +538,11 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   public SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
-    return new SSZBackingList<>
-        (PendingAttestation.class, getCurrent_epoch_attestations_view(), Function.identity(), Function.identity());
+    return new SSZBackingList<>(
+        PendingAttestation.class,
+        getCurrent_epoch_attestations_view(),
+        Function.identity(),
+        Function.identity());
   }
 
   @SuppressWarnings("unchecked")

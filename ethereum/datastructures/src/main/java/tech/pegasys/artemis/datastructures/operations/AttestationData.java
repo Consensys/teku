@@ -161,12 +161,17 @@ public class AttestationData extends ContainerViewImpl<AttestationData>
 
   @Override
   public String toString() {
-    return "AttestationData{" +
-        "slot=" + getSlot() +
-        ", index=" + getIndex() +
-        ", beacon_block_root=" + getBeacon_block_root() +
-        ", source=" + getSource() +
-        ", target=" + getTarget() +
-        '}';
+    return "AttestationData{"
+        + "slot="
+        + getSlot()
+        + ", index="
+        + getIndex()
+        + ", beacon_block_root="
+        + getBeacon_block_root()
+        + ", source="
+        + getSource()
+        + ", target="
+        + getTarget()
+        + '}';
   }
 }

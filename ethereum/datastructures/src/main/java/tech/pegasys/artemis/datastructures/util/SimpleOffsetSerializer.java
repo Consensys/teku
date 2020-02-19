@@ -98,7 +98,7 @@ public class SimpleOffsetSerializer {
         SignedVoluntaryExit.class, new ReflectionInformation(SignedVoluntaryExit.class));
     classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
     // TODO
-//    classReflectionInfo.put(BeaconState.class, new ReflectionInformation(BeaconState.class));
+    //    classReflectionInfo.put(BeaconState.class, new ReflectionInformation(BeaconState.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
     classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
     classReflectionInfo.put(
@@ -161,7 +161,8 @@ public class SimpleOffsetSerializer {
         Bytes.concatenate(value.get_variable_parts().toArray(new Bytes[0])));
   }
 
-  public static Bytes serializeFixedCompositeList(SSZList<? extends SimpleOffsetSerializable> values) {
+  public static Bytes serializeFixedCompositeList(
+      SSZList<? extends SimpleOffsetSerializable> values) {
     return Bytes.fromHexString(
         values.stream()
             .map(item -> serialize(item).toHexString().substring(2))

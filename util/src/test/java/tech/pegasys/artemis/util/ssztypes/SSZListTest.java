@@ -42,8 +42,10 @@ class SSZListTest {
       list.add(Bytes32.random());
     }
 
-    Assertions.assertThrows(IllegalArgumentException.class, () -> {
-      list.add(Bytes32.random());
-    });
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          list.add(Bytes32.random());
+        });
   }
 }

@@ -38,8 +38,7 @@ import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
-    implements MutableValidator,
-        Copyable<ValidatorImpl> {
+    implements MutableValidator, Copyable<ValidatorImpl> {
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 8;
   public static final ContainerViewType<ValidatorImpl> TYPE =

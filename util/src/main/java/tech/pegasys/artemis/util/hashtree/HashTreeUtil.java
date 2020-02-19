@@ -159,8 +159,7 @@ public final class HashTreeUtil {
   public static Bytes32 hash_tree_root(SSZTypes sszType, SSZList bytes) {
     switch (sszType) {
       case LIST_OF_COMPOSITE:
-        return hash_tree_root_list_composite_type(
-            (SSZList<Merkleizable>) bytes);
+        return hash_tree_root_list_composite_type((SSZList<Merkleizable>) bytes);
       default:
         throw new UnsupportedOperationException(
             "The maxSize parameter is only applicable for SSZ Lists.");
@@ -310,8 +309,7 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_of_unsigned_long(
-      SSZList<? extends Bytes> bytes) {
+  private static Bytes32 hash_tree_root_list_of_unsigned_long(SSZList<? extends Bytes> bytes) {
     return mix_in_length(
         merkleize(pack(bytes.toArray()), chunk_count_list_unsigned_long(bytes.getMaxSize())),
         bytes.size());
@@ -329,17 +327,18 @@ public final class HashTreeUtil {
    */
   public static Bytes32 hash_tree_root_list_bytes(SSZList<Bytes32> bytes) {
     return mix_in_length(
-        merkleize(bytes.asList(), chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())), bytes.size());
+        merkleize(bytes.asList(), chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),
+        bytes.size());
   }
 
-  private static Bytes32 hash_tree_root_list_pubkey(
-      SSZList<BLSPublicKey> bytes) {
+  private static Bytes32 hash_tree_root_list_pubkey(SSZList<BLSPublicKey> bytes) {
     List<Bytes32> hashTreeRootList =
         bytes.stream()
             .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toBytes()))
             .collect(Collectors.toList());
     return mix_in_length(
-        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())), bytes.size());
+        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),
+        bytes.size());
   }
 
   /**
@@ -352,12 +351,12 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_composite_type(
-      SSZList<? extends Merkleizable> bytes) {
+  private static Bytes32 hash_tree_root_list_composite_type(SSZList<? extends Merkleizable> bytes) {
     List<Bytes32> hashTreeRootList =
         bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList());
     return mix_in_length(
-        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())), bytes.size());
+        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),
+        bytes.size());
   }
 
   /**

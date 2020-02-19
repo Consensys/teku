@@ -48,7 +48,8 @@ class BeaconBlockBodyTest {
       SSZList.create(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
   private SSZMutableList<AttesterSlashing> attesterSlashings =
       SSZList.create(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
-  private SSZMutableList<Attestation> attestations = SSZList.create(Attestation.class, MAX_ATTESTATIONS);
+  private SSZMutableList<Attestation> attestations =
+      SSZList.create(Attestation.class, MAX_ATTESTATIONS);
   private SSZMutableList<Deposit> deposits = SSZList.create(Deposit.class, MAX_DEPOSITS);
   private SSZMutableList<SignedVoluntaryExit> voluntaryExits =
       SSZList.create(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);

@@ -296,10 +296,14 @@ class BeaconStateUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.getValidators().addAll(
-        SSZList.create(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
-    beaconState.getBalances().addAll(
-        SSZList.create(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
+    beaconState
+        .getValidators()
+        .addAll(
+            SSZList.create(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
+    beaconState
+        .getBalances()
+        .addAll(
+            SSZList.create(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
     return beaconState.commitChanges();
   }
 

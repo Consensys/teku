@@ -76,8 +76,8 @@ class BitvectorTest {
 
   @Test
   void bitlistHashTest() {
-    Bitlist bitlist = new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE,
-        Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    Bitlist bitlist =
+        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     for (int i = 0; i < 44; i++) {
       bitlist.setBit(i);
     }

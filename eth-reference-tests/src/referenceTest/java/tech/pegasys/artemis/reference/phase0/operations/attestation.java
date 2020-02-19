@@ -38,7 +38,8 @@ public class attestation extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process attestation success")
   @MethodSource({"mainnetAttestationSuccessSetup", "minimalAttestationSuccessSetup"})
-  void processAttestationSuccess(Attestation attestation, BeaconStateImpl pre, BeaconStateImpl post) {
+  void processAttestationSuccess(
+      Attestation attestation, BeaconStateImpl pre, BeaconStateImpl post) {
     assertDoesNotThrow(() -> process_attestations(pre, SSZList.singleton(attestation)));
     assertEquals(pre, post);
   }
@@ -46,7 +47,9 @@ public class attestation extends TestSuite {
   @ParameterizedTest(name = "{index}. process attestation")
   @MethodSource({"mainnetAttestationSetup", "minimalAttestationSetup"})
   void processAttestation(Attestation attestation, BeaconStateImpl pre) {
-    assertThrows(BlockProcessingException.class, () -> process_attestations(pre, SSZList.singleton(attestation)));
+    assertThrows(
+        BlockProcessingException.class,
+        () -> process_attestations(pre, SSZList.singleton(attestation)));
   }
 
   @MustBeClosed

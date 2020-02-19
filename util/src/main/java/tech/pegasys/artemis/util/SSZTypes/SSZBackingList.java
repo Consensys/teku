@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.util.SSZTypes;
 
 import java.util.function.Function;
@@ -5,15 +18,17 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
-public class SSZBackingList<C, R extends ViewRead> extends
-    SSZAbstractCollection<C> implements SSZMutableList<C> {
+public class SSZBackingList<C, R extends ViewRead> extends SSZAbstractCollection<C>
+    implements SSZMutableList<C> {
 
   private final ListViewWrite<R> delegate;
   private final Function<C, R> wrapper;
   private final Function<R, C> unwrapper;
 
-  public SSZBackingList(Class<C> classInfo,
-      ListViewWrite<R> delegate, Function<C, R> wrapper,
+  public SSZBackingList(
+      Class<C> classInfo,
+      ListViewWrite<R> delegate,
+      Function<C, R> wrapper,
       Function<R, C> unwrapper) {
     super(classInfo);
     this.delegate = delegate;

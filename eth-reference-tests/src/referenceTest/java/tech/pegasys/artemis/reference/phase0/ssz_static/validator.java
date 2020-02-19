@@ -37,7 +37,8 @@ public class validator extends TestSuite {
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(ValidatorImpl deserializedValidator, Bytes32 root) throws Exception {
+  void processSSZStaticBeaconBlock(ValidatorImpl deserializedValidator, Bytes32 root)
+      throws Exception {
     assertEquals(deserializedValidator.hash_tree_root(), root);
   }
 

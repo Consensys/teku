@@ -70,8 +70,8 @@ class ChainStorageClientTest {
     storageClient.setStore(store);
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
-    final MutableBeaconState bestState = DataStructureUtil
-        .randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(0, GENESIS_BLOCK_ROOT);
     when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(bestState);
@@ -86,8 +86,8 @@ class ChainStorageClientTest {
     final UnsignedLong bestSlot = UnsignedLong.ONE;
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final MutableBeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++)
-        .createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
     final BeaconBlock genesisBlock = GENESIS_BLOCK;
     final Bytes32 genesisBlockHash = genesisBlock.hash_tree_root();
     // At the start of the chain, the slot number is the index into historical roots
@@ -106,8 +106,8 @@ class ChainStorageClientTest {
         UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT).plus(UnsignedLong.ONE);
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final MutableBeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++)
-        .createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
     // Overwrite the genesis hash with a newer block.
     final BeaconBlock newerBlock =
         DataStructureUtil.randomBeaconBlock(bestSlot.longValue() - 1, seed++);
@@ -136,8 +136,8 @@ class ChainStorageClientTest {
 
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final MutableBeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++)
-        .createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
     final BeaconBlock bestBlock =
         DataStructureUtil.randomBeaconBlock(requestedSlot.longValue(), seed++);
     final Bytes32 bestBlockHash = bestBlock.hash_tree_root();
@@ -158,8 +158,8 @@ class ChainStorageClientTest {
 
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final MutableBeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++)
-        .createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
     final Bytes32 block1Hash = GENESIS_BLOCK.hash_tree_root();
     // The root for BLOCK1 is copied over from it's slot to be the best block at the requested slot
     bestState.getBlock_roots().set(GENESIS_BLOCK.getSlot().intValue(), block1Hash);
@@ -188,8 +188,8 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     // bestState has no historical block roots so definitely nothing canonical at the block's slot
-    final MutableBeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++)
-        .createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
 
@@ -201,8 +201,8 @@ class ChainStorageClientTest {
     storageClient.setStore(store);
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, UnsignedLong.ONE);
 
-    final MutableBeaconState bestState = DataStructureUtil
-        .randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
     final BeaconBlock canonicalBlock =
         DataStructureUtil.randomBeaconBlock(GENESIS_BLOCK.getSlot().longValue(), seed++);
     bestState
@@ -219,8 +219,8 @@ class ChainStorageClientTest {
     final UnsignedLong bestSlot = UnsignedLong.ONE;
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
-    final MutableBeaconState bestState = DataStructureUtil.randomBeaconState(bestSlot, seed++)
-        .createWritableCopy();
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
     bestState
         .getBlock_roots()
         .set(GENESIS_BLOCK.getSlot().intValue(), GENESIS_BLOCK.hash_tree_root());

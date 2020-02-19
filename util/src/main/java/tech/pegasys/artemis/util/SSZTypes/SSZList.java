@@ -30,7 +30,8 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
     return new SSZArrayCollection<>(list.collect(Collectors.toList()), maxSize, classInfo);
   }
 
-  static <T> SSZMutableList<T> create(Collection<T> list, long maxSize, Class<? extends T> classInfo) {
+  static <T> SSZMutableList<T> create(
+      Collection<T> list, long maxSize, Class<? extends T> classInfo) {
     return create(list.stream(), maxSize, classInfo);
   }
 
@@ -38,8 +39,8 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
     return new SSZArrayCollection<>(list.asList(), list.getMaxSize(), list.getElementType());
   }
 
-  static <T> SSZMutableList<T> concat(SSZImmutableCollection<? extends T> left,
-      SSZImmutableCollection<? extends T> right) {
+  static <T> SSZMutableList<T> concat(
+      SSZImmutableCollection<? extends T> left, SSZImmutableCollection<? extends T> right) {
     SSZMutableList<T> ret = create(left);
     ret.addAll(right);
     return ret;
@@ -51,7 +52,7 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
 
   default SSZList<T> reverse() {
     SSZMutableList<T> ret = create(getElementType(), getMaxSize());
-    for (int i = size() - 1; i >= 0 ; i--) {
+    for (int i = size() - 1; i >= 0; i--) {
       ret.add(get(i));
     }
     return ret;
@@ -61,7 +62,8 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
     return modify(getElementType(), streamer);
   }
 
-  default <D> SSZList<D> modify(Class<? extends D> newElementType, Function<Stream<T>, Stream<D>> streamer) {
+  default <D> SSZList<D> modify(
+      Class<? extends D> newElementType, Function<Stream<T>, Stream<D>> streamer) {
     return create(streamer.apply(stream()), getMaxSize(), newElementType);
   }
 
@@ -77,5 +79,4 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
   default T[] toArray() {
     return asList().toArray((T[]) Array.newInstance(getElementType(), 0));
   }
-
 }

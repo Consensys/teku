@@ -50,8 +50,8 @@ public class deposit extends TestSuite {
   void processDeposit(Deposit deposit, BeaconStateImpl pre) {
     List<Deposit> deposits = new ArrayList<>();
     deposits.add(deposit);
-    assertThrows(BlockProcessingException.class,
-        () -> process_deposits(pre, SSZList.singleton(deposit)));
+    assertThrows(
+        BlockProcessingException.class, () -> process_deposits(pre, SSZList.singleton(deposit)));
   }
 
   @MustBeClosed

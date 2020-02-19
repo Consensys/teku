@@ -67,10 +67,9 @@ public final class StartupUtil {
         .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
   }
 
-  public static BeaconState loadBeaconStateFromFile(final String stateFile)
-      throws IOException {
+  public static BeaconState loadBeaconStateFromFile(final String stateFile) throws IOException {
     return SimpleOffsetSerializer.deserialize(
-            Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconStateImpl.class);
+        Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconStateImpl.class);
   }
 
   public static void setupInitialState(

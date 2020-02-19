@@ -39,7 +39,10 @@ public class attester_slashing extends TestSuite {
   @ParameterizedTest(name = "{index}.{3} process attester slashing success")
   @MethodSource({"mainnetAttesterSlashingSuccessSetup", "minimalAttesterSlashingSuccessSetup"})
   void processAttesterSlashingSuccess(
-      AttesterSlashing attester_slashing, BeaconStateImpl pre, BeaconStateImpl post, String testName) {
+      AttesterSlashing attester_slashing,
+      BeaconStateImpl pre,
+      BeaconStateImpl post,
+      String testName) {
     assertDoesNotThrow(() -> process_attester_slashings(pre, SSZList.singleton(attester_slashing)));
     assertEquals(pre, post);
   }

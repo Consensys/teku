@@ -54,7 +54,8 @@ class CommitteeAssignmentManagerTest {
   private final List<DepositData> depositDatas =
       new MockStartDepositGenerator().createDeposits(validatorKeys);
   private final MutableBeaconState state =
-      new MockStartBeaconStateGenerator().createInitialBeaconState(UnsignedLong.ONE, depositDatas)
+      new MockStartBeaconStateGenerator()
+          .createInitialBeaconState(UnsignedLong.ONE, depositDatas)
           .createWritableCopy();
 
   private CommitteeAssignmentManager committeeAssignmentManager;

@@ -128,11 +128,12 @@ public final class EpochProcessorUtil {
    */
   private static SSZList<PendingAttestation> get_matching_head_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
-    return get_matching_source_attestations(state, epoch).filter(
-        a ->
-            a.getData()
-                .getBeacon_block_root()
-                .equals(get_block_root_at_slot(state, a.getData().getSlot())));
+    return get_matching_source_attestations(state, epoch)
+        .filter(
+            a ->
+                a.getData()
+                    .getBeacon_block_root()
+                    .equals(get_block_root_at_slot(state, a.getData().getSlot())));
   }
 
   /**
@@ -460,7 +461,8 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#registry-updates</a>
    */
-  public static void process_registry_updates(MutableBeaconState state) throws EpochProcessingException {
+  public static void process_registry_updates(MutableBeaconState state)
+      throws EpochProcessingException {
     try {
 
       // Process activation eligibility and ejections
@@ -617,7 +619,8 @@ public final class EpochProcessorUtil {
 
     // Rotate current/previous epoch attestations
     state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
-    state.getCurrent_epoch_attestations().setAll(
-        SSZList.create(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
+    state
+        .getCurrent_epoch_attestations()
+        .setAll(SSZList.create(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
   }
 }

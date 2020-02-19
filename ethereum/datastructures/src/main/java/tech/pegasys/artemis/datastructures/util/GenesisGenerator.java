@@ -133,8 +133,7 @@ public class GenesisGenerator {
     Eth1Data eth1Data = state.getEth1_data();
     state.setEth1_data(
         new Eth1Data(
-            HashTreeUtil.hash_tree_root(
-                HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositDataList),
+            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositDataList),
             eth1Data.getDeposit_count(),
             eth1Data.getBlock_hash()));
   }

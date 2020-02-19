@@ -36,7 +36,8 @@ public class slotsMinimal extends TestSuite {
 
   @ParameterizedTest(name = "{index}.{3} Sanity slots (Minimal)")
   @MethodSource({"sanityGenericSlotSetup"})
-  void sanityProcessSlot(BeaconStateImpl pre, BeaconStateImpl post, UnsignedLong slot, String testName) {
+  void sanityProcessSlot(
+      BeaconStateImpl pre, BeaconStateImpl post, UnsignedLong slot, String testName) {
     boolean printEnabled = false;
     StateTransition stateTransition = new StateTransition(printEnabled);
     BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);

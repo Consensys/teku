@@ -80,9 +80,7 @@ public class StateTransition {
    * @throws StateTransitionException
    */
   public BeaconState initiate(
-      BeaconState preState,
-      SignedBeaconBlock signed_block,
-      boolean validateStateRootAndSignatures)
+      BeaconState preState, SignedBeaconBlock signed_block, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
       MutableBeaconState state = preState.createWritableCopy();
@@ -229,9 +227,7 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
           STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
-          reportExceptions(
-              CompletableFuture.runAsync(
-                  () -> recordMetrics(state)));
+          reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(state)));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }

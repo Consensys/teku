@@ -42,7 +42,8 @@ public class MockStartBeaconStateGenerator {
       deposits.add(deposit);
     }
     final MutableBeaconState initialState =
-        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, genesisTime, deposits).createWritableCopy();
+        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, genesisTime, deposits)
+            .createWritableCopy();
     initialState.setGenesis_time(genesisTime);
     return initialState.commitChanges();
   }

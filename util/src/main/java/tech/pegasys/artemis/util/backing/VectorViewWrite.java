@@ -13,8 +13,7 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface VectorViewWrite<R>
-    extends CompositeViewWrite<R>, VectorViewRead<R> {
+public interface VectorViewWrite<R> extends CompositeViewWrite<R>, VectorViewRead<R> {
 
   @Override
   default VectorViewRead<R> commitChanges() {

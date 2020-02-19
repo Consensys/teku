@@ -40,9 +40,8 @@ public class VectorViewType<C> extends CollectionViewType {
   public TreeNode createDefaultTree() {
     return isListBacking
         ? TreeNodeImpl.createZeroTree(maxChunks())
-        : TreeNodeImpl
-            .createDefaultTree((int) maxChunks(),
-                getElementType().createDefault().getBackingNode());
+        : TreeNodeImpl.createDefaultTree(
+            (int) maxChunks(), getElementType().createDefault().getBackingNode());
   }
 
   @Override

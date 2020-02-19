@@ -208,15 +208,10 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, randao_reveal.toBytes()),
             eth1_data.hash_tree_root(),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, graffiti),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, attestations),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, deposits),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, voluntary_exits)));
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, proposer_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attester_slashings),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, attestations),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, deposits),
+            HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, voluntary_exits)));
   }
 }

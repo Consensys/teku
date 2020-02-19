@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
@@ -13,8 +26,8 @@ import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public interface BeaconState extends ContainerViewRead<ViewRead>, Merkleizable,
-    SimpleOffsetSerializable, SSZContainer {
+public interface BeaconState
+    extends ContainerViewRead<ViewRead>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   static BeaconState createEmpty() {
     return BeaconStateWithCache.fromBeaconState(new BeaconStateImpl());
@@ -58,11 +71,28 @@ public interface BeaconState extends ContainerViewRead<ViewRead>, Merkleizable,
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
 
-    return BeaconStateWithCache.fromBeaconState(new BeaconStateImpl(genesis_time, slot, fork, latest_block_header, block_roots, state_roots,
-        historical_roots, eth1_data, eth1_data_votes, eth1_deposit_index, validators, balances,
-        randao_mixes, slashings, previous_epoch_attestations, current_epoch_attestations,
-        justification_bits, previous_justified_checkpoint, current_justified_checkpoint,
-        finalized_checkpoint));
+    return BeaconStateWithCache.fromBeaconState(
+        new BeaconStateImpl(
+            genesis_time,
+            slot,
+            fork,
+            latest_block_header,
+            block_roots,
+            state_roots,
+            historical_roots,
+            eth1_data,
+            eth1_data_votes,
+            eth1_deposit_index,
+            validators,
+            balances,
+            randao_mixes,
+            slashings,
+            previous_epoch_attestations,
+            current_epoch_attestations,
+            justification_bits,
+            previous_justified_checkpoint,
+            current_justified_checkpoint,
+            finalized_checkpoint));
   }
 
   // Versioning

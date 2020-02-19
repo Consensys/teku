@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.util.backing;
 
 import com.google.common.primitives.UnsignedLong;
@@ -20,11 +33,9 @@ public class ListViewTest {
 
     public static final ContainerViewType<SubContainer> TYPE =
         new ContainerViewType<>(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE),
-            SubContainer::new);
+            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE), SubContainer::new);
 
-    private SubContainer(
-        ContainerViewType<SubContainer> type, TreeNode backingNode) {
+    private SubContainer(ContainerViewType<SubContainer> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
@@ -43,7 +54,7 @@ public class ListViewTest {
 
   @Test
   void clearTest() {
-    ListViewType<SubContainer> type = new ListViewType<>(SubContainer.TYPE,100);
+    ListViewType<SubContainer> type = new ListViewType<>(SubContainer.TYPE, 100);
     ListViewRead<SubContainer> lr1 = type.createDefault();
     ListViewWrite<SubContainer> lw1 = lr1.createWritableCopy();
     lw1.append(new SubContainer(UnsignedLong.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));

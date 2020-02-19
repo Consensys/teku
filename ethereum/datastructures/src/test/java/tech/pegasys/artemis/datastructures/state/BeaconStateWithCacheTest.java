@@ -97,7 +97,9 @@ class BeaconStateWithCacheTest {
                     UnsignedLong.valueOf(GENESIS_EPOCH),
                     UnsignedLong.ZERO,
                     UnsignedLong.ZERO)));
-    state.getValidators().addAll(SSZList.create(new_records, VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
+    state
+        .getValidators()
+        .addAll(SSZList.create(new_records, VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
     BeaconStateImpl deepCopy = BeaconStateWithCache.deepCopy(state);
     MutableValidator validator = deepCopy.getValidators().get(0);
     validator.setPubkey(BLSPublicKey.random(9999999));

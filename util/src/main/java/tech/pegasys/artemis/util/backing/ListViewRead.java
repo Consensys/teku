@@ -31,5 +31,4 @@ public interface ListViewRead<C extends ViewRead> extends CompositeViewRead<C> {
   default boolean isEmpty() {
     return size() == 0;
   }
-
 }
