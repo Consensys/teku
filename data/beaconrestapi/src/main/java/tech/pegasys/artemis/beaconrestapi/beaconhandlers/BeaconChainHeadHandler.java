@@ -13,17 +13,23 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.HashMap;
-import java.util.Map;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHeadResponse;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class BeaconChainHeadHandler implements BeaconRestApiHandler {
+public class BeaconChainHeadHandler implements Handler {
 
   private final ChainStorageClient client;
 
@@ -31,16 +37,25 @@ public class BeaconChainHeadHandler implements BeaconRestApiHandler {
     this.client = client;
   }
 
-  @Override
-  public String getPath() {
-    return "/beacon/chainhead";
-  }
+  public static final String ROUTE = "/beacon/chainhead";
 
   // TODO: make sure finalized and justified root methods return null if
   // we don't have them in store yet. So that we can handle them better instead of
   // returning zero.
+  @OpenApi(
+      path = GenesisTimeHandler.ROUTE,
+      method = HttpMethod.GET,
+      summary = "Get the canonical head from the beacon node.",
+      tags = {"Node"},
+      description = "Requests the canonical head from the beacon node.",
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
+        @OpenApiResponse(status = "204", description = "if any of the block roots are null")
+      })
   @Override
-  public Object handleRequest(RequestParams params) {
+  public void handle(Context ctx) {
     Bytes32 head_block_root = client.getBestBlockRoot();
 
     UnsignedLong head_block_slot = client.getBestSlot();
@@ -50,21 +65,22 @@ public class BeaconChainHeadHandler implements BeaconRestApiHandler {
     Bytes32 justified_root = client.getJustifiedRoot();
 
     if (head_block_root == null || finalized_root == null || justified_root == null) {
-      return null;
+      ctx.status(SC_NO_CONTENT);
+      return;
     }
 
-    Map<String, Object> jsonObject = new HashMap<>();
-    jsonObject.put("headSlot", head_block_slot.longValue());
-    jsonObject.put("headEpoch", compute_epoch_at_slot(head_block_slot).longValue());
-    jsonObject.put("headBlockRoot", head_block_root.toHexString());
+    BeaconChainHeadResponse chainHeadResponse =
+        new BeaconChainHeadResponse(
+            head_block_slot,
+            compute_epoch_at_slot(head_block_slot),
+            head_block_root,
+            compute_start_slot_at_epoch(finalized_epoch),
+            finalized_epoch,
+            finalized_root,
+            compute_start_slot_at_epoch(justified_epoch),
+            justified_epoch,
+            justified_root);
 
-    jsonObject.put("finalizedSlot", compute_start_slot_at_epoch(finalized_epoch).longValue());
-    jsonObject.put("finalizedEpoch", finalized_epoch.longValue());
-    jsonObject.put("finalizedBlockRoot", finalized_root.toHexString());
-
-    jsonObject.put("justifiedSlot", compute_start_slot_at_epoch(justified_epoch).longValue());
-    jsonObject.put("justifiedEpoch", justified_epoch.longValue());
-    jsonObject.put("justifiedBlockRoot", justified_root.toHexString());
-    return jsonObject;
+    ctx.result(JsonProvider.objectToJSON(chainHeadResponse));
   }
 }
