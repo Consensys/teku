@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
 public class PeerIdHandlerTest {
-  private Context mockContext = mock(Context.class);
+  private Context context = mock(Context.class);
   private P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
 
   @Test
@@ -32,7 +32,7 @@ public class PeerIdHandlerTest {
 
     when(p2PNetwork.getNodeAddress()).thenReturn(peerId);
 
-    peerIdHandler.handle(mockContext);
-    verify(mockContext).result(peerId);
+    peerIdHandler.handle(context);
+    verify(context).result(peerId);
   }
 }
