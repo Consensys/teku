@@ -28,7 +28,7 @@ class AsyncResponseProcessor<TResponse> {
 
   private final AtomicInteger responseCount = new AtomicInteger(0);
   private final Queue<TResponse> queuedResponses = new ConcurrentLinkedQueue<>();
-  private AtomicBoolean isProcessing = new AtomicBoolean(false);
+  private final AtomicBoolean isProcessing = new AtomicBoolean(false);
   private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
   private final AtomicBoolean allResponsesDelivered = new AtomicBoolean(false);

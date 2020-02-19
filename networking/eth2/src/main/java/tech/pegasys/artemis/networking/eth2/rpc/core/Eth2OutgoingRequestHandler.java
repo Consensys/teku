@@ -38,21 +38,21 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final int maximumResponseChunks;
   private final ResponseStreamImpl<TResponse> responseStream = new ResponseStreamImpl<>();
 
-  private final AsyncRunner asyncRunner;
+  private final AsyncRunner timeoutRunner;
   private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
-  private AtomicInteger currentChunkCount = new AtomicInteger(0);
+  private final AtomicInteger currentChunkCount = new AtomicInteger(0);
 
   private final ResponseRpcDecoder<TResponse> responseHandler;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
 
-  private RpcStream rpcStream;
+  private volatile RpcStream rpcStream;
 
   public Eth2OutgoingRequestHandler(
       final AsyncRunner asyncRunner,
       final AsyncRunner timeoutRunner,
       final Eth2RpcMethod<TRequest, TResponse> method,
       final int maximumResponseChunks) {
-    this.asyncRunner = timeoutRunner;
+    this.timeoutRunner = timeoutRunner;
     this.method = method;
     this.maximumResponseChunks = maximumResponseChunks;
 
@@ -146,7 +146,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
 
   private void ensureFirstBytesArriveWithinTimeLimit(final RpcStream stream) {
     final Duration timeout = RpcTimeouts.TTFB_TIMEOUT;
-    asyncRunner
+    timeoutRunner
         .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
         .thenAccept(
             (__) -> {
@@ -167,7 +167,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       final int previousResponseCount,
       final AtomicInteger currentResponseCount) {
     final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
-    asyncRunner
+    timeoutRunner
         .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
         .thenAccept(
             (__) -> {
