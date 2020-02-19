@@ -24,12 +24,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconHeadResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconHeadHandlerTest {
   private Context context = mock(Context.class);
-  private BeaconState rootState = mock(BeaconState.class);
+  private BeaconState rootState = DataStructureUtil.randomBeaconState(1);
   private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);
 
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
@@ -38,12 +39,10 @@ public class BeaconHeadHandlerTest {
   public void shouldReturnBeaconHead() throws Exception {
     BeaconHeadHandler handler = new BeaconHeadHandler(storageClient);
     Bytes32 blockRoot = Bytes32.random();
-    Bytes32 hashTreeRoot = Bytes32.random();
-    BeaconHeadResponse head = new BeaconHeadResponse(bestSlot, blockRoot, hashTreeRoot);
+    BeaconHeadResponse head = new BeaconHeadResponse(bestSlot, blockRoot, rootState.hash_tree_root());
 
     when(storageClient.getBestBlockRoot()).thenReturn(blockRoot);
     when(storageClient.getBestBlockRootState()).thenReturn(rootState);
-    when(rootState.hash_tree_root()).thenReturn(hashTreeRoot);
     when(storageClient.getBestSlot()).thenReturn(bestSlot);
 
     handler.handle(context);
