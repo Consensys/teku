@@ -109,8 +109,7 @@ public class AsyncResponseProcessor<TResponse> {
         .exceptionally(
             (err) -> {
               LOG.trace("Failed to process response: " + response, err);
-              cancelled.set(true);
-              queuedResponses.clear();
+              cancel();
               onError.accept(err);
               return null;
             })
