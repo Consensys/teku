@@ -21,7 +21,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockGossipManager {
@@ -41,7 +41,7 @@ public class BlockGossipManager {
 
   @Subscribe
   @SuppressWarnings("unused")
-  void onBlockProposed(final BlockProposedEvent blockProposedEvent) {
+  void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
     final Bytes data = SimpleOffsetSerializer.serialize(blockProposedEvent.getBlock());
     channel.gossip(data);
   }

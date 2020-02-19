@@ -23,7 +23,7 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PeerIdHandlerTest {
-  private Context mockContext = mock(Context.class);
+  private Context context = mock(Context.class);
   private P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
   private JsonProvider jsonProvider = new JsonProvider();
 
@@ -33,8 +33,6 @@ public class PeerIdHandlerTest {
     final PeerIdHandler peerIdHandler = new PeerIdHandler(p2PNetwork, jsonProvider);
 
     when(p2PNetwork.getNodeAddress()).thenReturn(peerId);
-
-    peerIdHandler.handle(mockContext);
-    verify(mockContext).result(jsonProvider.objectToJSON(peerId));
+    verify(context).result(jsonProvider.objectToJSON(peerId));
   }
 }

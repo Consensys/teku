@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.api;
+package tech.pegasys.artemis.storage.api;
 
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 
-public interface DepositEventChannel {
-  void onDepositsFromBlock(DepositsFromBlockEvent event);
+public interface FinalizedCheckpointEventChannel {
+  void onFinalizedCheckpoint(FinalizedCheckpointEvent event);
 }

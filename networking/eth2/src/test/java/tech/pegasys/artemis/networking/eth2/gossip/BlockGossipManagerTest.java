@@ -29,7 +29,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
-import tech.pegasys.artemis.statetransition.events.BlockProposedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockGossipManagerTest {
@@ -50,7 +50,7 @@ public class BlockGossipManagerTest {
     // Should gossip new blocks received from event bus
     SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 100);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
-    eventBus.post(new BlockProposedEvent(block));
+    eventBus.post(new ProposedBlockEvent(block));
 
     verify(topicChannel).gossip(serialized);
   }

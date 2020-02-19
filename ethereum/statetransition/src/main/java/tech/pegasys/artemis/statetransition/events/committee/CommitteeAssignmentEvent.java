@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,10 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.api;
+package tech.pegasys.artemis.statetransition.events.committee;
 
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import java.util.List;
 
-public interface DepositEventChannel {
-  void onDepositsFromBlock(DepositsFromBlockEvent event);
+public class CommitteeAssignmentEvent {
+
+  List<Integer> committeeIndices;
+
+  public CommitteeAssignmentEvent(List<Integer> committeeIndices) {
+    this.committeeIndices = committeeIndices;
+  }
+
+  public List<Integer> getCommitteeIndices() {
+    return this.committeeIndices;
+  }
 }
