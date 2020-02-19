@@ -17,6 +17,8 @@ import io.netty.buffer.ByteBuf;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public interface RpcRequestHandler {
+  void onActivation(final RpcStream rpcStream);
+
   void onData(NodeId nodeId, RpcStream rpcStream, ByteBuf bytes);
 
   void onRequestComplete();

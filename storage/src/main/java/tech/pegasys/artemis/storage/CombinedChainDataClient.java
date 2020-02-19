@@ -92,7 +92,7 @@ public class CombinedChainDataClient {
     }
     if (isFinalized(slot)) {
       LOG.trace("Block at slot {} is in a finalized epoch. Retrieving from historical data", slot);
-      return historicalChainData.getFinalizedBlockAtSlot(slot);
+      return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
     }
 
     return getBlockAtSlotFormHistoricalBlockRoots(slot, store, headState);

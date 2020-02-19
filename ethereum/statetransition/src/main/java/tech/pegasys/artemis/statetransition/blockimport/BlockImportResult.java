@@ -29,6 +29,10 @@ public interface BlockImportResult {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
   }
 
+  static BlockImportResult internalError(final Exception cause) {
+    return new FailedBlockImportResult(FailureReason.INTERNAL_ERROR, Optional.of(cause));
+  }
+
   static BlockImportResult successful(final BlockProcessingRecord record) {
     return new SuccessfulBlockImportResult(record);
   }
@@ -37,7 +41,8 @@ public interface BlockImportResult {
     UNKNOWN_PARENT,
     BLOCK_IS_FROM_FUTURE,
     DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
-    FAILED_STATE_TRANSITION
+    FAILED_STATE_TRANSITION,
+    INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
   boolean isSuccessful();

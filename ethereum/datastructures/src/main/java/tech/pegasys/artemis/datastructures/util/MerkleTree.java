@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 import java.util.ArrayList;
@@ -22,76 +23,151 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
-public class MerkleTree<T> {
-  private final List<List<Bytes32>> tree;
-  private final List<Bytes32> zeroHashes;
-  private final int height;
-  private boolean dirty = true;
+public abstract class MerkleTree {
+  protected final List<List<Bytes32>> tree;
+  protected final List<Bytes32> zeroHashes;
+  protected final int treeDepth; // Root does not count as depth, i.e. tree height is treeDepth + 1
 
-  public MerkleTree(int height) {
-    assert (height > 1);
-    this.height = height;
-    tree = new ArrayList<List<Bytes32>>();
-    for (int i = 0; i <= height; i++) {
-      tree.add(new ArrayList<Bytes32>());
+  protected MerkleTree(int treeDepth) {
+    checkArgument(treeDepth > 1, "MerkleTree: treeDepth must be greater than 1");
+    this.treeDepth = treeDepth;
+    tree = new ArrayList<>();
+    for (int i = 0; i <= treeDepth; i++) {
+      tree.add(new ArrayList<>());
     }
-    zeroHashes = generateZeroHashes(height);
+    zeroHashes = generateZeroHashes(treeDepth);
   }
 
-  public void add(Bytes32 leaf) {
-    dirty = true;
-    tree.get(0).add(leaf);
-  }
+  public abstract void add(Bytes32 leaf);
 
-  private void calcBranches() {
-    for (int i = 0; i < height; i++) {
-      List<Bytes32> parent = tree.get(i + 1);
-      List<Bytes32> child = tree.get(i);
-      for (int j = 0; j < child.size(); j += 2) {
-        Bytes32 leftNode = child.get(j);
-        Bytes32 rightNode = (j + 1 < child.size()) ? child.get(j + 1) : zeroHashes.get(i);
-        if (parent.size() <= j / 2)
-          parent.add(Hash.sha2_256(Bytes.concatenate(leftNode, rightNode)));
-        else parent.set(j / 2, Hash.sha2_256(Bytes.concatenate(leftNode, rightNode)));
-      }
+  public abstract int getNumberOfLeaves();
+
+  protected static List<Bytes32> generateZeroHashes(int height) {
+    List<Bytes32> zeroHashes = new ArrayList<>();
+    zeroHashes.add(Bytes32.ZERO);
+    for (int i = 1; i < height; i++) {
+      zeroHashes.add(
+          i, Hash.sha2_256(Bytes.concatenate(zeroHashes.get(i - 1), zeroHashes.get(i - 1))));
     }
-    dirty = false;
-  }
-
-  public SSZVector<Bytes32> getProofTreeByValue(Bytes32 value) {
-    int index = tree.get(0).indexOf(value);
-    return getProofTreeByIndex(index);
-  }
-
-  public SSZVector<Bytes32> getProofTreeByIndex(int index) {
-    if (dirty) calcBranches();
-    List<Bytes32> proof = new ArrayList<Bytes32>();
-    for (int i = 0; i < height; i++) {
-      index = index % 2 == 1 ? index - 1 : index + 1;
-      if (index < tree.get(i).size()) proof.add(tree.get(i).get(index));
-      else proof.add(zeroHashes.get(i));
-      index /= 2;
-    }
-    proof.add(calcMixInValue());
-    return new SSZVector<Bytes32>(proof, Bytes32.class);
-  }
-
-  private Bytes32 calcMixInValue() {
-    return (Bytes32)
-        Bytes.concatenate(
-            Bytes.ofUnsignedLong(tree.get(0).size(), LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
-  }
-
-  public static List<Bytes32> generateZeroHashes(int height) {
-    List<Bytes32> zeroHashes = new ArrayList<Bytes32>();
-    for (int i = 0; i < height; i++) zeroHashes.add(Bytes32.ZERO);
-    for (int i = 0; i < height - 1; i++)
-      zeroHashes.set(i + 1, Hash.sha2_256(Bytes.concatenate(zeroHashes.get(i), zeroHashes.get(i))));
     return zeroHashes;
   }
 
+  public SSZVector<Bytes32> getProof(Bytes32 value) {
+    int index = tree.get(0).indexOf(value);
+    if (index == -1) {
+      throw new IllegalArgumentException("Leaf value is missing from the MerkleTree");
+    }
+    return getProof(index);
+  }
+
+  public SSZVector<Bytes32> getProof(int itemIndex) {
+    List<Bytes32> proof = new ArrayList<>();
+    for (int i = 0; i < treeDepth; i++) {
+
+      // Get index of sibling node
+      int siblingIndex = itemIndex % 2 == 1 ? itemIndex - 1 : itemIndex + 1;
+
+      // If sibling is contained in the tree
+      if (siblingIndex < tree.get(i).size()) {
+
+        // Get the sibling from the tree
+        proof.add(tree.get(i).get(siblingIndex));
+      } else {
+
+        // Get the zero hash at the appropriate
+        // depth of the tree as sibling
+        proof.add(zeroHashes.get(i));
+      }
+
+      itemIndex /= 2;
+    }
+    proof.add(calcMixInValue());
+    return new SSZVector<>(proof, Bytes32.class);
+  }
+
+  private Bytes32 calcViewBoundaryRoot(int depth, int viewLimit) {
+    if (depth == 0) {
+      return zeroHashes.get(0);
+    }
+    depth -= 1;
+    Bytes32 deeperRoot = calcViewBoundaryRoot(depth, viewLimit);
+    // Check if given the viewLimit at the leaf layer, is root in left or right subtree
+    if ((viewLimit & (1 << depth)) != 0) {
+      // For the right subtree
+      return Hash.sha2_256(
+          Bytes.concatenate(tree.get(depth).get((viewLimit >> depth) - 1), deeperRoot));
+    } else {
+      // For the left subtree
+      return Hash.sha2_256(Bytes.concatenate(deeperRoot, zeroHashes.get(depth)));
+    }
+  }
+
+  /**
+   * @param value of the leaf
+   * @param viewLimit number of leaves in the tree
+   * @return proof (i.e. collection of siblings on the way to root for the given leaf)
+   */
+  public SSZVector<Bytes32> getProofWithViewBoundary(Bytes32 value, int viewLimit) {
+    return getProofWithViewBoundary(tree.get(0).indexOf(value), viewLimit);
+  }
+
+  /**
+   * @param itemIndex of the leaf
+   * @param viewLimit number of leaves in the tree
+   * @return proof (i.e. collection of siblings on the way to root for the given leaf)
+   */
+  public SSZVector<Bytes32> getProofWithViewBoundary(int itemIndex, int viewLimit) {
+    checkArgument(itemIndex < viewLimit, "MerkleTree: Index must be less than the view limit");
+
+    List<Bytes32> proof = new ArrayList<>();
+    for (int i = 0; i < treeDepth; i++) {
+      // Get index of sibling node
+      int siblingIndex = itemIndex % 2 == 1 ? itemIndex - 1 : itemIndex + 1;
+
+      // Check how much of the tree at this level is strictly within the view limit.
+      int limit = viewLimit >> i;
+
+      checkArgument(
+          limit <= tree.get(i).size(), "MerkleTree: Tree is too small for given limit at height");
+
+      // If the sibling is equal to the limit,
+      if (siblingIndex == limit) {
+        // Go deeper to partially merkleize in zero-hashes.
+        proof.add(calcViewBoundaryRoot(i, viewLimit));
+      } else if (siblingIndex > limit) {
+        // Beyond:
+        // Just use a zero-hash as effective sibling.
+        proof.add(zeroHashes.get(i));
+      } else {
+        // Within:
+        // Return the tree node as-is without modifications
+        proof.add(tree.get(i).get(siblingIndex));
+      }
+      itemIndex /= 2;
+    }
+    proof.add(calcMixInValue(viewLimit));
+    return new SSZVector<>(proof, Bytes32.class);
+  }
+
+  public Bytes32 calcMixInValue(int viewLimit) {
+    return (Bytes32)
+        Bytes.concatenate(Bytes.ofUnsignedLong(viewLimit, LITTLE_ENDIAN), Bytes.wrap(new byte[24]));
+  }
+
+  public Bytes32 calcMixInValue() {
+    return calcMixInValue(getNumberOfLeaves());
+  }
+
   public Bytes32 getRoot() {
-    if (dirty) calcBranches();
-    return tree.get(height).get(0);
+    return Hash.sha2_256(Bytes.concatenate(tree.get(treeDepth).get(0), calcMixInValue()));
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder returnString = new StringBuilder();
+    for (int i = treeDepth; i >= 0; i--) {
+      returnString.append("\n").append(tree.get(i));
+    }
+    return "MerkleTree{" + "tree=" + returnString + ", treeDepth=" + treeDepth + '}';
   }
 }

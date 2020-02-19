@@ -38,8 +38,9 @@ public class EventChannels {
     return getChannel(channelInterface).getPublisher();
   }
 
-  public <T> void subscribe(final Class<T> channelInterface, final T subscriber) {
+  public <T> EventChannels subscribe(final Class<T> channelInterface, final T subscriber) {
     getChannel(channelInterface).subscribe(subscriber);
+    return this;
   }
 
   @SuppressWarnings("unchecked")

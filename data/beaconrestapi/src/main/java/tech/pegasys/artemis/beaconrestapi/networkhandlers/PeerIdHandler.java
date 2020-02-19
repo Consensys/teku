@@ -13,10 +13,18 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
-public class PeerIdHandler implements BeaconRestApiHandler {
+public class PeerIdHandler implements Handler {
+
+  public static final String ROUTE = "/network/peer_id";
 
   private final P2PNetwork<?> network;
 
@@ -24,13 +32,17 @@ public class PeerIdHandler implements BeaconRestApiHandler {
     this.network = network;
   }
 
+  @OpenApi(
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Get this beacon node's PeerId.",
+      tags = {"Network"},
+      description = "Requests that the beacon node return its PeerId as a base58 encoded String.",
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = String.class))
+      })
   @Override
-  public String getPath() {
-    return "/network/peer_id";
-  }
-
-  @Override
-  public Object handleRequest(RequestParams params) {
-    return network.getNodeAddress();
+  public void handle(@NotNull Context ctx) throws Exception {
+    ctx.result(network.getNodeAddress());
   }
 }

@@ -19,15 +19,17 @@ import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements RpcMethod {
+
+  private final AsyncRunner asyncRunner;
 
   private final String methodMultistreamId;
   private final RpcEncoding encoding;
   private final Class<TRequest> requestType;
   private final Class<TResponse> responseType;
-  private final boolean closeNotification;
+  private final boolean expectResponseToRequest;
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final PeerLookup peerLookup;
@@ -35,14 +37,16 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
   private final RpcEncoder rpcEncoder;
 
   public Eth2RpcMethod(
+      final AsyncRunner asyncRunner,
       final String methodMultistreamId,
       final RpcEncoding encoding,
       final Class<TRequest> requestType,
       final Class<TResponse> responseType,
-      final boolean closeNotification,
+      final boolean expectResponseToRequest,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
       final PeerLookup peerLookup) {
-    this.closeNotification = closeNotification;
+    this.asyncRunner = asyncRunner;
+    this.expectResponseToRequest = expectResponseToRequest;
     this.methodMultistreamId = methodMultistreamId + "/" + encoding.getName();
     this.encoding = encoding;
     this.requestType = requestType;
@@ -67,6 +71,10 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
 
   public RpcEncoding getEncoding() {
     return encoding;
+  }
+
+  public RpcEncoder getRpcEncoder() {
+    return rpcEncoder;
   }
 
   public Bytes encodeRequest(TRequest request) {
@@ -99,17 +107,17 @@ public class Eth2RpcMethod<TRequest extends RpcRequest, TResponse> implements Rp
     return methodMultistreamId;
   }
 
-  public boolean getCloseNotification() {
-    return closeNotification;
+  public boolean shouldReceiveResponse() {
+    return expectResponseToRequest;
   }
 
   @Override
-  public RpcRequestHandler createIncomingRequestHandler() {
-    return new Eth2IncomingRequestHandler<>(this, peerLookup, localMessageHandler);
+  public Eth2IncomingRequestHandler<TRequest, TResponse> createIncomingRequestHandler() {
+    return new Eth2IncomingRequestHandler<>(asyncRunner, this, peerLookup, localMessageHandler);
   }
 
   public Eth2OutgoingRequestHandler<TRequest, TResponse> createOutgoingRequestHandler(
       final int maximumResponseChunks) {
-    return new Eth2OutgoingRequestHandler<>(this, maximumResponseChunks);
+    return new Eth2OutgoingRequestHandler<>(asyncRunner, this, maximumResponseChunks);
   }
 }

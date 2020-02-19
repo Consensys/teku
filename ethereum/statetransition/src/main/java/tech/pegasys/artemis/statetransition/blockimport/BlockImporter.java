@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
@@ -40,17 +40,22 @@ public class BlockImporter {
   @CheckReturnValue
   public BlockImportResult importBlock(SignedBeaconBlock block) {
     LOG.trace("Import block at slot {}: {}", block.getMessage().getSlot(), block);
-    Store.Transaction transaction = storageClient.startStoreTransaction();
-    final BlockImportResult result = on_block(transaction, block, stateTransition);
-    if (!result.isSuccessful()) {
+    try {
+      Store.Transaction transaction = storageClient.startStoreTransaction();
+      final BlockImportResult result = on_block(transaction, block, stateTransition);
+      if (!result.isSuccessful()) {
+        return result;
+      }
+
+      final BlockProcessingRecord record = result.getBlockProcessingRecord();
+      transaction.commit().join();
+      eventBus.post(new ImportedBlockEvent(block));
+      eventBus.post(record);
+
       return result;
+    } catch (Exception e) {
+      LOG.error("Internal error while importing block " + block.getMessage(), e);
+      return BlockImportResult.internalError(e);
     }
-
-    final BlockProcessingRecord record = result.getBlockProcessingRecord();
-    transaction.commit().join();
-    eventBus.post(new BlockImportedEvent(block));
-    eventBus.post(record);
-
-    return result;
   }
 }

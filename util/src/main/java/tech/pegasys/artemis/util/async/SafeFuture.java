@@ -26,6 +26,8 @@ import org.apache.logging.log4j.Logger;
 public class SafeFuture<T> extends CompletableFuture<T> {
   private static final Logger LOG = LogManager.getLogger();
 
+  public static SafeFuture<Void> COMPLETE = SafeFuture.completedFuture(null);
+
   public static void reportExceptions(final CompletionStage<?> future) {
     future.exceptionally(
         error -> {
@@ -99,6 +101,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public void finish(final Runnable onSuccess, final Consumer<Throwable> onError) {
     finish(result -> onSuccess.run(), onError);
+  }
+
+  public void propagateTo(final SafeFuture<T> target) {
+    propagateResult(this, target);
   }
 
   /**
