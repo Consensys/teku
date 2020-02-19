@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class AsyncResponseProcessor<TResponse> {
+class AsyncResponseProcessor<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AtomicInteger responseCount = new AtomicInteger(0);
@@ -70,7 +70,7 @@ public class AsyncResponseProcessor<TResponse> {
   }
 
   /** Stop processing and clear any pending requests */
-  public void cancel() {
+  private void cancel() {
     cancelled.set(true);
     queuedResponses.clear();
   }

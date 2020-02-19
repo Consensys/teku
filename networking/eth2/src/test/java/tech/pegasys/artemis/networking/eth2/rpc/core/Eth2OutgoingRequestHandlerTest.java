@@ -74,12 +74,13 @@ public class Eth2OutgoingRequestHandlerTest {
               asyncRequestRunner, timeoutRunner, blocksByRangeMethod, maxChunks);
   private final RpcStream rpcStream = mock(RpcStream.class);
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
+  private SafeFuture<Void> finishedProcessingFuture;
 
   @BeforeEach
   public void setup() {
     lenient().when(rpcStream.close()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
-    reqHandler.getResponseStream().expectMultipleResponses(blocks::add).reportExceptions();
+    finishedProcessingFuture = reqHandler.getResponseStream().expectMultipleResponses(blocks::add);
   }
 
   @Test
@@ -89,12 +90,33 @@ public class Eth2OutgoingRequestHandlerTest {
 
     for (int i = 0; i < maxChunks; i++) {
       deliverChunk(i);
+      assertThat(finishedProcessingFuture).isNotDone();
     }
+
+    asyncRequestRunner.executeUntilDone(maxChunks - 1);
+    assertThat(finishedProcessingFuture).isNotDone();
 
     asyncRequestRunner.executeUntilDone();
     timeoutRunner.executeUntilDone();
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
+    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
+  }
+
+  @Test
+  public void processAllValidChunksWhenErrorIsEncountered() {
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    deliverChunk(0);
+    assertThat(finishedProcessingFuture).isNotDone();
+    deliverInvalidChunk();
+
+    asyncRequestRunner.executeUntilDone();
+    timeoutRunner.executeUntilDone();
+    verify(rpcStream).close();
+    assertThat(blocks.size()).isEqualTo(1);
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
   }
 
   @Test
@@ -115,6 +137,7 @@ public class Eth2OutgoingRequestHandlerTest {
     verify(rpcStream).close();
     // TODO - we should limit the number of chunks to be parsed based on maxChunks
     assertThat(blocks.size()).isEqualTo(4);
+    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
   }
 
   @Test
@@ -209,6 +232,12 @@ public class Eth2OutgoingRequestHandlerTest {
   private Bytes chunkBytes(final int chunk) {
     final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(chunk, chunk);
     return rpcEncoder.encodeSuccessfulResponse(block);
+  }
+
+  private void deliverInvalidChunk() {
+    final Bytes chunkBytes = DataStructureUtil.randomBytes32(1L);
+    final ByteBuf chunkBuffer = Unpooled.wrappedBuffer(chunkBytes.toArrayUnsafe());
+    reqHandler.onData(nodeId, rpcStream, chunkBuffer);
   }
 
   private void deliverChunk(final int chunk) {
