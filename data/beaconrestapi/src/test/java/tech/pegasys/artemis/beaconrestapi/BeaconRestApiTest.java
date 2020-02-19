@@ -32,48 +32,47 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 class BeaconRestApiTest {
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());
-  private final JavalinServer mockServer = mock(JavalinServer.class);
-  private final Javalin mockApp = mock(Javalin.class);
+  private final JavalinServer server = mock(JavalinServer.class);
+  private final Javalin app = mock(Javalin.class);
   private static final Integer THE_PORT = 12345;
 
   @Test
   public void RestApiShouldHaveServerPortSet() {
-    when(mockApp.server()).thenReturn(mockServer);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+    when(app.server()).thenReturn(server);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
-    verify(mockServer).setServerPort(THE_PORT);
+    verify(server).setServerPort(THE_PORT);
   }
 
   @Test
   public void RestApiShouldHaveGenesisTimeEndpoint() throws Exception {
-    when(mockApp.server()).thenReturn(mockServer);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+    when(app.server()).thenReturn(server);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
-    verify(mockApp).get(eq(GenesisTimeHandler.ROUTE), any(GenesisTimeHandler.class));
+    verify(app).get(eq(GenesisTimeHandler.ROUTE), any(GenesisTimeHandler.class));
   }
 
   @Test
   public void RestApiShouldHaveVersionEndpoint() throws Exception {
-    when(mockApp.server()).thenReturn(mockServer);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+    when(app.server()).thenReturn(server);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
-    verify(mockApp).get(eq(VersionHandler.ROUTE), any(VersionHandler.class));
+    verify(app).get(eq(VersionHandler.ROUTE), any(VersionHandler.class));
   }
 
   @Test
   public void RestApiShouldHavePeerIdEndpoint() {
-    when(mockApp.server()).thenReturn(mockServer);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+    when(app.server()).thenReturn(server);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
-    verify(mockApp).get(eq(PeerIdHandler.ROUTE), any(PeerIdHandler.class));
+    verify(app).get(eq(PeerIdHandler.ROUTE), any(PeerIdHandler.class));
   }
 
   @Test
   public void RestApiShouldHaveFinalizedCheckpointEndpoint() {
-    when(mockApp.server()).thenReturn(mockServer);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, mockApp);
+    when(app.server()).thenReturn(server);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
-    verify(mockApp)
-        .get(eq(FinalizedCheckpointHandler.ROUTE), any(FinalizedCheckpointHandler.class));
+    verify(app).get(eq(FinalizedCheckpointHandler.ROUTE), any(FinalizedCheckpointHandler.class));
   }
 }

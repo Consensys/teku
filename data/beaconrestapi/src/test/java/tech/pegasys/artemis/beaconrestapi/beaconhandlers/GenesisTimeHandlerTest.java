@@ -25,7 +25,7 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandlerTest {
-  private Context mockContext = mock(Context.class);
+  private Context context = mock(Context.class);
   private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
 
   private final ChainStorageClient storageClient =
@@ -34,17 +34,17 @@ public class GenesisTimeHandlerTest {
   @Test
   public void shouldReturnNoContentWhenGenesisTimeIsNotSet() throws Exception {
     GenesisTimeHandler handler = new GenesisTimeHandler(null);
-    handler.handle(mockContext);
+    handler.handle(context);
 
-    verify(mockContext).status(SC_NO_CONTENT);
+    verify(context).status(SC_NO_CONTENT);
   }
 
   @Test
   public void shouldReturnGenesisTimeWhenSet() throws Exception {
     storageClient.setGenesisTime(genesisTime);
     GenesisTimeHandler handler = new GenesisTimeHandler(storageClient);
-    handler.handle(mockContext);
+    handler.handle(context);
 
-    verify(mockContext).result(JsonProvider.objectToJSON(genesisTime));
+    verify(context).result(JsonProvider.objectToJSON(genesisTime));
   }
 }
