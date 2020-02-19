@@ -23,12 +23,13 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class VersionHandlerTest {
   private Context mockContext = Mockito.mock(Context.class);
+  private JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldReturnVersionString() throws Exception {
-    VersionHandler handler = new VersionHandler();
+    VersionHandler handler = new VersionHandler(jsonProvider);
     handler.handle(mockContext);
 
-    verify(mockContext).result(JsonProvider.objectToJSON(VersionProvider.VERSION));
+    verify(mockContext).result(jsonProvider.objectToJSON(VersionProvider.VERSION));
   }
 }

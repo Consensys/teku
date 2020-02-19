@@ -30,6 +30,7 @@ public class FinalizedCheckpointHandlerTest {
   private Context context = Mockito.mock(Context.class);
   private ChainStorageClient client = Mockito.mock(ChainStorageClient.class);
   private Store store = Mockito.mock(Store.class);
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private final Checkpoint checkpoint = DataStructureUtil.randomCheckpoint(99);
 
@@ -38,17 +39,17 @@ public class FinalizedCheckpointHandlerTest {
     when(client.getStore()).thenReturn(store);
     when(store.getFinalizedCheckpoint()).thenReturn(checkpoint);
 
-    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client, jsonProvider);
     handler.handle(context);
 
-    verify(context).result(JsonProvider.objectToJSON(checkpoint));
+    verify(context).result(jsonProvider.objectToJSON(checkpoint));
   }
 
   @Test
   public void shouldReturnNoContentWhenStoreIsNull() throws Exception {
     when(client.getStore()).thenReturn(null);
 
-    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client, jsonProvider);
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);

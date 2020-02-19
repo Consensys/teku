@@ -25,7 +25,12 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class VersionHandler implements Handler {
 
+  public VersionHandler(JsonProvider jsonProvider) {
+    this.jsonProvider = jsonProvider;
+  }
+
   public static final String ROUTE = "/node/version/";
+  JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,
@@ -39,6 +44,6 @@ public class VersionHandler implements Handler {
       })
   @Override
   public void handle(@NotNull Context ctx) throws Exception {
-    ctx.result(JsonProvider.objectToJSON(VersionProvider.VERSION));
+    ctx.result(jsonProvider.objectToJSON(VersionProvider.VERSION));
   }
 }

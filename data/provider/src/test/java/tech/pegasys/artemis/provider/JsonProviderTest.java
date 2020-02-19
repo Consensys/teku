@@ -13,19 +13,60 @@
 
 package tech.pegasys.artemis.provider;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 class JsonProviderTest {
+  JsonProvider jsonProvider = new JsonProvider();
+  private static final String Q = "\"";
 
   @Test
-  void beaconStateJsonTest() {
+  public void bytes32ShouldSerializeToJsonAndBack() throws JsonProcessingException {
+    Bytes32 data = Bytes32.random();
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(Q + data.toHexString().toLowerCase() + Q, serialized);
+
+    Bytes32 deserialize = jsonProvider.jsonToObject(serialized, Bytes32.class);
+    assertEquals(data, deserialize);
+  }
+
+  @Test
+  public void UnsignedLongShouldSerializeToJson() throws JsonProcessingException {
+    UnsignedLong data = DataStructureUtil.randomUnsignedLong(1111);
+
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, data.toString());
+  }
+
+  @Test
+  public void vectorShouldSerializeToJson() throws JsonProcessingException {
+    SSZVector<String> data = new SSZVector<String>(List.of("One", "Two"), String.class);
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, "[" + Q + "One" + Q + "," + Q + "Two" + Q + "]");
+  }
+
+  @Test
+  public void stringShouldSerializeToJson() throws JsonProcessingException {
+    JsonProvider provider = new JsonProvider();
+
+    String data = "test";
+
+    assertEquals(Q + data + Q, provider.objectToJSON(data));
+  }
+
+  @Test
+  void beaconStateJsonTest() throws JsonProcessingException {
     BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
-    String jsonState = JsonProvider.objectToJSON(state);
+    String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
   }
 }

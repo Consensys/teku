@@ -20,19 +20,21 @@ import static org.mockito.Mockito.when;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PeerIdHandlerTest {
   private Context mockContext = mock(Context.class);
   private P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
+  private JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldReturnPeerId() throws Exception {
     final String peerId = "peerId";
-    final PeerIdHandler peerIdHandler = new PeerIdHandler(p2PNetwork);
+    final PeerIdHandler peerIdHandler = new PeerIdHandler(p2PNetwork, jsonProvider);
 
     when(p2PNetwork.getNodeAddress()).thenReturn(peerId);
 
     peerIdHandler.handle(mockContext);
-    verify(mockContext).result(peerId);
+    verify(mockContext).result(jsonProvider.objectToJSON(peerId));
   }
 }
