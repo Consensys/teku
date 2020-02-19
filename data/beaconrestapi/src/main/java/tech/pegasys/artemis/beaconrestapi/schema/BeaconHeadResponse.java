@@ -13,44 +13,15 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
+
 public class BeaconHeadResponse {
-  public final long slot;
-  public final String block_root;
-  public final String state_root;
+  public final UnsignedLong slot;
+  public final Bytes32 block_root;
+  public final Bytes32 state_root;
 
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  public static class Builder {
-    private long slot;
-    private String block_root;
-    private String state_root;
-
-    private Builder() {}
-
-    public Builder slot(long slot) {
-      this.slot = slot;
-
-      return this;
-    }
-
-    public Builder block_root(String block_root) {
-      this.block_root = block_root;
-      return this;
-    }
-
-    public Builder state_root(String state_root) {
-      this.state_root = state_root;
-      return this;
-    }
-
-    public BeaconHeadResponse build() {
-      return new BeaconHeadResponse(slot, block_root, state_root);
-    }
-  }
-
-  private BeaconHeadResponse(long slot, String block_root, String state_root) {
+  public BeaconHeadResponse(UnsignedLong slot, Bytes32 block_root, Bytes32 state_root) {
     this.slot = slot;
     this.block_root = block_root;
     this.state_root = state_root;

@@ -44,11 +44,7 @@ public class BeaconHeadHandler implements Handler {
       return null;
     }
     Bytes32 headStateRoot = client.getBestBlockRootState().hash_tree_root();
-    return BeaconHeadResponse.builder()
-        .slot(client.getBestSlot().longValue())
-        .block_root(headBlockRoot.toHexString())
-        .state_root(headStateRoot.toHexString())
-        .build();
+    return new BeaconHeadResponse(client.getBestSlot(), headBlockRoot, headStateRoot);
   }
 
   @OpenApi(
@@ -61,7 +57,10 @@ public class BeaconHeadHandler implements Handler {
         @OpenApiResponse(
             status = "200",
             content = @OpenApiContent(from = BeaconHeadResponse.class)),
-        @OpenApiResponse(status = "204")
+        @OpenApiResponse(
+            status = "204",
+            description =
+                "No Content may be returned if the genesis block has not been set, meaning that there is no head to query.")
       })
   @Override
   public void handle(Context ctx) throws Exception {
