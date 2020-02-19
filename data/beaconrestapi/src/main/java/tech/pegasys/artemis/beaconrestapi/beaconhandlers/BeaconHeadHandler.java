@@ -66,7 +66,7 @@ public class BeaconHeadHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     BeaconHeadResponse result = getBeaconHead();
     if (result == null) {
-      LOG.debug("Failed to get beacon head");
+      LOG.trace("Failed to get beacon head");
       ctx.status(SC_NO_CONTENT);
     } else {
       ctx.result(JsonProvider.objectToJSON(getBeaconHead()));
