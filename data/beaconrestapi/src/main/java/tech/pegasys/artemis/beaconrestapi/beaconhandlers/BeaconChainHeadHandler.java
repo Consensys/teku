@@ -43,7 +43,7 @@ public class BeaconChainHeadHandler implements Handler {
   // we don't have them in store yet. So that we can handle them better instead of
   // returning zero.
   @OpenApi(
-      path = GenesisTimeHandler.ROUTE,
+      path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the canonical head from the beacon node.",
       tags = {"Node"},
