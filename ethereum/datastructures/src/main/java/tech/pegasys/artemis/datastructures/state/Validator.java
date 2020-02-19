@@ -53,7 +53,4 @@ public interface Validator extends ContainerViewRead<ViewRead>, Merkleizable,
   UnsignedLong getExit_epoch();
 
   UnsignedLong getWithdrawable_epoch();
-
-  @Override
-  MutableValidator createWritableCopy();
 }

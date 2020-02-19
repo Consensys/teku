@@ -33,7 +33,4 @@ public interface MutableValidator extends Validator, ContainerViewWrite<ViewRead
   void setExit_epoch(UnsignedLong exit_epoch);
 
   void setWithdrawable_epoch(UnsignedLong withdrawable_epoch);
-
-  @Override
-  Validator commitChanges();
 }
