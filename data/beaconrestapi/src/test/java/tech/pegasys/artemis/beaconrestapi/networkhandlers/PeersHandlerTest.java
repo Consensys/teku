@@ -32,9 +32,11 @@ import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
 public class PeersHandlerTest {
+  @Mock Context mockContext;
+  @Mock P2PNetwork<Peer> p2PNetwork;
+
   @Test
-  public void shouldReturnArrayOfPeersIfPresent(
-      @Mock Context mockContext, @Mock P2PNetwork<Peer> p2PNetwork) throws Exception {
+  public void shouldReturnArrayOfPeersIfPresent() throws Exception {
     final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
     final Peer peer1 = mock(Peer.class);
     final Peer peer2 = mock(Peer.class);
@@ -55,8 +57,7 @@ public class PeersHandlerTest {
   }
 
   @Test
-  public void shouldReturnEmptyPeersArrayIfNoneConnected(
-      @Mock Context mockContext, @Mock P2PNetwork<Peer> p2PNetwork) throws Exception {
+  public void shouldReturnEmptyPeersArrayIfNoneConnected() throws Exception {
     final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
     final String response = JsonProvider.objectToJSON(new String[] {});
 
