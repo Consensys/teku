@@ -46,13 +46,15 @@ public class BeaconChainHeadHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the canonical head from the beacon node.",
-      tags = {"Node"},
+      tags = {"Beacon"},
       description = "Requests the canonical head from the beacon node.",
       responses = {
         @OpenApiResponse(
             status = "200",
             content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
-        @OpenApiResponse(status = "204", description = "if any of the block roots are null")
+        @OpenApiResponse(
+            status = "204",
+            description = "No Content will be returned if any of the block roots are null")
       })
   @Override
   public void handle(Context ctx) {

@@ -30,7 +30,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconChainHeadHandlerTest {
   private Context context = mock(Context.class);
-  private ChainStorageClient client = mock(ChainStorageClient.class);
+  private ChainStorageClient storageClient = mock(ChainStorageClient.class);
 
   private final UnsignedLong headBlockSlot = DataStructureUtil.randomUnsignedLong(90);
   private final UnsignedLong headBlockEpoch = BeaconStateUtil.compute_epoch_at_slot(headBlockSlot);
@@ -48,16 +48,16 @@ public class BeaconChainHeadHandlerTest {
 
   @Test
   public void shouldReturnBeaconChainHeadResponse() throws Exception {
-    when(client.getBestSlot()).thenReturn(headBlockSlot);
-    when(client.getBestBlockRoot()).thenReturn(headBlockRoot);
+    when(storageClient.getBestSlot()).thenReturn(headBlockSlot);
+    when(storageClient.getBestBlockRoot()).thenReturn(headBlockRoot);
 
-    when(client.getFinalizedRoot()).thenReturn(finalizedBlockRoot);
-    when(client.getFinalizedEpoch()).thenReturn(finalizedBlockEpoch);
+    when(storageClient.getFinalizedRoot()).thenReturn(finalizedBlockRoot);
+    when(storageClient.getFinalizedEpoch()).thenReturn(finalizedBlockEpoch);
 
-    when(client.getJustifiedRoot()).thenReturn(justifiedBlockRoot);
-    when(client.getJustifiedEpoch()).thenReturn(justifiedBlockEpoch);
+    when(storageClient.getJustifiedRoot()).thenReturn(justifiedBlockRoot);
+    when(storageClient.getJustifiedEpoch()).thenReturn(justifiedBlockEpoch);
 
-    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(client);
+    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient);
     handler.handle(context);
 
     verify(context).result(JsonProvider.objectToJSON(chainHeadResponse()));
@@ -65,9 +65,9 @@ public class BeaconChainHeadHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenHeadBlockRootIsNull() throws Exception {
-    when(client.getBestBlockRoot()).thenReturn(null);
+    when(storageClient.getBestBlockRoot()).thenReturn(null);
 
-    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(client);
+    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient);
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);
