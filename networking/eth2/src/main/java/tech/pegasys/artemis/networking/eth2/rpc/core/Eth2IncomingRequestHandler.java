@@ -14,6 +14,9 @@
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
 import io.netty.buffer.ByteBuf;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -22,6 +25,7 @@ import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 
 public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     implements RpcRequestHandler {
@@ -35,16 +39,26 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final RequestRpcDecoder<TRequest> requestReader;
   private ResponseCallback<TResponse> callback;
 
+  private final AsyncRunner asyncRunner;
+  private final AtomicBoolean requestReceived = new AtomicBoolean(false);
+
   public Eth2IncomingRequestHandler(
-      Eth2RpcMethod<TRequest, TResponse> method,
-      PeerLookup peerLookup,
-      LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
+      final AsyncRunner asyncRunner,
+      final Eth2RpcMethod<TRequest, TResponse> method,
+      final PeerLookup peerLookup,
+      final LocalMessageHandler<TRequest, TResponse> localMessageHandler) {
+    this.asyncRunner = asyncRunner;
     this.method = method;
     this.peerLookup = peerLookup;
     this.localMessageHandler = localMessageHandler;
     this.rpcEncoder = new RpcEncoder(method.getEncoding());
 
     requestReader = method.createRequestDecoder();
+  }
+
+  @Override
+  public void onActivation(final RpcStream rpcStream) {
+    ensureRequestReceivedWithinTimeLimit(rpcStream);
   }
 
   @Override
@@ -56,7 +70,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     try {
       requestReader
           .onDataReceived(bytes)
-          .ifPresent(request -> invokeHandler(peer, request, callback));
+          .ifPresent(request -> handleRequest(peer, request, callback));
     } catch (final RpcException e) {
       callback.completeWithError(e);
     }
@@ -67,13 +81,30 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
     // Nothing to do
   }
 
-  private void invokeHandler(
+  private void handleRequest(
       Eth2Peer peer, TRequest request, ResponseCallback<TResponse> callback) {
     try {
+      requestReceived.set(true);
       localMessageHandler.onIncomingMessage(peer, request, callback);
     } catch (final Throwable t) {
       LOG.error("Unhandled error while processing request " + method.getMultistreamId(), t);
       callback.completeWithError(RpcException.SERVER_ERROR);
     }
+  }
+
+  private void ensureRequestReceivedWithinTimeLimit(final RpcStream stream) {
+    final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
+    asyncRunner
+        .getDelayedFuture(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .thenAccept(
+            (__) -> {
+              if (!requestReceived.get()) {
+                LOG.debug(
+                    "Failed to receive incoming request data within {} sec. Close stream.",
+                    timeout.getSeconds());
+                stream.close().reportExceptions();
+              }
+            })
+        .reportExceptions();
   }
 }

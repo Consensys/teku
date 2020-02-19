@@ -11,15 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.rpc;
+package tech.pegasys.artemis.storage.api;
 
-import io.netty.buffer.ByteBuf;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 
-public interface RpcRequestHandler {
-  void onActivation(final RpcStream rpcStream);
-
-  void onData(NodeId nodeId, RpcStream rpcStream, ByteBuf bytes);
-
-  void onRequestComplete();
+public interface FinalizedCheckpointEventChannel {
+  void onFinalizedCheckpoint(FinalizedCheckpointEvent event);
 }
