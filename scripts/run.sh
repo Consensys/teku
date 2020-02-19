@@ -3,7 +3,7 @@
 # **** Usage **** #
 
 usage() {
-  echo "Runs a simulation of artemis with NODES number of nodes, where NODES > 0 and NODES < 256 and VALIDATORS number of validators divided equally among nodes"
+  echo "Runs a simulation of teku with NODES number of nodes, where NODES > 0 and NODES < 256 and VALIDATORS number of validators divided equally among nodes"
   echo "Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]"
   echo "                 [--help, -h] [--numValidators, -v=VALIDATORS]"
   echo "Note: "

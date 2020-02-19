@@ -23,7 +23,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 @Command(
-    name = "artemis",
+    name = "teku",
     subcommands = {
       TransitionCommand.class,
       PeerCommand.class,
@@ -31,14 +31,14 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
       GenesisCommand.class
     },
     abbreviateSynopsis = true,
-    description = "Run the Artemis beacon chain client and validator",
+    description = "Run the Teku beacon chain client and validator",
     mixinStandardHelpOptions = true,
     versionProvider = VersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Artemis is licensed under the Apache License 2.0")
+    footer = "Teku is licensed under the Apache License 2.0")
 public class BeaconNodeCommand implements Callable<Integer> {
 
   @Option(
@@ -74,12 +74,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
           .addShutdownHook(
               new Thread(
                   () -> {
-                    System.out.println("Artemis is shutting down");
+                    System.out.println("Teku is shutting down");
                     node.stop();
                   }));
       return 0;
     } catch (Throwable t) {
-      System.err.println("Artemis failed to start.");
+      System.err.println("Teku failed to start.");
       t.printStackTrace();
       return 1;
     }

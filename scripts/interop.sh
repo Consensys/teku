@@ -82,7 +82,7 @@ then
          sh configurator.sh "$CONFIG_DIR/runConfig.0.toml" isBootnode false
     #fi
     sed -i "" '10d' "$CONFIG_DIR/runConfig.0.toml"
-    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./artemis --config=$CONFIG_DIR/runConfig.0.toml --logging=DEBUG; sleep 20"
+    tmux new-session -d -s foo "jenv local $ARTEMIS_JAVA_VERSION; cd $SCRIPT_DIR/demo/node_0/ && ./teku --config=$CONFIG_DIR/runConfig.0.toml --logging=DEBUG; sleep 20"
 fi
 
 
