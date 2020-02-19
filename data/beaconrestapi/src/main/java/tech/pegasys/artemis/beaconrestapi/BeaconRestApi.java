@@ -133,12 +133,12 @@ public class BeaconRestApi {
   private void addBeaconHandlers(
       ChainStorageClient chainStorageClient, HistoricalChainData historicalChainData) {
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainStorageClient));
+    app.get(FinalizedCheckpointHandler.ROUTE, new FinalizedCheckpointHandler(chainStorageClient));
     // TODO: not in Minimal or optional specified set - some are similar to lighthouse
     // implementation
     handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
     handlers.add(new BeaconChainHeadHandler(chainStorageClient));
     handlers.add(new BeaconStateHandler(chainStorageClient));
-    handlers.add(new FinalizedCheckpointHandler(chainStorageClient));
   }
 
   private void addValidatorHandlers() {
@@ -153,9 +153,10 @@ public class BeaconRestApi {
   }
 
   private void addNetworkHandlers(P2PNetwork<?> p2pNetwork) {
+    app.get(PeerIdHandler.ROUTE, new PeerIdHandler(p2pNetwork));
+
     // not in Minimal or optional specified set
     handlers.add(new ENRHandler());
-    handlers.add(new PeerIdHandler(p2pNetwork));
     handlers.add(new PeersHandler(p2pNetwork));
   }
 

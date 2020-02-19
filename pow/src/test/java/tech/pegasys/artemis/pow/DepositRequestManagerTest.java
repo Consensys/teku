@@ -93,8 +93,8 @@ public class DepositRequestManagerTest {
             mockDepositEventEventResponse(2, "0x1234", 1),
             mockDepositEventEventResponse(3, "0x2345", 2)));
 
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 2)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(1, 2)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(2, 1)));
     verifyNoMoreInteractions(depositEventChannel);
   }
 
@@ -117,9 +117,9 @@ public class DepositRequestManagerTest {
             mockDepositEventEventResponse(2, "0x2345", 2),
             mockDepositEventEventResponse(3, "0x4567", 4)));
 
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 1)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(4, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(1, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(2, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(4, 1)));
     verifyNoMoreInteractions(depositEventChannel);
   }
 
@@ -158,12 +158,12 @@ public class DepositRequestManagerTest {
             mockDepositEventEventResponse(6, "0x0011", 11),
             mockDepositEventEventResponse(7, "0x0014", 14)));
 
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 2)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(4, 1)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(10, 1)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(11, 1)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(14, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(1, 2)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(2, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(4, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(10, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(11, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(14, 1)));
     verifyNoMoreInteractions(depositEventChannel);
   }
 
@@ -192,8 +192,8 @@ public class DepositRequestManagerTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(1, 1)));
-    verify(depositEventChannel).notifyDepositsFromBlock(argThat(isEvent(2, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(1, 1)));
+    verify(depositEventChannel).onDepositsFromBlock(argThat(isEvent(2, 1)));
     verifyNoMoreInteractions(depositEventChannel);
   }
 

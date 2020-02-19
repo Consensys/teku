@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,35 +16,41 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 
-public class GenesisTimeHandlerTest {
+public class FinalizedCheckpointHandlerTest {
   private Context context = mock(Context.class);
-  private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
+  private ChainStorageClient client = mock(ChainStorageClient.class);
+  private Store store = mock(Store.class);
 
-  private final ChainStorageClient storageClient =
-      ChainStorageClient.memoryOnlyClient(new EventBus());
+  private final Checkpoint checkpoint = DataStructureUtil.randomCheckpoint(99);
 
   @Test
-  public void shouldReturnNoContentWhenGenesisTimeIsNotSet() throws Exception {
-    GenesisTimeHandler handler = new GenesisTimeHandler(null);
+  public void shouldReturnCheckpoint() throws Exception {
+    when(client.getStore()).thenReturn(store);
+    when(store.getFinalizedCheckpoint()).thenReturn(checkpoint);
+
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
     handler.handle(context);
 
-    verify(context).status(SC_NO_CONTENT);
+    verify(context).result(JsonProvider.objectToJSON(checkpoint));
   }
 
   @Test
-  public void shouldReturnGenesisTimeWhenSet() throws Exception {
-    storageClient.setGenesisTime(genesisTime);
-    GenesisTimeHandler handler = new GenesisTimeHandler(storageClient);
+  public void shouldReturnNoContentWhenStoreIsNull() throws Exception {
+    when(client.getStore()).thenReturn(null);
+
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
     handler.handle(context);
 
-    verify(context).result(JsonProvider.objectToJSON(genesisTime));
+    verify(context).status(SC_NO_CONTENT);
   }
 }

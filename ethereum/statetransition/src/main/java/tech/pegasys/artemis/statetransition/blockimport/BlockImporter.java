@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.statetransition.StateTransition;
-import tech.pegasys.artemis.statetransition.events.BlockImportedEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
@@ -49,7 +49,7 @@ public class BlockImporter {
 
       final BlockProcessingRecord record = result.getBlockProcessingRecord();
       transaction.commit().join();
-      eventBus.post(new BlockImportedEvent(block));
+      eventBus.post(new ImportedBlockEvent(block));
       eventBus.post(record);
 
       return result;

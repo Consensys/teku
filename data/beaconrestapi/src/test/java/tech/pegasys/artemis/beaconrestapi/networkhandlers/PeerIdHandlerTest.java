@@ -11,24 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 
-public class VersionHandlerTest {
+public class PeerIdHandlerTest {
   private Context context = mock(Context.class);
+  private P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
 
   @Test
-  public void shouldReturnVersionString() throws Exception {
-    VersionHandler handler = new VersionHandler();
-    handler.handle(context);
+  public void shouldReturnPeerId() throws Exception {
+    final String peerId = "peerId";
+    final PeerIdHandler peerIdHandler = new PeerIdHandler(p2PNetwork);
 
-    verify(context).result(JsonProvider.objectToJSON(VersionProvider.VERSION));
+    when(p2PNetwork.getNodeAddress()).thenReturn(peerId);
+
+    peerIdHandler.handle(context);
+    verify(context).result(peerId);
   }
 }

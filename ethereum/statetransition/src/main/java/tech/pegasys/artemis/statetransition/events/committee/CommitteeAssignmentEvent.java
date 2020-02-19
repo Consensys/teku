@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.rpc;
+package tech.pegasys.artemis.statetransition.events.committee;
 
-import io.netty.buffer.ByteBuf;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import java.util.List;
 
-public interface RpcRequestHandler {
-  void onActivation(final RpcStream rpcStream);
+public class CommitteeAssignmentEvent {
 
-  void onData(NodeId nodeId, RpcStream rpcStream, ByteBuf bytes);
+  List<Integer> committeeIndices;
 
-  void onRequestComplete();
+  public CommitteeAssignmentEvent(List<Integer> committeeIndices) {
+    this.committeeIndices = committeeIndices;
+  }
+
+  public List<Integer> getCommitteeIndices() {
+    return this.committeeIndices;
+  }
 }
