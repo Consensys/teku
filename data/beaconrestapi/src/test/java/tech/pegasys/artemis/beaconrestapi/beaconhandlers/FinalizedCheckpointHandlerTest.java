@@ -32,7 +32,6 @@ public class FinalizedCheckpointHandlerTest {
   private ChainStorageClient client = mock(ChainStorageClient.class);
   private Store store = mock(Store.class);
 
-
   private final Checkpoint checkpoint = DataStructureUtil.randomCheckpoint(99);
 
   @Test

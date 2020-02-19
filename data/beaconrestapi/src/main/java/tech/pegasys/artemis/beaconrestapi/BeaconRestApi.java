@@ -64,7 +64,8 @@ public class BeaconRestApi {
               config.registerPlugin(new OpenApiPlugin(getOpenApiOptions(new JsonProvider())));
               config.defaultContentType = "application/json";
             }));
-    //TODO because of the static function in getOpenAiOptions, had to pass a new jsonProvider here, which means we have 2 instances of the JsonProvider, not 1.
+    // TODO because of the static function in getOpenAiOptions, had to pass a new jsonProvider here,
+    // which means we have 2 instances of the JsonProvider, not 1.
   }
 
   BeaconRestApi(

@@ -33,6 +33,7 @@ public class PeerIdHandlerTest {
     final PeerIdHandler peerIdHandler = new PeerIdHandler(p2PNetwork, jsonProvider);
 
     when(p2PNetwork.getNodeAddress()).thenReturn(peerId);
+    peerIdHandler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(peerId));
   }
 }
