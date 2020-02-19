@@ -23,7 +23,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -38,7 +38,7 @@ public class JsonProvider {
         new ExclusionStrategy() {
           @Override
           public boolean shouldSkipField(FieldAttributes field) {
-            return field.getDeclaringClass() == BeaconStateWithCache.class;
+            return BeaconStateRead.class.isAssignableFrom(field.getDeclaringClass());
           }
 
           @Override

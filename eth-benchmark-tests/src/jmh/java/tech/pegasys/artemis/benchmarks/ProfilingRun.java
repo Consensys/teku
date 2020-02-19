@@ -33,6 +33,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.backing.view.ListViewImpl;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
@@ -45,10 +46,12 @@ public class ProfilingRun {
   @Test
   public void importBlocks() throws Exception {
 
+//    Constants.setConstants("mainnet");
     Constants.SLOTS_PER_EPOCH = 6;
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
+    ListViewImpl.THROW_OUT_OF_BOUNDS = false;
 
-    int validatorsCount = 10 * 1024;
+    int validatorsCount = 1 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"

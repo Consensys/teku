@@ -31,7 +31,7 @@ import picocli.CommandLine.Parameters;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -108,8 +108,9 @@ public class TransitionCommand implements Runnable {
           if (delta) {
             targetSlot = state.getSlot().plus(targetSlot);
           }
-          stateTransition.process_slots(state, targetSlot, false);
-          return state;
+          BeaconStateWrite stateWrite = state.createWritableCopy();
+          stateTransition.process_slots(stateWrite, targetSlot, false);
+          return stateWrite.commitChanges();
         });
   }
 
@@ -119,9 +120,7 @@ public class TransitionCommand implements Runnable {
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
-      BeaconStateWithCache state =
-          BeaconStateWithCache.fromBeaconState(
-              SimpleOffsetSerializer.deserialize(inData, BeaconState.class));
+      BeaconStateRead state = SimpleOffsetSerializer.deserialize(inData, BeaconState.class);
 
       final StateTransition stateTransition = new StateTransition(false);
       try {
@@ -186,7 +185,7 @@ public class TransitionCommand implements Runnable {
   }
 
   private interface StateTransitionFunction {
-    BeaconStateRead applyTransition(BeaconStateWithCache state, StateTransition stateTransition)
+    BeaconStateRead applyTransition(BeaconStateRead state, StateTransition stateTransition)
         throws StateTransitionException, EpochProcessingException, SlotProcessingException,
             IOException;
   }

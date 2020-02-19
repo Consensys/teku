@@ -35,7 +35,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -89,8 +88,8 @@ public class Store implements ReadOnlyStore {
     Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
     blocks.put(root, new SignedBeaconBlock(genesisBlock, BLSSignature.empty()));
-    block_states.put(root, BeaconStateWithCache.deepCopy(genesisState));
-    checkpoint_states.put(justified_checkpoint, BeaconStateWithCache.deepCopy(genesisState));
+    block_states.put(root, genesisState);
+    checkpoint_states.put(justified_checkpoint, genesisState);
 
     return new Store(
         genesisState.getGenesis_time(),

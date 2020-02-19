@@ -44,7 +44,6 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWrite;
 import tech.pegasys.artemis.datastructures.state.ValidatorRead;
 import tech.pegasys.artemis.metrics.EpochMetrics;
@@ -74,18 +73,19 @@ public class StateTransition {
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
    * Runs state transition up to and with the given block
    *
-   * @param state
+   * @param preState
    * @param signed_block
    * @param validateStateRootAndSignatures
    * @return
    * @throws StateTransitionException
    */
-  public BeaconStateWithCache initiate(
-      BeaconStateWithCache state,
+  public BeaconStateRead initiate(
+      BeaconStateRead preState,
       SignedBeaconBlock signed_block,
       boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
+      BeaconStateWrite state = preState.createWritableCopy();
       // Process slots (including those with no blocks) since block
       process_slots(state, signed_block.getMessage().getSlot(), printEnabled);
 
@@ -109,7 +109,7 @@ public class StateTransition {
                 + stateRoot.toHexString());
       }
 
-      return state;
+      return state.commitChanges();
     } catch (SlotProcessingException
         | BlockProcessingException
         | EpochProcessingException
@@ -130,7 +130,7 @@ public class StateTransition {
         domain);
   }
 
-  public BeaconStateWithCache initiate(BeaconStateWithCache state, SignedBeaconBlock block)
+  public BeaconStateRead initiate(BeaconStateRead state, SignedBeaconBlock block)
       throws StateTransitionException {
     return initiate(state, block, true);
   }
@@ -145,7 +145,7 @@ public class StateTransition {
    * @throws BlockProcessingException
    */
   private void process_block(
-      BeaconStateWithCache state, BeaconBlock block, boolean validateStateRootAndSignatures)
+      BeaconStateWrite state, BeaconBlock block, boolean validateStateRootAndSignatures)
       throws BlockProcessingException {
     process_block_header(state, block);
     process_randao(state, block.getBody(), validateStateRootAndSignatures);
@@ -231,7 +231,7 @@ public class StateTransition {
           process_epoch(state);
           reportExceptions(
               CompletableFuture.runAsync(
-                  () -> recordMetrics(BeaconStateWithCache.deepCopy(state))));
+                  () -> recordMetrics(state)));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }
@@ -241,7 +241,7 @@ public class StateTransition {
     }
   }
 
-  private synchronized void recordMetrics(BeaconStateWithCache state) {
+  private synchronized void recordMetrics(BeaconStateRead state) {
     epochMetrics.ifPresent(
         metrics -> {
           final UnsignedLong currentEpoch = get_current_epoch(state);

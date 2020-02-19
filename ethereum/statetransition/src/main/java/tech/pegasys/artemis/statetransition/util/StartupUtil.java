@@ -30,7 +30,6 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateRead;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.util.DepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
@@ -68,11 +67,10 @@ public final class StartupUtil {
         .createInitialBeaconState(UnsignedLong.valueOf(genesisTime), initialDepositData);
   }
 
-  public static BeaconStateWithCache loadBeaconStateFromFile(final String stateFile)
+  public static BeaconStateRead loadBeaconStateFromFile(final String stateFile)
       throws IOException {
-    return BeaconStateWithCache.fromBeaconState(
-        SimpleOffsetSerializer.deserialize(
-            Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconState.class));
+    return SimpleOffsetSerializer.deserialize(
+            Bytes.wrap(Files.readAllBytes(new File(stateFile).toPath())), BeaconState.class);
   }
 
   public static void setupInitialState(
