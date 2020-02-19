@@ -32,16 +32,12 @@ import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
 public class PeersHandlerTest {
-  @Mock private Context mockContext;
-  @Mock private P2PNetwork<Peer> p2PNetwork;
-
-  private final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
-
   @Test
-  public void shouldReturnArrayOfPeersIfPresent() throws Exception {
+  public void shouldReturnArrayOfPeersIfPresent(
+      @Mock Context mockContext, @Mock P2PNetwork<Peer> p2PNetwork) throws Exception {
+    final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
     final Peer peer1 = mock(Peer.class);
     final Peer peer2 = mock(Peer.class);
-
     final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
     final PeerId peerId2 = new PeerId(PeerId.random().getBytes());
     final NodeId nodeId1 = new LibP2PNodeId(peerId1);
@@ -59,10 +55,12 @@ public class PeersHandlerTest {
   }
 
   @Test
-  public void shouldReturnEmptyPeersArrayIfNoneConnected() throws Exception {
-    when(p2PNetwork.streamPeers()).thenReturn(Stream.empty());
-
+  public void shouldReturnEmptyPeersArrayIfNoneConnected(
+      @Mock Context mockContext, @Mock P2PNetwork<Peer> p2PNetwork) throws Exception {
+    final PeersHandler peersHandler = new PeersHandler(p2PNetwork);
     final String response = JsonProvider.objectToJSON(new String[] {});
+
+    when(p2PNetwork.streamPeers()).thenReturn(Stream.empty());
 
     peersHandler.handle(mockContext);
     verify(mockContext).result(response);
