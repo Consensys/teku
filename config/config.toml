@@ -37,7 +37,7 @@ nodeUrl = "http://localhost:8545"
 [output]
 logPath = "."
 logFile = "teku.log"
-#transitionRecordDir = ""
+#transitionRecordDir = "/tmp/teku"
 
 [metrics]
 enabled = false

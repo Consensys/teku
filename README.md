@@ -52,7 +52,7 @@ OSX: `brew install gradle`
 To create a ready to run distribution:
 
 ```shell script
-bash <(curl -s https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
+git clone https://github.com/PegaSysEng/artemis.git
 cd artemis && ./gradlew distTar installDist
 ```
 
@@ -65,7 +65,7 @@ This will produce:
 To build, clone this repo and run with `gradle` like so:
 
 ```shell script
-bash <(curl -s https://raw.githubusercontent.com/PegaSysEng/artemis/master/scripts/clone-repo.sh)
+git clone https://github.com/PegaSysEng/artemis.git
 cd artemis && ./gradlew
 
 ```
@@ -73,8 +73,7 @@ cd artemis && ./gradlew
 Or clone it manually:
 
 ```shell script
-git clone git@github.com:jrhea/eth2.0-spec-tests-template.git /tmp/eth2.0-spec-tests-template
-git clone --recursive --template=/tmp/eth2.0-spec-tests-template git@github.com:PegaSysEng/artemis.git
+git clone https://github.com/PegaSysEng/artemis.git
 cd artemis && ./gradlew
 ```
 
@@ -184,13 +183,14 @@ All the unit tests are run as part of the build, but can be explicitly triggered
 To view the run menu:
 
 ```
-./gradlew run --args='-h'
+./gradlew installDist
+./build/install/teku/bin/teku -h
 
-artemis [OPTIONS] [COMMAND]
+teku [OPTIONS] [COMMAND]
 
 Description:
 
-Run the Artemis beacon chain client and validator
+Run the Teku beacon chain client and validator
 
 Options:
   -c, --config=<FILENAME>   Path/filename of the config file
@@ -203,44 +203,18 @@ Commands:
   transition  Manually run state transitions
   peer        Commands for LibP2P PeerID
 
-Artemis is licensed under the Apache License 2.0
+Teku is licensed under the Apache License 2.0
 
 ```
 
 You can run the executable from the CLI with this command:
 ```shell script
-./gradlew run
+./gradlew installDist
+./build/install/teku/bin/teku
 ```
 
 Refer to `config/config.toml` for a set of default configuration settings.
 
-
-To run with logging level set to DEBUG
-
-```shell script
-./gradlew run --args='-l=DEBUG'
-```
-
-To profile and/or generate flow diagrams for Artemis: 
-
-Setup:
-
-```shell script 
-source artemis.env 
-```
-
-Run:
-
-Terminal 1:
-
-```shell script
-flow
-```
-
-Terminal 2:
-```shell script
-./gradlew run -PgenerateFlow
-```
 
 ## Special thanks
 YourKit for providing us with a free profiler open source license. 
