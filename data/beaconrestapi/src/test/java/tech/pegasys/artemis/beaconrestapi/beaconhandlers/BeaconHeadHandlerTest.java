@@ -39,7 +39,8 @@ public class BeaconHeadHandlerTest {
   public void shouldReturnBeaconHead() throws Exception {
     BeaconHeadHandler handler = new BeaconHeadHandler(storageClient);
     Bytes32 blockRoot = Bytes32.random();
-    BeaconHeadResponse head = new BeaconHeadResponse(bestSlot, blockRoot, rootState.hash_tree_root());
+    BeaconHeadResponse head =
+        new BeaconHeadResponse(bestSlot, blockRoot, rootState.hash_tree_root());
 
     when(storageClient.getBestBlockRoot()).thenReturn(blockRoot);
     when(storageClient.getBestBlockRootState()).thenReturn(rootState);
