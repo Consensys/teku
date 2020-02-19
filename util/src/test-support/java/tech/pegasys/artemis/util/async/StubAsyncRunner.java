@@ -19,11 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 public class StubAsyncRunner implements AsyncRunner {
-  private static final Logger LOG = LogManager.getLogger();
   private List<Runnable> queuedActions = new ArrayList<>();
 
   @Override

@@ -33,16 +33,18 @@ public class AsyncResponseProcessorTest {
   private final Consumer<Throwable> errorConsumer = errors::add;
 
   private final AtomicReference<Consumer<String>> requestProcessor =
-      new AtomicReference(defaultProcessor);
+      new AtomicReference<>(defaultProcessor);
   private final ResponseStreamImpl<String> responseStream = new ResponseStreamImpl<>();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final AsyncResponseProcessor<String> asyncResponseProcessor =
-      new AsyncResponseProcessor(asyncRunner, responseStream, errorConsumer);
+      new AsyncResponseProcessor<>(asyncRunner, responseStream, errorConsumer);
 
   @BeforeEach
   public void setup() {
-    responseStream.expectMultipleResponses((s) -> requestProcessor.get().accept(s));
+    responseStream
+        .expectMultipleResponses((s) -> requestProcessor.get().accept(s))
+        .reportExceptions();
   }
 
   @Test
@@ -140,7 +142,7 @@ public class AsyncResponseProcessorTest {
 
   @Test
   public void shouldThrowIfResponsesSubmittedAfterFinishedProcessing() {
-    asyncResponseProcessor.finishProcessing();
+    asyncResponseProcessor.finishProcessing().reportExceptions();
     assertThatThrownBy(() -> asyncResponseProcessor.processResponse("a"))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("New response submitted after closing");
