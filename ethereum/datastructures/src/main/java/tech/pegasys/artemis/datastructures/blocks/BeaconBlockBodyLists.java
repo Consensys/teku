@@ -19,27 +19,28 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconBlockBodyLists {
 
-  public static SSZList<ProposerSlashing> createProposerSlashings() {
+  public static SSZMutableList<ProposerSlashing> createProposerSlashings() {
     return SSZList.create(ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS);
   }
 
-  public static SSZList<AttesterSlashing> createAttesterSlashings() {
+  public static SSZMutableList<AttesterSlashing> createAttesterSlashings() {
     return SSZList.create(AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
   }
 
-  public static SSZList<Attestation> createAttestations() {
+  public static SSZMutableList<Attestation> createAttestations() {
     return SSZList.create(Attestation.class, Constants.MAX_ATTESTATIONS);
   }
 
-  public static SSZList<Deposit> createDeposits() {
+  public static SSZMutableList<Deposit> createDeposits() {
     return SSZList.create(Deposit.class, Constants.MAX_DEPOSITS);
   }
 
-  public static SSZList<SignedVoluntaryExit> createVoluntaryExits() {
+  public static SSZMutableList<SignedVoluntaryExit> createVoluntaryExits() {
     return SSZList.create(SignedVoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
   }
 }

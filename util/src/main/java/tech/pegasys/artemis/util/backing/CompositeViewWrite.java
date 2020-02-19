@@ -20,7 +20,7 @@ public interface CompositeViewWrite<R> extends ViewWrite, CompositeViewRead<R> {
 
   void setIvalidator(Consumer<ViewWrite> listener);
 
-  R set(int index, R value);
+  void set(int index, R value);
 
   default void update(int index, Function<R, R> mutator) {
     set(index, mutator.apply(get(index)));

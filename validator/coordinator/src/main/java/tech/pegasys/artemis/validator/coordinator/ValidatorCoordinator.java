@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +75,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -87,7 +88,7 @@ public class ValidatorCoordinator {
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private final StateTransition stateTransition;
   private final BlockProposalUtil blockCreator;
-  private final SSZList<Deposit> newDeposits = SSZList.create(Deposit.class, MAX_DEPOSITS);
+  private final List<Deposit> newDeposits = new ArrayList<>();
   private final ChainStorageClient chainStorageClient;
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
@@ -316,7 +317,7 @@ public class ValidatorCoordinator {
   }
 
   private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
-    SSZList<ProposerSlashing> slashingsForBlock = BeaconBlockBodyLists.createProposerSlashings();
+    SSZMutableList<ProposerSlashing> slashingsForBlock = BeaconBlockBodyLists.createProposerSlashings();
     ProposerSlashing slashing = slashings.poll();
     while (slashing != null) {
       if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
@@ -332,8 +333,8 @@ public class ValidatorCoordinator {
 
   private SSZList<Deposit> getDepositsForBlock() {
     // TODO - Look into how deposits should be managed, this seems wrong
-    final SSZList<Deposit> deposits = BeaconBlockBodyLists.createDeposits();
-    deposits.addAll(newDeposits);
+    final SSZMutableList<Deposit> deposits = BeaconBlockBodyLists.createDeposits();
+    deposits.addAll(newDeposits.subList(0, MAX_DEPOSITS));
     return deposits;
   }
 
@@ -364,7 +365,7 @@ public class ValidatorCoordinator {
   @VisibleForTesting
   static void getIndicesOfOurValidators(
       BeaconState state, Map<BLSPublicKey, ValidatorInfo> validators) {
-    SSZListRead<Validator> validatorRegistry = state.getValidators();
+    SSZList<Validator> validatorRegistry = state.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {

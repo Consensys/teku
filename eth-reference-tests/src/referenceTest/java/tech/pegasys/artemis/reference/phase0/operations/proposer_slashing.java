@@ -21,8 +21,6 @@ import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.proce
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +31,7 @@ import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class proposer_slashing extends TestSuite {
@@ -40,19 +39,16 @@ public class proposer_slashing extends TestSuite {
   @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
   @MethodSource({"mainnetProposerSlashingSetup", "minimalProposerSlashingSetup"})
   void processProposerSlashing(ProposerSlashing proposerSlashing, BeaconStateImpl pre) {
-    List<ProposerSlashing> proposerSlashings = new ArrayList<>();
-    proposerSlashings.add(proposerSlashing);
     assertThrows(
-        BlockProcessingException.class, () -> process_proposer_slashings(pre, proposerSlashings));
+        BlockProcessingException.class,
+        () -> process_proposer_slashings(pre, SSZList.singleton(proposerSlashing)));
   }
 
   @ParameterizedTest(name = "{index}. mainnet process proposer slashing")
   @MethodSource({"mainnetProposerSlashingSuccessSetup", "minimalProposerSlashingSuccessSetup"})
   void processProposerSlashing(
       ProposerSlashing proposerSlashing, BeaconStateImpl pre, BeaconStateImpl post) {
-    List<ProposerSlashing> proposerSlashings = new ArrayList<>();
-    proposerSlashings.add(proposerSlashing);
-    assertDoesNotThrow(() -> process_proposer_slashings(pre, proposerSlashings));
+    assertDoesNotThrow(() -> process_proposer_slashings(pre, SSZList.singleton(proposerSlashing)));
     assertEquals(pre, post);
   }
 

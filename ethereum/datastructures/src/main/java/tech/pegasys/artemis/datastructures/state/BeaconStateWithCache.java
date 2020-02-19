@@ -58,4 +58,14 @@ public final class BeaconStateWithCache extends BeaconStateImpl {
   public TransitionCaches getTransitionCaches() {
     return transitionCaches;
   }
+
+  @Override
+  public BeaconStateWithCache createWritableCopy() {
+    return new BeaconStateWithCache(this);
+  }
+
+  @Override
+  public BeaconStateImpl commitChanges() {
+    return new BeaconStateWithCache(this);
+  }
 }

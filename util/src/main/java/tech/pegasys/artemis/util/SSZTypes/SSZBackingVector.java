@@ -1,15 +1,13 @@
 package tech.pegasys.artemis.util.SSZTypes;
 
-import java.util.AbstractList;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
-public class SSZBackingVector<C, R extends ViewRead> extends AbstractList<C>
-    implements SSZVectorWrite<C> {
+public class SSZBackingVector<C, R extends ViewRead> extends
+    SSZAbstractCollection<C> implements SSZMutableVector<C> {
 
-  private final Class<C> classInfo;
   private final VectorViewWrite<R> delegate;
   private final Function<C, R> wrapper;
   private final Function<R, C> unwrapper;
@@ -17,7 +15,7 @@ public class SSZBackingVector<C, R extends ViewRead> extends AbstractList<C>
   public SSZBackingVector(Class<C> classInfo,
       VectorViewWrite<R> delegate, Function<C, R> wrapper,
       Function<R, C> unwrapper) {
-    this.classInfo = classInfo;
+    super(classInfo);
     this.delegate = delegate;
     this.wrapper = wrapper;
     this.unwrapper = unwrapper;
@@ -34,19 +32,18 @@ public class SSZBackingVector<C, R extends ViewRead> extends AbstractList<C>
   }
 
   @Override
-  public Class<C> getElementType() {
-    return classInfo;
-  }
-
-  @Override
-  public C set(int index, C element) {
+  public void set(int index, C element) {
     delegate.set(index, wrapper.apply(element));
-    return null;
   }
 
   @Override
   public void clear() {
     delegate.clear();
+  }
+
+  @Override
+  public long getMaxSize() {
+    return size();
   }
 
   public Bytes32 hash_tree_root() {

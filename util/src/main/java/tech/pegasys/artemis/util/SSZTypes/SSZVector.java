@@ -13,34 +13,23 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
-import com.google.common.base.Preconditions;
 import java.util.List;
 
-public interface SSZVector<T> extends List<T> {
+public interface SSZVector<T> extends SSZImmutableCollection<T> {
 
-  static <T> SSZVector<T> create(int size, T object) {
-    return new SSZArrayVector<>(size, object);
+  static <T> SSZMutableVector<T> create(int size, T object) {
+    return new SSZArrayCollection<T>(size, object);
   }
 
-  static <T> SSZVector<T> create(Class<T> classInfo, int size) {
-    return new SSZArrayVector<>(size, classInfo);
+  static <T> SSZMutableVector<T> create(Class<T> classInfo, int size) {
+    return new SSZArrayCollection<T>(classInfo, size);
   }
 
-  static <T> SSZVector<T> create(List<T> list, Class<T> classInfo) {
-    return new SSZArrayVector<>(list, classInfo);
+  static <T> SSZMutableVector<T> create(List<T> list, Class<T> classInfo) {
+    return new SSZArrayCollection<>(list, list.size(), classInfo);
   }
 
   static <T> SSZVector<T> copy(SSZVector<T> vector) {
-    return new SSZArrayVector<T>(vector, vector.getElementType());
-  }
-
-  Class<T> getElementType();
-
-  default void setAll(SSZVector<T> other) {
-    Preconditions.checkArgument(other.size() == size(), "Incompatible vector size");
-    clear();
-    for (int i = 0; i < other.size(); i++) {
-      set(i, other.get(i));
-    }
+    return new SSZArrayCollection<T>(vector.asList(), vector.size(), vector.getElementType());
   }
 }

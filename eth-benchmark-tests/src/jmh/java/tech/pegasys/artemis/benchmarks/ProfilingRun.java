@@ -18,7 +18,7 @@ import static org.mockito.Mockito.mock;
 import com.google.common.eventbus.EventBus;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Disabled;
@@ -106,25 +106,22 @@ public class ProfilingRun {
     System.out.println("getValidators: " + s1.getValidators().hash_tree_root());
     System.out.println(
         "getValidators: " + HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE,
-            Constants.VALIDATOR_REGISTRY_LIMIT, s1.getValidators()));
+            s1.getValidators()));
     System.out.println("getBlock_roots: " + s1.getBlock_roots().hash_tree_root());
     System.out.println("getBlock_roots: " + HashTreeUtil.hash_tree_root(
         SSZTypes.VECTOR_OF_COMPOSITE, s1.getBlock_roots()));
 
     System.out.println("getHistorical_roots: " + s1.getHistorical_roots().hash_tree_root());
     System.out.println("getHistorical_roots: " + HashTreeUtil.hash_tree_root(
-        SSZTypes.LIST_OF_COMPOSITE, Constants.HISTORICAL_ROOTS_LIMIT, s1.getHistorical_roots()));
+        SSZTypes.LIST_OF_COMPOSITE, s1.getHistorical_roots()));
 
     System.out.println("getEth1_data_votes: " + s1.getEth1_data_votes().hash_tree_root());
     System.out.println("getEth1_data_votes: " + HashTreeUtil.hash_tree_root(
-        SSZTypes.LIST_OF_COMPOSITE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD, s1.getEth1_data_votes()));
+        SSZTypes.LIST_OF_COMPOSITE, s1.getEth1_data_votes()));
 
     System.out.println("getBalances: " + s1.getBalances().hash_tree_root());
     System.out.println("getBalances: " + HashTreeUtil.hash_tree_root_list_ul(
-        Constants.VALIDATOR_REGISTRY_LIMIT,
-        s1.getBalances().stream()
-            .map(item -> SSZ.encodeUInt64(item.longValue()))
-            .collect(Collectors.toList())));
+        s1.getBalances().map(Bytes.class, item -> SSZ.encodeUInt64(item.longValue()))));
 
 
     System.out.println("getJustification_bits: " + HashTreeUtil.hash_tree_root_bitvector(s1.getJustification_bits()));
@@ -143,25 +140,21 @@ public class ProfilingRun {
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, s.getBlock_roots()),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, s.getState_roots()),
             HashTreeUtil.hash_tree_root_list_bytes(
-                Constants.HISTORICAL_ROOTS_LIMIT, s.getHistorical_roots()),
+                s.getHistorical_roots()),
 
             // Ethereum 1.0 chain data
             s.getEth1_data().hash_tree_root(),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
-                Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
                 s.getEth1_data_votes()),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.BASIC, SSZ.encodeUInt64(s.getEth1_deposit_index().longValue())),
 
             // Validator registry
             HashTreeUtil.hash_tree_root(
-                SSZTypes.LIST_OF_COMPOSITE, Constants.VALIDATOR_REGISTRY_LIMIT, s.getValidators()),
+                SSZTypes.LIST_OF_COMPOSITE, s.getValidators()),
             HashTreeUtil.hash_tree_root_list_ul(
-                Constants.VALIDATOR_REGISTRY_LIMIT,
-                s.getBalances().stream()
-                    .map(item -> SSZ.encodeUInt64(item.longValue()))
-                    .collect(Collectors.toList())),
+                s.getBalances().map(Bytes.class, item -> SSZ.encodeUInt64(item.longValue()))),
 
             // Randomness
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_COMPOSITE, s.getRandao_mixes()),
@@ -172,11 +165,9 @@ public class ProfilingRun {
             // Attestations
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
-                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
                 s.getPrevious_epoch_attestations()),
             HashTreeUtil.hash_tree_root(
                 SSZTypes.LIST_OF_COMPOSITE,
-                Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
                 s.getCurrent_epoch_attestations()),
 
             // Finality

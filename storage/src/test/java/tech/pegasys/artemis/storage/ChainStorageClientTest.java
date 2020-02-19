@@ -70,7 +70,8 @@ class ChainStorageClientTest {
     storageClient.setStore(store);
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
-    final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final MutableBeaconState bestState = DataStructureUtil
+        .randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(0, GENESIS_BLOCK_ROOT);
     when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(bestState);

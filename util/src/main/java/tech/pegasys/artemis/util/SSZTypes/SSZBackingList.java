@@ -1,15 +1,13 @@
 package tech.pegasys.artemis.util.SSZTypes;
 
-import java.util.AbstractList;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
-public class SSZBackingList<C, R extends ViewRead> extends AbstractList<C>
-    implements SSZListWrite<C> {
+public class SSZBackingList<C, R extends ViewRead> extends
+    SSZAbstractCollection<C> implements SSZMutableList<C> {
 
-  private final Class<C> classInfo;
   private final ListViewWrite<R> delegate;
   private final Function<C, R> wrapper;
   private final Function<R, C> unwrapper;
@@ -17,7 +15,7 @@ public class SSZBackingList<C, R extends ViewRead> extends AbstractList<C>
   public SSZBackingList(Class<C> classInfo,
       ListViewWrite<R> delegate, Function<C, R> wrapper,
       Function<R, C> unwrapper) {
-    this.classInfo = classInfo;
+    super(classInfo);
     this.delegate = delegate;
     this.wrapper = wrapper;
     this.unwrapper = unwrapper;
@@ -39,20 +37,13 @@ public class SSZBackingList<C, R extends ViewRead> extends AbstractList<C>
   }
 
   @Override
-  public boolean add(C c) {
+  public void add(C c) {
     delegate.append(wrapper.apply(c));
-    return true;
   }
 
   @Override
-  public Class<C> getElementType() {
-    return classInfo;
-  }
-
-  @Override
-  public C set(int index, C element) {
+  public void set(int index, C element) {
     delegate.set(index, wrapper.apply(element));
-    return null;
   }
 
   @Override

@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class deposit extends TestSuite {
@@ -40,9 +41,7 @@ public class deposit extends TestSuite {
   @ParameterizedTest(name = "{index}. process deposit success")
   @MethodSource({"mainnetDepositSuccessSetup", "minimalDepositSuccessSetup"})
   void processDepositSuccess(Deposit deposit, BeaconStateImpl pre, BeaconStateImpl post) {
-    List<Deposit> deposits = new ArrayList<>();
-    deposits.add(deposit);
-    assertDoesNotThrow(() -> process_deposits(pre, deposits));
+    assertDoesNotThrow(() -> process_deposits(pre, SSZList.singleton(deposit)));
     assertEquals(pre, post);
   }
 
@@ -51,7 +50,8 @@ public class deposit extends TestSuite {
   void processDeposit(Deposit deposit, BeaconStateImpl pre) {
     List<Deposit> deposits = new ArrayList<>();
     deposits.add(deposit);
-    assertThrows(BlockProcessingException.class, () -> process_deposits(pre, deposits));
+    assertThrows(BlockProcessingException.class,
+        () -> process_deposits(pre, SSZList.singleton(deposit)));
   }
 
   @MustBeClosed

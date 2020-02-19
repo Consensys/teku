@@ -80,12 +80,12 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   }
 
   @Override
-  public R set(int index, R value) {
+  public void set(int index, R value) {
     int size = size();
 
     // TODO: temp workaround
     if (!THROW_OUT_OF_BOUNDS && index >= getType().getMaxLength()) {
-      return null;
+      return;
     }
     checkArgument(
         (index >= 0 && index < size) || (index == size && index < getType().getMaxLength()),
@@ -107,7 +107,6 @@ public class ListViewImpl<R extends ViewRead, W extends R>
         });
 
     invalidate();
-    return null;
   }
 
   @Override

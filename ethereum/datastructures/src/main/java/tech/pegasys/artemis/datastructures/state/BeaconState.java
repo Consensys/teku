@@ -7,9 +7,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.SSZTypes.SSZVectorRead;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
@@ -19,7 +17,7 @@ public interface BeaconState extends ContainerViewRead<ViewRead>, Merkleizable,
     SimpleOffsetSerializable, SSZContainer {
 
   static BeaconState createEmpty() {
-    return new BeaconStateImpl();
+    return BeaconStateWithCache.fromBeaconState(new BeaconStateImpl());
   }
 
   static BeaconState create(
@@ -60,11 +58,11 @@ public interface BeaconState extends ContainerViewRead<ViewRead>, Merkleizable,
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
 
-    return new BeaconStateImpl(genesis_time, slot, fork, latest_block_header, block_roots, state_roots,
+    return BeaconStateWithCache.fromBeaconState(new BeaconStateImpl(genesis_time, slot, fork, latest_block_header, block_roots, state_roots,
         historical_roots, eth1_data, eth1_data_votes, eth1_deposit_index, validators, balances,
         randao_mixes, slashings, previous_epoch_attestations, current_epoch_attestations,
         justification_bits, previous_justified_checkpoint, current_justified_checkpoint,
-        finalized_checkpoint);
+        finalized_checkpoint));
   }
 
   // Versioning
@@ -77,33 +75,33 @@ public interface BeaconState extends ContainerViewRead<ViewRead>, Merkleizable,
   // History
   BeaconBlockHeader getLatest_block_header();
 
-  SSZVectorRead<Bytes32> getBlock_roots();
+  SSZVector<Bytes32> getBlock_roots();
 
-  SSZVectorRead<Bytes32> getState_roots();
+  SSZVector<Bytes32> getState_roots();
 
-  SSZListRead<Bytes32> getHistorical_roots();
+  SSZList<Bytes32> getHistorical_roots();
 
   // Eth1
   Eth1Data getEth1_data();
 
-  SSZListRead<Eth1Data> getEth1_data_votes();
+  SSZList<Eth1Data> getEth1_data_votes();
 
   UnsignedLong getEth1_deposit_index();
 
   // Registry
-  SSZListRead<Validator> getValidators();
+  SSZList<Validator> getValidators();
 
-  SSZListRead<UnsignedLong> getBalances();
+  SSZList<UnsignedLong> getBalances();
 
-  SSZVectorRead<Bytes32> getRandao_mixes();
+  SSZVector<Bytes32> getRandao_mixes();
 
   // Slashings
-  SSZVectorRead<UnsignedLong> getSlashings();
+  SSZVector<UnsignedLong> getSlashings();
 
   // Attestations
-  SSZListRead<PendingAttestation> getPrevious_epoch_attestations();
+  SSZList<PendingAttestation> getPrevious_epoch_attestations();
 
-  SSZListRead<PendingAttestation> getCurrent_epoch_attestations();
+  SSZList<PendingAttestation> getCurrent_epoch_attestations();
 
   // Finality
   Bitvector getJustification_bits();

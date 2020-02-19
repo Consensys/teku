@@ -26,6 +26,7 @@ import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -54,7 +55,7 @@ class DepositTest {
   @Test
   void equalsReturnsFalseWhenBranchesAreDifferent() {
     // Create copy of signature and reverse to ensure it is different.
-    List<Bytes32> reverseBranch = new ArrayList<>(branch);
+    List<Bytes32> reverseBranch = new ArrayList<>(branch.asList());
     Collections.reverse(reverseBranch);
 
     Deposit testDeposit = new Deposit(SSZVector.create(reverseBranch, Bytes32.class), depositData);
@@ -95,7 +96,7 @@ class DepositTest {
   }
 
   private SSZVector<Bytes32> setupMerkleBranch() {
-    SSZVector<Bytes32> branch =
+    SSZMutableVector<Bytes32> branch =
         SSZVector.create(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
 
     for (int i = 0; i < branch.size(); ++i) {

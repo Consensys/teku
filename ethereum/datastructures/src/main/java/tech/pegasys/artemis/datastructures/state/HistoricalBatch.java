@@ -47,15 +47,9 @@ public class HistoricalBatch
     this.state_roots = SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
   }
 
-  public HistoricalBatch(HistoricalBatch historicalBatch) {
-    this.block_roots =
-        copyBytesList(
-            historicalBatch.getBlockRoots(),
-            SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
-    this.state_roots =
-        copyBytesList(
-            historicalBatch.getStateRoots(),
-            SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO));
+  private HistoricalBatch(HistoricalBatch historicalBatch) {
+    this.block_roots = SSZVector.copy(historicalBatch.getBlockRoots());
+    this.state_roots = SSZVector.copy(historicalBatch.getStateRoots());
   }
 
   @Override
@@ -66,8 +60,8 @@ public class HistoricalBatch
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots)),
-        SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots)));
+        SSZ.encode(writer -> writer.writeFixedBytesVector(block_roots.asList())),
+        SSZ.encode(writer -> writer.writeFixedBytesVector(state_roots.asList())));
   }
 
   @Override
@@ -97,13 +91,6 @@ public class HistoricalBatch
     HistoricalBatch other = (HistoricalBatch) obj;
     return Objects.equals(this.getBlockRoots(), other.getBlockRoots())
         && Objects.equals(this.getStateRoots(), other.getStateRoots());
-  }
-
-  private <T extends SSZVector<Bytes32>> T copyBytesList(T sourceList, T destinationList) {
-    for (Bytes sourceItem : sourceList) {
-      destinationList.add((Bytes32) sourceItem.copy());
-    }
-    return destinationList;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

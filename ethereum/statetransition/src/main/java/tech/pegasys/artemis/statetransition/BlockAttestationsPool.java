@@ -29,6 +29,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockAttestationsPool {
@@ -95,7 +96,7 @@ public class BlockAttestationsPool {
   }
 
   public SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {
-    SSZList<Attestation> attestations =
+    SSZMutableList<Attestation> attestations =
         SSZList.create(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
 

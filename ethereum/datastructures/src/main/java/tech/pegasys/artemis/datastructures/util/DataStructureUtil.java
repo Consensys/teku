@@ -52,6 +52,8 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -80,7 +82,7 @@ public final class DataStructureUtil {
 
   public static <T> SSZList<T> randomSSZList(
       Class<T> classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
-    SSZList<T> sszList = SSZList.create(classInfo, maxSize);
+    SSZMutableList<T> sszList = SSZList.create(classInfo, maxSize);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems).forEach(i -> sszList.add(randomFunction.apply(seed)));
     return sszList;
@@ -88,7 +90,7 @@ public final class DataStructureUtil {
 
   public static <T> SSZVector<T> randomSSZVector(
       T defaultClassObject, long maxSize, Function<Integer, T> randomFunction, int seed) {
-    SSZVector<T> sszvector = SSZVector.create(toIntExact(maxSize), defaultClassObject);
+    SSZMutableVector<T> sszvector = SSZVector.create(toIntExact(maxSize), defaultClassObject);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems)
         .forEach(i -> sszvector.set(toIntExact(i), randomFunction.apply(seed)));
@@ -243,7 +245,7 @@ public final class DataStructureUtil {
   }
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
-    SSZList<UnsignedLong> attesting_indices =
+    SSZMutableList<UnsignedLong> attesting_indices =
         SSZList.create(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     attesting_indices.add(randomUnsignedLong(seed));
     attesting_indices.add(randomUnsignedLong(seed++));
@@ -308,8 +310,8 @@ public final class DataStructureUtil {
     return new VoluntaryExit(randomUnsignedLong(seed), randomUnsignedLong(seed++));
   }
 
-  public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
-    ArrayList<DepositWithIndex> deposits = new ArrayList<>();
+  public static SSZList<DepositWithIndex> newDeposits(int numDeposits) {
+    SSZMutableList<DepositWithIndex> deposits = SSZList.create(DepositWithIndex.class, Constants.MAX_DEPOSITS);
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {

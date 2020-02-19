@@ -59,6 +59,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -160,7 +161,7 @@ public class SimpleOffsetSerializer {
         Bytes.concatenate(value.get_variable_parts().toArray(new Bytes[0])));
   }
 
-  public static Bytes serializeFixedCompositeList(List<? extends SimpleOffsetSerializable> values) {
+  public static Bytes serializeFixedCompositeList(SSZList<? extends SimpleOffsetSerializable> values) {
     return Bytes.fromHexString(
         values.stream()
             .map(item -> serialize(item).toHexString().substring(2))
@@ -168,7 +169,7 @@ public class SimpleOffsetSerializer {
   }
 
   public static Bytes serializeVariableCompositeList(
-      List<? extends SimpleOffsetSerializable> values) {
+      SSZList<? extends SimpleOffsetSerializable> values) {
     List<Bytes> parts =
         values.stream().map(SimpleOffsetSerializer::serialize).collect(Collectors.toList());
     List<UnsignedLong> fixed_lengths = Collections.nCopies(values.size(), BYTES_PER_LENGTH_OFFSET);
@@ -323,7 +324,7 @@ public class SimpleOffsetSerializer {
             reflectionInformation.getListElementTypes().get(variableObjectCounter);
         Long listElementMaxSize =
             reflectionInformation.getListElementMaxSizes().get(variableObjectCounter);
-        SSZList newSSZList = SSZList.create(listElementType, listElementMaxSize);
+        SSZMutableList newSSZList = SSZList.create(listElementType, listElementMaxSize);
         if (!isVariable(listElementType)) {
           // If SSZList element is fixed size
           deserializeFixedElementList(
@@ -377,7 +378,7 @@ public class SimpleOffsetSerializer {
       MutableInt bytesPointer,
       Class listElementType,
       int bytesEndByte,
-      SSZList newSSZList)
+      SSZMutableList newSSZList)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
     int currentObjectStartByte = bytesPointer.intValue();
@@ -410,7 +411,7 @@ public class SimpleOffsetSerializer {
       MutableInt bytesPointer,
       Class listElementType,
       int currentObjectEndByte,
-      SSZList newSSZList)
+      SSZMutableList newSSZList)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
     while (bytesPointer.intValue() < currentObjectEndByte) {
       if (isContainer(listElementType)) {

@@ -32,10 +32,10 @@ import tech.pegasys.artemis.util.SSZTypes.SSZBackingList;
 import tech.pegasys.artemis.util.SSZTypes.SSZBackingListRef;
 import tech.pegasys.artemis.util.SSZTypes.SSZBackingVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZListWrite;
-import tech.pegasys.artemis.util.SSZTypes.SSZListWriteRef;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
-import tech.pegasys.artemis.util.SSZTypes.SSZVectorWrite;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewWriteRef;
@@ -217,15 +217,15 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
             SSZ.encodeUInt64(getSlot().longValue()),
             SimpleOffsetSerializer.serialize(getFork()),
             SimpleOffsetSerializer.serialize(getLatest_block_header()),
-            SSZ.encode(writer -> writer.writeFixedBytesVector(getBlock_roots())),
-            SSZ.encode(writer -> writer.writeFixedBytesVector(getState_roots())),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(getBlock_roots().asList())),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(getState_roots().asList())),
             Bytes.EMPTY,
             SimpleOffsetSerializer.serialize(getEth1_data()),
             Bytes.EMPTY,
             SSZ.encodeUInt64(getEth1_deposit_index().longValue()),
             Bytes.EMPTY,
             Bytes.EMPTY,
-            SSZ.encode(writer -> writer.writeFixedBytesVector(getRandao_mixes())),
+            SSZ.encode(writer -> writer.writeFixedBytesVector(getRandao_mixes().asList())),
             SSZ.encode(
                 writer ->
                     writer.writeFixedBytesVector(
@@ -246,7 +246,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
         List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
-    variablePartsList.add(SSZ.encode(writer -> writer.writeFixedBytesVector(getHistorical_roots())));
+    variablePartsList.add(SSZ.encode(writer -> writer.writeFixedBytesVector(getHistorical_roots().asList())));
     variablePartsList.add(Bytes.EMPTY);
     variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(getEth1_data_votes()));
     variablePartsList.add(Bytes.EMPTY);
@@ -391,7 +391,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     set(3, latest_block_header);
   }
 
-  public SSZVectorWrite<Bytes32> getBlock_roots() {
+  public SSZMutableVector<Bytes32> getBlock_roots() {
     return new SSZBackingVector<>
         (Bytes32.class, getBlock_roots_view(), Bytes32View::new, AbstractBasicView::get);
   }
@@ -401,7 +401,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     return (VectorViewWrite<Bytes32View>) getByRef(4);
   }
 
-  public SSZVectorWrite<Bytes32> getState_roots() {
+  public SSZMutableVector<Bytes32> getState_roots() {
     return new SSZBackingVector<>
         (Bytes32.class, getState_roots_view(), Bytes32View::new, AbstractBasicView::get);
   }
@@ -411,7 +411,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     return (VectorViewWrite<Bytes32View>) getByRef(5);
   }
 
-  public SSZListWrite<Bytes32> getHistorical_roots() {
+  public SSZMutableList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>
         (Bytes32.class, getHistorical_roots_view(), Bytes32View::new, AbstractBasicView::get);
   }
@@ -430,7 +430,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     set(7, eth1_data);
   }
 
-  public SSZListWrite<Eth1Data> getEth1_data_votes() {
+  public SSZMutableList<Eth1Data> getEth1_data_votes() {
     return new SSZBackingList<>
         (Eth1Data.class, getEth1_data_votes_view(), Function.identity(), Function.identity());
   }
@@ -449,7 +449,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   // Registry
-  public SSZListWriteRef<Validator, MutableValidator> getValidators() {
+  public SSZMutableRefList<Validator, MutableValidator> getValidators() {
     return new SSZBackingListRef<>(ValidatorImpl.class, getValidators_view());
   }
 
@@ -458,7 +458,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     return (ListViewWriteRef<Validator, MutableValidator>) getByRef(10);
   }
 
-  public SSZListWrite<UnsignedLong> getBalances() {
+  public SSZMutableList<UnsignedLong> getBalances() {
     return new SSZBackingList<>
         (UnsignedLong.class, getBalances_view(), UInt64View::new, AbstractBasicView::get);
   }
@@ -467,7 +467,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     return (ListViewWrite<UInt64View>) getByRef(11);
   }
 
-  public SSZVectorWrite<Bytes32> getRandao_mixes() {
+  public SSZMutableVector<Bytes32> getRandao_mixes() {
     return new SSZBackingVector<>
         (Bytes32.class, getRandao_mixes_view(), Bytes32View::new, AbstractBasicView::get);
   }
@@ -478,7 +478,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   // Slashings
-  public SSZVectorWrite<UnsignedLong> getSlashings() {
+  public SSZMutableVector<UnsignedLong> getSlashings() {
     return new SSZBackingVector<>
         (UnsignedLong.class, getSlashings_view(), UInt64View::new, AbstractBasicView::get);
   }
@@ -489,7 +489,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
   }
 
   // Attestations
-  public SSZListWrite<PendingAttestation> getPrevious_epoch_attestations() {
+  public SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
     return new SSZBackingList<>
         (PendingAttestation.class, getPrevious_epoch_attestations_view(), Function.identity(), Function.identity());
   }
@@ -499,7 +499,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl> implemen
     return (ListViewWrite<PendingAttestation>) getByRef(14);
   }
 
-  public SSZListWrite<PendingAttestation> getCurrent_epoch_attestations() {
+  public SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
     return new SSZBackingList<>
         (PendingAttestation.class, getCurrent_epoch_attestations_view(), Function.identity(), Function.identity());
   }

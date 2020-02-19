@@ -68,7 +68,8 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -122,7 +123,7 @@ public class BeaconStateUtil {
       Integer cachedIndex = pubKeyToIndexMap.putIfAbsent(pubkey, state.getValidators().size());
       existingIndex = cachedIndex == null ? OptionalInt.empty() : OptionalInt.of(cachedIndex);
     } else {
-      SSZListRead<Validator> validators = state.getValidators();
+      SSZList<Validator> validators = state.getValidators();
       existingIndex =
           IntStream.range(0, validators.size())
               .filter(index -> pubkey.equals(validators.get(index).getPubkey()))
@@ -203,7 +204,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
   public static boolean is_valid_merkle_branch(
-      Bytes32 leaf, List<Bytes32> branch, int depth, int index, Bytes32 root) {
+      Bytes32 leaf, SSZVector<Bytes32> branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
       if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
@@ -246,7 +247,7 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_total_balance(BeaconState state, Collection<Integer> indices) {
     UnsignedLong sum = UnsignedLong.ZERO;
-    SSZListRead<Validator> validator_registry = state.getValidators();
+    SSZList<Validator> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }

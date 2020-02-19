@@ -35,7 +35,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   }
 
   @Override
-  public R set(int index, R value) {
+  public void set(int index, R value) {
     checkArgument(
         index >= 0 && index < type.getMaxLength(),
         "Index out of bounds: %s, size=%s",
@@ -49,7 +49,6 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
                 type.getElementType()
                     .updateTreeNode(oldBytes, index % type.getElementsPerChunk(), value));
     invalidate();
-    return null;
   }
 
   @Override

@@ -44,6 +44,7 @@ import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -186,9 +187,9 @@ public class DeserializationTest {
 
   @Test
   void HistoricalBatchTest() {
-    SSZVector<Bytes32> block_roots =
+    SSZMutableVector<Bytes32> block_roots =
         SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
-    SSZVector<Bytes32> state_roots =
+    SSZMutableVector<Bytes32> state_roots =
         SSZVector.create(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(

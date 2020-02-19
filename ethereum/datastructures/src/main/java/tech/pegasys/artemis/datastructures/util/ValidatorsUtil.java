@@ -21,7 +21,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.SSZListRead;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {
@@ -83,7 +83,7 @@ public class ValidatorsUtil {
         .get(
             epoch,
             e -> {
-              SSZListRead<Validator> validators = state.getValidators();
+              SSZList<Validator> validators = state.getValidators();
               return IntStream.range(0, validators.size())
                   .filter(index -> is_active_validator(validators.get(index), epoch))
                   .boxed()

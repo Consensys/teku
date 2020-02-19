@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomV
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
@@ -35,6 +34,7 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -45,7 +45,7 @@ class BlockProcessorUtilTest {
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup
-    List<DepositWithIndex> deposits = newDeposits(1);
+    SSZList<DepositWithIndex> deposits = newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();
@@ -85,7 +85,7 @@ class BlockProcessorUtilTest {
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup
-    List<DepositWithIndex> deposits = newDeposits(1);
+    SSZList<DepositWithIndex> deposits = newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();
@@ -142,12 +142,12 @@ class BlockProcessorUtilTest {
             Constants.GENESIS_FORK_VERSION,
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
-    SSZList<ValidatorImpl> validatorList =
+    SSZMutableList<ValidatorImpl> validatorList =
         SSZList.create(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             ValidatorImpl.class);
-    SSZList<UnsignedLong> balanceList =
+    SSZMutableList<UnsignedLong> balanceList =
         SSZList.create(
             Arrays.asList(
                 randomUnsignedLong(104), randomUnsignedLong(105), randomUnsignedLong(106)),

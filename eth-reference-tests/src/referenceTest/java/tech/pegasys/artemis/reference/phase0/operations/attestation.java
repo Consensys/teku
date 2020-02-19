@@ -21,8 +21,6 @@ import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.proce
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +31,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class attestation extends TestSuite {
@@ -40,18 +39,14 @@ public class attestation extends TestSuite {
   @ParameterizedTest(name = "{index}. process attestation success")
   @MethodSource({"mainnetAttestationSuccessSetup", "minimalAttestationSuccessSetup"})
   void processAttestationSuccess(Attestation attestation, BeaconStateImpl pre, BeaconStateImpl post) {
-    List<Attestation> attestations = new ArrayList<>();
-    attestations.add(attestation);
-    assertDoesNotThrow(() -> process_attestations(pre, attestations));
+    assertDoesNotThrow(() -> process_attestations(pre, SSZList.singleton(attestation)));
     assertEquals(pre, post);
   }
 
   @ParameterizedTest(name = "{index}. process attestation")
   @MethodSource({"mainnetAttestationSetup", "minimalAttestationSetup"})
   void processAttestation(Attestation attestation, BeaconStateImpl pre) {
-    List<Attestation> attestations = new ArrayList<>();
-    attestations.add(attestation);
-    assertThrows(BlockProcessingException.class, () -> process_attestations(pre, attestations));
+    assertThrows(BlockProcessingException.class, () -> process_attestations(pre, SSZList.singleton(attestation)));
   }
 
   @MustBeClosed

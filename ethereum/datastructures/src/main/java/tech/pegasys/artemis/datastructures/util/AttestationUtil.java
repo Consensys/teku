@@ -136,7 +136,7 @@ public class AttestationUtil {
    */
   public static Boolean is_valid_indexed_attestation(
       BeaconState state, IndexedAttestation indexed_attestation) {
-    List<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
+    SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
     if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
       STDOUT.log(

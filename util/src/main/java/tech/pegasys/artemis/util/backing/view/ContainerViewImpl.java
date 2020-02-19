@@ -79,7 +79,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
   }
 
   @Override
-  public ViewRead set(int index, ViewRead child) {
+  public void set(int index, ViewRead child) {
     checkIndex(index);
     checkArgument(
         child.getType().equals(type.getChildType(index)),
@@ -89,7 +89,6 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
         child.getType());
     backingNode = backingNode.set(type.treeWidth() + index, child.getBackingNode());
     invalidate();
-    return null;
   }
 
   @Override

@@ -3,7 +3,7 @@ package tech.pegasys.artemis.util.SSZTypes;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
-public interface SSZVectorWriteRef<R extends ViewRead, W extends R> extends SSZVectorWrite<R>,
+public interface SSZMutableVectorRef<R extends ViewRead, W extends R> extends SSZMutableVector<R>,
     VectorViewWriteRef<R, W> {
 
   @Override
