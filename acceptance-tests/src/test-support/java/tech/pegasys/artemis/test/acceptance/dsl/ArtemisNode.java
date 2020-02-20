@@ -64,6 +64,7 @@ public class ArtemisNode extends Node {
 
   private final SimpleHttpClient httpClient;
   private final Config config;
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private boolean started = false;
   private Set<File> configFiles;
@@ -157,7 +158,7 @@ public class ArtemisNode extends Node {
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
     final BeaconHead beaconHead =
-        JsonProvider.jsonToObject(
+        jsonProvider.jsonToObject(
             httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
     LOG.debug("Retrieved beacon head: {}", beaconHead);
     return beaconHead;
@@ -165,7 +166,7 @@ public class ArtemisNode extends Node {
 
   private FinalizedCheckpoint getCurrentFinalizedCheckpoint() throws IOException {
     final FinalizedCheckpoint finalizedCheckpoint =
-        JsonProvider.jsonToObject(
+        jsonProvider.jsonToObject(
             httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"),
             FinalizedCheckpoint.class);
     LOG.debug("Retrieved finalized checkpoint: {}", finalizedCheckpoint);
