@@ -49,6 +49,7 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -97,8 +98,7 @@ public class SimpleOffsetSerializer {
     classReflectionInfo.put(
         SignedVoluntaryExit.class, new ReflectionInformation(SignedVoluntaryExit.class));
     classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
-    // TODO
-    //    classReflectionInfo.put(BeaconState.class, new ReflectionInformation(BeaconState.class));
+    classReflectionInfo.put(BeaconStateImpl.class, new ReflectionInformation(BeaconStateImpl.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
     classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
     classReflectionInfo.put(

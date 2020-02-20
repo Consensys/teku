@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -92,6 +93,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
               Checkpoint.TYPE),
           BeaconStateImpl::new);
 
+  @Label("sos-ignore")
   private final TransitionCaches transitionCaches;
 
   // Versioning
@@ -200,7 +202,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
-  BeaconStateImpl(
+  public BeaconStateImpl(
       // Versioning
       UnsignedLong genesis_time,
       UnsignedLong slot,
@@ -260,7 +262,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
     transitionCaches = TransitionCaches.createNewEmpty();
   }
 
-  BeaconStateImpl() {
+  public BeaconStateImpl() {
     super(TYPE);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
@@ -690,5 +692,15 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
         .add("current_justified_checkpoint", getCurrent_justified_checkpoint())
         .add("finalized_checkpoint", getFinalized_checkpoint())
         .toString();
+  }
+
+  @Override
+  public BeaconStateImpl createWritableCopy() {
+    return new BeaconStateImpl(this);
+  }
+
+  @Override
+  public BeaconStateImpl commitChanges() {
+    return new BeaconStateImpl(this);
   }
 }
