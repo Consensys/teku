@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,23 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.sos;
+package tech.pegasys.artemis.provider;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Collections;
-import java.util.List;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 
-public interface SimpleOffsetSerializable {
-  int getSSZFieldCount();
+public class BytesDeserializer extends JsonDeserializer<Bytes> {
 
-  @JsonIgnore
-  default List<Bytes> get_fixed_parts() {
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
-  }
-
-  @JsonIgnore
-  default List<Bytes> get_variable_parts() {
-    return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
+  @Override
+  public Bytes deserialize(JsonParser p, DeserializationContext ctxt)
+      throws IOException, JsonProcessingException {
+    return Bytes.fromHexString(p.getValueAsString());
   }
 }
