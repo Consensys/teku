@@ -69,11 +69,6 @@ public class BeaconChainHeadHandler implements Handler {
     Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
     Checkpoint justifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
 
-    if (finalizedCheckpoint.getRoot() == null || justifiedCheckpoint.getRoot() == null) {
-      ctx.status(SC_NO_CONTENT);
-      return;
-    }
-
     BeaconChainHeadResponse chainHeadResponse =
         new BeaconChainHeadResponse(
             beaconState.getSlot(),

@@ -35,13 +35,13 @@ public class BeaconChainHeadHandlerTest {
   private Context context = mock(Context.class);
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private Store store = mock(Store.class);
-  private BeaconState beaconState = mock(BeaconState.class);
+  private BeaconState beaconState = DataStructureUtil.randomBeaconState(77);
 
-  private Checkpoint finalizedCheckpoint = DataStructureUtil.randomCheckpoint(99);
-  private Checkpoint justifiedCheckpoint = DataStructureUtil.randomCheckpoint(98);
+  private Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
+  private Checkpoint justifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
 
   private final Bytes32 headBlockRoot = DataStructureUtil.randomBytes32(91);
-  private final UnsignedLong headBlockSlot = DataStructureUtil.randomUnsignedLong(92);
+  private final UnsignedLong headBlockSlot = beaconState.getSlot();
   private final UnsignedLong headBlockEpoch = compute_epoch_at_slot(headBlockSlot);
 
   @Test
@@ -50,10 +50,6 @@ public class BeaconChainHeadHandlerTest {
     when(storageClient.getStore()).thenReturn(store);
 
     when(store.getBlockState(headBlockRoot)).thenReturn(beaconState);
-
-    when(beaconState.getSlot()).thenReturn(headBlockSlot);
-    when(beaconState.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
-    when(beaconState.getCurrent_justified_checkpoint()).thenReturn(justifiedCheckpoint);
 
     BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient);
     handler.handle(context);
