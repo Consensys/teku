@@ -47,8 +47,8 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconChainHead;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
-import tech.pegasys.artemis.test.acceptance.dsl.data.FinalizedCheckpoint;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
 
@@ -140,13 +140,10 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForNewFinalization() throws IOException {
-    UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
+    UnsignedLong startingFinalizedEpoch = getChainHead().finalizedEpoch;
     LOG.debug("Wait for finalized block");
     waitFor(
-        () ->
-            assertThat(getCurrentFinalizedCheckpoint().getEpoch())
-                .isNotEqualTo(startingFinalizedEpoch),
-        540);
+        () -> assertThat(getChainHead().finalizedEpoch).isNotEqualTo(startingFinalizedEpoch), 540);
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
@@ -163,13 +160,12 @@ public class ArtemisNode extends Node {
     return beaconHead;
   }
 
-  private FinalizedCheckpoint getCurrentFinalizedCheckpoint() throws IOException {
-    final FinalizedCheckpoint finalizedCheckpoint =
+  private BeaconChainHead getChainHead() throws IOException {
+    final BeaconChainHead beaconChainHead =
         JsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"),
-            FinalizedCheckpoint.class);
-    LOG.debug("Retrieved finalized checkpoint: {}", finalizedCheckpoint);
-    return finalizedCheckpoint;
+            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class);
+    LOG.debug("Retrieved chain head: {}", beaconChainHead);
+    return beaconChainHead;
   }
 
   public File getDatabaseFileFromContainer() throws Exception {
