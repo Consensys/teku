@@ -1,31 +1,60 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 public class Kdf {
-    private CryptoFunction cryptoFunction;
-    private KdfParams params;
-    private String message;
+  private CryptoFunction cryptoFunction;
+  private KdfParam param;
+  private String message;
 
-    @JsonCreator
-    public Kdf(@JsonProperty(value="function", required = true) final CryptoFunction cryptoFunction,
-               @JsonProperty(value="params", required = true) final KdfParams params,
-               @JsonProperty(value="message", required = true) final String message) {
-        this.cryptoFunction = cryptoFunction;
-        this.params = params;
-        this.message = message;
-    }
+  @JsonCreator
+  public Kdf(
+      @JsonProperty(value = "function", required = true) final CryptoFunction cryptoFunction,
+      @JsonProperty(value = "params", required = true)
+          @JsonTypeInfo(
+              use = JsonTypeInfo.Id.NAME,
+              include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
+              property = "function")
+          @JsonSubTypes({
+            @Type(value = SCryptParam.class, name = "scrypt"),
+            @Type(value = Pbkdf2Param.class, name = "pbkdf2")
+          })
+          final KdfParam param,
+      @JsonProperty(value = "message", required = true) final String message) {
+    this.cryptoFunction = cryptoFunction;
+    this.param = param;
+    this.message = message;
+  }
 
-    public CryptoFunction getCryptoFunction() {
-        return cryptoFunction;
-    }
+  @JsonProperty(value = "function")
+  public CryptoFunction getCryptoFunction() {
+    return cryptoFunction;
+  }
 
-    public KdfParams getParams() {
-        return params;
-    }
+  @JsonProperty(value = "params")
+  public KdfParam getParam() {
+    return param;
+  }
 
-    public String getMessage() {
-        return message;
-    }
+  @JsonProperty(value = "message")
+  public String getMessage() {
+    return message;
+  }
 }

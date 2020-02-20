@@ -13,22 +13,10 @@
 
 package tech.pegasys.artemis.util.bls.keystore;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public enum CryptoFunction {
-  SHA256("sha256"),
-  PBKDF2("pbkdf2"),
-  SCRYPT("scrypt"),
-  AES_128_CTR("aes-128-ctr");
-
-  private final String jsonValue;
-
-  CryptoFunction(final String jsonValue) {
-    this.jsonValue = jsonValue;
-  }
-
-  @JsonValue
-  public String getJsonValue() {
-    return this.jsonValue;
-  }
+/** Placeholder for empty params */
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class Param {
+  public Param() {}
 }

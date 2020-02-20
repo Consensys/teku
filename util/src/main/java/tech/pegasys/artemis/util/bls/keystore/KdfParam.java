@@ -13,22 +13,25 @@
 
 package tech.pegasys.artemis.util.bls.keystore;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.tuweni.bytes.Bytes;
 
-public enum CryptoFunction {
-  SHA256("sha256"),
-  PBKDF2("pbkdf2"),
-  SCRYPT("scrypt"),
-  AES_128_CTR("aes-128-ctr");
+public abstract class KdfParam extends Param {
+  private Integer dklen;
+  private Bytes salt;
 
-  private final String jsonValue;
-
-  CryptoFunction(final String jsonValue) {
-    this.jsonValue = jsonValue;
+  public KdfParam(final Integer dklen, final Bytes salt) {
+    this.dklen = dklen;
+    this.salt = salt;
   }
 
-  @JsonValue
-  public String getJsonValue() {
-    return this.jsonValue;
+  @JsonProperty(value = "dklen")
+  public Integer getDklen() {
+    return dklen;
+  }
+
+  @JsonProperty(value = "salt")
+  public Bytes getSalt() {
+    return salt;
   }
 }
