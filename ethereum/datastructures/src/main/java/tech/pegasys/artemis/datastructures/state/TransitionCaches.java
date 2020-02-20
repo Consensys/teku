@@ -104,6 +104,14 @@ public class TransitionCaches {
     return validatorsPubKeys;
   }
 
+  public void invalidate() {
+    activeValidators.clear();
+    beaconProposerIndex.clear();
+    beaconCommittee.clear();
+    totalActiveBalance.clear();
+    validatorsPubKeys.clear();
+  }
+
   /**
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance

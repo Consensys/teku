@@ -36,6 +36,7 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
@@ -110,12 +111,15 @@ public class GenesisGenerator {
 
   public Optional<MutableBeaconState> getGenesisStateIfValid(
       Predicate<BeaconState> validityCriteria) {
-    if (!validityCriteria.test(state)) {
+    MutableBeaconState copy = state.createWritableCopy();
+    BeaconStateCache.getTransitionCaches(copy).invalidate();
+
+    if (!validityCriteria.test(copy)) {
       return Optional.empty();
     }
 
     finalizeState();
-    return Optional.of(state);
+    return Optional.of(copy);
   }
 
   private void finalizeState() {
