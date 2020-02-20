@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
@@ -32,7 +33,7 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  public static final int SSZ_FIELD_COUNT = 2;
+  @JsonIgnore public static final int SSZ_FIELD_COUNT = 2;
 
   private final UnsignedLong epoch;
   private final Bytes32 root;
@@ -48,6 +49,7 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
   }
 
   @Override
+  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }
@@ -104,6 +106,7 @@ public class Checkpoint implements Merkleizable, SimpleOffsetSerializable, SSZCo
     return root;
   }
 
+  @JsonIgnore
   public UnsignedLong getEpochSlot() {
     return compute_start_slot_at_epoch(getEpoch());
   }

@@ -15,9 +15,8 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -26,15 +25,19 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHeadResponse;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconChainHeadHandler implements Handler {
 
   private final ChainStorageClient client;
+  private final JsonProvider jsonProvider;
 
-  public BeaconChainHeadHandler(ChainStorageClient client) {
+  public BeaconChainHeadHandler(ChainStorageClient client, JsonProvider jsonProvider) {
     this.client = client;
+    this.jsonProvider = jsonProvider;
   }
 
   public static final String ROUTE = "/beacon/chainhead";
@@ -54,35 +57,33 @@ public class BeaconChainHeadHandler implements Handler {
             content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
         @OpenApiResponse(
             status = "204",
-            description = "No Content will be returned if any of the block roots are null")
+            description = "No Content will be returned if pre Genesis state")
       })
   @Override
-  public void handle(Context ctx) {
+  public void handle(Context ctx) throws JsonProcessingException {
     Bytes32 head_block_root = client.getBestBlockRoot();
-
-    UnsignedLong head_block_slot = client.getBestSlot();
-    UnsignedLong finalized_epoch = client.getFinalizedEpoch();
-    Bytes32 finalized_root = client.getFinalizedRoot();
-    UnsignedLong justified_epoch = client.getJustifiedEpoch();
-    Bytes32 justified_root = client.getJustifiedRoot();
-
-    if (head_block_root == null || finalized_root == null || justified_root == null) {
+    if (head_block_root == null) {
       ctx.status(SC_NO_CONTENT);
       return;
     }
 
+    // derive all other state from the head_block_root
+    BeaconState beaconState = client.getStore().getBlockState(head_block_root);
+    Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
+    Checkpoint justifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
+
     BeaconChainHeadResponse chainHeadResponse =
         new BeaconChainHeadResponse(
-            head_block_slot,
-            compute_epoch_at_slot(head_block_slot),
+            beaconState.getSlot(),
+            compute_epoch_at_slot(beaconState.getSlot()),
             head_block_root,
-            compute_start_slot_at_epoch(finalized_epoch),
-            finalized_epoch,
-            finalized_root,
-            compute_start_slot_at_epoch(justified_epoch),
-            justified_epoch,
-            justified_root);
+            finalizedCheckpoint.getEpochSlot(),
+            finalizedCheckpoint.getEpoch(),
+            finalizedCheckpoint.getRoot(),
+            justifiedCheckpoint.getEpochSlot(),
+            justifiedCheckpoint.getEpoch(),
+            justifiedCheckpoint.getRoot());
 
-    ctx.result(JsonProvider.objectToJSON(chainHeadResponse));
+    ctx.result(jsonProvider.objectToJSON(chainHeadResponse));
   }
 }

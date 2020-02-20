@@ -47,8 +47,8 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconChainHead;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
-import tech.pegasys.artemis.test.acceptance.dsl.data.FinalizedCheckpoint;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
 
@@ -64,6 +64,7 @@ public class ArtemisNode extends Node {
 
   private final SimpleHttpClient httpClient;
   private final Config config;
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private boolean started = false;
   private Set<File> configFiles;
@@ -140,13 +141,10 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForNewFinalization() throws IOException {
-    UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
+    UnsignedLong startingFinalizedEpoch = getChainHead().finalizedEpoch;
     LOG.debug("Wait for finalized block");
     waitFor(
-        () ->
-            assertThat(getCurrentFinalizedCheckpoint().getEpoch())
-                .isNotEqualTo(startingFinalizedEpoch),
-        540);
+        () -> assertThat(getChainHead().finalizedEpoch).isNotEqualTo(startingFinalizedEpoch), 540);
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
@@ -157,19 +155,18 @@ public class ArtemisNode extends Node {
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
     final BeaconHead beaconHead =
-        JsonProvider.jsonToObject(
+        jsonProvider.jsonToObject(
             httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
     LOG.debug("Retrieved beacon head: {}", beaconHead);
     return beaconHead;
   }
 
-  private FinalizedCheckpoint getCurrentFinalizedCheckpoint() throws IOException {
-    final FinalizedCheckpoint finalizedCheckpoint =
-        JsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"),
-            FinalizedCheckpoint.class);
-    LOG.debug("Retrieved finalized checkpoint: {}", finalizedCheckpoint);
-    return finalizedCheckpoint;
+  private BeaconChainHead getChainHead() throws IOException {
+    final BeaconChainHead beaconChainHead =
+        jsonProvider.jsonToObject(
+            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class);
+    LOG.debug("Retrieved chain head: {}", beaconChainHead);
+    return beaconChainHead;
   }
 
   public File getDatabaseFileFromContainer() throws Exception {
