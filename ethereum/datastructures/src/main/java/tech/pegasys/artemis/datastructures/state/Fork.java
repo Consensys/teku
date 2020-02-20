@@ -129,4 +129,13 @@ public class Fork extends ContainerViewImpl<Fork>
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
   }
+
+  @Override
+  public String toString() {
+    return "Fork{" +
+        "previous_version=" + getPrevious_version() +
+        ", current_version=" + getCurrent_version() +
+        ", epoch=" + getEpoch() +
+        '}';
+  }
 }
