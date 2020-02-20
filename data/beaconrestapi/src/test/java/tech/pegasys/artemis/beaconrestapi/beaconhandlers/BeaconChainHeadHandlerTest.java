@@ -17,45 +17,43 @@ import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHeadResponse;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 
 public class BeaconChainHeadHandlerTest {
   private Context context = mock(Context.class);
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
+  private Store store = mock(Store.class);
+  private BeaconState beaconState = mock(BeaconState.class);
 
-  private final UnsignedLong headBlockSlot = DataStructureUtil.randomUnsignedLong(90);
-  private final UnsignedLong headBlockEpoch = BeaconStateUtil.compute_epoch_at_slot(headBlockSlot);
+  private Checkpoint finalizedCheckpoint = DataStructureUtil.randomCheckpoint(99);
+  private Checkpoint justifiedCheckpoint = DataStructureUtil.randomCheckpoint(98);
+
   private final Bytes32 headBlockRoot = DataStructureUtil.randomBytes32(91);
-
-  private final UnsignedLong finalizedBlockEpoch = DataStructureUtil.randomUnsignedLong(92);
-  private final UnsignedLong finalizedBlockSlot =
-      BeaconStateUtil.compute_start_slot_at_epoch(finalizedBlockEpoch);
-  private final Bytes32 finalizedBlockRoot = DataStructureUtil.randomBytes32(93);
-
-  private final UnsignedLong justifiedBlockEpoch = DataStructureUtil.randomUnsignedLong(94);
-  private final UnsignedLong justifiedBlockSlot =
-      BeaconStateUtil.compute_start_slot_at_epoch(justifiedBlockEpoch);
-  private final Bytes32 justifiedBlockRoot = DataStructureUtil.randomBytes32(95);
+  private final UnsignedLong headBlockSlot = DataStructureUtil.randomUnsignedLong(92);
+  private final UnsignedLong headBlockEpoch = compute_epoch_at_slot(headBlockSlot);
 
   @Test
   public void shouldReturnBeaconChainHeadResponse() throws Exception {
-    when(storageClient.getBestSlot()).thenReturn(headBlockSlot);
     when(storageClient.getBestBlockRoot()).thenReturn(headBlockRoot);
+    when(storageClient.getStore()).thenReturn(store);
 
-    when(storageClient.getFinalizedRoot()).thenReturn(finalizedBlockRoot);
-    when(storageClient.getFinalizedEpoch()).thenReturn(finalizedBlockEpoch);
+    when(store.getBlockState(headBlockRoot)).thenReturn(beaconState);
 
-    when(storageClient.getJustifiedRoot()).thenReturn(justifiedBlockRoot);
-    when(storageClient.getJustifiedEpoch()).thenReturn(justifiedBlockEpoch);
+    when(beaconState.getSlot()).thenReturn(headBlockSlot);
+    when(beaconState.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
+    when(beaconState.getCurrent_justified_checkpoint()).thenReturn(justifiedCheckpoint);
 
     BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient);
     handler.handle(context);
@@ -79,12 +77,12 @@ public class BeaconChainHeadHandlerTest {
             headBlockSlot,
             headBlockEpoch,
             headBlockRoot,
-            finalizedBlockSlot,
-            finalizedBlockEpoch,
-            finalizedBlockRoot,
-            justifiedBlockSlot,
-            justifiedBlockEpoch,
-            justifiedBlockRoot);
+            finalizedCheckpoint.getEpochSlot(),
+            finalizedCheckpoint.getEpoch(),
+            finalizedCheckpoint.getRoot(),
+            justifiedCheckpoint.getEpochSlot(),
+            justifiedCheckpoint.getEpoch(),
+            justifiedCheckpoint.getRoot());
     return response;
   }
 }
