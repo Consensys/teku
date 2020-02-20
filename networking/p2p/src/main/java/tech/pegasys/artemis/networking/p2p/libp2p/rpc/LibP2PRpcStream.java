@@ -25,8 +25,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public class LibP2PRpcStream implements RpcStream {
 
   private final P2PChannel p2pChannel;
-  private ChannelHandlerContext ctx;
-  private AtomicBoolean writeStreamClosed = new AtomicBoolean(false);
+  private final ChannelHandlerContext ctx;
+  private final AtomicBoolean writeStreamClosed = new AtomicBoolean(false);
 
   public LibP2PRpcStream(final P2PChannel p2pChannel, final ChannelHandlerContext ctx) {
     this.p2pChannel = p2pChannel;

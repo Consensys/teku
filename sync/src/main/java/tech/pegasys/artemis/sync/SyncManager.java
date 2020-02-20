@@ -66,7 +66,7 @@ public class SyncManager extends Service {
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    final AsyncRunner asyncRunner = new DelayedExecutorAsyncRunner();
+    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
     return new SyncManager(
         asyncRunner,
         network,
