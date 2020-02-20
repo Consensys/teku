@@ -52,7 +52,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
-            new DelayedExecutorAsyncRunner(),
+            DelayedExecutorAsyncRunner.create(),
             this,
             combinedChainDataClient,
             storageClient,

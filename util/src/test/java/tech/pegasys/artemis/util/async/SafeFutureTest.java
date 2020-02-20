@@ -328,6 +328,28 @@ public class SafeFutureTest {
     assertExceptionallyCompletedWith(target, exception);
   }
 
+  @Test
+  public void fromRunnable_propagatesSuccessfulResult() {
+    final AtomicBoolean runnableWasProcessed = new AtomicBoolean(false);
+    final SafeFuture<Void> future = SafeFuture.fromRunnable(() -> runnableWasProcessed.set(true));
+
+    assertThat(runnableWasProcessed).isTrue();
+    assertThat(future.isDone()).isTrue();
+  }
+
+  @Test
+  public void fromRunnable_propagatesExceptionalResult() {
+    final RuntimeException error = new RuntimeException("whoops");
+    final SafeFuture<Void> future =
+        SafeFuture.fromRunnable(
+            () -> {
+              throw error;
+            });
+
+    assertThat(future).isCompletedExceptionally();
+    assertExceptionallyCompletedWith(future, error);
+  }
+
   private CountingNoOpAppender startCountingReportedUnhandledExceptions() {
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     final Configuration config = ctx.getConfiguration();
@@ -346,7 +368,7 @@ public class SafeFutureTest {
   }
 
   static void assertExceptionallyCompletedWith(
-      final SafeFuture<String> safeFuture, final RuntimeException exception) {
+      final SafeFuture<?> safeFuture, final RuntimeException exception) {
     assertThat(safeFuture).isCompletedExceptionally();
     assertThatThrownBy(safeFuture::join)
         .isInstanceOf(CompletionException.class)

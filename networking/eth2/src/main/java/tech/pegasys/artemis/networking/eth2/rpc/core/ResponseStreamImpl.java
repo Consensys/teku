@@ -16,14 +16,15 @@ package tech.pegasys.artemis.networking.eth2.rpc.core;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Preconditions;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
   private final SafeFuture<Void> completionFuture = new SafeFuture<>();
-  private int receivedResponseCount = 0;
-  private ResponseListener<O> responseListener;
+  private final AtomicInteger receivedResponseCount = new AtomicInteger(0);
+  private volatile ResponseListener<O> responseListener;
 
   @Override
   public SafeFuture<O> expectSingleResponse() {
@@ -61,12 +62,12 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
   public void respond(final O data) {
     checkNotNull(responseListener, "Must call an 'expect' method");
-    receivedResponseCount++;
+    receivedResponseCount.incrementAndGet();
     responseListener.onResponse(data);
   }
 
   public int getResponseChunkCount() {
-    return receivedResponseCount;
+    return receivedResponseCount.get();
   }
 
   public void completeSuccessfully() {
