@@ -30,7 +30,7 @@ public class VersionHandler implements Handler {
   }
 
   public static final String ROUTE = "/node/version/";
-  JsonProvider jsonProvider;
+  private final JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,

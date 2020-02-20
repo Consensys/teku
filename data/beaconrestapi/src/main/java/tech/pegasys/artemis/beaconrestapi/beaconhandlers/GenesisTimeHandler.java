@@ -31,7 +31,7 @@ public class GenesisTimeHandler implements Handler {
   private final Logger LOG = LogManager.getLogger();
   private final JsonProvider jsonProvider;
   public static final String ROUTE = "/node/genesis_time/";
-  ChainStorageClient chainStorageClient;
+  private final ChainStorageClient chainStorageClient;
 
   public GenesisTimeHandler(ChainStorageClient chainStorageClient, JsonProvider jsonProvider) {
     this.chainStorageClient = chainStorageClient;

@@ -27,7 +27,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 public class GenesisTimeHandlerTest {
   private Context context = mock(Context.class);
   private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
-  JsonProvider jsonProvider = new JsonProvider();
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());

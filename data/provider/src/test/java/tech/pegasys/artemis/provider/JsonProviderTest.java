@@ -26,7 +26,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 class JsonProviderTest {
-  JsonProvider jsonProvider = new JsonProvider();
+  private final JsonProvider jsonProvider = new JsonProvider();
   private static final String Q = "\"";
 
   @Test
@@ -42,7 +42,6 @@ class JsonProviderTest {
   @Test
   public void UnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     UnsignedLong data = DataStructureUtil.randomUnsignedLong(1111);
-
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, data.toString());
   }
@@ -56,11 +55,8 @@ class JsonProviderTest {
 
   @Test
   public void stringShouldSerializeToJson() throws JsonProcessingException {
-    JsonProvider provider = new JsonProvider();
-
     String data = "test";
-
-    assertEquals(Q + data + Q, provider.objectToJSON(data));
+    assertEquals(Q + data + Q, jsonProvider.objectToJSON(data));
   }
 
   @Test

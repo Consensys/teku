@@ -49,23 +49,31 @@ public class BeaconRestApi {
   private Javalin app;
   private JsonProvider jsonProvider = new JsonProvider();
 
+  private void initialise(
+      ChainStorageClient chainStorageClient,
+      P2PNetwork<?> p2pNetwork,
+      HistoricalChainData historicalChainData,
+      final int requestedPortNumber) {
+    app.server().setServerPort(requestedPortNumber);
+
+    addNodeHandlers(chainStorageClient);
+    addBeaconHandlers(chainStorageClient, historicalChainData);
+    addNetworkHandlers(p2pNetwork);
+    addValidatorHandlers();
+  }
+
   public BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
       HistoricalChainData historicalChainData,
       final int requestedPortNumber) {
-    this(
-        chainStorageClient,
-        p2pNetwork,
-        historicalChainData,
-        requestedPortNumber,
+    this.app =
         Javalin.create(
             config -> {
-              config.registerPlugin(new OpenApiPlugin(getOpenApiOptions(new JsonProvider())));
+              config.registerPlugin(new OpenApiPlugin(getOpenApiOptions(jsonProvider)));
               config.defaultContentType = "application/json";
-            }));
-    // TODO because of the static function in getOpenAiOptions, had to pass a new jsonProvider here,
-    // which means we have 2 instances of the JsonProvider, not 1.
+            });
+    initialise(chainStorageClient, p2pNetwork, historicalChainData, requestedPortNumber);
   }
 
   BeaconRestApi(
@@ -74,14 +82,8 @@ public class BeaconRestApi {
       HistoricalChainData historicalChainData,
       final int requestedPortNumber,
       Javalin app) {
-
     this.app = app;
-    app.server().setServerPort(requestedPortNumber);
-
-    addNodeHandlers(chainStorageClient);
-    addBeaconHandlers(chainStorageClient, historicalChainData);
-    addNetworkHandlers(p2pNetwork);
-    addValidatorHandlers();
+    initialise(chainStorageClient, p2pNetwork, historicalChainData, requestedPortNumber);
   }
 
   public void start() {

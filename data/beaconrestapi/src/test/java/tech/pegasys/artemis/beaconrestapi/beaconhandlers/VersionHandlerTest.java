@@ -23,7 +23,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class VersionHandlerTest {
   private Context context = mock(Context.class);
-  private JsonProvider jsonProvider = new JsonProvider();
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldReturnVersionString() throws Exception {

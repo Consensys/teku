@@ -29,7 +29,7 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconChainHeadHandlerTest {
-  JsonProvider jsonProvider = new JsonProvider();
+  private final JsonProvider jsonProvider = new JsonProvider();
   private Context context = mock(Context.class);
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
 
