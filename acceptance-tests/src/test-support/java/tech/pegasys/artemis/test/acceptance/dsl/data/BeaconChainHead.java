@@ -19,40 +19,17 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class BeaconChainHead {
-  @JsonProperty("headSlot")
   public final UnsignedLong headSlot;
-
-  @JsonProperty("headEpoch")
   public final UnsignedLong headEpoch;
-
-  @JsonProperty("headBlockRoot")
   public final Bytes32 headBlockRoot;
-
-  @JsonProperty("finalizedSlot")
   public final UnsignedLong finalizedSlot;
-
-  @JsonProperty("finalizedEpoch")
   public final UnsignedLong finalizedEpoch;
-
-  @JsonProperty("finalizedBlockRoot")
   public final Bytes32 finalizedBlockRoot;
-
-  @JsonProperty("justifiedSlot")
   public final UnsignedLong justifiedSlot;
-
-  @JsonProperty("justifiedEpoch")
   public final UnsignedLong justifiedEpoch;
-
-  @JsonProperty("justifiedBlockRoot")
   public final Bytes32 justifiedBlockRoot;
-
-  @JsonProperty("previousJustifiedSlot")
   public final UnsignedLong previousJustifiedSlot;
-
-  @JsonProperty("previousJustifiedEpoch")
   public final UnsignedLong previousJustifiedEpoch;
-
-  @JsonProperty("previousJustifiedBlockRoot")
   public final Bytes32 previousJustifiedBlockRoot;
 
   @JsonCreator
