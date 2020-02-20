@@ -13,9 +13,17 @@
 
 package tech.pegasys.artemis.util.bls.keystore;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static tech.pegasys.artemis.util.bls.keystore.CryptoFunction.PBKDF2;
+import static tech.pegasys.artemis.util.bls.keystore.CryptoFunction.SCRYPT;
+
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class KeyStoreDataJsonTest {
   private static final String sCryptJson =
@@ -135,36 +143,29 @@ class KeyStoreDataJsonTest {
           + "    \"version\": 4\n"
           + "}";
 
-  @Test
-  void parseSCryptTestVector() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {sCryptJson, pbkdf2Json})
+  void validatePasswordOfCryptoTestVectors(final String keyStoreJson) throws Exception {
     final KeyStore keyStore = KeyStoreFactory.loadFromJson(sCryptJson);
     final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
-    Assertions.assertNotNull(keyStoreData);
-    final SCryptParam params = (SCryptParam) keyStoreData.getCrypto().getKdf().getParam();
-    Assertions.assertNotNull(params);
-    Assertions.assertTrue(keyStore.validatePassword("testpassword"));
+    assertNotNull(keyStoreData);
+    final KdfParam param = keyStoreData.getCrypto().getKdf().getParam();
+    assertNotNull(param);
+    if (keyStoreData.getCrypto().getKdf().getCryptoFunction() == SCRYPT) {
+      assertTrue(param instanceof SCryptParam);
+    } else if (keyStoreData.getCrypto().getKdf().getCryptoFunction() == PBKDF2) {
+      assertTrue(param instanceof Pbkdf2Param);
+    } else {
+      fail("Unsupported crypto function");
+    }
+    assertTrue(keyStore.validatePassword("testpassword"));
+    assertFalse(keyStore.validatePassword("test"));
   }
 
-  @Test
-  void parsePbKdf2TestVector() throws Exception {
-    final KeyStore keyStore = KeyStoreFactory.loadFromJson(pbkdf2Json);
-    final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
-    Assertions.assertNotNull(keyStoreData);
-    final Pbkdf2Param params = (Pbkdf2Param) keyStoreData.getCrypto().getKdf().getParam();
-    Assertions.assertNotNull(params);
-    Assertions.assertEquals("hmac-sha256", params.getPrf());
-    Assertions.assertTrue(keyStore.validatePassword("testpassword"));
-  }
-
-  @Test
-  void parseMissingKdfParamsthrowsException() {
+  @ParameterizedTest
+  @ValueSource(strings = {missingKdfParamJson, emptyKdfParams})
+  void loadingKeyStoreWithInvalidKdfParamsThrowsException(final String invalidJson) {
     Assertions.assertThrows(
-        JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(missingKdfParamJson));
-  }
-
-  @Test
-  void parseWithEmptyParamThrowsException() {
-    Assertions.assertThrows(
-        JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(emptyKdfParams));
+        JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(invalidJson));
   }
 }
