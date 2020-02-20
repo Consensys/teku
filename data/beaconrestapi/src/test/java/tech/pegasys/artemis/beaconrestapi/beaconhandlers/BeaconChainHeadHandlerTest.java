@@ -40,6 +40,7 @@ public class BeaconChainHeadHandlerTest {
 
   private Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
   private Checkpoint justifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
+  private Checkpoint previousJustifiedCheckpoint = beaconState.getPrevious_justified_checkpoint();
 
   private final Bytes32 headBlockRoot = DataStructureUtil.randomBytes32(91);
   private final UnsignedLong headBlockSlot = beaconState.getSlot();
@@ -79,7 +80,10 @@ public class BeaconChainHeadHandlerTest {
             finalizedCheckpoint.getRoot(),
             justifiedCheckpoint.getEpochSlot(),
             justifiedCheckpoint.getEpoch(),
-            justifiedCheckpoint.getRoot());
+            justifiedCheckpoint.getRoot(),
+            previousJustifiedCheckpoint.getEpochSlot(),
+            previousJustifiedCheckpoint.getEpoch(),
+            previousJustifiedCheckpoint.getRoot());
     return response;
   }
 }
