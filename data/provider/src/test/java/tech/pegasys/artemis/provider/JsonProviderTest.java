@@ -63,7 +63,7 @@ class JsonProviderTest {
   }
 
   @Test
-  public void sszlistOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
+  public void sszListOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZList<UnsignedLong> data =
         new SSZList<>(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
     String serialized = jsonProvider.objectToJSON(data);
