@@ -43,7 +43,7 @@ public class SSZArrayCollection<T> extends SSZAbstractCollection<T>
   @SuppressWarnings("unchecked")
   SSZArrayCollection(int size, T object) {
     super((Class<? extends T>) object.getClass());
-    this.data = Collections.nCopies(size, object);
+    this.data = new ArrayList<>(Collections.nCopies(size, object));
     this.maxSize = size;
   }
 
