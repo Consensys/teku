@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl.data;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -20,25 +22,30 @@ public class BeaconChainHead {
   public final UnsignedLong headSlot;
   public final UnsignedLong headEpoch;
   public final Bytes32 headBlockRoot;
-
   public final UnsignedLong finalizedSlot;
   public final UnsignedLong finalizedEpoch;
   public final Bytes32 finalizedBlockRoot;
-
   public final UnsignedLong justifiedSlot;
   public final UnsignedLong justifiedEpoch;
   public final Bytes32 justifiedBlockRoot;
+  public final UnsignedLong previousJustifiedSlot;
+  public final UnsignedLong previousJustifiedEpoch;
+  public final Bytes32 previousJustifiedBlockRoot;
 
+  @JsonCreator
   public BeaconChainHead(
-      UnsignedLong headSlot,
-      UnsignedLong headEpoch,
-      Bytes32 headBlockRoot,
-      UnsignedLong finalizedSlot,
-      UnsignedLong finalizedEpoch,
-      Bytes32 finalizedBlockRoot,
-      UnsignedLong justifiedSlot,
-      UnsignedLong justifiedEpoch,
-      Bytes32 justifiedBlockRoot) {
+      @JsonProperty("headSlot") UnsignedLong headSlot,
+      @JsonProperty("headEpoch") UnsignedLong headEpoch,
+      @JsonProperty("headBlockRoot") Bytes32 headBlockRoot,
+      @JsonProperty("finalizedSlot") UnsignedLong finalizedSlot,
+      @JsonProperty("finalizedEpoch") UnsignedLong finalizedEpoch,
+      @JsonProperty("finalizedBlockRoot") Bytes32 finalizedBlockRoot,
+      @JsonProperty("justifiedSlot") UnsignedLong justifiedSlot,
+      @JsonProperty("justifiedEpoch") UnsignedLong justifiedEpoch,
+      @JsonProperty("justifiedBlockRoot") Bytes32 justifiedBlockRoot,
+      @JsonProperty("previousJustifiedSlot") UnsignedLong previousJustifiedSlot,
+      @JsonProperty("previousJustifiedEpoch") UnsignedLong previousJustifiedEpoch,
+      @JsonProperty("previousJustifiedBlockRoot") Bytes32 previousJustifiedBlockRoot) {
     this.headSlot = headSlot;
     this.headEpoch = headEpoch;
     this.headBlockRoot = headBlockRoot;
@@ -50,5 +57,9 @@ public class BeaconChainHead {
     this.justifiedSlot = justifiedSlot;
     this.justifiedEpoch = justifiedEpoch;
     this.justifiedBlockRoot = justifiedBlockRoot;
+
+    this.previousJustifiedSlot = previousJustifiedSlot;
+    this.previousJustifiedEpoch = previousJustifiedEpoch;
+    this.previousJustifiedBlockRoot = previousJustifiedBlockRoot;
   }
 }

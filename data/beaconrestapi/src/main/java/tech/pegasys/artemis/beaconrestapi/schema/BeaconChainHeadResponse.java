@@ -29,6 +29,10 @@ public class BeaconChainHeadResponse {
   public final UnsignedLong justifiedEpoch;
   public final Bytes32 justifiedBlockRoot;
 
+  public final UnsignedLong previousJustifiedSlot;
+  public final UnsignedLong previousJustifiedEpoch;
+  public final Bytes32 previousJustifiedBlockRoot;
+
   public BeaconChainHeadResponse(
       UnsignedLong headSlot,
       UnsignedLong headEpoch,
@@ -38,7 +42,10 @@ public class BeaconChainHeadResponse {
       Bytes32 finalizedBlockRoot,
       UnsignedLong justifiedSlot,
       UnsignedLong justifiedEpoch,
-      Bytes32 justifiedBlockRoot) {
+      Bytes32 justifiedBlockRoot,
+      UnsignedLong previousJustifiedSlot,
+      UnsignedLong previousJustifiedEpoch,
+      Bytes32 previousJustifiedBlockRoot) {
     this.headSlot = headSlot;
     this.headEpoch = headEpoch;
     this.headBlockRoot = headBlockRoot;
@@ -50,5 +57,9 @@ public class BeaconChainHeadResponse {
     this.justifiedSlot = justifiedSlot;
     this.justifiedEpoch = justifiedEpoch;
     this.justifiedBlockRoot = justifiedBlockRoot;
+
+    this.previousJustifiedSlot = previousJustifiedSlot;
+    this.previousJustifiedEpoch = previousJustifiedEpoch;
+    this.previousJustifiedBlockRoot = previousJustifiedBlockRoot;
   }
 }
