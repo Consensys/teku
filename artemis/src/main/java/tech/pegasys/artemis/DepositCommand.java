@@ -56,7 +56,7 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Artemis is licensed under the Apache License 2.0")
+    footer = "Teku is licensed under the Apache License 2.0")
 public class DepositCommand implements Runnable {
 
   @Command(
@@ -70,7 +70,7 @@ public class DepositCommand implements Runnable {
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
-      footer = "Artemis is licensed under the Apache License 2.0")
+      footer = "Teku is licensed under the Apache License 2.0")
   public void generate(
       @Mixin CommonParams params,
       @Option(
@@ -132,7 +132,7 @@ public class DepositCommand implements Runnable {
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
-      footer = "Artemis is licensed under the Apache License 2.0")
+      footer = "Teku is licensed under the Apache License 2.0")
   public void register(
       @Mixin CommonParams params,
       @Option(

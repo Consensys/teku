@@ -13,118 +13,58 @@
 
 package tech.pegasys.artemis.provider;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.primitives.UnsignedLong;
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class JsonProvider {
+  private void addTekuMappers() {
+    SimpleModule module = new SimpleModule("TekuJson", new Version(1, 0, 0, null, null, null));
 
-  private static final Gson gson;
+    module.addDeserializer(Bitvector.class, new BitvectorDeserializer());
+    module.addSerializer(Bitvector.class, new BitvectorSerializer());
 
-  static {
-    ExclusionStrategy strategy =
-        new ExclusionStrategy() {
-          @Override
-          public boolean shouldSkipField(FieldAttributes field) {
-            return BeaconState.class.isAssignableFrom(field.getDeclaringClass());
-          }
+    module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
+    module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
+    module.addDeserializer(BLSSignature.class, new BLSSignatureDeserializer());
+    module.addSerializer(BLSSignature.class, new BLSSignatureSerializer());
 
-          @Override
-          public boolean shouldSkipClass(Class<?> clazz) {
-            return false;
-          }
-        };
-    GsonBuilder builder = new GsonBuilder().addSerializationExclusionStrategy(strategy);
-    builder.registerTypeAdapter(
-        UnsignedLong.class,
-        (JsonSerializer<UnsignedLong>)
-            (src, typeOfSrc, context) -> new JsonPrimitive(src.bigIntegerValue()));
-    builder.registerTypeAdapter(
-        UnsignedLong.class,
-        (JsonDeserializer<UnsignedLong>)
-            (json, typeOfT, context) -> UnsignedLong.valueOf(json.getAsLong()));
+    module.addDeserializer(Bytes4.class, new Bytes4Deserializer());
+    module.addDeserializer(Bytes32.class, new Bytes32Deserializer());
+    module.addDeserializer(Bytes.class, new BytesDeserializer());
+    module.addSerializer(Bytes.class, new BytesSerializer());
 
-    builder.registerTypeAdapter(
-        Bytes.class,
-        (JsonSerializer<Bytes>)
-            (src, typeOfSrc, context) -> new JsonPrimitive(src.toHexString().toLowerCase()));
-    builder.registerTypeAdapter(
-        Bytes.class,
-        (JsonDeserializer<Bytes>)
-            (json, typeOfT, context) -> Bytes.fromHexString(json.getAsString()));
+    module.addDeserializer(UnsignedLong.class, new UnsignedLongDeserializer());
+    module.addSerializer(UnsignedLong.class, new UnsignedLongSerializer());
 
-    builder.registerTypeAdapter(
-        Bytes32.class,
-        (JsonSerializer<Bytes32>)
-            (src, typeOfSrc, context) -> new JsonPrimitive(src.toHexString().toLowerCase()));
-    builder.registerTypeAdapter(
-        Bytes32.class,
-        (JsonDeserializer<Bytes32>)
-            (json, typeOfT, context) -> Bytes32.fromHexString(json.getAsString()));
-
-    builder.registerTypeAdapter(
-        Bytes4.class,
-        (JsonSerializer<Bytes4>)
-            (src, typeOfSrc, context) ->
-                new JsonPrimitive(src.getWrappedBytes().toHexString().toLowerCase()));
-    builder.registerTypeAdapter(
-        Bytes4.class,
-        (JsonDeserializer<Bytes4>)
-            (json, typeOfT, context) -> new Bytes4(Bytes.fromHexString(json.getAsString())));
-
-    builder.registerTypeAdapter(
-        BLSPublicKey.class,
-        (JsonSerializer<BLSPublicKey>)
-            (src, typeOfSrc, context) ->
-                new JsonPrimitive(src.toBytes().toHexString().toLowerCase()));
-    builder.registerTypeAdapter(
-        BLSPublicKey.class,
-        (JsonDeserializer<BLSPublicKey>)
-            (json, typeOfT, context) ->
-                BLSPublicKey.fromBytes(Bytes32.fromHexString(json.getAsString())));
-
-    builder.registerTypeAdapter(
-        Bitvector.class,
-        (JsonSerializer<Bitvector>)
-            (src, typeOfSrc, context) ->
-                new JsonPrimitive(Bytes.wrap(src.getByteArray()).toHexString().toLowerCase()));
-    builder.registerTypeAdapter(
-        Bitvector.class,
-        (JsonDeserializer<Bitvector>)
-            (json, typeOfT, context) -> {
-              Bytes bytes = Bytes.fromHexString(json.getAsString());
-              int length = bytes.bitLength();
-              return Bitvector.fromBytes(bytes, length);
-            });
-
-    builder.registerTypeAdapter(
-        BLSSignature.class,
-        (JsonSerializer<BLSSignature>)
-            (src, typeOfSrc, context) ->
-                new JsonPrimitive(src.toBytes().toHexString().toLowerCase()));
-
-    gson = builder.create();
+    objectMapper.registerModule(module).writer(new DefaultPrettyPrinter());
   }
 
-  private JsonProvider() {}
+  private final ObjectMapper objectMapper;
 
-  public static <T> String objectToJSON(T object) {
-    return gson.toJson(object);
+  public JsonProvider() {
+    objectMapper = new ObjectMapper();
+    addTekuMappers();
   }
 
-  public static <T> T jsonToObject(String json, Class<T> clazz) {
-    return gson.fromJson(json, clazz);
+  public <T> String objectToJSON(T object) throws JsonProcessingException {
+    return objectMapper.writeValueAsString(object);
+  }
+
+  public <T> T jsonToObject(String json, Class<T> clazz) throws JsonProcessingException {
+    return objectMapper.readValue(json, clazz);
+  }
+
+  public ObjectMapper getObjectMapper() {
+    return objectMapper;
   }
 }

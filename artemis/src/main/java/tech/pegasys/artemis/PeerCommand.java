@@ -39,7 +39,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Artemis is licensed under the Apache License 2.0")
+    footer = "Teku is licensed under the Apache License 2.0")
 public class PeerCommand {
 
   @Command(
@@ -52,7 +52,7 @@ public class PeerCommand {
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
-      footer = "Artemis is licensed under the Apache License 2.0")
+      footer = "Teku is licensed under the Apache License 2.0")
   public void generate(
       @Mixin PeerGenerationParams params,
       @Parameters(paramLabel = "number", description = "number of peerIDs to generate") int number)

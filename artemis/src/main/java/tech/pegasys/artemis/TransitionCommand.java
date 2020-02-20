@@ -51,7 +51,7 @@ import tech.pegasys.artemis.util.config.Constants;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Artemis is licensed under the Apache License 2.0")
+    footer = "Teku is licensed under the Apache License 2.0")
 public class TransitionCommand implements Runnable {
 
   @Command(
@@ -64,7 +64,7 @@ public class TransitionCommand implements Runnable {
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
-      footer = "Artemis is licensed under the Apache License 2.0")
+      footer = "Teku is licensed under the Apache License 2.0")
   public void blocks(
       @Mixin InAndOutParams params,
       @Parameters(paramLabel = "block", description = "Files to read blocks from")
@@ -92,7 +92,7 @@ public class TransitionCommand implements Runnable {
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
-      footer = "Artemis is licensed under the Apache License 2.0")
+      footer = "Teku is licensed under the Apache License 2.0")
   public void slots(
       @Mixin InAndOutParams params,
       @Option(

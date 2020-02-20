@@ -18,6 +18,7 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import io.javalin.Javalin;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
@@ -28,7 +29,6 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
@@ -46,22 +46,33 @@ public class BeaconRestApi {
 
   private List<BeaconRestApiHandler> handlers = new ArrayList<>();
   private Javalin app;
+  private JsonProvider jsonProvider = new JsonProvider();
+
+  private void initialise(
+      ChainStorageClient chainStorageClient,
+      P2PNetwork<?> p2pNetwork,
+      HistoricalChainData historicalChainData,
+      final int requestedPortNumber) {
+    app.server().setServerPort(requestedPortNumber);
+
+    addNodeHandlers(chainStorageClient);
+    addBeaconHandlers(chainStorageClient, historicalChainData);
+    addNetworkHandlers(p2pNetwork);
+    addValidatorHandlers();
+  }
 
   public BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
       HistoricalChainData historicalChainData,
       final int requestedPortNumber) {
-    this(
-        chainStorageClient,
-        p2pNetwork,
-        historicalChainData,
-        requestedPortNumber,
+    this.app =
         Javalin.create(
             config -> {
-              config.registerPlugin(new OpenApiPlugin(getOpenApiOptions()));
+              config.registerPlugin(new OpenApiPlugin(getOpenApiOptions(jsonProvider)));
               config.defaultContentType = "application/json";
-            }));
+            });
+    initialise(chainStorageClient, p2pNetwork, historicalChainData, requestedPortNumber);
   }
 
   BeaconRestApi(
@@ -70,14 +81,8 @@ public class BeaconRestApi {
       HistoricalChainData historicalChainData,
       final int requestedPortNumber,
       Javalin app) {
-
     this.app = app;
-    app.server().setServerPort(requestedPortNumber);
-
-    addNodeHandlers(chainStorageClient);
-    addBeaconHandlers(chainStorageClient, historicalChainData);
-    addNetworkHandlers(p2pNetwork);
-    addValidatorHandlers();
+    initialise(chainStorageClient, p2pNetwork, historicalChainData, requestedPortNumber);
   }
 
   public void start() {
@@ -89,16 +94,19 @@ public class BeaconRestApi {
                   ctx.contentType("application/json");
                   final Object response = handler.handleRequest(new RequestParams(ctx));
                   if (response != null) {
-                    ctx.result(JsonProvider.objectToJSON(response));
+                    ctx.result(jsonProvider.objectToJSON(response));
                   } else {
-                    ctx.status(SC_NOT_FOUND).result(JsonProvider.objectToJSON("Not found"));
+                    ctx.status(SC_NOT_FOUND).result(jsonProvider.objectToJSON("Not found"));
                   }
                 }));
 
     app.start();
   }
 
-  private static OpenApiOptions getOpenApiOptions() {
+  private static OpenApiOptions getOpenApiOptions(JsonProvider jsonProvider) {
+    JacksonModelConverterFactory factory =
+        new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
+
     Info applicationInfo =
         new Info()
             .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
@@ -112,6 +120,8 @@ public class BeaconRestApi {
                     .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
     OpenApiOptions options =
         new OpenApiOptions(applicationInfo)
+            //            .jacksonMapper(factory.getObjectMapper())
+            .modelConverterFactory(factory)
             .path("/swagger-docs")
             .swagger(new SwaggerOptions("/swagger-ui"));
     // TODO: allow swagger-ui to be turned off - ideally still leave swagger-docs, just dont add the
@@ -120,8 +130,8 @@ public class BeaconRestApi {
   }
 
   private void addNodeHandlers(ChainStorageClient chainStorageClient) {
-    app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient));
-    app.get(VersionHandler.ROUTE, new VersionHandler());
+    app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient, jsonProvider));
+    app.get(VersionHandler.ROUTE, new VersionHandler(jsonProvider));
     /*
      * TODO:
      *    /node/syncing
@@ -132,12 +142,12 @@ public class BeaconRestApi {
 
   private void addBeaconHandlers(
       ChainStorageClient chainStorageClient, HistoricalChainData historicalChainData) {
-    app.get(FinalizedCheckpointHandler.ROUTE, new FinalizedCheckpointHandler(chainStorageClient));
+    app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainStorageClient, jsonProvider));
+    app.get(
+        BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
     // TODO: not in Minimal or optional specified set - some are similar to lighthouse
     // implementation
     handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
-    handlers.add(new BeaconChainHeadHandler(chainStorageClient));
-    handlers.add(new BeaconHeadHandler(chainStorageClient));
     handlers.add(new BeaconStateHandler(chainStorageClient));
   }
 
@@ -153,11 +163,11 @@ public class BeaconRestApi {
   }
 
   private void addNetworkHandlers(P2PNetwork<?> p2pNetwork) {
-    app.get(PeerIdHandler.ROUTE, new PeerIdHandler(p2pNetwork));
+    app.get(PeerIdHandler.ROUTE, new PeerIdHandler(p2pNetwork, jsonProvider));
+    app.get(PeersHandler.ROUTE, new PeersHandler(p2pNetwork, jsonProvider));
 
     // not in Minimal or optional specified set
     handlers.add(new ENRHandler());
-    handlers.add(new PeersHandler(p2pNetwork));
   }
 
   public void stop() {

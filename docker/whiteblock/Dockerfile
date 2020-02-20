@@ -6,12 +6,12 @@ RUN apt-get update && \
     software-properties-common openssh-server
 
 WORKDIR /
-ENV PATH="/opt/artemis/bin/:${PATH}"
+ENV PATH="/opt/teku/bin/:${PATH}"
 
 ENTRYPOINT ["/bin/bash"]
 
 COPY scripts /opt/whiteblock/scripts
 COPY config /opt/whiteblock/config
 COPY start.sh /launch/start.sh
-COPY artemis /opt/artemis
+COPY teku /opt/teku
 

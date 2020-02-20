@@ -29,9 +29,11 @@ import tech.pegasys.artemis.storage.Store;
 public class FinalizedCheckpointHandler implements Handler {
 
   private final ChainStorageClient client;
+  private final JsonProvider jsonProvider;
 
-  public FinalizedCheckpointHandler(ChainStorageClient client) {
+  public FinalizedCheckpointHandler(ChainStorageClient client, JsonProvider jsonProvider) {
     this.client = client;
+    this.jsonProvider = jsonProvider;
   }
 
   public static final String ROUTE = "/beacon/finalized_checkpoint";
@@ -54,6 +56,6 @@ public class FinalizedCheckpointHandler implements Handler {
       return;
     }
     Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
-    ctx.result(JsonProvider.objectToJSON(finalizedCheckpoint));
+    ctx.result(jsonProvider.objectToJSON(finalizedCheckpoint));
   }
 }
