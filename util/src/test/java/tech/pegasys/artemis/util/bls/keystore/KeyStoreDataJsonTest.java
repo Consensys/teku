@@ -146,7 +146,7 @@ class KeyStoreDataJsonTest {
   @ParameterizedTest
   @ValueSource(strings = {sCryptJson, pbkdf2Json})
   void validatePasswordOfCryptoTestVectors(final String keyStoreJson) throws Exception {
-    final KeyStore keyStore = KeyStoreFactory.loadFromJson(sCryptJson);
+    final KeyStore keyStore = KeyStoreFactory.loadFromJson(keyStoreJson);
     final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
     assertNotNull(keyStoreData);
     final KdfParam param = keyStoreData.getCrypto().getKdf().getParam();
