@@ -74,6 +74,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
+  static SafeFuture<Void> fromRunnable(final Runnable action) {
+    try {
+      action.run();
+      return SafeFuture.COMPLETE;
+    } catch (Throwable t) {
+      return SafeFuture.failedFuture(t);
+    }
+  }
+
   public static <U> SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
     return of(CompletableFuture.allOf(futures));
   }

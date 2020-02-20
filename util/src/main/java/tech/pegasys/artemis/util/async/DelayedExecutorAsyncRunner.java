@@ -15,15 +15,43 @@ package tech.pegasys.artemis.util.async;
 
 import static tech.pegasys.artemis.util.async.SafeFuture.propagateResult;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 public class DelayedExecutorAsyncRunner implements AsyncRunner {
+  private final ExecutorFactory executorFactory;
+
+  private DelayedExecutorAsyncRunner(ExecutorFactory executorFactory) {
+    this.executorFactory = executorFactory;
+  }
+
+  public static DelayedExecutorAsyncRunner create() {
+    return new DelayedExecutorAsyncRunner(CompletableFuture::delayedExecutor);
+  }
+
+  public static DelayedExecutorAsyncRunner create(Executor executor) {
+    return new DelayedExecutorAsyncRunner(
+        (delay, unit) -> CompletableFuture.delayedExecutor(delay, unit, executor));
+  }
 
   @Override
-  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
+  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
+    final Executor executor = getAsyncExecutor();
+    return runAsync(action, executor);
+  }
+
+  @Override
+  public <U> SafeFuture<U> runAfterDelay(
+      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
+    final Executor executor = getDelayedExecutor(delayAmount, delayUnit);
+    return runAsync(action, executor);
+  }
+
+  @VisibleForTesting
+  <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
     final SafeFuture<U> result = new SafeFuture<>();
     try {
       executor.execute(() -> propagateResult(action.get(), result));
@@ -33,10 +61,15 @@ public class DelayedExecutorAsyncRunner implements AsyncRunner {
     return result;
   }
 
-  @Override
-  public <U> SafeFuture<U> runAfterDelay(
-      Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
-    Executor delayed = CompletableFuture.delayedExecutor(delayAmount, delayUnit);
-    return runAsync(action, delayed);
+  private Executor getAsyncExecutor() {
+    return getDelayedExecutor(-1, TimeUnit.SECONDS);
+  }
+
+  protected Executor getDelayedExecutor(long delayAmount, TimeUnit delayUnit) {
+    return executorFactory.create(delayAmount, delayUnit);
+  }
+
+  private interface ExecutorFactory {
+    Executor create(long delayAmount, TimeUnit delayUnit);
   }
 }

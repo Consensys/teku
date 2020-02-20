@@ -134,12 +134,22 @@ public class Eth1DataCache {
   }
 
   UnsignedLong getSpecRangeLowerBound() {
-    return currentVotingPeriodStartTime.minus(
+    return secondsBeforeCurrentVotingPeriodStartTime(
         ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
   }
 
   UnsignedLong getSpecRangeUpperBound() {
-    return currentVotingPeriodStartTime.minus(ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
+    return secondsBeforeCurrentVotingPeriodStartTime(
+        ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
+  }
+
+  private UnsignedLong secondsBeforeCurrentVotingPeriodStartTime(
+      final UnsignedLong valueToSubtract) {
+    if (currentVotingPeriodStartTime.compareTo(valueToSubtract) > 0) {
+      return currentVotingPeriodStartTime.minus(valueToSubtract);
+    } else {
+      return UnsignedLong.ZERO;
+    }
   }
 
   private UnsignedLong computeTimeAtSlot(UnsignedLong slot) {
