@@ -32,6 +32,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
@@ -67,7 +68,7 @@ class BlockProcessorUtilTest {
         beaconState.getBalances().size() == (originalValidatorBalancesSize + 1),
         "No balance was added to the validator balances.");
     assertEquals(
-        new ValidatorImpl(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -92,8 +93,8 @@ class BlockProcessorUtilTest {
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = deposit.getData().getAmount();
 
-    ValidatorImpl knownValidator =
-        new ValidatorImpl(
+    Validator knownValidator =
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -128,12 +129,12 @@ class BlockProcessorUtilTest {
     return createBeaconState(false, null, null);
   }
 
-  private BeaconState createBeaconState(UnsignedLong amount, ValidatorImpl knownValidator) {
+  private BeaconState createBeaconState(UnsignedLong amount, Validator knownValidator) {
     return createBeaconState(true, amount, knownValidator);
   }
 
   private BeaconState createBeaconState(
-      boolean addToList, UnsignedLong amount, ValidatorImpl knownValidator) {
+      boolean addToList, UnsignedLong amount, Validator knownValidator) {
     MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
@@ -142,7 +143,7 @@ class BlockProcessorUtilTest {
             Constants.GENESIS_FORK_VERSION,
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
-    SSZMutableList<ValidatorImpl> validatorList =
+    SSZMutableList<Validator> validatorList =
         SSZList.create(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,

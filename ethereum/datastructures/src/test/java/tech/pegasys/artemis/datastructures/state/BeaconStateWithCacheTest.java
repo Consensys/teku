@@ -84,11 +84,11 @@ class BeaconStateWithCacheTest {
     BeaconStateWithCache state = (BeaconStateWithCache) newState(1);
 
     // Test validator registry
-    ArrayList<ValidatorImpl> new_records =
+    ArrayList<Validator> new_records =
         new ArrayList<>(
             Collections.nCopies(
                 12,
-                new ValidatorImpl(
+                Validator.create(
                     BLSPublicKey.empty(),
                     Bytes32.ZERO,
                     UnsignedLong.ZERO,

@@ -21,10 +21,41 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class ValidatorTest {
+
+  public static Validator validatorFromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            Validator.create(
+                BLSPublicKey.fromBytes(reader.readFixedBytes(48)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                reader.readBoolean(),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
+  }
+
+  public static Bytes validatorToBytes(Validator v) {
+    return SSZ.encode(
+        writer -> {
+          writer.writeFixedBytes(v.getPubkey().toBytes());
+          writer.writeFixedBytes(v.getWithdrawal_credentials());
+          writer.writeUInt64(v.getEffective_balance().longValue());
+          writer.writeBoolean(v.isSlashed());
+          writer.writeUInt64(v.getActivation_eligibility_epoch().longValue());
+          writer.writeUInt64(v.getActivation_epoch().longValue());
+          writer.writeUInt64(v.getExit_epoch().longValue());
+          writer.writeUInt64(v.getWithdrawable_epoch().longValue());
+        });
+  }
+
   private int seed = 100;
   private BLSPublicKey pubkey = BLSPublicKey.random(seed);
   private Bytes32 withdrawalCredentials = randomBytes32(seed++);
@@ -35,8 +66,8 @@ class ValidatorTest {
   private boolean slashed = false;
   private UnsignedLong effectiveBalance = randomUnsignedLong(seed++);
 
-  private ValidatorImpl validator =
-      new ValidatorImpl(
+  private Validator validator =
+      Validator.create(
           pubkey,
           withdrawalCredentials,
           effectiveBalance,
@@ -48,15 +79,15 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsTrueWhenObjectAreSame() {
-    ValidatorImpl testValidator = validator;
+    Validator testValidator = validator;
 
     assertEquals(validator, testValidator);
   }
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    ValidatorImpl testValidator =
-        new ValidatorImpl(
+    Validator testValidator =
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -75,8 +106,8 @@ class ValidatorTest {
     while (pubkey.equals(differentPublicKey)) {
       differentPublicKey = BLSPublicKey.random();
     }
-    ValidatorImpl testValidator =
-        new ValidatorImpl(
+    Validator testValidator =
+        Validator.create(
             differentPublicKey,
             withdrawalCredentials,
             effectiveBalance,
@@ -91,8 +122,8 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenWithdrawalCredentialsAreDifferent() {
-    ValidatorImpl testValidator =
-        new ValidatorImpl(
+    Validator testValidator =
+        Validator.create(
             pubkey,
             withdrawalCredentials.not(),
             effectiveBalance,
@@ -107,8 +138,8 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenActivationEpochsAreDifferent() {
-    ValidatorImpl testValidator =
-        new ValidatorImpl(
+    Validator testValidator =
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -123,8 +154,8 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenExitEpochsAreDifferent() {
-    ValidatorImpl testValidator =
-        new ValidatorImpl(
+    Validator testValidator =
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -139,8 +170,8 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenWithdrawalEpochsAreDifferent() {
-    ValidatorImpl testValidator =
-        new ValidatorImpl(
+    Validator testValidator =
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -155,8 +186,8 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenInitiatedExitIsDifferent() {
-    ValidatorImpl testValidator =
-        new ValidatorImpl(
+    Validator testValidator =
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -171,7 +202,7 @@ class ValidatorTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszValidatorBytes = validator.toBytes();
-    assertEquals(validator, ValidatorImpl.fromBytes(sszValidatorBytes));
+    Bytes sszValidatorBytes = validatorToBytes(validator);
+    assertEquals(validator, validatorFromBytes(sszValidatorBytes));
   }
 }

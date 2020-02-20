@@ -65,7 +65,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -161,7 +160,7 @@ public class BeaconStateUtil {
       state
           .getValidators()
           .add(
-              new ValidatorImpl(
+              Validator.create(
                   pubkey,
                   deposit.getData().getWithdrawal_credentials(),
                   min(

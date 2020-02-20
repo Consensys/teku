@@ -47,6 +47,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
@@ -258,7 +259,7 @@ public class MapObjectUtil {
             Eth1Data.class);
     UnsignedLong eth1_deposit_index =
         UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
-    SSZList<ValidatorImpl> validators =
+    SSZList<Validator> validators =
         SSZList.create(
             ((List<Map>) map.get("validators"))
                 .stream().map(e -> getValidator(e)).collect(Collectors.toList()),
@@ -350,7 +351,7 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"rawtypes"})
-  private static ValidatorImpl getValidator(Map map) {
+  private static Validator getValidator(Map map) {
     BLSPublicKey pubkey = BLSPublicKey.fromBytes(Bytes.fromHexString(map.get("pubkey").toString()));
     Bytes32 withdrawal_credentials =
         Bytes32.fromHexString(map.get("withdrawal_credentials").toString());
@@ -363,7 +364,7 @@ public class MapObjectUtil {
     UnsignedLong withdrawable_epoch =
         UnsignedLong.valueOf(map.get("withdrawable_epoch").toString());
 
-    return new ValidatorImpl(
+    return Validator.create(
         pubkey,
         withdrawal_credentials,
         effective_balance,

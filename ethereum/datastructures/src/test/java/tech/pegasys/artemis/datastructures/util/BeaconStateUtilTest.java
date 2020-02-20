@@ -43,6 +43,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -275,7 +276,7 @@ class BeaconStateUtilTest {
   }
 
   private BeaconState createBeaconState(
-      boolean addToList, UnsignedLong amount, ValidatorImpl knownValidator) {
+      boolean addToList, UnsignedLong amount, Validator knownValidator) {
     MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
@@ -284,7 +285,7 @@ class BeaconStateUtilTest {
             Constants.GENESIS_FORK_VERSION,
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
-    List<ValidatorImpl> validatorList =
+    List<Validator> validatorList =
         new ArrayList<>(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)));
     List<UnsignedLong> balanceList =

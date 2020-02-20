@@ -91,7 +91,7 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
     super(type, backingNode);
   }
 
-  public ValidatorImpl(
+  ValidatorImpl(
       BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
       UnsignedLong effective_balance,
@@ -112,11 +112,11 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
         new UInt64View(withdrawable_epoch));
   }
 
-  public ValidatorImpl(ValidatorImpl validator) {
+  ValidatorImpl(ValidatorImpl validator) {
     super(TYPE, validator.getBackingNode());
   }
 
-  public ValidatorImpl() {
+  ValidatorImpl() {
     super(TYPE);
   }
 
@@ -144,35 +144,6 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
             SSZ.encodeUInt64(getExit_epoch().longValue()),
             SSZ.encodeUInt64(getWithdrawable_epoch().longValue())));
     return fixedPartsList;
-  }
-
-  public static ValidatorImpl fromBytes(Bytes bytes) {
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new ValidatorImpl(
-                BLSPublicKey.fromBytes(reader.readFixedBytes(48)),
-                Bytes32.wrap(reader.readFixedBytes(32)),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                reader.readBoolean(),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64()),
-                UnsignedLong.fromLongBits(reader.readUInt64())));
-  }
-
-  public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeFixedBytes(getPubkey().toBytes());
-          writer.writeFixedBytes(getWithdrawal_credentials());
-          writer.writeUInt64(getEffective_balance().longValue());
-          writer.writeBoolean(isSlashed());
-          writer.writeUInt64(getActivation_eligibility_epoch().longValue());
-          writer.writeUInt64(getActivation_epoch().longValue());
-          writer.writeUInt64(getExit_epoch().longValue());
-          writer.writeUInt64(getWithdrawable_epoch().longValue());
-        });
   }
 
   @Override

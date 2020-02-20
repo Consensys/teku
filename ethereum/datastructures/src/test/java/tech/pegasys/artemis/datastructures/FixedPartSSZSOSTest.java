@@ -21,19 +21,34 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.blocks.Eth1DataVote;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 @SuppressWarnings("unused")
 class FixedPartSSZSOSTest {
+
+  public static Bytes validatorToBytes(Validator v) {
+    return SSZ.encode(
+        writer -> {
+          writer.writeFixedBytes(v.getPubkey().toBytes());
+          writer.writeFixedBytes(v.getWithdrawal_credentials());
+          writer.writeUInt64(v.getEffective_balance().longValue());
+          writer.writeBoolean(v.isSlashed());
+          writer.writeUInt64(v.getActivation_eligibility_epoch().longValue());
+          writer.writeUInt64(v.getActivation_epoch().longValue());
+          writer.writeUInt64(v.getExit_epoch().longValue());
+          writer.writeUInt64(v.getWithdrawable_epoch().longValue());
+        });
+  }
 
   @Test
   void testBLSPubkeySOS() {
@@ -97,8 +112,8 @@ class FixedPartSSZSOSTest {
     UnsignedLong exit_epoch = randomUnsignedLong(103);
     UnsignedLong withdrawable_epoch = randomUnsignedLong(104);
 
-    ValidatorImpl validator =
-        new ValidatorImpl(
+    Validator validator =
+        Validator.create(
             pubkey,
             withdrawal_credentials,
             effective_balance,
@@ -108,7 +123,7 @@ class FixedPartSSZSOSTest {
             exit_epoch,
             withdrawable_epoch);
 
-    Bytes sszValidatorBytes = validator.toBytes();
+    Bytes sszValidatorBytes = validatorToBytes(validator);
     Bytes sosValidatorBytes = SimpleOffsetSerializer.serialize(validator);
 
     assertEquals(sszValidatorBytes, sosValidatorBytes);

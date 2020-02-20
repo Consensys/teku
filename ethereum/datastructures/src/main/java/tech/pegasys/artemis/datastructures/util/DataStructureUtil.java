@@ -47,6 +47,7 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
@@ -81,7 +82,7 @@ public final class DataStructureUtil {
   }
 
   public static <T> SSZList<T> randomSSZList(
-      Class<T> classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
+      Class<? extends T> classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
     SSZMutableList<T> sszList = SSZList.create(classInfo, maxSize);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems).forEach(i -> sszList.add(randomFunction.apply(seed)));
@@ -341,8 +342,8 @@ public final class DataStructureUtil {
     return deposits;
   }
 
-  public static ValidatorImpl randomValidator(int seed) {
-    return new ValidatorImpl(
+  public static Validator randomValidator(int seed) {
+    return Validator.create(
         randomPublicKey(seed),
         randomBytes32(seed++),
         UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),

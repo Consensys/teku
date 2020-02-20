@@ -215,7 +215,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
       UnsignedLong eth1_deposit_index,
 
       // Registry
-      SSZList<ValidatorImpl> validators,
+      SSZList<? extends Validator> validators,
       SSZList<UnsignedLong> balances,
 
       // Randomness
