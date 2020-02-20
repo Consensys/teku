@@ -55,11 +55,11 @@ import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
 public class ArtemisNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/artemis:develop";
+  public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/teku:develop";
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.toml";
   protected static final String ARTIFACTS_PATH = "/artifacts/";
-  private static final String DATABASE_PATH = ARTIFACTS_PATH + "artemis.db";
+  private static final String DATABASE_PATH = ARTIFACTS_PATH + "teku.db";
   private static final int P2P_PORT = 9000;
 
   private final SimpleHttpClient httpClient;

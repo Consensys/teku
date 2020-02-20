@@ -40,7 +40,7 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Artemis is licensed under the Apache License 2.0")
+    footer = "Teku is licensed under the Apache License 2.0")
 public class GenesisCommand {
 
   @Command(
@@ -53,7 +53,7 @@ public class GenesisCommand {
       descriptionHeading = "%nDescription:%n%n",
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
-      footer = "Artemis is licensed under the Apache License 2.0")
+      footer = "Teku is licensed under the Apache License 2.0")
   public void generate(@Mixin MockGenesisParams params) throws IOException {
     // Output to stdout if no file is specified
     final boolean outputToFile = params.outputFile != null && !params.outputFile.isBlank();

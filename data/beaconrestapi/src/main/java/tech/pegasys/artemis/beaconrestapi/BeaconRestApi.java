@@ -168,10 +168,10 @@ public class BeaconRestApi {
 
   private void addNetworkHandlers(P2PNetwork<?> p2pNetwork) {
     app.get(PeerIdHandler.ROUTE, new PeerIdHandler(p2pNetwork, jsonProvider));
+    app.get(PeersHandler.ROUTE, new PeersHandler(p2pNetwork, jsonProvider));
 
     // not in Minimal or optional specified set
     handlers.add(new ENRHandler());
-    handlers.add(new PeersHandler(p2pNetwork));
   }
 
   public void stop() {

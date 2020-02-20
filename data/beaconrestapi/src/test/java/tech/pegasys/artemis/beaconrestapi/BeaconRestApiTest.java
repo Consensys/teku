@@ -27,6 +27,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHand
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
+import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 class BeaconRestApiTest {
@@ -74,5 +75,13 @@ class BeaconRestApiTest {
     new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
     verify(app).get(eq(FinalizedCheckpointHandler.ROUTE), any(FinalizedCheckpointHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHavePeersEndpoint() {
+    when(app.server()).thenReturn(server);
+    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
+
+    verify(app).get(eq(PeersHandler.ROUTE), any(PeersHandler.class));
   }
 }
