@@ -29,7 +29,6 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
@@ -143,9 +142,6 @@ public class BeaconRestApi {
 
   private void addBeaconHandlers(
       ChainStorageClient chainStorageClient, HistoricalChainData historicalChainData) {
-    app.get(
-        FinalizedCheckpointHandler.ROUTE,
-        new FinalizedCheckpointHandler(chainStorageClient, jsonProvider));
     app.get(
         BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
     // TODO: not in Minimal or optional specified set - some are similar to lighthouse
