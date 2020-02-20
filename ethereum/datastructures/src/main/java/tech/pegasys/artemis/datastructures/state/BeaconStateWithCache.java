@@ -16,7 +16,6 @@ package tech.pegasys.artemis.datastructures.state;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 
 @JsonIgnoreType
-public final class BeaconStateWithCache extends BeaconState {
 public final class BeaconStateWithCache extends BeaconStateImpl {
 
   private final TransitionCaches transitionCaches;
