@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import java.util.UUID;
 import org.apache.tuweni.bytes.Bytes;
 
@@ -60,5 +61,16 @@ public class KeyStoreData {
 
   public Integer getVersion() {
     return version;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("crypto", crypto)
+        .add("pubkey", pubkey)
+        .add("path", path)
+        .add("uuid", uuid)
+        .add("version", version)
+        .toString();
   }
 }

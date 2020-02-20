@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Cipher {
@@ -45,5 +46,14 @@ public class Cipher {
   @JsonProperty(value = "message")
   public Bytes getMessage() {
     return message;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("function", cryptoFunction)
+        .add("params", cipherParam)
+        .add("message", message)
+        .toString();
   }
 }

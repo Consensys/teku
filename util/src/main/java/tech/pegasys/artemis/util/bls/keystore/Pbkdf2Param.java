@@ -15,12 +15,9 @@ package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
-// Required because base class' usage of custom deserializer which produces an infinite loop
-@JsonDeserialize(using = JsonDeserializer.None.class)
 public class Pbkdf2Param extends KdfParam {
   private Integer iterativeCount;
   private String prf;
@@ -44,5 +41,15 @@ public class Pbkdf2Param extends KdfParam {
   @JsonProperty(value = "prf")
   public String getPrf() {
     return prf;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("dklen", getDerivedKeyLength())
+        .add("c", iterativeCount)
+        .add("prf", prf)
+        .add("salt", getSalt())
+        .toString();
   }
 }

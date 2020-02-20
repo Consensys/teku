@@ -15,12 +15,9 @@ package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
-// Required because base class' usage of custom deserializer which produces an infinite loop
-@JsonDeserialize(using = JsonDeserializer.None.class)
 public class SCryptParam extends KdfParam {
   private Integer n;
   private Integer p;
@@ -52,5 +49,16 @@ public class SCryptParam extends KdfParam {
   @JsonProperty(value = "r")
   public Integer getR() {
     return r;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("dklen", getDerivedKeyLength())
+        .add("n", n)
+        .add("p", p)
+        .add("r", r)
+        .add("salt", getSalt())
+        .toString();
   }
 }

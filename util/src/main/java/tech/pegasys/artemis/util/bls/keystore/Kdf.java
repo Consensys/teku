@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.base.MoreObjects;
 
 public class Kdf {
   private CryptoFunction cryptoFunction;
@@ -56,5 +57,14 @@ public class Kdf {
   @JsonProperty(value = "message")
   public String getMessage() {
     return message;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("function", cryptoFunction)
+        .add("params", param)
+        .add("message", message)
+        .toString();
   }
 }

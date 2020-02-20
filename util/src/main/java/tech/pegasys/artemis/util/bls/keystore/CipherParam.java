@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class CipherParam extends Param {
@@ -29,5 +30,10 @@ public class CipherParam extends Param {
   @JsonProperty(value = "iv")
   public Bytes getInitializationVector() {
     return initializationVector;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("iv", initializationVector).toString();
   }
 }

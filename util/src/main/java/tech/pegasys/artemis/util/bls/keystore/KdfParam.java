@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public abstract class KdfParam extends Param {
@@ -33,5 +34,10 @@ public abstract class KdfParam extends Param {
   @JsonProperty(value = "salt")
   public Bytes getSalt() {
     return salt;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this).add("dklen", dklen).add("salt", salt).toString();
   }
 }

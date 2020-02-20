@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 
 public class Crypto {
   private Kdf kdf;
@@ -44,5 +45,14 @@ public class Crypto {
   @JsonProperty(value = "cipher")
   public Cipher getCipher() {
     return cipher;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("kdf", kdf)
+        .add("checksum", checksum)
+        .add("cipher", cipher)
+        .toString();
   }
 }
