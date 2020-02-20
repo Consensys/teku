@@ -40,7 +40,7 @@ class JsonProviderTest {
   }
 
   @Test
-  public void UnsignedLongShouldSerializeToJson() throws JsonProcessingException {
+  public void unsignedLongShouldSerializeToJson() throws JsonProcessingException {
     UnsignedLong data = DataStructureUtil.randomUnsignedLong(1111);
 
     String serialized = jsonProvider.objectToJSON(data);
