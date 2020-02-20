@@ -79,4 +79,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
   public Optional<V> getCached(K key) {
     return Optional.ofNullable(cacheData.get(key));
   }
+
+  @Override
+  public void clear() {
+    cacheData.clear();
+  }
 }

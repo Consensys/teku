@@ -163,4 +163,14 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
   }
+
+  @Override
+  public String toString() {
+    return "BeaconBlockHeader{" +
+        "slot=" + getSlot() +
+        ", parent_root=" + getParent_root() +
+        ", state_root=" + getState_root() +
+        ", body_root=" + getBody_root() +
+        '}';
+  }
 }

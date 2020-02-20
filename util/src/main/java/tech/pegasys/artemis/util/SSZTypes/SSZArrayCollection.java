@@ -25,26 +25,30 @@ import org.jetbrains.annotations.NotNull;
 public class SSZArrayCollection<T> extends SSZAbstractCollection<T>
     implements SSZMutableList<T>, SSZMutableVector<T> {
 
+  private final boolean isVector;
   protected final long maxSize;
   protected final List<T> data;
 
-  SSZArrayCollection(Class<? extends T> classInfo, long maxSize) {
+  SSZArrayCollection(Class<? extends T> classInfo, long maxSize, boolean isVector) {
     super(classInfo);
     this.data = new ArrayList<>();
     this.maxSize = maxSize;
+    this.isVector = isVector;
   }
 
-  SSZArrayCollection(List<? extends T> elements, long maxSize, Class<? extends T> classInfo) {
+  SSZArrayCollection(List<? extends T> elements, long maxSize, Class<? extends T> classInfo, boolean isVector) {
     super(classInfo);
     this.data = new ArrayList<>(elements);
     this.maxSize = maxSize;
+    this.isVector = isVector;
   }
 
   @SuppressWarnings("unchecked")
-  SSZArrayCollection(int size, T object) {
+  SSZArrayCollection(int size, T object, boolean isVector) {
     super((Class<? extends T>) object.getClass());
     this.data = new ArrayList<>(Collections.nCopies(size, object));
     this.maxSize = size;
+    this.isVector = isVector;
   }
 
   @Override
@@ -71,7 +75,7 @@ public class SSZArrayCollection<T> extends SSZAbstractCollection<T>
 
   @Override
   public int size() {
-    return data.size();
+    return isVector ? (int) getMaxSize() : data.size();
   }
 
   @Override
