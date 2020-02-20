@@ -11,7 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.networkhandlers;
+package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -19,32 +21,41 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.Store;
 
-public class PeerIdHandler implements Handler {
+public class FinalizedCheckpointHandler implements Handler {
 
-  public static final String ROUTE = "/network/peer_id";
-
-  private final P2PNetwork<?> network;
+  private final ChainStorageClient client;
   private final JsonProvider jsonProvider;
 
-  public PeerIdHandler(P2PNetwork<?> network, JsonProvider jsonProvider) {
-    this.network = network;
+  public FinalizedCheckpointHandler(ChainStorageClient client, JsonProvider jsonProvider) {
+    this.client = client;
     this.jsonProvider = jsonProvider;
   }
+
+  public static final String ROUTE = "/beacon/finalized_checkpoint";
 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get this beacon node's PeerId.",
-      tags = {"Network"},
-      description = "Requests that the beacon node return its PeerId as a base58 encoded String.",
+      summary = "Finalized checkpoint.",
+      tags = {"Node"},
+      description = "Requests that the beacon node give finalized checkpoint info.",
       responses = {
-        @OpenApiResponse(status = "200", content = @OpenApiContent(from = String.class))
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = Checkpoint.class)),
+        @OpenApiResponse(status = "204")
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.result(jsonProvider.objectToJSON(network.getNodeAddress()));
+    Store store = client.getStore();
+    if (store == null) {
+      ctx.status(SC_NO_CONTENT);
+      return;
+    }
+    Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
+    ctx.result(jsonProvider.objectToJSON(finalizedCheckpoint));
   }
 }
