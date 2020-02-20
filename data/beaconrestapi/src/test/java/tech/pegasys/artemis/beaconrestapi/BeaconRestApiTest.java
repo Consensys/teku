@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
@@ -33,14 +33,14 @@ import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 class BeaconRestApiTest {
-  private static final ChainStorageClient storageClient =
+  private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClient(new EventBus());
-  private static final JavalinServer server = mock(JavalinServer.class);
-  private static final Javalin app = mock(Javalin.class);
+  private final JavalinServer server = mock(JavalinServer.class);
+  private final Javalin app = mock(Javalin.class);
   private static final Integer THE_PORT = 12345;
 
-  @BeforeAll
-  public static void setup() {
+  @BeforeEach
+  public void setup() {
 
     when(app.server()).thenReturn(server);
     new BeaconRestApi(storageClient, null, null, THE_PORT, app);
