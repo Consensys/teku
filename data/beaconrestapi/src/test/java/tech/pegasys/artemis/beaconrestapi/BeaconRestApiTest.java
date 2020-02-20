@@ -25,6 +25,7 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
@@ -62,6 +63,11 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHavePeerIdEndpoint() {
     verify(app).get(eq(PeerIdHandler.ROUTE), any(PeerIdHandler.class));
+  }
+
+  @Test
+  public void restApiShouldHaveBeaconHeadEndpoint() throws Exception {
+    verify(app).get(eq(BeaconHeadHandler.ROUTE), any(BeaconHeadHandler.class));
   }
 
   @Test
