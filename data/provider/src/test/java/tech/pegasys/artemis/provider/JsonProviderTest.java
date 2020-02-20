@@ -55,7 +55,7 @@ class JsonProviderTest {
   }
 
   @Test
-  public void vectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
+  public void sszVectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZVector<UnsignedLong> data =
         new SSZVector<>(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
     String serialized = jsonProvider.objectToJSON(data);
