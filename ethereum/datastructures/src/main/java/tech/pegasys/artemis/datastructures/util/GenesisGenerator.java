@@ -111,14 +111,15 @@ public class GenesisGenerator {
 
   public Optional<MutableBeaconState> getGenesisStateIfValid(
       Predicate<BeaconState> validityCriteria) {
-    MutableBeaconState copy = state.createWritableCopy();
-    BeaconStateCache.getTransitionCaches(copy).invalidate();
-
-    if (!validityCriteria.test(copy)) {
+    if (!validityCriteria.test(state)) {
       return Optional.empty();
     }
 
     finalizeState();
+
+    MutableBeaconState copy = state.createWritableCopy();
+    BeaconStateCache.getTransitionCaches(copy).invalidate();
+
     return Optional.of(copy);
   }
 
