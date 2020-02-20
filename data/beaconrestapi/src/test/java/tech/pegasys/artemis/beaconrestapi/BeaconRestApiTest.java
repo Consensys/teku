@@ -70,14 +70,6 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void RestApiShouldHaveFinalizedCheckpointEndpoint() {
-    when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
-
-    verify(app).get(eq(FinalizedCheckpointHandler.ROUTE), any(FinalizedCheckpointHandler.class));
-  }
-
-  @Test
   public void RestApiShouldHavePeersEndpoint() {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(storageClient, null, null, THE_PORT, app);
