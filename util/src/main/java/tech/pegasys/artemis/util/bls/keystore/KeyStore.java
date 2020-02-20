@@ -18,6 +18,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Objects;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -46,15 +48,13 @@ public class KeyStore {
 
   public boolean validatePassword(final String password) {
     final Bytes derivedKey = keyDerivationFunction(password.getBytes(UTF_8));
-    final Bytes dkSlice = derivedKey.slice(16, 16); // 16-32
+    final Bytes dkSlice = derivedKey.slice(16, 16);
     final Bytes preImage = Bytes.wrap(dkSlice, keyStoreData.getCrypto().getCipher().getMessage());
     final MessageDigest messageDigest = sha256Digest();
     preImage.update(messageDigest);
     final Bytes checksum = Bytes.wrap(messageDigest.digest());
 
-    return Arrays.equals(
-        checksum.toArrayUnsafe(),
-        keyStoreData.getCrypto().getChecksum().getMessage().toArrayUnsafe());
+    return Objects.equals(checksum, keyStoreData.getCrypto().getChecksum().getMessage());
   }
 
   private MessageDigest sha256Digest() {
