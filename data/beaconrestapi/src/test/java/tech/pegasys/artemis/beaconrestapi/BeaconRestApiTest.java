@@ -41,7 +41,6 @@ class BeaconRestApiTest {
 
   @BeforeEach
   public void setup() {
-
     when(app.server()).thenReturn(server);
     new BeaconRestApi(storageClient, null, null, THE_PORT, app);
   }
