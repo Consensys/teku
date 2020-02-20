@@ -30,6 +30,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconHeadHandlerTest {
   private Context context = mock(Context.class);
+  private final JsonProvider jsonProvider = new JsonProvider();
   private BeaconState rootState = DataStructureUtil.randomBeaconState(1);
   private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);
 
@@ -37,7 +38,7 @@ public class BeaconHeadHandlerTest {
 
   @Test
   public void shouldReturnBeaconHead() throws Exception {
-    BeaconHeadHandler handler = new BeaconHeadHandler(storageClient);
+    BeaconHeadHandler handler = new BeaconHeadHandler(storageClient, jsonProvider);
     Bytes32 blockRoot = Bytes32.random();
     BeaconHeadResponse head =
         new BeaconHeadResponse(bestSlot, blockRoot, rootState.hash_tree_root());
@@ -48,12 +49,12 @@ public class BeaconHeadHandlerTest {
 
     handler.handle(context);
 
-    verify(context).result(JsonProvider.objectToJSON(head));
+    verify(context).result(jsonProvider.objectToJSON(head));
   }
 
   @Test
   public void shouldReturnNoContentIfBlockRootNotSet() throws Exception {
-    BeaconHeadHandler handler = new BeaconHeadHandler(storageClient);
+    BeaconHeadHandler handler = new BeaconHeadHandler(storageClient, jsonProvider);
     when(storageClient.getBestBlockRoot()).thenReturn(null);
     handler.handle(context);
 

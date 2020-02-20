@@ -19,17 +19,19 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PeerIdHandler implements Handler {
 
   public static final String ROUTE = "/network/peer_id";
 
   private final P2PNetwork<?> network;
+  private final JsonProvider jsonProvider;
 
-  public PeerIdHandler(P2PNetwork<?> network) {
+  public PeerIdHandler(P2PNetwork<?> network, JsonProvider jsonProvider) {
     this.network = network;
+    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -42,7 +44,7 @@ public class PeerIdHandler implements Handler {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = String.class))
       })
   @Override
-  public void handle(@NotNull Context ctx) throws Exception {
-    ctx.result(network.getNodeAddress());
+  public void handle(Context ctx) throws Exception {
+    ctx.result(jsonProvider.objectToJSON(network.getNodeAddress()));
   }
 }

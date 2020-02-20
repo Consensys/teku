@@ -13,31 +13,49 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.stream.Collectors;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.provider.JsonProvider;
 
-public class PeersHandler implements BeaconRestApiHandler {
+public class PeersHandler implements Handler {
 
+  public static final String ROUTE = "/network/peers";
+  private final JsonProvider jsonProvider;
   private final P2PNetwork<?> network;
 
-  public PeersHandler(P2PNetwork<?> network) {
+  public PeersHandler(P2PNetwork<?> network, JsonProvider jsonProvider) {
     this.network = network;
+    this.jsonProvider = jsonProvider;
   }
 
+  @OpenApi(
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Get an array containing the PeerId Strings of each connected peer.",
+      tags = {"Network"},
+      description =
+          "Requests that the beacon node return a String array containing one base58 encoded MultiAddr for each connected peer.",
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            content = @OpenApiContent(from = String.class, isArray = true))
+      })
   @Override
-  public String getPath() {
-    return "/network/peers";
-  }
-
-  @Override
-  public Object handleRequest(RequestParams param) {
-    return network
-        .streamPeers()
-        .map(Peer::getId)
-        .map(NodeId::toBase58)
-        .collect(Collectors.toList());
+  public void handle(Context ctx) throws Exception {
+    ctx.result(
+        jsonProvider.objectToJSON(
+            network
+                .streamPeers()
+                .map(Peer::getId)
+                .map(NodeId::toBase58)
+                .collect(Collectors.toList())));
   }
 }

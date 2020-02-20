@@ -31,11 +31,13 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 public class BeaconHeadHandler implements Handler {
   private final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/beacon/head";
+  private final JsonProvider jsonProvider;
 
   private final ChainStorageClient client;
 
-  public BeaconHeadHandler(ChainStorageClient client) {
+  public BeaconHeadHandler(ChainStorageClient client, JsonProvider jsonProvider) {
     this.client = client;
+    this.jsonProvider = jsonProvider;
   }
 
   private BeaconHeadResponse getBeaconHead() {
@@ -69,7 +71,7 @@ public class BeaconHeadHandler implements Handler {
       LOG.trace("Failed to get beacon head");
       ctx.status(SC_NO_CONTENT);
     } else {
-      ctx.result(JsonProvider.objectToJSON(getBeaconHead()));
+      ctx.result(jsonProvider.objectToJSON(getBeaconHead()));
     }
   }
 }
