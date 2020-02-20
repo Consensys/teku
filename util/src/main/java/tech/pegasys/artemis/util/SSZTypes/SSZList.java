@@ -23,11 +23,11 @@ import java.util.stream.Stream;
 public interface SSZList<T> extends SSZImmutableCollection<T> {
 
   static <T> SSZMutableList<T> create(Class<? extends T> classInfo, long maxSize) {
-    return new SSZArrayCollection<>(classInfo, maxSize);
+    return new SSZArrayCollection<>(classInfo, maxSize, false);
   }
 
   static <T> SSZMutableList<T> create(Stream<T> list, long maxSize, Class<? extends T> classInfo) {
-    return new SSZArrayCollection<>(list.collect(Collectors.toList()), maxSize, classInfo);
+    return new SSZArrayCollection<>(list.collect(Collectors.toList()), maxSize, classInfo, false);
   }
 
   static <T> SSZMutableList<T> create(
@@ -36,7 +36,7 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
   }
 
   static <T> SSZMutableList<T> create(SSZImmutableCollection<? extends T> list) {
-    return new SSZArrayCollection<>(list.asList(), list.getMaxSize(), list.getElementType());
+    return new SSZArrayCollection<>(list.asList(), list.getMaxSize(), list.getElementType(), false);
   }
 
   static <T> SSZMutableList<T> concat(
@@ -47,7 +47,7 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
   }
 
   static <T> SSZList<T> singleton(T obj) {
-    return new SSZArrayCollection<>(1, obj);
+    return new SSZArrayCollection<>(1, obj, false);
   }
 
   default SSZList<T> reverse() {
