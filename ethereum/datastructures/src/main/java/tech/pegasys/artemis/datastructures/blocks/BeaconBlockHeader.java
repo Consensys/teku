@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
@@ -36,6 +38,7 @@ public class BeaconBlockHeader implements Merkleizable, SimpleOffsetSerializable
   private Bytes32 state_root;
   private Bytes32 body_root;
 
+  @JsonCreator
   public BeaconBlockHeader(
       UnsignedLong slot, Bytes32 parent_root, Bytes32 state_root, Bytes32 body_root) {
     this.slot = slot;
@@ -59,11 +62,13 @@ public class BeaconBlockHeader implements Merkleizable, SimpleOffsetSerializable
   }
 
   @Override
+  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }
 
   @Override
+  @JsonIgnore
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encodeUInt64(slot.longValue()),

@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -30,6 +31,7 @@ public class JsonProvider {
   private void addTekuMappers() {
     SimpleModule module = new SimpleModule("TekuJson", new Version(1, 0, 0, null, null, null));
 
+    module.addSerializer(Bitlist.class, new BitlistSerializer());
     module.addDeserializer(Bitvector.class, new BitvectorDeserializer());
     module.addSerializer(Bitvector.class, new BitvectorSerializer());
 
@@ -38,8 +40,9 @@ public class JsonProvider {
     module.addDeserializer(BLSSignature.class, new BLSSignatureDeserializer());
     module.addSerializer(BLSSignature.class, new BLSSignatureSerializer());
 
-    module.addDeserializer(Bytes4.class, new Bytes4Deserializer());
     module.addDeserializer(Bytes32.class, new Bytes32Deserializer());
+    module.addDeserializer(Bytes4.class, new Bytes4Deserializer());
+    module.addSerializer(Bytes4.class, new Bytes4Serializer());
     module.addDeserializer(Bytes.class, new BytesDeserializer());
     module.addSerializer(Bytes.class, new BytesSerializer());
 

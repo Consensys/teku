@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
@@ -78,5 +79,10 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveChainHeadEndpoint() {
     verify(app).get(eq(BeaconChainHeadHandler.ROUTE), any(BeaconChainHeadHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveBeaconStateEndpoint() {
+    verify(app).get(eq(BeaconStateHandler.ROUTE), any(BeaconStateHandler.class));
   }
 }

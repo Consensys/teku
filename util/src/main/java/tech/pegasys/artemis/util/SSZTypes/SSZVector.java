@@ -13,10 +13,13 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@JsonSerialize(as = ArrayList.class)
 public class SSZVector<T> extends ArrayList<T> {
 
   private int maxSize;
@@ -37,6 +40,17 @@ public class SSZVector<T> extends ArrayList<T> {
     super(list);
     maxSize = list.size();
     this.classInfo = classInfo;
+  }
+
+  @JsonCreator
+  @SuppressWarnings("unchecked")
+  public SSZVector(List<T> list) {
+    super(list);
+    maxSize = list.size();
+    if (maxSize < 1) {
+      throw new UnsupportedOperationException("SSZVector must have specified size");
+    }
+    this.classInfo = (Class<T>) list.get(0).getClass();
   }
 
   public SSZVector(SSZVector<T> list) {

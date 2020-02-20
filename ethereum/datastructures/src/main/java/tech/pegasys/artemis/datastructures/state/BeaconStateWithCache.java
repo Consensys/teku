@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreType;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,7 +24,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
-@JsonIgnoreType
+@JsonSerialize(as = BeaconState.class)
 public final class BeaconStateWithCache extends BeaconState {
 
   private final TransitionCaches transitionCaches;

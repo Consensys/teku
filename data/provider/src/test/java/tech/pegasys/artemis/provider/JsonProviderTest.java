@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 class JsonProviderTest {
@@ -51,6 +52,22 @@ class JsonProviderTest {
     SSZVector<String> data = new SSZVector<String>(List.of("One", "Two"), String.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[" + Q + "One" + Q + "," + Q + "Two" + Q + "]");
+  }
+
+  @Test
+  public void vectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
+    SSZVector<UnsignedLong> data =
+        new SSZVector<>(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, "[1,18446744073709551615]");
+  }
+
+  @Test
+  public void sszlistOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
+    SSZList<UnsignedLong> data =
+        new SSZList<>(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
+    String serialized = jsonProvider.objectToJSON(data);
+    assertEquals(serialized, "[1,18446744073709551615]");
   }
 
   @Test
