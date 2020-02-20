@@ -29,6 +29,7 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconChainHeadHandlerTest {
+  JsonProvider jsonProvider = new JsonProvider();
   private Context context = mock(Context.class);
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
 
@@ -57,17 +58,17 @@ public class BeaconChainHeadHandlerTest {
     when(storageClient.getJustifiedRoot()).thenReturn(justifiedBlockRoot);
     when(storageClient.getJustifiedEpoch()).thenReturn(justifiedBlockEpoch);
 
-    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient);
+    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient, jsonProvider);
     handler.handle(context);
 
-    verify(context).result(JsonProvider.objectToJSON(chainHeadResponse()));
+    verify(context).result(jsonProvider.objectToJSON(chainHeadResponse()));
   }
 
   @Test
   public void shouldReturnNoContentWhenHeadBlockRootIsNull() throws Exception {
     when(storageClient.getBestBlockRoot()).thenReturn(null);
 
-    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient);
+    BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient, jsonProvider);
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);
