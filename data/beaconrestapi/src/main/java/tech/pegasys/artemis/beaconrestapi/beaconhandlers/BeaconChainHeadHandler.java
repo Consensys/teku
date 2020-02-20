@@ -71,6 +71,7 @@ public class BeaconChainHeadHandler implements Handler {
     BeaconState beaconState = client.getStore().getBlockState(head_block_root);
     Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
     Checkpoint justifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
+    Checkpoint previousJustifiedCheckpoint = beaconState.getPrevious_justified_checkpoint();
 
     BeaconChainHeadResponse chainHeadResponse =
         new BeaconChainHeadResponse(
@@ -82,7 +83,10 @@ public class BeaconChainHeadHandler implements Handler {
             finalizedCheckpoint.getRoot(),
             justifiedCheckpoint.getEpochSlot(),
             justifiedCheckpoint.getEpoch(),
-            justifiedCheckpoint.getRoot());
+            justifiedCheckpoint.getRoot(),
+            previousJustifiedCheckpoint.getEpochSlot(),
+            previousJustifiedCheckpoint.getEpoch(),
+            previousJustifiedCheckpoint.getRoot());
 
     ctx.result(jsonProvider.objectToJSON(chainHeadResponse));
   }
