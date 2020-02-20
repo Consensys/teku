@@ -23,7 +23,6 @@ import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
@@ -67,14 +66,6 @@ class BeaconRestApiTest {
     new BeaconRestApi(storageClient, null, null, THE_PORT, app);
 
     verify(app).get(eq(PeerIdHandler.ROUTE), any(PeerIdHandler.class));
-  }
-
-  @Test
-  public void RestApiShouldHaveFinalizedCheckpointEndpoint() {
-    when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
-
-    verify(app).get(eq(FinalizedCheckpointHandler.ROUTE), any(FinalizedCheckpointHandler.class));
   }
 
   @Test
