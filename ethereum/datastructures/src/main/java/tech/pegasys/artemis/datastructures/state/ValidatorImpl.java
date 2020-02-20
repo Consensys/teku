@@ -91,7 +91,7 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
     super(type, backingNode);
   }
 
-  ValidatorImpl(
+  public ValidatorImpl(
       BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
       UnsignedLong effective_balance,
@@ -112,11 +112,11 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
         new UInt64View(withdrawable_epoch));
   }
 
-  ValidatorImpl(ValidatorImpl validator) {
+  public ValidatorImpl(ValidatorImpl validator) {
     super(TYPE, validator.getBackingNode());
   }
 
-  ValidatorImpl() {
+  public ValidatorImpl() {
     super(TYPE);
   }
 
