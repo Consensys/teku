@@ -68,6 +68,6 @@ public class DepositContractListenerFactory {
       DepositEventChannel depositEventChannel,
       DepositContract depositContract) {
     return new DepositRequestManager(
-        eth1Provider, new DelayedExecutorAsyncRunner(), depositEventChannel, depositContract);
+        eth1Provider, DelayedExecutorAsyncRunner.create(), depositEventChannel, depositContract);
   }
 }
