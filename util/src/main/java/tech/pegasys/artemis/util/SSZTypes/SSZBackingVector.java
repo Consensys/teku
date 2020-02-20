@@ -61,6 +61,7 @@ public class SSZBackingVector<C, R extends ViewRead> extends SSZAbstractCollecti
     return size();
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return delegate.hashTreeRoot();
   }

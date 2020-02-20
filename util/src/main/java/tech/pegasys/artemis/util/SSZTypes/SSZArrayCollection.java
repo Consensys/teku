@@ -64,6 +64,7 @@ public class SSZArrayCollection<T> extends SSZAbstractCollection<T>
     }
   }
 
+  @Override
   public long getMaxSize() {
     return maxSize;
   }

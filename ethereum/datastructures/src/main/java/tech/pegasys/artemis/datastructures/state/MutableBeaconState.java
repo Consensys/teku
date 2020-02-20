@@ -54,8 +54,6 @@ public interface MutableBeaconState
   @Override
   SSZMutableList<Eth1Data> getEth1_data_votes();
 
-  UnsignedLong getEth1_deposit_index();
-
   void setEth1_deposit_index(UnsignedLong eth1_deposit_index);
 
   // Registry
@@ -88,5 +86,6 @@ public interface MutableBeaconState
 
   void setFinalized_checkpoint(Checkpoint finalized_checkpoint);
 
+  @Override
   BeaconState commitChanges();
 }

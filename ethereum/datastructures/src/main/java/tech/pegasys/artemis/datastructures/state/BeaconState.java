@@ -142,5 +142,6 @@ public interface BeaconState
 
   Checkpoint getFinalized_checkpoint();
 
+  @Override
   MutableBeaconState createWritableCopy();
 }

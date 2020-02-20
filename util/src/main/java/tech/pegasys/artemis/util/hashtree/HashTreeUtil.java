@@ -331,6 +331,7 @@ public final class HashTreeUtil {
         bytes.size());
   }
 
+  @SuppressWarnings("unused")
   private static Bytes32 hash_tree_root_list_pubkey(SSZList<BLSPublicKey> bytes) {
     List<Bytes32> hashTreeRootList =
         bytes.stream()

@@ -66,6 +66,7 @@ public class SSZBackingList<C, R extends ViewRead> extends SSZAbstractCollection
     delegate.clear();
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return delegate.hashTreeRoot();
   }

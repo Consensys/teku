@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.SSZTypes;
 
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public abstract class SSZAbstractCollection<C> implements SSZMutableCollection<C> {
@@ -43,6 +44,11 @@ public abstract class SSZAbstractCollection<C> implements SSZMutableCollection<C
     } else {
       return false;
     }
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getElementType(), getMaxSize(), size());
   }
 
   @Override

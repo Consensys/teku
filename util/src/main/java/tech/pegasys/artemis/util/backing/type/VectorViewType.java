@@ -44,6 +44,7 @@ public class VectorViewType<C> extends CollectionViewType {
             (int) maxChunks(), getElementType().createDefault().getBackingNode());
   }
 
+  @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public VectorViewRead<C> createFromTreeNode(TreeNode node) {
     return new VectorViewImpl(this, node);

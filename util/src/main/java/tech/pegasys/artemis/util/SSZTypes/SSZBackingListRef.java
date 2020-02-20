@@ -57,6 +57,7 @@ public class SSZBackingListRef<R extends ViewRead, W extends R> extends SSZAbstr
     delegate.clear();
   }
 
+  @Override
   public Bytes32 hash_tree_root() {
     return delegate.hashTreeRoot();
   }
