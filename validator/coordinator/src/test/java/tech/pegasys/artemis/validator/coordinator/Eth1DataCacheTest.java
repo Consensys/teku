@@ -96,10 +96,8 @@ public class Eth1DataCacheTest {
     genesisState.setGenesis_time(UnsignedLong.ZERO);
     eth1DataCache.startBeaconChainMode(genesisState);
     eth1DataCache.onSlot(new SlotEvent(UnsignedLong.ONE));
-    assertThat(eth1DataCache.getSpecRangeLowerBound())
-        .isEqualByComparingTo(UnsignedLong.ZERO);
-    assertThat(eth1DataCache.getSpecRangeUpperBound())
-        .isEqualByComparingTo(UnsignedLong.ZERO);
+    assertThat(eth1DataCache.getSpecRangeLowerBound()).isEqualByComparingTo(UnsignedLong.ZERO);
+    assertThat(eth1DataCache.getSpecRangeUpperBound()).isEqualByComparingTo(UnsignedLong.ZERO);
   }
 
   @Test
