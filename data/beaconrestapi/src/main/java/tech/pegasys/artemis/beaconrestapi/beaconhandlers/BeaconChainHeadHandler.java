@@ -57,7 +57,7 @@ public class BeaconChainHeadHandler implements Handler {
             content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
         @OpenApiResponse(
             status = "204",
-            description = "No Content will be returned if any of the block roots are null")
+            description = "No Content will be returned if pre Genesis state")
       })
   @Override
   public void handle(Context ctx) throws JsonProcessingException {
