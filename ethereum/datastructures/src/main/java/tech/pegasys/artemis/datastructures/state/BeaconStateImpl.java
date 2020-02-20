@@ -56,7 +56,7 @@ import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
-    implements MutableBeaconState {
+    implements MutableBeaconState, BeaconStateCache {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 14;
@@ -91,6 +91,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
               Checkpoint.TYPE,
               Checkpoint.TYPE),
           BeaconStateImpl::new);
+
+  private final TransitionCaches transitionCaches;
 
   // Versioning
   @SuppressWarnings("unused")
@@ -195,6 +197,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
   private BeaconStateImpl(
       ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
     super(type, backingNode);
+    transitionCaches = TransitionCaches.createNewEmpty();
   }
 
   BeaconStateImpl(
@@ -254,14 +257,21 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
     setPrevious_justified_checkpoint(previous_justified_checkpoint);
     setCurrent_justified_checkpoint(current_justified_checkpoint);
     setFinalized_checkpoint(finalized_checkpoint);
+    transitionCaches = TransitionCaches.createNewEmpty();
   }
 
   BeaconStateImpl() {
     super(TYPE);
+    transitionCaches = TransitionCaches.createNewEmpty();
   }
 
   BeaconStateImpl(BeaconState state) {
-    this(TYPE, state.getBackingNode());
+    super(TYPE, state.getBackingNode());
+    if (state instanceof BeaconStateCache) {
+      transitionCaches = ((BeaconStateCache) state).getTransitionCaches().copy();
+    } else {
+      transitionCaches = TransitionCaches.createNewEmpty();
+    }
   }
 
   @Override
@@ -649,6 +659,11 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot();
+  }
+
+  @Override
+  public TransitionCaches getTransitionCaches() {
+    return transitionCaches;
   }
 
   @Override

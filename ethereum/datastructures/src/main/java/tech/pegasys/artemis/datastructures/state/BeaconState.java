@@ -30,7 +30,7 @@ public interface BeaconState
     extends ContainerViewRead<ViewRead>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   static BeaconState createEmpty() {
-    return BeaconStateWithCache.fromBeaconState(new BeaconStateImpl());
+    return new BeaconStateImpl();
   }
 
   static BeaconState create(
@@ -71,28 +71,27 @@ public interface BeaconState
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
 
-    return BeaconStateWithCache.fromBeaconState(
-        new BeaconStateImpl(
-            genesis_time,
-            slot,
-            fork,
-            latest_block_header,
-            block_roots,
-            state_roots,
-            historical_roots,
-            eth1_data,
-            eth1_data_votes,
-            eth1_deposit_index,
-            validators,
-            balances,
-            randao_mixes,
-            slashings,
-            previous_epoch_attestations,
-            current_epoch_attestations,
-            justification_bits,
-            previous_justified_checkpoint,
-            current_justified_checkpoint,
-            finalized_checkpoint));
+    return new BeaconStateImpl(
+        genesis_time,
+        slot,
+        fork,
+        latest_block_header,
+        block_roots,
+        state_roots,
+        historical_roots,
+        eth1_data,
+        eth1_data_votes,
+        eth1_deposit_index,
+        validators,
+        balances,
+        randao_mixes,
+        slashings,
+        previous_epoch_attestations,
+        current_epoch_attestations,
+        justification_bits,
+        previous_justified_checkpoint,
+        current_justified_checkpoint,
+        finalized_checkpoint);
   }
 
   // Versioning

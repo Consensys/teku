@@ -42,7 +42,6 @@ import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
@@ -76,8 +75,6 @@ public class MapObjectUtil {
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
     else if (classtype.equals(Bytes32[].class)) return getBytes32Array((List) object);
     else if (classtype.equals(BeaconStateImpl.class)) return getBeaconState((Map) object);
-    else if (classtype.equals(BeaconStateWithCache.class))
-      return getBeaconStateWithCache((Map) object);
     else if (classtype.equals(Checkpoint.class)) return getCheckpoint((Map) object);
     else if (classtype.equals(Deposit.class)) return getDeposit((Map) object);
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
@@ -330,11 +327,6 @@ public class MapObjectUtil {
         previous_justified_checkpoint,
         current_justified_checkpoint,
         finalized_checkpoint);
-  }
-
-  @SuppressWarnings({"rawtypes"})
-  private static BeaconStateWithCache getBeaconStateWithCache(Map map) {
-    return (BeaconStateWithCache) getBeaconState(map);
   }
 
   @SuppressWarnings({"rawtypes"})

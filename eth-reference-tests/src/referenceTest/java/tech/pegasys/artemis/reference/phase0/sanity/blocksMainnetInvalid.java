@@ -27,7 +27,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -43,13 +42,11 @@ public class blocksMainnetInvalid extends TestSuite {
   })
   void sanityProcessBlockInvalid(
       BeaconStateImpl pre, String testName, List<SignedBeaconBlock> blocks) {
-    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
         block ->
             assertThrows(
-                StateTransitionException.class,
-                () -> stateTransition.initiate(preWithCache, block, true)));
+                StateTransitionException.class, () -> stateTransition.initiate(pre, block, true)));
   }
 
   @MustBeClosed
