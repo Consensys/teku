@@ -31,7 +31,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -112,7 +112,7 @@ class GenesisGeneratorTest {
     assertThat(state).isNotEmpty();
 
     // And caching should be enabled on the final generated state.
-    assertThat(BeaconStateWithCache.getTransitionCaches(state.get()))
+    assertThat(BeaconStateCache.getTransitionCaches(state.get()))
         .isNotSameAs(TransitionCaches.getNoOp());
   }
 

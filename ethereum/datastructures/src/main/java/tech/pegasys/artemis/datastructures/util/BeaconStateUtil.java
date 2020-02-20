@@ -61,7 +61,7 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -262,7 +262,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
    */
   public static UnsignedLong get_total_active_balance(BeaconState state) {
-    return BeaconStateWithCache.getTransitionCaches(state)
+    return BeaconStateCache.getTransitionCaches(state)
         .getTotalActiveBalance()
         .get(
             get_current_epoch(state),
@@ -588,7 +588,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_beacon_proposer_index</a>
    */
   public static int get_beacon_proposer_index(BeaconState state) {
-    return BeaconStateWithCache.getTransitionCaches(state)
+    return BeaconStateCache.getTransitionCaches(state)
         .getBeaconProposerIndex()
         .get(
             state.getSlot(),

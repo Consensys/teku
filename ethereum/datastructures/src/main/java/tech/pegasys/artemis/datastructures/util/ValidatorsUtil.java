@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -78,7 +78,7 @@ public class ValidatorsUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
   public static List<Integer> get_active_validator_indices(BeaconState state, UnsignedLong epoch) {
-    return BeaconStateWithCache.getTransitionCaches(state)
+    return BeaconStateCache.getTransitionCaches(state)
         .getActiveValidators()
         .get(
             epoch,

@@ -37,7 +37,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -173,7 +173,7 @@ public class AttestationUtil {
   }
 
   private static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
-    return BeaconStateWithCache.getTransitionCaches(state)
+    return BeaconStateCache.getTransitionCaches(state)
         .getValidatorsPubKeys()
         .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
   }
