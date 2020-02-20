@@ -30,11 +30,11 @@ public class BeaconHead {
   @JsonProperty("state_root")
   private final Bytes32 stateRoot;
 
-
   @JsonCreator
-  public BeaconHead(@JsonProperty("slot") final UnsignedLong slot,
-                    @JsonProperty("block_root") final Bytes32 blockRoot,
-                    @JsonProperty("state_root") final Bytes32 stateRoot) {
+  public BeaconHead(
+      @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("block_root") final Bytes32 blockRoot,
+      @JsonProperty("state_root") final Bytes32 stateRoot) {
     this.slot = slot;
     this.blockRoot = blockRoot;
     this.stateRoot = stateRoot;
