@@ -22,23 +22,23 @@ import org.apache.tuweni.bytes.Bytes;
 // Required because base class' usage of custom deserializer which produces an infinite loop
 @JsonDeserialize(using = JsonDeserializer.None.class)
 public class Pbkdf2Param extends KdfParam {
-  private Integer c;
+  private Integer iterativeCount;
   private String prf;
 
   @JsonCreator
   public Pbkdf2Param(
       @JsonProperty(value = "dklen", required = true) final Integer dklen,
-      @JsonProperty(value = "c", required = true) final Integer c,
+      @JsonProperty(value = "c", required = true) final Integer iterativeCount,
       @JsonProperty(value = "prf", required = true) final String prf,
       @JsonProperty(value = "salt", required = true) final Bytes salt) {
     super(dklen, salt);
-    this.c = c;
+    this.iterativeCount = iterativeCount;
     this.prf = prf;
   }
 
   @JsonProperty(value = "c")
-  public Integer getC() {
-    return c;
+  public Integer getIterativeCount() {
+    return iterativeCount;
   }
 
   @JsonProperty(value = "prf")

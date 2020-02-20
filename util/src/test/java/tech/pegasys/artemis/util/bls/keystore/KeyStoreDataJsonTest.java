@@ -137,34 +137,34 @@ class KeyStoreDataJsonTest {
 
   @Test
   void parseSCryptTestVector() throws Exception {
-    final KeyStore keyStore = KeyStore.loadFromJson(sCryptJson);
+    final KeyStore keyStore = KeyStoreFactory.loadFromJson(sCryptJson);
     final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
     Assertions.assertNotNull(keyStoreData);
     final SCryptParam params = (SCryptParam) keyStoreData.getCrypto().getKdf().getParam();
     Assertions.assertNotNull(params);
-    System.out.println(keyStore.toJson());
+    Assertions.assertTrue(keyStore.validatePassword("testpassword"));
   }
 
   @Test
   void parsePbKdf2TestVector() throws Exception {
-    final KeyStore keyStore = KeyStore.loadFromJson(pbkdf2Json);
+    final KeyStore keyStore = KeyStoreFactory.loadFromJson(pbkdf2Json);
     final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
     Assertions.assertNotNull(keyStoreData);
     final Pbkdf2Param params = (Pbkdf2Param) keyStoreData.getCrypto().getKdf().getParam();
     Assertions.assertNotNull(params);
     Assertions.assertEquals("hmac-sha256", params.getPrf());
-    System.out.println(keyStore.toJson());
+    Assertions.assertTrue(keyStore.validatePassword("testpassword"));
   }
 
   @Test
   void parseMissingKdfParamsthrowsException() {
     Assertions.assertThrows(
-        JsonMappingException.class, () -> KeyStore.loadFromJson(missingKdfParamJson));
+        JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(missingKdfParamJson));
   }
 
   @Test
   void parseWithEmptyParamThrowsException() {
     Assertions.assertThrows(
-        JsonMappingException.class, () -> KeyStore.loadFromJson(emptyKdfParams));
+        JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(emptyKdfParams));
   }
 }

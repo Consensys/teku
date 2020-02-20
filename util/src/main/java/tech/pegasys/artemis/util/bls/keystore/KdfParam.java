@@ -26,7 +26,7 @@ public abstract class KdfParam extends Param {
   }
 
   @JsonProperty(value = "dklen")
-  public Integer getDklen() {
+  public Integer getDerivedKeyLength() {
     return dklen;
   }
 
