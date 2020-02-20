@@ -16,6 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -32,9 +33,11 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 public class BeaconChainHeadHandler implements Handler {
 
   private final ChainStorageClient client;
+  private final JsonProvider jsonProvider;
 
-  public BeaconChainHeadHandler(ChainStorageClient client) {
+  public BeaconChainHeadHandler(ChainStorageClient client, JsonProvider jsonProvider) {
     this.client = client;
+    this.jsonProvider = jsonProvider;
   }
 
   public static final String ROUTE = "/beacon/chainhead";
@@ -57,7 +60,7 @@ public class BeaconChainHeadHandler implements Handler {
             description = "No Content will be returned if any of the block roots are null")
       })
   @Override
-  public void handle(Context ctx) {
+  public void handle(Context ctx) throws JsonProcessingException {
     Bytes32 head_block_root = client.getBestBlockRoot();
     if (head_block_root == null) {
       ctx.status(SC_NO_CONTENT);
@@ -81,6 +84,6 @@ public class BeaconChainHeadHandler implements Handler {
             justifiedCheckpoint.getEpoch(),
             justifiedCheckpoint.getRoot());
 
-    ctx.result(JsonProvider.objectToJSON(chainHeadResponse));
+    ctx.result(jsonProvider.objectToJSON(chainHeadResponse));
   }
 }

@@ -13,9 +13,10 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl.data;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
-import com.google.gson.annotations.SerializedName;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -23,13 +24,17 @@ public class BeaconHead {
 
   private final UnsignedLong slot;
 
-  @SerializedName("block_root")
+  @JsonProperty("block_root")
   private final Bytes32 blockRoot;
 
-  @SerializedName("state_root")
+  @JsonProperty("state_root")
   private final Bytes32 stateRoot;
 
-  public BeaconHead(final UnsignedLong slot, final Bytes32 blockRoot, final Bytes32 stateRoot) {
+  @JsonCreator
+  public BeaconHead(
+      @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("block_root") final Bytes32 blockRoot,
+      @JsonProperty("state_root") final Bytes32 stateRoot) {
     this.slot = slot;
     this.blockRoot = blockRoot;
     this.stateRoot = stateRoot;

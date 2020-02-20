@@ -27,6 +27,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
 public class FinalizedCheckpointHandlerTest {
+  private final JsonProvider jsonProvider = new JsonProvider();
   private Context context = mock(Context.class);
   private ChainStorageClient client = mock(ChainStorageClient.class);
   private Store store = mock(Store.class);
@@ -38,17 +39,17 @@ public class FinalizedCheckpointHandlerTest {
     when(client.getStore()).thenReturn(store);
     when(store.getFinalizedCheckpoint()).thenReturn(checkpoint);
 
-    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client, jsonProvider);
     handler.handle(context);
 
-    verify(context).result(JsonProvider.objectToJSON(checkpoint));
+    verify(context).result(jsonProvider.objectToJSON(checkpoint));
   }
 
   @Test
   public void shouldReturnNoContentWhenStoreIsNull() throws Exception {
     when(client.getStore()).thenReturn(null);
 
-    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client);
+    FinalizedCheckpointHandler handler = new FinalizedCheckpointHandler(client, jsonProvider);
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);

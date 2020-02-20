@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import static tech.pegasys.artemis.provider.JsonProvider.objectToJSON;
-
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -25,14 +23,17 @@ import java.util.stream.Collectors;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PeersHandler implements Handler {
 
   public static final String ROUTE = "/network/peers";
+  private final JsonProvider jsonProvider;
   private final P2PNetwork<?> network;
 
-  public PeersHandler(P2PNetwork<?> network) {
+  public PeersHandler(P2PNetwork<?> network, JsonProvider jsonProvider) {
     this.network = network;
+    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -50,7 +51,7 @@ public class PeersHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     ctx.result(
-        objectToJSON(
+        jsonProvider.objectToJSON(
             network
                 .streamPeers()
                 .map(Peer::getId)
