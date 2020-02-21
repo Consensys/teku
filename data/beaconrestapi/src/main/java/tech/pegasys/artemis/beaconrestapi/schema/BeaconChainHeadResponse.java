@@ -17,49 +17,49 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class BeaconChainHeadResponse {
-  public final UnsignedLong headSlot;
-  public final UnsignedLong headEpoch;
-  public final Bytes32 headBlockRoot;
+  public final UnsignedLong head_slot;
+  public final UnsignedLong head_epoch;
+  public final Bytes32 head_block_root;
 
-  public final UnsignedLong finalizedSlot;
-  public final UnsignedLong finalizedEpoch;
-  public final Bytes32 finalizedBlockRoot;
+  public final UnsignedLong finalized_slot;
+  public final UnsignedLong finalized_epoch;
+  public final Bytes32 finalized_block_root;
 
-  public final UnsignedLong justifiedSlot;
-  public final UnsignedLong justifiedEpoch;
-  public final Bytes32 justifiedBlockRoot;
+  public final UnsignedLong justified_slot;
+  public final UnsignedLong justified_epoch;
+  public final Bytes32 justified_block_root;
 
-  public final UnsignedLong previousJustifiedSlot;
-  public final UnsignedLong previousJustifiedEpoch;
-  public final Bytes32 previousJustifiedBlockRoot;
+  public final UnsignedLong previous_justified_slot;
+  public final UnsignedLong previous_justified_epoch;
+  public final Bytes32 previous_justified_block_root;
 
   public BeaconChainHeadResponse(
-      UnsignedLong headSlot,
-      UnsignedLong headEpoch,
-      Bytes32 headBlockRoot,
-      UnsignedLong finalizedSlot,
-      UnsignedLong finalizedEpoch,
-      Bytes32 finalizedBlockRoot,
-      UnsignedLong justifiedSlot,
-      UnsignedLong justifiedEpoch,
-      Bytes32 justifiedBlockRoot,
-      UnsignedLong previousJustifiedSlot,
-      UnsignedLong previousJustifiedEpoch,
-      Bytes32 previousJustifiedBlockRoot) {
-    this.headSlot = headSlot;
-    this.headEpoch = headEpoch;
-    this.headBlockRoot = headBlockRoot;
+      UnsignedLong head_slot,
+      UnsignedLong head_epoch,
+      Bytes32 head_block_root,
+      UnsignedLong finalized_slot,
+      UnsignedLong finalized_epoch,
+      Bytes32 finalized_block_root,
+      UnsignedLong justified_slot,
+      UnsignedLong justified_epoch,
+      Bytes32 justified_block_root,
+      UnsignedLong previous_justified_slot,
+      UnsignedLong previous_justified_epoch,
+      Bytes32 previous_justified_block_root) {
+    this.head_slot = head_slot;
+    this.head_epoch = head_epoch;
+    this.head_block_root = head_block_root;
 
-    this.finalizedSlot = finalizedSlot;
-    this.finalizedEpoch = finalizedEpoch;
-    this.finalizedBlockRoot = finalizedBlockRoot;
+    this.finalized_slot = finalized_slot;
+    this.finalized_epoch = finalized_epoch;
+    this.finalized_block_root = finalized_block_root;
 
-    this.justifiedSlot = justifiedSlot;
-    this.justifiedEpoch = justifiedEpoch;
-    this.justifiedBlockRoot = justifiedBlockRoot;
+    this.justified_slot = justified_slot;
+    this.justified_epoch = justified_epoch;
+    this.justified_block_root = justified_block_root;
 
-    this.previousJustifiedSlot = previousJustifiedSlot;
-    this.previousJustifiedEpoch = previousJustifiedEpoch;
-    this.previousJustifiedBlockRoot = previousJustifiedBlockRoot;
+    this.previous_justified_slot = previous_justified_slot;
+    this.previous_justified_epoch = previous_justified_epoch;
+    this.previous_justified_block_root = previous_justified_block_root;
   }
 }
