@@ -127,7 +127,6 @@ class LengthPrefixedEncodingTest {
     assertThat(data.size())
         .isEqualTo(request.getBlockRoots().size() * Bytes32.SIZE + expectedLengthPrefixLength);
     assertThat(encoding.decode(data, BeaconBlocksByRootRequestMessage.class))
-        .usingRecursiveComparison()
         .isEqualTo(request);
   }
 
