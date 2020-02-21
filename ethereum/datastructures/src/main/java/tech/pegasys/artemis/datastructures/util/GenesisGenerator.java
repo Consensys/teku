@@ -36,7 +36,6 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
@@ -46,7 +45,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {
-  private final MutableBeaconState state = BeaconState.createEmpty().createWritableCopy();
+  private final MutableBeaconState state = MutableBeaconState.createBuilder();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
   private final SSZMutableList<DepositData> depositDataList =
@@ -117,10 +116,7 @@ public class GenesisGenerator {
 
     finalizeState();
 
-    MutableBeaconState copy = state.createWritableCopy();
-    BeaconStateCache.getTransitionCaches(copy).invalidate();
-
-    return Optional.of(copy);
+    return Optional.of(state.createWritableCopy());
   }
 
   private void finalizeState() {
