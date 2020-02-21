@@ -21,7 +21,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -33,7 +32,6 @@ class JsonProviderTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final String Q = "\"";
 
-  @Disabled
   @Test
   public void bytes32ShouldSerializeToJsonAndBack() throws JsonProcessingException {
     Bytes32 data = Bytes32.random();
@@ -44,7 +42,6 @@ class JsonProviderTest {
     assertEquals(data, deserialize);
   }
 
-  @Disabled
   @Test
   public void unsignedLongShouldSerializeToJson() throws JsonProcessingException {
     UnsignedLong data = DataStructureUtil.randomUnsignedLong(1111);
@@ -52,7 +49,6 @@ class JsonProviderTest {
     assertEquals(serialized, data.toString());
   }
 
-  @Disabled
   @Test
   public void vectorShouldSerializeToJson() throws JsonProcessingException {
     SSZVector<String> data = SSZVector.create(List.of("One", "Two"), String.class);
@@ -60,8 +56,6 @@ class JsonProviderTest {
     assertEquals(serialized, "[" + Q + "One" + Q + "," + Q + "Two" + Q + "]");
   }
 
-  // TODO: fix provider
-  @Disabled
   @Test
   public void sszVectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZVector<UnsignedLong> data =
@@ -70,7 +64,6 @@ class JsonProviderTest {
     assertEquals(serialized, "[1,18446744073709551615]");
   }
 
-  @Disabled
   @Test
   public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
     String hexString = "0xf22e4ec2";
@@ -83,7 +76,6 @@ class JsonProviderTest {
     assertEquals(data, asData);
   }
 
-  @Disabled
   @Test
   public void sszListOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZList<UnsignedLong> data =
@@ -92,14 +84,12 @@ class JsonProviderTest {
     assertEquals(serialized, "[1,18446744073709551615]");
   }
 
-  @Disabled
   @Test
   public void stringShouldSerializeToJson() throws JsonProcessingException {
     String data = "test";
     assertEquals(Q + data + Q, jsonProvider.objectToJSON(data));
   }
 
-  @Disabled
   @Test
   void beaconStateJsonTest() throws JsonProcessingException {
     BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);

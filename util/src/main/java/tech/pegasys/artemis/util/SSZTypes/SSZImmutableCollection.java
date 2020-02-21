@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Spliterator;
@@ -21,8 +22,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
+import org.bouncycastle.util.Iterable;
 import org.jetbrains.annotations.NotNull;
 
+@JsonSerialize(as = Iterable.class)
 public interface SSZImmutableCollection<E> extends Iterable<E> {
 
   /**

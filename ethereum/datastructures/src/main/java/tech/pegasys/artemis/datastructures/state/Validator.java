@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
@@ -22,6 +25,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
+@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public interface Validator
     extends ContainerViewRead<ViewRead>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -45,19 +49,27 @@ public interface Validator
         withdrawable_epoch);
   }
 
+  @JsonProperty
   BLSPublicKey getPubkey();
 
+  @JsonProperty
   Bytes32 getWithdrawal_credentials();
 
+  @JsonProperty
   UnsignedLong getEffective_balance();
 
+  @JsonProperty
   boolean isSlashed();
 
+  @JsonProperty
   UnsignedLong getActivation_eligibility_epoch();
 
+  @JsonProperty
   UnsignedLong getActivation_epoch();
 
+  @JsonProperty
   UnsignedLong getExit_epoch();
 
+  @JsonProperty
   UnsignedLong getWithdrawable_epoch();
 }

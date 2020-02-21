@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +36,7 @@ import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
+@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -148,18 +152,22 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
   }
 
   /** *************** * GETTERS & SETTERS * * ******************* */
+  @JsonProperty
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
   }
 
+  @JsonProperty
   public Bytes32 getParent_root() {
     return ((Bytes32View) get(1)).get();
   }
 
+  @JsonProperty
   public Bytes32 getState_root() {
     return ((Bytes32View) get(2)).get();
   }
 
+  @JsonProperty
   public Bytes32 getBody_root() {
     return ((Bytes32View) get(3)).get();
   }

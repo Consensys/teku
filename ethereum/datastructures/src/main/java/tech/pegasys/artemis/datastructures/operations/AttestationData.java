@@ -13,7 +13,10 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,7 @@ import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
+@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class AttestationData extends ContainerViewImpl<AttestationData>
     implements SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
@@ -132,22 +136,27 @@ public class AttestationData extends ContainerViewImpl<AttestationData>
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+  @JsonProperty
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
   }
 
+  @JsonProperty
   public UnsignedLong getIndex() {
     return ((UInt64View) get(1)).get();
   }
 
+  @JsonProperty
   public Bytes32 getBeacon_block_root() {
     return ((Bytes32View) get(2)).get();
   }
 
+  @JsonProperty
   public Checkpoint getSource() {
     return ((Checkpoint) get(3));
   }
 
+  @JsonProperty
   public Checkpoint getTarget() {
     return ((Checkpoint) get(4));
   }

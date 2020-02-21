@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -33,6 +35,7 @@ import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
+@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class Eth1Data extends ContainerViewImpl<Eth1Data>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -76,7 +79,6 @@ public class Eth1Data extends ContainerViewImpl<Eth1Data>
   }
 
   @Override
-  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }
@@ -134,15 +136,18 @@ public class Eth1Data extends ContainerViewImpl<Eth1Data>
   }
 
   /** @return the deposit_root */
+  @JsonProperty
   public Bytes32 getDeposit_root() {
     return ((Bytes32View) get(0)).get();
   }
 
+  @JsonProperty
   public UnsignedLong getDeposit_count() {
     return ((UInt64View) get(1)).get();
   }
 
   /** @return the block_hash */
+  @JsonProperty
   public Bytes32 getBlock_hash() {
     return ((Bytes32View) get(2)).get();
   }
