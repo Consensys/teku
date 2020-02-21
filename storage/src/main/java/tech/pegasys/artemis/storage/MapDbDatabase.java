@@ -38,6 +38,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.DBMaker.Maker;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
@@ -107,7 +108,7 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "finalizedStatsByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
 
     hotBlocksByRoot =
@@ -120,14 +121,14 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "hotStatesByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
 
     checkpointStates =
         db.hashMap(
                 "checkpointStates",
                 new MapDBSerializer<>(Checkpoint.class),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
 
     latestMessages =

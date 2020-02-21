@@ -23,9 +23,9 @@ import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class MapDBSerializer<T extends SimpleOffsetSerializable> implements Serializer<T> {
 
-  private Class<T> classInfo;
+  private Class<? extends T> classInfo;
 
-  public MapDBSerializer(Class<T> classInformation) {
+  public MapDBSerializer(Class<? extends T> classInformation) {
     this.classInfo = classInformation;
   }
 
