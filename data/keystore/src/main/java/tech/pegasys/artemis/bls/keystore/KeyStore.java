@@ -61,28 +61,27 @@ public class KeyStore {
 
     final Bytes decryptionKey =
         keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));
+    if (decryptionKey.size() < 16) {
+      throw new RuntimeException("Invalid Decryption key size");
+    }
     final SecretKeySpec secretKey =
         new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
-    final byte[] iv =
-        keyStoreData
-            .getCrypto()
-            .getCipher()
-            .getCipherParam()
-            .getInitializationVector()
-            .toArrayUnsafe();
+    final IvParameterSpec ivParameterSpec =
+        new IvParameterSpec(
+            keyStoreData
+                .getCrypto()
+                .getCipher()
+                .getCipherParam()
+                .getInitializationVector()
+                .toArrayUnsafe());
     final byte[] cipherMessage = keyStoreData.getCrypto().getCipher().getMessage().toArrayUnsafe();
-    final javax.crypto.Cipher cipher;
     try {
-      cipher = javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
+      final javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
+      cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
+      final Bytes updatedBytes = Bytes.wrap(cipher.update(cipherMessage));
+      return Bytes.wrap(updatedBytes, Bytes.wrap(cipher.doFinal()));
     } catch (final GeneralSecurityException e) {
-      throw new RuntimeException("Error obtaining cipher");
-    }
-
-    try {
-      cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
-      return Bytes.wrap(Bytes.wrap(cipher.update(cipherMessage)), Bytes.wrap(cipher.doFinal()));
-    } catch (final GeneralSecurityException e) {
-      throw new RuntimeException("Error initializing cipher");
+      throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
     }
   }
 
