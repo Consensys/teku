@@ -19,10 +19,15 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
+import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import tech.pegasys.artemis.bls.keystore.builder.ChecksumBuilder;
+import tech.pegasys.artemis.bls.keystore.builder.CipherBuilder;
+import tech.pegasys.artemis.bls.keystore.builder.KdfBuilder;
+import tech.pegasys.artemis.bls.keystore.builder.KeyStoreDataBuilder;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
 /**
@@ -42,19 +47,51 @@ public class KeyStore {
     return keyStoreData;
   }
 
-  public static KeyStore encrypt(final Bytes secret, final String password, final String path, final KdfParam kdf) {
-    // decryption key
+  public static KeyStore encrypt(
+      final Bytes secret,
+      final String password,
+      final String path,
+      final KdfParam kdfParam,
+      final CipherParam cipherParam) {
 
-    // cipher encrypted_secret cipher_message
+    final Bytes decryptionKey = kdfParam.decryptionKey(password.getBytes(UTF_8));
+    final SecretKeySpec secretKey =
+        new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
 
-    // checksum
+    final IvParameterSpec ivParameterSpec =
+        new IvParameterSpec(cipherParam.getIv().toArrayUnsafe());
 
-    // TODO: Obtain Public Key from private key (and path?)
+    final Bytes cipherMessage;
+    final Bytes checksumMessage;
+    try {
+      final javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
+      cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
+      final Bytes intermediateEncryptedBytes = Bytes.wrap(cipher.update(secret.toArrayUnsafe()));
+      cipherMessage = Bytes.wrap(intermediateEncryptedBytes, Bytes.wrap(cipher.doFinal()));
 
-    // construct KeyStoreData
+      final Bytes checksumBytes = Bytes.wrap(decryptionKey.slice(16, 16), cipherMessage);
+      final MessageDigest messageDigest = sha256Digest();
+      checksumBytes.update(messageDigest);
+      checksumMessage = Bytes.wrap(messageDigest.digest());
+    } catch (final GeneralSecurityException e) {
+      throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
+    }
 
-    return new KeyStore(null);
+    final Checksum checksum = ChecksumBuilder.aChecksum().withMessage(checksumMessage).build();
+    final tech.pegasys.artemis.bls.keystore.Cipher cipher =
+        CipherBuilder.aCipher().withCipherParam(cipherParam).withMessage(cipherMessage).build();
+    final Kdf kdf = KdfBuilder.aKdf().withParam(kdfParam).build();
+    final Crypto crypto = new Crypto(kdf, checksum, cipher);
 
+    Bytes pubKey = Bytes.random(32); // TODO: Obtain Public Key from private key (and path?)
+    final KeyStoreData keyStoreData =
+        KeyStoreDataBuilder.aKeyStoreData()
+            .withCrypto(crypto)
+            .withPath(path)
+            .withPubkey(pubKey)
+            .build();
+
+    return new KeyStore(keyStoreData);
   }
 
   public boolean validatePassword(final String password) {
@@ -76,31 +113,11 @@ public class KeyStore {
 
     final Bytes decryptionKey =
         keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));
-    if (decryptionKey.size() < 16) {
-      throw new RuntimeException("Invalid Decryption key size");
-    }
-    final SecretKeySpec secretKey =
-        new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
-    final IvParameterSpec ivParameterSpec =
-        new IvParameterSpec(
-            keyStoreData
-                .getCrypto()
-                .getCipher()
-                .getCipherParam()
-                .getInitializationVector()
-                .toArrayUnsafe());
-    final byte[] cipherMessage = keyStoreData.getCrypto().getCipher().getMessage().toArrayUnsafe();
-    try {
-      final javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
-      cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
-      final Bytes updatedBytes = Bytes.wrap(cipher.update(cipherMessage));
-      return Bytes.wrap(updatedBytes, Bytes.wrap(cipher.doFinal()));
-    } catch (final GeneralSecurityException e) {
-      throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
-    }
+
+    return keyStoreData.getCrypto().getCipher().decrypt(decryptionKey);
   }
 
-  private MessageDigest sha256Digest() {
+  private static MessageDigest sha256Digest() {
     final MessageDigest messageDigest;
     try {
       messageDigest = BouncyCastleMessageDigestFactory.create("sha256");

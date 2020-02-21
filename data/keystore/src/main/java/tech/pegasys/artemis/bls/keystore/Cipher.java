@@ -16,9 +16,14 @@ package tech.pegasys.artemis.bls.keystore;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
+import java.security.GeneralSecurityException;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Cipher {
+  private static final BouncyCastleProvider BC = new BouncyCastleProvider();
   private final CipherFunction cipherFunction;
   private final CipherParam cipherParam;
   private final Bytes message;
@@ -46,6 +51,26 @@ public class Cipher {
   @JsonProperty(value = "message")
   public Bytes getMessage() {
     return message;
+  }
+
+  public Bytes decrypt(final Bytes decryptionKey) {
+    if (decryptionKey.size() < 16) {
+      throw new RuntimeException("Invalid Decryption key size");
+    }
+
+    final SecretKeySpec secretKey =
+        new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
+
+    final IvParameterSpec ivParameterSpec =
+        new IvParameterSpec(getCipherParam().getIv().toArrayUnsafe());
+    try {
+      final javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
+      cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
+      final Bytes updatedBytes = Bytes.wrap(cipher.update(getMessage().toArrayUnsafe()));
+      return Bytes.wrap(updatedBytes, Bytes.wrap(cipher.doFinal()));
+    } catch (final GeneralSecurityException e) {
+      throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
+    }
   }
 
   @Override

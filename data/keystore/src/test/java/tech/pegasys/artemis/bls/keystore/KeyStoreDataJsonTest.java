@@ -23,9 +23,13 @@ import static tech.pegasys.artemis.bls.keystore.CryptoFunction.SCRYPT;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.artemis.bls.keystore.builder.CipherParamBuilder;
+import tech.pegasys.artemis.bls.keystore.builder.SCryptParamBuilder;
 
 class KeyStoreDataJsonTest {
   private static final String sCryptJson =
@@ -181,6 +185,10 @@ class KeyStoreDataJsonTest {
   private static final String expectedPassword = "testpassword";
   private static final Bytes expectedSecret =
       Bytes.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+  private static final Bytes32 expectedSalt =
+      Bytes32.fromHexString("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
+  private static final Bytes expectedAESIv =
+      Bytes.fromHexString("264daa3f303d7259501c93d997d84fe6");
 
   @ParameterizedTest
   @ValueSource(strings = {sCryptJson, pbkdf2Json})
@@ -209,5 +217,15 @@ class KeyStoreDataJsonTest {
   void loadingKeyStoreWithInvalidKdfParamsThrowsException(final String invalidJson) {
     Assertions.assertThrows(
         JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(invalidJson));
+  }
+
+  @Test
+  void encryptSecret() throws Exception {
+    final SCryptParam kdfParam = SCryptParamBuilder.aSCryptParam().withSalt(expectedSalt).build();
+    final CipherParam cipherParam = CipherParamBuilder.aCipherParam().withIv(expectedAESIv).build();
+    final KeyStore keyStore =
+        KeyStore.encrypt(expectedSecret, expectedPassword, "m/12381/60/0/0", kdfParam, cipherParam);
+    final String jsonKeyFactory = KeyStoreFactory.toJson(keyStore.getKeyStoreData());
+    System.out.println(jsonKeyFactory);
   }
 }

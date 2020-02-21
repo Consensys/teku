@@ -52,7 +52,7 @@ public class KeyStoreBytesModule extends SimpleModule {
   private static class Bytes32Serializer extends JsonSerializer<Bytes32> {
     @Override
     public void serialize(Bytes32 bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
-            throws IOException {
+        throws IOException {
       // write bytes in hex without 0x
       jGen.writeString(bytes.appendHexTo(new StringBuilder()).toString());
     }

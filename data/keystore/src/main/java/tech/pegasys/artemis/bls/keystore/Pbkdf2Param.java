@@ -28,10 +28,10 @@ public class Pbkdf2Param extends KdfParam {
 
   @JsonCreator
   public Pbkdf2Param(
-          @JsonProperty(value = "dklen", required = true) final Integer dklen,
-          @JsonProperty(value = "c", required = true) final Integer iterativeCount,
-          @JsonProperty(value = "prf", required = true) final Pbkdf2PseudoRandomFunction prf,
-          @JsonProperty(value = "salt", required = true) final Bytes32 salt) {
+      @JsonProperty(value = "dklen", required = true) final Integer dklen,
+      @JsonProperty(value = "c", required = true) final Integer iterativeCount,
+      @JsonProperty(value = "prf", required = true) final Pbkdf2PseudoRandomFunction prf,
+      @JsonProperty(value = "salt", required = true) final Bytes32 salt) {
     super(dklen, salt);
     this.iterativeCount = iterativeCount;
     this.prf = prf;

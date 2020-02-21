@@ -11,28 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.keystore;
+package tech.pegasys.artemis.bls.keystore.builder;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.keystore.CipherParam;
 
-public class CipherParam extends Param {
-  private final Bytes iv;
+public final class CipherParamBuilder {
+  private Bytes iv;
 
-  @JsonCreator
-  public CipherParam(@JsonProperty(value = "iv", required = true) final Bytes iv) {
+  private CipherParamBuilder() {}
+
+  public static CipherParamBuilder aCipherParam() {
+    return new CipherParamBuilder();
+  }
+
+  public CipherParamBuilder withIv(final Bytes iv) {
     this.iv = iv;
+    return this;
   }
 
-  @JsonProperty(value = "iv")
-  public Bytes getIv() {
-    return iv;
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this).add("iv", iv).toString();
+  public CipherParam build() {
+    if (iv == null) {
+      iv = Bytes.random(16);
+    }
+    return new CipherParam(iv);
   }
 }
