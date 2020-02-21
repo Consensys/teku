@@ -48,7 +48,7 @@ class JsonProviderTest {
 
   @Test
   public void vectorShouldSerializeToJson() throws JsonProcessingException {
-    SSZVector<String> data = new SSZVector<String>(List.of("One", "Two"), String.class);
+    SSZVector<String> data = SSZVector.create(List.of("One", "Two"), String.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[" + Q + "One" + Q + "," + Q + "Two" + Q + "]");
   }
