@@ -21,8 +21,6 @@ import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.proce
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,8 +46,6 @@ public class deposit extends TestSuite {
   @ParameterizedTest(name = "{index}. process deposit")
   @MethodSource({"mainnetDepositSetup", "minimalDepositSetup"})
   void processDeposit(Deposit deposit, BeaconStateImpl pre) {
-    List<Deposit> deposits = new ArrayList<>();
-    deposits.add(deposit);
     assertThrows(
         BlockProcessingException.class, () -> process_deposits(pre, SSZList.singleton(deposit)));
   }
