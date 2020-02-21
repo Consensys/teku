@@ -15,13 +15,12 @@ package tech.pegasys.artemis.util.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum CryptoFunction {
-  PBKDF2("pbkdf2"),
-  SCRYPT("scrypt");
+public enum ChecksumFunction {
+  SHA256("sha256");
 
   private final String jsonValue;
 
-  CryptoFunction(final String jsonValue) {
+  ChecksumFunction(final String jsonValue) {
     this.jsonValue = jsonValue;
   }
 

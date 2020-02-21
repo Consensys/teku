@@ -15,17 +15,17 @@ package tech.pegasys.artemis.util.bls.keystore;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
 /**
@@ -34,6 +34,7 @@ import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
  * @see <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2335.md">EIP-2335</a>
  */
 public class KeyStore {
+  private static final BouncyCastleProvider BC = new BouncyCastleProvider();
   private final KeyStoreData keyStoreData;
 
   public KeyStore(final KeyStoreData keyStoreData) {
@@ -53,6 +54,37 @@ public class KeyStore {
     final Bytes checksum = Bytes.wrap(messageDigest.digest());
 
     return Objects.equals(checksum, keyStoreData.getCrypto().getChecksum().getMessage());
+  }
+
+  public Bytes decrypt(final String password) {
+    if (!validatePassword(password)) {
+      throw new RuntimeException("Invalid password");
+    }
+
+    final Bytes derivedKey = keyDerivationFunction(password.getBytes(UTF_8));
+    final SecretKeySpec secretKey =
+        new SecretKeySpec(derivedKey.slice(0, 16).toArrayUnsafe(), "AES");
+    final byte[] iv =
+        keyStoreData
+            .getCrypto()
+            .getCipher()
+            .getCipherParam()
+            .getInitializationVector()
+            .toArrayUnsafe();
+    final byte[] cipherMessage = keyStoreData.getCrypto().getCipher().getMessage().toArrayUnsafe();
+    final javax.crypto.Cipher cipher;
+    try {
+      cipher = javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
+    } catch (final GeneralSecurityException e) {
+      throw new RuntimeException("Error obtaining cipher");
+    }
+
+    try {
+      cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+      return Bytes.wrap(Bytes.wrap(cipher.update(cipherMessage)), Bytes.wrap(cipher.doFinal()));
+    } catch (final GeneralSecurityException e) {
+      throw new RuntimeException("Error initializing cipher");
+    }
   }
 
   private MessageDigest sha256Digest() {
@@ -91,27 +123,11 @@ public class KeyStore {
   }
 
   private Bytes pbkdf2(final byte[] password, final Pbkdf2Param pbkdf2Param) {
-    final String pseudoRandomFunction = pbkdf2Param.getPrf().toLowerCase();
-    final Digest digest;
-    switch (pseudoRandomFunction) {
-      case "hmac-sha1":
-        digest = new SHA1Digest();
-        break;
-      case "hmac-sha256":
-        digest = new SHA256Digest();
-        break;
-      case "hmac-sha512":
-        digest = new SHA512Digest();
-        break;
-      default:
-        throw new RuntimeException("Unsupported pseudo random function for PBKDF2");
-    }
-
-    PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(digest);
+    PKCS5S2ParametersGenerator gen =
+        new PKCS5S2ParametersGenerator(pbkdf2Param.getPrf().getDigest());
     gen.init(password, pbkdf2Param.getSalt().toArrayUnsafe(), pbkdf2Param.getIterativeCount());
-    final byte[] key =
-        ((KeyParameter) gen.generateDerivedParameters(pbkdf2Param.getDerivedKeyLength() * 8))
-            .getKey();
+    final int keySizeInBits = pbkdf2Param.getDerivedKeyLength() * 8;
+    final byte[] key = ((KeyParameter) gen.generateDerivedParameters(keySizeInBits)).getKey();
     return Bytes.wrap(key);
   }
 }

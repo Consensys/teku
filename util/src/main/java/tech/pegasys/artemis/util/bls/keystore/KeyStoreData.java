@@ -24,11 +24,11 @@ import org.apache.tuweni.bytes.Bytes;
  * @see <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2335.md">EIP-2335</a>
  */
 public class KeyStoreData {
-  private Crypto crypto;
-  private Bytes pubkey;
-  private String path;
-  private UUID uuid;
-  private Integer version;
+  private final Crypto crypto;
+  private final Bytes pubkey;
+  private final String path;
+  private final UUID uuid;
+  private final Integer version;
 
   public KeyStoreData(
       @JsonProperty(value = "crypto", required = true) final Crypto crypto,

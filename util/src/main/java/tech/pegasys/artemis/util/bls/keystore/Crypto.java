@@ -18,9 +18,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
 public class Crypto {
-  private Kdf kdf;
-  private Checksum checksum;
-  private Cipher cipher;
+  private final Kdf kdf;
+  private final Checksum checksum;
+  private final Cipher cipher;
 
   @JsonCreator
   public Crypto(

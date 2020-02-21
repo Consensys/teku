@@ -18,8 +18,8 @@ import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public abstract class KdfParam extends Param {
-  private Integer dklen;
-  private Bytes salt;
+  private final Integer dklen;
+  private final Bytes salt;
 
   public KdfParam(final Integer dklen, final Bytes salt) {
     this.dklen = dklen;

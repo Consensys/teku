@@ -21,9 +21,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
 
 public class Kdf {
-  private CryptoFunction cryptoFunction;
-  private KdfParam param;
-  private String message;
+  private final CryptoFunction cryptoFunction;
+  private final KdfParam param;
+  private final String message;
 
   @JsonCreator
   public Kdf(

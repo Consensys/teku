@@ -19,14 +19,14 @@ import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Pbkdf2Param extends KdfParam {
-  private Integer iterativeCount;
-  private String prf;
+  private final Integer iterativeCount;
+  private final Pbkdf2PseudoRandomFunction prf;
 
   @JsonCreator
   public Pbkdf2Param(
       @JsonProperty(value = "dklen", required = true) final Integer dklen,
       @JsonProperty(value = "c", required = true) final Integer iterativeCount,
-      @JsonProperty(value = "prf", required = true) final String prf,
+      @JsonProperty(value = "prf", required = true) final Pbkdf2PseudoRandomFunction prf,
       @JsonProperty(value = "salt", required = true) final Bytes salt) {
     super(dklen, salt);
     this.iterativeCount = iterativeCount;
@@ -39,7 +39,7 @@ public class Pbkdf2Param extends KdfParam {
   }
 
   @JsonProperty(value = "prf")
-  public String getPrf() {
+  public Pbkdf2PseudoRandomFunction getPrf() {
     return prf;
   }
 

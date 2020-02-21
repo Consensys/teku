@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.bls.keystore;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,6 +22,7 @@ import static tech.pegasys.artemis.util.bls.keystore.CryptoFunction.PBKDF2;
 import static tech.pegasys.artemis.util.bls.keystore.CryptoFunction.SCRYPT;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -143,6 +145,43 @@ class KeyStoreDataJsonTest {
           + "    \"version\": 4\n"
           + "}";
 
+  private static final String unsupportedChecksumJson =
+      "{\n"
+          + "    \"crypto\": {\n"
+          + "        \"kdf\": {\n"
+          + "            \"function\": \"scrypt\",\n"
+          + "            \"params\": {\n"
+          + "                \"dklen\": 32,\n"
+          + "                \"n\": 262144,\n"
+          + "                \"p\": 1,\n"
+          + "                \"r\": 8,\n"
+          + "                \"salt\": \"d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3\"\n"
+          + "            },\n"
+          + "            \"message\": \"\"\n"
+          + "        },\n"
+          + "        \"checksum\": {\n"
+          + "            \"function\": \"sha1\",\n"
+          + "            \"params\": {},\n"
+          + "            \"message\": \"149aafa27b041f3523c53d7acba1905fa6b1c90f9fef137568101f44b531a3cb\"\n"
+          + "        },\n"
+          + "        \"cipher\": {\n"
+          + "            \"function\": \"aes-128-ctr\",\n"
+          + "            \"params\": {\n"
+          + "                \"iv\": \"264daa3f303d7259501c93d997d84fe6\"\n"
+          + "            },\n"
+          + "            \"message\": \"54ecc8863c0550351eee5720f3be6a5d4a016025aa91cd6436cfec938d6a8d30\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"pubkey\": \"9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07\",\n"
+          + "    \"path\": \"m/12381/60/3141592653/589793238\",\n"
+          + "    \"uuid\": \"1d85ae20-35c5-4611-98e8-aa14a633906f\",\n"
+          + "    \"version\": 4\n"
+          + "}";
+
+  private static final String expectedPassword = "testpassword";
+  private static final Bytes expectedSecret =
+      Bytes.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+
   @ParameterizedTest
   @ValueSource(strings = {sCryptJson, pbkdf2Json})
   void validatePasswordOfCryptoTestVectors(final String keyStoreJson) throws Exception {
@@ -158,12 +197,15 @@ class KeyStoreDataJsonTest {
     } else {
       fail("Unsupported crypto function");
     }
-    assertTrue(keyStore.validatePassword("testpassword"));
+    assertTrue(keyStore.validatePassword(expectedPassword));
     assertFalse(keyStore.validatePassword("test"));
+
+    final Bytes decryptedKey = keyStore.decrypt(expectedPassword);
+    assertEquals(expectedSecret, decryptedKey);
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {missingKdfParamJson, emptyKdfParams})
+  @ValueSource(strings = {missingKdfParamJson, emptyKdfParams, unsupportedChecksumJson})
   void loadingKeyStoreWithInvalidKdfParamsThrowsException(final String invalidJson) {
     Assertions.assertThrows(
         JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(invalidJson));

@@ -19,23 +19,23 @@ import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Checksum {
-  private CryptoFunction cryptoFunction;
-  private Param param;
-  private Bytes message;
+  private final ChecksumFunction checksumFunction;
+  private final Param param;
+  private final Bytes message;
 
   @JsonCreator
   public Checksum(
-      @JsonProperty(value = "function", required = true) final CryptoFunction cryptoFunction,
+      @JsonProperty(value = "function", required = true) final ChecksumFunction checksumFunction,
       @JsonProperty(value = "params", required = true) final Param param,
       @JsonProperty(value = "message", required = true) final Bytes message) {
-    this.cryptoFunction = cryptoFunction;
+    this.checksumFunction = checksumFunction;
     this.param = param;
     this.message = message;
   }
 
   @JsonProperty(value = "function")
-  public CryptoFunction getCryptoFunction() {
-    return cryptoFunction;
+  public ChecksumFunction getChecksumFunction() {
+    return checksumFunction;
   }
 
   @JsonProperty(value = "params")
@@ -51,7 +51,7 @@ public class Checksum {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("cryptoFunction", cryptoFunction)
+        .add("cryptoFunction", checksumFunction)
         .add("param", param)
         .add("message", message)
         .toString();

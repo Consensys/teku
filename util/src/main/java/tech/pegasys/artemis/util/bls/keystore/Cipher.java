@@ -19,23 +19,23 @@ import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class Cipher {
-  private CryptoFunction cryptoFunction;
-  private CipherParam cipherParam;
-  private Bytes message;
+  private final CipherFunction cipherFunction;
+  private final CipherParam cipherParam;
+  private final Bytes message;
 
   @JsonCreator
   public Cipher(
-      @JsonProperty(value = "function", required = true) final CryptoFunction cryptoFunction,
+      @JsonProperty(value = "function", required = true) final CipherFunction cipherFunction,
       @JsonProperty(value = "params", required = true) final CipherParam cipherParam,
       @JsonProperty(value = "message", required = true) final Bytes message) {
-    this.cryptoFunction = cryptoFunction;
+    this.cipherFunction = cipherFunction;
     this.cipherParam = cipherParam;
     this.message = message;
   }
 
   @JsonProperty(value = "function")
-  public CryptoFunction getCryptoFunction() {
-    return cryptoFunction;
+  public CipherFunction getCipherFunction() {
+    return cipherFunction;
   }
 
   @JsonProperty(value = "params")
@@ -51,7 +51,7 @@ public class Cipher {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("function", cryptoFunction)
+        .add("function", cipherFunction)
         .add("params", cipherParam)
         .add("message", message)
         .toString();

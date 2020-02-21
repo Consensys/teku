@@ -19,10 +19,11 @@ import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class SCryptParam extends KdfParam {
-  private Integer n;
-  private Integer p;
-  private Integer r;
+  private final Integer n;
+  private final Integer p;
+  private final Integer r;
 
+  /** Construct SCrypt Parameters. @See org.bouncycastle.crypto.generators.SCrypt */
   @JsonCreator
   public SCryptParam(
       @JsonProperty(value = "dklen", required = true) final Integer dklen,

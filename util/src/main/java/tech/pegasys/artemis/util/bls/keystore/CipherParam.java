@@ -19,7 +19,7 @@ import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class CipherParam extends Param {
-  private Bytes initializationVector;
+  private final Bytes initializationVector;
 
   @JsonCreator
   public CipherParam(
