@@ -13,9 +13,11 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.ArrayList;
 import java.util.List;
 
+@JsonSerialize(as = ArrayList.class)
 public class SSZList<T> extends ArrayList<T> {
 
   private long maxSize;
