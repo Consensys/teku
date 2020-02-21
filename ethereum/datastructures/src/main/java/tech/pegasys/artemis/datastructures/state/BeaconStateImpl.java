@@ -96,6 +96,9 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
   @Label("sos-ignore")
   private final TransitionCaches transitionCaches;
 
+  @Label("sos-ignore")
+  private final boolean builder;
+
   // Versioning
   @SuppressWarnings("unused")
   private final UnsignedLong genesis_time = null;
@@ -200,6 +203,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
       ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
+    builder = false;
   }
 
   public BeaconStateImpl(
@@ -259,17 +263,26 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
     setPrevious_justified_checkpoint(previous_justified_checkpoint);
     setCurrent_justified_checkpoint(current_justified_checkpoint);
     setFinalized_checkpoint(finalized_checkpoint);
-    transitionCaches = TransitionCaches.createNewEmpty();
+    this.transitionCaches = TransitionCaches.createNewEmpty();
+    this.builder = false;
   }
 
   public BeaconStateImpl() {
+    this(false);
+  }
+
+  public BeaconStateImpl(boolean builder) {
     super(TYPE);
-    transitionCaches = TransitionCaches.createNewEmpty();
+    this.builder = builder;
+    transitionCaches = builder ? TransitionCaches.getNoOp() : TransitionCaches.createNewEmpty();
   }
 
   BeaconStateImpl(BeaconState state) {
     super(TYPE, state.getBackingNode());
-    if (state instanceof BeaconStateCache) {
+    this.builder = false;
+    if (state instanceof BeaconStateImpl && ((BeaconStateImpl) state).builder) {
+      transitionCaches = TransitionCaches.createNewEmpty();
+    } else if (state instanceof BeaconStateCache) {
       transitionCaches = ((BeaconStateCache) state).getTransitionCaches().copy();
     } else {
       transitionCaches = TransitionCaches.createNewEmpty();

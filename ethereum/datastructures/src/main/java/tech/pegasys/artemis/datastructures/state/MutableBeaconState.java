@@ -28,6 +28,10 @@ import tech.pegasys.artemis.util.backing.ViewWrite;
 public interface MutableBeaconState
     extends BeaconState, ContainerViewWriteRef<ViewRead, ViewWrite> {
 
+  static MutableBeaconState createBuilder() {
+    return new BeaconStateImpl(true);
+  }
+
   // Versioning
 
   void setGenesis_time(UnsignedLong genesis_time);

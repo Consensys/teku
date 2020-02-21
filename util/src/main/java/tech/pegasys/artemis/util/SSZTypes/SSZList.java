@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
+import com.google.common.base.Preconditions;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.function.Function;
@@ -41,7 +42,13 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
 
   static <T> SSZMutableList<T> concat(
       SSZImmutableCollection<? extends T> left, SSZImmutableCollection<? extends T> right) {
-    SSZMutableList<T> ret = create(left);
+    Preconditions.checkArgument(
+        left.getElementType().equals(right.getElementType()),
+        "Incompatible list types: %s != %s",
+        left.getElementType(),
+        right.getElementType());
+    SSZMutableList<T> ret = create(left.getElementType(), left.getMaxSize() + right.getMaxSize());
+    ret.addAll(left);
     ret.addAll(right);
     return ret;
   }
