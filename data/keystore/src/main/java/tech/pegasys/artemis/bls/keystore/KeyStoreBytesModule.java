@@ -22,12 +22,15 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class KeyStoreBytesModule extends SimpleModule {
   public KeyStoreBytesModule() {
     super("KeystoreBytes");
     addSerializer(Bytes.class, new BytesSerializer());
     addDeserializer(Bytes.class, new BytesDeserializer());
+    addSerializer(Bytes32.class, new Bytes32Serializer());
+    addDeserializer(Bytes32.class, new Bytes32Deserializer());
   }
 
   private static class BytesSerializer extends JsonSerializer<Bytes> {
@@ -43,6 +46,22 @@ public class KeyStoreBytesModule extends SimpleModule {
     @Override
     public Bytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return Bytes.fromHexString(p.getValueAsString());
+    }
+  }
+
+  private static class Bytes32Serializer extends JsonSerializer<Bytes32> {
+    @Override
+    public void serialize(Bytes32 bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
+            throws IOException {
+      // write bytes in hex without 0x
+      jGen.writeString(bytes.appendHexTo(new StringBuilder()).toString());
+    }
+  }
+
+  private static class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
+    @Override
+    public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      return Bytes32.fromHexString(p.getValueAsString());
     }
   }
 }

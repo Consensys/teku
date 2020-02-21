@@ -42,6 +42,21 @@ public class KeyStore {
     return keyStoreData;
   }
 
+  public static KeyStore encrypt(final Bytes secret, final String password, final String path, final KdfParam kdf) {
+    // decryption key
+
+    // cipher encrypted_secret cipher_message
+
+    // checksum
+
+    // TODO: Obtain Public Key from private key (and path?)
+
+    // construct KeyStoreData
+
+    return new KeyStore(null);
+
+  }
+
   public boolean validatePassword(final String password) {
     final Bytes decryptionKey =
         keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));

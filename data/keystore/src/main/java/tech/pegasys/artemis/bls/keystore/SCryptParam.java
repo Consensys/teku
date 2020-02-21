@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.generators.SCrypt;
 
 public class SCryptParam extends KdfParam {
@@ -31,7 +32,7 @@ public class SCryptParam extends KdfParam {
       @JsonProperty(value = "n", required = true) final Integer n,
       @JsonProperty(value = "p", required = true) final Integer p,
       @JsonProperty(value = "r", required = true) final Integer r,
-      @JsonProperty(value = "salt", required = true) final Bytes salt) {
+      @JsonProperty(value = "salt", required = true) final Bytes32 salt) {
     super(dklen, salt);
     this.n = n;
     this.p = p;

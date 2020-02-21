@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.DigestFactory;
@@ -27,10 +28,10 @@ public class Pbkdf2Param extends KdfParam {
 
   @JsonCreator
   public Pbkdf2Param(
-      @JsonProperty(value = "dklen", required = true) final Integer dklen,
-      @JsonProperty(value = "c", required = true) final Integer iterativeCount,
-      @JsonProperty(value = "prf", required = true) final Pbkdf2PseudoRandomFunction prf,
-      @JsonProperty(value = "salt", required = true) final Bytes salt) {
+          @JsonProperty(value = "dklen", required = true) final Integer dklen,
+          @JsonProperty(value = "c", required = true) final Integer iterativeCount,
+          @JsonProperty(value = "prf", required = true) final Pbkdf2PseudoRandomFunction prf,
+          @JsonProperty(value = "salt", required = true) final Bytes32 salt) {
     super(dklen, salt);
     this.iterativeCount = iterativeCount;
     this.prf = prf;

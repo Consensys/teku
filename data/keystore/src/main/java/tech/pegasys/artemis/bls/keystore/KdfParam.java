@@ -16,12 +16,13 @@ package tech.pegasys.artemis.bls.keystore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 public abstract class KdfParam extends Param {
   private final Integer dklen;
-  private final Bytes salt;
+  private final Bytes32 salt;
 
-  public KdfParam(final Integer dklen, final Bytes salt) {
+  public KdfParam(final Integer dklen, final Bytes32 salt) {
     this.dklen = dklen;
     this.salt = salt;
   }
@@ -32,7 +33,7 @@ public abstract class KdfParam extends Param {
   }
 
   @JsonProperty(value = "salt")
-  public Bytes getSalt() {
+  public Bytes32 getSalt() {
     return salt;
   }
 
