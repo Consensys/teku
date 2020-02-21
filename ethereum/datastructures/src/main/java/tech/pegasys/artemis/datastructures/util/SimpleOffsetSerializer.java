@@ -98,7 +98,8 @@ public class SimpleOffsetSerializer {
     classReflectionInfo.put(
         SignedVoluntaryExit.class, new ReflectionInformation(SignedVoluntaryExit.class));
     classReflectionInfo.put(VoluntaryExit.class, new ReflectionInformation(VoluntaryExit.class));
-    classReflectionInfo.put(BeaconStateImpl.class, new ReflectionInformation(BeaconStateImpl.class));
+    classReflectionInfo.put(
+        BeaconStateImpl.class, new ReflectionInformation(BeaconStateImpl.class));
     classReflectionInfo.put(Checkpoint.class, new ReflectionInformation(Checkpoint.class));
     classReflectionInfo.put(Fork.class, new ReflectionInformation(Fork.class));
     classReflectionInfo.put(

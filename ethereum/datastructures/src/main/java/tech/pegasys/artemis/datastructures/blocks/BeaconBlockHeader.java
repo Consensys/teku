@@ -142,7 +142,9 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
         && Objects.equals(this.getBody_root(), other.getBody_root());
   }
 
-  /** ******************* * GETTERS & SETTERS * * ******************* */
+  /**
+   * ***************** * GETTERS & SETTERS * * *******************
+   */
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
   }
@@ -166,11 +168,15 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
 
   @Override
   public String toString() {
-    return "BeaconBlockHeader{" +
-        "slot=" + getSlot() +
-        ", parent_root=" + getParent_root() +
-        ", state_root=" + getState_root() +
-        ", body_root=" + getBody_root() +
-        '}';
+    return "BeaconBlockHeader{"
+        + "slot="
+        + getSlot()
+        + ", parent_root="
+        + getParent_root()
+        + ", state_root="
+        + getState_root()
+        + ", body_root="
+        + getBody_root()
+        + '}';
   }
 }

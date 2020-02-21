@@ -102,8 +102,10 @@ public class ReflectionInformation {
   private Field[] getFields(Class classInfo) {
     return Arrays.stream(classInfo.getDeclaredFields())
         .filter(f -> !Modifier.isStatic(f.getModifiers()))
-        .filter(f -> f.getAnnotation(Label.class) == null
-            || !"sos-ignore".equals(f.getAnnotation(Label.class).value()))
+        .filter(
+            f ->
+                f.getAnnotation(Label.class) == null
+                    || !"sos-ignore".equals(f.getAnnotation(Label.class).value()))
         .toArray(Field[]::new);
   }
 

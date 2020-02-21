@@ -36,7 +36,8 @@ public class SSZArrayCollection<T> extends SSZAbstractCollection<T>
     this.isVector = isVector;
   }
 
-  SSZArrayCollection(List<? extends T> elements, long maxSize, Class<? extends T> classInfo, boolean isVector) {
+  SSZArrayCollection(
+      List<? extends T> elements, long maxSize, Class<? extends T> classInfo, boolean isVector) {
     super(classInfo);
     this.data = new ArrayList<>(elements);
     this.maxSize = maxSize;
