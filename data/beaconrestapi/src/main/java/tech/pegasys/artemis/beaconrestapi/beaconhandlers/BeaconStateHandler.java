@@ -31,7 +31,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 
 public class BeaconStateHandler implements Handler {
-  public static final String ROUTE = "/beacon/state/";
+  public static final String ROUTE = "/beacon/state";
   private final Logger LOG = LogManager.getLogger();
   private final ChainStorageClient client;
   private final JsonProvider jsonProvider;
@@ -64,7 +64,7 @@ public class BeaconStateHandler implements Handler {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
             status = "404",
-            description = "The beacon state matching the supplied query was not found.")
+            description = "The beacon state matching the supplied query parameter was not found.")
       })
   @Override
   public void handle(Context ctx) throws Exception {

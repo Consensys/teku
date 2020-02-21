@@ -32,6 +32,7 @@ public class JsonProvider {
     SimpleModule module = new SimpleModule("TekuJson", new Version(1, 0, 0, null, null, null));
 
     module.addSerializer(Bitlist.class, new BitlistSerializer());
+    module.addDeserializer(Bitlist.class, new BitlistDeserializer());
     module.addDeserializer(Bitvector.class, new BitvectorDeserializer());
     module.addSerializer(Bitvector.class, new BitvectorSerializer());
 

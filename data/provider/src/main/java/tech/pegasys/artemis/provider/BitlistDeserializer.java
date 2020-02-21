@@ -18,12 +18,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 public class BitlistDeserializer extends JsonDeserializer<Bitlist> {
   @Override
   public Bitlist deserialize(JsonParser p, DeserializationContext ctxt)
       throws IOException, JsonProcessingException {
-    return null;
+    Bytes data = Bytes.fromHexString(p.getValueAsString());
+    return new Bitlist(data.toArray(), data.bitLength());
   }
 }
