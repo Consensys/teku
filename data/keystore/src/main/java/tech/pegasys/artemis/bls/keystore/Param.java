@@ -11,21 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls.keystore;
+package tech.pegasys.artemis.bls.keystore;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public enum ChecksumFunction {
-  SHA256("sha256");
+/** Placeholder for empty params */
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class Param {
+  public Param() {}
 
-  private final String jsonValue;
-
-  ChecksumFunction(final String jsonValue) {
-    this.jsonValue = jsonValue;
-  }
-
-  @JsonValue
-  public String getJsonValue() {
-    return this.jsonValue;
+  @Override
+  public String toString() {
+    return "";
   }
 }

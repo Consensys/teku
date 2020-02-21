@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls.keystore;
+package tech.pegasys.artemis.bls.keystore;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.artemis.util.bls.keystore.CryptoFunction.PBKDF2;
-import static tech.pegasys.artemis.util.bls.keystore.CryptoFunction.SCRYPT;
+import static tech.pegasys.artemis.bls.keystore.CryptoFunction.PBKDF2;
+import static tech.pegasys.artemis.bls.keystore.CryptoFunction.SCRYPT;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import org.apache.tuweni.bytes.Bytes;

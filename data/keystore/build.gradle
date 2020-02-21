@@ -1,0 +1,18 @@
+jar {
+    baseName 'artemis-data-keystore'
+    manifest {
+        attributes('Implementation-Title': baseName,
+                'Implementation-Version': project.version)
+    }
+}
+
+dependencies {
+    implementation project(":util")
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.bouncycastle:bcprov-jdk15on'
+    implementation 'com.google.guava:guava'
+    implementation 'org.apache.logging.log4j:log4j-api'
+    implementation 'org.apache.tuweni:tuweni-bytes'
+    runtime 'org.apache.logging.log4j:log4j-core'
+}

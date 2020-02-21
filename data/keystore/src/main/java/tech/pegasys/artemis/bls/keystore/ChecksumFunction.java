@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls.keystore;
+package tech.pegasys.artemis.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum CipherFunction {
-  AES_128_CTR("aes-128-ctr");
+public enum ChecksumFunction {
+  SHA256("sha256");
 
   private final String jsonValue;
 
-  CipherFunction(final String jsonValue) {
+  ChecksumFunction(final String jsonValue) {
     this.jsonValue = jsonValue;
   }
 

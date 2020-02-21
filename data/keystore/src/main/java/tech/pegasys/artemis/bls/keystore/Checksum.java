@@ -11,36 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls.keystore;
+package tech.pegasys.artemis.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
-public class Cipher {
-  private final CipherFunction cipherFunction;
-  private final CipherParam cipherParam;
+public class Checksum {
+  private final ChecksumFunction checksumFunction;
+  private final Param param;
   private final Bytes message;
 
   @JsonCreator
-  public Cipher(
-      @JsonProperty(value = "function", required = true) final CipherFunction cipherFunction,
-      @JsonProperty(value = "params", required = true) final CipherParam cipherParam,
+  public Checksum(
+      @JsonProperty(value = "function", required = true) final ChecksumFunction checksumFunction,
+      @JsonProperty(value = "params", required = true) final Param param,
       @JsonProperty(value = "message", required = true) final Bytes message) {
-    this.cipherFunction = cipherFunction;
-    this.cipherParam = cipherParam;
+    this.checksumFunction = checksumFunction;
+    this.param = param;
     this.message = message;
   }
 
   @JsonProperty(value = "function")
-  public CipherFunction getCipherFunction() {
-    return cipherFunction;
+  public ChecksumFunction getChecksumFunction() {
+    return checksumFunction;
   }
 
   @JsonProperty(value = "params")
-  public CipherParam getCipherParam() {
-    return cipherParam;
+  public Param getParam() {
+    return param;
   }
 
   @JsonProperty(value = "message")
@@ -51,8 +51,8 @@ public class Cipher {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("function", cipherFunction)
-        .add("params", cipherParam)
+        .add("function", checksumFunction)
+        .add("param", param)
         .add("message", message)
         .toString();
   }

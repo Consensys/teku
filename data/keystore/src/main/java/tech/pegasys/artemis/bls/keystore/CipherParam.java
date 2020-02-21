@@ -11,33 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls.keystore;
+package tech.pegasys.artemis.bls.keystore;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
-public abstract class KdfParam extends Param {
-  private final Integer dklen;
-  private final Bytes salt;
+public class CipherParam extends Param {
+  private final Bytes initializationVector;
 
-  public KdfParam(final Integer dklen, final Bytes salt) {
-    this.dklen = dklen;
-    this.salt = salt;
+  @JsonCreator
+  public CipherParam(
+      @JsonProperty(value = "iv", required = true) final Bytes initializationVector) {
+    this.initializationVector = initializationVector;
   }
 
-  @JsonProperty(value = "dklen")
-  public Integer getDerivedKeyLength() {
-    return dklen;
-  }
-
-  @JsonProperty(value = "salt")
-  public Bytes getSalt() {
-    return salt;
+  @JsonProperty(value = "iv")
+  public Bytes getInitializationVector() {
+    return initializationVector;
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("dklen", dklen).add("salt", salt).toString();
+    return MoreObjects.toStringHelper(this).add("iv", initializationVector).toString();
   }
 }
