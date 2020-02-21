@@ -49,7 +49,7 @@ public class SSZVector<T> extends ArrayList<T> {
     maxSize = list.size();
     if (maxSize < 1) {
       throw new UnsupportedOperationException(
-          "SSZVector must at least 1 element in the list used to initialize");
+          "SSZVector must have at least 1 element in the list used to initialize");
     }
     this.classInfo = (Class<T>) list.get(0).getClass();
   }
