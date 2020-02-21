@@ -59,7 +59,7 @@ public class BeaconStateHandler implements Handler {
         @OpenApiParam(name = "root", description = "Tree hash root to query (Bytes32)")
       },
       description =
-          "Request that the node return a beacon chain state that matches the provided criteria.",
+          "Request that the node return a beacon chain state that matches the specified tree hash root.",
       responses = {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
