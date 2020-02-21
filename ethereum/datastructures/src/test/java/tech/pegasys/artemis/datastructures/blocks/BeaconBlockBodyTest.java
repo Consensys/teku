@@ -62,7 +62,7 @@ class BeaconBlockBodyTest {
     attestations.add(randomAttestation(seed++));
     attestations.add(randomAttestation(seed++));
     attestations.add(randomAttestation(seed++));
-    deposits.addAll(randomDeposits(100, seed++));
+    deposits.addAll(randomDeposits(MAX_DEPOSITS, seed++));
     voluntaryExits.add(randomSignedVoluntaryExit(seed++));
     voluntaryExits.add(randomSignedVoluntaryExit(seed++));
     voluntaryExits.add(randomSignedVoluntaryExit(seed++));
