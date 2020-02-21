@@ -21,7 +21,6 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
@@ -51,9 +50,8 @@ public class BlockPropagationIntegrationTest {
     final List<SignedBeaconBlock> blocksToFetch = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
       currentSlot = currentSlot.plus(UnsignedLong.ONE);
-      final BlockProcessingRecord record =
-          node1.chainUtil().createAndImportBlockAtSlot(currentSlot);
-      blocksToFetch.add(record.getBlock());
+      final SignedBeaconBlock block = node1.chainUtil().createAndImportBlockAtSlot(currentSlot);
+      blocksToFetch.add(block);
     }
 
     // Setup node 2

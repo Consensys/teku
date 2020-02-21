@@ -30,7 +30,6 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.benchmarks.gen.BlockIO.Writer;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -81,28 +80,25 @@ public class Generator {
         for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
           long s = System.currentTimeMillis();
           currentSlot = currentSlot.plus(UnsignedLong.ONE);
-          //        Optional<BeaconState> lastState =
-          // localStorage.getBlockState(localStorage.getBestBlockRoot());
-          //        Optional<BeaconBlock> lastBlock =
-          // localStorage.getBlockByRoot(localStorage.getBestBlockRoot());
-          BlockProcessingRecord record =
+
+          final SignedBeaconBlock block =
               localChain.createAndImportBlockAtSlot(
                   currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
-
-          final SignedBeaconBlock block = record.getBlock();
           writer.accept(block);
+          final BeaconState postState =
+              localStorage.getBlockState(block.getMessage().getState_root()).orElseThrow();
 
           attestations =
               UnsignedLong.ONE.equals(currentSlot)
                   ? Collections.emptyList()
                   : attestationGenerator.getAttestationsForSlot(
-                      record.getPostState(), block.getMessage(), currentSlot);
+                      postState, block.getMessage(), currentSlot);
 
           System.out.println(
               "Processed: "
                   + currentSlot
                   + ", "
-                  + getCommittees(record.getPostState())
+                  + getCommittees(postState)
                   + ", "
                   + (System.currentTimeMillis() - s)
                   + " ms");
