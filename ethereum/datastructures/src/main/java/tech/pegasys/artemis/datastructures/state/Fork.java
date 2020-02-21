@@ -132,10 +132,13 @@ public class Fork extends ContainerViewImpl<Fork>
 
   @Override
   public String toString() {
-    return "Fork{" +
-        "previous_version=" + getPrevious_version() +
-        ", current_version=" + getCurrent_version() +
-        ", epoch=" + getEpoch() +
-        '}';
+    return "Fork{"
+        + "previous_version="
+        + getPrevious_version()
+        + ", current_version="
+        + getCurrent_version()
+        + ", epoch="
+        + getEpoch()
+        + '}';
   }
 }
