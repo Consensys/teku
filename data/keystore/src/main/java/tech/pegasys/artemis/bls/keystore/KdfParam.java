@@ -36,6 +36,8 @@ public abstract class KdfParam extends Param {
     return salt;
   }
 
+  public abstract Bytes decryptionKey(final byte[] password);
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("dklen", dklen).add("salt", salt).toString();

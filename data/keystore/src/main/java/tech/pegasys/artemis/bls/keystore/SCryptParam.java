@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
+import org.bouncycastle.crypto.generators.SCrypt;
 
 public class SCryptParam extends KdfParam {
   private final Integer n;
@@ -50,6 +51,13 @@ public class SCryptParam extends KdfParam {
   @JsonProperty(value = "r")
   public Integer getR() {
     return r;
+  }
+
+  @Override
+  public Bytes decryptionKey(final byte[] password) {
+    return Bytes.wrap(
+        SCrypt.generate(
+            password, getSalt().toArrayUnsafe(), getN(), getR(), getP(), getDerivedKeyLength()));
   }
 
   @Override

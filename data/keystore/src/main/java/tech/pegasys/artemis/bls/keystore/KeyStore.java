@@ -22,9 +22,6 @@ import java.util.Objects;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.generators.SCrypt;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
 
@@ -46,8 +43,9 @@ public class KeyStore {
   }
 
   public boolean validatePassword(final String password) {
-    final Bytes derivedKey = keyDerivationFunction(password.getBytes(UTF_8));
-    final Bytes dkSlice = derivedKey.slice(16, 16);
+    final Bytes decryptionKey =
+        keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));
+    final Bytes dkSlice = decryptionKey.slice(16, 16);
     final Bytes preImage = Bytes.wrap(dkSlice, keyStoreData.getCrypto().getCipher().getMessage());
     final MessageDigest messageDigest = sha256Digest();
     preImage.update(messageDigest);
@@ -61,9 +59,10 @@ public class KeyStore {
       throw new RuntimeException("Invalid password");
     }
 
-    final Bytes derivedKey = keyDerivationFunction(password.getBytes(UTF_8));
+    final Bytes decryptionKey =
+        keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));
     final SecretKeySpec secretKey =
-        new SecretKeySpec(derivedKey.slice(0, 16).toArrayUnsafe(), "AES");
+        new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
     final byte[] iv =
         keyStoreData
             .getCrypto()
@@ -95,39 +94,5 @@ public class KeyStore {
       throw new RuntimeException("Unable to create message digest", e);
     }
     return messageDigest;
-  }
-
-  private Bytes keyDerivationFunction(final byte[] password) {
-    final Kdf kdf = keyStoreData.getCrypto().getKdf();
-
-    if (kdf.getParam() instanceof SCryptParam) {
-      SCryptParam sCryptParam = (SCryptParam) kdf.getParam();
-      return scrypt(password, sCryptParam);
-    } else if (kdf.getParam() instanceof Pbkdf2Param) {
-      final Pbkdf2Param pbkdf2Param = (Pbkdf2Param) kdf.getParam();
-      return pbkdf2(password, pbkdf2Param);
-    }
-
-    throw new RuntimeException("Unsupported crypto function");
-  }
-
-  private Bytes scrypt(final byte[] password, final SCryptParam sCryptParam) {
-    return Bytes.wrap(
-        SCrypt.generate(
-            password,
-            sCryptParam.getSalt().toArrayUnsafe(),
-            sCryptParam.getN(),
-            sCryptParam.getR(),
-            sCryptParam.getP(),
-            sCryptParam.getDerivedKeyLength()));
-  }
-
-  private Bytes pbkdf2(final byte[] password, final Pbkdf2Param pbkdf2Param) {
-    PKCS5S2ParametersGenerator gen =
-        new PKCS5S2ParametersGenerator(pbkdf2Param.getPrf().getDigest());
-    gen.init(password, pbkdf2Param.getSalt().toArrayUnsafe(), pbkdf2Param.getIterativeCount());
-    final int keySizeInBits = pbkdf2Param.getDerivedKeyLength() * 8;
-    final byte[] key = ((KeyParameter) gen.generateDerivedParameters(keySizeInBits)).getKey();
-    return Bytes.wrap(key);
   }
 }

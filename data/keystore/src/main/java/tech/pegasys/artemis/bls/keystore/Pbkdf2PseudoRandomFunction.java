@@ -14,13 +14,9 @@
 package tech.pegasys.artemis.bls.keystore;
 
 import com.fasterxml.jackson.annotation.JsonValue;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.util.DigestFactory;
 
 public enum Pbkdf2PseudoRandomFunction {
-  HMAC_SHA1("hmac-sha1"),
-  HMAC_SHA256("hmac-sha256"),
-  HMAC_SHA512("hmac-sha512");
+  HMAC_SHA256("hmac-sha256");
 
   private final String jsonValue;
 
@@ -31,16 +27,5 @@ public enum Pbkdf2PseudoRandomFunction {
   @JsonValue
   public String getJsonValue() {
     return this.jsonValue;
-  }
-
-  public Digest getDigest() {
-    switch (this) {
-      case HMAC_SHA256:
-        return DigestFactory.createSHA256();
-      case HMAC_SHA512:
-        return DigestFactory.createSHA512();
-      default:
-        return DigestFactory.createSHA1();
-    }
   }
 }
