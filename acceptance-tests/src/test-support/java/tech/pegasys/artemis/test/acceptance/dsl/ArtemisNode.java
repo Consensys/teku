@@ -141,10 +141,10 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForNewFinalization() throws IOException {
-    UnsignedLong startingFinalizedEpoch = getChainHead().finalizedEpoch;
+    UnsignedLong startingFinalizedEpoch = getChainHead().finalized_epoch;
     LOG.debug("Wait for finalized block");
     waitFor(
-        () -> assertThat(getChainHead().finalizedEpoch).isNotEqualTo(startingFinalizedEpoch), 540);
+        () -> assertThat(getChainHead().finalized_epoch).isNotEqualTo(startingFinalizedEpoch), 540);
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {

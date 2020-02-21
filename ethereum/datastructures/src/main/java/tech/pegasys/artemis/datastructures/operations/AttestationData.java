@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.operations;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +92,7 @@ public class AttestationData extends ContainerViewImpl<AttestationData>
   }
 
   @Override
+  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT + getSource().getSSZFieldCount() + getTarget().getSSZFieldCount();
   }

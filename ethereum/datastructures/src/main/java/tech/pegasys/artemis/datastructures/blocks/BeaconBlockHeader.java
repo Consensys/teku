@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -63,6 +65,7 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
     super(type, backingNode);
   }
 
+  @JsonCreator
   public BeaconBlockHeader(
       UnsignedLong slot, Bytes32 parent_root, Bytes32 state_root, Bytes32 body_root) {
     super(
@@ -82,11 +85,13 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
   }
 
   @Override
+  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }
 
   @Override
+  @JsonIgnore
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encodeUInt64(getSlot().longValue()),
