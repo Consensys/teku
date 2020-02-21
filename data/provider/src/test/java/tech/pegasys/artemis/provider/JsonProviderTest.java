@@ -19,10 +19,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
@@ -60,6 +62,18 @@ class JsonProviderTest {
         new SSZVector<>(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[1,18446744073709551615]");
+  }
+
+  @Test
+  public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
+    String hexString = "0xf22e4ec2";
+    Bytes bytes = Bytes.fromHexString(hexString);
+    Bitlist data = new Bitlist(bytes.toArray(), 64);
+    String asJson = jsonProvider.objectToJSON(data);
+    assertEquals(Q + hexString + Q, asJson);
+
+    Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
+    assertEquals(data, asData);
   }
 
   @Test

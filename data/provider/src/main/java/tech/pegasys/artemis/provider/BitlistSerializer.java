@@ -17,12 +17,14 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 public class BitlistSerializer extends JsonSerializer<Bitlist> {
   @Override
   public void serialize(Bitlist value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeBinary(value.getByteArray());
+    Bytes in = Bytes.of(value.getByteArray());
+    gen.writeString(in.toHexString().toLowerCase());
   }
 }
