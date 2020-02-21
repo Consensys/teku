@@ -23,12 +23,15 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.bls.keystore.builder.ChecksumBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.CipherBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.KdfBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.KeyStoreDataBuilder;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 /**
  * BLS Key Store implementation EIP-2335
@@ -47,6 +50,16 @@ public class KeyStore {
     return keyStoreData;
   }
 
+  /**
+   * Encrypt given BLS12-381 secret key with given password and create KeyStore
+   *
+   * @param secret BLS12-381 secret key in Bytes
+   * @param password The password to be used for encryption
+   * @param path Path as defined in EIP-2334
+   * @param kdfParam An instance of SCryptParam or Pbkdf2Param specifying salt
+   * @param cipherParam An instance of CipherParam specifying AES-IV
+   * @return Constructed KeyStore
+   */
   public static KeyStore encrypt(
       final Bytes secret,
       final String password,
@@ -66,13 +79,10 @@ public class KeyStore {
     try {
       final javax.crypto.Cipher cipher = javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
       cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec);
-      final Bytes intermediateEncryptedBytes = Bytes.wrap(cipher.update(secret.toArrayUnsafe()));
-      cipherMessage = Bytes.wrap(intermediateEncryptedBytes, Bytes.wrap(cipher.doFinal()));
-
-      final Bytes checksumBytes = Bytes.wrap(decryptionKey.slice(16, 16), cipherMessage);
-      final MessageDigest messageDigest = sha256Digest();
-      checksumBytes.update(messageDigest);
-      checksumMessage = Bytes.wrap(messageDigest.digest());
+      cipherMessage =
+          Bytes.wrap(
+              Bytes.wrap(cipher.update(secret.toArrayUnsafe())), Bytes.wrap(cipher.doFinal()));
+      checksumMessage = sha256Digest(Bytes.wrap(decryptionKey.slice(16, 16), cipherMessage));
     } catch (final GeneralSecurityException e) {
       throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
     }
@@ -83,7 +93,7 @@ public class KeyStore {
     final Kdf kdf = KdfBuilder.aKdf().withParam(kdfParam).build();
     final Crypto crypto = new Crypto(kdf, checksum, cipher);
 
-    Bytes pubKey = Bytes.random(32); // TODO: Obtain Public Key from private key (and path?)
+    Bytes pubKey = new PublicKey(SecretKey.fromBytes(Bytes48.leftPad(secret))).toBytesCompressed();
     final KeyStoreData keyStoreData =
         KeyStoreDataBuilder.aKeyStoreData()
             .withCrypto(crypto)
@@ -99,9 +109,7 @@ public class KeyStore {
         keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));
     final Bytes dkSlice = decryptionKey.slice(16, 16);
     final Bytes preImage = Bytes.wrap(dkSlice, keyStoreData.getCrypto().getCipher().getMessage());
-    final MessageDigest messageDigest = sha256Digest();
-    preImage.update(messageDigest);
-    final Bytes checksum = Bytes.wrap(messageDigest.digest());
+    final Bytes checksum = sha256Digest(preImage);
 
     return Objects.equals(checksum, keyStoreData.getCrypto().getChecksum().getMessage());
   }
@@ -117,13 +125,14 @@ public class KeyStore {
     return keyStoreData.getCrypto().getCipher().decrypt(decryptionKey);
   }
 
-  private static MessageDigest sha256Digest() {
+  private static Bytes sha256Digest(final Bytes bytes) {
     final MessageDigest messageDigest;
     try {
       messageDigest = BouncyCastleMessageDigestFactory.create("sha256");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException("Unable to create message digest", e);
     }
-    return messageDigest;
+    bytes.update(messageDigest);
+    return Bytes.wrap(messageDigest.digest());
   }
 }
