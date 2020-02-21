@@ -143,7 +143,7 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
   }
 
   /**
-   * ***************** * GETTERS & SETTERS * * *******************
+   * **************** * GETTERS & SETTERS * * *******************
    */
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();

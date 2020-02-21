@@ -93,7 +93,6 @@ public class ProfilingRun {
     }
   }
 
-  @Test
   void compareHashes(BeaconState s1) {
     for (int i = 0; i < s1.size(); i++) {
       Bytes32 hash = s1.get(i).hashTreeRoot();

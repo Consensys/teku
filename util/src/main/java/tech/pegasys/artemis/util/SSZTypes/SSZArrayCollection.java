@@ -66,6 +66,8 @@ public class SSZArrayCollection<T> extends SSZAbstractCollection<T>
   public void add(T object) {
     if (data.size() < maxSize) {
       data.add(object);
+    } else {
+      throw new IllegalArgumentException("List out of bounds");
     }
   }
 
