@@ -43,13 +43,21 @@ public class BlockImporter {
     LOG.trace("Import block at slot {}: {}", block.getMessage().getSlot(), block);
     try {
       if (storageClient.containsBlock(block.getMessage().hash_tree_root())) {
+        LOG.trace(
+            "Importing known block {}.  Return successful result without re-processing.",
+            block.getMessage().hash_tree_root());
         return BlockImportResult.knownBlock(block);
       }
       Store.Transaction transaction = storageClient.startStoreTransaction();
       final BlockImportResult result = on_block(transaction, block, stateTransition);
       if (!result.isSuccessful()) {
+        LOG.trace(
+            "Failed to import block for reason {}: {}",
+            result.getFailureReason(),
+            block.getMessage());
         return result;
       }
+      LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
 
       final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
       transaction.commit().join();
@@ -58,7 +66,7 @@ public class BlockImporter {
 
       return result;
     } catch (Exception e) {
-      LOG.error("Internal error while importing block " + block.getMessage(), e);
+      LOG.error("Internal error while importing block: " + block.getMessage(), e);
       return BlockImportResult.internalError(e);
     }
   }
