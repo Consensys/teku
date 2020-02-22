@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.bls.keystore;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.tuweni.crypto.Hash.sha2_256;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -27,9 +27,11 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.artemis.bls.keystore.builder.ChecksumBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.CipherBuilder;
+import tech.pegasys.artemis.bls.keystore.builder.CipherParamBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.KdfBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.KeyStoreDataBuilder;
-import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
+import tech.pegasys.artemis.bls.keystore.builder.Pbkdf2ParamBuilder;
+import tech.pegasys.artemis.bls.keystore.builder.SCryptParamBuilder;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
@@ -51,15 +53,30 @@ public class KeyStore {
   }
 
   /**
-   * Encrypt given BLS12-381 secret key with given password and create KeyStore
+   * Encrypt the given BLS12-381 secret key with the password format using random salt and AES-IV
+   * and default parameter values of specified crypto function.
    *
    * @param secret BLS12-381 secret key in Bytes
    * @param password The password to be used for encryption
-   * @param path Path as defined in EIP-2334
-   * @param kdfParam An instance of SCryptParam or Pbkdf2Param specifying salt
-   * @param cipherParam An instance of CipherParam specifying AES-IV
-   * @return Constructed KeyStore
+   * @param path Path as defined in EIP-2334. Can be empty String.
+   * @param cryptoFunction The KDF Crypto function to use with the default parameters and random salt.
+   * @return The constructed KeyStore with encrypted secret and other details as defined by the
+   *     EIP-2335 standard.
    */
+  public static KeyStore encrypt(
+      final Bytes secret,
+      final String password,
+      final String path,
+      final CryptoFunction cryptoFunction) {
+    final KdfParam kdfParam =
+        cryptoFunction == CryptoFunction.SCRYPT
+            ? SCryptParamBuilder.aSCryptParam().build()
+            : Pbkdf2ParamBuilder.aPbkdf2Param().build();
+    final CipherParam cipherParam = CipherParamBuilder.aCipherParam().build();
+    return encrypt(secret, password, path, kdfParam, cipherParam);
+  }
+
+  @VisibleForTesting
   public static KeyStore encrypt(
       final Bytes secret,
       final String password,
@@ -82,7 +99,7 @@ public class KeyStore {
       cipherMessage =
           Bytes.wrap(
               Bytes.wrap(cipher.update(secret.toArrayUnsafe())), Bytes.wrap(cipher.doFinal()));
-      checksumMessage = sha256Digest(Bytes.wrap(decryptionKey.slice(16, 16), cipherMessage));
+      checksumMessage = sha2_256(Bytes.wrap(decryptionKey.slice(16, 16), cipherMessage));
     } catch (final GeneralSecurityException e) {
       throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
     }
@@ -109,7 +126,7 @@ public class KeyStore {
         keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));
     final Bytes dkSlice = decryptionKey.slice(16, 16);
     final Bytes preImage = Bytes.wrap(dkSlice, keyStoreData.getCrypto().getCipher().getMessage());
-    final Bytes checksum = sha256Digest(preImage);
+    final Bytes checksum = sha2_256(preImage);
 
     return Objects.equals(checksum, keyStoreData.getCrypto().getChecksum().getMessage());
   }
@@ -122,17 +139,29 @@ public class KeyStore {
     final Bytes decryptionKey =
         keyStoreData.getCrypto().getKdf().getParam().decryptionKey(password.getBytes(UTF_8));
 
-    return keyStoreData.getCrypto().getCipher().decrypt(decryptionKey);
+    return decryptSecret(decryptionKey, keyStoreData.getCrypto().getCipher());
   }
 
-  private static Bytes sha256Digest(final Bytes bytes) {
-    final MessageDigest messageDigest;
-    try {
-      messageDigest = BouncyCastleMessageDigestFactory.create("sha256");
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("Unable to create message digest", e);
+  private Bytes decryptSecret(
+      final Bytes decryptionKey, final tech.pegasys.artemis.bls.keystore.Cipher cipher) {
+    if (decryptionKey.size() < 16) {
+      throw new RuntimeException("Invalid Decryption key size");
     }
-    bytes.update(messageDigest);
-    return Bytes.wrap(messageDigest.digest());
+
+    final SecretKeySpec secretKey =
+        new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
+
+    final IvParameterSpec ivParameterSpec =
+        new IvParameterSpec(cipher.getCipherParam().getIv().toArrayUnsafe());
+    try {
+      final javax.crypto.Cipher aesCtrCipher =
+          javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
+      aesCtrCipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, ivParameterSpec);
+      final Bytes updatedBytes =
+          Bytes.wrap(aesCtrCipher.update(cipher.getMessage().toArrayUnsafe()));
+      return Bytes.wrap(updatedBytes, Bytes.wrap(aesCtrCipher.doFinal()));
+    } catch (final GeneralSecurityException e) {
+      throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
+    }
   }
 }

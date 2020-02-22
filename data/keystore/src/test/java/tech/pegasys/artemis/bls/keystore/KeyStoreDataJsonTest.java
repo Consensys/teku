@@ -228,7 +228,7 @@ class KeyStoreDataJsonTest {
   @ParameterizedTest
   @MethodSource("validJsonKeyStore")
   void validatePasswordOfCryptoTestVectors(final String keyStoreJson) throws Exception {
-    final KeyStore keyStore = KeyStoreFactory.loadFromJson(keyStoreJson);
+    final KeyStore keyStore = KeyStoreLoader.loadFromJson(keyStoreJson);
     final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
     assertNotNull(keyStoreData);
     final KdfParam param = keyStoreData.getCrypto().getKdf().getParam();
@@ -251,7 +251,7 @@ class KeyStoreDataJsonTest {
   @ValueSource(strings = {missingKdfParamJson, emptyKdfParams, unsupportedChecksumJson})
   void loadingKeyStoreWithInvalidKdfParamsThrowsException(final String invalidJson) {
     Assertions.assertThrows(
-        JsonMappingException.class, () -> KeyStoreFactory.loadFromJson(invalidJson));
+        JsonMappingException.class, () -> KeyStoreLoader.loadFromJson(invalidJson));
   }
 
   @ParameterizedTest
