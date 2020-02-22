@@ -207,10 +207,12 @@ class KeyStoreDataJsonTest {
           + "    \"version\": 4\n"
           + "}";
 
+  @SuppressWarnings("UnusedMethod")
   private static Stream<Arguments> validJsonKeyStore() {
     return Stream.of(Arguments.of(sCryptJson), Arguments.of(pbkdf2Json));
   }
 
+  @SuppressWarnings("UnusedMethod")
   private static Stream<Arguments> kdfParams() {
     return Stream.of(
         Arguments.of(
