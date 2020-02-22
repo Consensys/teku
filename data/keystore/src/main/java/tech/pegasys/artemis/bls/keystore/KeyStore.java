@@ -59,7 +59,8 @@ public class KeyStore {
    * @param secret BLS12-381 secret key in Bytes
    * @param password The password to be used for encryption
    * @param path Path as defined in EIP-2334. Can be empty String.
-   * @param cryptoFunction The KDF Crypto function to use with the default parameters and random salt.
+   * @param cryptoFunction The KDF Crypto function to use with the default parameters and random
+   *     salt.
    * @return The constructed KeyStore with encrypted secret and other details as defined by the
    *     EIP-2335 standard.
    */
