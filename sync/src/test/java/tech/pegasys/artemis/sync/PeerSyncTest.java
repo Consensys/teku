@@ -83,8 +83,10 @@ public class PeerSyncTest {
     when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
-    when(blockImporter.importBlock(any()))
-        .thenReturn(BlockImportResult.successful(processingRecord));
+    final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
+    final BlockImportResult result = BlockImportResult.successful(processingRecord);
+    when(processingRecord.getBlock()).thenReturn(block);
+    when(blockImporter.importBlock(any())).thenReturn(result);
     peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
   }
 

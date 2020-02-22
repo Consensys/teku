@@ -204,6 +204,10 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
         ALogger.Color.BLUE);
   }
 
+  public boolean containsBlock(final Bytes32 root) {
+    return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
+  }
+
   public Optional<BeaconBlock> getBlockByRoot(final Bytes32 root) {
     if (store == null) {
       return Optional.empty();

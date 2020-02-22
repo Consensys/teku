@@ -81,8 +81,7 @@ public class BeaconBlocksByRangeIntegrationTest {
   @Test
   public void shouldRespondWithBlocksWhenHeadBlockRootIsNotOnCanonicalChain() throws Exception {
     beaconChainUtil.initializeStorage();
-    final SignedBeaconBlock nonCanonicalBlock =
-        beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
+    final SignedBeaconBlock nonCanonicalBlock = beaconChainUtil.createAndImportBlockAtSlot(1);
     storageClient1.updateBestBlock(nonCanonicalBlock.getParent_root(), UnsignedLong.ZERO);
     final List<SignedBeaconBlock> response =
         requestBlocks(nonCanonicalBlock.getMessage().hash_tree_root());
@@ -93,11 +92,11 @@ public class BeaconBlocksByRangeIntegrationTest {
   public void shouldRespondWithBlocksFromCanonicalChain() throws Exception {
     beaconChainUtil.initializeStorage();
 
-    final SignedBeaconBlock block1 = beaconChainUtil.createAndImportBlockAtSlot(1).getBlock();
+    final SignedBeaconBlock block1 = beaconChainUtil.createAndImportBlockAtSlot(1);
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();
     storageClient1.updateBestBlock(block1Root, block1.getSlot());
 
-    final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2).getBlock();
+    final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     storageClient1.updateBestBlock(block2Root, block2.getSlot());
 

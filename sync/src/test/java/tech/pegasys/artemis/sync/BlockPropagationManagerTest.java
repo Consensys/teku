@@ -104,8 +104,7 @@ public class BlockPropagationManagerTest {
     final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
-    final SignedBeaconBlock nextNextBlock =
-        remoteChain.createAndImportBlockAtSlot(nextNextSlot).getBlock();
+    final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
 
     incrementSlot();
     incrementSlot();
@@ -119,7 +118,7 @@ public class BlockPropagationManagerTest {
   @Test
   public void onGossipedBlock_futureBlock() throws Exception {
     final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
-    final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock();
+    final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     localEventBus.post(new GossipedBlockEvent(nextBlock));
     assertThat(importedBlocks.get()).isEmpty();
@@ -134,8 +133,7 @@ public class BlockPropagationManagerTest {
     final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
-    final SignedBeaconBlock nextNextBlock =
-        remoteChain.createAndImportBlockAtSlot(nextNextSlot).getBlock();
+    final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
 
     incrementSlot();
     localEventBus.post(new GossipedBlockEvent(nextNextBlock));
@@ -152,7 +150,7 @@ public class BlockPropagationManagerTest {
 
     for (int i = 0; i < blockCount; i++) {
       final UnsignedLong nextSlot = incrementSlot();
-      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock());
+      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
     // Gossip all blocks except the first
@@ -249,7 +247,7 @@ public class BlockPropagationManagerTest {
     incrementSlot();
     for (int i = 0; i < blockCount; i++) {
       final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.valueOf(i + 1));
-      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot).getBlock());
+      blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
     // Gossip all blocks except the first
