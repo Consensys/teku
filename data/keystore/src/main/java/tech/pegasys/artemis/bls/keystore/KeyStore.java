@@ -111,7 +111,7 @@ public class KeyStore {
     final Kdf kdf = KdfBuilder.aKdf().withParam(kdfParam).build();
     final Crypto crypto = new Crypto(kdf, checksum, cipher);
 
-    Bytes pubKey = new PublicKey(SecretKey.fromBytes(Bytes48.leftPad(secret))).toBytesCompressed();
+    final Bytes pubKey = new PublicKey(SecretKey.fromBytes(Bytes48.leftPad(secret))).toBytesCompressed();
     final KeyStoreData keyStoreData =
         KeyStoreDataBuilder.aKeyStoreData()
             .withCrypto(crypto)
