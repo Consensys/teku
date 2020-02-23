@@ -45,6 +45,6 @@ public class PeerIdHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.result(jsonProvider.objectToJSON(network.getNodeAddress()));
+    ctx.result(jsonProvider.objectToJSON(network.getNodeId().toBase58()));
   }
 }
