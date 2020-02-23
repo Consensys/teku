@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.sos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -20,10 +21,12 @@ import org.apache.tuweni.bytes.Bytes;
 public interface SimpleOffsetSerializable {
   int getSSZFieldCount();
 
+  @JsonIgnore
   default List<Bytes> get_fixed_parts() {
     return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }
 
+  @JsonIgnore
   default List<Bytes> get_variable_parts() {
     return Collections.nCopies(getSSZFieldCount(), Bytes.EMPTY);
   }

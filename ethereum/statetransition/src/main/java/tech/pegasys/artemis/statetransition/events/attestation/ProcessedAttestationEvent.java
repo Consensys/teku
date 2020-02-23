@@ -11,21 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.test.acceptance.dsl.data;
+package tech.pegasys.artemis.statetransition.events.attestation;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.operations.Attestation;
 
-public class FinalizedCheckpoint {
+public class ProcessedAttestationEvent {
 
-  private final UnsignedLong epoch;
-  private final Bytes32 root;
+  private final Attestation attestation;
 
-  public FinalizedCheckpoint(final UnsignedLong epoch, final Bytes32 root) {
-    this.epoch = epoch;
-    this.root = root;
+  public ProcessedAttestationEvent(Attestation attestation) {
+    this.attestation = attestation;
+  }
+
+  public Attestation getAttestation() {
+    return attestation;
   }
 
   @Override
@@ -36,25 +37,17 @@ public class FinalizedCheckpoint {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final FinalizedCheckpoint that = (FinalizedCheckpoint) o;
-    return Objects.equals(epoch, that.epoch) && Objects.equals(root, that.root);
+    final ProcessedAttestationEvent that = (ProcessedAttestationEvent) o;
+    return Objects.equals(attestation, that.attestation);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(epoch, root);
+    return Objects.hash(attestation);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("epoch", epoch).add("root", root).toString();
-  }
-
-  public UnsignedLong getEpoch() {
-    return epoch;
-  }
-
-  public Bytes32 getRoot() {
-    return root;
+    return MoreObjects.toStringHelper(this).add("attestation", attestation).toString();
   }
 }

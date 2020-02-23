@@ -29,6 +29,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -51,7 +52,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.peerValidatorFactory = peerValidatorFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
-            this, combinedChainDataClient, storageClient, metricsSystem, statusMessageFactory);
+            DelayedExecutorAsyncRunner.create(),
+            this,
+            combinedChainDataClient,
+            storageClient,
+            metricsSystem,
+            statusMessageFactory);
   }
 
   public static Eth2PeerManager create(

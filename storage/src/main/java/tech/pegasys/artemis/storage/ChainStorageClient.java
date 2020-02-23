@@ -150,7 +150,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   /**
-   * Retrives the block chosen by fork choice to build and attest on
+   * Retrieves the block chosen by fork choice to build and attest on
    *
    * @return
    */
@@ -159,7 +159,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   /**
-   * Retrives the state of the block chosen by fork choice to build and attest on
+   * Retrieves the state of the block chosen by fork choice to build and attest on
    *
    * @return
    */
@@ -168,7 +168,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   /**
-   * Retrives the slot of the block chosen by fork choice to build and attest on
+   * Retrieves the slot of the block chosen by fork choice to build and attest on
    *
    * @return
    */
@@ -202,6 +202,10 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
             + attestation.getAggregate().getData().getBeacon_block_root()
             + " detected.",
         ALogger.Color.BLUE);
+  }
+
+  public boolean containsBlock(final Bytes32 root) {
+    return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
   }
 
   public Optional<BeaconBlock> getBlockByRoot(final Bytes32 root) {

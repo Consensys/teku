@@ -67,7 +67,7 @@ public class MapDbDatabase implements Database {
       new ConcurrentSkipListMap<>();
 
   public static Database createOnDisk(final File directory, final boolean startFromDisk) {
-    final File databaseFile = new File(directory, "artemis.db");
+    final File databaseFile = new File(directory, "teku.db");
     try {
       if (!startFromDisk) {
         Files.deleteIfExists(databaseFile.toPath());

@@ -93,7 +93,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
     // Setup peers
     peerManager =
-        new PeerManager(new DelayedExecutorAsyncRunner(), metricsSystem, peerHandlers, rpcHandlers);
+        new PeerManager(
+            DelayedExecutorAsyncRunner.create(), metricsSystem, peerHandlers, rpcHandlers);
 
     host =
         BuilderJKt.hostJ(

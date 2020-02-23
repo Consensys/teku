@@ -13,24 +13,50 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+
+import com.google.common.primitives.UnsignedLong;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
-public class GenesisTimeHandler implements BeaconRestApiHandler {
+public class GenesisTimeHandler implements Handler {
+  private final Logger LOG = LogManager.getLogger();
+  private final JsonProvider jsonProvider;
+  public static final String ROUTE = "/node/genesis_time/";
+  private final ChainStorageClient chainStorageClient;
 
-  private final ChainStorageClient client;
-
-  public GenesisTimeHandler(final ChainStorageClient client) {
-    this.client = client;
+  public GenesisTimeHandler(ChainStorageClient chainStorageClient, JsonProvider jsonProvider) {
+    this.chainStorageClient = chainStorageClient;
+    this.jsonProvider = jsonProvider;
   }
 
+  @OpenApi(
+      path = GenesisTimeHandler.ROUTE,
+      method = HttpMethod.GET,
+      summary = "Get the genesis_time parameter from beacon node configuration.",
+      tags = {"Node"},
+      description =
+          "Requests the genesis_time parameter from the beacon node, which should be consistent across all beacon nodes that follow the same beacon chain.",
+      responses = {
+        @OpenApiResponse(status = "200", content = @OpenApiContent(from = UnsignedLong.class)),
+        @OpenApiResponse(status = "204")
+      })
   @Override
-  public String getPath() {
-    return "/node/genesis_time";
-  }
-
-  @Override
-  public Object handleRequest(RequestParams params) {
-    return client.getGenesisTime();
+  public void handle(Context ctx) throws Exception {
+    try {
+      UnsignedLong result = chainStorageClient.getGenesisTime();
+      ctx.result(jsonProvider.objectToJSON(result));
+    } catch (Exception exception) {
+      LOG.debug("Failed to get genesis time", exception);
+      ctx.status(SC_NO_CONTENT);
+    }
   }
 }

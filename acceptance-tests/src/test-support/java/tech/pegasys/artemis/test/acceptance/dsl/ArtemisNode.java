@@ -47,23 +47,24 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconChainHead;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
-import tech.pegasys.artemis.test.acceptance.dsl.data.FinalizedCheckpoint;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
 
 public class ArtemisNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/artemis:develop";
+  public static final String ARTEMIS_DOCKER_IMAGE = "pegasyseng/teku:develop";
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.toml";
   protected static final String ARTIFACTS_PATH = "/artifacts/";
-  private static final String DATABASE_PATH = ARTIFACTS_PATH + "artemis.db";
+  private static final String DATABASE_PATH = ARTIFACTS_PATH + "teku.db";
   private static final int P2P_PORT = 9000;
 
   private final SimpleHttpClient httpClient;
   private final Config config;
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private boolean started = false;
   private Set<File> configFiles;
@@ -140,13 +141,10 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForNewFinalization() throws IOException {
-    UnsignedLong startingFinalizedEpoch = getCurrentFinalizedCheckpoint().getEpoch();
+    UnsignedLong startingFinalizedEpoch = getChainHead().finalized_epoch;
     LOG.debug("Wait for finalized block");
     waitFor(
-        () ->
-            assertThat(getCurrentFinalizedCheckpoint().getEpoch())
-                .isNotEqualTo(startingFinalizedEpoch),
-        540);
+        () -> assertThat(getChainHead().finalized_epoch).isNotEqualTo(startingFinalizedEpoch), 540);
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
@@ -157,19 +155,18 @@ public class ArtemisNode extends Node {
 
   private BeaconHead getCurrentBeaconHead() throws IOException {
     final BeaconHead beaconHead =
-        JsonProvider.jsonToObject(
+        jsonProvider.jsonToObject(
             httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
     LOG.debug("Retrieved beacon head: {}", beaconHead);
     return beaconHead;
   }
 
-  private FinalizedCheckpoint getCurrentFinalizedCheckpoint() throws IOException {
-    final FinalizedCheckpoint finalizedCheckpoint =
-        JsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/finalized_checkpoint"),
-            FinalizedCheckpoint.class);
-    LOG.debug("Retrieved finalized checkpoint: {}", finalizedCheckpoint);
-    return finalizedCheckpoint;
+  private BeaconChainHead getChainHead() throws IOException {
+    final BeaconChainHead beaconChainHead =
+        jsonProvider.jsonToObject(
+            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class);
+    LOG.debug("Retrieved chain head: {}", beaconChainHead);
+    return beaconChainHead;
   }
 
   public File getDatabaseFileFromContainer() throws Exception {

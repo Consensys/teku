@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition.blockimport;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
 public class FailedBlockImportResult implements BlockImportResult {
   private final FailureReason failureReason;
@@ -32,7 +33,12 @@ public class FailedBlockImportResult implements BlockImportResult {
   }
 
   @Override
-  public BlockProcessingRecord getBlockProcessingRecord() {
+  public Optional<BlockProcessingRecord> getBlockProcessingRecord() {
+    return Optional.empty();
+  }
+
+  @Override
+  public SignedBeaconBlock getBlock() {
     return null;
   }
 
