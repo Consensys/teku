@@ -27,9 +27,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
@@ -98,14 +98,16 @@ public class BlockImporterTest {
   public void importBlock_validAttestations() throws Exception {
 
     UnsignedLong currentSlot = UnsignedLong.ONE;
-    BlockProcessingRecord record1 = localChain.createAndImportBlockAtSlot(currentSlot);
+    SignedBeaconBlock block1 = localChain.createAndImportBlockAtSlot(currentSlot);
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
-    BlockProcessingRecord record2 = localChain.createAndImportBlockAtSlot(currentSlot);
+    SignedBeaconBlock block2 = localChain.createAndImportBlockAtSlot(currentSlot);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final BeaconState block2PostState =
+        localStorage.getBlockState(block2.getMessage().hash_tree_root()).orElseThrow();
     List<Attestation> attestations =
         attestationGenerator.getAttestationsForSlot(
-            record2.getPostState(), record1.getBlock().getMessage(), currentSlot);
+            block2PostState, block1.getMessage(), currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
@@ -118,14 +120,16 @@ public class BlockImporterTest {
   public void importBlock_attestationWithInvalidSignature() throws Exception {
 
     UnsignedLong currentSlot = UnsignedLong.ONE;
-    BlockProcessingRecord record1 = localChain.createAndImportBlockAtSlot(currentSlot);
+    SignedBeaconBlock block1 = localChain.createAndImportBlockAtSlot(currentSlot);
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
-    BlockProcessingRecord record2 = localChain.createAndImportBlockAtSlot(currentSlot);
+    SignedBeaconBlock block2 = localChain.createAndImportBlockAtSlot(currentSlot);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final BeaconState block2PostState =
+        localStorage.getBlockState(block2.getMessage().hash_tree_root()).orElseThrow();
     List<Attestation> attestations =
         attestationGenerator.getAttestationsForSlot(
-            record2.getPostState(), record1.getBlock().getMessage(), currentSlot);
+            block2PostState, block1.getMessage(), currentSlot);
     List<Attestation> aggregatedAttestations =
         AttestationGenerator.groupAndAggregateAttestations(attestations);
 
@@ -151,7 +155,7 @@ public class BlockImporterTest {
     UnsignedLong currentSlot = localStorage.getBestSlot();
     for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
       currentSlot = currentSlot.plus(UnsignedLong.ONE);
-      final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
+      final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot);
       blocks.add(block);
     }
 
@@ -164,8 +168,9 @@ public class BlockImporterTest {
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
+    // Known blocks should report as successfully imported
     final BlockImportResult result = blockImporter.importBlock(blocks.get(blocks.size() - 1));
-    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
+    assertSuccessfulResult(result);
   }
 
   @Test
@@ -176,7 +181,7 @@ public class BlockImporterTest {
     UnsignedLong currentSlot = localStorage.getBestSlot();
     for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
       currentSlot = currentSlot.plus(UnsignedLong.ONE);
-      final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot).getBlock();
+      final SignedBeaconBlock block = localChain.createAndImportBlockAtSlot(currentSlot);
       blocks.add(block);
     }
 
@@ -189,8 +194,11 @@ public class BlockImporterTest {
     tx.setFinalizedCheckpoint(finalized);
     tx.commit().join();
 
+    // This block does not descend from the latest finalized block, but we know about it and so
+    // we mark the import as successful without trying to re-import which would trigger a
+    // DOES_NOT_DESCEND_FROM_LATEST_FINALIZED error
     final BlockImportResult result = blockImporter.importBlock(blocks.get(1));
-    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
+    assertSuccessfulResult(result);
   }
 
   private void assertSuccessfulResult(final BlockImportResult result) {
@@ -211,8 +219,7 @@ public class BlockImporterTest {
   @Test
   public void importBlock_unknownParent() throws Exception {
     otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE);
-    final SignedBeaconBlock block2 =
-        otherChain.createAndImportBlockAtSlot(UnsignedLong.valueOf(2)).getBlock();
+    final SignedBeaconBlock block2 = otherChain.createAndImportBlockAtSlot(UnsignedLong.valueOf(2));
     localChain.setSlot(block2.getSlot());
 
     final BlockImportResult result = blockImporter.importBlock(block2);
@@ -235,8 +242,10 @@ public class BlockImporterTest {
     tx.commit().join();
 
     // Now create a new block that is not descendent from the finalized block
+    AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
+    final Attestation attestation = attestationGenerator.validAttestation(otherStorage);
     final SignedBeaconBlock block =
-        otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE).getBlock();
+        otherChain.createAndImportBlockAtSlot(currentSlot, List.of(attestation));
 
     final BlockImportResult result = blockImporter.importBlock(block);
     assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
