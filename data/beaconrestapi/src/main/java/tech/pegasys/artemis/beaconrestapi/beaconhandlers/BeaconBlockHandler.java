@@ -13,60 +13,73 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-
-import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 
-public class BeaconBlockHandler implements BeaconRestApiHandler {
+public class BeaconBlockHandler implements Handler {
 
   private final ChainStorageClient client;
   private final HistoricalChainData historicalChainData;
+  public static final String ROUTE = "/beacon/block";
+  private final JsonProvider jsonProvider;
 
-  public BeaconBlockHandler(ChainStorageClient client, HistoricalChainData historicalChainData) {
+  public BeaconBlockHandler(
+      final ChainStorageClient client,
+      final HistoricalChainData historicalChainData,
+      final JsonProvider jsonProvider) {
     this.client = client;
     this.historicalChainData = historicalChainData;
+    this.jsonProvider = jsonProvider;
   }
 
   @Override
-  public String getPath() {
-    return "/beacon/block";
-  }
-
-  @Override
-  public Object handleRequest(RequestParams param) {
-    Map<String, List<String>> queryParamMap = param.getQueryParamMap();
+  public void handle(@NotNull Context ctx) throws Exception {
+    final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
     if (queryParamMap.containsKey(ROOT)) {
-      Bytes32 root = Bytes32.fromHexString(param.getQueryParam(ROOT));
-      return client.getStore() != null ? client.getStore().getBlock(root) : null;
+      final Bytes32 root = Bytes32.fromHexString(queryParamMap.get(ROOT).get(0));
+      if (client.getStore() != null) {
+        ctx.result(
+            jsonProvider.objectToJSON(new BeaconBlockResponse(client.getStore().getBlock(root))));
+        return;
+      } else {
+        ctx.status(SC_NOT_FOUND);
+        return;
+      }
     }
 
-    UnsignedLong slot;
+    final UnsignedLong slot;
     if (queryParamMap.containsKey(EPOCH)) {
-      slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(param.getQueryParam(EPOCH)));
+      slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(queryParamMap.get(EPOCH).get(0)));
     } else if (queryParamMap.containsKey(SLOT)) {
-      slot = UnsignedLong.valueOf(param.getQueryParam(SLOT));
+      slot = UnsignedLong.valueOf(queryParamMap.get(SLOT).get(0));
     } else {
-      return null;
+      ctx.status(SC_NOT_FOUND);
+      return;
     }
 
-    return getBlockBySlot(slot)
-        .map(
-            block ->
-                ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root().toHexString()))
-        .orElse(null);
+    final Optional<BeaconBlock> blockBySlot = getBlockBySlot(slot);
+    if (blockBySlot.isPresent()) {
+      ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(blockBySlot.get())));
+    } else {
+      ctx.status(SC_NOT_FOUND);
+    }
   }
 
   private Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
@@ -75,9 +88,9 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
         .map(root -> client.getStore().getBlock(root))
         .or(
             () -> {
-              Optional<SignedBeaconBlock> signedBeaconBlock =
+              final Optional<SignedBeaconBlock> signedBeaconBlock =
                   historicalChainData.getFinalizedBlockAtSlot(slot).join();
               return signedBeaconBlock.map(SignedBeaconBlock::getMessage);
             });
-  };
+  }
 }
