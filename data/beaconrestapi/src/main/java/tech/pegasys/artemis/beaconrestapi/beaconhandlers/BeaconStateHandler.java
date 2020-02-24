@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import io.javalin.http.Context;
@@ -25,6 +26,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -64,11 +66,19 @@ public class BeaconStateHandler implements Handler {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
             status = "404",
-            description = "The beacon state matching the supplied query parameter was not found.")
+            description = "The beacon state matching the supplied query parameter was not found."),
+        @OpenApiResponse(status = "400", description = "Missing a query parameter")
       })
   @Override
   public void handle(Context ctx) throws Exception {
     String rootParam = ctx.queryParam("root");
+    if (rootParam == null) {
+      ctx.status(SC_BAD_REQUEST);
+      ctx.result(
+          jsonProvider.objectToJSON(
+              new BadRequest(SC_BAD_REQUEST, "missingQueryParameter: must specify a root")));
+      return;
+    }
     BeaconState result = queryByRootHash(rootParam);
     if (result == null) {
       LOG.trace("Block root {} not found", rootParam);
