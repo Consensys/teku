@@ -217,7 +217,7 @@ public class FetchRecentBlocksServiceTest {
   public void queueFetchTaskWhenConcurrencyLimitReached() {
     final int taskCount = maxConcurrentRequests + 1;
     for (int i = 0; i < taskCount; i++) {
-      final Bytes32 root = DataStructureUtil.randomBytes32(1);
+      final Bytes32 root = DataStructureUtil.randomBytes32(i);
       recentBlockFetcher.requestRecentBlock(root);
     }
 
