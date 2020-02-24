@@ -16,7 +16,8 @@ package tech.pegasys.artemis.bls.keystore.model;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum Pbkdf2PseudoRandomFunction {
-  HMAC_SHA256("hmac-sha256");
+  HMAC_SHA256("hmac-sha256"),
+  HMAC_SHA512("hmac-sha512");
 
   private final String jsonValue;
 

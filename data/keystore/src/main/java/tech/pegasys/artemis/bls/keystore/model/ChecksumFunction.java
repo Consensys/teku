@@ -16,7 +16,8 @@ package tech.pegasys.artemis.bls.keystore.model;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ChecksumFunction {
-  SHA256("sha256");
+  SHA256("sha256"),
+  SHA512("sha512");
 
   private final String jsonValue;
 

@@ -21,6 +21,7 @@ public final class Pbkdf2ParamBuilder {
   private Integer dklen = 32;
   private Bytes32 salt;
   private Integer iterativeCount = 262144;
+  private Pbkdf2PseudoRandomFunction prf = Pbkdf2PseudoRandomFunction.HMAC_SHA256;
 
   private Pbkdf2ParamBuilder() {}
 
@@ -43,10 +44,15 @@ public final class Pbkdf2ParamBuilder {
     return this;
   }
 
+  public Pbkdf2ParamBuilder withPrf(final Pbkdf2PseudoRandomFunction prf) {
+    this.prf = prf;
+    return this;
+  }
+
   public Pbkdf2Param build() {
     if (salt == null) {
       salt = Bytes32.random();
     }
-    return new Pbkdf2Param(dklen, iterativeCount, Pbkdf2PseudoRandomFunction.HMAC_SHA256, salt);
+    return new Pbkdf2Param(dklen, iterativeCount, prf, salt);
   }
 }

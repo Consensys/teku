@@ -16,24 +16,31 @@ package tech.pegasys.artemis.bls.keystore;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static tech.pegasys.artemis.bls.keystore.model.CipherFunction.AES_128_CTR;
 import static tech.pegasys.artemis.bls.keystore.model.CryptoFunction.PBKDF2;
 import static tech.pegasys.artemis.bls.keystore.model.CryptoFunction.SCRYPT;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.io.Resources;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.artemis.bls.keystore.builder.CipherBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.CipherParamBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.Pbkdf2ParamBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.SCryptParamBuilder;
+import tech.pegasys.artemis.bls.keystore.model.ChecksumFunction;
+import tech.pegasys.artemis.bls.keystore.model.Cipher;
 import tech.pegasys.artemis.bls.keystore.model.CipherParam;
 import tech.pegasys.artemis.bls.keystore.model.Crypto;
 import tech.pegasys.artemis.bls.keystore.model.CryptoFunction;
@@ -49,179 +56,43 @@ class KeyStoreTest {
   private static final Bytes32 SALT =
       Bytes32.fromHexString("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
   private static final Bytes AES_IV_PARAM = Bytes.fromHexString("264daa3f303d7259501c93d997d84fe6");
-  private static final Bytes PUB_KEY =
-      Bytes.fromHexString(
-          "9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07");
 
-  private static final String sCryptJson =
-      "{\n"
-          + "    \"crypto\": {\n"
-          + "        \"kdf\": {\n"
-          + "            \"function\": \"scrypt\",\n"
-          + "            \"params\": {\n"
-          + "                \"dklen\": 32,\n"
-          + "                \"n\": 262144,\n"
-          + "                \"p\": 1,\n"
-          + "                \"r\": 8,\n"
-          + "                \"salt\": \""
-          + SALT
-          + "\"\n"
-          + "            },\n"
-          + "            \"message\": \"\"\n"
-          + "        },\n"
-          + "        \"checksum\": {\n"
-          + "            \"function\": \"sha256\",\n"
-          + "            \"params\": {},\n"
-          + "            \"message\": \"149aafa27b041f3523c53d7acba1905fa6b1c90f9fef137568101f44b531a3cb\"\n"
-          + "        },\n"
-          + "        \"cipher\": {\n"
-          + "            \"function\": \"aes-128-ctr\",\n"
-          + "            \"params\": {\n"
-          + "                \"iv\": \""
-          + AES_IV_PARAM
-          + "\"\n"
-          + "            },\n"
-          + "            \"message\": \"54ecc8863c0550351eee5720f3be6a5d4a016025aa91cd6436cfec938d6a8d30\"\n"
-          + "        }\n"
-          + "    },\n"
-          + "    \"pubkey\": \""
-          + PUB_KEY
-          + "\",\n"
-          + "    \"path\": \"m/12381/60/3141592653/589793238\",\n"
-          + "    \"uuid\": \"1d85ae20-35c5-4611-98e8-aa14a633906f\",\n"
-          + "    \"version\": 4\n"
-          + "}";
-  private static final String pbkdf2Json =
-      "{\n"
-          + "    \"crypto\": {\n"
-          + "        \"kdf\": {\n"
-          + "            \"function\": \"pbkdf2\",\n"
-          + "            \"params\": {\n"
-          + "                \"dklen\": 32,\n"
-          + "                \"c\": 262144,\n"
-          + "                \"prf\": \"hmac-sha256\",\n"
-          + "                \"salt\": \""
-          + SALT
-          + "\"\n"
-          + "            },\n"
-          + "            \"message\": \"\"\n"
-          + "        },\n"
-          + "        \"checksum\": {\n"
-          + "            \"function\": \"sha256\",\n"
-          + "            \"params\": {},\n"
-          + "            \"message\": \"18b148af8e52920318084560fd766f9d09587b4915258dec0676cba5b0da09d8\"\n"
-          + "        },\n"
-          + "        \"cipher\": {\n"
-          + "            \"function\": \"aes-128-ctr\",\n"
-          + "            \"params\": {\n"
-          + "                \"iv\": \""
-          + AES_IV_PARAM
-          + "\"\n"
-          + "            },\n"
-          + "            \"message\": \"a9249e0ca7315836356e4c7440361ff22b9fe71e2e2ed34fc1eb03976924ed48\"\n"
-          + "        }\n"
-          + "    },\n"
-          + "    \"pubkey\": \""
-          + PUB_KEY
-          + "\",\n"
-          + "    \"path\": \"m/12381/60/0/0\",\n"
-          + "    \"uuid\": \"64625def-3331-4eea-ab6f-782f3ed16a83\",\n"
-          + "    \"version\": 4\n"
-          + "}";
-
-  private static final String missingKdfParamJson =
-      "{\n"
-          + "    \"crypto\": {\n"
-          + "        \"kdf\": {\n"
-          + "            \"function\": \"pbkdf2\",\n"
-          + "            \"message\": \"\"\n"
-          + "        },\n"
-          + "        \"checksum\": {\n"
-          + "            \"function\": \"sha256\",\n"
-          + "            \"params\": {},\n"
-          + "            \"message\": \"18b148af8e52920318084560fd766f9d09587b4915258dec0676cba5b0da09d8\"\n"
-          + "        },\n"
-          + "        \"cipher\": {\n"
-          + "            \"function\": \"aes-128-ctr\",\n"
-          + "            \"params\": {\n"
-          + "                \"iv\": \"264daa3f303d7259501c93d997d84fe6\"\n"
-          + "            },\n"
-          + "            \"message\": \"a9249e0ca7315836356e4c7440361ff22b9fe71e2e2ed34fc1eb03976924ed48\"\n"
-          + "        }\n"
-          + "    },\n"
-          + "    \"pubkey\": \"9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07\",\n"
-          + "    \"path\": \"m/12381/60/0/0\",\n"
-          + "    \"uuid\": \"64625def-3331-4eea-ab6f-782f3ed16a83\",\n"
-          + "    \"version\": 4\n"
-          + "}";
-
-  private static final String emptyKdfParams =
-      "{\n"
-          + "    \"crypto\": {\n"
-          + "        \"kdf\": {\n"
-          + "            \"function\": \"pbkdf2\",\n"
-          + "            \"params\": {},\n"
-          + "            \"message\": \"\"\n"
-          + "        },\n"
-          + "        \"checksum\": {\n"
-          + "            \"function\": \"sha256\",\n"
-          + "            \"params\": {},\n"
-          + "            \"message\": \"18b148af8e52920318084560fd766f9d09587b4915258dec0676cba5b0da09d8\"\n"
-          + "        },\n"
-          + "        \"cipher\": {\n"
-          + "            \"function\": \"aes-128-ctr\",\n"
-          + "            \"params\": {\n"
-          + "                \"iv\": \"264daa3f303d7259501c93d997d84fe6\"\n"
-          + "            },\n"
-          + "            \"message\": \"a9249e0ca7315836356e4c7440361ff22b9fe71e2e2ed34fc1eb03976924ed48\"\n"
-          + "        }\n"
-          + "    },\n"
-          + "    \"pubkey\": \"9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07\",\n"
-          + "    \"path\": \"m/12381/60/0/0\",\n"
-          + "    \"uuid\": \"64625def-3331-4eea-ab6f-782f3ed16a83\",\n"
-          + "    \"version\": 4\n"
-          + "}";
-
-  private static final String unsupportedChecksumJson =
-      "{\n"
-          + "    \"crypto\": {\n"
-          + "        \"kdf\": {\n"
-          + "            \"function\": \"scrypt\",\n"
-          + "            \"params\": {\n"
-          + "                \"dklen\": 32,\n"
-          + "                \"n\": 262144,\n"
-          + "                \"p\": 1,\n"
-          + "                \"r\": 8,\n"
-          + "                \"salt\": \"d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3\"\n"
-          + "            },\n"
-          + "            \"message\": \"\"\n"
-          + "        },\n"
-          + "        \"checksum\": {\n"
-          + "            \"function\": \"sha1\",\n"
-          + "            \"params\": {},\n"
-          + "            \"message\": \"149aafa27b041f3523c53d7acba1905fa6b1c90f9fef137568101f44b531a3cb\"\n"
-          + "        },\n"
-          + "        \"cipher\": {\n"
-          + "            \"function\": \"aes-128-ctr\",\n"
-          + "            \"params\": {\n"
-          + "                \"iv\": \"264daa3f303d7259501c93d997d84fe6\"\n"
-          + "            },\n"
-          + "            \"message\": \"54ecc8863c0550351eee5720f3be6a5d4a016025aa91cd6436cfec938d6a8d30\"\n"
-          + "        }\n"
-          + "    },\n"
-          + "    \"pubkey\": \"9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07\",\n"
-          + "    \"path\": \"m/12381/60/3141592653/589793238\",\n"
-          + "    \"uuid\": \"1d85ae20-35c5-4611-98e8-aa14a633906f\",\n"
-          + "    \"version\": 4\n"
-          + "}";
+  private static final String scryptTestVectorJsonResource = "scryptTestVector.json";
+  private static final String pbkdf2TestVectorJsonResource = "pbkdf2TestVector.json";
+  private static final String missingKdfParamTestVectorJsonResource =
+      "missingKdfSectionTestVector.json";
+  private static final String unsupportedChecksumFunctionJsonResource =
+      "unsupportedChecksumFunction.json";
 
   @SuppressWarnings("UnusedMethod")
-  private static Stream<Arguments> validJsonKeyStore() {
-    return Stream.of(Arguments.of(sCryptJson), Arguments.of(pbkdf2Json));
+  private static Stream<Arguments> keystorePaths() {
+    try {
+      final Path scryptTestVectorPath =
+          Paths.get(Resources.getResource(scryptTestVectorJsonResource).toURI());
+      final Path pbkdf2TestVectorPath =
+          Paths.get(Resources.getResource(pbkdf2TestVectorJsonResource).toURI());
+      return Stream.of(Arguments.of(scryptTestVectorPath), Arguments.of(pbkdf2TestVectorPath));
+    } catch (URISyntaxException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  @SuppressWarnings("UnusedMethod")
+  private static Stream<Arguments> invalidKeyStorePaths() {
+    try {
+      final Path scryptTestVectorPath =
+          Paths.get(Resources.getResource(missingKdfParamTestVectorJsonResource).toURI());
+      final Path pbkdf2TestVectorPath =
+          Paths.get(Resources.getResource(unsupportedChecksumFunctionJsonResource).toURI());
+      return Stream.of(Arguments.of(scryptTestVectorPath), Arguments.of(pbkdf2TestVectorPath));
+    } catch (URISyntaxException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @SuppressWarnings("UnusedMethod")
   private static Stream<Arguments> kdfParams() {
+    // KdfParam, expected checksum, expected encrypted cipher message
     return Stream.of(
         Arguments.of(
             SCryptParamBuilder.aSCryptParam().withSalt(SALT).build(),
@@ -245,9 +116,9 @@ class KeyStoreTest {
   }
 
   @ParameterizedTest
-  @MethodSource("validJsonKeyStore")
-  void loadKeyStoreAndDecryptKey(final String keyStoreJson) throws Exception {
-    final KeyStore keyStore = KeyStoreLoader.loadFromJson(keyStoreJson);
+  @MethodSource("keystorePaths")
+  void loadKeyStoreAndDecryptKey(final Path keyStorePath) throws Exception {
+    final KeyStore keyStore = KeyStoreLoader.loadFromFile(keyStorePath);
     final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
     assertNotNull(keyStoreData);
     final KdfParam param = keyStoreData.getCrypto().getKdf().getParam();
@@ -267,10 +138,9 @@ class KeyStoreTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {missingKdfParamJson, emptyKdfParams, unsupportedChecksumJson})
-  void loadingKeyStoreWithInvalidKdfParamsThrowsException(final String invalidJson) {
-    Assertions.assertThrows(
-        JsonMappingException.class, () -> KeyStoreLoader.loadFromJson(invalidJson));
+  @MethodSource("invalidKeyStorePaths")
+  void loadingKeyStoreWithInvalidKdfParamsThrowsException(final Path invalidJsonPath) {
+    assertThrows(JsonMappingException.class, () -> KeyStoreLoader.loadFromFile(invalidJsonPath));
   }
 
   @ParameterizedTest
@@ -278,8 +148,14 @@ class KeyStoreTest {
   void encryptWithKdfAndCipherFunction(
       final KdfParam kdfParam, final Bytes expectedChecksum, final Bytes encryptedCipherMessage) {
     final CipherParam cipherParam = CipherParamBuilder.aCipherParam().withIv(AES_IV_PARAM).build();
+    final Cipher cipher =
+        CipherBuilder.aCipher()
+            .withCipherParam(cipherParam)
+            .withCipherFunction(AES_128_CTR)
+            .build();
     final Crypto crypto =
-        KeyStore.encryptUsingCipherFunction(BLS_PRIVATE_KEY, PASSWORD, kdfParam, cipherParam);
+        KeyStore.encryptUsingCipherFunction(
+            BLS_PRIVATE_KEY, PASSWORD, kdfParam, cipher, ChecksumFunction.SHA256);
 
     assertEquals(expectedChecksum, crypto.getChecksum().getMessage());
     assertEquals(encryptedCipherMessage, crypto.getCipher().getMessage());
@@ -288,8 +164,13 @@ class KeyStoreTest {
   @ParameterizedTest
   @MethodSource("basicKdfParam")
   void encryptWithRandomSaltAndIv(final KdfParam kdfParam, final CipherParam cipherParam) {
+    final Cipher cipher =
+        CipherBuilder.aCipher()
+            .withCipherParam(cipherParam)
+            .withCipherFunction(AES_128_CTR)
+            .build();
     final KeyStore encryptedKeyStore =
-        KeyStore.encrypt(BLS_PRIVATE_KEY, "test", "", kdfParam, cipherParam);
+        KeyStore.encrypt(BLS_PRIVATE_KEY, "test", "", kdfParam, cipher);
     assertTrue(encryptedKeyStore.validatePassword("test"));
     final Bytes decryptedKey = encryptedKeyStore.decrypt("test");
     assertEquals(BLS_PRIVATE_KEY, decryptedKey);
@@ -303,10 +184,15 @@ class KeyStoreTest {
             ? SCryptParamBuilder.aSCryptParam().build()
             : Pbkdf2ParamBuilder.aPbkdf2Param().build();
     final CipherParam cipherParam = CipherParamBuilder.aCipherParam().build();
+    final Cipher cipher =
+        CipherBuilder.aCipher()
+            .withCipherParam(cipherParam)
+            .withCipherFunction(AES_128_CTR)
+            .build();
     final Bytes largeData = Bytes.random(1024);
     final Crypto crypto =
-        KeyStore.encryptUsingCipherFunction(largeData, PASSWORD, kdfParam, cipherParam);
-    System.out.println(crypto);
+        KeyStore.encryptUsingCipherFunction(
+            largeData, PASSWORD, kdfParam, cipher, ChecksumFunction.SHA256);
     assertEquals(32, crypto.getChecksum().getMessage().size());
   }
 
@@ -318,10 +204,59 @@ class KeyStoreTest {
             ? SCryptParamBuilder.aSCryptParam().build()
             : Pbkdf2ParamBuilder.aPbkdf2Param().build();
     final CipherParam cipherParam = CipherParamBuilder.aCipherParam().build();
+    final Cipher cipher =
+        CipherBuilder.aCipher()
+            .withCipherParam(cipherParam)
+            .withCipherFunction(AES_128_CTR)
+            .build();
     final Bytes smallData = Bytes.random(8);
     final Crypto crypto =
-        KeyStore.encryptUsingCipherFunction(smallData, PASSWORD, kdfParam, cipherParam);
-    System.out.println(crypto);
+        KeyStore.encryptUsingCipherFunction(
+            smallData, PASSWORD, kdfParam, cipher, ChecksumFunction.SHA256);
     assertEquals(32, crypto.getChecksum().getMessage().size());
+  }
+
+  @ParameterizedTest
+  @EnumSource(CryptoFunction.class)
+  void checksumFunctionSha512(final CryptoFunction cryptoFunction) {
+    final KdfParam kdfParam =
+        cryptoFunction == SCRYPT
+            ? SCryptParamBuilder.aSCryptParam().build()
+            : Pbkdf2ParamBuilder.aPbkdf2Param().build();
+    final CipherParam cipherParam = CipherParamBuilder.aCipherParam().build();
+    final Cipher cipher =
+        CipherBuilder.aCipher()
+            .withCipherParam(cipherParam)
+            .withCipherFunction(AES_128_CTR)
+            .build();
+    final Bytes smallData = Bytes.random(8);
+    final Crypto crypto =
+        KeyStore.encryptUsingCipherFunction(
+            smallData, PASSWORD, kdfParam, cipher, ChecksumFunction.SHA512);
+    assertEquals(64, crypto.getChecksum().getMessage().size());
+  }
+
+  @ParameterizedTest
+  @EnumSource(CryptoFunction.class)
+  void encryptionWithInvalidDkLenShouldFail(final CryptoFunction cryptoFunction) {
+    final KdfParam kdfParam =
+        cryptoFunction == SCRYPT
+            ? SCryptParamBuilder.aSCryptParam().withDklen(15).build()
+            : Pbkdf2ParamBuilder.aPbkdf2Param().withDklen(15).build();
+    final CipherParam cipherParam = CipherParamBuilder.aCipherParam().build();
+    final Cipher cipher =
+        CipherBuilder.aCipher()
+            .withCipherParam(cipherParam)
+            .withCipherFunction(AES_128_CTR)
+            .build();
+    final Bytes data = Bytes.random(8);
+    final IllegalArgumentException illegalArgumentException =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                KeyStore.encryptUsingCipherFunction(
+                    data, PASSWORD, kdfParam, cipher, ChecksumFunction.SHA256));
+    assertEquals(
+        "aes-128-ctr requires kdf dklen greater than 16", illegalArgumentException.getMessage());
   }
 }

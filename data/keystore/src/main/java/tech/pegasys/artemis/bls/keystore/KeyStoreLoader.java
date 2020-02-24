@@ -21,8 +21,8 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
@@ -36,8 +36,9 @@ public class KeyStoreLoader {
     return new KeyStore(keyStoreData);
   }
 
-  public static KeyStore loadFromFile(final File keystoreFile) throws Exception {
-    final KeyStoreData keyStoreData = OBJECT_MAPPER.readValue(keystoreFile, KeyStoreData.class);
+  public static KeyStore loadFromFile(final Path keystoreFile) throws Exception {
+    final KeyStoreData keyStoreData =
+        OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
     return new KeyStore(keyStoreData);
   }
 

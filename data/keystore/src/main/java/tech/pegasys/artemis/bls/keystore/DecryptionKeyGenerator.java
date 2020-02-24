@@ -15,6 +15,7 @@ package tech.pegasys.artemis.bls.keystore;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.generators.SCrypt;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -45,7 +46,19 @@ public class DecryptionKeyGenerator {
   }
 
   private static Bytes generate(final byte[] password, final Pbkdf2Param pbkdf2Param) {
-    PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(DigestFactory.createSHA256());
+    final Digest digest;
+    switch (pbkdf2Param.getPrf()) {
+      case HMAC_SHA256:
+        digest = DigestFactory.createSHA256();
+        break;
+      case HMAC_SHA512:
+        digest = DigestFactory.createSHA512();
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "PBKDF2 function not implemented: " + pbkdf2Param.getPrf());
+    }
+    final PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(digest);
     gen.init(password, pbkdf2Param.getSalt().toArrayUnsafe(), pbkdf2Param.getIterativeCount());
     final int keySizeInBits = pbkdf2Param.getDerivedKeyLength() * 8;
     final byte[] key = ((KeyParameter) gen.generateDerivedParameters(keySizeInBits)).getKey();

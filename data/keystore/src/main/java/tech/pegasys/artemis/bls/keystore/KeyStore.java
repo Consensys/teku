@@ -17,10 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
+import static org.apache.tuweni.crypto.Hash.digestUsingAlgorithm;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -32,7 +34,8 @@ import tech.pegasys.artemis.bls.keystore.builder.CipherBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.KdfBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.KeyStoreDataBuilder;
 import tech.pegasys.artemis.bls.keystore.model.Checksum;
-import tech.pegasys.artemis.bls.keystore.model.CipherParam;
+import tech.pegasys.artemis.bls.keystore.model.ChecksumFunction;
+import tech.pegasys.artemis.bls.keystore.model.Cipher;
 import tech.pegasys.artemis.bls.keystore.model.Crypto;
 import tech.pegasys.artemis.bls.keystore.model.Kdf;
 import tech.pegasys.artemis.bls.keystore.model.KdfParam;
@@ -65,7 +68,7 @@ public class KeyStore {
    * @param path Path as defined in EIP-2334. Can be empty String.
    * @param kdfParam crypto function such as scrypt or PBKDF2 and related parameters such as dklen,
    *     salt etc.
-   * @param cipherParam cipher function and parameters such as iv.
+   * @param cipher cipher function and parameters such as iv.
    * @return The constructed KeyStore with encrypted blsPrivateKey and other details as defined by
    *     the EIP-2335 standard.
    */
@@ -74,10 +77,11 @@ public class KeyStore {
       final String password,
       final String path,
       final KdfParam kdfParam,
-      final CipherParam cipherParam) {
+      final Cipher cipher) {
 
     final Crypto crypto =
-        encryptUsingCipherFunction(blsPrivateKey, password, kdfParam, cipherParam);
+        encryptUsingCipherFunction(
+            blsPrivateKey, password, kdfParam, cipher, ChecksumFunction.SHA256);
     final Bytes pubKey =
         new PublicKey(SecretKey.fromBytes(Bytes48.leftPad(blsPrivateKey))).toBytesCompressed();
     final KeyStoreData keyStoreData =
@@ -95,19 +99,30 @@ public class KeyStore {
       final Bytes secret,
       final String password,
       final KdfParam kdfParam,
-      final CipherParam cipherParam) {
+      final Cipher cipher,
+      final ChecksumFunction checksumFunction) {
     checkArgument(
         kdfParam.getDerivedKeyLength() > 16, "aes-128-ctr requires kdf dklen greater than 16");
 
     final Bytes decryptionKey = DecryptionKeyGenerator.generate(password.getBytes(UTF_8), kdfParam);
     final Bytes cipherMessage =
-        applyCipherFunction(decryptionKey, cipherParam.getIv(), true, secret.toArrayUnsafe());
-    final Bytes checksumMessage = calculateChecksum(kdfParam, decryptionKey, cipherMessage);
-    final Checksum checksum = ChecksumBuilder.aChecksum().withMessage(checksumMessage).build();
-    final tech.pegasys.artemis.bls.keystore.model.Cipher cipher =
-        CipherBuilder.aCipher().withCipherParam(cipherParam).withMessage(cipherMessage).build();
+        applyCipherFunction(
+            decryptionKey, cipher.getCipherParam().getIv(), true, secret.toArrayUnsafe());
+    final Bytes checksumMessage =
+        calculateChecksum(kdfParam, checksumFunction, decryptionKey, cipherMessage);
+    final Checksum checksum =
+        ChecksumBuilder.aChecksum()
+            .withChecksumFunction(checksumFunction)
+            .withMessage(checksumMessage)
+            .build();
+    final Cipher encryptedCipher =
+        CipherBuilder.aCipher()
+            .withCipherFunction(cipher.getCipherFunction())
+            .withCipherParam(cipher.getCipherParam())
+            .withMessage(cipherMessage)
+            .build();
     final Kdf kdf = KdfBuilder.aKdf().withParam(kdfParam).build();
-    return new Crypto(kdf, checksum, cipher);
+    return new Crypto(kdf, checksum, encryptedCipher);
   }
 
   public Bytes decrypt(final String password) {
@@ -138,16 +153,28 @@ public class KeyStore {
     final Bytes checksum =
         calculateChecksum(
             keyStoreData.getCrypto().getKdf().getParam(),
+            keyStoreData.getCrypto().getChecksum().getChecksumFunction(),
             decryptionKey,
             keyStoreData.getCrypto().getCipher().getMessage());
     return Objects.equals(checksum, keyStoreData.getCrypto().getChecksum().getMessage());
   }
 
   private static Bytes calculateChecksum(
-      final KdfParam kdfParam, final Bytes decryptionKey, final Bytes cipherMessage) {
+      final KdfParam kdfParam,
+      final ChecksumFunction checksumFunction,
+      final Bytes decryptionKey,
+      final Bytes cipherMessage) {
     // aes-128-ctr needs first 16 bytes for its key. The rest of the key is used to create checksum
     final Bytes dkSliceSecondHalf = decryptionKey.slice(16, kdfParam.getDerivedKeyLength() - 16);
-    return sha2_256(Bytes.wrap(dkSliceSecondHalf, cipherMessage));
+    final Bytes preImage = Bytes.wrap(dkSliceSecondHalf, cipherMessage);
+    switch (checksumFunction) {
+      case SHA256:
+        return sha2_256(preImage);
+      case SHA512:
+        return sha2_512(preImage);
+      default:
+        throw new IllegalArgumentException("checksum function not supported: " + checksumFunction);
+    }
   }
 
   private static Bytes applyCipherFunction(
@@ -177,6 +204,14 @@ public class KeyStore {
           Bytes.wrap(cipher.doFinal(inputMessage, blockIndex, inputMessage.length - blockIndex)));
     } catch (final GeneralSecurityException e) {
       throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
+    }
+  }
+
+  private static Bytes sha2_512(Bytes input) {
+    try {
+      return digestUsingAlgorithm(input, "SHA-512");
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException("Digest Algorithm not available", e);
     }
   }
 }

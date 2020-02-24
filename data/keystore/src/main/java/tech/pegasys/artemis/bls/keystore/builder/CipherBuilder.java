@@ -22,7 +22,7 @@ import tech.pegasys.artemis.bls.keystore.model.CipherParam;
 public final class CipherBuilder {
   private CipherFunction cipherFunction = CipherFunction.AES_128_CTR;
   private CipherParam cipherParam;
-  private Bytes message;
+  private Bytes message = Bytes.EMPTY;
 
   private CipherBuilder() {}
 
@@ -47,7 +47,6 @@ public final class CipherBuilder {
 
   public Cipher build() {
     Objects.requireNonNull(cipherParam);
-    Objects.requireNonNull(message);
     return new Cipher(cipherFunction, cipherParam, message);
   }
 }

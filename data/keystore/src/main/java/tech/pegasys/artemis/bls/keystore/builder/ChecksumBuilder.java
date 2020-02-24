@@ -35,6 +35,11 @@ public final class ChecksumBuilder {
     return this;
   }
 
+  public ChecksumBuilder withChecksumFunction(final ChecksumFunction checksumFunction) {
+    this.checksumFunction = checksumFunction;
+    return this;
+  }
+
   public Checksum build() {
     Objects.requireNonNull(message);
     return new Checksum(checksumFunction, param, message);
