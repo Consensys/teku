@@ -19,12 +19,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -32,6 +36,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 class HistoricalChainDataTest {
   private static final Optional<SignedBeaconBlock> BLOCK =
       Optional.of(DataStructureUtil.randomSignedBeaconBlock(1, 100));
+  private static final Optional<BeaconState> STATE =
+      Optional.of(DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1), 100));
   private final EventBus eventBus = mock(EventBus.class);
   private final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
 
@@ -127,6 +133,17 @@ class HistoricalChainDataTest {
 
     assertThat(result1).isCompletedWithValue(BLOCK);
     assertThat(result2).isCompletedWithValue(BLOCK);
+  }
+
+  @Test
+  public void getFinalizedStateAtSlot_shouldRetrieveStateBySlot() {
+    final SafeFuture<Optional<BeaconState>> result =
+        historicalChainData.getFinalizedStateAtSlot(ONE);
+    verify(eventBus).post(new GetFinalizedStateAtSlotRequest(ONE));
+    assertThat(result).isNotDone();
+
+    historicalChainData.onStateAtSlotResponse(new GetFinalizedStateAtSlotResponse(ONE, STATE));
+    assertThat(result).isCompletedWithValue(STATE);
   }
 
   @Test

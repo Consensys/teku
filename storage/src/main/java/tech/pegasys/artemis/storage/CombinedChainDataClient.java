@@ -34,6 +34,8 @@ public class CombinedChainDataClient {
 
   private static final SafeFuture<Optional<SignedBeaconBlock>> BLOCK_NOT_AVAILABLE =
       completedFuture(Optional.empty());
+  private static final SafeFuture<Optional<BeaconState>> STATE_NOT_AVAILABLE =
+      completedFuture(Optional.empty());
   private final ChainStorageClient recentChainData;
   private final HistoricalChainData historicalChainData;
 
@@ -125,5 +127,48 @@ public class CombinedChainDataClient {
 
   public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
     return recentChainData.getBlockState(blockRoot);
+  }
+
+  /**
+   * Returns the state which was proposed in or most recently before the requested slot on the chain
+   * specified by <code>headBlockRoot</code>. If the slot was empty, the state at the last filled
+   * slot is returned.
+   *
+   * @param slot the slot to get the effective block for
+   * @return the State at slot or the closest previous slot if empty
+   */
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(
+      final UnsignedLong slot, final Bytes32 headBlockRoot) {
+
+    final Store store = recentChainData.getStore();
+    if (store == null) {
+      LOG.trace("No state at slot {} because the store is not set", slot);
+      return STATE_NOT_AVAILABLE;
+    }
+
+    if (isFinalized(slot)) {
+      return historicalChainData.getFinalizedStateAtSlot(slot);
+    }
+
+    final BeaconState headState = store.getBlockState(headBlockRoot);
+    if (headState.getSlot().equals(slot)) {
+      return completedFuture(Optional.ofNullable(headState));
+    }
+
+    return completedFuture(recentChainData.getStateBySlot(slot));
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtBlock(final Bytes32 block) {
+    final Store store = recentChainData.getStore();
+    if (store == null) {
+      LOG.trace("No state at block {} because the store is not set", block);
+      return STATE_NOT_AVAILABLE;
+    }
+    final BeaconState state = store.getBlockState(block);
+    if (state != null) {
+      return completedFuture(Optional.of(state));
+    }
+
+    return historicalChainData.getFinalizedStateAtBlock(block);
   }
 }

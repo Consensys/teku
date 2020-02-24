@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
+import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -22,32 +23,49 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconStateHandler implements Handler {
   public static final String ROUTE = "/beacon/state";
-  private final Logger LOG = LogManager.getLogger();
+  public static final String ROOT_PARAMETER = "root";
+  public static final String SLOT_PARAMETER = "slot";
   private final ChainStorageClient client;
+  private final CombinedChainDataClient combinedClient;
   private final JsonProvider jsonProvider;
 
-  public BeaconStateHandler(ChainStorageClient client, JsonProvider jsonProvider) {
+  public BeaconStateHandler(
+      ChainStorageClient client,
+      CombinedChainDataClient combinedClient,
+      JsonProvider jsonProvider) {
     this.client = client;
+    this.combinedClient = combinedClient;
     this.jsonProvider = jsonProvider;
   }
 
-  private BeaconState queryByRootHash(String root) {
+  private BeaconState queryByRootHash(String root) throws ExecutionException, InterruptedException {
     Bytes32 root32 = Bytes32.fromHexString(root);
-    Store store = client.getStore();
-    if (store == null) {
-      return client.getBlockState(root32).orElse(null);
-    }
-    return store.getBlockState(root32);
+
+    SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtBlock(root32);
+    Optional<BeaconState> result = future.get();
+    return result.orElse(null);
+  }
+
+  private BeaconState queryBySlot(UnsignedLong slot)
+      throws ExecutionException, InterruptedException {
+    Bytes32 head = client.getBestBlockRoot();
+
+    SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtSlot(slot, head);
+    Optional<BeaconState> result = future.get();
+    return result.orElse(null);
   }
 
   @OpenApi(
@@ -56,7 +74,11 @@ public class BeaconStateHandler implements Handler {
       summary = "Get the beacon chain state that matches the specified tree hash root.",
       tags = {"Beacon"},
       queryParams = {
-        @OpenApiParam(name = "root", description = "Tree hash root to query (Bytes32)")
+        @OpenApiParam(name = ROOT_PARAMETER, description = "Tree hash root to query (Bytes32)"),
+        @OpenApiParam(
+            name = SLOT_PARAMETER,
+            description =
+                "Query by slot number in the canonical chain (head or ancestor of the head)")
       },
       description =
           "Request that the node return a beacon chain state that matches the specified tree hash root.",
@@ -68,10 +90,15 @@ public class BeaconStateHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    String rootParam = ctx.queryParam("root");
-    BeaconState result = queryByRootHash(rootParam);
+    Map<String, List<String>> parameters = ctx.queryParamMap();
+    BeaconState result = null;
+    if (parameters.containsKey(ROOT_PARAMETER)) {
+      result = queryByRootHash(parameters.get(ROOT_PARAMETER).get(0));
+    } else if (parameters.containsKey(SLOT_PARAMETER)) {
+      result = queryBySlot(UnsignedLong.valueOf(parameters.get(SLOT_PARAMETER).get(0)));
+    }
+
     if (result == null) {
-      LOG.trace("Block root {} not found", rootParam);
       ctx.status(SC_NOT_FOUND);
     } else {
       ctx.result(jsonProvider.objectToJSON(result));

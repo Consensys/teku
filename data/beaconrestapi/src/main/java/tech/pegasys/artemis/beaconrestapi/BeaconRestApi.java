@@ -39,6 +39,7 @@ import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -52,11 +53,12 @@ public class BeaconRestApi {
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
       HistoricalChainData historicalChainData,
+      CombinedChainDataClient combinedChainDataClient,
       final int requestedPortNumber) {
     app.server().setServerPort(requestedPortNumber);
 
     addNodeHandlers(chainStorageClient);
-    addBeaconHandlers(chainStorageClient, historicalChainData);
+    addBeaconHandlers(chainStorageClient, historicalChainData, combinedChainDataClient);
     addNetworkHandlers(p2pNetwork);
     addValidatorHandlers();
   }
@@ -65,6 +67,7 @@ public class BeaconRestApi {
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
       HistoricalChainData historicalChainData,
+      CombinedChainDataClient combinedChainDataClient,
       final int requestedPortNumber) {
     this.app =
         Javalin.create(
@@ -72,17 +75,28 @@ public class BeaconRestApi {
               config.registerPlugin(new OpenApiPlugin(getOpenApiOptions(jsonProvider)));
               config.defaultContentType = "application/json";
             });
-    initialise(chainStorageClient, p2pNetwork, historicalChainData, requestedPortNumber);
+    initialise(
+        chainStorageClient,
+        p2pNetwork,
+        historicalChainData,
+        combinedChainDataClient,
+        requestedPortNumber);
   }
 
   BeaconRestApi(
       ChainStorageClient chainStorageClient,
       P2PNetwork<?> p2pNetwork,
       HistoricalChainData historicalChainData,
+      CombinedChainDataClient combinedChainDataClient,
       final int requestedPortNumber,
       Javalin app) {
     this.app = app;
-    initialise(chainStorageClient, p2pNetwork, historicalChainData, requestedPortNumber);
+    initialise(
+        chainStorageClient,
+        p2pNetwork,
+        historicalChainData,
+        combinedChainDataClient,
+        requestedPortNumber);
   }
 
   public void start() {
@@ -141,11 +155,15 @@ public class BeaconRestApi {
   }
 
   private void addBeaconHandlers(
-      ChainStorageClient chainStorageClient, HistoricalChainData historicalChainData) {
+      ChainStorageClient chainStorageClient,
+      HistoricalChainData historicalChainData,
+      CombinedChainDataClient combinedChainDataClient) {
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainStorageClient, jsonProvider));
     app.get(
         BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
-    app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(chainStorageClient, jsonProvider));
+    app.get(
+        BeaconStateHandler.ROUTE,
+        new BeaconStateHandler(chainStorageClient, combinedChainDataClient, jsonProvider));
     // TODO: not in Minimal or optional specified set - some are similar to lighthouse
     // implementation
     handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
