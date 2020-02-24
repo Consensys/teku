@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -46,6 +47,18 @@ public class BeaconStateHandlerTest {
     handler.handle(context);
 
     verify(context).status(SC_NOT_FOUND);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenNoParameterSpecified() throws Exception {
+    BeaconStateHandler handler = new BeaconStateHandler(storageClient, jsonProvider);
+
+    when(storageClient.getStore()).thenReturn(store);
+    when(context.queryParam("root")).thenReturn(null);
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
   }
 
   @Test
