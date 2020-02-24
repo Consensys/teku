@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static java.util.Optional.empty;
-import static java.util.Optional.of;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -24,10 +24,10 @@ import static org.mockito.Mockito.when;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -46,7 +46,6 @@ public class BeaconBlockHandlerTest {
 
   private final SignedBeaconBlock signedBeaconBlock =
       DataStructureUtil.randomSignedBeaconBlock(1, 1);
-  private final BeaconBlock beaconBlock = signedBeaconBlock.getMessage();
   private final BeaconBlockHandler handler =
       new BeaconBlockHandler(storageClient, historicalChainData, jsonProvider);
 
@@ -66,7 +65,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnNotFoundWhenValidParamNotSpecified() throws Exception {
     handler.handle(context);
-    verify(context).status(SC_NOT_FOUND);
+    verify(context).status(SC_BAD_REQUEST);
   }
 
   @Test
@@ -74,7 +73,7 @@ public class BeaconBlockHandlerTest {
     final Map<String, List<String>> params = Map.of("epoch", List.of("1"));
 
     when(context.queryParamMap()).thenReturn(params);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(of(blockRoot));
+    when(storageClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
     when(storageClient.getStore()).thenReturn(store);
     when(store.getBlock(any())).thenReturn(null);
     when(historicalChainData.getFinalizedBlockAtSlot(any()))
@@ -91,7 +90,7 @@ public class BeaconBlockHandlerTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(storageClient.getStore()).thenReturn(store);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(of(blockRoot));
+    when(storageClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
     when(store.getBlock(any())).thenReturn(null);
     when(historicalChainData.getFinalizedBlockAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(empty()));
@@ -132,15 +131,16 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnBlockWhenRootParamSpecified() throws Exception {
     final Map<String, List<String>> params =
-        Map.of("root", List.of(beaconBlock.getParent_root().toHexString()));
+        Map.of("root", List.of(signedBeaconBlock.getParent_root().toHexString()));
 
     when(context.queryParamMap()).thenReturn(params);
     when(storageClient.getStore()).thenReturn(store);
-    when(store.getBlock(any())).thenReturn(beaconBlock);
+    when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
 
     handler.handle(context);
 
-    final String jsonResponse = jsonProvider.objectToJSON(new BeaconBlockResponse(beaconBlock));
+    final String jsonResponse =
+        jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
     verify(context).result(jsonResponse);
   }
 
@@ -149,15 +149,16 @@ public class BeaconBlockHandlerTest {
     final Map<String, List<String>> params = Map.of("epoch", List.of("1"));
 
     when(context.queryParamMap()).thenReturn(params);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(of(blockRoot));
+    when(storageClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
     when(storageClient.getStore()).thenReturn(store);
-    when(store.getBlock(any())).thenReturn(beaconBlock);
+    when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
     when(historicalChainData.getFinalizedBlockAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(empty()));
 
     handler.handle(context);
 
-    final String jsonResponse = jsonProvider.objectToJSON(new BeaconBlockResponse(beaconBlock));
+    final String jsonResponse =
+        jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
     verify(context).result(jsonResponse);
   }
 
@@ -167,14 +168,15 @@ public class BeaconBlockHandlerTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(storageClient.getStore()).thenReturn(store);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(of(blockRoot));
-    when(store.getBlock(any())).thenReturn(beaconBlock);
+    when(storageClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
+    when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
     when(historicalChainData.getFinalizedBlockAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(empty()));
 
     handler.handle(context);
 
-    final String jsonResponse = jsonProvider.objectToJSON(new BeaconBlockResponse(beaconBlock));
+    final String jsonResponse =
+        jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
     verify(context).result(jsonResponse);
   }
 
@@ -185,11 +187,12 @@ public class BeaconBlockHandlerTest {
     when(context.queryParamMap()).thenReturn(params);
     when(storageClient.getBlockRootBySlot(any())).thenReturn(empty());
     when(historicalChainData.getFinalizedBlockAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(of(signedBeaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
 
     handler.handle(context);
 
-    final String jsonResponse = jsonProvider.objectToJSON(new BeaconBlockResponse(beaconBlock));
+    final String jsonResponse =
+        jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
     verify(context).result(jsonResponse);
   }
 
@@ -200,11 +203,12 @@ public class BeaconBlockHandlerTest {
     when(context.queryParamMap()).thenReturn(params);
     when(storageClient.getBlockRootBySlot(any())).thenReturn(empty());
     when(historicalChainData.getFinalizedBlockAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(of(signedBeaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
 
     handler.handle(context);
 
-    final String jsonResponse = jsonProvider.objectToJSON(new BeaconBlockResponse(beaconBlock));
+    final String jsonResponse =
+        jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
     verify(context).result(jsonResponse);
   }
 }

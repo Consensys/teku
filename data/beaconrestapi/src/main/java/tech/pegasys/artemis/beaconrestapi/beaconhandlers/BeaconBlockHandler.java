@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -54,13 +54,14 @@ public class BeaconBlockHandler implements Handler {
     if (queryParamMap.containsKey(ROOT)) {
       final Bytes32 root = Bytes32.fromHexString(queryParamMap.get(ROOT).get(0));
       if (client.getStore() != null) {
-        ctx.result(
-            jsonProvider.objectToJSON(new BeaconBlockResponse(client.getStore().getBlock(root))));
-        return;
-      } else {
-        ctx.status(SC_NOT_FOUND);
-        return;
+        final SignedBeaconBlock block = client.getStore().getSignedBlock(root);
+        if (block != null) {
+          ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(block)));
+          return;
+        }
       }
+      ctx.status(SC_NOT_FOUND);
+      return;
     }
 
     final UnsignedLong slot;
@@ -69,27 +70,22 @@ public class BeaconBlockHandler implements Handler {
     } else if (queryParamMap.containsKey(SLOT)) {
       slot = UnsignedLong.valueOf(queryParamMap.get(SLOT).get(0));
     } else {
-      ctx.status(SC_NOT_FOUND);
+      ctx.status(SC_BAD_REQUEST);
       return;
     }
 
-    final Optional<BeaconBlock> blockBySlot = getBlockBySlot(slot);
+    final Optional<SignedBeaconBlock> blockBySlot = getBlockBySlot(slot);
     if (blockBySlot.isPresent()) {
       ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(blockBySlot.get())));
-    } else {
-      ctx.status(SC_NOT_FOUND);
+      return;
     }
+    ctx.status(SC_NOT_FOUND);
   }
 
-  private Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
+  private Optional<SignedBeaconBlock> getBlockBySlot(final UnsignedLong slot) {
     return client
         .getBlockRootBySlot(slot)
-        .map(root -> client.getStore().getBlock(root))
-        .or(
-            () -> {
-              final Optional<SignedBeaconBlock> signedBeaconBlock =
-                  historicalChainData.getFinalizedBlockAtSlot(slot).join();
-              return signedBeaconBlock.map(SignedBeaconBlock::getMessage);
-            });
+        .map(root -> client.getStore().getSignedBlock(root))
+        .or(() -> historicalChainData.getFinalizedBlockAtSlot(slot).join());
   }
 }

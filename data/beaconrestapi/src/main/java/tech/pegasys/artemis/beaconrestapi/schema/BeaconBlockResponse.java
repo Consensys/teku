@@ -15,19 +15,19 @@ package tech.pegasys.artemis.beaconrestapi.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
 public class BeaconBlockResponse {
-  private final BeaconBlock beaconBlock;
+  private final SignedBeaconBlock beaconBlock;
   private final Bytes32 rootHash;
 
-  public BeaconBlockResponse(final BeaconBlock beaconBlock) {
+  public BeaconBlockResponse(final SignedBeaconBlock beaconBlock) {
     this.beaconBlock = beaconBlock;
-    this.rootHash = beaconBlock.hash_tree_root();
+    this.rootHash = beaconBlock.getMessage().hash_tree_root();
   }
 
   @JsonProperty("beacon_block")
-  public BeaconBlock getBeaconBlock() {
+  public SignedBeaconBlock getBeaconBlock() {
     return beaconBlock;
   }
 
