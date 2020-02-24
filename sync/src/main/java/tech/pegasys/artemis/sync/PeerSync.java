@@ -47,6 +47,10 @@ public class PeerSync {
 
   private final AsyncRunner asyncRunner;
 
+  private UnsignedLong startingSlot = UnsignedLong.valueOf(0);
+  private UnsignedLong currentSlot = UnsignedLong.valueOf(0);
+  private UnsignedLong highestSlot = UnsignedLong.valueOf(0);
+
   public PeerSync(
       final AsyncRunner asyncRunner,
       final ChainStorageClient storageClient,
@@ -62,6 +66,10 @@ public class PeerSync {
     final UnsignedLong finalizedEpoch = storageClient.getFinalizedEpoch();
     final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
+
+    this.startingSlot = firstNonFinalSlot;
+    this.currentSlot = startingSlot;
+    this.highestSlot = peer.getStatus().getHeadSlot();
 
     return executeSync(peer, peer.getStatus(), firstNonFinalSlot, SafeFuture.COMPLETE)
         .whenComplete(
@@ -113,6 +121,7 @@ public class PeerSync {
                   startSlot,
                   peer.getId());
               final UnsignedLong nextSlot = startSlot.plus(count);
+              currentSlot = nextSlot; // might end up at highest + 1 but by then syncing is finished
               return executeSync(peer, status, nextSlot, readyForNextRequest);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
@@ -184,5 +193,9 @@ public class PeerSync {
 
   private void disconnectFromPeer(Eth2Peer peer) {
     peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
+  }
+
+  synchronized SyncStatus getSyncStatus() {
+    return new SyncStatus(startingSlot, currentSlot, highestSlot);
   }
 }

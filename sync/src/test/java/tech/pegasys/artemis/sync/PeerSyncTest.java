@@ -161,6 +161,8 @@ public class PeerSyncTest {
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    SyncStatus syncStatus = peerSync.getSyncStatus();
+    assertThat(syncStatus.highest_slot).isGreaterThan(UnsignedLong.valueOf(0));
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -375,6 +377,11 @@ public class PeerSyncTest {
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
     verify(peer, never()).sendGoodbye(any());
+
+    // check syncStatus
+    UnsignedLong slot = peerSync.getSyncStatus().current_slot;
+    assertThat(slot).isGreaterThanOrEqualTo(peerSync.getSyncStatus().highest_slot);
+    assertThat(peerSync.getSyncStatus().highest_slot).isGreaterThan(UnsignedLong.valueOf(0));
   }
 
   private List<SignedBeaconBlock> respondWithBlocksAtSlots(
