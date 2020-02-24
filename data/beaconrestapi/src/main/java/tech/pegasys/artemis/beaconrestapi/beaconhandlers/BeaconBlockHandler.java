@@ -22,10 +22,10 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -50,36 +50,43 @@ public class BeaconBlockHandler implements Handler {
 
   @Override
   public void handle(final Context ctx) throws Exception {
-    final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-    if (queryParamMap.containsKey(ROOT)) {
-      final Bytes32 root = Bytes32.fromHexString(queryParamMap.get(ROOT).get(0));
-      if (client.getStore() != null) {
-        final SignedBeaconBlock block = client.getStore().getSignedBlock(root);
-        if (block != null) {
-          ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(block)));
+    try {
+      if (ctx.queryParamMap().containsKey(ROOT)) {
+        final Bytes32 root = Bytes32.fromHexString(validateParms(ctx, ROOT));
+        if (client.getStore() != null) {
+          final SignedBeaconBlock block = client.getStore().getSignedBlock(root);
+          if (block != null) {
+            ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(block)));
+            return;
+          }
+          ctx.status(SC_NOT_FOUND);
           return;
         }
       }
+
+      final UnsignedLong slot;
+      if (ctx.queryParamMap().containsKey(EPOCH)) {
+        slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(validateParms(ctx, EPOCH)));
+      } else if (ctx.queryParamMap().containsKey(SLOT)) {
+        slot = UnsignedLong.valueOf(validateParms(ctx, SLOT));
+      } else {
+        ctx.result(
+            jsonProvider.objectToJSON(
+                new BadRequest(
+                    SC_BAD_REQUEST,
+                    "missingQueryParameter: must specify either: root or epoch or slot.")));
+        return;
+      }
+
+      final Optional<SignedBeaconBlock> blockBySlot = getBlockBySlot(slot);
+      if (blockBySlot.isPresent()) {
+        ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(blockBySlot.get())));
+        return;
+      }
       ctx.status(SC_NOT_FOUND);
-      return;
+    } catch (final IllegalArgumentException e) {
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(SC_BAD_REQUEST, e.getMessage())));
     }
-
-    final UnsignedLong slot;
-    if (queryParamMap.containsKey(EPOCH)) {
-      slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(queryParamMap.get(EPOCH).get(0)));
-    } else if (queryParamMap.containsKey(SLOT)) {
-      slot = UnsignedLong.valueOf(queryParamMap.get(SLOT).get(0));
-    } else {
-      ctx.status(SC_BAD_REQUEST);
-      return;
-    }
-
-    final Optional<SignedBeaconBlock> blockBySlot = getBlockBySlot(slot);
-    if (blockBySlot.isPresent()) {
-      ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(blockBySlot.get())));
-      return;
-    }
-    ctx.status(SC_NOT_FOUND);
   }
 
   private Optional<SignedBeaconBlock> getBlockBySlot(final UnsignedLong slot) {
@@ -87,5 +94,13 @@ public class BeaconBlockHandler implements Handler {
         .getBlockRootBySlot(slot)
         .map(root -> client.getStore().getSignedBlock(root))
         .or(() -> historicalChainData.getFinalizedBlockAtSlot(slot).join());
+  }
+
+  private String validateParms(final Context ctx, final String key) {
+    if (ctx.queryParamMap().containsKey(key) && !StringUtils.isEmpty(ctx.queryParam(key))) {
+      return ctx.queryParam(key);
+    } else {
+      throw new IllegalArgumentException(String.format("'%s' cannot be null or empty.", key));
+    }
   }
 }
