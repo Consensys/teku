@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
@@ -50,7 +49,7 @@ public class BeaconBlockHandler implements Handler {
   }
 
   @Override
-  public void handle(@NotNull Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
     if (queryParamMap.containsKey(ROOT)) {
       final Bytes32 root = Bytes32.fromHexString(queryParamMap.get(ROOT).get(0));
@@ -82,7 +81,7 @@ public class BeaconBlockHandler implements Handler {
     }
   }
 
-  private Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
+  private Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
     return client
         .getBlockRootBySlot(slot)
         .map(root -> client.getStore().getBlock(root))
