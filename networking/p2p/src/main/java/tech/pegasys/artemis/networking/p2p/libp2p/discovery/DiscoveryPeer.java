@@ -44,8 +44,7 @@ public class DiscoveryPeer {
       return false;
     }
     final DiscoveryPeer that = (DiscoveryPeer) o;
-    return Objects.equals(nodeId, that.nodeId) &&
-        Objects.equals(nodeAddress, that.nodeAddress);
+    return Objects.equals(nodeId, that.nodeId) && Objects.equals(nodeAddress, that.nodeAddress);
   }
 
   @Override
