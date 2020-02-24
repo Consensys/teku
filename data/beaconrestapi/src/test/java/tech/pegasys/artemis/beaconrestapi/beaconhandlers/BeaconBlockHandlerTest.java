@@ -286,4 +286,14 @@ public class BeaconBlockHandlerTest {
     handler.handle(realContext);
     assertThat(realContext.resultString()).contains("slot").contains("cannot be null or empty");
   }
+
+  @Test
+  public void shouldFailWithMultipleParamKeys() throws Exception {
+    final Map<String, List<String>> params = Map.of("root", emptyList(), "slot", emptyList());
+
+    doReturn(params).when(realContext).queryParamMap();
+
+    handler.handle(realContext);
+    assertThat(realContext.resultString()).contains("Too many query parameters specified");
+  }
 }

@@ -75,6 +75,11 @@ public class BeaconBlockHandler implements Handler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
+        if (ctx.queryParamMap().size() > 1) {
+            throw new IllegalArgumentException(
+                    "Too many query parameters specified. Please supply only one.");
+        }
+
       if (ctx.queryParamMap().containsKey(ROOT)) {
         final Bytes32 root = Bytes32.fromHexString(validateParms(ctx, ROOT));
         if (client.getStore() != null) {
