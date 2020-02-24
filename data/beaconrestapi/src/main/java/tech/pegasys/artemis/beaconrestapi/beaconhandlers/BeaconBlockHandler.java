@@ -22,6 +22,11 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,6 +53,25 @@ public class BeaconBlockHandler implements Handler {
     this.jsonProvider = jsonProvider;
   }
 
+  @OpenApi(
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Request that the node return a specified beacon chain block.",
+      tags = {"Beacon"},
+      queryParams = {
+        @OpenApiParam(name = "epoch", description = "Query by epoch number (uint64)"),
+        @OpenApiParam(name = "slot", description = "Query by slot number (uint64)"),
+        @OpenApiParam(name = "root", description = "Query by tree hash root (Bytes32)")
+      },
+      description =
+          "Request that the node return a beacon chain block that matches the provided criteria.",
+      responses = {
+        @OpenApiResponse(
+            status = "200",
+            content = @OpenApiContent(from = BeaconBlockResponse.class)),
+        @OpenApiResponse(status = "400", description = "Invalid parameters supplied"),
+        @OpenApiResponse(status = "404", description = "Specified block not found")
+      })
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
@@ -70,12 +94,8 @@ public class BeaconBlockHandler implements Handler {
       } else if (ctx.queryParamMap().containsKey(SLOT)) {
         slot = UnsignedLong.valueOf(validateParms(ctx, SLOT));
       } else {
-        ctx.result(
-            jsonProvider.objectToJSON(
-                new BadRequest(
-                    SC_BAD_REQUEST,
-                    "missingQueryParameter: must specify either: root or epoch or slot.")));
-        return;
+        throw new IllegalArgumentException(
+            "Query parameter missing. Must specify one of root or epoch or slot.");
       }
 
       final Optional<SignedBeaconBlock> blockBySlot = getBlockBySlot(slot);

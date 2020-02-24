@@ -47,7 +47,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public class BeaconBlockHandlerTest {
   private static final BadRequest BAD_REQUEST =
       new BadRequest(
-          SC_BAD_REQUEST, "missingQueryParameter: must specify either: root or epoch or slot.");
+          SC_BAD_REQUEST, "Query parameter missing. Must specify one of root or epoch or slot.");
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
