@@ -113,7 +113,6 @@ public class Eth2OutgoingRequestHandlerTest {
     deliverInvalidChunk();
 
     asyncRequestRunner.executeUntilDone();
-    timeoutRunner.executeUntilDone();
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(1);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
@@ -235,8 +234,9 @@ public class Eth2OutgoingRequestHandlerTest {
   }
 
   private void deliverInvalidChunk() {
-    final Bytes chunkBytes = DataStructureUtil.randomBytes32(1L);
-    final ByteBuf chunkBuffer = Unpooled.wrappedBuffer(chunkBytes.toArrayUnsafe());
+    // Send a chunk with error code 1, message length 0
+    final Bytes invalidChunk = Bytes.fromHexString("0x0100");
+    final ByteBuf chunkBuffer = Unpooled.wrappedBuffer(invalidChunk.toArrayUnsafe());
     reqHandler.onData(nodeId, rpcStream, chunkBuffer);
   }
 
