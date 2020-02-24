@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.bls.keystore;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -27,22 +30,29 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 
+/** Provide utility methods to load/store BLS KeyStore from json format */
 public class KeyStoreLoader {
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().registerModule(new KeyStoreBytesModule());
 
   public static KeyStore loadFromJson(final String json) throws Exception {
+    requireNonNull(json);
     final KeyStoreData keyStoreData = OBJECT_MAPPER.readValue(json, KeyStoreData.class);
+    checkArgument(keyStoreData.getVersion() == 4, "Key Store version 4 is supported.");
     return new KeyStore(keyStoreData);
   }
 
   public static KeyStore loadFromFile(final Path keystoreFile) throws Exception {
+    requireNonNull(keystoreFile);
     final KeyStoreData keyStoreData =
         OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
+    checkArgument(keyStoreData.getVersion() == 4, "Key Store version 4 is supported.");
     return new KeyStore(keyStoreData);
   }
 
   public static String toJson(final KeyStoreData keyStoreData) throws Exception {
+    requireNonNull(keyStoreData);
+    checkArgument(keyStoreData.getVersion() == 4, "Key Store version 4 is supported.");
     return KeyStoreLoader.OBJECT_MAPPER
         .writerWithDefaultPrettyPrinter()
         .writeValueAsString(keyStoreData);

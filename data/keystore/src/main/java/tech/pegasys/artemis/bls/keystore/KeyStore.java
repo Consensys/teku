@@ -68,9 +68,9 @@ public class KeyStore {
    * @param path Path as defined in EIP-2334. Can be empty String.
    * @param kdfParam crypto function such as scrypt or PBKDF2 and related parameters such as dklen,
    *     salt etc.
-   * @param cipher cipher function and parameters such as iv.
-   * @return The constructed KeyStore with encrypted blsPrivateKey and other details as defined by
-   *     the EIP-2335 standard.
+   * @param cipher cipher function and parameters such as iv. Message is ignored.
+   * @return The constructed KeyStore with encrypted BLS Private Key as cipher.message and other
+   *     details as defined by the EIP-2335 standard.
    */
   public static KeyStore encrypt(
       final Bytes blsPrivateKey,
