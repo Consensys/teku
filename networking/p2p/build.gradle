@@ -19,6 +19,8 @@ dependencies {
 
   implementation 'io.projectreactor:reactor-core'
 
+  implementation 'tech.pegasys.discovery:discovery'
+
   implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
 
