@@ -28,7 +28,7 @@ public class NodeRecordConverter {
       ipAddress = (Bytes) nodeRecord.get(EnrField.IP_V6);
       port = (int) nodeRecord.get(EnrField.TCP_V6);
     } else {
-      LOG.debug(
+      LOG.trace(
           "Unable to convert ENR record to MultiAddr: {}. NodeId: {}",
           nodeRecord::asEnr,
           nodeRecord::getNodeId);
@@ -42,7 +42,7 @@ public class NodeRecordConverter {
               protocol, ipAddressToString(ipAddress), port, nodeId.toBase58());
       return Optional.of(new DiscoveryPeer(nodeId, Multiaddr.fromString(addrString)));
     } catch (final UnknownHostException e) {
-      LOG.debug("Unable to resolve host: {}", ipAddress);
+      LOG.trace("Unable to resolve host: {}", ipAddress);
       return Optional.empty();
     }
   }
