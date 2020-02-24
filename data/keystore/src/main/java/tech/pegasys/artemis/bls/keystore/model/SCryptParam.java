@@ -11,14 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.keystore;
+package tech.pegasys.artemis.bls.keystore.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.crypto.generators.SCrypt;
 
 public class SCryptParam extends KdfParam {
   private final Integer n;
@@ -52,13 +50,6 @@ public class SCryptParam extends KdfParam {
   @JsonProperty(value = "r")
   public Integer getR() {
     return r;
-  }
-
-  @Override
-  public Bytes decryptionKey(final byte[] password) {
-    return Bytes.wrap(
-        SCrypt.generate(
-            password, getSalt().toArrayUnsafe(), getN(), getR(), getP(), getDerivedKeyLength()));
   }
 
   @Override

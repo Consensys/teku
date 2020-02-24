@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.bls.keystore.builder;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.keystore.SCryptParam;
+import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 
 public final class SCryptParamBuilder {
   private Integer dklen = 32;

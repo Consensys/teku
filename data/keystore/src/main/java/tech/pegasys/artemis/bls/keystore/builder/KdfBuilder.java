@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.bls.keystore.builder;
 
 import java.util.Objects;
-import tech.pegasys.artemis.bls.keystore.CryptoFunction;
-import tech.pegasys.artemis.bls.keystore.Kdf;
-import tech.pegasys.artemis.bls.keystore.KdfParam;
-import tech.pegasys.artemis.bls.keystore.SCryptParam;
+import tech.pegasys.artemis.bls.keystore.model.CryptoFunction;
+import tech.pegasys.artemis.bls.keystore.model.Kdf;
+import tech.pegasys.artemis.bls.keystore.model.KdfParam;
+import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 
 public final class KdfBuilder {
   private CryptoFunction cryptoFunction;

@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.bls.keystore.builder;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.bls.keystore.Pbkdf2Param;
-import tech.pegasys.artemis.bls.keystore.Pbkdf2PseudoRandomFunction;
+import tech.pegasys.artemis.bls.keystore.model.Pbkdf2Param;
+import tech.pegasys.artemis.bls.keystore.model.Pbkdf2PseudoRandomFunction;
 
 public final class Pbkdf2ParamBuilder {
   private Integer dklen = 32;

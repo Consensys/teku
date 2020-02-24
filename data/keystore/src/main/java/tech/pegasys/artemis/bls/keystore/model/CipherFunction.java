@@ -11,17 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.keystore;
+package tech.pegasys.artemis.bls.keystore.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-/** Placeholder for empty params */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Param {
-  public Param() {}
+public enum CipherFunction {
+  AES_128_CTR("aes-128-ctr");
 
-  @Override
-  public String toString() {
-    return "";
+  private final String jsonValue;
+
+  CipherFunction(final String jsonValue) {
+    this.jsonValue = jsonValue;
+  }
+
+  @JsonValue
+  public String getJsonValue() {
+    return this.jsonValue;
   }
 }

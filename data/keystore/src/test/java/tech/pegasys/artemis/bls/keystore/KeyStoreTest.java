@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.artemis.bls.keystore.CryptoFunction.PBKDF2;
-import static tech.pegasys.artemis.bls.keystore.CryptoFunction.SCRYPT;
+import static tech.pegasys.artemis.bls.keystore.model.CryptoFunction.PBKDF2;
+import static tech.pegasys.artemis.bls.keystore.model.CryptoFunction.SCRYPT;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import java.util.stream.Stream;
@@ -28,13 +28,21 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.artemis.bls.keystore.builder.CipherParamBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.Pbkdf2ParamBuilder;
 import tech.pegasys.artemis.bls.keystore.builder.SCryptParamBuilder;
+import tech.pegasys.artemis.bls.keystore.model.CipherParam;
+import tech.pegasys.artemis.bls.keystore.model.Crypto;
+import tech.pegasys.artemis.bls.keystore.model.CryptoFunction;
+import tech.pegasys.artemis.bls.keystore.model.KdfParam;
+import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
+import tech.pegasys.artemis.bls.keystore.model.Pbkdf2Param;
+import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 
-class KeyStoreDataJsonTest {
+class KeyStoreTest {
   private static final String PASSWORD = "testpassword";
   private static final Bytes BLS_PRIVATE_KEY =
       Bytes.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
@@ -217,17 +225,28 @@ class KeyStoreDataJsonTest {
     return Stream.of(
         Arguments.of(
             SCryptParamBuilder.aSCryptParam().withSalt(SALT).build(),
+            Bytes.fromHexString("149aafa27b041f3523c53d7acba1905fa6b1c90f9fef137568101f44b531a3cb"),
             Bytes.fromHexString(
-                "149aafa27b041f3523c53d7acba1905fa6b1c90f9fef137568101f44b531a3cb")),
+                "54ecc8863c0550351eee5720f3be6a5d4a016025aa91cd6436cfec938d6a8d30")),
         Arguments.of(
             Pbkdf2ParamBuilder.aPbkdf2Param().withSalt(SALT).build(),
+            Bytes.fromHexString("18b148af8e52920318084560fd766f9d09587b4915258dec0676cba5b0da09d8"),
             Bytes.fromHexString(
-                "18b148af8e52920318084560fd766f9d09587b4915258dec0676cba5b0da09d8")));
+                "a9249e0ca7315836356e4c7440361ff22b9fe71e2e2ed34fc1eb03976924ed48")));
+  }
+
+  @SuppressWarnings("UnusedMethod")
+  private static Stream<Arguments> basicKdfParam() {
+    return Stream.of(
+        Arguments.of(
+            SCryptParamBuilder.aSCryptParam().build(), CipherParamBuilder.aCipherParam().build()),
+        Arguments.of(
+            Pbkdf2ParamBuilder.aPbkdf2Param().build(), CipherParamBuilder.aCipherParam().build()));
   }
 
   @ParameterizedTest
   @MethodSource("validJsonKeyStore")
-  void validatePasswordOfCryptoTestVectors(final String keyStoreJson) throws Exception {
+  void loadKeyStoreAndDecryptKey(final String keyStoreJson) throws Exception {
     final KeyStore keyStore = KeyStoreLoader.loadFromJson(keyStoreJson);
     final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
     assertNotNull(keyStoreData);
@@ -256,13 +275,53 @@ class KeyStoreDataJsonTest {
 
   @ParameterizedTest
   @MethodSource("kdfParams")
-  void encryptSecretWithSCrypt(final KdfParam kdfParam, final Bytes expectedChecksum)
-      throws Exception {
+  void encryptWithKdfAndCipherFunction(
+      final KdfParam kdfParam, final Bytes expectedChecksum, final Bytes encryptedCipherMessage) {
     final CipherParam cipherParam = CipherParamBuilder.aCipherParam().withIv(AES_IV_PARAM).build();
-    final KeyStore keyStore =
-        KeyStore.encrypt(BLS_PRIVATE_KEY, PASSWORD, "m/12381/60/0/0", kdfParam, cipherParam);
-    final KeyStoreData keyStoreData = keyStore.getKeyStoreData();
-    assertEquals(PUB_KEY, keyStoreData.getPubkey());
-    assertEquals(expectedChecksum, keyStoreData.getCrypto().getChecksum().getMessage());
+    final Crypto crypto =
+        KeyStore.encryptUsingCipherFunction(BLS_PRIVATE_KEY, PASSWORD, kdfParam, cipherParam);
+
+    assertEquals(expectedChecksum, crypto.getChecksum().getMessage());
+    assertEquals(encryptedCipherMessage, crypto.getCipher().getMessage());
+  }
+
+  @ParameterizedTest
+  @MethodSource("basicKdfParam")
+  void encryptWithRandomSaltAndIv(final KdfParam kdfParam, final CipherParam cipherParam) {
+    final KeyStore encryptedKeyStore =
+        KeyStore.encrypt(BLS_PRIVATE_KEY, "test", "", kdfParam, cipherParam);
+    assertTrue(encryptedKeyStore.validatePassword("test"));
+    final Bytes decryptedKey = encryptedKeyStore.decrypt("test");
+    assertEquals(BLS_PRIVATE_KEY, decryptedKey);
+  }
+
+  @ParameterizedTest
+  @EnumSource(CryptoFunction.class)
+  void encryptLargeDataWithRandomSaltAndIv(final CryptoFunction cryptoFunction) {
+    final KdfParam kdfParam =
+        cryptoFunction == SCRYPT
+            ? SCryptParamBuilder.aSCryptParam().build()
+            : Pbkdf2ParamBuilder.aPbkdf2Param().build();
+    final CipherParam cipherParam = CipherParamBuilder.aCipherParam().build();
+    final Bytes largeData = Bytes.random(1024);
+    final Crypto crypto =
+        KeyStore.encryptUsingCipherFunction(largeData, PASSWORD, kdfParam, cipherParam);
+    System.out.println(crypto);
+    assertEquals(32, crypto.getChecksum().getMessage().size());
+  }
+
+  @ParameterizedTest
+  @EnumSource(CryptoFunction.class)
+  void encryptSmallDataWithRandomSaltAndIv(final CryptoFunction cryptoFunction) {
+    final KdfParam kdfParam =
+        cryptoFunction == SCRYPT
+            ? SCryptParamBuilder.aSCryptParam().build()
+            : Pbkdf2ParamBuilder.aPbkdf2Param().build();
+    final CipherParam cipherParam = CipherParamBuilder.aCipherParam().build();
+    final Bytes smallData = Bytes.random(8);
+    final Crypto crypto =
+        KeyStore.encryptUsingCipherFunction(smallData, PASSWORD, kdfParam, cipherParam);
+    System.out.println(crypto);
+    assertEquals(32, crypto.getChecksum().getMessage().size());
   }
 }

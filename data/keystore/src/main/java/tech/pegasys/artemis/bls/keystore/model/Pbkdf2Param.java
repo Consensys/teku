@@ -11,16 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.keystore;
+package tech.pegasys.artemis.bls.keystore.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.util.DigestFactory;
 
 public class Pbkdf2Param extends KdfParam {
   private final Integer iterativeCount;
@@ -45,15 +41,6 @@ public class Pbkdf2Param extends KdfParam {
   @JsonProperty(value = "prf")
   public Pbkdf2PseudoRandomFunction getPrf() {
     return prf;
-  }
-
-  @Override
-  public Bytes decryptionKey(final byte[] password) {
-    PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(DigestFactory.createSHA256());
-    gen.init(password, getSalt().toArrayUnsafe(), getIterativeCount());
-    final int keySizeInBits = getDerivedKeyLength() * 8;
-    final byte[] key = ((KeyParameter) gen.generateDerivedParameters(keySizeInBits)).getKey();
-    return Bytes.wrap(key);
   }
 
   @Override

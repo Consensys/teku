@@ -15,9 +15,9 @@ package tech.pegasys.artemis.bls.keystore.builder;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.keystore.Cipher;
-import tech.pegasys.artemis.bls.keystore.CipherFunction;
-import tech.pegasys.artemis.bls.keystore.CipherParam;
+import tech.pegasys.artemis.bls.keystore.model.Cipher;
+import tech.pegasys.artemis.bls.keystore.model.CipherFunction;
+import tech.pegasys.artemis.bls.keystore.model.CipherParam;
 
 public final class CipherBuilder {
   private CipherFunction cipherFunction = CipherFunction.AES_128_CTR;

@@ -16,8 +16,8 @@ package tech.pegasys.artemis.bls.keystore.builder;
 import java.util.Objects;
 import java.util.UUID;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.keystore.Crypto;
-import tech.pegasys.artemis.bls.keystore.KeyStoreData;
+import tech.pegasys.artemis.bls.keystore.model.Crypto;
+import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 
 public final class KeyStoreDataBuilder {
   private Crypto crypto;

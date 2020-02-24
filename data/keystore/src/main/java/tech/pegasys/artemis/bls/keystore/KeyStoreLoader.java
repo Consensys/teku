@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 
 public class KeyStoreLoader {
   private static final ObjectMapper OBJECT_MAPPER =

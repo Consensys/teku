@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.bls.keystore.builder;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.keystore.CipherParam;
+import tech.pegasys.artemis.bls.keystore.model.CipherParam;
 
 public final class CipherParamBuilder {
   private Bytes iv;

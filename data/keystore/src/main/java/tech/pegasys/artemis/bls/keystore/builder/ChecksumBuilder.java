@@ -15,9 +15,9 @@ package tech.pegasys.artemis.bls.keystore.builder;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.bls.keystore.Checksum;
-import tech.pegasys.artemis.bls.keystore.ChecksumFunction;
-import tech.pegasys.artemis.bls.keystore.Param;
+import tech.pegasys.artemis.bls.keystore.model.Checksum;
+import tech.pegasys.artemis.bls.keystore.model.ChecksumFunction;
+import tech.pegasys.artemis.bls.keystore.model.Param;
 
 public final class ChecksumBuilder {
   private ChecksumFunction checksumFunction = ChecksumFunction.SHA256;

@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.keystore;
+package tech.pegasys.artemis.bls.keystore.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum ChecksumFunction {
-  SHA256("sha256");
+public enum Pbkdf2PseudoRandomFunction {
+  HMAC_SHA256("hmac-sha256");
 
   private final String jsonValue;
 
-  ChecksumFunction(final String jsonValue) {
+  Pbkdf2PseudoRandomFunction(final String jsonValue) {
     this.jsonValue = jsonValue;
   }
 
