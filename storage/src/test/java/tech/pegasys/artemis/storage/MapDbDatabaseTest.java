@@ -57,7 +57,7 @@ class MapDbDatabaseTest {
   private Database database = MapDbDatabase.createInMemory();
   private final TransactionPrecommit databaseTransactionPrecommit =
       updateEvent -> {
-        database.insert(updateEvent);
+        database.update(updateEvent);
         return SafeFuture.completedFuture(null);
       };
   private final Store store = Store.get_genesis_store(GENESIS_STATE);

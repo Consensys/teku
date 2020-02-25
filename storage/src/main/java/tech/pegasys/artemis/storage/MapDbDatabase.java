@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -175,7 +176,7 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public synchronized void insert(final StoreDiskUpdateEvent event) {
+  public synchronized DatabaseUpdateResult update(final StoreDiskUpdateEvent event) {
     try {
       final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
       final Checkpoint newFinalizedCheckpoint =
@@ -191,16 +192,21 @@ public class MapDbDatabase implements Database {
       event.getBlocks().forEach(this::addHotBlock);
       hotStatesByRoot.putAll(event.getBlockStates());
 
+      final DatabaseUpdateResult result;
       if (previousFinalizedCheckpoint == null
           || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
         recordFinalizedBlocks(newFinalizedCheckpoint);
-        pruneCheckpointStates(newFinalizedCheckpoint);
-        pruneHotBlocks(newFinalizedCheckpoint);
+        final Set<Checkpoint> prunedCheckpoints = pruneCheckpointStates(newFinalizedCheckpoint);
+        final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(newFinalizedCheckpoint);
+        result = DatabaseUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
+      } else {
+        result = DatabaseUpdateResult.successful(Collections.emptySet(), Collections.emptySet());
       }
       db.commit();
+      return result;
     } catch (final RuntimeException | Error e) {
       db.rollback();
-      throw e;
+      return DatabaseUpdateResult.failed(new RuntimeException(e));
     }
   }
 
@@ -247,19 +253,25 @@ public class MapDbDatabase implements Database {
     }
   }
 
-  private void pruneCheckpointStates(final Checkpoint newFinalizedCheckpoint) {
-    checkpointStates
-        .keySet()
-        .removeIf(
-            checkpoint -> checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0);
+  private Set<Checkpoint> pruneCheckpointStates(final Checkpoint newFinalizedCheckpoint) {
+    final Set<Checkpoint> prunedCheckpoints =
+        checkpointStates.keySet().stream()
+            .filter(
+                checkpoint ->
+                    checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0)
+            .collect(Collectors.toSet());
+    prunedCheckpoints.forEach(checkpointStates::remove);
+    return prunedCheckpoints;
   }
 
-  private void pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
+  private Set<Bytes32> pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
     SignedBeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newFinalizedCheckpoint.getRoot());
     final UnsignedLong finalizedSlot = newlyFinalizedBlock.getSlot();
     final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> toRemove =
         hotRootsBySlotCache.headMap(finalizedSlot);
     LOG.trace("Pruning slots {} from non-finalized pool", toRemove::keySet);
+    final Set<Bytes32> prunedRoots =
+        toRemove.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
     toRemove
         .values()
         .forEach(
@@ -268,6 +280,8 @@ public class MapDbDatabase implements Database {
               hotStatesByRoot.keySet().removeAll(roots);
             });
     hotRootsBySlotCache.keySet().removeAll(toRemove.keySet());
+
+    return prunedRoots;
   }
 
   private void addToHotRootsBySlotCache(final Bytes32 root, final SignedBeaconBlock block) {

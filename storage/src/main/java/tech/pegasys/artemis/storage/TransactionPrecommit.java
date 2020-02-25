@@ -29,5 +29,5 @@ public interface TransactionPrecommit {
   }
 
   @CheckReturnValue
-  SafeFuture<Void> precommit(StoreDiskUpdateEvent updateEvent);
+  SafeFuture<DatabaseUpdateResult> precommit(StoreDiskUpdateEvent updateEvent);
 }
