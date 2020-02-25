@@ -16,6 +16,7 @@ package tech.pegasys.artemis.statetransition.blockimport;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_block;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Optional;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,20 +42,31 @@ public class BlockImporter {
   public BlockImportResult importBlock(SignedBeaconBlock block) {
     LOG.trace("Import block at slot {}: {}", block.getMessage().getSlot(), block);
     try {
+      if (storageClient.containsBlock(block.getMessage().hash_tree_root())) {
+        LOG.trace(
+            "Importing known block {}.  Return successful result without re-processing.",
+            block.getMessage().hash_tree_root());
+        return BlockImportResult.knownBlock(block);
+      }
       Store.Transaction transaction = storageClient.startStoreTransaction();
       final BlockImportResult result = on_block(transaction, block, stateTransition);
       if (!result.isSuccessful()) {
+        LOG.trace(
+            "Failed to import block for reason {}: {}",
+            result.getFailureReason(),
+            block.getMessage());
         return result;
       }
+      LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
 
-      final BlockProcessingRecord record = result.getBlockProcessingRecord();
+      final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
       transaction.commit().join();
       eventBus.post(new ImportedBlockEvent(block));
-      eventBus.post(record);
+      record.ifPresent(eventBus::post);
 
       return result;
     } catch (Exception e) {
-      LOG.error("Internal error while importing block " + block.getMessage(), e);
+      LOG.error("Internal error while importing block: " + block.getMessage(), e);
       return BlockImportResult.internalError(e);
     }
   }

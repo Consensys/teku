@@ -16,12 +16,16 @@ package tech.pegasys.artemis.statetransition.blockimport;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.artemis.data.BlockProcessingRecord;
+import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 
 public class SuccessfulBlockImportResult implements BlockImportResult {
 
-  private final BlockProcessingRecord record;
+  private final SignedBeaconBlock block;
+  private final Optional<BlockProcessingRecord> record;
 
-  public SuccessfulBlockImportResult(final BlockProcessingRecord record) {
+  public SuccessfulBlockImportResult(
+      final SignedBeaconBlock block, final Optional<BlockProcessingRecord> record) {
+    this.block = block;
     this.record = record;
   }
 
@@ -31,8 +35,13 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
   }
 
   @Override
-  public BlockProcessingRecord getBlockProcessingRecord() {
+  public Optional<BlockProcessingRecord> getBlockProcessingRecord() {
     return record;
+  }
+
+  @Override
+  public SignedBeaconBlock getBlock() {
+    return block;
   }
 
   @Override
@@ -47,6 +56,6 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("block", record.getBlock()).toString();
+    return MoreObjects.toStringHelper(this).add("block", block).toString();
   }
 }
