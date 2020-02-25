@@ -51,6 +51,8 @@ public class SyncManager extends Service {
   private final AsyncRunner asyncRunner;
   private final Set<NodeId> peersWithSyncErrors = new HashSet<>();
 
+  private UnsignedLong highestSlot = UnsignedLong.ZERO;
+
   SyncManager(
       final AsyncRunner asyncRunner,
       final Eth2Network network,
@@ -128,9 +130,16 @@ public class SyncManager extends Service {
     return syncQueued;
   }
 
+  synchronized SyncStatus getSyncStatus() {
+    return new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
+  }
+
   private SafeFuture<Void> executeSync() {
-    return findBestSyncPeer()
-        .map(this::syncToPeer)
+    Optional<Eth2Peer> peer = findBestSyncPeer();
+    if (peer.isPresent()) {
+      this.highestSlot = peer.get().getStatus().getHeadSlot();
+    }
+    return peer.map(this::syncToPeer)
         .orElseGet(
             () -> {
               LOG.trace("No suitable peers (out of {}) found for sync.", network.getPeerCount());

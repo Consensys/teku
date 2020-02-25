@@ -17,9 +17,9 @@ import com.google.common.primitives.UnsignedLong;
 
 public class SyncStatus {
 
-  public UnsignedLong starting_slot;
-  public UnsignedLong current_slot;
-  public UnsignedLong highest_slot;
+  public final UnsignedLong starting_slot;
+  public final UnsignedLong current_slot;
+  public final UnsignedLong highest_slot;
 
   public SyncStatus(
       final UnsignedLong starting_slot,

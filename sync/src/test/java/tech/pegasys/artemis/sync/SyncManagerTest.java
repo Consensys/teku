@@ -192,4 +192,28 @@ public class SyncManagerTest {
     verify(peerSync).stop();
     verify(network).unsubscribeConnect(SUBSCRIPTION_ID);
   }
+
+  @Test
+  void sync_syncStatus() {
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+    UnsignedLong startingSlot = UnsignedLong.valueOf(11);
+    when(peerSync.getStartingSlot()).thenReturn(startingSlot);
+
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+
+    UnsignedLong currentSlot = UnsignedLong.valueOf(17);
+    when(storageClient.getBestSlot()).thenReturn(currentSlot);
+    SyncStatus syncStatus = syncManager.getSyncStatus();
+    assertThat(syncStatus.current_slot).isEqualTo(currentSlot);
+    assertThat(syncStatus.starting_slot).isEqualTo(startingSlot);
+    assertThat(syncStatus.highest_slot).isEqualTo(PEER_HEAD_SLOT);
+
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    verify(peerSync).sync(peer);
+  }
 }

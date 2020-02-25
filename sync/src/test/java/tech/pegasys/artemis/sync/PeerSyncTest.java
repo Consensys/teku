@@ -161,8 +161,6 @@ public class PeerSyncTest {
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
-    SyncStatus syncStatus = peerSync.getSyncStatus();
-    assertThat(syncStatus.highest_slot).isGreaterThan(UnsignedLong.valueOf(0));
     assertThat(syncFuture).isNotDone();
 
     verify(peer)
@@ -195,6 +193,11 @@ public class PeerSyncTest {
     assertThat(syncFuture).isCompleted();
     PeerSyncResult result = syncFuture.join();
     assertThat(result).isEqualByComparingTo(PeerSyncResult.CANCELLED);
+
+    // check startingSlot
+    UnsignedLong startingSlot = peerSync.getStartingSlot();
+    assertThat(startingSlot).isGreaterThan(UnsignedLong.valueOf(0));
+    assertThat(startingSlot).isLessThan(PEER_HEAD_SLOT);
   }
 
   @Test
@@ -378,10 +381,10 @@ public class PeerSyncTest {
     assertThat(syncFuture).isCompleted();
     verify(peer, never()).sendGoodbye(any());
 
-    // check syncStatus
-    UnsignedLong slot = peerSync.getSyncStatus().current_slot;
-    assertThat(slot).isGreaterThanOrEqualTo(peerSync.getSyncStatus().highest_slot);
-    assertThat(peerSync.getSyncStatus().highest_slot).isGreaterThan(UnsignedLong.valueOf(0));
+    // check startingSlot
+    UnsignedLong startingSlot = peerSync.getStartingSlot();
+    assertThat(startingSlot).isGreaterThan(UnsignedLong.valueOf(0));
+    assertThat(startingSlot).isLessThan(PEER_HEAD_SLOT);
   }
 
   private List<SignedBeaconBlock> respondWithBlocksAtSlots(
