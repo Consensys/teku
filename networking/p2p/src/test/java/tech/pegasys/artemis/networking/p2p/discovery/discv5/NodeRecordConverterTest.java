@@ -27,6 +27,7 @@ import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryNodeId;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 
 class NodeRecordConverterTest {

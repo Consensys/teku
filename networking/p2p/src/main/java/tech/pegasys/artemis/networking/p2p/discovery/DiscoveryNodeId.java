@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.discovery.discv5;
+package tech.pegasys.artemis.networking.p2p.discovery;
 
 import io.libp2p.etc.encode.Base58;
 import java.util.Objects;

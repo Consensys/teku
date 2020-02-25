@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryNodeId;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 
 public class NodeRecordConverter {
