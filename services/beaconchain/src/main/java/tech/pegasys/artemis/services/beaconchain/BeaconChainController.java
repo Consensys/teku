@@ -56,6 +56,7 @@ import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestat
 import tech.pegasys.artemis.statetransition.genesis.PreGenesisDepositHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
@@ -237,11 +238,15 @@ public class BeaconChainController {
 
   public void initRestAPI() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
+    HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
+    CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(chainStorageClient, historicalChainData);
     beaconRestAPI =
         new BeaconRestApi(
             chainStorageClient,
             p2pNetwork,
-            new HistoricalChainData(eventBus),
+            historicalChainData,
+            combinedChainDataClient,
             config.getBeaconRestAPIPortNumber());
   }
 

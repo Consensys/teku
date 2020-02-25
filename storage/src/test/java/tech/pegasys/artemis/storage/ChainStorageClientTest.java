@@ -165,6 +165,24 @@ class ChainStorageClientTest {
   }
 
   @Test
+  void getStateBySlot_returnEmptyWhenStoreNotSet() {
+    assertThat(storageClient.getStateBySlot(UnsignedLong.ZERO)).isEmpty();
+  }
+
+  @Test
+  public void getStateBySlot_returnGenesisBlockWhenItIsTheBestState() {
+    storageClient.setStore(store);
+    storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
+
+    final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    bestState.getBlock_roots().set(0, GENESIS_BLOCK_ROOT);
+    when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(bestState);
+    when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
+
+    assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).contains(GENESIS_BLOCK);
+  }
+
+  @Test
   public void isIncludedInBestState_falseWhenNoStoreSet() {
     assertThat(storageClient.isIncludedInBestState(GENESIS_BLOCK_ROOT)).isFalse();
   }
