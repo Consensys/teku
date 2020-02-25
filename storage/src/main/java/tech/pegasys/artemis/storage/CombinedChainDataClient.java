@@ -161,7 +161,7 @@ public class CombinedChainDataClient {
   public SafeFuture<Optional<BeaconState>> getStateAtBlock(final Bytes32 block) {
     final Store store = recentChainData.getStore();
     if (store == null) {
-      LOG.trace("No state at block {} because the store is not set", block);
+      LOG.trace("No state for block root {} because the store is not set", block);
       return STATE_NOT_AVAILABLE;
     }
     final BeaconState state = store.getBlockState(block);
