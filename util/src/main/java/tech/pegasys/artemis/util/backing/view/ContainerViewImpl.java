@@ -73,7 +73,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
   public ViewWrite getByRef(int index) {
     ViewWrite writableCopy = get(index).createWritableCopy();
     if (writableCopy instanceof CompositeViewWrite) {
-      ((CompositeViewWrite<?>) writableCopy).setIvalidator(viewWrite -> set(index, viewWrite));
+      ((CompositeViewWrite<?>) writableCopy).setInvalidator(viewWrite -> set(index, viewWrite));
     }
     return writableCopy;
   }

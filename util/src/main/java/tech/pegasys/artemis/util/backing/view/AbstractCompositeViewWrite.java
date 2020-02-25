@@ -31,7 +31,7 @@ public abstract class AbstractCompositeViewWrite<
   }
 
   @Override
-  public void setIvalidator(Consumer<ViewWrite> listener) {
+  public void setInvalidator(Consumer<ViewWrite> listener) {
     invalidator = listener;
   }
 

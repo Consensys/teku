@@ -74,7 +74,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     W writableCopy = (W) get(index).createWritableCopy();
 
     if (writableCopy instanceof CompositeViewWrite) {
-      ((CompositeViewWrite<?>) writableCopy).setIvalidator(viewWrite -> set(index, writableCopy));
+      ((CompositeViewWrite<?>) writableCopy).setInvalidator(viewWrite -> set(index, writableCopy));
     }
     return writableCopy;
   }

@@ -18,7 +18,7 @@ import java.util.function.Function;
 
 public interface CompositeViewWrite<R> extends ViewWrite, CompositeViewRead<R> {
 
-  void setIvalidator(Consumer<ViewWrite> listener);
+  void setInvalidator(Consumer<ViewWrite> listener);
 
   void set(int index, R value);
 
