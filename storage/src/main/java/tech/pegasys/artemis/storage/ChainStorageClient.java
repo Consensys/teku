@@ -230,8 +230,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   public Optional<BeaconState> getStateBySlot(final UnsignedLong slot) {
     return getBlockRootBySlot(slot)
-        .map(blockRoot-> store.getBlockState(blockRoot))
-        .filter(state-> state.getSlot().equals(slot));
+        .map(blockRoot -> store.getBlockState(blockRoot))
+        .filter(state -> state.getSlot().equals(slot));
   }
 
   public boolean isIncludedInBestState(final Bytes32 blockRoot) {

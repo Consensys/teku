@@ -13,12 +13,13 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler.ROOT_PARAMETER;
-import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler.SLOT_PARAMETER;
+import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler.ROOT;
+import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler.SLOT;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.eventbus.EventBus;
@@ -64,9 +65,9 @@ public class BeaconStateHandlerTest {
 
   @Test
   public void shouldReturnNotFoundWhenQueryAgainstMissingRootObject() throws Exception {
-    final Map<String, List<String>> params = Map.of(ROOT_PARAMETER, List.of(missingRoot));
+    final Map<String, List<String>> params = Map.of(ROOT, List.of(missingRoot));
     final BeaconStateHandler handler =
-        new BeaconStateHandler(storageClient, combinedChainDataClient, jsonProvider);
+        new BeaconStateHandler(combinedChainDataClient, jsonProvider);
 
     when(context.queryParamMap()).thenReturn(params);
     when(historicalChainData.getFinalizedStateAtBlock(Bytes32.fromHexString(missingRoot)))
@@ -78,11 +79,21 @@ public class BeaconStateHandlerTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenNoParameterSpecified() throws Exception {
+    final Map<String, List<String>> params = Map.of();
+    BeaconStateHandler handler = new BeaconStateHandler(combinedChainDataClient, jsonProvider);
+
+    when(context.queryParamMap()).thenReturn(params);
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnBeaconStateObjectWhenQueryByRoot() throws Exception {
-    final Map<String, List<String>> params =
-        Map.of(ROOT_PARAMETER, List.of(blockRoot.toHexString()));
-    BeaconStateHandler handler =
-        new BeaconStateHandler(storageClient, combinedChainDataClient, jsonProvider);
+    final Map<String, List<String>> params = Map.of(ROOT, List.of(blockRoot.toHexString()));
+    BeaconStateHandler handler = new BeaconStateHandler(combinedChainDataClient, jsonProvider);
 
     when(context.queryParamMap()).thenReturn(params);
 
@@ -92,10 +103,21 @@ public class BeaconStateHandlerTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenEmptyRootIsSpecified() throws Exception {
+    final Map<String, List<String>> params = Map.of(ROOT, List.of());
+    BeaconStateHandler handler = new BeaconStateHandler(combinedChainDataClient, jsonProvider);
+
+    when(context.queryParamMap()).thenReturn(params);
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnBeaconStateObjectWhenQueryBySlot() throws Exception {
-    final Map<String, List<String>> params = Map.of(SLOT_PARAMETER, List.of(slot.toString()));
-    BeaconStateHandler handler =
-        new BeaconStateHandler(storageClient, combinedChainDataClient, jsonProvider);
+    final Map<String, List<String>> params = Map.of(SLOT, List.of(slot.toString()));
+    BeaconStateHandler handler = new BeaconStateHandler(combinedChainDataClient, jsonProvider);
 
     when(context.queryParamMap()).thenReturn(params);
 
@@ -106,9 +128,8 @@ public class BeaconStateHandlerTest {
 
   @Test
   public void shouldReturnNotFoundWhenQueryByMissingSlot() throws Exception {
-    final Map<String, List<String>> params = Map.of(SLOT_PARAMETER, List.of("11223344"));
-    BeaconStateHandler handler =
-        new BeaconStateHandler(storageClient, combinedChainDataClient, jsonProvider);
+    final Map<String, List<String>> params = Map.of(SLOT, List.of("11223344"));
+    BeaconStateHandler handler = new BeaconStateHandler(combinedChainDataClient, jsonProvider);
 
     when(context.queryParamMap()).thenReturn(params);
 

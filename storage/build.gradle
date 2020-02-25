@@ -13,4 +13,5 @@ dependencies {
   compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
 
   testImplementation 'org.mockito:mockito-core'
+  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 }

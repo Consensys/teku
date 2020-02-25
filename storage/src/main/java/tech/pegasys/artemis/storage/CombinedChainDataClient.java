@@ -171,4 +171,13 @@ public class CombinedChainDataClient {
 
     return historicalChainData.getFinalizedStateAtBlock(block);
   }
+
+  public Optional<Bytes32> getBestBlockRoot() {
+    final Store store = recentChainData.getStore();
+    if (store == null) {
+      LOG.trace("No block found because the store is not set");
+      return Optional.empty();
+    }
+    return Optional.ofNullable(recentChainData.getBestBlockRoot());
+  }
 }

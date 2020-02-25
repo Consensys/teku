@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.primitives.UnsignedLong;
@@ -27,45 +28,43 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconStateHandler implements Handler {
   public static final String ROUTE = "/beacon/state";
-  public static final String ROOT_PARAMETER = "root";
-  public static final String SLOT_PARAMETER = "slot";
-  private final ChainStorageClient client;
+  public static final String ROOT = "root";
+  public static final String SLOT = "slot";
   private final CombinedChainDataClient combinedClient;
   private final JsonProvider jsonProvider;
 
-  public BeaconStateHandler(
-      ChainStorageClient client,
-      CombinedChainDataClient combinedClient,
-      JsonProvider jsonProvider) {
-    this.client = client;
+  public BeaconStateHandler(CombinedChainDataClient combinedClient, JsonProvider jsonProvider) {
     this.combinedClient = combinedClient;
     this.jsonProvider = jsonProvider;
   }
 
-  private BeaconState queryByRootHash(String root) throws ExecutionException, InterruptedException {
+  private Optional<BeaconState> queryByRootHash(String root)
+      throws ExecutionException, InterruptedException {
     Bytes32 root32 = Bytes32.fromHexString(root);
 
     SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtBlock(root32);
     Optional<BeaconState> result = future.get();
-    return result.orElse(null);
+    return result;
   }
 
-  private BeaconState queryBySlot(UnsignedLong slot)
+  private Optional<BeaconState> queryBySlot(String slotString)
       throws ExecutionException, InterruptedException {
-    Bytes32 head = client.getBestBlockRoot();
+    UnsignedLong slot = UnsignedLong.valueOf(slotString);
+    Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
 
     SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtSlot(slot, head);
     Optional<BeaconState> result = future.get();
-    return result.orElse(null);
+    return result;
   }
 
   @OpenApi(
@@ -74,9 +73,9 @@ public class BeaconStateHandler implements Handler {
       summary = "Get the beacon chain state that matches the specified tree hash root.",
       tags = {"Beacon"},
       queryParams = {
-        @OpenApiParam(name = ROOT_PARAMETER, description = "Tree hash root to query (Bytes32)"),
+        @OpenApiParam(name = ROOT, description = "Tree hash root to query (Bytes32)"),
         @OpenApiParam(
-            name = SLOT_PARAMETER,
+            name = SLOT,
             description =
                 "Query by slot number in the canonical chain (head or ancestor of the head)")
       },
@@ -86,22 +85,42 @@ public class BeaconStateHandler implements Handler {
         @OpenApiResponse(status = "200", content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
             status = "404",
-            description = "The beacon state matching the supplied query parameter was not found.")
+            description = "The beacon state matching the supplied query parameter was not found."),
+        @OpenApiResponse(status = "400", description = "Missing a query parameter")
       })
+  private String validateParams(final Map<String, List<String>> params, final String key) {
+    if (params.containsKey(key)
+        && params.get(key).size() == 1
+        && !StringUtils.isEmpty(params.get(key).get(0))) {
+      return params.get(key).get(0);
+    } else {
+      throw new IllegalArgumentException(String.format("'%s' cannot be null or empty.", key));
+    }
+  }
+
   @Override
   public void handle(Context ctx) throws Exception {
-    Map<String, List<String>> parameters = ctx.queryParamMap();
-    BeaconState result = null;
-    if (parameters.containsKey(ROOT_PARAMETER)) {
-      result = queryByRootHash(parameters.get(ROOT_PARAMETER).get(0));
-    } else if (parameters.containsKey(SLOT_PARAMETER)) {
-      result = queryBySlot(UnsignedLong.valueOf(parameters.get(SLOT_PARAMETER).get(0)));
-    }
+    try {
+      Map<String, List<String>> parameters = ctx.queryParamMap();
+      Optional<BeaconState> result = Optional.empty();
+      if (parameters.size() == 0) {
+        throw new IllegalArgumentException("No query parameters specified");
+      }
 
-    if (result == null) {
+      if (parameters.containsKey(ROOT)) {
+        result = queryByRootHash(validateParams(parameters, ROOT));
+      } else if (parameters.containsKey(SLOT)) {
+        result = queryBySlot(validateParams(parameters, SLOT));
+      }
+
+      if (result.isPresent()) {
+        ctx.result(jsonProvider.objectToJSON(result.get()));
+        return;
+      }
       ctx.status(SC_NOT_FOUND);
-    } else {
-      ctx.result(jsonProvider.objectToJSON(result));
+    } catch (final IllegalArgumentException e) {
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.status(SC_BAD_REQUEST);
     }
   }
 }
