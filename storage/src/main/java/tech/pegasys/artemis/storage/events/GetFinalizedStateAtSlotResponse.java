@@ -13,22 +13,25 @@
 
 package tech.pegasys.artemis.storage.events;
 
-import tech.pegasys.artemis.storage.DatabaseUpdateResult;
+import com.google.common.primitives.UnsignedLong;
+import java.util.Optional;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 
-public class StoreDiskUpdateCompleteEvent {
-  private final long transactionId;
-  private final DatabaseUpdateResult result;
+public class GetFinalizedStateAtSlotResponse {
+  private final UnsignedLong slot;
+  private final Optional<BeaconState> state;
 
-  public StoreDiskUpdateCompleteEvent(final long transactionId, final DatabaseUpdateResult result) {
-    this.transactionId = transactionId;
-    this.result = result;
+  public GetFinalizedStateAtSlotResponse(
+      final UnsignedLong slot, final Optional<BeaconState> state) {
+    this.slot = slot;
+    this.state = state;
   }
 
-  public long getTransactionId() {
-    return transactionId;
+  public UnsignedLong getSlot() {
+    return slot;
   }
 
-  public DatabaseUpdateResult getResult() {
-    return result;
+  public Optional<BeaconState> getState() {
+    return state;
   }
 }

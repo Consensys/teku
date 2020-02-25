@@ -11,28 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.storage;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+public class FailedPrecommitException extends RuntimeException {
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-public class BadRequest {
-  private final Integer status;
-  private final String message;
-
-  public BadRequest(String message) {
-    this.message = message;
-    this.status = SC_BAD_REQUEST;
-  }
-
-  @JsonProperty("status")
-  public final Integer getStatus() {
-    return status;
-  }
-
-  @JsonProperty("message")
-  public final String getMessage() {
-    return message;
+  public FailedPrecommitException(final DatabaseUpdateResult result) {
+    super(result.getError());
   }
 }

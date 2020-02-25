@@ -18,11 +18,12 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.io.File;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
@@ -31,7 +32,6 @@ import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
-  private static final Logger LOG = LogManager.getLogger();
   private final Database database;
   private final EventBus eventBus;
 
@@ -47,14 +47,8 @@ public class ChainStorageServer {
 
   @Subscribe
   public void onStoreDiskUpdate(final StoreDiskUpdateEvent event) {
-    try {
-      database.insert(event);
-
-      eventBus.post(new StoreDiskUpdateCompleteEvent(event.getTransactionId(), Optional.empty()));
-    } catch (final RuntimeException e) {
-      LOG.debug("Transaction " + event.getTransactionId() + " failed", e);
-      eventBus.post(new StoreDiskUpdateCompleteEvent(event.getTransactionId(), Optional.of(e)));
-    }
+    final DatabaseUpdateResult result = database.update(event);
+    eventBus.post(new StoreDiskUpdateCompleteEvent(event.getTransactionId(), result));
   }
 
   @Subscribe
@@ -68,6 +62,14 @@ public class ChainStorageServer {
     final Optional<SignedBeaconBlock> block =
         database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getSignedBlock);
     eventBus.post(new GetFinalizedBlockAtSlotResponse(request.getSlot(), block));
+  }
+
+  @Subscribe
+  @AllowConcurrentEvents
+  public void onGetStateBySlotRequest(final GetFinalizedStateAtSlotRequest request) {
+    final Optional<BeaconState> state =
+        database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getState);
+    eventBus.post(new GetFinalizedStateAtSlotResponse(request.getSlot(), state));
   }
 
   @Subscribe
