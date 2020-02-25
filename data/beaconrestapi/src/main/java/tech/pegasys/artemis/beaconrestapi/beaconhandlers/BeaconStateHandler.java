@@ -51,14 +51,13 @@ public class BeaconStateHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain state that matches the specified tree hash root.",
+      summary = "Get the beacon chain state that matches the specified tree hash root, or slot.",
       tags = {"Beacon"},
       queryParams = {
         @OpenApiParam(name = ROOT, description = "Tree hash root to query (Bytes32)"),
         @OpenApiParam(
             name = SLOT,
-            description =
-                "Query by slot number in the canonical chain (head or ancestor of the head)")
+            description = "Slot to query in the canonical chain (head or ancestor of the head)")
       },
       description =
           "Request that the node return a beacon chain state that matches the specified tree hash root.",
