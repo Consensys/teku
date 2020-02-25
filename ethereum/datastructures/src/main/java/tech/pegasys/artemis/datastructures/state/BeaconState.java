@@ -98,6 +98,10 @@ public interface BeaconState
         finalized_checkpoint);
   }
 
+  static void setConstants() {
+    BeaconStateImpl.resetSSZType();
+  }
+
   // Versioning
   @JsonProperty
   UnsignedLong getGenesis_time();

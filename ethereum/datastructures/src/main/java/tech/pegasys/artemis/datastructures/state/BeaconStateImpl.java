@@ -62,36 +62,49 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 14;
 
-  public static final ContainerViewType<BeaconStateImpl> TYPE =
-      new ContainerViewType<>(
-          List.of(
-              BasicViewTypes.UINT64_TYPE,
-              BasicViewTypes.UINT64_TYPE,
-              Fork.TYPE,
-              BeaconBlockHeader.TYPE,
-              new VectorViewType<>(
-                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-              new VectorViewType<>(
-                  BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-              new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT),
-              Eth1Data.TYPE,
-              new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD),
-              BasicViewTypes.UINT64_TYPE,
-              new ListViewType<>(ValidatorImpl.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
-              new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
-              new VectorViewType<>(
-                  BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
-              new VectorViewType<>(
-                  BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR),
-              new ListViewType<>(
-                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
-              new ListViewType<>(
-                  PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
-              new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.JUSTIFICATION_BITS_LENGTH),
-              Checkpoint.TYPE,
-              Checkpoint.TYPE,
-              Checkpoint.TYPE),
-          BeaconStateImpl::new);
+  private static volatile ContainerViewType<BeaconStateImpl> TYPE = null;
+
+  private static ContainerViewType<BeaconStateImpl> createSSZType() {
+    return new ContainerViewType<>(
+        List.of(
+            BasicViewTypes.UINT64_TYPE,
+            BasicViewTypes.UINT64_TYPE,
+            Fork.TYPE,
+            BeaconBlockHeader.TYPE,
+            new VectorViewType<>(
+                BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+            new VectorViewType<>(
+                BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+            new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT),
+            Eth1Data.TYPE,
+            new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD),
+            BasicViewTypes.UINT64_TYPE,
+            new ListViewType<>(ValidatorImpl.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
+            new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
+            new VectorViewType<>(
+                BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
+            new VectorViewType<>(
+                BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR),
+            new ListViewType<>(
+                PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
+            new ListViewType<>(
+                PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
+            new VectorViewType<>(BasicViewTypes.BIT_TYPE, Constants.JUSTIFICATION_BITS_LENGTH),
+            Checkpoint.TYPE,
+            Checkpoint.TYPE,
+            Checkpoint.TYPE),
+        BeaconStateImpl::new);
+  }
+  public static ContainerViewType<BeaconStateImpl> getSSZType() {
+    if (TYPE == null) {
+      TYPE = createSSZType();
+    }
+    return TYPE;
+  }
+
+  public static void resetSSZType() {
+    TYPE = null;
+  }
 
   @Label("sos-ignore")
   private final TransitionCaches transitionCaches;
@@ -242,7 +255,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
       Checkpoint previous_justified_checkpoint,
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
-    super(TYPE);
+    super(getSSZType());
     setGenesis_time(genesis_time);
     setSlot(slot);
     setFork(fork);
@@ -272,13 +285,13 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
   }
 
   public BeaconStateImpl(boolean builder) {
-    super(TYPE);
+    super(getSSZType());
     this.builder = builder;
     transitionCaches = builder ? TransitionCaches.getNoOp() : TransitionCaches.createNewEmpty();
   }
 
   BeaconStateImpl(BeaconState state) {
-    super(TYPE, state.getBackingNode());
+    super(getSSZType(), state.getBackingNode());
     this.builder = false;
     if (state instanceof BeaconStateImpl && ((BeaconStateImpl) state).builder) {
       transitionCaches = TransitionCaches.createNewEmpty();
