@@ -34,6 +34,8 @@ public class CombinedChainDataClient {
 
   private static final SafeFuture<Optional<SignedBeaconBlock>> BLOCK_NOT_AVAILABLE =
       completedFuture(Optional.empty());
+  private static final SafeFuture<Optional<BeaconState>> STATE_NOT_AVAILABLE =
+      completedFuture(Optional.empty());
   private final ChainStorageClient recentChainData;
   private final HistoricalChainData historicalChainData;
 
@@ -125,5 +127,55 @@ public class CombinedChainDataClient {
 
   public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
     return recentChainData.getBlockState(blockRoot);
+  }
+
+  /**
+   * Returns the state on the chain specified by <code>headBlockRoot</code>.
+   *
+   * @param slot the slot to get the state for
+   * @return the State at slot
+   */
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(
+      final UnsignedLong slot, final Bytes32 headBlockRoot) {
+
+    final Store store = recentChainData.getStore();
+    if (store == null) {
+      LOG.trace("No state at slot {} because the store is not set", slot);
+      return STATE_NOT_AVAILABLE;
+    }
+
+    if (isFinalized(slot)) {
+      return historicalChainData.getFinalizedStateAtSlot(slot);
+    }
+
+    final BeaconState headState = store.getBlockState(headBlockRoot);
+    if (headState.getSlot().equals(slot)) {
+      return completedFuture(Optional.ofNullable(headState));
+    }
+
+    return completedFuture(recentChainData.getStateBySlot(slot));
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
+    final Store store = recentChainData.getStore();
+    if (store == null) {
+      LOG.trace("No state at blockRoot {} because the store is not set", blockRoot);
+      return STATE_NOT_AVAILABLE;
+    }
+    final BeaconState state = store.getBlockState(blockRoot);
+    if (state != null) {
+      return completedFuture(Optional.of(state));
+    }
+
+    return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+  }
+
+  public Optional<Bytes32> getBestBlockRoot() {
+    final Store store = recentChainData.getStore();
+    if (store == null) {
+      LOG.trace("No block found because the store is not set");
+      return Optional.empty();
+    }
+    return Optional.ofNullable(recentChainData.getBestBlockRoot());
   }
 }

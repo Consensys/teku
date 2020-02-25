@@ -326,7 +326,10 @@ public class MapDbDatabase implements Database {
 
   @Override
   public Optional<BeaconState> getState(final Bytes32 root) {
-    return Optional.ofNullable(hotStatesByRoot.get(root));
+    final BeaconState state = hotStatesByRoot.get(root);
+    return state != null
+        ? Optional.of(state)
+        : Optional.ofNullable(finalizedStatesByRoot.get(root));
   }
 
   @Override
