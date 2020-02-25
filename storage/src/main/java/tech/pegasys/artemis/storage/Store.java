@@ -355,7 +355,7 @@ public class Store implements ReadOnlyStore {
                   Store.this.checkpoint_states.putAll(checkpoint_states);
                   Store.this.latest_messages.putAll(latest_messages);
                   // Prune old data
-                  updateResult.getPrunedBlockRoots().forEach(Store.this.checkpoint_states::remove);
+                  updateResult.getPrunedCheckpoints().forEach(Store.this.checkpoint_states::remove);
                   updateResult
                       .getPrunedBlockRoots()
                       .forEach(

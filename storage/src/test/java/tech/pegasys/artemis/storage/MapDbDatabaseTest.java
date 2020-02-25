@@ -20,9 +20,12 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.TempDirectory;
@@ -55,12 +58,21 @@ class MapDbDatabaseTest {
   private Checkpoint checkpoint3;
 
   private Database database = MapDbDatabase.createInMemory();
+  private final List<DatabaseUpdateResult> updateResults = new ArrayList<>();
   private final TransactionPrecommit databaseTransactionPrecommit =
       updateEvent -> {
-        database.update(updateEvent);
-        return SafeFuture.completedFuture(null);
+        final DatabaseUpdateResult result = database.update(updateEvent);
+        updateResults.add(result);
+        return SafeFuture.completedFuture(result);
       };
   private final Store store = Store.get_genesis_store(GENESIS_STATE);
+  private final BeaconBlock genesisBlock =
+      store.getBlockRoots().stream()
+          .map(store::getBlock)
+          .filter(b -> b.getSlot().equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT)))
+          .findFirst()
+          .get();
+  private final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
 
   private int seed = 498242;
 
@@ -210,11 +222,22 @@ class MapDbDatabaseTest {
     transaction1.putCheckpointState(middleCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     transaction1.putCheckpointState(laterCheckpoint, DataStructureUtil.randomBeaconState(seed++));
     commit(transaction1);
+    assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
     // Now update the finalized checkpoint
+    final Set<BeaconBlock> blocksToPrune =
+        Set.of(genesisBlock, store.getBlock(earlyCheckpoint.getRoot()));
     final Transaction transaction2 = store.startTransaction(databaseTransactionPrecommit);
     transaction2.setFinalizedCheckpoint(middleCheckpoint);
     commit(transaction2);
+
+    final Set<Bytes32> prunedBlocks =
+        blocksToPrune.stream().map(BeaconBlock::hash_tree_root).collect(Collectors.toSet());
+    final Set<Checkpoint> prunedCheckpoints = Set.of(genesisCheckpoint, earlyCheckpoint);
+    assertLatestUpdateResultContains(prunedBlocks, prunedCheckpoints);
+
+    // Check pruned data has been removed from store
+    assertStoreWasPruned(store, prunedBlocks, prunedCheckpoints);
 
     final Store result = database.createMemoryStore();
     assertThat(result.getCheckpointState(earlyCheckpoint)).isNull();
@@ -222,6 +245,7 @@ class MapDbDatabaseTest {
         .isEqualTo(transaction1.getCheckpointState(middleCheckpoint));
     assertThat(result.getCheckpointState(laterCheckpoint))
         .isEqualTo(transaction1.getCheckpointState(laterCheckpoint));
+    assertStoreWasPruned(result, prunedBlocks, prunedCheckpoints);
   }
 
   @Test
@@ -317,8 +341,21 @@ class MapDbDatabaseTest {
         forkBlock8,
         forkBlock9);
     assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
+    assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
     finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
+
+    // Upon finalization, we should prune data
+    final Set<Bytes32> blocksToPrune =
+        Set.of(block1, block2, block3, forkBlock6).stream()
+            .map(b -> b.getMessage().hash_tree_root())
+            .collect(Collectors.toSet());
+    blocksToPrune.add(genesisBlock.hash_tree_root());
+    final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
+    assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
+
+    // Check data was pruned from store
+    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
 
     assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
     assertBlocksFinalized(block1, block2, block3, block7);
@@ -359,8 +396,21 @@ class MapDbDatabaseTest {
         forkBlock8,
         forkBlock9);
     assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
+    assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
     finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
+
+    // Upon finalization, we should prune data
+    final Set<Bytes32> blocksToPrune =
+        Set.of(block1, block2, block3, forkBlock6).stream()
+            .map(b -> b.getMessage().hash_tree_root())
+            .collect(Collectors.toSet());
+    blocksToPrune.add(genesisBlock.hash_tree_root());
+    final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
+    assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
+
+    // Check data was pruned from store
+    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
 
     // Close and re-read from disk store.
     database.close();
@@ -423,6 +473,31 @@ class MapDbDatabaseTest {
             Stream.of(blocks).map(block -> block.getMessage().hash_tree_root()).collect(toList()));
   }
 
+  private void assertLatestUpdateResultContains(
+      final Set<Bytes32> blockRoots, final Set<Checkpoint> checkpoints) {
+    final DatabaseUpdateResult latestResult = getLatestUpdateResult();
+    assertThat(latestResult.getPrunedBlockRoots()).containsExactlyInAnyOrderElementsOf(blockRoots);
+    assertThat(latestResult.getPrunedCheckpoints())
+        .containsExactlyInAnyOrderElementsOf(checkpoints);
+  }
+
+  private void assertLatestUpdateResultPrunedCollectionsAreEmpty() {
+    final DatabaseUpdateResult latestResult = getLatestUpdateResult();
+    assertThat(latestResult.getPrunedBlockRoots()).isEmpty();
+    assertThat(latestResult.getPrunedCheckpoints()).isEmpty();
+  }
+
+  private void assertStoreWasPruned(
+      final Store store, final Set<Bytes32> prunedBlocks, final Set<Checkpoint> prunedCheckpoints) {
+    // Check pruned data has been removed from store
+    for (Bytes32 prunedBlock : prunedBlocks) {
+      assertThat(store.getBlock(prunedBlock)).isNull();
+    }
+    for (Checkpoint prunedCheckpoint : prunedCheckpoints) {
+      assertThat(store.getCheckpointState(prunedCheckpoint)).isNull();
+    }
+  }
+
   private void addBlocks(final SignedBeaconBlock... blocks) {
     final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     for (SignedBeaconBlock block : blocks) {
@@ -461,5 +536,9 @@ class MapDbDatabaseTest {
         new BeaconBlock(
             UnsignedLong.valueOf(slot), parentRoot, Bytes32.ZERO, new BeaconBlockBody()),
         BLSSignature.empty());
+  }
+
+  private DatabaseUpdateResult getLatestUpdateResult() {
+    return updateResults.get(updateResults.size() - 1);
   }
 }
