@@ -16,7 +16,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p.discovery.discv5;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.networking.p2p.libp2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
 
-import io.libp2p.core.multiformats.Multiaddr;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -63,12 +63,11 @@ class NodeRecordConverterTest {
   }
 
   @Test
-  public void shouldNotConvertRecordWithV4IpAndV6Port() {
+  public void shouldUseV4IpIfV6PortSpecifiedWithNoV6Ip() {
     assertThat(
             convertNodeRecordWithFields(
-                new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
-                new EnrField(EnrField.TCP_V6, 30303)))
-        .isEmpty();
+                new EnrField(EnrField.IP_V4, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V6, 30303)))
+        .contains(new DiscoveryPeer(NODE_ID, new InetSocketAddress("::1", 30303)));
   }
 
   @Test
@@ -92,10 +91,7 @@ class NodeRecordConverterTest {
             new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {-127, 24, 31, 22})),
             new EnrField(EnrField.TCP_V4, 1234));
     assertThat(result)
-        .contains(
-            new DiscoveryPeer(
-                NODE_ID,
-                Multiaddr.fromString("/ip4/129.24.31.22/tcp/1234/p2p/" + NODE_ID.toBase58())));
+        .contains(new DiscoveryPeer(NODE_ID, new InetSocketAddress("129.24.31.22", 1234)));
   }
 
   @Test
@@ -103,10 +99,7 @@ class NodeRecordConverterTest {
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V6, 1234));
-    assertThat(result)
-        .contains(
-            new DiscoveryPeer(
-                NODE_ID, Multiaddr.fromString("/ip6/::1/tcp/1234/p2p/" + NODE_ID.toBase58())));
+    assertThat(result).contains(new DiscoveryPeer(NODE_ID, new InetSocketAddress("::1", 1234)));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(final EnrField... fields) {

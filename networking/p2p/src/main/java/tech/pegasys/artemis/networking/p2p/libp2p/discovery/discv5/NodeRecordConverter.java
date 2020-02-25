@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p.discovery.discv5;
 
-import io.libp2p.core.multiformats.Multiaddr;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -28,39 +28,34 @@ public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
 
   static Optional<DiscoveryPeer> convertToDiscoveryPeer(final NodeRecord nodeRecord) {
+    return addressFromFields(nodeRecord, EnrField.IP_V4, EnrField.TCP_V4)
+        .or(() -> addressFromFields(nodeRecord, EnrField.IP_V6, EnrField.TCP_V6))
+        .or(() -> addressFromFields(nodeRecord, EnrField.IP_V4, EnrField.TCP_V6))
+        .map(address -> socketAddressToDiscoveryPeer(nodeRecord, address));
+  }
+
+  private static DiscoveryPeer socketAddressToDiscoveryPeer(
+      final NodeRecord nodeRecord, final InetSocketAddress address) {
     final DiscoveryNodeId nodeId = new DiscoveryNodeId(nodeRecord.getNodeId());
-    final String protocol;
-    final Bytes ipAddress;
-    final int port;
-    if (nodeRecord.containsKey(EnrField.IP_V4) && nodeRecord.containsKey(EnrField.TCP_V4)) {
-      protocol = "ip4";
-      ipAddress = (Bytes) nodeRecord.get(EnrField.IP_V4);
-      port = (int) nodeRecord.get(EnrField.TCP_V4);
-    } else if (nodeRecord.containsKey(EnrField.IP_V6) && nodeRecord.containsKey(EnrField.TCP_V6)) {
-      protocol = "ip6";
-      ipAddress = (Bytes) nodeRecord.get(EnrField.IP_V6);
-      port = (int) nodeRecord.get(EnrField.TCP_V6);
-    } else {
-      LOG.trace(
-          "Unable to convert ENR record to MultiAddr: {}. NodeId: {}",
-          nodeRecord::asEnr,
-          nodeRecord::getNodeId);
+    return new DiscoveryPeer(nodeId, address);
+  }
+
+  private static Optional<InetSocketAddress> addressFromFields(
+      final NodeRecord nodeRecord, final String ipField, final String portField) {
+    if (!nodeRecord.containsKey(ipField) || !nodeRecord.containsKey(portField)) {
       return Optional.empty();
     }
-
+    final Bytes ipBytes = (Bytes) nodeRecord.get(ipField);
+    final int port = (int) nodeRecord.get(portField);
     try {
-      final String addrString =
-          String.format(
-              "/%s/%s/tcp/%d/p2p/%s",
-              protocol, ipAddressToString(ipAddress), port, nodeId.toBase58());
-      return Optional.of(new DiscoveryPeer(nodeId, Multiaddr.fromString(addrString)));
+      return Optional.of(new InetSocketAddress(getInetAddress(ipBytes), port));
     } catch (final UnknownHostException e) {
-      LOG.trace("Unable to resolve host: {}", ipAddress);
+      LOG.trace("Unable to resolve host: {}", ipBytes);
       return Optional.empty();
     }
   }
 
-  private static String ipAddressToString(final Bytes address) throws UnknownHostException {
-    return InetAddress.getByAddress(address.toArrayUnsafe()).getHostAddress();
+  private static InetAddress getInetAddress(final Bytes address) throws UnknownHostException {
+    return InetAddress.getByAddress(address.toArrayUnsafe());
   }
 }

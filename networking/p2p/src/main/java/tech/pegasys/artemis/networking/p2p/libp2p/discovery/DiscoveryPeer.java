@@ -14,15 +14,15 @@
 package tech.pegasys.artemis.networking.p2p.libp2p.discovery;
 
 import com.google.common.base.MoreObjects;
-import io.libp2p.core.multiformats.Multiaddr;
+import java.net.InetSocketAddress;
 import java.util.Objects;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
 public class DiscoveryPeer {
   private final NodeId nodeId;
-  private final Multiaddr nodeAddress;
+  private final InetSocketAddress nodeAddress;
 
-  public DiscoveryPeer(final NodeId nodeId, final Multiaddr nodeAddress) {
+  public DiscoveryPeer(final NodeId nodeId, final InetSocketAddress nodeAddress) {
     this.nodeId = nodeId;
     this.nodeAddress = nodeAddress;
   }
@@ -31,7 +31,7 @@ public class DiscoveryPeer {
     return nodeId;
   }
 
-  public Multiaddr getNodeAddress() {
+  public InetSocketAddress getNodeAddress() {
     return nodeAddress;
   }
 
