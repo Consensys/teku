@@ -198,7 +198,7 @@ public class PendingPoolTest {
         DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
     final Bytes32 parentRoot = blockA.getParent_root();
     final SignedBeaconBlock blockB =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot, 2);
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot, 3);
     pendingPool.add(blockA);
     pendingPool.add(blockB);
 
@@ -244,7 +244,7 @@ public class PendingPoolTest {
         DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
     final Bytes32 parentRoot = blockA.getParent_root();
     final SignedBeaconBlock blockB =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot, 2);
+        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot, 3);
     pendingPool.add(blockA);
     pendingPool.add(blockB);
     pendingPool.remove(blockA);
@@ -259,6 +259,7 @@ public class PendingPoolTest {
 
   @Test
   public void getItemsDependingOn_includeIndirect() {
+    int seed = 9248294;
     final int chainDepth = 2;
     final int descendentChainCount = 2;
     final List<SignedBeaconBlock> directDescendents = new ArrayList<>();
@@ -270,7 +271,7 @@ public class PendingPoolTest {
       for (int depth = 0; depth < chainDepth; depth++) {
         final long slot = currentSlot.longValue() + 1 + depth;
         final SignedBeaconBlock block =
-            DataStructureUtil.randomSignedBeaconBlock(slot, parentRoot, depth * chainIndex);
+            DataStructureUtil.randomSignedBeaconBlock(slot, parentRoot, seed++);
         final List<SignedBeaconBlock> blockSet =
             depth == 0 ? directDescendents : indirectDescendents;
         blockSet.add(block);
@@ -292,6 +293,7 @@ public class PendingPoolTest {
 
   @Test
   public void getItemsDependingOn_directOnly() {
+    int seed = 48929482;
     final int chainDepth = 2;
     final int descendentChainCount = 2;
     final List<SignedBeaconBlock> directDescendents = new ArrayList<>();
@@ -303,7 +305,7 @@ public class PendingPoolTest {
       for (int depth = 0; depth < chainDepth; depth++) {
         final long slot = currentSlot.longValue() + 1 + depth;
         final SignedBeaconBlock block =
-            DataStructureUtil.randomSignedBeaconBlock(slot, parentRoot, depth * chainIndex);
+            DataStructureUtil.randomSignedBeaconBlock(slot, parentRoot, seed++);
         final List<SignedBeaconBlock> blockSet =
             depth == 0 ? directDescendents : indirectDescendents;
         blockSet.add(block);
