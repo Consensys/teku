@@ -34,7 +34,7 @@ public class beaconState extends TestSuite {
 
   @ParameterizedTest(
       name =
-          "{index}. ssz_static/BeaconState deserializedBeaconState={0}, root={1}, signingRoot={2}")
+          "{index}. ssz_static/BeaconState root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",
