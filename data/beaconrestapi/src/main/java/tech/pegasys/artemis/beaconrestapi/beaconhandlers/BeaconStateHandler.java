@@ -27,7 +27,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
@@ -47,21 +46,6 @@ public class BeaconStateHandler implements Handler {
       final CombinedChainDataClient combinedClient, final JsonProvider jsonProvider) {
     this.combinedClient = combinedClient;
     this.jsonProvider = jsonProvider;
-  }
-
-  private Optional<BeaconState> queryByRootHash(final String root)
-      throws ExecutionException, InterruptedException {
-    final Bytes32 root32 = Bytes32.fromHexString(root);
-    final SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtBlock(root32);
-    return future.get();
-  }
-
-  private Optional<BeaconState> queryBySlot(final String slotString)
-      throws ExecutionException, InterruptedException {
-    final UnsignedLong slot = UnsignedLong.valueOf(slotString);
-    final Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
-    final SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtSlot(slot, head);
-    return future.get();
   }
 
   @OpenApi(
@@ -85,6 +69,46 @@ public class BeaconStateHandler implements Handler {
             description = "The beacon state matching the supplied query parameter was not found."),
         @OpenApiResponse(status = "400", description = "Missing a query parameter")
       })
+  @Override
+  public void handle(Context ctx) throws Exception {
+    try {
+      final Map<String, List<String>> parameters = ctx.queryParamMap();
+      SafeFuture<Optional<BeaconState>> future = null;
+      if (parameters.size() == 0) {
+        throw new IllegalArgumentException("No query parameters specified");
+      }
+
+      if (parameters.containsKey(ROOT)) {
+        future = queryByRootHash(validateParams(parameters, ROOT));
+      } else if (parameters.containsKey(SLOT)) {
+        future = queryBySlot(validateParams(parameters, SLOT));
+      }
+      ctx.result(
+          future.thenApplyChecked(
+              state -> {
+                if (state.isEmpty()) {
+                  ctx.status(SC_NOT_FOUND);
+                  return null;
+                }
+                return jsonProvider.objectToJSON(state.get());
+              }));
+    } catch (final IllegalArgumentException e) {
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.status(SC_BAD_REQUEST);
+    }
+  }
+
+  private SafeFuture<Optional<BeaconState>> queryByRootHash(final String root) {
+    final Bytes32 root32 = Bytes32.fromHexString(root);
+    return combinedClient.getStateByBlockRoot(root32);
+  }
+
+  private SafeFuture<Optional<BeaconState>> queryBySlot(final String slotString) {
+    final UnsignedLong slot = UnsignedLong.valueOf(slotString);
+    final Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
+    return combinedClient.getStateAtSlot(slot, head);
+  }
+
   private String validateParams(final Map<String, List<String>> params, final String key) {
     if (params.containsKey(key)
         && params.get(key).size() == 1
@@ -92,32 +116,6 @@ public class BeaconStateHandler implements Handler {
       return params.get(key).get(0);
     } else {
       throw new IllegalArgumentException(String.format("'%s' cannot be null or empty.", key));
-    }
-  }
-
-  @Override
-  public void handle(Context ctx) throws Exception {
-    try {
-      final Map<String, List<String>> parameters = ctx.queryParamMap();
-      Optional<BeaconState> result = Optional.empty();
-      if (parameters.size() == 0) {
-        throw new IllegalArgumentException("No query parameters specified");
-      }
-
-      if (parameters.containsKey(ROOT)) {
-        result = queryByRootHash(validateParams(parameters, ROOT));
-      } else if (parameters.containsKey(SLOT)) {
-        result = queryBySlot(validateParams(parameters, SLOT));
-      }
-
-      if (result.isPresent()) {
-        ctx.result(jsonProvider.objectToJSON(result.get()));
-        return;
-      }
-      ctx.status(SC_NOT_FOUND);
-    } catch (final IllegalArgumentException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-      ctx.status(SC_BAD_REQUEST);
     }
   }
 }

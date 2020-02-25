@@ -130,12 +130,10 @@ public class CombinedChainDataClient {
   }
 
   /**
-   * Returns the state which was proposed in or most recently before the requested slot on the chain
-   * specified by <code>headBlockRoot</code>. If the slot was empty, the state at the last filled
-   * slot is returned.
+   * Returns the state on the chain specified by <code>headBlockRoot</code>.
    *
-   * @param slot the slot to get the effective block for
-   * @return the State at slot or the closest previous slot if empty
+   * @param slot the slot to get the state for
+   * @return the State at slot
    */
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
@@ -158,18 +156,18 @@ public class CombinedChainDataClient {
     return completedFuture(recentChainData.getStateBySlot(slot));
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateAtBlock(final Bytes32 block) {
+  public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
     final Store store = recentChainData.getStore();
     if (store == null) {
-      LOG.trace("No state at block {} because the store is not set", block);
+      LOG.trace("No state at blockRoot {} because the store is not set", blockRoot);
       return STATE_NOT_AVAILABLE;
     }
-    final BeaconState state = store.getBlockState(block);
+    final BeaconState state = store.getBlockState(blockRoot);
     if (state != null) {
       return completedFuture(Optional.of(state));
     }
 
-    return historicalChainData.getFinalizedStateAtBlock(block);
+    return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
   }
 
   public Optional<Bytes32> getBestBlockRoot() {

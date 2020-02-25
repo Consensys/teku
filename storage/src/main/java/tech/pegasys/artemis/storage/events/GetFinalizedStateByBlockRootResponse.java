@@ -13,34 +13,25 @@
 
 package tech.pegasys.artemis.storage.events;
 
-import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 
-public class GetFinalizedStateAtBlockRequest {
-  private final Bytes32 block;
+public class GetFinalizedStateByBlockRootResponse {
+  private final Bytes32 blockRoot;
+  private final Optional<BeaconState> state;
 
-  public GetFinalizedStateAtBlockRequest(final Bytes32 block) {
-    this.block = block;
+  public GetFinalizedStateByBlockRootResponse(
+      final Bytes32 blockRoot, final Optional<BeaconState> state) {
+    this.blockRoot = blockRoot;
+    this.state = state;
   }
 
-  public Bytes32 getBlock() {
-    return block;
+  public Bytes32 getBlockRoot() {
+    return blockRoot;
   }
 
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final GetFinalizedStateAtBlockRequest that = (GetFinalizedStateAtBlockRequest) o;
-    return Objects.equals(block, that.block);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(block);
+  public Optional<BeaconState> getState() {
+    return state;
   }
 }

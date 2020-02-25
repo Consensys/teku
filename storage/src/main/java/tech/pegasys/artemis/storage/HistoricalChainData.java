@@ -24,10 +24,10 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateAtBlockRequest;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateAtBlockResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.AsyncEventTracker;
@@ -39,13 +39,13 @@ public class HistoricalChainData {
   private final AsyncEventTracker<UnsignedLong, Optional<SignedBeaconBlock>>
       latestBlockAtSlotRequests;
   private final AsyncEventTracker<UnsignedLong, Optional<BeaconState>> stateAtSlotRequests;
-  private final AsyncEventTracker<Bytes32, Optional<BeaconState>> stateAtBlockRequests;
+  private final AsyncEventTracker<Bytes32, Optional<BeaconState>> stateByBlockRootRequests;
 
   public HistoricalChainData(final EventBus eventBus) {
     this.blockAtSlotRequests = new AsyncEventTracker<>(eventBus);
     this.latestBlockAtSlotRequests = new AsyncEventTracker<>(eventBus);
     this.stateAtSlotRequests = new AsyncEventTracker<>(eventBus);
-    this.stateAtBlockRequests = new AsyncEventTracker<>(eventBus);
+    this.stateByBlockRootRequests = new AsyncEventTracker<>(eventBus);
     eventBus.register(this);
   }
 
@@ -65,9 +65,9 @@ public class HistoricalChainData {
         slot, new GetFinalizedStateAtSlotRequest(slot), QUERY_TIMEOUT);
   }
 
-  public SafeFuture<Optional<BeaconState>> getFinalizedStateAtBlock(final Bytes32 block) {
-    return stateAtBlockRequests.sendRequest(
-        block, new GetFinalizedStateAtBlockRequest(block), QUERY_TIMEOUT);
+  public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
+    return stateByBlockRootRequests.sendRequest(
+        blockRoot, new GetFinalizedStateByBlockRootRequest(blockRoot), QUERY_TIMEOUT);
   }
 
   @Subscribe
@@ -90,7 +90,7 @@ public class HistoricalChainData {
 
   @Subscribe
   @AllowConcurrentEvents
-  public void onStateAtBlockResponse(final GetFinalizedStateAtBlockResponse response) {
-    stateAtBlockRequests.onResponse(response.getBlock(), response.getState());
+  public void onStateByBlockRootResponse(final GetFinalizedStateByBlockRootResponse response) {
+    stateByBlockRootRequests.onResponse(response.getBlockRoot(), response.getState());
   }
 }

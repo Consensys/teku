@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,13 +33,19 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
+@ExtendWith(MockitoExtension.class)
 public class BeaconStateHandlerTest {
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
@@ -49,6 +56,8 @@ public class BeaconStateHandlerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
   private final String missingRoot = Bytes32.leftPad(Bytes.fromHexString("0xff")).toHexString();
+
+  @Captor private ArgumentCaptor<SafeFuture<String>> args;
 
   @BeforeAll
   public static void setup() {
@@ -66,7 +75,7 @@ public class BeaconStateHandlerTest {
     final BeaconStateHandler handler =
         new BeaconStateHandler(combinedChainDataClient, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(ROOT, List.of(missingRoot)));
-    when(historicalChainData.getFinalizedStateAtBlock(Bytes32.fromHexString(missingRoot)))
+    when(historicalChainData.getFinalizedStateByBlockRoot(Bytes32.fromHexString(missingRoot)))
         .thenReturn(completedFuture(Optional.empty()));
 
     handler.handle(context);
@@ -93,7 +102,9 @@ public class BeaconStateHandlerTest {
 
     handler.handle(context);
 
-    verify(context).result(jsonProvider.objectToJSON(beaconState));
+    verify(context).result(args.capture());
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconState));
   }
 
   @Test
@@ -136,7 +147,9 @@ public class BeaconStateHandlerTest {
 
     handler.handle(context);
 
-    verify(context).result(jsonProvider.objectToJSON(beaconState));
+    verify(context).result(args.capture());
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconState));
   }
 
   @Test

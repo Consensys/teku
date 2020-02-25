@@ -28,10 +28,10 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateAtBlockRequest;
-import tech.pegasys.artemis.storage.events.GetFinalizedStateAtBlockResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -150,14 +150,15 @@ class HistoricalChainDataTest {
   }
 
   @Test
-  public void getFinalizedStateAtBlock_shouldRetrieveStateByBlock() {
+  public void getFinalizedStateByBlockRoot_shouldRetrieveStateByBlock() {
     final Bytes32 data = BLOCK.get().getMessage().hash_tree_root();
     final SafeFuture<Optional<BeaconState>> result =
-        historicalChainData.getFinalizedStateAtBlock(data);
-    verify(eventBus).post(new GetFinalizedStateAtBlockRequest(data));
+        historicalChainData.getFinalizedStateByBlockRoot(data);
+    verify(eventBus).post(new GetFinalizedStateByBlockRootRequest(data));
     assertThat(result).isNotDone();
 
-    historicalChainData.onStateAtBlockResponse(new GetFinalizedStateAtBlockResponse(data, STATE));
+    historicalChainData.onStateByBlockRootResponse(
+        new GetFinalizedStateByBlockRootResponse(data, STATE));
     assertThat(result).isCompletedWithValue(STATE);
   }
 
