@@ -14,6 +14,11 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
@@ -42,12 +47,13 @@ public class GenesisTimeHandler implements Handler {
       path = GenesisTimeHandler.ROUTE,
       method = HttpMethod.GET,
       summary = "Get the genesis_time parameter from beacon node configuration.",
-      tags = {"Node"},
+      tags = {TAG_NODE},
       description =
           "Requests the genesis_time parameter from the beacon node, which should be consistent across all beacon nodes that follow the same beacon chain.",
       responses = {
-        @OpenApiResponse(status = "200", content = @OpenApiContent(from = UnsignedLong.class)),
-        @OpenApiResponse(status = "204")
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = UnsignedLong.class)),
+        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
