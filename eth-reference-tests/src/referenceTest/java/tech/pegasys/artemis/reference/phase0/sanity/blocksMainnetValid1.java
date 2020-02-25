@@ -27,7 +27,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 
@@ -44,10 +44,15 @@ public class blocksMainnetValid1 extends TestSuite {
     "sanityEmptyBlockTransitionSetup",
   })
   void sanityProcessBlock(
-      BeaconStateImpl pre, BeaconStateImpl post, String testName, List<SignedBeaconBlock> blocks) {
+      BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
     StateTransition stateTransition = new StateTransition(false);
-    blocks.forEach(block -> assertDoesNotThrow(() -> stateTransition.initiate(pre, block, true)));
-    assertEquals(pre, post);
+    BeaconState result = blocks.stream()
+        .reduce(
+            pre,
+            (preState, block) ->
+                assertDoesNotThrow(() -> stateTransition.initiate(preState, block, true)),
+            (preState, postState) -> postState);
+    assertEquals(post, result);
   }
 
   @MustBeClosed

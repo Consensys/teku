@@ -26,7 +26,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 
@@ -36,12 +37,13 @@ public class slotsMainnet extends TestSuite {
   @ParameterizedTest(name = "{index}.{3} Sanity slots (Mainnet)")
   @MethodSource({"sanityGenericSlotSetup"})
   void sanityProcessSlot(
-      BeaconStateImpl pre, BeaconStateImpl post, UnsignedLong slot, String testName) {
+      BeaconState pre, BeaconState post, UnsignedLong slot, String testName) {
     boolean printEnabled = false;
     StateTransition stateTransition = new StateTransition(printEnabled);
 
-    assertDoesNotThrow(() -> stateTransition.process_slots(pre, pre.getSlot().plus(slot), false));
-    assertEquals(pre, post);
+    MutableBeaconState state = pre.createWritableCopy();
+    assertDoesNotThrow(() -> stateTransition.process_slots(state, pre.getSlot().plus(slot), false));
+    assertEquals(post, state);
   }
 
   @MustBeClosed
