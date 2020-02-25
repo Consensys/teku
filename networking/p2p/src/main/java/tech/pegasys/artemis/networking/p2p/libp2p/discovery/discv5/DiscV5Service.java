@@ -27,9 +27,10 @@ import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
 import tech.pegasys.artemis.networking.p2p.libp2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.libp2p.discovery.DiscoveryService;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class DiscV5Service implements DiscoveryService {
+public class DiscV5Service extends Service implements DiscoveryService {
 
   @SuppressWarnings("ComparatorMethodParameterNotUsed")
   public static final Comparator<NodeRecord> RANDOMLY =
@@ -55,13 +56,14 @@ public class DiscV5Service implements DiscoveryService {
   }
 
   @Override
-  public void start() {
-    SafeFuture.of(discoverySystem.start()).join();
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.of(discoverySystem.start());
   }
 
   @Override
-  public void stop() {
+  protected SafeFuture<?> doStop() {
     discoverySystem.stop();
+    return SafeFuture.completedFuture(null);
   }
 
   @Override

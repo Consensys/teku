@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':data')
   implementation project(':data:metrics')
+  implementation project(':services:serviceutils')
   implementation project(':validator:coordinator')
   implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'

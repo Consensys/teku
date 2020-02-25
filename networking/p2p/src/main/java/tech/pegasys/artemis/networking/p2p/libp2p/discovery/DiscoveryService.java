@@ -15,11 +15,13 @@ package tech.pegasys.artemis.networking.p2p.libp2p.discovery;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface DiscoveryService {
-  void start();
 
-  void stop();
+  SafeFuture<?> start();
+
+  SafeFuture<?> stop();
 
   Stream<DiscoveryPeer> streamKnownPeers();
 
