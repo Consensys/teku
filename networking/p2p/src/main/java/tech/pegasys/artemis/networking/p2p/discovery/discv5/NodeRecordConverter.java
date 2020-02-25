@@ -31,7 +31,7 @@ public class NodeRecordConverter {
   static Optional<DiscoveryPeer> convertToDiscoveryPeer(final NodeRecord nodeRecord) {
     return addressFromFields(nodeRecord, EnrField.IP_V4, EnrField.TCP_V4)
         .or(() -> addressFromFields(nodeRecord, EnrField.IP_V6, EnrField.TCP_V6))
-        .or(() -> addressFromFields(nodeRecord, EnrField.IP_V4, EnrField.TCP_V6))
+        .or(() -> addressFromFields(nodeRecord, EnrField.IP_V6, EnrField.TCP_V4))
         .map(address -> socketAddressToDiscoveryPeer(nodeRecord, address));
   }
 

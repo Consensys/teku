@@ -64,18 +64,18 @@ class NodeRecordConverterTest {
   }
 
   @Test
-  public void shouldUseV4IpIfV6PortSpecifiedWithNoV6Ip() {
+  public void shouldUseV4PortIfV6PortSpecifiedWithNoV6Ip() {
     assertThat(
             convertNodeRecordWithFields(
-                new EnrField(EnrField.IP_V4, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V6, 30303)))
+                new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V4, 30303)))
         .contains(new DiscoveryPeer(NODE_ID, new InetSocketAddress("::1", 30303)));
   }
 
   @Test
-  public void shouldNotConvertRecordWithV6IpAndV4Port() {
+  public void shouldNotConvertRecordWithV4IpAndV6Port() {
     assertThat(
             convertNodeRecordWithFields(
-                new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V4, 30303)))
+                new EnrField(EnrField.IP_V4, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V6, 30303)))
         .isEmpty();
   }
 
