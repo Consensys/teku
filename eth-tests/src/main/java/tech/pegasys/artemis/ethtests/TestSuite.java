@@ -57,7 +57,6 @@ public abstract class TestSuite {
           "resources",
           "eth2.0-spec-tests",
           "tests");
-  private static final String FILE = "file://";
 
   @SuppressWarnings({"rawtypes"})
   public static void loadConfigFromPath(Path path) throws Exception {
@@ -98,10 +97,9 @@ public abstract class TestSuite {
   }
 
   public static InputStream getInputStreamFromPath(Path path) {
-    URL url = null;
     InputStream in = null;
     try {
-      url = new URL(FILE + path);
+      URL url = path.toUri().toURL();
       in = url.openConnection().getInputStream();
     } catch (IOException e) {
       LOG.warn("Failed to load " + path, e);
