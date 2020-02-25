@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.discovery.discv5;
+package tech.pegasys.artemis.networking.p2p.discovery.discv5;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.networking.p2p.libp2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
+import static tech.pegasys.artemis.networking.p2p.discovery.discv5.NodeRecordConverter.convertToDiscoveryPeer;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import org.ethereum.beacon.discovery.schema.IdentitySchema;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.libp2p.discovery.DiscoveryPeer;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 
 class NodeRecordConverterTest {
 

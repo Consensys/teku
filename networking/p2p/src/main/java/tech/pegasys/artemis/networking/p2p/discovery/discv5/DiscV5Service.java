@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.discovery.discv5;
+package tech.pegasys.artemis.networking.p2p.discovery.discv5;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -25,8 +25,8 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
-import tech.pegasys.artemis.networking.p2p.libp2p.discovery.DiscoveryPeer;
-import tech.pegasys.artemis.networking.p2p.libp2p.discovery.DiscoveryService;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.util.async.SafeFuture;
 

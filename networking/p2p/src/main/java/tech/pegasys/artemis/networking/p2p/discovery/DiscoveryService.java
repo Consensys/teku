@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.discovery;
+package tech.pegasys.artemis.networking.p2p.discovery;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;

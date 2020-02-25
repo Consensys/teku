@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.libp2p.discovery.discv5;
+package tech.pegasys.artemis.networking.p2p.discovery.discv5;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
-import tech.pegasys.artemis.networking.p2p.libp2p.discovery.DiscoveryPeer;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 
 public class NodeRecordConverter {
   private static final Logger LOG = LogManager.getLogger();
