@@ -13,23 +13,22 @@
 
 package tech.pegasys.artemis.storage.events;
 
-import java.util.Optional;
+import tech.pegasys.artemis.storage.DatabaseUpdateResult;
 
 public class StoreDiskUpdateCompleteEvent {
   private final long transactionId;
-  private final Optional<RuntimeException> error;
+  private final DatabaseUpdateResult result;
 
-  public StoreDiskUpdateCompleteEvent(
-      final long transactionId, final Optional<RuntimeException> error) {
+  public StoreDiskUpdateCompleteEvent(final long transactionId, final DatabaseUpdateResult result) {
     this.transactionId = transactionId;
-    this.error = error;
+    this.result = result;
   }
 
   public long getTransactionId() {
     return transactionId;
   }
 
-  public Optional<RuntimeException> getError() {
-    return error;
+  public DatabaseUpdateResult getResult() {
+    return result;
   }
 }
