@@ -17,7 +17,6 @@ import static tech.pegasys.artemis.util.async.SafeFuture.propagateResult;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -25,7 +24,7 @@ public class StubAsyncRunner implements AsyncRunner {
   private List<Runnable> queuedActions = new ArrayList<>();
 
   @Override
-  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action, final Executor executor) {
+  public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
     final SafeFuture<U> result = new SafeFuture<>();
     queuedActions.add(
         () -> {
@@ -41,7 +40,7 @@ public class StubAsyncRunner implements AsyncRunner {
   @Override
   public <U> SafeFuture<U> runAfterDelay(
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
-    return runAsync(action, null); // Executor is ignored anyway.
+    return runAsync(action);
   }
 
   public void executeQueuedActions() {
@@ -55,6 +54,30 @@ public class StubAsyncRunner implements AsyncRunner {
     final List<Runnable> rest = queuedActions.subList(limit, queuedActions.size());
     queuedActions = new ArrayList<>(rest);
     actionsToExecute.forEach(Runnable::run);
+  }
+
+  public void executeUntilDone() {
+    executeRepeatedly(1000, true);
+  }
+
+  public void executeRepeatedly(final int maxRuns) {
+    executeRepeatedly(maxRuns, false);
+  }
+
+  private void executeRepeatedly(final int maxRuns, final boolean shouldFinish) {
+    for (int i = 0; i < maxRuns; i++) {
+      if (countDelayedActions() == 0) {
+        return;
+      }
+      executeQueuedActions();
+    }
+
+    if (countDelayedActions() != 0 && shouldFinish) {
+      throw new RuntimeException(
+          "Unable to execute all delayed actions. "
+              + countDelayedActions()
+              + " actions remain unexecuted.");
+    }
   }
 
   public boolean hasDelayedActions() {

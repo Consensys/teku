@@ -29,11 +29,13 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandler implements Handler {
   private final Logger LOG = LogManager.getLogger();
+  private final JsonProvider jsonProvider;
   public static final String ROUTE = "/node/genesis_time/";
-  ChainStorageClient chainStorageClient;
+  private final ChainStorageClient chainStorageClient;
 
-  public GenesisTimeHandler(ChainStorageClient chainStorageClient) {
+  public GenesisTimeHandler(ChainStorageClient chainStorageClient, JsonProvider jsonProvider) {
     this.chainStorageClient = chainStorageClient;
+    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -51,7 +53,7 @@ public class GenesisTimeHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       UnsignedLong result = chainStorageClient.getGenesisTime();
-      ctx.result(JsonProvider.objectToJSON(result));
+      ctx.result(jsonProvider.objectToJSON(result));
     } catch (Exception exception) {
       LOG.debug("Failed to get genesis time", exception);
       ctx.status(SC_NO_CONTENT);

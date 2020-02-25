@@ -43,7 +43,9 @@ import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class Eth2OutgoingRequestHandlerTest {
 
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final StubAsyncRunner asyncRequestRunner = new StubAsyncRunner();
+  private final StubAsyncRunner timeoutRunner = new StubAsyncRunner();
+
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -51,7 +53,7 @@ public class Eth2OutgoingRequestHandlerTest {
 
   private final BeaconChainMethods beaconChainMethods =
       BeaconChainMethods.create(
-          asyncRunner,
+          timeoutRunner,
           peerLookup,
           combinedChainDataClient,
           chainStorageClient,
@@ -67,15 +69,18 @@ public class Eth2OutgoingRequestHandlerTest {
 
   private final int maxChunks = chunks.size();
   private final Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
-      reqHandler = blocksByRangeMethod.createOutgoingRequestHandler(maxChunks);
+      reqHandler =
+          new Eth2OutgoingRequestHandler<>(
+              asyncRequestRunner, timeoutRunner, blocksByRangeMethod, maxChunks);
   private final RpcStream rpcStream = mock(RpcStream.class);
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
+  private SafeFuture<Void> finishedProcessingFuture;
 
   @BeforeEach
   public void setup() {
     lenient().when(rpcStream.close()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
-    reqHandler.getResponseStream().expectMultipleResponses(blocks::add).reportExceptions();
+    finishedProcessingFuture = reqHandler.getResponseStream().expectMultipleResponses(blocks::add);
   }
 
   @Test
@@ -85,11 +90,32 @@ public class Eth2OutgoingRequestHandlerTest {
 
     for (int i = 0; i < maxChunks; i++) {
       deliverChunk(i);
+      assertThat(finishedProcessingFuture).isNotDone();
     }
 
-    asyncRunner.executeQueuedActions();
+    asyncRequestRunner.executeRepeatedly(maxChunks - 1);
+    assertThat(finishedProcessingFuture).isNotDone();
+
+    asyncRequestRunner.executeUntilDone();
+    timeoutRunner.executeUntilDone();
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
+    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
+  }
+
+  @Test
+  public void processAllValidChunksWhenErrorIsEncountered() {
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    deliverChunk(0);
+    assertThat(finishedProcessingFuture).isNotDone();
+    deliverInvalidChunk();
+
+    asyncRequestRunner.executeUntilDone();
+    verify(rpcStream).close();
+    assertThat(blocks.size()).isEqualTo(1);
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
   }
 
   @Test
@@ -105,8 +131,12 @@ public class Eth2OutgoingRequestHandlerTest {
       }
     }
 
-    asyncRunner.executeQueuedActions();
+    asyncRequestRunner.executeUntilDone();
+    timeoutRunner.executeUntilDone();
     verify(rpcStream).close();
+    // TODO - we should limit the number of chunks to be parsed based on maxChunks
+    assertThat(blocks.size()).isEqualTo(4);
+    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
   }
 
   @Test
@@ -116,8 +146,8 @@ public class Eth2OutgoingRequestHandlerTest {
     verify(rpcStream, never()).close();
 
     // Run async tasks
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
-    asyncRunner.executeQueuedActions();
+    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(1);
+    timeoutRunner.executeQueuedActions();
     verify(rpcStream).close();
   }
 
@@ -131,8 +161,8 @@ public class Eth2OutgoingRequestHandlerTest {
     deliverInitialBytes();
 
     // Run async tasks
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(2);
-    asyncRunner.executeQueuedActions(1);
+    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(2);
+    timeoutRunner.executeQueuedActions(1);
     verify(rpcStream, never()).close();
   }
 
@@ -143,7 +173,7 @@ public class Eth2OutgoingRequestHandlerTest {
     deliverInitialBytes();
 
     // Run timeouts
-    asyncRunner.executeQueuedActions();
+    timeoutRunner.executeQueuedActions();
     verify(rpcStream).close();
   }
 
@@ -154,8 +184,8 @@ public class Eth2OutgoingRequestHandlerTest {
     deliverChunk(0);
 
     // Run timeouts
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(3);
-    asyncRunner.executeQueuedActions(2);
+    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(3);
+    timeoutRunner.executeQueuedActions(2);
     verify(rpcStream, never()).close();
   }
 
@@ -166,8 +196,10 @@ public class Eth2OutgoingRequestHandlerTest {
     deliverChunk(0);
 
     // Run timeouts
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(3);
-    asyncRunner.executeQueuedActions();
+    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(3);
+    asyncRequestRunner.executeQueuedActions();
+    timeoutRunner.executeQueuedActions();
+    assertThat(blocks.size()).isEqualTo(1);
     verify(rpcStream).close();
   }
 
@@ -179,8 +211,10 @@ public class Eth2OutgoingRequestHandlerTest {
     deliverChunk(1);
 
     // Run timeouts
-    assertThat(asyncRunner.countDelayedActions()).isEqualTo(4);
-    asyncRunner.executeQueuedActions(3);
+    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(4);
+    asyncRequestRunner.executeUntilDone();
+    timeoutRunner.executeQueuedActions(3);
+    assertThat(blocks.size()).isEqualTo(2);
     verify(rpcStream, never()).close();
   }
 
@@ -197,6 +231,13 @@ public class Eth2OutgoingRequestHandlerTest {
   private Bytes chunkBytes(final int chunk) {
     final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(chunk, chunk);
     return rpcEncoder.encodeSuccessfulResponse(block);
+  }
+
+  private void deliverInvalidChunk() {
+    // Send a chunk with error code 1, message length 0
+    final Bytes invalidChunk = Bytes.fromHexString("0x0100");
+    final ByteBuf chunkBuffer = Unpooled.wrappedBuffer(invalidChunk.toArrayUnsafe());
+    reqHandler.onData(nodeId, rpcStream, chunkBuffer);
   }
 
   private void deliverChunk(final int chunk) {

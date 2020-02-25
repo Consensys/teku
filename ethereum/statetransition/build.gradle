@@ -22,7 +22,10 @@ dependencies {
   testImplementation 'org.mockito:mockito-core'
 
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 
   test {
     testLogging.showStandardStreams = true

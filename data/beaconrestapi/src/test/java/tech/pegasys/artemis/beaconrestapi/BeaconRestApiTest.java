@@ -22,8 +22,11 @@ import static org.mockito.Mockito.when;
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.FinalizedCheckpointHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
@@ -37,51 +40,49 @@ class BeaconRestApiTest {
   private final Javalin app = mock(Javalin.class);
   private static final Integer THE_PORT = 12345;
 
-  @Test
-  public void RestApiShouldHaveServerPortSet() {
+  @BeforeEach
+  public void setup() {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(storageClient, null, null, THE_PORT, app);
+  }
 
+  @Test
+  public void RestApiShouldHaveServerPortSet() {
     verify(server).setServerPort(THE_PORT);
   }
 
   @Test
   public void RestApiShouldHaveGenesisTimeEndpoint() throws Exception {
-    when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
-
     verify(app).get(eq(GenesisTimeHandler.ROUTE), any(GenesisTimeHandler.class));
   }
 
   @Test
   public void RestApiShouldHaveVersionEndpoint() throws Exception {
-    when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
-
     verify(app).get(eq(VersionHandler.ROUTE), any(VersionHandler.class));
   }
 
   @Test
   public void RestApiShouldHavePeerIdEndpoint() {
-    when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
-
     verify(app).get(eq(PeerIdHandler.ROUTE), any(PeerIdHandler.class));
   }
 
   @Test
-  public void RestApiShouldHaveFinalizedCheckpointEndpoint() {
-    when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
-
-    verify(app).get(eq(FinalizedCheckpointHandler.ROUTE), any(FinalizedCheckpointHandler.class));
+  public void restApiShouldHaveBeaconHeadEndpoint() throws Exception {
+    verify(app).get(eq(BeaconHeadHandler.ROUTE), any(BeaconHeadHandler.class));
   }
 
   @Test
   public void RestApiShouldHavePeersEndpoint() {
-    when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, THE_PORT, app);
-
     verify(app).get(eq(PeersHandler.ROUTE), any(PeersHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveChainHeadEndpoint() {
+    verify(app).get(eq(BeaconChainHeadHandler.ROUTE), any(BeaconChainHeadHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveBeaconStateEndpoint() {
+    verify(app).get(eq(BeaconStateHandler.ROUTE), any(BeaconStateHandler.class));
   }
 }

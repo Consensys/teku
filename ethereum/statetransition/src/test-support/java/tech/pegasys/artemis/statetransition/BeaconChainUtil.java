@@ -22,7 +22,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.data.BlockProcessingRecord;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
@@ -110,11 +109,11 @@ public class BeaconChainUtil {
     return createBlockAtSlot(slot, true);
   }
 
-  public BlockProcessingRecord createAndImportBlockAtSlot(final long slot) throws Exception {
+  public SignedBeaconBlock createAndImportBlockAtSlot(final long slot) throws Exception {
     return createAndImportBlockAtSlot(UnsignedLong.valueOf(slot));
   }
 
-  public BlockProcessingRecord createAndImportBlockAtSlot(
+  public SignedBeaconBlock createAndImportBlockAtSlot(
       final UnsignedLong slot, List<Attestation> attestations) throws Exception {
     Optional<SSZList<Attestation>> sszList =
         attestations.isEmpty()
@@ -125,7 +124,7 @@ public class BeaconChainUtil {
     return createAndImportBlockAtSlot(slot, sszList);
   }
 
-  public BlockProcessingRecord createAndImportBlockAtSlot(
+  public SignedBeaconBlock createAndImportBlockAtSlot(
       final UnsignedLong slot, Optional<SSZList<Attestation>> attestations) throws Exception {
     final SignedBeaconBlock block = createBlockAtSlot(slot, true, attestations);
     setSlot(slot);
@@ -148,11 +147,10 @@ public class BeaconChainUtil {
     }
     storageClient.updateBestBlock(
         block.getMessage().hash_tree_root(), block.getMessage().getSlot());
-    return importResult.getBlockProcessingRecord();
+    return importResult.getBlock();
   }
 
-  public BlockProcessingRecord createAndImportBlockAtSlot(final UnsignedLong slot)
-      throws Exception {
+  public SignedBeaconBlock createAndImportBlockAtSlot(final UnsignedLong slot) throws Exception {
     return createAndImportBlockAtSlot(slot, Optional.empty());
   }
 

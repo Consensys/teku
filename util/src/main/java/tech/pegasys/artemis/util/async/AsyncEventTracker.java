@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.async;
 
 import com.google.common.eventbus.EventBus;
+import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -26,10 +27,12 @@ public class AsyncEventTracker<K, V> {
     this.eventBus = eventBus;
   }
 
-  public SafeFuture<V> sendRequest(final K key, final Object eventToSend) {
+  public SafeFuture<V> sendRequest(final K key, final Object eventToSend, final Duration timeout) {
     final SafeFuture<V> future = requests.computeIfAbsent(key, k -> new SafeFuture<>());
     eventBus.post(eventToSend);
-    return future.orTimeout(5, TimeUnit.SECONDS);
+    return future
+        .orTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        .whenComplete((res, err) -> requests.remove(key, future));
   }
 
   public void onResponse(final K key, final V value) {

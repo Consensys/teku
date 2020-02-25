@@ -33,6 +33,10 @@ public class Bytes4 {
     return new Bytes4(Bytes.fromHexString(value));
   }
 
+  public String toHexString() {
+    return bytes.toHexString();
+  }
+
   /**
    * Left pad a {@link Bytes} value with zero bytes to create a {@link Bytes4}.
    *

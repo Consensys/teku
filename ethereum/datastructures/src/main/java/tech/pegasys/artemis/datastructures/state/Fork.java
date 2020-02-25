@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.base.MoreObjects;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +51,7 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
   }
 
   @Override
+  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }

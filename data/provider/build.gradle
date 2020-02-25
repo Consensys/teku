@@ -2,6 +2,7 @@ dependencies {
     implementation project(':util')
     implementation project(':data')
     implementation project(':ethereum:datastructures')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
     implementation 'org.apache.tuweni:tuweni-units'
     implementation 'com.google.code.gson:gson'
@@ -9,6 +10,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-api'
     runtime 'org.apache.logging.log4j:log4j-core'
 
+    testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 }
 
 test {

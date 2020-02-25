@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -100,6 +101,7 @@ public class Validator
   }
 
   @Override
+  @JsonIgnore
   public int getSSZFieldCount() {
     return pubkey.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
