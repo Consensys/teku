@@ -32,9 +32,7 @@ import tech.pegasys.artemis.ethtests.TestSuite;
 @ExtendWith(BouncyCastleExtension.class)
 public class beaconState extends TestSuite {
 
-  @ParameterizedTest(
-      name =
-          "{index}. ssz_static/BeaconState root={1}, signingRoot={2}")
+  @ParameterizedTest(name = "{index}. ssz_static/BeaconState root={1}, signingRoot={2}")
   @MethodSource({
     "processMinimal",
     "processMainnet",

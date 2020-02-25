@@ -46,12 +46,13 @@ public class blocksMainnetValid1 extends TestSuite {
   void sanityProcessBlock(
       BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
     StateTransition stateTransition = new StateTransition(false);
-    BeaconState result = blocks.stream()
-        .reduce(
-            pre,
-            (preState, block) ->
-                assertDoesNotThrow(() -> stateTransition.initiate(preState, block, true)),
-            (preState, postState) -> postState);
+    BeaconState result =
+        blocks.stream()
+            .reduce(
+                pre,
+                (preState, block) ->
+                    assertDoesNotThrow(() -> stateTransition.initiate(preState, block, true)),
+                (preState, postState) -> postState);
     assertEquals(post, result);
   }
 

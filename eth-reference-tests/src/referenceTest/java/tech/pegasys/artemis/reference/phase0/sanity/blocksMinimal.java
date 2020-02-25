@@ -54,12 +54,13 @@ public class blocksMinimal extends TestSuite {
   void sanityProcessBlock(
       BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
     StateTransition stateTransition = new StateTransition(false);
-    BeaconState result = blocks.stream()
-        .reduce(
-            pre,
-            (preState, block) ->
-                assertDoesNotThrow(() -> stateTransition.initiate(preState, block, true)),
-            (preState, postState) -> postState);
+    BeaconState result =
+        blocks.stream()
+            .reduce(
+                pre,
+                (preState, block) ->
+                    assertDoesNotThrow(() -> stateTransition.initiate(preState, block, true)),
+                (preState, postState) -> postState);
     assertEquals(post, result);
   }
 
@@ -154,8 +155,7 @@ public class blocksMinimal extends TestSuite {
     "sanityExpectedDepositInBlockSetup",
     "sanityPrevSlotBlockTransitionSetup"
   })
-  void sanityProcessBlockInvalid(
-      BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
+  void sanityProcessBlockInvalid(BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
         block -> {

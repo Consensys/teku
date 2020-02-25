@@ -71,10 +71,8 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
             BasicViewTypes.UINT64_TYPE,
             Fork.TYPE,
             BeaconBlockHeader.TYPE,
-            new VectorViewType<>(
-                BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
-            new VectorViewType<>(
-                BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+            new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
+            new VectorViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.SLOTS_PER_HISTORICAL_ROOT),
             new ListViewType<>(BasicViewTypes.BYTES32_TYPE, Constants.HISTORICAL_ROOTS_LIMIT),
             Eth1Data.TYPE,
             new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD),
@@ -83,8 +81,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
             new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
             new VectorViewType<>(
                 BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
-            new VectorViewType<>(
-                BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR),
+            new VectorViewType<>(BasicViewTypes.UINT64_TYPE, Constants.EPOCHS_PER_SLASHINGS_VECTOR),
             new ListViewType<>(
                 PendingAttestation.TYPE, Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH),
             new ListViewType<>(
@@ -95,6 +92,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
             Checkpoint.TYPE),
         BeaconStateImpl::new);
   }
+
   public static ContainerViewType<BeaconStateImpl> getSSZType() {
     if (TYPE == null) {
       TYPE = createSSZType();

@@ -34,7 +34,8 @@ public class slashings extends TestSuite {
 
   @ParameterizedTest(name = "{index}.{2} process slashings")
   @MethodSource("mainnetSlashingsSetup")
-  void mainnetProcessSlashings(BeaconState pre, BeaconState post, String testName) throws Exception {
+  void mainnetProcessSlashings(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
     MutableBeaconState wState = pre.createWritableCopy();
     EpochProcessorUtil.process_slashings(wState);
     assertEquals(post, wState);
@@ -42,7 +43,8 @@ public class slashings extends TestSuite {
 
   @ParameterizedTest(name = "{index}.{2} process slashings")
   @MethodSource("minimalSlashingsSetup")
-  void minimalProcessSlashings(BeaconState pre, BeaconState post, String testName) throws Exception {
+  void minimalProcessSlashings(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
     MutableBeaconState wState = pre.createWritableCopy();
     EpochProcessorUtil.process_slashings(wState);
     assertEquals(post, wState);

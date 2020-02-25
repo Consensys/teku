@@ -33,7 +33,8 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 public class final_updates extends TestSuite {
   @ParameterizedTest(name = "{index}.{2} process final updates")
   @MethodSource("mainnetFinalUpdatesSetup")
-  void mainnetProcessFinalUpdates(BeaconState pre, BeaconState post, String testName) throws Exception {
+  void mainnetProcessFinalUpdates(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
     MutableBeaconState wState = pre.createWritableCopy();
     EpochProcessorUtil.process_final_updates(wState);
     assertEquals(post, wState);
@@ -41,7 +42,8 @@ public class final_updates extends TestSuite {
 
   @ParameterizedTest(name = "{index}.{2} process final updates")
   @MethodSource("minimalFinalUpdatesSetup")
-  void minimalFinalUpdatesSetup(BeaconState pre, BeaconState post, String testName) throws Exception {
+  void minimalFinalUpdatesSetup(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
     MutableBeaconState wState = pre.createWritableCopy();
     EpochProcessorUtil.process_final_updates(wState);
     assertEquals(post, wState);

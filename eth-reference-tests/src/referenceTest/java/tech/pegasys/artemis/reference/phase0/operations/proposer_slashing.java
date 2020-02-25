@@ -52,7 +52,8 @@ public class proposer_slashing extends TestSuite {
   void processProposerSlashing(
       ProposerSlashing proposerSlashing, BeaconState pre, BeaconState post) {
     MutableBeaconState wState = pre.createWritableCopy();
-    assertDoesNotThrow(() -> process_proposer_slashings(wState, SSZList.singleton(proposerSlashing)));
+    assertDoesNotThrow(
+        () -> process_proposer_slashings(wState, SSZList.singleton(proposerSlashing)));
     assertEquals(post, wState);
   }
 

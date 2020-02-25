@@ -40,8 +40,7 @@ public class blocksMainnetInvalid extends TestSuite {
     "sanityExpectedDepositInBlockSetup",
     "sanityPrevSlotBlockTransitionSetup"
   })
-  void sanityProcessBlockInvalid(
-      BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
+  void sanityProcessBlockInvalid(BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
     StateTransition stateTransition = new StateTransition(false);
     blocks.forEach(
         block ->

@@ -36,8 +36,7 @@ public class slotsMainnet extends TestSuite {
 
   @ParameterizedTest(name = "{index}.{3} Sanity slots (Mainnet)")
   @MethodSource({"sanityGenericSlotSetup"})
-  void sanityProcessSlot(
-      BeaconState pre, BeaconState post, UnsignedLong slot, String testName) {
+  void sanityProcessSlot(BeaconState pre, BeaconState post, UnsignedLong slot, String testName) {
     boolean printEnabled = false;
     StateTransition stateTransition = new StateTransition(printEnabled);
 

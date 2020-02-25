@@ -47,8 +47,7 @@ public class voluntary_exit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process voluntary_exit")
   @MethodSource({"mainnetVoluntaryExitSuccessSetup", "minimalVoluntaryExitSuccessSetup"})
-  void processVoluntaryExit(
-      SignedVoluntaryExit voluntary_exit, BeaconState pre, BeaconState post) {
+  void processVoluntaryExit(SignedVoluntaryExit voluntary_exit, BeaconState pre, BeaconState post) {
     MutableBeaconState wState = pre.createWritableCopy();
     assertDoesNotThrow(() -> process_voluntary_exits(wState, SSZList.singleton(voluntary_exit)));
     assertEquals(post, wState);

@@ -39,8 +39,7 @@ public class attestation extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process attestation success")
   @MethodSource({"mainnetAttestationSuccessSetup", "minimalAttestationSuccessSetup"})
-  void processAttestationSuccess(
-      Attestation attestation, BeaconState pre, BeaconState post) {
+  void processAttestationSuccess(Attestation attestation, BeaconState pre, BeaconState post) {
     MutableBeaconState wState = pre.createWritableCopy();
     assertDoesNotThrow(() -> process_attestations(wState, SSZList.singleton(attestation)));
     assertEquals(post, wState);
