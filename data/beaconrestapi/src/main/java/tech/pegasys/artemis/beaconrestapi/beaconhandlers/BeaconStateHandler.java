@@ -43,28 +43,25 @@ public class BeaconStateHandler implements Handler {
   private final CombinedChainDataClient combinedClient;
   private final JsonProvider jsonProvider;
 
-  public BeaconStateHandler(CombinedChainDataClient combinedClient, JsonProvider jsonProvider) {
+  public BeaconStateHandler(
+      final CombinedChainDataClient combinedClient, final JsonProvider jsonProvider) {
     this.combinedClient = combinedClient;
     this.jsonProvider = jsonProvider;
   }
 
-  private Optional<BeaconState> queryByRootHash(String root)
+  private Optional<BeaconState> queryByRootHash(final String root)
       throws ExecutionException, InterruptedException {
-    Bytes32 root32 = Bytes32.fromHexString(root);
-
-    SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtBlock(root32);
-    Optional<BeaconState> result = future.get();
-    return result;
+    final Bytes32 root32 = Bytes32.fromHexString(root);
+    final SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtBlock(root32);
+    return future.get();
   }
 
-  private Optional<BeaconState> queryBySlot(String slotString)
+  private Optional<BeaconState> queryBySlot(final String slotString)
       throws ExecutionException, InterruptedException {
-    UnsignedLong slot = UnsignedLong.valueOf(slotString);
-    Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
-
-    SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtSlot(slot, head);
-    Optional<BeaconState> result = future.get();
-    return result;
+    final UnsignedLong slot = UnsignedLong.valueOf(slotString);
+    final Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
+    final SafeFuture<Optional<BeaconState>> future = combinedClient.getStateAtSlot(slot, head);
+    return future.get();
   }
 
   @OpenApi(
@@ -101,7 +98,7 @@ public class BeaconStateHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      Map<String, List<String>> parameters = ctx.queryParamMap();
+      final Map<String, List<String>> parameters = ctx.queryParamMap();
       Optional<BeaconState> result = Optional.empty();
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
