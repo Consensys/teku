@@ -28,7 +28,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -38,18 +39,19 @@ public class voluntary_exit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process voluntary_exit")
   @MethodSource({"mainnetVoluntaryExitSetup", "minimalVoluntaryExitSetup"})
-  void processVoluntaryExit(SignedVoluntaryExit voluntary_exit, BeaconStateImpl pre) {
+  void processVoluntaryExit(SignedVoluntaryExit voluntary_exit, BeaconState pre) {
     assertThrows(
         BlockProcessingException.class,
-        () -> process_voluntary_exits(pre, SSZList.singleton(voluntary_exit)));
+        () -> process_voluntary_exits(pre.createWritableCopy(), SSZList.singleton(voluntary_exit)));
   }
 
   @ParameterizedTest(name = "{index}. process voluntary_exit")
   @MethodSource({"mainnetVoluntaryExitSuccessSetup", "minimalVoluntaryExitSuccessSetup"})
   void processVoluntaryExit(
-      SignedVoluntaryExit voluntary_exit, BeaconStateImpl pre, BeaconStateImpl post) {
-    assertDoesNotThrow(() -> process_voluntary_exits(pre, SSZList.singleton(voluntary_exit)));
-    assertEquals(pre, post);
+      SignedVoluntaryExit voluntary_exit, BeaconState pre, BeaconState post) {
+    MutableBeaconState wState = pre.createWritableCopy();
+    assertDoesNotThrow(() -> process_voluntary_exits(wState, SSZList.singleton(voluntary_exit)));
+    assertEquals(post, wState);
   }
 
   @MustBeClosed

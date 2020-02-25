@@ -28,7 +28,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -40,20 +41,22 @@ public class attester_slashing extends TestSuite {
   @MethodSource({"mainnetAttesterSlashingSuccessSetup", "minimalAttesterSlashingSuccessSetup"})
   void processAttesterSlashingSuccess(
       AttesterSlashing attester_slashing,
-      BeaconStateImpl pre,
-      BeaconStateImpl post,
+      BeaconState pre,
+      BeaconState post,
       String testName) {
-    assertDoesNotThrow(() -> process_attester_slashings(pre, SSZList.singleton(attester_slashing)));
-    assertEquals(pre, post);
+    MutableBeaconState wState = pre.createWritableCopy();
+    assertDoesNotThrow(() -> process_attester_slashings(wState, SSZList.singleton(attester_slashing)));
+    assertEquals(post, wState);
   }
 
   @ParameterizedTest(name = "{index}.{2} process attester slashing rejection")
   @MethodSource({"mainnetAttesterSlashingSetup", "minimalAttesterSlashingSetup"})
   void processAttesterSlashing(
-      AttesterSlashing attester_slashing, BeaconStateImpl pre, String testName) {
+      AttesterSlashing attester_slashing, BeaconState pre, String testName) {
+    MutableBeaconState wState = pre.createWritableCopy();
     assertThrows(
         BlockProcessingException.class,
-        () -> process_attester_slashings(pre, SSZList.singleton(attester_slashing)));
+        () -> process_attester_slashings(wState, SSZList.singleton(attester_slashing)));
   }
 
   @MustBeClosed

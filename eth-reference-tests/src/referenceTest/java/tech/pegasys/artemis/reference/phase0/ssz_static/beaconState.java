@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -38,7 +38,7 @@ public class beaconState extends TestSuite {
     "processMinimal",
     "processMainnet",
   })
-  void processSSZStaticBeaconBlock(BeaconStateImpl deserializedBeaconState, Bytes32 root)
+  void processSSZStaticBeaconBlock(BeaconState deserializedBeaconState, Bytes32 root)
       throws Exception {
     assertEquals(deserializedBeaconState.hash_tree_root(), root);
   }
@@ -57,6 +57,6 @@ public class beaconState extends TestSuite {
   static Stream<Arguments> process(String config) throws Exception {
     Path configPath = Paths.get(config);
     Path path = Paths.get(config, "phase0", "ssz_static", "BeaconState");
-    return sszStaticSetup(path, configPath, BeaconStateImpl.class);
+    return sszStaticSetup(path, configPath, BeaconState.class);
   }
 }

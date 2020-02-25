@@ -30,7 +30,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.ethtests.TestSuite;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -39,7 +38,7 @@ public class initialization extends TestSuite {
   @ParameterizedTest(name = "{index}.{3} root of Merkleizable")
   @MethodSource({"genesisGenericInitializationSetup"})
   void genesisInitialization(
-      BeaconStateImpl state,
+      BeaconState state,
       UnsignedLong eth1_timestamp,
       Bytes32 eth1_block_hash,
       String testName,

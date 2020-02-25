@@ -28,7 +28,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -38,16 +39,18 @@ public class deposit extends TestSuite {
 
   @ParameterizedTest(name = "{index}. process deposit success")
   @MethodSource({"mainnetDepositSuccessSetup", "minimalDepositSuccessSetup"})
-  void processDepositSuccess(Deposit deposit, BeaconStateImpl pre, BeaconStateImpl post) {
-    assertDoesNotThrow(() -> process_deposits(pre, SSZList.singleton(deposit)));
-    assertEquals(pre, post);
+  void processDepositSuccess(Deposit deposit, BeaconState pre, BeaconState post) {
+    MutableBeaconState wState = pre.createWritableCopy();
+    assertDoesNotThrow(() -> process_deposits(wState, SSZList.singleton(deposit)));
+    assertEquals(post, wState);
   }
 
   @ParameterizedTest(name = "{index}. process deposit")
   @MethodSource({"mainnetDepositSetup", "minimalDepositSetup"})
-  void processDeposit(Deposit deposit, BeaconStateImpl pre) {
+  void processDeposit(Deposit deposit, BeaconState pre) {
     assertThrows(
-        BlockProcessingException.class, () -> process_deposits(pre, SSZList.singleton(deposit)));
+        BlockProcessingException.class,
+        () -> process_deposits(pre.createWritableCopy(), SSZList.singleton(deposit)));
   }
 
   @MustBeClosed

@@ -24,24 +24,27 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class final_updates extends TestSuite {
-  @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process final updates")
   @MethodSource("mainnetFinalUpdatesSetup")
-  void mainnetProcessFinalUpdates(BeaconStateImpl pre, BeaconStateImpl post) throws Exception {
-    EpochProcessorUtil.process_final_updates(pre);
-    assertEquals(pre, post);
+  void mainnetProcessFinalUpdates(BeaconState pre, BeaconState post, String testName) throws Exception {
+    MutableBeaconState wState = pre.createWritableCopy();
+    EpochProcessorUtil.process_final_updates(wState);
+    assertEquals(post, wState);
   }
 
-  @ParameterizedTest(name = "{index}. process final updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process final updates")
   @MethodSource("minimalFinalUpdatesSetup")
-  void minimalFinalUpdatesSetup(BeaconStateImpl pre, BeaconStateImpl post) throws Exception {
-    EpochProcessorUtil.process_final_updates(pre);
-    assertEquals(pre, post);
+  void minimalFinalUpdatesSetup(BeaconState pre, BeaconState post, String testName) throws Exception {
+    MutableBeaconState wState = pre.createWritableCopy();
+    EpochProcessorUtil.process_final_updates(wState);
+    assertEquals(post, wState);
   }
 
   @MustBeClosed
