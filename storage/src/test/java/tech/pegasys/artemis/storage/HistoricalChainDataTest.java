@@ -21,12 +21,15 @@ import static org.mockito.Mockito.verify;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateAtBlockRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateAtBlockResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
@@ -143,6 +146,18 @@ class HistoricalChainDataTest {
     assertThat(result).isNotDone();
 
     historicalChainData.onStateAtSlotResponse(new GetFinalizedStateAtSlotResponse(ONE, STATE));
+    assertThat(result).isCompletedWithValue(STATE);
+  }
+
+  @Test
+  public void getFinalizedStateAtBlock_shouldRetrieveStateByBlock() {
+    final Bytes32 data = BLOCK.get().getMessage().hash_tree_root();
+    final SafeFuture<Optional<BeaconState>> result =
+        historicalChainData.getFinalizedStateAtBlock(data);
+    verify(eventBus).post(new GetFinalizedStateAtBlockRequest(data));
+    assertThat(result).isNotDone();
+
+    historicalChainData.onStateAtBlockResponse(new GetFinalizedStateAtBlockResponse(data, STATE));
     assertThat(result).isCompletedWithValue(STATE);
   }
 
