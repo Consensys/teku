@@ -69,7 +69,7 @@ public class BeaconBlockHandler implements Handler {
         @OpenApiResponse(
             status = "200",
             content = @OpenApiContent(from = BeaconBlockResponse.class)),
-        @OpenApiResponse(status = "400", description = "Invalid parameters supplied"),
+        @OpenApiResponse(status = "400", description = "Invalid parameter supplied"),
         @OpenApiResponse(status = "404", description = "Specified block not found")
       })
   @Override
