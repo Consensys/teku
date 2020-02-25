@@ -19,6 +19,7 @@ dependencies {
     runtime 'org.apache.logging.log4j:log4j-core'
 
     testImplementation 'org.mockito:mockito-core'
+    testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 
     testCompile 'io.libp2p:jvm-libp2p-minimal'
     testCompile 'org.mockito:mockito-junit-jupiter:3.2.4'
