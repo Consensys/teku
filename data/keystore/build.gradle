@@ -1,5 +1,5 @@
 jar {
-    baseName 'artemis-data-keystore'
+    baseName 'teku-data-keystore'
     manifest {
         attributes('Implementation-Title': baseName,
                 'Implementation-Version': project.version)
