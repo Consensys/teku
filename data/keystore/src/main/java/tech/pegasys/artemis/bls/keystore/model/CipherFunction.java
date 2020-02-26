@@ -16,16 +16,22 @@ package tech.pegasys.artemis.bls.keystore.model;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum CipherFunction {
-  AES_128_CTR("aes-128-ctr");
+  AES_128_CTR("aes-128-ctr", "AES/CTR/NoPadding");
 
   private final String jsonValue;
+  private final String algorithmName;
 
-  CipherFunction(final String jsonValue) {
+  CipherFunction(final String jsonValue, final String algorithmName) {
     this.jsonValue = jsonValue;
+    this.algorithmName = algorithmName;
   }
 
   @JsonValue
   public String getJsonValue() {
     return this.jsonValue;
+  }
+
+  public String getAlgorithmName() {
+    return algorithmName;
   }
 }

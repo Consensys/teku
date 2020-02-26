@@ -44,6 +44,10 @@ public class Kdf {
     this.message = message;
   }
 
+  public Kdf(final KdfParam kdfParam) {
+    this(kdfParam.getCryptoFunction(), kdfParam, "");
+  }
+
   @JsonProperty(value = "function")
   public CryptoFunction getCryptoFunction() {
     return cryptoFunction;

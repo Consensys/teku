@@ -15,24 +15,28 @@ package tech.pegasys.artemis.bls.keystore.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
 
 public abstract class KdfParam extends Param {
   private final Integer dklen;
-  private final Bytes32 salt;
+  private final Bytes salt;
 
-  public KdfParam(final Integer dklen, final Bytes32 salt) {
+  public KdfParam(final Integer dklen, final Bytes salt) {
     this.dklen = dklen;
     this.salt = salt;
   }
 
   @JsonProperty(value = "dklen")
-  public Integer getDerivedKeyLength() {
+  public Integer getDkLen() {
     return dklen;
   }
 
+  public abstract CryptoFunction getCryptoFunction();
+
+  public abstract Bytes generateDecryptionKey(final String password);
+
   @JsonProperty(value = "salt")
-  public Bytes32 getSalt() {
+  public Bytes getSalt() {
     return salt;
   }
 

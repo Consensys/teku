@@ -13,91 +13,36 @@
 
 package tech.pegasys.artemis.bls.keystore;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import java.io.IOException;
 import java.nio.file.Path;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
+import tech.pegasys.artemis.util.json.BytesModule;
 
 /** Provide utility methods to load/store BLS KeyStore from json format */
 public class KeyStoreLoader {
   private static final ObjectMapper OBJECT_MAPPER =
-      new ObjectMapper().registerModule(new KeyStoreBytesModule());
+      new ObjectMapper().registerModule(new BytesModule());
 
-  public static KeyStore loadFromJson(final String json) throws Exception {
+  public static KeyStoreData loadFromJson(final String json) throws Exception {
     requireNonNull(json);
     final KeyStoreData keyStoreData = OBJECT_MAPPER.readValue(json, KeyStoreData.class);
-    checkArgument(keyStoreData.getVersion() == 4, "Key Store version 4 is supported.");
-    return new KeyStore(keyStoreData);
+    // TODO: perform validation
+    return keyStoreData;
   }
 
-  public static KeyStore loadFromFile(final Path keystoreFile) throws Exception {
+  public static KeyStoreData loadFromFile(final Path keystoreFile) throws Exception {
     requireNonNull(keystoreFile);
     final KeyStoreData keyStoreData =
         OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
-    checkArgument(keyStoreData.getVersion() == 4, "Key Store version 4 is supported.");
-    return new KeyStore(keyStoreData);
+    // TODO: perform validation
+    return keyStoreData;
   }
 
   public static String toJson(final KeyStoreData keyStoreData) throws Exception {
-    requireNonNull(keyStoreData);
-    checkArgument(keyStoreData.getVersion() == 4, "Key Store version 4 is supported.");
     return KeyStoreLoader.OBJECT_MAPPER
         .writerWithDefaultPrettyPrinter()
         .writeValueAsString(keyStoreData);
-  }
-
-  private static class KeyStoreBytesModule extends SimpleModule {
-    public KeyStoreBytesModule() {
-      super("KeystoreBytes");
-      addSerializer(Bytes.class, new BytesSerializer());
-      addDeserializer(Bytes.class, new BytesDeserializer());
-      addSerializer(Bytes32.class, new Bytes32Serializer());
-      addDeserializer(Bytes32.class, new Bytes32Deserializer());
-    }
-
-    private static class BytesSerializer extends JsonSerializer<Bytes> {
-      @Override
-      public void serialize(Bytes bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
-          throws IOException {
-        // write bytes in hex without 0x
-        jGen.writeString(bytes.appendHexTo(new StringBuilder()).toString());
-      }
-    }
-
-    private static class BytesDeserializer extends JsonDeserializer<Bytes> {
-      @Override
-      public Bytes deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        return Bytes.fromHexString(p.getValueAsString());
-      }
-    }
-
-    private static class Bytes32Serializer extends JsonSerializer<Bytes32> {
-      @Override
-      public void serialize(
-          Bytes32 bytes, JsonGenerator jGen, SerializerProvider serializerProvider)
-          throws IOException {
-        // write bytes in hex without 0x
-        jGen.writeString(bytes.appendHexTo(new StringBuilder()).toString());
-      }
-    }
-
-    private static class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
-      @Override
-      public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        return Bytes32.fromHexString(p.getValueAsString());
-      }
-    }
   }
 }

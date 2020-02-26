@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.util.UUID;
@@ -24,23 +25,29 @@ import org.apache.tuweni.bytes.Bytes;
  * @see <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2335.md">EIP-2335</a>
  */
 public class KeyStoreData {
+  public static final int KEYSTORE_VERSION = 4;
   private final Crypto crypto;
   private final Bytes pubkey;
   private final String path;
   private final UUID uuid;
   private final Integer version;
 
+  @JsonCreator
   public KeyStoreData(
       @JsonProperty(value = "crypto", required = true) final Crypto crypto,
       @JsonProperty(value = "pubkey", required = true) final Bytes pubkey,
       @JsonProperty(value = "path", required = true) final String path,
       @JsonProperty(value = "uuid", required = true) final UUID uuid,
-      @JsonProperty(value = "version", required = true, defaultValue = "4") final Integer version) {
+      @JsonProperty(value = "version", required = true) final Integer version) {
     this.crypto = crypto;
     this.pubkey = pubkey;
     this.path = path;
     this.uuid = uuid;
     this.version = version;
+  }
+
+  public KeyStoreData(final Crypto crypto, final Bytes pubkey, final String path) {
+    this(crypto, pubkey, path, UUID.randomUUID(), KEYSTORE_VERSION);
   }
 
   public Crypto getCrypto() {

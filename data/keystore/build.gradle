@@ -15,5 +15,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.tuweni:tuweni-bytes'
     implementation 'org.apache.tuweni:tuweni-crypto'
-    runtime 'org.apache.logging.log4j:log4j-core'
+
+    testImplementation 'org.assertj:assertj-core'
+    testRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
 }

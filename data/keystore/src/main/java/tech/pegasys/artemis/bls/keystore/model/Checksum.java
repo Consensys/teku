@@ -33,6 +33,10 @@ public class Checksum {
     this.message = message;
   }
 
+  public Checksum(final Bytes message) {
+    this(ChecksumFunction.SHA256, new Param(), message);
+  }
+
   @JsonProperty(value = "function")
   public ChecksumFunction getChecksumFunction() {
     return checksumFunction;

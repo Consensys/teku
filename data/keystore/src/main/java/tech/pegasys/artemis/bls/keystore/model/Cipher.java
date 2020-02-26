@@ -33,6 +33,10 @@ public class Cipher {
     this.message = message;
   }
 
+  public Cipher(final Bytes ivParam) {
+    this(CipherFunction.AES_128_CTR, new CipherParam(ivParam), Bytes.EMPTY);
+  }
+
   @JsonProperty(value = "function")
   public CipherFunction getCipherFunction() {
     return cipherFunction;
