@@ -17,8 +17,6 @@ import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
-import java.nio.ByteBuffer;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.function.Function;
@@ -72,9 +70,8 @@ public final class DataStructureUtil {
   }
 
   public static Bytes32 randomBytes32(long seed) {
-    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-    buffer.putLong(seed);
-    return Bytes32.random(new SecureRandom(buffer.array()));
+    final Random random = new Random(seed);
+    return Bytes32.random(random);
   }
 
   public static <T> SSZList<T> randomSSZList(

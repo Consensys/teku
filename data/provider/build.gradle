@@ -10,6 +10,7 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-api'
     runtime 'org.apache.logging.log4j:log4j-core'
 
+    testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 }
 
 test {
