@@ -128,6 +128,11 @@ public class SyncManager extends Service {
     return syncQueued;
   }
 
+  public SyncStatus getSyncStatus() {
+    final UnsignedLong highestSlot = findBestSyncPeer().get().getStatus().getHeadSlot();
+    return new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
+  }
+
   private SafeFuture<Void> executeSync() {
     return findBestSyncPeer()
         .map(this::syncToPeer)
@@ -174,7 +179,7 @@ public class SyncManager extends Service {
             });
   }
 
-  private Optional<Eth2Peer> findBestSyncPeer() {
+  Optional<Eth2Peer> findBestSyncPeer() {
     return network
         .streamPeers()
         .filter(this::isPeerSyncSuitable)
