@@ -83,12 +83,17 @@ public class Eth1MinGenesisTimeBlockFinder {
         .thenAccept(this::publishFirstValidBlock)
         .exceptionallyCompose(
             err -> {
+              if (latestBlockDisposable != null) {
+                latestBlockDisposable.dispose();
+              }
+
               LOG.debug(
                   "Eth1MinGenesisTimeBlockFinder failed to find first valid block. Retry in "
                       + Constants.ETH1_MIN_GENESIS_TIME_BLOCK_RETRY_TIMEOUT
                       + " seconds",
                   err);
 
+              System.out.println("adding one delayed run");
               return asyncRunner.runAfterDelay(
                   this::findAndPublishFirstValidBlock,
                   Constants.ETH1_MIN_GENESIS_TIME_BLOCK_RETRY_TIMEOUT,
@@ -105,7 +110,7 @@ public class Eth1MinGenesisTimeBlockFinder {
   }
 
   /**
-   * Find first estimationBlock that has timestamp that is greater than MIN_GENESIS_TIME
+   * Find first valid block in history that has timestamp greater than MIN_GENESIS_TIME
    *
    * @param estimationBlock estimationBlock that will be used for estimation
    * @return first valid block in history
@@ -211,9 +216,7 @@ public class Eth1MinGenesisTimeBlockFinder {
                 latestBlockDisposable.dispose();
               }
             })
-        .finish(
-            () -> {},
-            (err) -> firstValidBlockFuture.completeExceptionally(new RuntimeException(err)));
+        .finish(() -> {}, firstValidBlockFuture::completeExceptionally);
   }
 
   // TODO: this function changes a tiny bit in 10.1

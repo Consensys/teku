@@ -195,19 +195,37 @@ public class Eth1MinGenesisTimeBlockFinderTest {
   @Test
   void waitForFirstValidBlock_errorAndRecover() {
     mockLatestCanonicalBlock(1000);
-    mockBlockForEth1Provider("0xbf", 1000, 1000);
+    mockBlockForEth1Provider("0xaf", 1000, 1000);
 
     setMinGenesisTime(1200);
+
+    mockBlockForEth1Provider("0xcf", 1001, 1098);
+
+    EthBlock.Block mockBlock = mock(EthBlock.Block.class);
+    when(mockBlock.getHash()).thenReturn("0xbf");
+    when(mockBlock.getNumber()).thenReturn(BigInteger.valueOf(1002));
+    when(mockBlock.getTimestamp()).thenReturn(BigInteger.valueOf(1201));
+    when(eth1Provider.getEth1BlockFuture(UnsignedLong.valueOf(1002)))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("Nope")))
+        .thenReturn(SafeFuture.completedFuture(mockBlock));
 
     eth1MinGenesisTimeBlockFinder.start();
 
     verify(eth1Provider).getLatestBlockFlowable();
 
-    mockBlockForEth1Provider("0xbf", 1001, 1098);
     pushLatestCanonicalBlockWithNumber(1001);
 
+    System.out.println(asyncRunner.countDelayedActions());
+
+    pushLatestCanonicalBlockWithNumber(1002);
+
+    asyncRunner.executeQueuedActions();
+
+    pushLatestCanonicalBlockWithNumber(1002);
+    verify(eth1Provider, times(2)).getLatestBlockFlowable();
+
     verify(minGenesisTimeBlockEventChannel)
-        .onMinGenesisTimeBlock(argThat(isEvent("0xbf", 1001, 1098)));
+        .onMinGenesisTimeBlock(argThat(isEvent("0xbf", 1002, 1201)));
   }
 
   @Test
