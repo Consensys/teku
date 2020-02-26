@@ -104,5 +104,7 @@ dependencyManagement {
 
     dependency "org.testcontainers:testcontainers:1.12.3"
     dependency "org.testcontainers:junit-jupiter:1.12.3"
+
+    dependency 'tech.pegasys.discovery:discovery:0.3.0'
   }
 }
