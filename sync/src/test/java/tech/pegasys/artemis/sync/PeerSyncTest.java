@@ -335,9 +335,11 @@ public class PeerSyncTest {
 
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
     final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
+    final SafeFuture<Void> requestFuture3 = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any()))
         .thenReturn(requestFuture1)
-        .thenReturn(requestFuture2);
+        .thenReturn(requestFuture2)
+        .thenReturn(requestFuture3);
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
@@ -356,9 +358,9 @@ public class PeerSyncTest {
     verify(blockImporter, never()).importBlock(any());
 
     // check startingSlot
-    UnsignedLong syncStartingSlot = peerSync.getStartingSlot();
-    assertThat(syncStartingSlot).isEqualTo(startSlot);
-    assertThat(syncStartingSlot).isLessThan(PEER_HEAD_SLOT);
+    final UnsignedLong syncStatusStartingSlot = peerSync.getStartingSlot();
+    assertThat(syncStatusStartingSlot).isEqualTo(startSlot);
+    assertThat(syncStatusStartingSlot).isLessThan(PEER_HEAD_SLOT);
 
     asyncRunner.executeQueuedActions();
     final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
@@ -384,14 +386,55 @@ public class PeerSyncTest {
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
     requestFuture2.complete(null);
 
-    // Check that the sync is done and the peer was not disconnected.
+    // Check that the sync is done
     assertThat(syncFuture).isCompleted();
+
+    // check startingSlot is still where it was
+    final UnsignedLong syncStatusStartingSlot2 = peerSync.getStartingSlot();
+    assertThat(syncStatusStartingSlot2).isEqualTo(startSlot);
+    assertThat(syncStatusStartingSlot2).isLessThan(PEER_HEAD_SLOT);
+
+    // do another sync and check that things are further along.
+    UnsignedLong thirdRequestSize = UnsignedLong.valueOf(6);
+    final PeerStatus peer_status_later =
+        PeerStatus.fromStatusMessage(
+            new StatusMessage(
+                Constants.GENESIS_FORK_VERSION,
+                Bytes32.ZERO,
+                PEER_FINALIZED_EPOCH,
+                PEER_HEAD_BLOCK_ROOT,
+                peerHeadSlot.plus(thirdRequestSize)));
+
+    when(peer.getStatus()).thenReturn(peer_status_later);
+    final SafeFuture<PeerSyncResult> syncFuture2 = peerSync.sync(peer);
+    assertThat(syncFuture2).isNotDone();
+
+    // first non-finalized slot after syncing with peer
+    final UnsignedLong secondSyncStartingSlot =
+        PEER_FINALIZED_EPOCH
+            .times(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
+            .plus(UnsignedLong.ONE);
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(PEER_HEAD_BLOCK_ROOT),
+            eq(secondSyncStartingSlot),
+            any(),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    // Signal that second sync is complete
+    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
+    requestFuture3.complete(null);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncFuture2).isCompleted();
     verify(peer, never()).sendGoodbye(any());
 
-    // check startingSlot
-    syncStartingSlot = peerSync.getStartingSlot();
-    assertThat(syncStartingSlot).isEqualTo(startSlot);
-    assertThat(syncStartingSlot).isLessThan(PEER_HEAD_SLOT);
+    // check that starting slot for second sync is the first slot after peer's finalized epoch
+    final UnsignedLong syncStatusStartingSlot3 = peerSync.getStartingSlot();
+    assertThat(syncStatusStartingSlot3).isEqualTo(secondSyncStartingSlot);
+    assertThat(syncStatusStartingSlot3).isLessThan(PEER_HEAD_SLOT);
   }
 
   private List<SignedBeaconBlock> respondWithBlocksAtSlots(
