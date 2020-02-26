@@ -47,7 +47,7 @@ public class PeerSync {
 
   private final AsyncRunner asyncRunner;
 
-  private UnsignedLong startingSlot = UnsignedLong.valueOf(0);
+  private volatile UnsignedLong startingSlot = UnsignedLong.valueOf(0);
 
   public PeerSync(
       final AsyncRunner asyncRunner,

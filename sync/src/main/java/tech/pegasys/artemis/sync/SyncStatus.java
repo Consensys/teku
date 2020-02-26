@@ -17,9 +17,9 @@ import com.google.common.primitives.UnsignedLong;
 
 public class SyncStatus {
 
-  public final UnsignedLong starting_slot;
-  public final UnsignedLong current_slot;
-  public final UnsignedLong highest_slot;
+  private final UnsignedLong starting_slot;
+  private final UnsignedLong current_slot;
+  private final UnsignedLong highest_slot;
 
   public SyncStatus(
       final UnsignedLong starting_slot,
@@ -28,5 +28,17 @@ public class SyncStatus {
     this.starting_slot = starting_slot;
     this.current_slot = current_slot;
     this.highest_slot = highest_slot;
+  }
+
+  public UnsignedLong getStarting_slot() {
+    return starting_slot;
+  }
+
+  public UnsignedLong getCurrent_slot() {
+    return current_slot;
+  }
+
+  public UnsignedLong getHighest_slot() {
+    return highest_slot;
   }
 }

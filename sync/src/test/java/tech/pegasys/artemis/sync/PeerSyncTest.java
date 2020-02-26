@@ -157,6 +157,8 @@ public class PeerSyncTest {
 
   @Test
   void sync_stoppedBeforeBlockImport() {
+    UnsignedLong step = UnsignedLong.ONE;
+    UnsignedLong startHere = UnsignedLong.ONE;
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -168,7 +170,7 @@ public class PeerSyncTest {
             eq(PEER_HEAD_BLOCK_ROOT),
             any(),
             any(),
-            eq(UnsignedLong.ONE),
+            eq(step),
             responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
@@ -196,7 +198,7 @@ public class PeerSyncTest {
 
     // check startingSlot
     UnsignedLong startingSlot = peerSync.getStartingSlot();
-    assertThat(startingSlot).isGreaterThan(UnsignedLong.valueOf(0));
+    assertThat(startingSlot).isEqualTo(startHere);
     assertThat(startingSlot).isLessThan(PEER_HEAD_SLOT);
   }
 
@@ -353,6 +355,11 @@ public class PeerSyncTest {
     requestFuture1.complete(null);
     verify(blockImporter, never()).importBlock(any());
 
+    // check startingSlot
+    UnsignedLong syncStartingSlot = peerSync.getStartingSlot();
+    assertThat(syncStartingSlot).isEqualTo(startSlot);
+    assertThat(syncStartingSlot).isLessThan(PEER_HEAD_SLOT);
+
     asyncRunner.executeQueuedActions();
     final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     verify(peer)
@@ -382,9 +389,9 @@ public class PeerSyncTest {
     verify(peer, never()).sendGoodbye(any());
 
     // check startingSlot
-    UnsignedLong startingSlot = peerSync.getStartingSlot();
-    assertThat(startingSlot).isGreaterThan(UnsignedLong.valueOf(0));
-    assertThat(startingSlot).isLessThan(PEER_HEAD_SLOT);
+    syncStartingSlot = peerSync.getStartingSlot();
+    assertThat(syncStartingSlot).isEqualTo(startSlot);
+    assertThat(syncStartingSlot).isLessThan(PEER_HEAD_SLOT);
   }
 
   private List<SignedBeaconBlock> respondWithBlocksAtSlots(

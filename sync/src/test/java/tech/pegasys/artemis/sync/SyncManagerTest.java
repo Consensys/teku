@@ -195,7 +195,8 @@ public class SyncManagerTest {
 
   @Test
   void sync_syncStatus() {
-    when(network.streamPeers()).thenReturn(Stream.of(peer));
+    // stream needs to be used more than once
+    when(network.streamPeers()).then(i -> Stream.of(peer));
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);
@@ -207,10 +208,11 @@ public class SyncManagerTest {
 
     UnsignedLong currentSlot = UnsignedLong.valueOf(17);
     when(storageClient.getBestSlot()).thenReturn(currentSlot);
+
     SyncStatus syncStatus = syncManager.getSyncStatus();
-    assertThat(syncStatus.current_slot).isEqualTo(currentSlot);
-    assertThat(syncStatus.starting_slot).isEqualTo(startingSlot);
-    assertThat(syncStatus.highest_slot).isEqualTo(PEER_HEAD_SLOT);
+    assertThat(syncStatus.getCurrent_slot()).isEqualTo(currentSlot);
+    assertThat(syncStatus.getStarting_slot()).isEqualTo(startingSlot);
+    assertThat(syncStatus.getHighest_slot()).isEqualTo(PEER_HEAD_SLOT);
 
     assertThat(syncManager.isSyncQueued()).isFalse();
 
