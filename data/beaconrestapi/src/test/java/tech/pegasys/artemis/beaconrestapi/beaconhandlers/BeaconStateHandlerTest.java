@@ -19,8 +19,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler.ROOT;
-import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.eventbus.EventBus;

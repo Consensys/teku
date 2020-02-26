@@ -13,6 +13,10 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
+
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -38,10 +42,11 @@ public class PeerIdHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get this beacon node's PeerId.",
-      tags = {"Network"},
+      tags = {TAG_NETWORK},
       description = "Requests that the beacon node return its PeerId as a base58 encoded String.",
       responses = {
-        @OpenApiResponse(status = "200", content = @OpenApiContent(from = String.class))
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
