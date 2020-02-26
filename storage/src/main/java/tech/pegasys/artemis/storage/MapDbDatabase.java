@@ -81,7 +81,7 @@ public class MapDbDatabase implements Database {
         if (StringUtils.isEmpty(ver) || !ver.equals(VERSION)) {
           throw new DatabaseStorageException(
               String.format(
-                  "The database version found (%s) does not meet the expected version(%s).\n"
+                  "The database version found (%s) does not match the expected version(%s).\n"
                       + "Aborting startup to prevent corruption of the database.\n",
                   ver, VERSION));
         }
