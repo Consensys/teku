@@ -16,7 +16,7 @@ package tech.pegasys.artemis.storage;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.Optional;
+import java.time.Duration;
 import javax.annotation.CheckReturnValue;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
@@ -24,7 +24,8 @@ import tech.pegasys.artemis.util.async.AsyncEventTracker;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class StoreToDiskTransactionPrecommit implements TransactionPrecommit {
-  private final AsyncEventTracker<Long, Optional<RuntimeException>> tracker;
+  private static final Duration COMMIT_TIMEOUT = Duration.ofMinutes(1);
+  private final AsyncEventTracker<Long, DatabaseUpdateResult> tracker;
 
   public StoreToDiskTransactionPrecommit(final EventBus eventBus) {
     this.tracker = new AsyncEventTracker<>(eventBus);
@@ -33,21 +34,13 @@ public class StoreToDiskTransactionPrecommit implements TransactionPrecommit {
 
   @Override
   @CheckReturnValue
-  public SafeFuture<Void> precommit(final StoreDiskUpdateEvent updateEvent) {
-    return tracker
-        .sendRequest(updateEvent.getTransactionId(), updateEvent)
-        .thenApply(
-            error -> {
-              if (error.isPresent()) {
-                throw error.get();
-              }
-              return null;
-            });
+  public SafeFuture<DatabaseUpdateResult> precommit(final StoreDiskUpdateEvent updateEvent) {
+    return tracker.sendRequest(updateEvent.getTransactionId(), updateEvent, COMMIT_TIMEOUT);
   }
 
   @Subscribe
   @AllowConcurrentEvents
   void onResponse(final StoreDiskUpdateCompleteEvent event) {
-    tracker.onResponse(event.getTransactionId(), event.getError());
+    tracker.onResponse(event.getTransactionId(), event.getResult());
   }
 }
