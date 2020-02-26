@@ -23,11 +23,11 @@ import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.Date;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -199,10 +199,10 @@ public class BeaconChainController {
       this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
-      Optional<PrivKey> pk =
+      PrivKey pk =
           bytes.isEmpty()
-              ? Optional.empty()
-              : Optional.of(KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe()));
+              ? KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()
+              : KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
       NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
