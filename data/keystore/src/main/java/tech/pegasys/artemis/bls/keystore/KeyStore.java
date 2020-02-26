@@ -15,11 +15,10 @@ package tech.pegasys.artemis.bls.keystore;
 
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
+import static org.apache.tuweni.bytes.Bytes.concatenate;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
 import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.security.GeneralSecurityException;
 import java.util.Objects;
 import javax.crypto.spec.IvParameterSpec;
@@ -43,8 +42,6 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
  */
 public class KeyStore {
   private static final BouncyCastleProvider BC = new BouncyCastleProvider();
-  private static final String DKLEN_ERROR_MESSAGE =
-      "The decryption key length (dklen) must be greater than or equal to 32";
 
   /**
    * Encrypt the given BLS12-381 key with specified password.
@@ -77,12 +74,8 @@ public class KeyStore {
     return new KeyStoreData(crypto, pubKey, path);
   }
 
-  @VisibleForTesting
-  static Crypto encryptUsingCipherFunction(
+  private static Crypto encryptUsingCipherFunction(
       final Bytes secret, final String password, final KdfParam kdfParam, final Cipher cipher) {
-    // The specs uses dk_slice[0:16] and dk_slice[16:32] which assumes dklen must be >= 32
-    checkArgument(kdfParam.getDkLen() >= 32, DKLEN_ERROR_MESSAGE);
-
     final Bytes decryptionKey = kdfParam.generateDecryptionKey(password);
     final Bytes cipherMessage =
         applyCipherFunction(decryptionKey, cipher, true, secret.toArrayUnsafe());
@@ -105,16 +98,13 @@ public class KeyStore {
     checkNotNull(password, "Password cannot be null");
     checkNotNull(keyStoreData, "KeyStoreData cannot be null");
 
-    checkArgument(
-        keyStoreData.getCrypto().getKdf().getParam().getDkLen() >= 32, DKLEN_ERROR_MESSAGE);
-
     final Bytes decryptionKey =
         keyStoreData.getCrypto().getKdf().getParam().generateDecryptionKey(password);
     return validateChecksum(decryptionKey, keyStoreData);
   }
 
   /**
-   * Decrypts the BLS private key from given KeyStore
+   * Decrypts BLS private key from the given KeyStore
    *
    * @param password The password to use for decryption
    * @param keyStoreData The given Key Store
@@ -124,13 +114,12 @@ public class KeyStore {
     checkNotNull(password, "Password cannot be null");
     checkNotNull(keyStoreData, "KeyStoreData cannot be null");
 
-    final KdfParam kdfParam = keyStoreData.getCrypto().getKdf().getParam();
-    checkArgument(kdfParam.getDkLen() >= 32, DKLEN_ERROR_MESSAGE);
-
-    final Bytes decryptionKey = kdfParam.generateDecryptionKey(password);
+    final Bytes decryptionKey =
+        keyStoreData.getCrypto().getKdf().getParam().generateDecryptionKey(password);
 
     if (!validateChecksum(decryptionKey, keyStoreData)) {
-      throw new KeyStoreValidationException("Failed to decrypt, checksum validation failed.");
+      throw new KeyStoreValidationException(
+          "Failed to decrypt KeyStore, checksum validation failed.");
     }
 
     final Cipher cipher = keyStoreData.getCrypto().getCipher();
@@ -149,7 +138,7 @@ public class KeyStore {
       final Bytes decryptionKey, final Bytes cipherMessage) {
     // aes-128-ctr needs first 16 bytes for its key. The 2nd 16 bytes are used to create checksum
     final Bytes dkSliceSecondHalf = decryptionKey.slice(16, 16);
-    return sha2_256(Bytes.concatenate(dkSliceSecondHalf, cipherMessage));
+    return sha2_256(concatenate(dkSliceSecondHalf, cipherMessage));
   }
 
   private static Bytes applyCipherFunction(

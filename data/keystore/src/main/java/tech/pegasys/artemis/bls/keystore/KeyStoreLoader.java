@@ -17,12 +17,14 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.bls.keystore.model.KdfParam;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 
 /** Provide utility methods to load/store BLS KeyStore from json format */
@@ -50,18 +52,32 @@ public class KeyStoreLoader {
     } catch (final JsonParseException e) {
       throw new KeyStoreValidationException("Error in parsing keystore: Invalid Json format", e);
     } catch (final JsonMappingException e) {
-      final String cause;
-      if (e.getCause() instanceof KeyStoreValidationException) {
-        cause = e.getCause().getMessage();
-      } else {
-        cause = "Missing required json elements";
-      }
-      throw new KeyStoreValidationException(
-          String.format("Error in parsing keystore: %s", cause), e);
+      throw convertToKeyStoreValidationException(e);
     } catch (final IOException e) {
       LOG.error("Error in parsing keystore: " + e.getMessage());
       throw new KeyStoreValidationException("Error in parsing keystore: " + e.getMessage(), e);
     }
+  }
+
+  private static KeyStoreValidationException convertToKeyStoreValidationException(
+      final JsonMappingException e) {
+    final String cause;
+    if (e.getCause() instanceof KeyStoreValidationException) {
+      cause = e.getCause().getMessage();
+    } else if (e instanceof InvalidTypeIdException) {
+      cause = getKdfFunctionErrorMessage((InvalidTypeIdException) e);
+    } else {
+      cause = "Missing required json elements";
+    }
+    return new KeyStoreValidationException(
+        String.format("Error in parsing keystore: %s", cause), e);
+  }
+
+  private static String getKdfFunctionErrorMessage(final InvalidTypeIdException e) {
+    if (e.getBaseType().getRawClass() == KdfParam.class) {
+      return "Kdf function [" + e.getTypeId() + "] is not supported.";
+    }
+    return "Missing required json elements";
   }
 
   public static void saveToFile(final Path keystoreFile, final KeyStoreData keyStoreData) {

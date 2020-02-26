@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,9 +34,15 @@ public abstract class KdfParam {
     return dklen;
   }
 
-  public abstract CryptoFunction getCryptoFunction();
+  public abstract KdfFunction getKdfFunction();
 
   public abstract Bytes generateDecryptionKey(final String password);
+
+  protected void validateParams() {
+    // because the EIP-2335 spec requires dklen >= 32
+    checkArgument(getDkLen() >= 32, "Generated key length parameter dklen must be >= 32.");
+    checkNotNull(getSalt(), "salt cannot be null");
+  }
 
   @JsonProperty(value = "salt")
   public Bytes getSalt() {

@@ -21,13 +21,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
 
 public class Kdf {
-  private final CryptoFunction cryptoFunction;
+  private final KdfFunction kdfFunction;
   private final KdfParam param;
   private final String message;
 
   @JsonCreator
   public Kdf(
-      @JsonProperty(value = "function", required = true) final CryptoFunction cryptoFunction,
+      @JsonProperty(value = "function", required = true) final KdfFunction kdfFunction,
       @JsonProperty(value = "params", required = true)
           @JsonTypeInfo(
               use = JsonTypeInfo.Id.NAME,
@@ -39,18 +39,18 @@ public class Kdf {
           })
           final KdfParam param,
       @JsonProperty(value = "message", required = true) final String message) {
-    this.cryptoFunction = cryptoFunction;
+    this.kdfFunction = kdfFunction;
     this.param = param;
     this.message = message;
   }
 
   public Kdf(final KdfParam kdfParam) {
-    this(kdfParam.getCryptoFunction(), kdfParam, "");
+    this(kdfParam.getKdfFunction(), kdfParam, "");
   }
 
   @JsonProperty(value = "function")
-  public CryptoFunction getCryptoFunction() {
-    return cryptoFunction;
+  public KdfFunction getKdfFunction() {
+    return kdfFunction;
   }
 
   @JsonProperty(value = "params")
@@ -66,7 +66,7 @@ public class Kdf {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("function", cryptoFunction)
+        .add("function", kdfFunction)
         .add("params", param)
         .add("message", message)
         .toString();

@@ -51,11 +51,10 @@ public class Pbkdf2Param extends KdfParam {
     validateParams();
   }
 
-  private void validateParams() throws KeyStoreValidationException {
+  @Override
+  protected void validateParams() throws KeyStoreValidationException {
+    super.validateParams();
     checkArgument(c >= 1, "Iterative Count parameter c must be >= 1");
-    // because the EIP-2335 spec requires dklen >= 32
-    checkArgument(getDkLen() >= 32, "Generated key length dkLen must be >= 32.");
-    checkNotNull(getSalt(), "salt cannot be null");
   }
 
   @JsonProperty(value = "c")
@@ -69,8 +68,8 @@ public class Pbkdf2Param extends KdfParam {
   }
 
   @Override
-  public CryptoFunction getCryptoFunction() {
-    return CryptoFunction.PBKDF2;
+  public KdfFunction getKdfFunction() {
+    return KdfFunction.PBKDF2;
   }
 
   @Override

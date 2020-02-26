@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -24,6 +26,7 @@ public class CipherParam {
   @JsonCreator
   public CipherParam(@JsonProperty(value = "iv", required = true) final Bytes iv) {
     this.iv = iv;
+    checkArgument(iv.size() == 16, "Cipher function parameter iv size must be 16");
   }
 
   @JsonProperty(value = "iv")

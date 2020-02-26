@@ -57,6 +57,9 @@ class KeyStoreTest {
   private static final String UNSUPPORTED_CHECKSUM_FUNCTION_JSON =
       "unsupportedChecksumFunction.json";
   private static final String UNSUPPORTED_CIPHER_FUNCTION_JSON = "unsupportedCipherFunction.json";
+  private static final String UNSUPPORTED_KDF_FUNCTION_JSON = "unsupportedKdfFunction.json";
+  private static final String UNSUPPORTED_PKKDF2_PRF_FUNCTION_JSON = "unsupportedPBKDF2Prf.json";
+  private static final String UNSUPPORTED_DKLEN_FUNCTION_JSON = "unsupportedDkLen.json";
 
   @SuppressWarnings("UnusedMethod")
   private static Stream<Arguments> encryptWithKdfAndCipherArguments() {
@@ -127,42 +130,51 @@ class KeyStoreTest {
   @Test
   void invalidJsonLoadingThrowsException() {
     Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
-        .isThrownBy(
-            () -> {
-              loadKeyStoreFromResource(MISSING_SECTION_KEYSTORE_RESOURCE);
-            })
+        .isThrownBy(() -> loadKeyStoreFromResource(MISSING_SECTION_KEYSTORE_RESOURCE))
         .withMessage("Error in parsing keystore: Missing required json elements");
   }
 
   @Test
   void unsupportedVersionThrowsException() {
     Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
-        .isThrownBy(
-            () -> {
-              loadKeyStoreFromResource(UNSUPPORTED_VERSION_JSON_RESOURCE);
-            })
+        .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_VERSION_JSON_RESOURCE))
         .withMessage("Error in parsing keystore: The KeyStore version 3 is not supported");
   }
 
   @Test
   void unsupportedChecksumFunctionThrowsException() {
     Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
-        .isThrownBy(
-            () -> {
-              loadKeyStoreFromResource(UNSUPPORTED_CHECKSUM_FUNCTION_JSON);
-            })
+        .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_CHECKSUM_FUNCTION_JSON))
         .withMessage("Error in parsing keystore: Checksum function [sha128] is not supported.");
   }
 
   @Test
   void unsupportedCipherFunctionThrowsException() {
     Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
-        .isThrownBy(
-            () -> {
-              loadKeyStoreFromResource(UNSUPPORTED_CIPHER_FUNCTION_JSON);
-            })
+        .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_CIPHER_FUNCTION_JSON))
         .withMessage("Error in parsing keystore: Cipher function [aes-256-ctr] is not supported.");
   }
 
-  // TODO: Test DKLEN after custom exception
+  @Test
+  void unsupportedKdfFunctionThrowsException() {
+    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_KDF_FUNCTION_JSON))
+        .withMessage("Error in parsing keystore: Kdf function [pbkdf3] is not supported.");
+  }
+
+  @Test
+  void unsupportedPBKDF2PrfFunctionThrowsException() {
+    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_PKKDF2_PRF_FUNCTION_JSON))
+        .withMessage(
+            "Error in parsing keystore: PBKDF2 pseudorandom function (prf) [hmac-sha512] is not supported.");
+  }
+
+  @Test
+  void unsupportedDkLenThrowsException() {
+    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_DKLEN_FUNCTION_JSON))
+        .withMessage(
+            "Error in parsing keystore: Generated key length parameter dklen must be >= 32.");
+  }
 }

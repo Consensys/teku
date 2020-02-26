@@ -15,13 +15,13 @@ package tech.pegasys.artemis.bls.keystore.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum CryptoFunction {
+public enum KdfFunction {
   PBKDF2("pbkdf2"),
   SCRYPT("scrypt");
 
   private final String jsonValue;
 
-  CryptoFunction(final String jsonValue) {
+  KdfFunction(final String jsonValue) {
     this.jsonValue = jsonValue;
   }
 

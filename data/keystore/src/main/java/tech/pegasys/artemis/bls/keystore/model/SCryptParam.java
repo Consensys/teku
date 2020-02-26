@@ -54,7 +54,9 @@ public class SCryptParam extends KdfParam {
     validateParams();
   }
 
-  private void validateParams() throws KeyStoreValidationException {
+  @Override
+  protected void validateParams() throws KeyStoreValidationException {
+    super.validateParams();
     checkArgument(n > 1 && isPowerOf2(n), "Cost parameter n must be > 1 and a power of 2");
     // Only value of r that cost (as an int) could be exceeded for is 1
     if (r == 1) {
@@ -69,8 +71,6 @@ public class SCryptParam extends KdfParam {
         String.format(
             "Parallelization parameter p must be >= 1 and <= %d (based on block size r of %d",
             maxParallel, r));
-    // because the EIP-2335 spec requires dklen >= 32
-    checkArgument(getDkLen() >= 32, "Generated key length dkLen must be >= 32.");
   }
 
   @JsonProperty(value = "n")
@@ -89,8 +89,8 @@ public class SCryptParam extends KdfParam {
   }
 
   @Override
-  public CryptoFunction getCryptoFunction() {
-    return CryptoFunction.SCRYPT;
+  public KdfFunction getKdfFunction() {
+    return KdfFunction.SCRYPT;
   }
 
   @Override

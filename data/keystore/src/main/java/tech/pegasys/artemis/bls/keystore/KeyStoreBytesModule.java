@@ -22,10 +22,12 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
 import java.util.EnumSet;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.keystore.model.ChecksumFunction;
 import tech.pegasys.artemis.bls.keystore.model.CipherFunction;
+import tech.pegasys.artemis.bls.keystore.model.Pbkdf2PseudoRandomFunction;
 
 class KeyStoreBytesModule extends SimpleModule {
   public KeyStoreBytesModule() {
@@ -34,8 +36,11 @@ class KeyStoreBytesModule extends SimpleModule {
     addDeserializer(Bytes.class, new BytesDeserializer());
     addSerializer(Bytes32.class, new Bytes32Serializer());
     addDeserializer(Bytes32.class, new Bytes32Deserializer());
+
+    // following deserializer allow custom exception message for invalid enum values
     addDeserializer(ChecksumFunction.class, new ChecksumFunctionDeserializer());
     addDeserializer(CipherFunction.class, new CipherFunctionDeserializer());
+    addDeserializer(Pbkdf2PseudoRandomFunction.class, new Pbkdf2PseudoRandomFunctionDeserializer());
   }
 
   private static class BytesSerializer extends JsonSerializer<Bytes> {
@@ -75,9 +80,8 @@ class KeyStoreBytesModule extends SimpleModule {
     public ChecksumFunction deserialize(final JsonParser p, final DeserializationContext ctxt)
         throws IOException {
       final String valueAsString = p.getValueAsString();
-      final EnumSet<ChecksumFunction> set = EnumSet.allOf(ChecksumFunction.class);
-      return set.stream()
-          .filter(checksumFunction -> checksumFunction.getJsonValue().equals(valueAsString))
+      return EnumSet.allOf(ChecksumFunction.class).stream()
+          .filter(function -> Objects.equals(function.getJsonValue(), valueAsString))
           .findFirst()
           .orElseThrow(
               () ->
@@ -91,14 +95,31 @@ class KeyStoreBytesModule extends SimpleModule {
     public CipherFunction deserialize(final JsonParser p, final DeserializationContext ctxt)
         throws IOException {
       final String valueAsString = p.getValueAsString();
-      final EnumSet<CipherFunction> set = EnumSet.allOf(CipherFunction.class);
-      return set.stream()
-          .filter(checksumFunction -> checksumFunction.getJsonValue().equals(valueAsString))
+      return EnumSet.allOf(CipherFunction.class).stream()
+          .filter(function -> Objects.equals(function.getJsonValue(), valueAsString))
           .findFirst()
           .orElseThrow(
               () ->
                   new KeyStoreValidationException(
                       String.format("Cipher function [%s] is not supported.", valueAsString)));
+    }
+  }
+
+  private static class Pbkdf2PseudoRandomFunctionDeserializer
+      extends JsonDeserializer<Pbkdf2PseudoRandomFunction> {
+    @Override
+    public Pbkdf2PseudoRandomFunction deserialize(
+        final JsonParser p, final DeserializationContext ctxt) throws IOException {
+      final String valueAsString = p.getValueAsString();
+      return EnumSet.allOf(Pbkdf2PseudoRandomFunction.class).stream()
+          .filter(function -> Objects.equals(function.getJsonValue(), valueAsString))
+          .findFirst()
+          .orElseThrow(
+              () ->
+                  new KeyStoreValidationException(
+                      String.format(
+                          "PBKDF2 pseudorandom function (prf) [%s] is not supported.",
+                          valueAsString)));
     }
   }
 }
