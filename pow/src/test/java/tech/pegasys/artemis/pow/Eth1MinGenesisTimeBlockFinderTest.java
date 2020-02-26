@@ -193,6 +193,24 @@ public class Eth1MinGenesisTimeBlockFinderTest {
   }
 
   @Test
+  void waitForFirstValidBlock_errorAndRecover() {
+    mockLatestCanonicalBlock(1000);
+    mockBlockForEth1Provider("0xbf", 1000, 1000);
+
+    setMinGenesisTime(1200);
+
+    eth1MinGenesisTimeBlockFinder.start();
+
+    verify(eth1Provider).getLatestBlockFlowable();
+
+    mockBlockForEth1Provider("0xbf", 1001, 1098);
+    pushLatestCanonicalBlockWithNumber(1001);
+
+    verify(minGenesisTimeBlockEventChannel)
+        .onMinGenesisTimeBlock(argThat(isEvent("0xbf", 1001, 1098)));
+  }
+
+  @Test
   void waitForFirstValidBlock_failureScenario() {
     blockPublisher.onError(new RuntimeException("Nope"));
 

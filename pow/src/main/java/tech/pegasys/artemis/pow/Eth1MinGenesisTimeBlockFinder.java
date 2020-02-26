@@ -201,6 +201,7 @@ public class Eth1MinGenesisTimeBlockFinder {
 
   private void onNewBlock(
       UnsignedLong blockNumber, SafeFuture<EthBlock.Block> firstValidBlockFuture) {
+
     eth1Provider
         .getEth1BlockFuture(blockNumber)
         .thenAccept(
@@ -209,7 +210,10 @@ public class Eth1MinGenesisTimeBlockFinder {
                 firstValidBlockFuture.complete(block);
                 latestBlockDisposable.dispose();
               }
-            });
+            })
+        .finish(
+            () -> {},
+            (err) -> firstValidBlockFuture.completeExceptionally(new RuntimeException(err)));
   }
 
   // TODO: this function changes a tiny bit in 10.1
