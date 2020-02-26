@@ -158,13 +158,14 @@ public class BeaconRestApi {
       ChainStorageClient chainStorageClient,
       HistoricalChainData historicalChainData,
       CombinedChainDataClient combinedChainDataClient) {
-      app.get(
-              BeaconBlockHandler.ROUTE,
-              new BeaconBlockHandler(chainStorageClient, historicalChainData, jsonProvider));
-      app.get(
-              BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
+    app.get(
+        BeaconBlockHandler.ROUTE,
+        new BeaconBlockHandler(chainStorageClient, historicalChainData, jsonProvider));
+    app.get(
+        BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainStorageClient, jsonProvider));
-    app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
+    app.get(
+        BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
   }
 
   private void addValidatorHandlers() {

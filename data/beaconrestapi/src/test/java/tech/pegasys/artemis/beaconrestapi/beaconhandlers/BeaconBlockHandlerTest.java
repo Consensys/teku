@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.empty;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +23,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 
 import io.javalin.http.Context;
 import io.javalin.http.util.ContextUtil;
@@ -46,8 +48,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlockHandlerTest {
   private static final BadRequest BAD_REQUEST =
-      new BadRequest(
-          SC_BAD_REQUEST, "Query parameter missing. Must specify one of root or epoch or slot.");
+      new BadRequest("Query parameter missing. Must specify one of root or epoch or slot.");
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
@@ -66,7 +67,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnNotFoundWhenRootQueryAndStoreNull() throws Exception {
     final String rootKey = "0xf22e4ec2";
-    final Map<String, List<String>> params = Map.of("root", List.of(rootKey));
+    final Map<String, List<String>> params = Map.of(ROOT, List.of(rootKey));
 
     when(storageClient.getStore()).thenReturn(null);
     when(context.queryParamMap()).thenReturn(params);
@@ -86,7 +87,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnNotFoundWhenEpochQueryAndBlockNotFound() throws Exception {
     final String epochNum = "1";
-    final Map<String, List<String>> params = Map.of("epoch", List.of(epochNum));
+    final Map<String, List<String>> params = Map.of(EPOCH, List.of(epochNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(epochNum);
@@ -104,7 +105,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnNotFoundWhenSlotQueryAndBlockNotFound() throws Exception {
     final String slotNum = "1";
-    final Map<String, List<String>> params = Map.of("slot", List.of(slotNum));
+    final Map<String, List<String>> params = Map.of(SLOT, List.of(slotNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(slotNum);
@@ -122,7 +123,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnNotFoundWhenEpochQueryAndNoBlockRootAndBlockNotFound() throws Exception {
     final String epochNum = "1";
-    final Map<String, List<String>> params = Map.of("epoch", List.of(epochNum));
+    final Map<String, List<String>> params = Map.of(EPOCH, List.of(epochNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(epochNum);
@@ -138,7 +139,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnNotFoundWhenSlotQueryAndNoBlockRootAndBlockNotFound() throws Exception {
     final String slotNum = "1";
-    final Map<String, List<String>> params = Map.of("slot", List.of(slotNum));
+    final Map<String, List<String>> params = Map.of(SLOT, List.of(slotNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(slotNum);
@@ -154,7 +155,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnBlockWhenRootParamSpecified() throws Exception {
     final String hash = signedBeaconBlock.getParent_root().toHexString();
-    final Map<String, List<String>> params = Map.of("root", List.of(hash));
+    final Map<String, List<String>> params = Map.of(ROOT, List.of(hash));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(hash);
@@ -171,7 +172,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnBlockWhenEpochQuery() throws Exception {
     final String epochNum = "1";
-    final Map<String, List<String>> params = Map.of("epoch", List.of(epochNum));
+    final Map<String, List<String>> params = Map.of(EPOCH, List.of(epochNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(epochNum);
@@ -191,7 +192,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnBlockWhenSlotQuery() throws Exception {
     final String slotNum = "1";
-    final Map<String, List<String>> params = Map.of("slot", List.of(slotNum));
+    final Map<String, List<String>> params = Map.of(SLOT, List.of(slotNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(slotNum);
@@ -211,7 +212,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnBlockWhenEpochQueryAndNoBlockRoot() throws Exception {
     final String epochNum = "1";
-    final Map<String, List<String>> params = Map.of("epoch", List.of(epochNum));
+    final Map<String, List<String>> params = Map.of(EPOCH, List.of(epochNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(epochNum);
@@ -229,7 +230,7 @@ public class BeaconBlockHandlerTest {
   @Test
   public void shouldReturnBlockWhenSlotQueryAndNoBlockRoot() throws Exception {
     final String slotNum = "1";
-    final Map<String, List<String>> params = Map.of("slot", List.of(slotNum));
+    final Map<String, List<String>> params = Map.of(SLOT, List.of(slotNum));
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(slotNum);
@@ -256,40 +257,40 @@ public class BeaconBlockHandlerTest {
 
   @Test
   public void shouldFailWithEmptyRootParamValue() throws Exception {
-    final Map<String, List<String>> params = Map.of("root", emptyList());
+    final Map<String, List<String>> params = Map.of(ROOT, emptyList());
 
     doReturn(params).when(realContext).queryParamMap();
     doReturn(null).when(realContext).queryParam(any());
 
     handler.handle(realContext);
-    assertThat(realContext.resultString()).contains("root").contains("cannot be null or empty");
+    assertThat(realContext.resultString()).contains(ROOT).contains("cannot be null or empty");
   }
 
   @Test
   public void shouldFailWithEmptyEpochParamValue() throws Exception {
-    final Map<String, List<String>> params = Map.of("epoch", emptyList());
+    final Map<String, List<String>> params = Map.of(EPOCH, emptyList());
 
     doReturn(params).when(realContext).queryParamMap();
     doReturn(null).when(realContext).queryParam(any());
 
     handler.handle(realContext);
-    assertThat(realContext.resultString()).contains("epoch").contains("cannot be null or empty");
+    assertThat(realContext.resultString()).contains(EPOCH).contains("cannot be null or empty");
   }
 
   @Test
   public void shouldFailWithEmptySlotParamValue() throws Exception {
-    final Map<String, List<String>> params = Map.of("slot", emptyList());
+    final Map<String, List<String>> params = Map.of(SLOT, emptyList());
 
     doReturn(params).when(realContext).queryParamMap();
     doReturn(null).when(realContext).queryParam(any());
 
     handler.handle(realContext);
-    assertThat(realContext.resultString()).contains("slot").contains("cannot be null or empty");
+    assertThat(realContext.resultString()).contains(SLOT).contains("cannot be null or empty");
   }
 
   @Test
   public void shouldFailWithMultipleParamKeys() throws Exception {
-    final Map<String, List<String>> params = Map.of("root", emptyList(), "slot", emptyList());
+    final Map<String, List<String>> params = Map.of(ROOT, emptyList(), SLOT, emptyList());
 
     doReturn(params).when(realContext).queryParamMap();
 

@@ -13,12 +13,13 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -27,8 +28,9 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
@@ -56,7 +58,7 @@ public class BeaconBlockHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Request that the node return a specified beacon chain block.",
+      summary = "Request that the node return the specified beacon chain block.",
       tags = {"Beacon"},
       queryParams = {
         @OpenApiParam(name = "epoch", description = "Query by epoch number (uint64)"),
@@ -64,7 +66,7 @@ public class BeaconBlockHandler implements Handler {
         @OpenApiParam(name = "root", description = "Query by tree hash root (Bytes32)")
       },
       description =
-          "Request that the node return a beacon chain block that matches the provided criteria.",
+          "Request that the node return the beacon chain block that matches the provided criteria.",
       responses = {
         @OpenApiResponse(
             status = "200",
@@ -75,13 +77,14 @@ public class BeaconBlockHandler implements Handler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-        if (ctx.queryParamMap().size() > 1) {
-            throw new IllegalArgumentException(
-                    "Too many query parameters specified. Please supply only one.");
-        }
+      if (ctx.queryParamMap().size() > 1) {
+        throw new IllegalArgumentException(
+            "Too many query parameters specified. Please supply only one.");
+      }
 
+      final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       if (ctx.queryParamMap().containsKey(ROOT)) {
-        final Bytes32 root = Bytes32.fromHexString(validateParms(ctx, ROOT));
+        final Bytes32 root = Bytes32.fromHexString(validateQueryParameter(queryParamMap, ROOT));
         if (client.getStore() != null) {
           final SignedBeaconBlock block = client.getStore().getSignedBlock(root);
           if (block != null) {
@@ -95,9 +98,11 @@ public class BeaconBlockHandler implements Handler {
 
       final UnsignedLong slot;
       if (ctx.queryParamMap().containsKey(EPOCH)) {
-        slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(validateParms(ctx, EPOCH)));
+        slot =
+            compute_start_slot_at_epoch(
+                UnsignedLong.valueOf(validateQueryParameter(queryParamMap, EPOCH)));
       } else if (ctx.queryParamMap().containsKey(SLOT)) {
-        slot = UnsignedLong.valueOf(validateParms(ctx, SLOT));
+        slot = UnsignedLong.valueOf(validateQueryParameter(queryParamMap, SLOT));
       } else {
         throw new IllegalArgumentException(
             "Query parameter missing. Must specify one of root or epoch or slot.");
@@ -110,7 +115,7 @@ public class BeaconBlockHandler implements Handler {
       }
       ctx.status(SC_NOT_FOUND);
     } catch (final IllegalArgumentException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(SC_BAD_REQUEST, e.getMessage())));
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
     }
   }
 
@@ -119,13 +124,5 @@ public class BeaconBlockHandler implements Handler {
         .getBlockRootBySlot(slot)
         .map(root -> client.getStore().getSignedBlock(root))
         .or(() -> historicalChainData.getFinalizedBlockAtSlot(slot).join());
-  }
-
-  private String validateParms(final Context ctx, final String key) {
-    if (ctx.queryParamMap().containsKey(key) && !StringUtils.isEmpty(ctx.queryParam(key))) {
-      return ctx.queryParam(key);
-    } else {
-      throw new IllegalArgumentException(String.format("'%s' cannot be null or empty.", key));
-    }
   }
 }
