@@ -25,7 +25,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.bls.keystore.model.Cipher;
-import tech.pegasys.artemis.bls.keystore.model.Crypto;
 import tech.pegasys.artemis.bls.keystore.model.KdfParam;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.bls.keystore.model.Pbkdf2Param;
@@ -35,6 +34,9 @@ class KeyStoreTest {
   private static final String PASSWORD = "testpassword";
   private static final Bytes BLS_PRIVATE_KEY =
       Bytes.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
+  private static final Bytes BLS_PUB_KEY =
+      Bytes.fromHexString(
+          "9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07");
   private static final Bytes32 SALT =
       Bytes32.fromHexString("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
   private static final Bytes AES_IV_PARAM = Bytes.fromHexString("264daa3f303d7259501c93d997d84fe6");
@@ -63,37 +65,37 @@ class KeyStoreTest {
   }
 
   @Test
-  void loadSCryptKeyStoreAndDecryptKey() throws Exception {
+  void loadSCryptKeyStoreAndDecryptKey() {
     loadKeyStoreAndDecryptKey(SCRYPT_KEYSTORE_RESOURCE);
   }
 
   @Test
-  void loadPBKDF2KeyStoreAndDecryptKey() throws Exception {
+  void loadPBKDF2KeyStoreAndDecryptKey() {
     loadKeyStoreAndDecryptKey(PBKDF2_KEYSTORE_RESOURCE);
   }
 
   @Test
-  void loadSCryptKeyStoreAndTestInvalidPassword() throws Exception {
+  void loadSCryptKeyStoreAndTestInvalidPassword() {
     invalidPasswordValidation(SCRYPT_KEYSTORE_RESOURCE);
   }
 
   @Test
-  void loadPBKDF2KeyStoreAndTestInvalidPassword() throws Exception {
+  void loadPBKDF2KeyStoreAndTestInvalidPassword() {
     invalidPasswordValidation(PBKDF2_KEYSTORE_RESOURCE);
   }
 
-  private void loadKeyStoreAndDecryptKey(final String resourcePath) throws Exception {
+  private void loadKeyStoreAndDecryptKey(final String resourcePath) {
     final KeyStoreData keyStoreData = loadKeyStoreFromResource(resourcePath);
     final Bytes decryptedBlsPrivateKey = KeyStore.decrypt(PASSWORD, keyStoreData);
     assertThat(decryptedBlsPrivateKey).isEqualTo(BLS_PRIVATE_KEY);
   }
 
-  private void invalidPasswordValidation(final String resourcePath) throws Exception {
+  private void invalidPasswordValidation(final String resourcePath) {
     final KeyStoreData keyStoreData = loadKeyStoreFromResource(resourcePath);
     assertThat(KeyStore.validatePassword("invalidpassword", keyStoreData)).isFalse();
   }
 
-  private KeyStoreData loadKeyStoreFromResource(final String resourcePath) throws Exception {
+  private KeyStoreData loadKeyStoreFromResource(final String resourcePath) {
     final Path testKeyStorePath = Path.of(Resources.getResource(resourcePath).getPath());
     return KeyStoreLoader.loadFromFile(testKeyStorePath);
   }
@@ -103,10 +105,13 @@ class KeyStoreTest {
   void encryptWithKdfAndCipherFunction(
       final KdfParam kdfParam, final Bytes expectedChecksum, final Bytes encryptedCipherMessage) {
     final Cipher cipher = new Cipher(AES_IV_PARAM);
-    final Crypto crypto =
-        KeyStore.encryptUsingCipherFunction(BLS_PRIVATE_KEY, PASSWORD, kdfParam, cipher);
-    assertThat(crypto.getChecksum().getMessage()).isEqualTo(expectedChecksum);
-    assertThat(crypto.getCipher().getMessage()).isEqualTo(encryptedCipherMessage);
+    final KeyStoreData keyStoreData =
+        KeyStore.encrypt(BLS_PRIVATE_KEY, PASSWORD, "", kdfParam, cipher);
+    assertThat(keyStoreData.getCrypto().getChecksum().getMessage()).isEqualTo(expectedChecksum);
+    assertThat(keyStoreData.getCrypto().getCipher().getMessage()).isEqualTo(encryptedCipherMessage);
+    assertThat(keyStoreData.getVersion()).isEqualTo(KeyStoreData.KEYSTORE_VERSION);
+    assertThat(keyStoreData.getPubkey()).isEqualTo(BLS_PUB_KEY);
+    assertThat(keyStoreData.getUuid()).isNotNull();
   }
 
   // TODO: Test invalid keystore version after custom exception

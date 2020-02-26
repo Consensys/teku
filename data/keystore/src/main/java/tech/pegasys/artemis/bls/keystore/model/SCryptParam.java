@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.generators.SCrypt;
 
 public class SCryptParam extends KdfParam {
@@ -32,7 +31,17 @@ public class SCryptParam extends KdfParam {
   private final Integer p;
   private final Integer r;
 
-  /** Construct SCrypt Parameters. @See org.bouncycastle.crypto.generators.SCrypt */
+  /**
+   * SCrypt Key Derivation Function
+   *
+   * @param dklen The length of key to generate.
+   * @param n CPU/Memory cost parameter. Must be larger than 1, a power of 2 and less than <code>
+   *     2^(128 * r / 8)</code>.
+   * @param p Parallelization parameter. Must be a positive integer less than or equal to <code>
+   *     Integer.MAX_VALUE / (128 * r * 8)</code>
+   * @param r the block size, must be &gt;= 1.
+   * @param salt The salt to use
+   */
   @JsonCreator
   public SCryptParam(
       @JsonProperty(value = "dklen", required = true) final Integer dklen,
@@ -44,15 +53,6 @@ public class SCryptParam extends KdfParam {
     this.n = n;
     this.p = p;
     this.r = r;
-  }
-
-  public SCryptParam() {
-    this(
-        DEFAULT_DKLEN,
-        DEFAULT_MEMORY_CPU_COST,
-        DEFAULT_PARALLELIZATION,
-        DEFAULT_BLOCKSIZE,
-        Bytes32.random());
   }
 
   public SCryptParam(final Bytes salt) {

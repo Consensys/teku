@@ -20,21 +20,21 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class Checksum {
   private final ChecksumFunction checksumFunction;
-  private final Param param;
+  private final EmptyParam emptyParam;
   private final Bytes message;
 
   @JsonCreator
   public Checksum(
       @JsonProperty(value = "function", required = true) final ChecksumFunction checksumFunction,
-      @JsonProperty(value = "params", required = true) final Param param,
+      @JsonProperty(value = "params", required = true) final EmptyParam emptyParam,
       @JsonProperty(value = "message", required = true) final Bytes message) {
     this.checksumFunction = checksumFunction;
-    this.param = param;
+    this.emptyParam = emptyParam;
     this.message = message;
   }
 
   public Checksum(final Bytes message) {
-    this(ChecksumFunction.SHA256, new Param(), message);
+    this(ChecksumFunction.SHA256, new EmptyParam(), message);
   }
 
   @JsonProperty(value = "function")
@@ -43,8 +43,8 @@ public class Checksum {
   }
 
   @JsonProperty(value = "params")
-  public Param getParam() {
-    return param;
+  public EmptyParam getEmptyParam() {
+    return emptyParam;
   }
 
   @JsonProperty(value = "message")
@@ -56,7 +56,7 @@ public class Checksum {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("function", checksumFunction)
-        .add("param", param)
+        .add("param", emptyParam)
         .add("message", message)
         .toString();
   }

@@ -13,10 +13,14 @@
 
 package tech.pegasys.artemis.bls.keystore;
 
-import static java.util.Objects.requireNonNull;
-
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.util.json.BytesModule;
 
@@ -25,24 +29,60 @@ public class KeyStoreLoader {
   private static final ObjectMapper OBJECT_MAPPER =
       new ObjectMapper().registerModule(new BytesModule());
 
-  public static KeyStoreData loadFromJson(final String json) throws Exception {
-    requireNonNull(json);
-    final KeyStoreData keyStoreData = OBJECT_MAPPER.readValue(json, KeyStoreData.class);
-    // TODO: perform validation
-    return keyStoreData;
+  public static KeyStoreData loadFromFile(final Path keystoreFile)
+      throws KeyStoreValidationException {
+    checkNotNull(keystoreFile, "KeyStore path cannot be null");
+
+    try {
+      final KeyStoreData keyStoreData =
+          OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
+      if (keyStoreData.getVersion() != KeyStoreData.KEYSTORE_VERSION) {
+        throw new KeyStoreValidationException(
+            String.format("The KeyStore version %d is not supported", keyStoreData.getVersion()));
+      }
+
+      return keyStoreData;
+    } catch (final JsonParseException e) {
+      throw new KeyStoreValidationException("Error in parsing keystore: Invalid Json format", e);
+    } catch (final IOException e) {
+      throw new KeyStoreValidationException("Error in parsing keystore: " + e.getMessage(), e);
+    }
   }
 
-  public static KeyStoreData loadFromFile(final Path keystoreFile) throws Exception {
-    requireNonNull(keystoreFile);
-    final KeyStoreData keyStoreData =
-        OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
-    // TODO: perform validation
-    return keyStoreData;
+  public static void saveToFile(final Path keystoreFile, final KeyStoreData keyStoreData) {
+    checkNotNull(keystoreFile, "KeyStore path cannot be null");
+    checkNotNull(keyStoreData, "KeyStore data cannot be null");
+
+    try {
+      Files.writeString(keystoreFile, toJson(keyStoreData), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new KeyStoreValidationException(
+          "Error in writing KeyStore to file: " + e.getMessage(), e);
+    }
   }
 
-  public static String toJson(final KeyStoreData keyStoreData) throws Exception {
-    return KeyStoreLoader.OBJECT_MAPPER
-        .writerWithDefaultPrettyPrinter()
-        .writeValueAsString(keyStoreData);
+  public static String toJson(final KeyStoreData keyStoreData) {
+    checkNotNull(keyStoreData, "KeyStore data cannot be null");
+
+    try {
+      return KeyStoreLoader.OBJECT_MAPPER
+          .writerWithDefaultPrettyPrinter()
+          .writeValueAsString(keyStoreData);
+    } catch (final JsonProcessingException e) {
+      throw new KeyStoreValidationException(
+          "Error in converting KeyStore to Json: " + e.getMessage(), e);
+    }
+  }
+
+  static <T extends @NonNull Object> void checkNotNull(T reference, String errorMessage) {
+    if (reference == null) {
+      throw new KeyStoreValidationException(errorMessage);
+    }
+  }
+
+  static void checkArgument(boolean expression, String errorMessage) {
+    if (!expression) {
+      throw new KeyStoreValidationException(errorMessage);
+    }
   }
 }

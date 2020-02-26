@@ -32,6 +32,14 @@ public class Pbkdf2Param extends KdfParam {
   private final Integer c;
   private final Pbkdf2PseudoRandomFunction prf;
 
+  /**
+   * PBKDF2 Key Derivation Function
+   *
+   * @param dklen The length of key to generate
+   * @param c The iteration count
+   * @param prf The pseudo random function i.e. hash digest to use.
+   * @param salt The salt to use
+   */
   @JsonCreator
   public Pbkdf2Param(
       @JsonProperty(value = "dklen", required = true) final Integer dklen,

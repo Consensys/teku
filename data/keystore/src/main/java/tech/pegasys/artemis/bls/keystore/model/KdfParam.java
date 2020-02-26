@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
-public abstract class KdfParam extends Param {
+public abstract class KdfParam {
   private final Integer dklen;
   private final Bytes salt;
 

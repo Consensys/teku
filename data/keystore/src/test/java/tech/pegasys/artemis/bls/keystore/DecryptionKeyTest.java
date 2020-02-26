@@ -16,14 +16,17 @@ package tech.pegasys.artemis.bls.keystore;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.bls.keystore.model.Pbkdf2Param;
 import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 
 class DecryptionKeyTest {
-  private static final Bytes32 SALT =
-      Bytes32.fromHexString("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
-
+  private static final Bytes SALT =
+      Bytes.fromHexString("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
+  private static final Bytes SCRYPT_DK =
+      Bytes.fromHexString("0xBC21AF552ED055E3B3F35A39AFD8355903CA2770709B5E5B363647FA75234344");
+  private static final Bytes PBKDF2_DK =
+      Bytes.fromHexString("0x57E2285C828F4F6B95DEEC3BB6D9D90933042C63FC9BADE14EA280202A17142D");
   private static final String PASSWORD = "testpassword";
 
   @Test
@@ -31,6 +34,14 @@ class DecryptionKeyTest {
     final SCryptParam kdfParam = new SCryptParam(SALT);
     final Bytes decryptionKey = kdfParam.generateDecryptionKey(PASSWORD);
     assertThat(decryptionKey.size()).isEqualTo(32);
-    System.out.println(decryptionKey);
+    assertThat(decryptionKey).isEqualTo(SCRYPT_DK);
+  }
+
+  @Test
+  void pbkdf2DecryptionKeyGeneration() {
+    final Pbkdf2Param kdfParam = new Pbkdf2Param(SALT);
+    final Bytes decryptionKey = kdfParam.generateDecryptionKey(PASSWORD);
+    assertThat(decryptionKey.size()).isEqualTo(32);
+    assertThat(decryptionKey).isEqualTo(PBKDF2_DK);
   }
 }

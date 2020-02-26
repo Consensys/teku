@@ -13,19 +13,15 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-public enum CipherFunction {
-  AES_128_CTR("aes-128-ctr");
+/** Placeholder for empty params */
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class EmptyParam {
+  public EmptyParam() {}
 
-  private final String jsonValue;
-
-  CipherFunction(final String jsonValue) {
-    this.jsonValue = jsonValue;
-  }
-
-  @JsonValue
-  public String getJsonValue() {
-    return this.jsonValue;
+  @Override
+  public String toString() {
+    return "";
   }
 }

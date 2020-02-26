@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 
-public class CipherParam extends Param {
+public class CipherParam {
   private final Bytes iv;
 
   @JsonCreator

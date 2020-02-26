@@ -13,10 +13,11 @@
 
 package tech.pegasys.artemis.bls.keystore;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
+import static tech.pegasys.artemis.bls.keystore.KeyStoreLoader.checkArgument;
+import static tech.pegasys.artemis.bls.keystore.KeyStoreLoader.checkNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.security.GeneralSecurityException;
@@ -42,6 +43,8 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
  */
 public class KeyStore {
   private static final BouncyCastleProvider BC = new BouncyCastleProvider();
+  private static final String DKLEN_ERROR_MESSAGE =
+      "The decryption key length (dklen) must be greater than or equal to 32";
 
   /**
    * Encrypt the given BLS12-381 key with specified password.
@@ -62,6 +65,12 @@ public class KeyStore {
       final KdfParam kdfParam,
       final Cipher cipher) {
 
+    checkNotNull(blsPrivateKey, "PrivateKey cannot be null");
+    checkNotNull(password, "Password cannot be null");
+    checkNotNull(path, "Path cannot be null");
+    checkNotNull(kdfParam, "KDFParam cannot be null");
+    checkNotNull(cipher, "Cipher cannot be null");
+
     final Crypto crypto = encryptUsingCipherFunction(blsPrivateKey, password, kdfParam, cipher);
     final Bytes pubKey =
         new PublicKey(SecretKey.fromBytes(Bytes48.leftPad(blsPrivateKey))).toBytesCompressed();
@@ -71,17 +80,13 @@ public class KeyStore {
   @VisibleForTesting
   static Crypto encryptUsingCipherFunction(
       final Bytes secret, final String password, final KdfParam kdfParam, final Cipher cipher) {
-    // The specs uses dk_slice[0:16] and dk_slice[16:32] which assumes dklen must be exact or
-    // greater than 32
-    checkArgument(
-        kdfParam.getDkLen() >= 32,
-        "Cipher function aes-128-ctr requires kdf parameter dklen greater than or equal to 32");
+    // The specs uses dk_slice[0:16] and dk_slice[16:32] which assumes dklen must be >= 32
+    checkArgument(kdfParam.getDkLen() >= 32, DKLEN_ERROR_MESSAGE);
 
     final Bytes decryptionKey = kdfParam.generateDecryptionKey(password);
     final Bytes cipherMessage =
         applyCipherFunction(decryptionKey, cipher, true, secret.toArrayUnsafe());
-    final Bytes checksumMessage =
-        calculateSHA256Checksum(kdfParam.getDkLen(), decryptionKey, cipherMessage);
+    final Bytes checksumMessage = calculateSHA256Checksum(decryptionKey, cipherMessage);
     final Checksum checksum = new Checksum(checksumMessage);
     final Cipher encryptedCipher =
         new Cipher(cipher.getCipherFunction(), cipher.getCipherParam(), cipherMessage);
@@ -97,6 +102,12 @@ public class KeyStore {
    * @return true if password is valid, false otherwise.
    */
   public static boolean validatePassword(final String password, final KeyStoreData keyStoreData) {
+    checkNotNull(password, "Password cannot be null");
+    checkNotNull(keyStoreData, "KeyStoreData cannot be null");
+
+    checkArgument(
+        keyStoreData.getCrypto().getKdf().getParam().getDkLen() >= 32, DKLEN_ERROR_MESSAGE);
+
     final Bytes decryptionKey =
         keyStoreData.getCrypto().getKdf().getParam().generateDecryptionKey(password);
     return validateChecksum(decryptionKey, keyStoreData);
@@ -110,16 +121,16 @@ public class KeyStore {
    * @return decrypted BLS private key in Bytes
    */
   public static Bytes decrypt(final String password, final KeyStoreData keyStoreData) {
+    checkNotNull(password, "Password cannot be null");
+    checkNotNull(keyStoreData, "KeyStoreData cannot be null");
+
     final KdfParam kdfParam = keyStoreData.getCrypto().getKdf().getParam();
-    checkArgument(
-        kdfParam.getDkLen() >= 32,
-        "Cipher function aes-128-ctr requires kdf parameter dklen greater than or equal to 32");
+    checkArgument(kdfParam.getDkLen() >= 32, DKLEN_ERROR_MESSAGE);
 
     final Bytes decryptionKey = kdfParam.generateDecryptionKey(password);
 
     if (!validateChecksum(decryptionKey, keyStoreData)) {
-      // TODO: Custom exception
-      throw new RuntimeException("Invalid checksum");
+      throw new KeyStoreValidationException("Failed to decrypt, checksum validation failed.");
     }
 
     final Cipher cipher = keyStoreData.getCrypto().getCipher();
@@ -130,19 +141,15 @@ public class KeyStore {
   private static boolean validateChecksum(
       final Bytes decryptionKey, final KeyStoreData keyStoreData) {
     final Bytes checksum =
-        calculateSHA256Checksum(
-            keyStoreData.getCrypto().getKdf().getParam().getDkLen(),
-            decryptionKey,
-            keyStoreData.getCrypto().getCipher().getMessage());
+        calculateSHA256Checksum(decryptionKey, keyStoreData.getCrypto().getCipher().getMessage());
     return Objects.equals(checksum, keyStoreData.getCrypto().getChecksum().getMessage());
   }
 
   private static Bytes calculateSHA256Checksum(
-      final int dkLen, final Bytes decryptionKey, final Bytes cipherMessage) {
-    // aes-128-ctr needs first 16 bytes for its key. The rest of the key is used to create checksum
-    // The specs uses dk_slice[16:32] which assumes dklen must be of exact or greater than 32
-    final Bytes dkSliceSecondHalf = decryptionKey.slice(16, dkLen - 16);
-    return sha2_256(Bytes.wrap(dkSliceSecondHalf, cipherMessage));
+      final Bytes decryptionKey, final Bytes cipherMessage) {
+    // aes-128-ctr needs first 16 bytes for its key. The 2nd 16 bytes are used to create checksum
+    final Bytes dkSliceSecondHalf = decryptionKey.slice(16, 16);
+    return sha2_256(Bytes.concatenate(dkSliceSecondHalf, cipherMessage));
   }
 
   private static Bytes applyCipherFunction(
@@ -150,20 +157,18 @@ public class KeyStore {
       final Cipher cipher,
       boolean encryptMode,
       final byte[] inputMessage) {
-    // aes-128-ctr requires a key size of 16. Use first 16 bytes of decryption key as AES key,
-    // rest of the decryption key will be used to create checksum later on
-    final SecretKeySpec secretKey =
+      // aes-128-ctr needs first 16 bytes for its key. The 2nd 16 bytes are used to create checksum
+      final SecretKeySpec secretKey =
         new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
     final IvParameterSpec ivParameterSpec =
         new IvParameterSpec(cipher.getCipherParam().getIv().toArrayUnsafe());
     try {
       final javax.crypto.Cipher jceCipher =
-          javax.crypto.Cipher.getInstance(cipher.getCipherFunction().getAlgorithmName(), BC);
+          javax.crypto.Cipher.getInstance("AES/CTR/NoPadding", BC);
       jceCipher.init(encryptMode ? ENCRYPT_MODE : DECRYPT_MODE, secretKey, ivParameterSpec);
       return Bytes.wrap(jceCipher.doFinal(inputMessage));
     } catch (final GeneralSecurityException e) {
-      // TODO: Custom exception
-      throw new RuntimeException("Error applying aes-128-ctr cipher function", e);
+      throw new KeyStoreValidationException("Unexpected error while applying cipher function", e);
     }
   }
 }

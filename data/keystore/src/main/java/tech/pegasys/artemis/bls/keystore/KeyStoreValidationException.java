@@ -11,17 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.bls.keystore.model;
+package tech.pegasys.artemis.bls.keystore;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+public class KeyStoreValidationException extends RuntimeException {
+  public KeyStoreValidationException() {
+    super();
+  }
 
-/** Placeholder for empty params */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Param {
-  public Param() {}
+  public KeyStoreValidationException(final String message) {
+    super(message);
+  }
 
-  @Override
-  public String toString() {
-    return "";
+  public KeyStoreValidationException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
+
+  public KeyStoreValidationException(final Throwable cause) {
+    super(cause);
   }
 }
