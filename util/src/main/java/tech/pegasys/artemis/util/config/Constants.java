@@ -135,6 +135,7 @@ public class Constants {
   public static UnsignedLong ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10); // in sec
   public static long ETH1_CACHE_STARTUP_RETRY_TIMEOUT = 10; // in sec
   public static long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
+  public static long ETH1_MIN_GENESIS_TIME_BLOCK_RETRY_TIMEOUT = 10; // in sec
   public static long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 5; // in sec
   public static long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
