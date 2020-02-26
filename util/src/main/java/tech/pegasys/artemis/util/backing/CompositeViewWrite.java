@@ -16,12 +16,31 @@ package tech.pegasys.artemis.util.backing;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+/**
+ * Represents composite mutable view which has descendant views
+ * @param <R> the type of children
+ */
 public interface CompositeViewWrite<R> extends ViewWrite, CompositeViewRead<R> {
 
+  /**
+   * Sets the function which should called by the implementation on
+   * any changes in this view or its descendant views
+   * @param listener listener to ba called with this view instance as a parameter
+   */
   void setInvalidator(Consumer<ViewWrite> listener);
 
+  /**
+   * Sets the child at index
+   * If the index == size() and the structure is extendable (e.g. List) then this is
+   * treated as `append()` operation
+   * @throws IllegalArgumentException if index > size() or if index == size() but size() == maxSize
+   */
   void set(int index, R value);
 
+  /**
+   * Similar to {@link #set(int, Object)} but using modifier function
+   * The implementation may potentially optimize this case
+   */
   default void update(int index, Function<R, R> mutator) {
     set(index, mutator.apply(get(index)));
   }

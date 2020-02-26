@@ -15,12 +15,33 @@ package tech.pegasys.artemis.util.backing;
 
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
+/**
+ * Base class of mutable views over Binary Backing Tree ({@link TreeNode})
+ * Each mutable View class normally inherits from the corresponding immutable class
+ * to have both get/set methods however ViewWrite instance shouldn't be leaked as
+ * ViewRead instance, the {@link #commitChanges()} should be used instead to get
+ * immutable view
+ */
 public interface ViewWrite extends ViewRead {
 
+  /**
+   * Resets this view to its default value
+   */
   void clear();
 
+  /**
+   * Creates the corresponding immutable structure
+   */
   ViewRead commitChanges();
 
+  /**
+   * This method may be not supported by mutable view implementation
+   * The general pattern for mutable views to get backing node is
+   * <code>
+   *   commit().getBackingNode()
+   * </code>
+   * @throws UnsupportedOperationException is the method is not supported
+   */
   @Override
   default TreeNode getBackingNode() {
     throw new UnsupportedOperationException(

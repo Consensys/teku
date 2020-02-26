@@ -16,14 +16,34 @@ package tech.pegasys.artemis.util.backing;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
+/**
+ * Base class of immutable views over Binary Backing Tree ({@link TreeNode})
+ * Overlay views concept described here:
+ * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#views
+ */
 public interface ViewRead {
 
+  /**
+   * Creates a corresponding writeable copy of this immutable structure
+   * Any modifications made to the returned copy doesn't affect neither
+   * this structure nor its descendant structures
+   */
   ViewWrite createWritableCopy();
 
+  /**
+   * Gets the type of this structure
+   */
   ViewType getType();
 
+  /**
+   * Returns Backing Tree this structure is backed by
+   */
   TreeNode getBackingNode();
 
+  /**
+   * Returns `hash_tree_root` conforming to SSZ spec:
+   * https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#merkleization
+   */
   default Bytes32 hashTreeRoot() {
     return getBackingNode().hashTreeRoot();
   }

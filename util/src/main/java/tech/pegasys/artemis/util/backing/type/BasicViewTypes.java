@@ -89,18 +89,6 @@ public class BasicViewTypes {
         }
       };
 
-  //  private abstract static class NonpackedBasicType<C extends ViewRead> extends BasicViewType<C>
-  // {
-  //    public NonpackedBasicType(int bitsSize) {
-  //      super(bitsSize);
-  //    }
-  //
-  //    @Override
-  //    public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
-  //      throw new UnsupportedOperationException();
-  //    }
-  //  }
-
   public static final BasicViewType<Bytes4View> BYTES4_TYPE =
       new BasicViewType<>(32) {
         @Override

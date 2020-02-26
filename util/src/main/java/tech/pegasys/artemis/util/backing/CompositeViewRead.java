@@ -15,12 +15,23 @@ package tech.pegasys.artemis.util.backing;
 
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 
+/**
+ * Represents composite immutable view which has descendant views
+ * @param <C> the type of children
+ */
 public interface CompositeViewRead<C> extends ViewRead {
 
+  /**
+   * Returns number of children in this view
+   */
   default int size() {
     return (int) getType().getMaxLength();
   }
 
+  /**
+   * Returns the child at index
+   * @throws IllegalArgumentException if index >= size()
+   */
   C get(int index);
 
   @Override
