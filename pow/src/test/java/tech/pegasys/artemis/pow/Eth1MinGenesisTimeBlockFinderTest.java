@@ -181,6 +181,8 @@ public class Eth1MinGenesisTimeBlockFinderTest {
 
     setMinGenesisTime(1100);
 
+    eth1MinGenesisTimeBlockFinder.start();
+
     verify(eth1Provider).getLatestBlockFlowable();
 
     mockBlockForEth1Provider("0xbf", 1001, 1098);

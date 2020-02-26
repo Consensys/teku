@@ -1,4 +1,4 @@
-￿## Proof of Work Chain Environmental Setup
+## Proof of Work Chain Environmental Setup
 
 1. `cd` to the artemis root directory
 2. `git submodule update --init --recursive`

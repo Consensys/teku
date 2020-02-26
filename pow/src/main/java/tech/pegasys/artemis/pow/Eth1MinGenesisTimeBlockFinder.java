@@ -66,29 +66,19 @@ public class Eth1MinGenesisTimeBlockFinder {
         .thenCompose(eth1Provider::getEth1BlockFuture)
         .thenCompose(
             block -> {
-              SafeFuture<EthBlock.Block> firstValidBlockFuture;
-              switch (compareBlockTimestampToMinGenesisTime(block)) {
-                case 1:
-                  // If block timestamp is greater than min genesis time
-                  // find first valid block in history
-                  firstValidBlockFuture = findFirstValidBlockInHistory(block);
-                  break;
-                case 0:
-                  firstValidBlockFuture = SafeFuture.completedFuture(block);
-                  break;
-                case -1:
-                  // If block timestamp is less than min genesis time
-                  // subscribe to new block events and wait for the first
-                  // valid block
-                  firstValidBlockFuture = waitForFirstValidBlock();
-                  break;
-                default:
-                  throw new IllegalStateException(
-                      "Unexpected value: "
-                          + calculateCandidateGenesisTimestamp(block.getTimestamp())
-                              .compareTo(Constants.MIN_GENESIS_TIME));
+              int comparison = compareBlockTimestampToMinGenesisTime(block);
+              if (comparison > 0) {
+                // If block timestamp is greater than min genesis time
+                // find first valid block in history
+                return findFirstValidBlockInHistory(block);
+              } else if (comparison < 0) {
+                // If block timestamp is less than min genesis time
+                // subscribe to new block events and wait for the first
+                // valid block
+                return waitForFirstValidBlock();
+              } else {
+                return SafeFuture.completedFuture(block);
               }
-              return firstValidBlockFuture;
             })
         .thenAccept(this::publishFirstValidBlock)
         .exceptionallyCompose(
@@ -127,59 +117,44 @@ public class Eth1MinGenesisTimeBlockFinder {
         .getEth1BlockFuture(estimatedFirstValidBlockNumber)
         .thenCompose(
             block -> {
-              SafeFuture<EthBlock.Block> firstValidBlock;
-              switch (compareBlockTimestampToMinGenesisTime(block)) {
-                case 1:
-                  // If block timestamp is greater than min genesis time
-                  // explore blocks downwards
-                  firstValidBlock = exploreBlocksDownwards(block);
-                  break;
-                case 0:
-                  firstValidBlock = SafeFuture.completedFuture(block);
-                  break;
-                case -1:
-                  // If block timestamp is less than min genesis time
-                  // explore blocks upwards
-                  firstValidBlock = exploreBlocksUpwards(block);
-                  break;
-                default:
-                  throw new IllegalStateException(
-                      "Unexpected value: "
-                          + calculateCandidateGenesisTimestamp(block.getTimestamp())
-                              .compareTo(Constants.MIN_GENESIS_TIME));
+              int comparison = compareBlockTimestampToMinGenesisTime(block);
+              if (comparison > 0) {
+                // If block timestamp is greater than min genesis time
+                // explore blocks downwards
+                return exploreBlocksDownwards(block);
+              } else if (comparison < 0) {
+                // If block timestamp is less than min genesis time
+                // explore blocks upwards
+                return exploreBlocksUpwards(block);
+              } else {
+                return SafeFuture.completedFuture(block);
               }
-              return firstValidBlock;
             });
   }
 
   private SafeFuture<EthBlock.Block> exploreBlocksDownwards(EthBlock.Block previousBlock) {
+    if (previousBlock.getNumber().equals(BigInteger.ZERO)) {
+      throw new RuntimeException(
+          "Reached Eth1Genesis before reaching a valid min Eth2 genesis time, "
+              + "MIN_GENESIS_TIME constant must be wrong");
+    }
     UnsignedLong previousBlockNumber = UnsignedLong.valueOf(previousBlock.getNumber());
     UnsignedLong newBlockNumber = previousBlockNumber.minus(UnsignedLong.ONE);
     SafeFuture<EthBlock.Block> blockFuture = eth1Provider.getEth1BlockFuture(newBlockNumber);
     return blockFuture.thenCompose(
         block -> {
-          SafeFuture<EthBlock.Block> firstValidBlock;
-          switch (compareBlockTimestampToMinGenesisTime(block)) {
-            case 1:
-              // If exploring downwards and block timestamp > min genesis time,
-              // then block must still be downwards.
-              firstValidBlock = exploreBlocksDownwards(block);
-              break;
-            case 0:
-              firstValidBlock = SafeFuture.completedFuture(block);
-              break;
-            case -1:
-              // If exploring downwards and block timestamp < min genesis time,
-              // then previous block must have been the first valid block.
-              firstValidBlock = SafeFuture.completedFuture(previousBlock);
-              break;
-            default:
-              throw new IllegalStateException(
-                  "Unexpected value: "
-                      + calculateCandidateGenesisTimestamp(block.getTimestamp())
-                          .compareTo(Constants.MIN_GENESIS_TIME));
+          int comparison = compareBlockTimestampToMinGenesisTime(block);
+          if (comparison > 0) {
+            // If exploring downwards and block timestamp > min genesis time,
+            // then block must still be downwards.
+            return exploreBlocksDownwards(block);
+          } else if (comparison < 0) {
+            // If exploring downwards and block timestamp < min genesis time,
+            // then previous block must have been the first valid block.
+            return SafeFuture.completedFuture(previousBlock);
+          } else {
+            return SafeFuture.completedFuture(block);
           }
-          return firstValidBlock;
         });
   }
 
@@ -189,26 +164,16 @@ public class Eth1MinGenesisTimeBlockFinder {
     SafeFuture<EthBlock.Block> blockFuture = eth1Provider.getEth1BlockFuture(newBlockNumber);
     return blockFuture.thenCompose(
         block -> {
-          SafeFuture<EthBlock.Block> firstValidBlock;
-          switch (compareBlockTimestampToMinGenesisTime(block)) {
-            case 1:
-            case 0:
-              // If exploring upwards and block timestamp >= min genesis time,
-              // then current block must be the first valid block.
-              firstValidBlock = SafeFuture.completedFuture(block);
-              break;
-            case -1:
-              // If exploring upwards and block timestamp < min genesis time,
-              // then previous block must have been the first valid block.
-              firstValidBlock = exploreBlocksUpwards(block);
-              break;
-            default:
-              throw new IllegalStateException(
-                  "Unexpected value: "
-                      + calculateCandidateGenesisTimestamp(block.getTimestamp())
-                          .compareTo(Constants.MIN_GENESIS_TIME));
+          int comparison = compareBlockTimestampToMinGenesisTime(block);
+          if (comparison >= 0) {
+            // If exploring upwards and block timestamp >= min genesis time,
+            // then current block must be the first valid block.
+            return SafeFuture.completedFuture(block);
+          } else {
+            // If exploring upwards and block timestamp < min genesis time,
+            // then previous block must have been the first valid block.
+            return exploreBlocksUpwards(block);
           }
-          return firstValidBlock;
         });
   }
 
