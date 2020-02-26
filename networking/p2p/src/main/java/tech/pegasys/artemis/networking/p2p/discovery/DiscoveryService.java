@@ -11,28 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.networking.p2p.discovery;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public interface DiscoveryService {
 
-public class BadRequest {
-  private final Integer status;
-  private final String message;
+  SafeFuture<?> start();
 
-  public BadRequest(String message) {
-    this.message = message;
-    this.status = SC_BAD_REQUEST;
-  }
+  SafeFuture<?> stop();
 
-  @JsonProperty("status")
-  public final Integer getStatus() {
-    return status;
-  }
+  Stream<DiscoveryPeer> streamKnownPeers();
 
-  @JsonProperty("message")
-  public final String getMessage() {
-    return message;
-  }
+  CompletableFuture<Void> searchForPeers();
 }

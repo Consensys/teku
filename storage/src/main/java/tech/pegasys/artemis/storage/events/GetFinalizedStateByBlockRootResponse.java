@@ -13,22 +13,25 @@
 
 package tech.pegasys.artemis.storage.events;
 
-import tech.pegasys.artemis.storage.DatabaseUpdateResult;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 
-public class StoreDiskUpdateCompleteEvent {
-  private final long transactionId;
-  private final DatabaseUpdateResult result;
+public class GetFinalizedStateByBlockRootResponse {
+  private final Bytes32 blockRoot;
+  private final Optional<BeaconState> state;
 
-  public StoreDiskUpdateCompleteEvent(final long transactionId, final DatabaseUpdateResult result) {
-    this.transactionId = transactionId;
-    this.result = result;
+  public GetFinalizedStateByBlockRootResponse(
+      final Bytes32 blockRoot, final Optional<BeaconState> state) {
+    this.blockRoot = blockRoot;
+    this.state = state;
   }
 
-  public long getTransactionId() {
-    return transactionId;
+  public Bytes32 getBlockRoot() {
+    return blockRoot;
   }
 
-  public DatabaseUpdateResult getResult() {
-    return result;
+  public Optional<BeaconState> getState() {
+    return state;
   }
 }

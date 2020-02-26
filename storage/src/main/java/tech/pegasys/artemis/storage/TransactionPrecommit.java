@@ -21,7 +21,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public interface TransactionPrecommit {
 
   static TransactionPrecommit memoryOnly() {
-    return event -> SafeFuture.completedFuture(null);
+    return event -> SafeFuture.completedFuture(DatabaseUpdateResult.successfulWithNothingPruned());
   }
 
   static TransactionPrecommit storageEnabled(final EventBus eventBus) {
@@ -29,5 +29,5 @@ public interface TransactionPrecommit {
   }
 
   @CheckReturnValue
-  SafeFuture<Void> precommit(StoreDiskUpdateEvent updateEvent);
+  SafeFuture<DatabaseUpdateResult> precommit(StoreDiskUpdateEvent updateEvent);
 }

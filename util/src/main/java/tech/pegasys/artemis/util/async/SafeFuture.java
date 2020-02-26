@@ -171,6 +171,18 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<U>) super.thenApply(fn);
   }
 
+  public <U> SafeFuture<U> thenApplyChecked(final ExceptionThrowingFunction<T, U> function) {
+    return thenCompose(
+        value -> {
+          try {
+            final U result = function.apply(value);
+            return SafeFuture.completedFuture(result);
+          } catch (final Exception e) {
+            return SafeFuture.failedFuture(e);
+          }
+        });
+  }
+
   @Override
   public SafeFuture<Void> thenRun(final Runnable action) {
     return (SafeFuture<Void>) super.thenRun(action);

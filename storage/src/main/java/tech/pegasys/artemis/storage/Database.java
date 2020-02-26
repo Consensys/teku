@@ -25,7 +25,7 @@ public interface Database extends Closeable {
 
   void storeGenesis(Store store);
 
-  void insert(StoreDiskUpdateEvent event);
+  DatabaseUpdateResult update(StoreDiskUpdateEvent event);
 
   Store createMemoryStore();
 

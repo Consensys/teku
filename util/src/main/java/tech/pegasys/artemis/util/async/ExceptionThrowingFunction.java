@@ -11,28 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.util.async;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-public class BadRequest {
-  private final Integer status;
-  private final String message;
-
-  public BadRequest(String message) {
-    this.message = message;
-    this.status = SC_BAD_REQUEST;
-  }
-
-  @JsonProperty("status")
-  public final Integer getStatus() {
-    return status;
-  }
-
-  @JsonProperty("message")
-  public final String getMessage() {
-    return message;
-  }
+public interface ExceptionThrowingFunction<I, O> {
+  O apply(I value) throws Exception;
 }
