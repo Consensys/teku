@@ -13,21 +13,20 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.util.DigestFactory;
+import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 
 public class Pbkdf2Param extends KdfParam {
-  private static final int DEFAULT_DKLEN = 32;
-  private static final int DEFAULT_COUNT = 262144;
 
   private final Integer c;
   private final Pbkdf2PseudoRandomFunction prf;
@@ -42,21 +41,21 @@ public class Pbkdf2Param extends KdfParam {
    */
   @JsonCreator
   public Pbkdf2Param(
-      @JsonProperty(value = "dklen", required = true) final Integer dklen,
-      @JsonProperty(value = "c", required = true) final Integer c,
+      @JsonProperty(value = "dklen", required = true) final int dklen,
+      @JsonProperty(value = "c", required = true) final int c,
       @JsonProperty(value = "prf", required = true) final Pbkdf2PseudoRandomFunction prf,
       @JsonProperty(value = "salt", required = true) final Bytes salt) {
     super(dklen, salt);
     this.c = c;
     this.prf = prf;
+    validateParams();
   }
 
-  public Pbkdf2Param() {
-    this(DEFAULT_DKLEN, DEFAULT_COUNT, Pbkdf2PseudoRandomFunction.HMAC_SHA256, Bytes32.random());
-  }
-
-  public Pbkdf2Param(final Bytes salt) {
-    this(DEFAULT_DKLEN, DEFAULT_COUNT, Pbkdf2PseudoRandomFunction.HMAC_SHA256, salt);
+  private void validateParams() throws KeyStoreValidationException {
+    checkArgument(c >= 1, "Iterative Count parameter c must be >= 1");
+    // because the EIP-2335 spec requires dklen >= 32
+    checkArgument(getDkLen() >= 32, "Generated key length dkLen must be >= 32.");
+    checkNotNull(getSalt(), "salt cannot be null");
   }
 
   @JsonProperty(value = "c")

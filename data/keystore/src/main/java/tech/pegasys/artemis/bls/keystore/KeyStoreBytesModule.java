@@ -21,8 +21,11 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import java.io.IOException;
+import java.util.EnumSet;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.bls.keystore.model.ChecksumFunction;
+import tech.pegasys.artemis.bls.keystore.model.CipherFunction;
 
 class KeyStoreBytesModule extends SimpleModule {
   public KeyStoreBytesModule() {
@@ -31,6 +34,8 @@ class KeyStoreBytesModule extends SimpleModule {
     addDeserializer(Bytes.class, new BytesDeserializer());
     addSerializer(Bytes32.class, new Bytes32Serializer());
     addDeserializer(Bytes32.class, new Bytes32Deserializer());
+    addDeserializer(ChecksumFunction.class, new ChecksumFunctionDeserializer());
+    addDeserializer(CipherFunction.class, new CipherFunctionDeserializer());
   }
 
   private static class BytesSerializer extends JsonSerializer<Bytes> {
@@ -62,6 +67,38 @@ class KeyStoreBytesModule extends SimpleModule {
     @Override
     public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
       return Bytes32.fromHexString(p.getValueAsString());
+    }
+  }
+
+  private static class ChecksumFunctionDeserializer extends JsonDeserializer<ChecksumFunction> {
+    @Override
+    public ChecksumFunction deserialize(final JsonParser p, final DeserializationContext ctxt)
+        throws IOException {
+      final String valueAsString = p.getValueAsString();
+      final EnumSet<ChecksumFunction> set = EnumSet.allOf(ChecksumFunction.class);
+      return set.stream()
+          .filter(checksumFunction -> checksumFunction.getJsonValue().equals(valueAsString))
+          .findFirst()
+          .orElseThrow(
+              () ->
+                  new KeyStoreValidationException(
+                      String.format("Checksum function [%s] is not supported.", valueAsString)));
+    }
+  }
+
+  private static class CipherFunctionDeserializer extends JsonDeserializer<CipherFunction> {
+    @Override
+    public CipherFunction deserialize(final JsonParser p, final DeserializationContext ctxt)
+        throws IOException {
+      final String valueAsString = p.getValueAsString();
+      final EnumSet<CipherFunction> set = EnumSet.allOf(CipherFunction.class);
+      return set.stream()
+          .filter(checksumFunction -> checksumFunction.getJsonValue().equals(valueAsString))
+          .findFirst()
+          .orElseThrow(
+              () ->
+                  new KeyStoreValidationException(
+                      String.format("Cipher function [%s] is not supported.", valueAsString)));
     }
   }
 }

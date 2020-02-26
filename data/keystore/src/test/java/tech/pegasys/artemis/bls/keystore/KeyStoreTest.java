@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -28,9 +29,16 @@ import tech.pegasys.artemis.bls.keystore.model.Cipher;
 import tech.pegasys.artemis.bls.keystore.model.KdfParam;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.bls.keystore.model.Pbkdf2Param;
+import tech.pegasys.artemis.bls.keystore.model.Pbkdf2PseudoRandomFunction;
 import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 
 class KeyStoreTest {
+  private static final int DKLEN = 32;
+  private static final int ITERATIVE_COUNT = 262144;
+  private static final int MEMORY_CPU_COST = 262144;
+  private static final int PARALLELIZATION = 1;
+  private static final int BLOCKSIZE = 8;
+
   private static final String PASSWORD = "testpassword";
   private static final Bytes BLS_PRIVATE_KEY =
       Bytes.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
@@ -43,22 +51,24 @@ class KeyStoreTest {
 
   private static final String SCRYPT_KEYSTORE_RESOURCE = "scryptTestVector.json";
   private static final String PBKDF2_KEYSTORE_RESOURCE = "pbkdf2TestVector.json";
-  private static final String missingKdfParamTestVectorJsonResource =
+  private static final String MISSING_SECTION_KEYSTORE_RESOURCE =
       "missingKdfSectionTestVector.json";
-  private static final String unsupportedChecksumFunctionJsonResource =
+  private static final String UNSUPPORTED_VERSION_JSON_RESOURCE = "v3TestVector.json";
+  private static final String UNSUPPORTED_CHECKSUM_FUNCTION_JSON =
       "unsupportedChecksumFunction.json";
+  private static final String UNSUPPORTED_CIPHER_FUNCTION_JSON = "unsupportedCipherFunction.json";
 
   @SuppressWarnings("UnusedMethod")
   private static Stream<Arguments> encryptWithKdfAndCipherArguments() {
     // KdfParam, expected checksum, expected encrypted cipher message
     return Stream.of(
         Arguments.of(
-            new SCryptParam(SALT),
+            new SCryptParam(DKLEN, MEMORY_CPU_COST, PARALLELIZATION, BLOCKSIZE, SALT),
             Bytes.fromHexString("149aafa27b041f3523c53d7acba1905fa6b1c90f9fef137568101f44b531a3cb"),
             Bytes.fromHexString(
                 "54ecc8863c0550351eee5720f3be6a5d4a016025aa91cd6436cfec938d6a8d30")),
         Arguments.of(
-            new Pbkdf2Param(SALT),
+            new Pbkdf2Param(DKLEN, ITERATIVE_COUNT, Pbkdf2PseudoRandomFunction.HMAC_SHA256, SALT),
             Bytes.fromHexString("18b148af8e52920318084560fd766f9d09587b4915258dec0676cba5b0da09d8"),
             Bytes.fromHexString(
                 "a9249e0ca7315836356e4c7440361ff22b9fe71e2e2ed34fc1eb03976924ed48")));
@@ -114,7 +124,45 @@ class KeyStoreTest {
     assertThat(keyStoreData.getUuid()).isNotNull();
   }
 
-  // TODO: Test invalid keystore version after custom exception
-  // TODO: Test invalid json loading after custom exception
+  @Test
+  void invalidJsonLoadingThrowsException() {
+    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(
+            () -> {
+              loadKeyStoreFromResource(MISSING_SECTION_KEYSTORE_RESOURCE);
+            })
+        .withMessage("Error in parsing keystore: Missing required json elements");
+  }
+
+  @Test
+  void unsupportedVersionThrowsException() {
+    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(
+            () -> {
+              loadKeyStoreFromResource(UNSUPPORTED_VERSION_JSON_RESOURCE);
+            })
+        .withMessage("Error in parsing keystore: The KeyStore version 3 is not supported");
+  }
+
+  @Test
+  void unsupportedChecksumFunctionThrowsException() {
+    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(
+            () -> {
+              loadKeyStoreFromResource(UNSUPPORTED_CHECKSUM_FUNCTION_JSON);
+            })
+        .withMessage("Error in parsing keystore: Checksum function [sha128] is not supported.");
+  }
+
+  @Test
+  void unsupportedCipherFunctionThrowsException() {
+    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(
+            () -> {
+              loadKeyStoreFromResource(UNSUPPORTED_CIPHER_FUNCTION_JSON);
+            })
+        .withMessage("Error in parsing keystore: Cipher function [aes-256-ctr] is not supported.");
+  }
+
   // TODO: Test DKLEN after custom exception
 }

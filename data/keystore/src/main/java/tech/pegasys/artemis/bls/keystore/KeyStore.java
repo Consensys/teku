@@ -16,8 +16,8 @@ package tech.pegasys.artemis.bls.keystore;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
-import static tech.pegasys.artemis.bls.keystore.KeyStoreLoader.checkArgument;
-import static tech.pegasys.artemis.bls.keystore.KeyStoreLoader.checkNotNull;
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.security.GeneralSecurityException;
@@ -157,8 +157,8 @@ public class KeyStore {
       final Cipher cipher,
       boolean encryptMode,
       final byte[] inputMessage) {
-      // aes-128-ctr needs first 16 bytes for its key. The 2nd 16 bytes are used to create checksum
-      final SecretKeySpec secretKey =
+    // aes-128-ctr needs first 16 bytes for its key. The 2nd 16 bytes are used to create checksum
+    final SecretKeySpec secretKey =
         new SecretKeySpec(decryptionKey.slice(0, 16).toArrayUnsafe(), "AES");
     final IvParameterSpec ivParameterSpec =
         new IvParameterSpec(cipher.getCipherParam().getIv().toArrayUnsafe());

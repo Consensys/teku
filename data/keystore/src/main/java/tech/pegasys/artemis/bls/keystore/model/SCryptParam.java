@@ -13,23 +13,21 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
+import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
 import org.bouncycastle.crypto.generators.SCrypt;
+import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 
 public class SCryptParam extends KdfParam {
-  private static final int DEFAULT_DKLEN = 32;
-  private static final int DEFAULT_MEMORY_CPU_COST = 262144;
-  private static final int DEFAULT_PARALLELIZATION = 1;
-  private static final int DEFAULT_BLOCKSIZE = 8;
-  private final Integer n;
-  private final Integer p;
-  private final Integer r;
+  private final int n;
+  private final int p;
+  private final int r;
 
   /**
    * SCrypt Key Derivation Function
@@ -44,19 +42,35 @@ public class SCryptParam extends KdfParam {
    */
   @JsonCreator
   public SCryptParam(
-      @JsonProperty(value = "dklen", required = true) final Integer dklen,
-      @JsonProperty(value = "n", required = true) final Integer n,
-      @JsonProperty(value = "p", required = true) final Integer p,
-      @JsonProperty(value = "r", required = true) final Integer r,
+      @JsonProperty(value = "dklen", required = true) final int dklen,
+      @JsonProperty(value = "n", required = true) final int n,
+      @JsonProperty(value = "p", required = true) final int p,
+      @JsonProperty(value = "r", required = true) final int r,
       @JsonProperty(value = "salt", required = true) final Bytes salt) {
     super(dklen, salt);
     this.n = n;
     this.p = p;
     this.r = r;
+    validateParams();
   }
 
-  public SCryptParam(final Bytes salt) {
-    this(DEFAULT_DKLEN, DEFAULT_MEMORY_CPU_COST, DEFAULT_PARALLELIZATION, DEFAULT_BLOCKSIZE, salt);
+  private void validateParams() throws KeyStoreValidationException {
+    checkArgument(n > 1 && isPowerOf2(n), "Cost parameter n must be > 1 and a power of 2");
+    // Only value of r that cost (as an int) could be exceeded for is 1
+    if (r == 1) {
+      checkArgument(n > 1 && n < 65536, "Cost parameter n must be > 1 and < 65536.");
+    }
+
+    checkArgument(r >= 1, "Block size r must be >= 1.");
+
+    int maxParallel = Integer.MAX_VALUE / (128 * r * 8);
+    checkArgument(
+        p >= 1 && p <= maxParallel,
+        String.format(
+            "Parallelization parameter p must be >= 1 and <= %d (based on block size r of %d",
+            maxParallel, r));
+    // because the EIP-2335 spec requires dklen >= 32
+    checkArgument(getDkLen() >= 32, "Generated key length dkLen must be >= 32.");
   }
 
   @JsonProperty(value = "n")
@@ -101,5 +115,9 @@ public class SCryptParam extends KdfParam {
         .add("r", r)
         .add("salt", getSalt())
         .toString();
+  }
+
+  private static boolean isPowerOf2(int x) {
+    return ((x & (x - 1)) == 0);
   }
 }
