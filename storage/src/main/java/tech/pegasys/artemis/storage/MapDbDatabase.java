@@ -270,6 +270,13 @@ public class MapDbDatabase implements Database {
 
   private Set<Bytes32> pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
     SignedBeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newFinalizedCheckpoint.getRoot());
+    if (newlyFinalizedBlock == null) {
+      LOG.error(
+          "Missing finalized block {} for epoch {}",
+          newFinalizedCheckpoint.getRoot(),
+          newFinalizedCheckpoint.getEpoch());
+      return Collections.emptySet();
+    }
     final UnsignedLong finalizedSlot = newlyFinalizedBlock.getSlot();
     final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> toRemove =
         hotRootsBySlotCache.headMap(finalizedSlot);

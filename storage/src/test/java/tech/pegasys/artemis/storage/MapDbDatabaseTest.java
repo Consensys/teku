@@ -156,6 +156,122 @@ class MapDbDatabaseTest {
   }
 
   @Test
+  public void shouldStoreSingleValue_genesisTime() {
+    final UnsignedLong newGenesisTime = UnsignedLong.valueOf(3);
+    // Sanity check
+    assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.setGenesis_time(newGenesisTime);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
+  }
+
+  @Test
+  public void shouldStoreSingleValue_justifiedCheckpoint() {
+    final Checkpoint newValue = checkpoint3;
+    // Sanity check
+    assertThat(store.getJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.setJustifiedCheckpoint(newValue);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getJustifiedCheckpoint()).isEqualTo(newValue);
+  }
+
+  @Test
+  public void shouldStoreSingleValue_finalizedCheckpoint() {
+    final Checkpoint newValue = checkpoint3;
+    // Sanity check
+    assertThat(store.getFinalizedCheckpoint()).isNotEqualTo(checkpoint3);
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.setFinalizedCheckpoint(newValue);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getFinalizedCheckpoint()).isEqualTo(newValue);
+  }
+
+  @Test
+  public void shouldStoreSingleValue_bestJustifiedCheckpoint() {
+    final Checkpoint newValue = checkpoint3;
+    // Sanity check
+    assertThat(store.getBestJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.setBestJustifiedCheckpoint(newValue);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getBestJustifiedCheckpoint()).isEqualTo(newValue);
+  }
+
+  @Test
+  public void shouldStoreSingleValue_singleBlock() {
+    final SignedBeaconBlock newBlock = checkpoint3Block;
+    final Bytes32 newBlockRoot = newBlock.getMessage().hash_tree_root();
+    // Sanity check
+    assertThat(store.getBlock(newBlockRoot)).isNull();
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.putBlock(newBlockRoot, newBlock);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getBlock(newBlockRoot)).isEqualTo(newBlock.getMessage());
+  }
+
+  @Test
+  public void shouldStoreSingleValue_singleBlockState() {
+    final BeaconState newState = DataStructureUtil.randomBeaconState(999);
+    final Bytes32 blockRoot = DataStructureUtil.randomBytes32(999L);
+    // Sanity check
+    assertThat(store.getBlockState(blockRoot)).isNull();
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.putBlockState(blockRoot, newState);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getBlockState(blockRoot)).isEqualTo(newState);
+  }
+
+  @Test
+  public void shouldStoreSingleValue_singleCheckpointState() {
+    final Checkpoint checkpoint = checkpoint3;
+    final BeaconState newState = DataStructureUtil.randomBeaconState(999);
+    // Sanity check
+    assertThat(store.getCheckpointState(checkpoint)).isNull();
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.putCheckpointState(checkpoint, newState);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getCheckpointState(checkpoint)).isEqualTo(newState);
+  }
+
+  @Test
+  public void shouldStoreSingleValue_latestMessage() {
+    final UnsignedLong validatorIndex = UnsignedLong.valueOf(999);
+    final Checkpoint latestMessage = checkpoint3;
+    // Sanity check
+    assertThat(store.getLatestMessage(validatorIndex)).isNull();
+
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    transaction.putLatestMessage(validatorIndex, latestMessage);
+    commit(transaction);
+
+    final Store result = database.createMemoryStore();
+    assertThat(result.getLatestMessage(validatorIndex)).isEqualTo(latestMessage);
+  }
+
+  @Test
   public void shouldStoreLatestMessageFromEachValidator() {
     final UnsignedLong validator1 = UnsignedLong.valueOf(1);
     final UnsignedLong validator2 = UnsignedLong.valueOf(2);
