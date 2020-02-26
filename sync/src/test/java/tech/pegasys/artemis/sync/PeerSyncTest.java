@@ -199,7 +199,6 @@ public class PeerSyncTest {
     // check startingSlot
     UnsignedLong startingSlot = peerSync.getStartingSlot();
     assertThat(startingSlot).isEqualTo(startHere);
-    assertThat(startingSlot).isLessThan(PEER_HEAD_SLOT);
   }
 
   @Test
@@ -360,7 +359,6 @@ public class PeerSyncTest {
     // check startingSlot
     final UnsignedLong syncStatusStartingSlot = peerSync.getStartingSlot();
     assertThat(syncStatusStartingSlot).isEqualTo(startSlot);
-    assertThat(syncStatusStartingSlot).isLessThan(PEER_HEAD_SLOT);
 
     asyncRunner.executeQueuedActions();
     final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
@@ -392,7 +390,6 @@ public class PeerSyncTest {
     // check startingSlot is still where it was
     final UnsignedLong syncStatusStartingSlot2 = peerSync.getStartingSlot();
     assertThat(syncStatusStartingSlot2).isEqualTo(startSlot);
-    assertThat(syncStatusStartingSlot2).isLessThan(PEER_HEAD_SLOT);
 
     // do another sync and check that things are further along.
     UnsignedLong thirdRequestSize = UnsignedLong.valueOf(6);
@@ -434,7 +431,6 @@ public class PeerSyncTest {
     // check that starting slot for second sync is the first slot after peer's finalized epoch
     final UnsignedLong syncStatusStartingSlot3 = peerSync.getStartingSlot();
     assertThat(syncStatusStartingSlot3).isEqualTo(secondSyncStartingSlot);
-    assertThat(syncStatusStartingSlot3).isLessThan(PEER_HEAD_SLOT);
   }
 
   private List<SignedBeaconBlock> respondWithBlocksAtSlots(
