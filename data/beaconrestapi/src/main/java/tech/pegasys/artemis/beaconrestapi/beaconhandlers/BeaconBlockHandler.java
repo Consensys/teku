@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.collect.ImmutableMap;
@@ -45,16 +48,16 @@ public class BeaconBlockHandler implements BeaconRestApiHandler {
   @Override
   public Object handleRequest(RequestParams param) {
     Map<String, List<String>> queryParamMap = param.getQueryParamMap();
-    if (queryParamMap.containsKey("root")) {
-      Bytes32 root = Bytes32.fromHexString(param.getQueryParam("root"));
+    if (queryParamMap.containsKey(ROOT)) {
+      Bytes32 root = Bytes32.fromHexString(param.getQueryParam(ROOT));
       return client.getStore() != null ? client.getStore().getBlock(root) : null;
     }
 
     UnsignedLong slot;
-    if (queryParamMap.containsKey("epoch")) {
-      slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(param.getQueryParam("epoch")));
-    } else if (queryParamMap.containsKey("slot")) {
-      slot = UnsignedLong.valueOf(param.getQueryParam("slot"));
+    if (queryParamMap.containsKey(EPOCH)) {
+      slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(param.getQueryParam(EPOCH)));
+    } else if (queryParamMap.containsKey(SLOT)) {
+      slot = UnsignedLong.valueOf(param.getQueryParam(SLOT));
     } else {
       return null;
     }

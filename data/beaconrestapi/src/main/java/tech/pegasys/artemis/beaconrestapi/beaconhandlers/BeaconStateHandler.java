@@ -15,6 +15,16 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
@@ -27,7 +37,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -37,8 +46,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconStateHandler implements Handler {
   public static final String ROUTE = "/beacon/state";
-  public static final String ROOT = "root";
-  public static final String SLOT = "slot";
+
   private final CombinedChainDataClient combinedClient;
   private final JsonProvider jsonProvider;
 
@@ -52,7 +60,7 @@ public class BeaconStateHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the beacon chain state that matches the specified tree hash root, or slot.",
-      tags = {"Beacon"},
+      tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(name = ROOT, description = "Tree hash root to query (Bytes32)"),
         @OpenApiParam(
@@ -62,11 +70,13 @@ public class BeaconStateHandler implements Handler {
       description =
           "Request that the node return a beacon chain state that matches the specified tree hash root.",
       responses = {
-        @OpenApiResponse(status = "200", content = @OpenApiContent(from = BeaconState.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
-            status = "404",
+            status = RES_NOT_FOUND,
             description = "The beacon state matching the supplied query parameter was not found."),
-        @OpenApiResponse(status = "400", description = "Missing a query parameter")
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter"),
+        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
@@ -78,9 +88,9 @@ public class BeaconStateHandler implements Handler {
       }
 
       if (parameters.containsKey(ROOT)) {
-        future = queryByRootHash(validateParams(parameters, ROOT));
+        future = queryByRootHash(validateQueryParameter(parameters, ROOT));
       } else if (parameters.containsKey(SLOT)) {
-        future = queryBySlot(validateParams(parameters, SLOT));
+        future = queryBySlot(validateQueryParameter(parameters, SLOT));
       }
       ctx.result(
           future.thenApplyChecked(
@@ -106,15 +116,5 @@ public class BeaconStateHandler implements Handler {
     final UnsignedLong slot = UnsignedLong.valueOf(slotString);
     final Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
     return combinedClient.getStateAtSlot(slot, head);
-  }
-
-  private String validateParams(final Map<String, List<String>> params, final String key) {
-    if (params.containsKey(key)
-        && params.get(key).size() == 1
-        && !StringUtils.isEmpty(params.get(key).get(0))) {
-      return params.get(key).get(0);
-    } else {
-      throw new IllegalArgumentException(String.format("'%s' cannot be null or empty.", key));
-    }
   }
 }
