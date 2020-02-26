@@ -19,8 +19,6 @@ import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.KEY_TYPE;
-import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.dsl.Builder.Defaults;
 import io.libp2p.core.dsl.BuilderJKt;
@@ -79,10 +77,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final MetricsSystem metricsSystem,
       final List<RpcMethod> rpcMethods,
       final List<PeerHandler> peerHandlers) {
-    this.privKey =
-        config
-            .getPrivateKey()
-            .orElseGet(() -> KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1());
+    this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
     this.config = config;
 
