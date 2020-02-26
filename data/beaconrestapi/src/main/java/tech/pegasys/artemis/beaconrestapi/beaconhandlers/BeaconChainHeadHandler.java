@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
@@ -61,7 +62,7 @@ public class BeaconChainHeadHandler implements Handler {
             content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
         @OpenApiResponse(
             status = RES_NO_CONTENT,
-            description = "No Content will be returned if pre Genesis state"),
+            description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
