@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -48,7 +49,6 @@ import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 public class MapDbDatabase implements Database {
   private static final Logger LOG = LogManager.getLogger();
   private final DB db;
-  private final Var<UnsignedLong> time;
   private final Var<UnsignedLong> genesisTime;
   private final Atomic.Var<Checkpoint> justifiedCheckpoint;
   private final Atomic.Var<Checkpoint> bestJustifiedCheckpoint;
@@ -85,7 +85,6 @@ public class MapDbDatabase implements Database {
 
   private MapDbDatabase(final Maker dbMaker) {
     db = dbMaker.transactionEnable().make();
-    time = db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
     genesisTime = db.atomicVar("genesisTime", new UnsignedLongSerializer()).createOrOpen();
     justifiedCheckpoint =
         db.atomicVar("justifiedCheckpoint", new MapDBSerializer<>(Checkpoint.class)).createOrOpen();
@@ -145,7 +144,6 @@ public class MapDbDatabase implements Database {
   @Override
   public synchronized void storeGenesis(final Store store) {
     try {
-      time.set(store.getTime());
       genesisTime.set(store.getGenesisTime());
       justifiedCheckpoint.set(store.getJustifiedCheckpoint());
       finalizedCheckpoint.set(store.getFinalizedCheckpoint());
@@ -176,12 +174,18 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public synchronized DatabaseUpdateResult update(final StoreDiskUpdateEvent event) {
+  public DatabaseUpdateResult update(final StoreDiskUpdateEvent event) {
+    if (event.isEmpty()) {
+      return DatabaseUpdateResult.successfulWithNothingPruned();
+    }
+    return doUpdate(event);
+  }
+
+  private synchronized DatabaseUpdateResult doUpdate(final StoreDiskUpdateEvent event) {
     try {
       final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
       final Checkpoint newFinalizedCheckpoint =
           event.getFinalizedCheckpoint().orElse(previousFinalizedCheckpoint);
-      event.getTime().ifPresent(time::set);
       event.getGenesisTime().ifPresent(genesisTime::set);
       event.getFinalizedCheckpoint().ifPresent(finalizedCheckpoint::set);
       event.getJustifiedCheckpoint().ifPresent(justifiedCheckpoint::set);
@@ -200,7 +204,7 @@ public class MapDbDatabase implements Database {
         final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(newFinalizedCheckpoint);
         result = DatabaseUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
       } else {
-        result = DatabaseUpdateResult.successful(Collections.emptySet(), Collections.emptySet());
+        result = DatabaseUpdateResult.successfulWithNothingPruned();
       }
       db.commit();
       return result;
@@ -294,7 +298,7 @@ public class MapDbDatabase implements Database {
   @Override
   public Store createMemoryStore() {
     return new Store(
-        time.get(),
+        UnsignedLong.valueOf(Instant.now().getEpochSecond()),
         genesisTime.get(),
         justifiedCheckpoint.get(),
         finalizedCheckpoint.get(),

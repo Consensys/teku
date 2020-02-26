@@ -29,6 +29,10 @@ public interface DatabaseUpdateResult {
     return new SuccessfulDatabaseUpdateResult(prunedBlockRoots, prunedCheckpoints);
   }
 
+  static DatabaseUpdateResult successfulWithNothingPruned() {
+    return new SuccessfulDatabaseUpdateResult(Collections.emptySet(), Collections.emptySet());
+  }
+
   /** @return {@code true} if the update was successfully processed */
   boolean isSuccessful();
 

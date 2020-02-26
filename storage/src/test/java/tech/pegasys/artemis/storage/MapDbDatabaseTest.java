@@ -95,7 +95,7 @@ class MapDbDatabaseTest {
   @Test
   public void shouldRecreateOriginalGenesisStore() {
     final Store memoryStore = database.createMemoryStore();
-    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "lock", "readLock");
+    assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
   }
 
   @Test
@@ -140,7 +140,6 @@ class MapDbDatabaseTest {
 
     final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     transaction.setGenesis_time(UnsignedLong.valueOf(3));
-    transaction.setTime(UnsignedLong.valueOf(5));
     transaction.setFinalizedCheckpoint(checkpoint1);
     transaction.setJustifiedCheckpoint(checkpoint2);
     transaction.setBestJustifiedCheckpoint(checkpoint3);
@@ -149,7 +148,6 @@ class MapDbDatabaseTest {
 
     final Store result = database.createMemoryStore();
 
-    assertThat(result.getTime()).isEqualTo(transaction.getTime());
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(transaction.getFinalizedCheckpoint());
     assertThat(result.getJustifiedCheckpoint()).isEqualTo(transaction.getJustifiedCheckpoint());
