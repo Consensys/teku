@@ -60,9 +60,7 @@ public class BeaconChainHeadHandler implements Handler {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
-        @OpenApiResponse(
-            status = RES_NO_CONTENT,
-            description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
