@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.MutableBytes32;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
@@ -50,7 +49,7 @@ public class BasicViewTypes {
             b = (byte) (b & ~(1 << bitIndex));
           }
           dest.set(byteIndex, b);
-          return new RootImpl(dest);
+          return TreeNode.createRoot(dest);
         }
       };
 
@@ -65,7 +64,7 @@ public class BasicViewTypes {
         public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
           byte[] bytes = srcNode.hashTreeRoot().toArray();
           bytes[index] = ((ByteView) newValue).get();
-          return new RootImpl(Bytes32.wrap(bytes));
+          return TreeNode.createRoot(Bytes32.wrap(bytes));
         }
       };
 
@@ -80,7 +79,7 @@ public class BasicViewTypes {
         @Override
         public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
           Bytes32 originalChunk = srcNode.hashTreeRoot();
-          return new RootImpl(
+          return TreeNode.createRoot(
               Bytes32.wrap(
                   Bytes.concatenate(
                       originalChunk.slice(0, index * 8),
@@ -114,7 +113,7 @@ public class BasicViewTypes {
           checkArgument(
               internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
           Bytes32 originalChunk = srcNode.hashTreeRoot();
-          return new RootImpl(
+          return TreeNode.createRoot(
               Bytes32.wrap(
                   Bytes.concatenate(
                       originalChunk.slice(0, internalIndex * 4),
@@ -132,7 +131,7 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
-          return new RootImpl(((Bytes32View) newValue).get());
+          return TreeNode.createRoot(((Bytes32View) newValue).get());
         }
       };
 }

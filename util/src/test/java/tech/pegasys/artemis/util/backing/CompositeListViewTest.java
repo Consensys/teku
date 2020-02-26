@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 
 public class CompositeListViewTest {
@@ -67,7 +66,7 @@ public class CompositeListViewTest {
     @Override
     public TreeNode getBackingNode() {
       if (node == null) {
-        node = new RootImpl(Bytes32.leftPad(Bytes.ofUnsignedInt(v)));
+        node = TreeNode.createRoot(Bytes32.leftPad(Bytes.ofUnsignedInt(v)));
       }
       return node;
     }

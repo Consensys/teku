@@ -17,7 +17,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 
 public abstract class BasicViewType<C extends ViewRead> implements ViewType {
 
@@ -34,7 +33,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
 
   @Override
   public TreeNode createDefaultTree() {
-    return new RootImpl(Bytes32.ZERO);
+    return TreeNode.createRoot(Bytes32.ZERO);
   }
 
   @Override
@@ -46,7 +45,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   public abstract C createFromTreeNode(TreeNode node, int internalIndex);
 
   public TreeNode createTreeNode(C newValue) {
-    return updateTreeNode(new RootImpl(Bytes32.ZERO), 0, newValue);
+    return updateTreeNode(TreeNode.createRoot(Bytes32.ZERO), 0, newValue);
   }
 
   @Override

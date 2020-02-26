@@ -16,7 +16,7 @@ package tech.pegasys.artemis.util.backing.type;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
+import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
 
 public class VectorViewType<C> extends CollectionViewType {
@@ -39,8 +39,8 @@ public class VectorViewType<C> extends CollectionViewType {
   @Override
   public TreeNode createDefaultTree() {
     return isListBacking
-        ? TreeNodeImpl.createZeroTree(maxChunks())
-        : TreeNodeImpl.createDefaultTree(
+        ? TreeUtil.createZeroTree(maxChunks())
+        : TreeUtil.createDefaultTree(
             (int) maxChunks(), getElementType().createDefault().getBackingNode());
   }
 

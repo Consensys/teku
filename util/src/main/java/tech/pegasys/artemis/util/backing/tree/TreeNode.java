@@ -19,11 +19,26 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 
+/**
+ * Basic interface for Backing Tree node Backing Binary Tree concept for SSZ structures is described
+ * here: https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#tree
+ *
+ * <p>Tree node is immutable by design. Any update on a tree creates new nodes which refer both new
+ * data nodes and old unmodified nodes
+ */
 public interface TreeNode {
 
+  static TreeNode createRoot(Bytes32 val) {
+    return new RootImpl(val);
+  }
+
+  /** Leaf node of a tree which contains 'bytes32' value */
   interface Root extends TreeNode {
 
+    /** Returns node value */
     Bytes32 getRoot();
 
     @Override
@@ -31,6 +46,12 @@ public interface TreeNode {
       return getRoot();
     }
 
+    /**
+     * @param target generalized index. Should be equal to 1
+     * @return this node if 'target' == 1
+     * @throws IllegalArgumentException if 'target' != 1
+     */
+    @NotNull
     @Override
     default TreeNode get(long target) {
       checkArgument(target == 1, "Invalid root index: %s", target);
@@ -44,12 +65,27 @@ public interface TreeNode {
     }
   }
 
+  /** Branch node of a tree */
   interface Commit extends TreeNode {
 
+    /**
+     * Returns left child node. It can be either a default or non-default node. Note that both left
+     * and right child may be the same default instance
+     */
+    @NotNull
     TreeNode left();
 
+    /**
+     * Returns right child node. It can be either a default or non-default node. Note that both left
+     * and right child may be the same default instance
+     */
+    @NotNull
     TreeNode right();
 
+    /**
+     * Rebind 'sets' a new left/right child of this node. Rebind doesn't modify this instance but
+     * creates and returns a new one which contains a new assigned and old unmodified child
+     */
     Commit rebind(boolean left, TreeNode newNode);
 
     @Override
@@ -57,6 +93,7 @@ public interface TreeNode {
       return Hash.sha2_256(Bytes.concatenate(left().hashTreeRoot(), right().hashTreeRoot()));
     }
 
+    @NotNull
     @Override
     default TreeNode get(long target) {
       checkArgument(target >= 1, "Invalid index: %s", target);
@@ -89,13 +126,35 @@ public interface TreeNode {
     }
   }
 
+  /** Calculates (if necessary) and returns `hash_tree_root` of this tree node */
   Bytes32 hashTreeRoot();
 
+  /**
+   * Gets this node descendant by it's 'generalized index'
+   *
+   * @param generalizedIndex generalized index of a tree is specified here:
+   *     https://github.com/ethereum/eth2.0-specs/blob/2787fea5feb8d5977ebee7c578c5d835cff6dc21/specs/light_client/merkle_proofs.md#generalized-merkle-tree-index
+   * @return node descendant
+   * @throws IllegalArgumentException if no node exists for the passed generalized index
+   */
+  @NotNull
   TreeNode get(long generalizedIndex);
 
+  /**
+   * The same as {@link #set(long, TreeNode)} except that existing node can be used to calculate a
+   * new node
+   */
   TreeNode update(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
 
-  default TreeNode set(long target, TreeNode node) {
-    return update(target, oldNode -> node);
+  /**
+   * 'Sets' a new node on place of the node at generalized index. This node and all its descendants
+   * are left immutable. The updated subtree node is returned.
+   *
+   * @param generalizedIndex index of tree node to be replaced
+   * @param node new node either leaf of subtree root node
+   * @return the updated subtree root node
+   */
+  default TreeNode set(long generalizedIndex, TreeNode node) {
+    return update(generalizedIndex, oldNode -> node);
   }
 }

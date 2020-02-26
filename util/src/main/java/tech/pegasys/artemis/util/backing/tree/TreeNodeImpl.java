@@ -13,23 +13,15 @@
 
 package tech.pegasys.artemis.util.backing.tree;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.backing.Utils;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Root;
 
-public class TreeNodeImpl {
+class TreeNodeImpl {
 
-  public static final Root ZERO_LEAF = new RootImpl(Bytes32.ZERO);
-
-  public static class RootImpl implements Root {
+  static class RootImpl implements Root {
     private final Bytes32 root;
 
     public RootImpl(Bytes32 root) {
@@ -51,7 +43,7 @@ public class TreeNodeImpl {
     }
   }
 
-  public static class CommitImpl implements Commit {
+  static class CommitImpl implements Commit {
     private final TreeNode left;
     private final TreeNode right;
     private volatile Bytes32 cachedHash = null;
@@ -61,11 +53,13 @@ public class TreeNodeImpl {
       this.right = right;
     }
 
+    @NotNull
     @Override
     public TreeNode left() {
       return left;
     }
 
+    @NotNull
     @Override
     public TreeNode right() {
       return right;
@@ -88,49 +82,5 @@ public class TreeNodeImpl {
     public String toString() {
       return "(" + (left == right ? "default" : left + ", " + right) + ')';
     }
-  }
-
-  public static TreeNode createDefaultTree(int maxLength, TreeNode zeroElement) {
-    List<TreeNode> nodes =
-        Stream.concat(
-                IntStream.range(0, maxLength).mapToObj(i -> zeroElement),
-                IntStream.range(maxLength, (int) Utils.nextPowerOf2(maxLength))
-                    .mapToObj(i -> TreeNodeImpl.ZERO_LEAF))
-            .collect(Collectors.toList());
-    while (nodes.size() > 1) {
-      List<TreeNode> parentNodes = new ArrayList<>(nodes.size() / 2);
-      for (int i = 0; i < nodes.size(); i += 2) {
-        parentNodes.add(new CommitImpl(nodes.get(i), nodes.get(i + 1)));
-      }
-      nodes = parentNodes;
-    }
-    return nodes.get(0);
-  }
-
-  public static TreeNode createZeroTree(long maxLength) {
-    int depth = treeDepth(maxLength);
-    TreeNode ret = TreeNodeImpl.ZERO_LEAF;
-    for (int i = 0; i < depth; i++) {
-      ret = new CommitImpl(ret, ret);
-    }
-    return ret;
-  }
-
-  public static TreeNode createTree(List<TreeNode> leafNodes) {
-    int treeWidth = (int) Utils.nextPowerOf2(leafNodes.size());
-    List<TreeNode> nodes = new ArrayList<>(leafNodes);
-    nodes.addAll(Collections.nCopies(treeWidth - leafNodes.size(), ZERO_LEAF));
-    while (nodes.size() > 1) {
-      List<TreeNode> upperLevelNodes = new ArrayList<>(nodes.size() / 2);
-      for (int i = 0; i < nodes.size() / 2; i++) {
-        upperLevelNodes.add(new CommitImpl(nodes.get(i * 2), nodes.get(i * 2 + 1)));
-      }
-      nodes = upperLevelNodes;
-    }
-    return nodes.get(0);
-  }
-
-  private static int treeDepth(long maxChunks) {
-    return Long.bitCount(Utils.nextPowerOf2(maxChunks) - 1);
   }
 }

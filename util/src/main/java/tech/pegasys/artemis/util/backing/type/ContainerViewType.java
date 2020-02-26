@@ -21,7 +21,7 @@ import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl;
+import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 
 public class ContainerViewType<C extends ContainerViewWrite<ViewRead>>
     implements CompositeViewType {
@@ -46,7 +46,7 @@ public class ContainerViewType<C extends ContainerViewWrite<ViewRead>>
     for (int i = 0; i < getMaxLength(); i++) {
       defaultChildren.add(getChildType(i).createDefault().getBackingNode());
     }
-    return TreeNodeImpl.createTree(defaultChildren);
+    return TreeUtil.createTree(defaultChildren);
   }
 
   @Override
