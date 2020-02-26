@@ -36,7 +36,7 @@ public class ChainStorageServer {
   private final EventBus eventBus;
 
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
-    File databaseStorage = new File(config.getDataPath() + "/db");
+    File databaseStoragePath = new File(config.getDataPath() + "/db");
     this.eventBus = eventBus;
     this.database = MapDbDatabase.createOnDisk(databaseStorage, config.startFromDisk());
     eventBus.register(this);
