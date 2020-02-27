@@ -60,6 +60,7 @@ class KeyStoreTest {
   private static final String UNSUPPORTED_KDF_FUNCTION_JSON = "unsupportedKdfFunction.json";
   private static final String UNSUPPORTED_PKKDF2_PRF_FUNCTION_JSON = "unsupportedPBKDF2Prf.json";
   private static final String UNSUPPORTED_DKLEN_FUNCTION_JSON = "unsupportedDkLen.json";
+  private static final Cipher CIPHER = new Cipher(AES_IV_PARAM);
 
   @SuppressWarnings("UnusedMethod")
   private static Stream<Arguments> encryptWithKdfAndCipherArguments() {
@@ -117,9 +118,8 @@ class KeyStoreTest {
   @MethodSource("encryptWithKdfAndCipherArguments")
   void encryptWithKdfAndCipherFunction(
       final KdfParam kdfParam, final Bytes expectedChecksum, final Bytes encryptedCipherMessage) {
-    final Cipher cipher = new Cipher(AES_IV_PARAM);
     final KeyStoreData keyStoreData =
-        KeyStore.encrypt(BLS_PRIVATE_KEY, PASSWORD, "", kdfParam, cipher);
+        KeyStore.encrypt(BLS_PRIVATE_KEY, PASSWORD, "", kdfParam, CIPHER);
     assertThat(keyStoreData.getCrypto().getChecksum().getMessage()).isEqualTo(expectedChecksum);
     assertThat(keyStoreData.getCrypto().getCipher().getMessage()).isEqualTo(encryptedCipherMessage);
     assertThat(keyStoreData.getVersion()).isEqualTo(KeyStoreData.KEYSTORE_VERSION);

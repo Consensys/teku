@@ -13,11 +13,11 @@
 
 package tech.pegasys.artemis.bls.keystore;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 import static javax.crypto.Cipher.ENCRYPT_MODE;
 import static org.apache.tuweni.bytes.Bytes.concatenate;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
 
 import java.security.GeneralSecurityException;
 import java.util.Objects;
@@ -68,6 +68,9 @@ public class KeyStore {
     checkNotNull(kdfParam, "KDFParam cannot be null");
     checkNotNull(cipher, "Cipher cannot be null");
 
+    kdfParam.validate();
+    cipher.validate();
+
     final Crypto crypto = encryptUsingCipherFunction(blsPrivateKey, password, kdfParam, cipher);
     final Bytes pubKey =
         new PublicKey(SecretKey.fromBytes(Bytes48.leftPad(blsPrivateKey))).toBytesCompressed();
@@ -91,7 +94,7 @@ public class KeyStore {
    * Validates password without decrypting the key as defined in specifications
    *
    * @param password The password to validate
-   * @param keyStoreData The Key Store against which passsword to validate
+   * @param keyStoreData The Key Store against which password to validate
    * @return true if password is valid, false otherwise.
    */
   public static boolean validatePassword(final String password, final KeyStoreData keyStoreData) {

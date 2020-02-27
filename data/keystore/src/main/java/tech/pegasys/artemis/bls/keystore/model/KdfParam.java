@@ -13,12 +13,12 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 
 public abstract class KdfParam {
   private final Integer dklen;
@@ -38,10 +38,12 @@ public abstract class KdfParam {
 
   public abstract Bytes generateDecryptionKey(final String password);
 
-  protected void validateParams() {
-    // because the EIP-2335 spec requires dklen >= 32
-    checkArgument(getDkLen() >= 32, "Generated key length parameter dklen must be >= 32.");
+  public void validate() {
     checkNotNull(getSalt(), "salt cannot be null");
+    // because the EIP-2335 spec requires dklen >= 32
+    if (dklen < 32) {
+      throw new KeyStoreValidationException("Generated key length parameter dklen must be >= 32.");
+    }
   }
 
   @JsonProperty(value = "salt")

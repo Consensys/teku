@@ -13,9 +13,8 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -51,26 +50,28 @@ public class SCryptParam extends KdfParam {
     this.n = n;
     this.p = p;
     this.r = r;
-    validateParams();
   }
 
   @Override
-  protected void validateParams() throws KeyStoreValidationException {
-    super.validateParams();
-    checkArgument(n > 1 && isPowerOf2(n), "Cost parameter n must be > 1 and a power of 2");
-    // Only value of r that cost (as an int) could be exceeded for is 1
-    if (r == 1) {
-      checkArgument(n > 1 && n < 65536, "Cost parameter n must be > 1 and < 65536.");
+  public void validate() throws KeyStoreValidationException {
+    super.validate();
+    if (n <= 1 || !isPowerOf2(n)) {
+      throw new KeyStoreValidationException("Cost parameter n must be > 1 and a power of 2");
     }
-
-    checkArgument(r >= 1, "Block size r must be >= 1.");
-
+    // Only value of r that cost (as an int) could be exceeded for is 1
+    if (r == 1 && n >= 65536) {
+      throw new KeyStoreValidationException("Cost parameter n must be > 1 and < 65536");
+    }
+    if (r < 1) {
+      throw new KeyStoreValidationException("Block size r must be >= 1");
+    }
     int maxParallel = Integer.MAX_VALUE / (128 * r * 8);
-    checkArgument(
-        p >= 1 && p <= maxParallel,
-        String.format(
-            "Parallelization parameter p must be >= 1 and <= %d (based on block size r of %d",
-            maxParallel, r));
+    if (p < 1 || p > maxParallel) {
+      throw new KeyStoreValidationException(
+          String.format(
+              "Parallelization parameter p must be >= 1 and <= %d (based on block size r of %d)",
+              maxParallel, r));
+    }
   }
 
   @JsonProperty(value = "n")
@@ -95,7 +96,7 @@ public class SCryptParam extends KdfParam {
 
   @Override
   public Bytes generateDecryptionKey(final String password) {
-    checkNotNull(password, "Password is required");
+    checkNotNull(password, "Password cannot be null");
     return Bytes.wrap(
         SCrypt.generate(
             password.getBytes(UTF_8),

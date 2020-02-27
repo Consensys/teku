@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.bls.keystore;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -35,20 +37,15 @@ public class KeyStoreLoader {
 
   public static KeyStoreData loadFromFile(final Path keystoreFile)
       throws KeyStoreValidationException {
-    KeyStorePreConditions.checkNotNull(keystoreFile, "KeyStore path cannot be null");
+    checkNotNull(keystoreFile, "KeyStore path cannot be null");
 
     try {
       final KeyStoreData keyStoreData =
           OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
-
-      if (keyStoreData.getVersion() != KeyStoreData.KEYSTORE_VERSION) {
-        throw new KeyStoreValidationException(
-            String.format(
-                "Error in parsing keystore: The KeyStore version %d is not supported",
-                keyStoreData.getVersion()));
-      }
-
+      keyStoreData.validate();
       return keyStoreData;
+    } catch (final KeyStoreValidationException e) {
+      throw new KeyStoreValidationException("Error in parsing keystore: " + e.getMessage(), e);
     } catch (final JsonParseException e) {
       throw new KeyStoreValidationException("Error in parsing keystore: Invalid Json format", e);
     } catch (final JsonMappingException e) {
@@ -81,8 +78,8 @@ public class KeyStoreLoader {
   }
 
   public static void saveToFile(final Path keystoreFile, final KeyStoreData keyStoreData) {
-    KeyStorePreConditions.checkNotNull(keystoreFile, "KeyStore path cannot be null");
-    KeyStorePreConditions.checkNotNull(keyStoreData, "KeyStore data cannot be null");
+    checkNotNull(keystoreFile, "KeyStore path cannot be null");
+    checkNotNull(keyStoreData, "KeyStore data cannot be null");
 
     try {
       Files.writeString(keystoreFile, toJson(keyStoreData), StandardCharsets.UTF_8);
@@ -93,7 +90,7 @@ public class KeyStoreLoader {
   }
 
   public static String toJson(final KeyStoreData keyStoreData) {
-    KeyStorePreConditions.checkNotNull(keyStoreData, "KeyStore data cannot be null");
+    checkNotNull(keyStoreData, "KeyStore data cannot be null");
 
     try {
       return KeyStoreLoader.OBJECT_MAPPER

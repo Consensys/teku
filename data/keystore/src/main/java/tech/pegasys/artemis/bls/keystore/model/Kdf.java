@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.base.MoreObjects;
+import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 
 public class Kdf {
   private final KdfFunction kdfFunction;
@@ -61,6 +62,10 @@ public class Kdf {
   @JsonProperty(value = "message")
   public String getMessage() {
     return message;
+  }
+
+  public void validate() throws KeyStoreValidationException {
+    param.validate();
   }
 
   @Override

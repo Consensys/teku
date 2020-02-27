@@ -17,6 +17,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 
 public class Cipher {
   private final CipherFunction cipherFunction;
@@ -50,6 +51,14 @@ public class Cipher {
   @JsonProperty(value = "message")
   public Bytes getMessage() {
     return message;
+  }
+
+  public void validate() throws KeyStoreValidationException {
+    // In case of CTR/SIC, the size of IV is between 8 bytes and 16 bytes
+    if (cipherParam.getIv().size() < 8 || cipherParam.getIv().size() > 16) {
+      throw new KeyStoreValidationException(
+          "Initialization Vector parameter iv size must be >= 8 and <= 16");
+    }
   }
 
   @Override

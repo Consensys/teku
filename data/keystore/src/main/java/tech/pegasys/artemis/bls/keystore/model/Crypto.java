@@ -47,6 +47,11 @@ public class Crypto {
     return cipher;
   }
 
+  public void validate() {
+    kdf.validate();
+    cipher.validate();
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)

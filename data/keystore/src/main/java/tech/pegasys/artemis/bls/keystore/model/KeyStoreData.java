@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.util.UUID;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 
 /**
  * BLS Key Store with Jackson Bindings as per json schema.
@@ -68,6 +69,18 @@ public class KeyStoreData {
 
   public Integer getVersion() {
     return version;
+  }
+
+  public void validate() throws KeyStoreValidationException {
+    checkKeyStoreVersion();
+    crypto.validate();
+  }
+
+  private void checkKeyStoreVersion() {
+    if (version != KEYSTORE_VERSION) {
+      throw new KeyStoreValidationException(
+          String.format("The KeyStore version %d is not supported", version));
+    }
   }
 
   @Override

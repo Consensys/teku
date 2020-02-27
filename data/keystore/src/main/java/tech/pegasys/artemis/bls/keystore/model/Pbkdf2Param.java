@@ -13,8 +13,7 @@
 
 package tech.pegasys.artemis.bls.keystore.model;
 
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkArgument;
-import static tech.pegasys.artemis.bls.keystore.KeyStorePreConditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,13 +47,14 @@ public class Pbkdf2Param extends KdfParam {
     super(dklen, salt);
     this.c = c;
     this.prf = prf;
-    validateParams();
   }
 
   @Override
-  protected void validateParams() throws KeyStoreValidationException {
-    super.validateParams();
-    checkArgument(c >= 1, "Iterative Count parameter c must be >= 1");
+  public void validate() throws KeyStoreValidationException {
+    super.validate();
+    if (c < 1) {
+      throw new KeyStoreValidationException("Iteration Count parameter c must be >= 1");
+    }
   }
 
   @JsonProperty(value = "c")
@@ -74,10 +74,10 @@ public class Pbkdf2Param extends KdfParam {
 
   @Override
   public Bytes generateDecryptionKey(final String password) {
-    checkNotNull(password, "Password is required");
+    checkNotNull(password, "Password cannot be null");
     final PKCS5S2ParametersGenerator gen =
         new PKCS5S2ParametersGenerator(DigestFactory.createSHA256());
-    gen.init(password.getBytes(StandardCharsets.UTF_8), getSalt().toArrayUnsafe(), getC());
+    gen.init(password.getBytes(StandardCharsets.UTF_8), getSalt().toArrayUnsafe(), c);
     final int keySizeInBits = getDkLen() * 8;
     final byte[] key = ((KeyParameter) gen.generateDerivedParameters(keySizeInBits)).getKey();
     return Bytes.wrap(key);
