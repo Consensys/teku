@@ -1,8 +1,8 @@
 # teku
 
- [![Build Status](https://circleci.com/gh/PegaSysEng/artemis.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/artemis)
+ [![Build Status](https://circleci.com/gh/PegaSysEng/teku.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/teku)
  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/artemis/blob/master/LICENSE)
- [![Gitter chat](https://badges.gitter.im/PegaSysEng/artemis.png)](https://gitter.im/PegaSysEng/artemis)
+ [![Gitter chat](https://badges.gitter.im/PegaSysEng/teku.png)](https://gitter.im/PegaSysEng/teku)
 
 Implementation of the Ethereum 2.0 Beacon Chain.
 
