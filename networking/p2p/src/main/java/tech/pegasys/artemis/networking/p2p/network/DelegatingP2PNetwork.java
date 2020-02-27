@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
+import java.util.Optional;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
@@ -50,6 +51,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public NodeId getNodeId() {
     return network.getNodeId();
+  }
+
+  @Override
+  public Optional<String> getEnr() {
+    return network.getEnr();
   }
 
   @Override

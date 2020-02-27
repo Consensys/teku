@@ -211,6 +211,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public Optional<String> getEnr() {
+    return Optional.empty();
+  }
+
+  @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
     return gossipNetwork.subscribe(topic, topicHandler);
   }

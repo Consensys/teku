@@ -26,4 +26,6 @@ public interface DiscoveryService {
   Stream<DiscoveryPeer> streamKnownPeers();
 
   CompletableFuture<Void> searchForPeers();
+
+  String getEnr();
 }

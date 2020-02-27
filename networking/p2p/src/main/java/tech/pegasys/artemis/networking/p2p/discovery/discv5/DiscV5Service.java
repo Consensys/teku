@@ -80,6 +80,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
             () -> SafeFuture.failedFuture(new IllegalStateException("No active nodes to search")));
   }
 
+  @Override
+  public String getEnr() {
+    return discoverySystem.getLocalNodeRecord().asEnr();
+  }
+
   private Optional<NodeRecord> randomActiveNode() {
     return activeNodes().sorted(RANDOMLY).findAny();
   }

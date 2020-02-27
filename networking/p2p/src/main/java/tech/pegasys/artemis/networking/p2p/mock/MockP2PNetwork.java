@@ -78,6 +78,11 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
     return nodeId;
   }
 
+  @Override
+  public Optional<String> getEnr() {
+    return Optional.empty();
+  }
+
   /** Stops the P2P network layer. */
   @Override
   public void stop() {}

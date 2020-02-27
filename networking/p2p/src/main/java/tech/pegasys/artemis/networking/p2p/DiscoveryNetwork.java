@@ -86,6 +86,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
+  public Optional<String> getEnr() {
+    return Optional.of(discoveryService.getEnr());
+  }
+
+  @Override
   public long subscribeConnect(final PeerConnectedSubscriber<P> subscriber) {
     return p2pNetwork.subscribeConnect(subscriber);
   }
