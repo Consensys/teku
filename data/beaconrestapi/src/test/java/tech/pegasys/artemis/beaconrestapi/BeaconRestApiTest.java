@@ -33,6 +33,7 @@ import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class BeaconRestApiTest {
   private final ChainStorageClient storageClient =
@@ -41,12 +42,15 @@ class BeaconRestApiTest {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
-  private static final Integer THE_PORT = 12345;
+  private static final Integer THE_PORT = 5051;
 
   @BeforeEach
   public void setup() {
+    ArtemisConfiguration config =
+        ArtemisConfiguration.fromString(
+            "beaconrestapi.portNumber=5051\nbeaconrestapi.enableSwagger=false");
     when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, combinedChainDataClient, THE_PORT, app);
+    new BeaconRestApi(storageClient, null, null, combinedChainDataClient, config, app);
   }
 
   @Test

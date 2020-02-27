@@ -326,4 +326,8 @@ public class ArtemisConfiguration {
   public int getBeaconRestAPIPortNumber() {
     return config.getInteger("beaconrestapi.portNumber");
   }
+
+  public boolean getBeaconRestAPIEnableSwagger() {
+    return config.getBoolean("beaconrestapi.enableSwagger");
+  }
 }

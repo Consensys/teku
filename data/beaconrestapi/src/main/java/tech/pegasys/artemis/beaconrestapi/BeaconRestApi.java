@@ -42,12 +42,13 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class BeaconRestApi {
 
-  private List<BeaconRestApiHandler> handlers = new ArrayList<>();
-  private Javalin app;
-  private JsonProvider jsonProvider = new JsonProvider();
+  private final List<BeaconRestApiHandler> handlers = new ArrayList<>();
+  private final Javalin app;
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private void initialise(
       ChainStorageClient chainStorageClient,
@@ -64,15 +65,16 @@ public class BeaconRestApi {
   }
 
   public BeaconRestApi(
-      ChainStorageClient chainStorageClient,
-      P2PNetwork<?> p2pNetwork,
-      HistoricalChainData historicalChainData,
-      CombinedChainDataClient combinedChainDataClient,
-      final int requestedPortNumber) {
+      final ChainStorageClient chainStorageClient,
+      final P2PNetwork<?> p2pNetwork,
+      final HistoricalChainData historicalChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final ArtemisConfiguration configuration) {
     this.app =
         Javalin.create(
             config -> {
-              config.registerPlugin(new OpenApiPlugin(getOpenApiOptions(jsonProvider)));
+              config.registerPlugin(
+                  new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
             });
     initialise(
@@ -80,23 +82,23 @@ public class BeaconRestApi {
         p2pNetwork,
         historicalChainData,
         combinedChainDataClient,
-        requestedPortNumber);
+        configuration.getBeaconRestAPIPortNumber());
   }
 
   BeaconRestApi(
-      ChainStorageClient chainStorageClient,
-      P2PNetwork<?> p2pNetwork,
-      HistoricalChainData historicalChainData,
-      CombinedChainDataClient combinedChainDataClient,
-      final int requestedPortNumber,
-      Javalin app) {
+      final ChainStorageClient chainStorageClient,
+      final P2PNetwork<?> p2pNetwork,
+      final HistoricalChainData historicalChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final ArtemisConfiguration configuration,
+      final Javalin app) {
     this.app = app;
     initialise(
         chainStorageClient,
         p2pNetwork,
         historicalChainData,
         combinedChainDataClient,
-        requestedPortNumber);
+        configuration.getBeaconRestAPIPortNumber());
   }
 
   public void start() {
@@ -117,7 +119,8 @@ public class BeaconRestApi {
     app.start();
   }
 
-  private static OpenApiOptions getOpenApiOptions(JsonProvider jsonProvider) {
+  private static OpenApiOptions getOpenApiOptions(
+      JsonProvider jsonProvider, ArtemisConfiguration config) {
     JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
@@ -132,14 +135,10 @@ public class BeaconRestApi {
                 new License()
                     .name("Apache 2.0")
                     .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
-    OpenApiOptions options =
-        new OpenApiOptions(applicationInfo)
-            //            .jacksonMapper(factory.getObjectMapper())
-            .modelConverterFactory(factory)
-            .path("/swagger-docs")
-            .swagger(new SwaggerOptions("/swagger-ui"));
-    // TODO: allow swagger-ui to be turned off - ideally still leave swagger-docs, just dont add the
-    // swagger-ui endpoint
+    OpenApiOptions options = new OpenApiOptions(applicationInfo).modelConverterFactory(factory);
+    if (config.getBeaconRestAPIEnableSwagger()) {
+      options.path("/swagger-docs").swagger(new SwaggerOptions("/swagger-ui"));
+    }
     return options;
   }
 
