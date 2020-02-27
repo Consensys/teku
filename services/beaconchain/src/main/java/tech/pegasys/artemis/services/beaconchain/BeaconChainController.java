@@ -251,6 +251,7 @@ public class BeaconChainController {
             config.getBeaconRestAPIPortNumber());
   }
 
+  @SuppressWarnings("unchecked")
   public void initSyncManager() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
