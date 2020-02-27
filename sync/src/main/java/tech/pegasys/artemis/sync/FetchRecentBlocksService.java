@@ -25,7 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.sync.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.artemis.util.async.AsyncRunner;
@@ -42,7 +43,7 @@ class FetchRecentBlocksService extends Service {
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
 
   private final int maxConcurrentRequests;
-  private final Eth2Network eth2Network;
+  private final P2PNetwork<Eth2Peer> eth2Network;
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool;
 
   private final Map<Bytes32, FetchBlockTask> allTasks = new ConcurrentHashMap<>();
@@ -55,7 +56,7 @@ class FetchRecentBlocksService extends Service {
 
   FetchRecentBlocksService(
       final AsyncRunner asyncRunner,
-      final Eth2Network eth2Network,
+      final P2PNetwork<Eth2Peer> eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final FetchBlockTaskFactory fetchBlockTaskFactory,
       final int maxConcurrentRequests) {
@@ -67,7 +68,7 @@ class FetchRecentBlocksService extends Service {
   }
 
   public static FetchRecentBlocksService create(
-      final Eth2Network eth2Network, final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
+      final P2PNetwork<Eth2Peer> eth2Network, final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
     return new FetchRecentBlocksService(
         DelayedExecutorAsyncRunner.create(),
         eth2Network,
@@ -228,7 +229,7 @@ class FetchRecentBlocksService extends Service {
   }
 
   interface FetchBlockTaskFactory {
-    FetchBlockTask create(final Eth2Network eth2Network, final Bytes32 blockRoot);
+    FetchBlockTask create(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot);
   }
 
   public interface BlockSubscriber {

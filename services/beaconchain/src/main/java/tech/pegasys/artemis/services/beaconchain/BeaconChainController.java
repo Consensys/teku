@@ -39,8 +39,8 @@ import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
@@ -259,7 +259,7 @@ public class BeaconChainController {
       syncService =
           new SyncService(
               eventBus,
-              (Eth2Network) p2pNetwork,
+              (P2PNetwork<Eth2Peer>) p2pNetwork,
               chainStorageClient,
               new BlockImporter(chainStorageClient, eventBus));
     }

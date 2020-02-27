@@ -61,6 +61,7 @@ public class ConnectionManager extends Service {
       return SafeFuture.COMPLETE;
     }
     return SafeFuture.of(discoveryService.searchForPeers())
+        .orTimeout(10, TimeUnit.SECONDS)
         .exceptionally(
             error -> {
               LOG.debug("Discovery failed", error);
@@ -79,6 +80,10 @@ public class ConnectionManager extends Service {
       LOG.trace("Not connecting to {} as we are already connected", discoveryPeer::getNodeId);
       return;
     }
+    LOG.trace(
+        "Attempting connection to {} at {}",
+        discoveryPeer::getNodeId,
+        discoveryPeer::getNodeAddress);
     network
         .connect(discoveryPeer)
         .finish(
