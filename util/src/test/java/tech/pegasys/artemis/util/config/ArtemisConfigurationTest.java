@@ -74,4 +74,16 @@ final class ArtemisConfigurationTest {
     ArtemisConfiguration config = ArtemisConfiguration.fromString("deposit.numValidators=31");
     assertThrows(IllegalArgumentException.class, () -> config.validateConfig());
   }
+
+  @Test
+  void dataPathCanBeSet() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.dataPath=\".\"");
+    assertThat(config.getDataPath()).isEqualTo(".");
+  }
+
+  @Test
+  void logPathCanBeSet() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.logPath=\".\"");
+    assertThat(config.getLogPath()).isEqualTo(".");
+  }
 }
