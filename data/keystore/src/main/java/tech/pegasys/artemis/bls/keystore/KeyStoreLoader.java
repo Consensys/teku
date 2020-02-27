@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -44,15 +45,16 @@ public class KeyStoreLoader {
           OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
       keyStoreData.validate();
       return keyStoreData;
-    } catch (final KeyStoreValidationException e) {
-      throw new KeyStoreValidationException("Error in parsing keystore: " + e.getMessage(), e);
     } catch (final JsonParseException e) {
-      throw new KeyStoreValidationException("Error in parsing keystore: Invalid Json format", e);
+      throw new KeyStoreValidationException("Invalid KeyStore: " + e.getMessage(), e);
     } catch (final JsonMappingException e) {
       throw convertToKeyStoreValidationException(e);
+    } catch (final FileNotFoundException e) {
+      throw new KeyStoreValidationException("KeyStore file not found", e);
     } catch (final IOException e) {
-      LOG.error("Error in parsing keystore: " + e.getMessage());
-      throw new KeyStoreValidationException("Error in parsing keystore: " + e.getMessage(), e);
+      LOG.error("Unexpected IO error while reading KeyStore: " + e.getMessage());
+      throw new KeyStoreValidationException(
+          "Unexpected IO error while reading KeyStore: " + e.getMessage(), e);
     }
   }
 
@@ -60,38 +62,33 @@ public class KeyStoreLoader {
       final JsonMappingException e) {
     final String cause;
     if (e.getCause() instanceof KeyStoreValidationException) {
-      cause = e.getCause().getMessage();
-    } else if (e instanceof InvalidTypeIdException) {
+      // this is wrapped because it is raised from custom deserializer in KeyStoreBytesModule to validate enums
+      throw (KeyStoreValidationException) e.getCause();
+    }
+
+    if (e instanceof InvalidTypeIdException) {
       cause = getKdfFunctionErrorMessage((InvalidTypeIdException) e);
     } else {
-      cause = "Missing required json elements";
+      cause = "Invalid KeyStore: " + e.getMessage();
     }
-    return new KeyStoreValidationException(
-        String.format("Error in parsing keystore: %s", cause), e);
+    return new KeyStoreValidationException(cause, e);
   }
 
   private static String getKdfFunctionErrorMessage(final InvalidTypeIdException e) {
     if (e.getBaseType().getRawClass() == KdfParam.class) {
       return "Kdf function [" + e.getTypeId() + "] is not supported.";
     }
-    return "Missing required json elements";
+    return "Invalid KeyStore: " + e.getMessage();
   }
 
-  public static void saveToFile(final Path keystoreFile, final KeyStoreData keyStoreData) {
+  public static void saveToFile(final Path keystoreFile, final KeyStoreData keyStoreData) throws IOException {
     checkNotNull(keystoreFile, "KeyStore path cannot be null");
     checkNotNull(keyStoreData, "KeyStore data cannot be null");
 
-    try {
-      Files.writeString(keystoreFile, toJson(keyStoreData), StandardCharsets.UTF_8);
-    } catch (IOException e) {
-      throw new KeyStoreValidationException(
-          "Error in writing KeyStore to file: " + e.getMessage(), e);
-    }
+    Files.writeString(keystoreFile, toJson(keyStoreData), StandardCharsets.UTF_8);
   }
 
-  public static String toJson(final KeyStoreData keyStoreData) {
-    checkNotNull(keyStoreData, "KeyStore data cannot be null");
-
+  private static String toJson(final KeyStoreData keyStoreData) {
     try {
       return KeyStoreLoader.OBJECT_MAPPER
           .writerWithDefaultPrettyPrinter()
