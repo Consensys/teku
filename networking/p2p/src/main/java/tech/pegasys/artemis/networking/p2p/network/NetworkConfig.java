@@ -15,11 +15,10 @@ package tech.pegasys.artemis.networking.p2p.network;
 
 import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
-import java.util.Optional;
 
 public class NetworkConfig {
 
-  private final Optional<PrivKey> privateKey;
+  private final PrivKey privateKey;
   private final String networkInterface;
   private final int listenPort;
   private final int advertisedPort;
@@ -29,7 +28,7 @@ public class NetworkConfig {
   private final boolean logMuxFrames;
 
   public NetworkConfig(
-      final Optional<PrivKey> privateKey,
+      final PrivKey privateKey,
       final String networkInterface,
       final int listenPort,
       final int advertisedPort,
@@ -47,7 +46,7 @@ public class NetworkConfig {
     this.logMuxFrames = logMuxFrames;
   }
 
-  public Optional<PrivKey> getPrivateKey() {
+  public PrivKey getPrivateKey() {
     return privateKey;
   }
 

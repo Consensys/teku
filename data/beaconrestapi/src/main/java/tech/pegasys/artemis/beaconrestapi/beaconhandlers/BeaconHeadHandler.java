@@ -14,6 +14,11 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -53,16 +58,14 @@ public class BeaconHeadHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the head of the beacon chain from the node's perspective.",
-      tags = {"Beacon"},
+      tags = {TAG_BEACON},
       description = "Requests the context of the best slot and head block from the beacon node.",
       responses = {
         @OpenApiResponse(
-            status = "200",
+            status = RES_OK,
             content = @OpenApiContent(from = BeaconHeadResponse.class)),
-        @OpenApiResponse(
-            status = "204",
-            description =
-                "No Content may be returned if the genesis block has not been set, meaning that there is no head to query.")
+        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {

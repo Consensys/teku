@@ -17,11 +17,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
+import io.libp2p.core.crypto.KEY_TYPE;
+import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -123,7 +124,14 @@ public class Eth2NetworkFactory {
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
       return new NetworkConfig(
-          Optional.empty(), "127.0.0.1", port, port, peerAddresses, false, false, false);
+          KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
+          "127.0.0.1",
+          port,
+          port,
+          peerAddresses,
+          false,
+          false,
+          false);
     }
 
     private void setDefaults() {

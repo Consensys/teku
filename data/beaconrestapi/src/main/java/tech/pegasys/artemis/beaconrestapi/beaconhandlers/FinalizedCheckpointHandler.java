@@ -14,6 +14,11 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -42,11 +47,12 @@ public class FinalizedCheckpointHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Finalized checkpoint.",
-      tags = {"Node"},
+      tags = {TAG_NODE},
       description = "Requests that the beacon node give finalized checkpoint info.",
       responses = {
-        @OpenApiResponse(status = "200", content = @OpenApiContent(from = Checkpoint.class)),
-        @OpenApiResponse(status = "204")
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Checkpoint.class)),
+        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {

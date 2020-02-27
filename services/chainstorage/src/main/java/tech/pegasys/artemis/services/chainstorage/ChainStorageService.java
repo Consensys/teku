@@ -24,7 +24,8 @@ public class ChainStorageService implements ServiceInterface {
 
   @Override
   public void init(ServiceConfig config) {
-    new ChainStorageServer(config.getEventBus(), config.getConfig());
+    ChainStorageServer server = new ChainStorageServer(config.getEventBus(), config.getConfig());
+    server.start();
   }
 
   @Override
