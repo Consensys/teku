@@ -30,7 +30,7 @@ public interface CompositeViewRead<C> extends ViewRead {
   /**
    * Returns the child at index
    *
-   * @throws IllegalArgumentException if index >= size()
+   * @throws IndexOutOfBoundsException if index >= size()
    */
   C get(int index);
 

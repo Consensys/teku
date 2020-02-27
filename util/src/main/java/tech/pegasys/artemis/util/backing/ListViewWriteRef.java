@@ -15,12 +15,28 @@ package tech.pegasys.artemis.util.backing;
 
 import java.util.function.Consumer;
 
+/**
+ * Represents a mutable List view which is able to return a mutable child 'by reference' Any
+ * modifications made to such child are reflected in this list and its backing tree
+ *
+ * @param <R> Class of immutable child views
+ * @param <W> Class of the corresponding mutable child views
+ */
 public interface ListViewWriteRef<R extends ViewRead, W extends R>
     extends CompositeViewWriteRef<R, W>, ListViewWrite<R> {
 
+  /**
+   * Returns a mutable child at index 'by reference' Any modifications made to such child are
+   * reflected in this structure and its backing tree
+   *
+   * @throws IndexOutOfBoundsException if index >= size()
+   */
   @Override
   W getByRef(int index);
 
+  /**
+   * Appends a new empty element to the list and returns its writeable reference for modification
+   */
   default W append() {
     @SuppressWarnings("unchecked")
     R newElement = (R) getType().getElementType().createDefault();
@@ -28,6 +44,7 @@ public interface ListViewWriteRef<R extends ViewRead, W extends R>
     return getByRef(size() - 1);
   }
 
+  /** Just a functional style helper for {@link #append()} */
   default void append(Consumer<W> mutator) {
     mutator.accept(append());
   }

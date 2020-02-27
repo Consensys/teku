@@ -24,7 +24,7 @@ public interface CompositeViewWriteRef<R extends ViewRead, W extends R /* & View
    * Returns a mutable child at index 'by reference' Any modifications made to such child are
    * reflected in this structure and its backing tree
    *
-   * @throws IllegalArgumentException if index >= size()
+   * @throws IndexOutOfBoundsException if index >= size()
    */
   W getByRef(int index);
 }
