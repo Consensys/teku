@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +50,6 @@ import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 public class MapDbDatabase implements Database {
   private static final Logger LOG = LogManager.getLogger();
   private final DB db;
-  private final Var<UnsignedLong> time;
   private final Var<UnsignedLong> genesisTime;
   private final Atomic.Var<Checkpoint> justifiedCheckpoint;
   private final Atomic.Var<Checkpoint> bestJustifiedCheckpoint;
@@ -74,7 +75,7 @@ public class MapDbDatabase implements Database {
         Files.deleteIfExists(databaseFile.toPath());
       }
     } catch (IOException e) {
-      STDOUT.log(Level.WARN, "Failed to clear old database");
+      STDOUT.log(Level.ERROR, "Failed to clear old database");
     }
     return new MapDbDatabase(DBMaker.fileDB(databaseFile));
   }
@@ -85,7 +86,6 @@ public class MapDbDatabase implements Database {
 
   private MapDbDatabase(final Maker dbMaker) {
     db = dbMaker.transactionEnable().make();
-    time = db.atomicVar("time", new UnsignedLongSerializer()).createOrOpen();
     genesisTime = db.atomicVar("genesisTime", new UnsignedLongSerializer()).createOrOpen();
     justifiedCheckpoint =
         db.atomicVar("justifiedCheckpoint", new MapDBSerializer<>(Checkpoint.class)).createOrOpen();
@@ -145,7 +145,6 @@ public class MapDbDatabase implements Database {
   @Override
   public synchronized void storeGenesis(final Store store) {
     try {
-      time.set(store.getTime());
       genesisTime.set(store.getGenesisTime());
       justifiedCheckpoint.set(store.getJustifiedCheckpoint());
       finalizedCheckpoint.set(store.getFinalizedCheckpoint());
@@ -176,12 +175,18 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public synchronized void insert(final StoreDiskUpdateEvent event) {
+  public DatabaseUpdateResult update(final StoreDiskUpdateEvent event) {
+    if (event.isEmpty()) {
+      return DatabaseUpdateResult.successfulWithNothingPruned();
+    }
+    return doUpdate(event);
+  }
+
+  private synchronized DatabaseUpdateResult doUpdate(final StoreDiskUpdateEvent event) {
     try {
       final Checkpoint previousFinalizedCheckpoint = finalizedCheckpoint.get();
       final Checkpoint newFinalizedCheckpoint =
           event.getFinalizedCheckpoint().orElse(previousFinalizedCheckpoint);
-      event.getTime().ifPresent(time::set);
       event.getGenesisTime().ifPresent(genesisTime::set);
       event.getFinalizedCheckpoint().ifPresent(finalizedCheckpoint::set);
       event.getJustifiedCheckpoint().ifPresent(justifiedCheckpoint::set);
@@ -192,16 +197,21 @@ public class MapDbDatabase implements Database {
       event.getBlocks().forEach(this::addHotBlock);
       hotStatesByRoot.putAll(event.getBlockStates());
 
+      final DatabaseUpdateResult result;
       if (previousFinalizedCheckpoint == null
           || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
         recordFinalizedBlocks(newFinalizedCheckpoint);
-        pruneCheckpointStates(newFinalizedCheckpoint);
-        pruneHotBlocks(newFinalizedCheckpoint);
+        final Set<Checkpoint> prunedCheckpoints = pruneCheckpointStates(newFinalizedCheckpoint);
+        final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(newFinalizedCheckpoint);
+        result = DatabaseUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
+      } else {
+        result = DatabaseUpdateResult.successfulWithNothingPruned();
       }
       db.commit();
+      return result;
     } catch (final RuntimeException | Error e) {
       db.rollback();
-      throw e;
+      return DatabaseUpdateResult.failed(new RuntimeException(e));
     }
   }
 
@@ -248,19 +258,32 @@ public class MapDbDatabase implements Database {
     }
   }
 
-  private void pruneCheckpointStates(final Checkpoint newFinalizedCheckpoint) {
-    checkpointStates
-        .keySet()
-        .removeIf(
-            checkpoint -> checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0);
+  private Set<Checkpoint> pruneCheckpointStates(final Checkpoint newFinalizedCheckpoint) {
+    final Set<Checkpoint> prunedCheckpoints =
+        checkpointStates.keySet().stream()
+            .filter(
+                checkpoint ->
+                    checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0)
+            .collect(Collectors.toSet());
+    prunedCheckpoints.forEach(checkpointStates::remove);
+    return prunedCheckpoints;
   }
 
-  private void pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
+  private Set<Bytes32> pruneHotBlocks(final Checkpoint newFinalizedCheckpoint) {
     SignedBeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newFinalizedCheckpoint.getRoot());
+    if (newlyFinalizedBlock == null) {
+      LOG.error(
+          "Missing finalized block {} for epoch {}",
+          newFinalizedCheckpoint.getRoot(),
+          newFinalizedCheckpoint.getEpoch());
+      return Collections.emptySet();
+    }
     final UnsignedLong finalizedSlot = newlyFinalizedBlock.getSlot();
     final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> toRemove =
         hotRootsBySlotCache.headMap(finalizedSlot);
     LOG.trace("Pruning slots {} from non-finalized pool", toRemove::keySet);
+    final Set<Bytes32> prunedRoots =
+        toRemove.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
     toRemove
         .values()
         .forEach(
@@ -269,6 +292,8 @@ public class MapDbDatabase implements Database {
               hotStatesByRoot.keySet().removeAll(roots);
             });
     hotRootsBySlotCache.keySet().removeAll(toRemove.keySet());
+
+    return prunedRoots;
   }
 
   private void addToHotRootsBySlotCache(final Bytes32 root, final SignedBeaconBlock block) {
@@ -281,7 +306,7 @@ public class MapDbDatabase implements Database {
   @Override
   public Store createMemoryStore() {
     return new Store(
-        time.get(),
+        UnsignedLong.valueOf(Instant.now().getEpochSecond()),
         genesisTime.get(),
         justifiedCheckpoint.get(),
         finalizedCheckpoint.get(),
@@ -313,7 +338,10 @@ public class MapDbDatabase implements Database {
 
   @Override
   public Optional<BeaconState> getState(final Bytes32 root) {
-    return Optional.ofNullable(hotStatesByRoot.get(root));
+    final BeaconState state = hotStatesByRoot.get(root);
+    return state != null
+        ? Optional.of(state)
+        : Optional.ofNullable(finalizedStatesByRoot.get(root));
   }
 
   @Override

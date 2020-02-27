@@ -18,6 +18,7 @@ import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import tech.pegasys.artemis.storage.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -78,10 +79,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
                     node.stop();
                   }));
       return 0;
+    } catch (DatabaseStorageException ex) {
+      System.err.println(ex.getMessage());
+      System.exit(1);
     } catch (Throwable t) {
       System.err.println("Teku failed to start.");
       t.printStackTrace();
-      return 1;
+      System.exit(1);
     }
+    return 1;
   }
 }

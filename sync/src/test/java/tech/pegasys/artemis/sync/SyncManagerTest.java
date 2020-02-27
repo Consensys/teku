@@ -42,8 +42,8 @@ public class SyncManagerTest {
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private Eth2Network network = mock(Eth2Network.class);
   private final PeerSync peerSync = mock(PeerSync.class);
-  private final StubAsyncRunner asynRunnner = new StubAsyncRunner();
-  private SyncManager syncManager = new SyncManager(asynRunnner, network, storageClient, peerSync);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private SyncManager syncManager = new SyncManager(asyncRunner, network, storageClient, peerSync);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(20);
@@ -132,7 +132,7 @@ public class SyncManagerTest {
     when(peerSync.sync(peer2)).thenReturn(new SafeFuture<>());
     syncFuture.complete(PeerSyncResult.FAULTY_ADVERTISEMENT);
 
-    asynRunnner.executeQueuedActions();
+    asyncRunner.executeQueuedActions();
     verify(peerSync).sync(peer2);
     assertThat(syncManager.isSyncActive()).isTrue();
     assertThat(syncManager.isSyncQueued()).isFalse();
@@ -191,5 +191,31 @@ public class SyncManagerTest {
     assertThat(syncManager.isSyncActive()).isFalse();
     verify(peerSync).stop();
     verify(network).unsubscribeConnect(SUBSCRIPTION_ID);
+  }
+
+  @Test
+  void sync_syncStatus() {
+    // stream needs to be used more than once
+    when(network.streamPeers()).then(i -> Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+    UnsignedLong startingSlot = UnsignedLong.valueOf(11);
+    when(peerSync.getStartingSlot()).thenReturn(startingSlot);
+
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+
+    UnsignedLong currentSlot = UnsignedLong.valueOf(17);
+    when(storageClient.getBestSlot()).thenReturn(currentSlot);
+
+    SyncStatus syncStatus = syncManager.getSyncStatus();
+    assertThat(syncStatus.getCurrent_slot()).isEqualTo(currentSlot);
+    assertThat(syncStatus.getStarting_slot()).isEqualTo(startingSlot);
+    assertThat(syncStatus.getHighest_slot()).isEqualTo(PEER_HEAD_SLOT);
+
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    verify(peerSync).sync(peer);
   }
 }

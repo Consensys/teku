@@ -323,7 +323,6 @@ public class Store implements ReadOnlyStore {
       final StoreDiskUpdateEvent updateEvent =
           new StoreDiskUpdateEvent(
               id,
-              time,
               genesis_time,
               justified_checkpoint,
               finalized_checkpoint,
@@ -334,11 +333,15 @@ public class Store implements ReadOnlyStore {
               latest_messages);
       return transactionPrecommit
           .precommit(updateEvent)
-          .thenRun(
-              () -> {
+          .thenAccept(
+              updateResult -> {
+                if (!updateResult.isSuccessful()) {
+                  throw new FailedPrecommitException(updateResult);
+                }
                 final Lock writeLock = Store.this.lock.writeLock();
                 writeLock.lock();
                 try {
+                  // Add new data
                   time.ifPresent(value -> Store.this.time = value);
                   genesis_time.ifPresent(value -> Store.this.genesis_time = value);
                   justified_checkpoint.ifPresent(value -> Store.this.justified_checkpoint = value);
@@ -349,6 +352,15 @@ public class Store implements ReadOnlyStore {
                   Store.this.block_states.putAll(block_states);
                   Store.this.checkpoint_states.putAll(checkpoint_states);
                   Store.this.latest_messages.putAll(latest_messages);
+                  // Prune old data
+                  updateResult.getPrunedCheckpoints().forEach(Store.this.checkpoint_states::remove);
+                  updateResult
+                      .getPrunedBlockRoots()
+                      .forEach(
+                          prunedRoot -> {
+                            Store.this.blocks.remove(prunedRoot);
+                            Store.this.block_states.remove(prunedRoot);
+                          });
                 } finally {
                   writeLock.unlock();
                 }
