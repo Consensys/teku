@@ -104,7 +104,7 @@ Help is available for this script as well:
 
 ```
 sh run.sh -h
-Runs a simulation of teku with NODES nodes, where NODES > 0 and NODES < 256
+Runs a simulation of Teku with NODES nodes, where NODES > 0 and NODES < 256
 Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
                  [--help, -h]
 - If config files are specifed for specific nodes, those input files will be used to
