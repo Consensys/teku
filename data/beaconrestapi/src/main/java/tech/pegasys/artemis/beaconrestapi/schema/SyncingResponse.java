@@ -13,11 +13,13 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
+import tech.pegasys.artemis.sync.SyncStatus;
+
 public class SyncingResponse {
   public final boolean is_syncing;
-  public final SyncingStatus sync_status;
+  public final SyncStatus sync_status;
 
-  public SyncingResponse(boolean is_syncing, SyncingStatus sync_status) {
+  public SyncingResponse(boolean is_syncing, SyncStatus sync_status) {
     this.is_syncing = is_syncing;
     this.sync_status = sync_status;
   }

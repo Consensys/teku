@@ -13,8 +13,9 @@
 
 package tech.pegasys.artemis.sync.util;
 
+import static com.google.common.primitives.UnsignedLong.ZERO;
+
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -45,7 +46,6 @@ public class NoopSyncService extends SyncService {
 
   @Override
   public SyncingStatus getSyncStatus() {
-    return new SyncingStatus(
-        false, new SyncStatus(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO));
+    return new SyncingStatus(false, new SyncStatus(ZERO, ZERO, ZERO));
   }
 }
