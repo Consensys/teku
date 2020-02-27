@@ -68,7 +68,8 @@ class FetchRecentBlocksService extends Service {
   }
 
   public static FetchRecentBlocksService create(
-      final P2PNetwork<Eth2Peer> eth2Network, final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
+      final P2PNetwork<Eth2Peer> eth2Network,
+      final PendingPool<SignedBeaconBlock> pendingBlocksPool) {
     return new FetchRecentBlocksService(
         DelayedExecutorAsyncRunner.create(),
         eth2Network,
