@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.util.backing;
 
+/** Base class for mutable containers which are able to return mutable children by reference */
 public interface ContainerViewWriteRef
-    extends CompositeViewWrite<ViewRead>, ContainerViewWrite {
-
-  ViewWrite getByRef(int index);
-}
+    extends CompositeViewWriteRef<ViewRead, ViewWrite>, ContainerViewWrite {}

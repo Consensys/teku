@@ -13,4 +13,8 @@
 
 package tech.pegasys.artemis.util.backing;
 
+/**
+ * Base class for immutable containers. Since containers are heterogeneous their generic child view
+ * is ViewRead
+ */
 public interface ContainerViewRead extends CompositeViewRead<ViewRead> {}

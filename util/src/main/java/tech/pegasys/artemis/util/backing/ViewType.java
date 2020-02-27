@@ -22,52 +22,48 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 public interface ViewType {
 
   /**
-   * Creates a default backing binary tree for this type
-   * E.g. if the type is basic then normally just a single leaf node is created
-   * E.g. if the type is a complex structure with multi-level nested vectors and containers
-   * then the complete tree including all descendant members subtrees is created
+   * Creates a default backing binary tree for this type E.g. if the type is basic then normally
+   * just a single leaf node is created E.g. if the type is a complex structure with multi-level
+   * nested vectors and containers then the complete tree including all descendant members subtrees
+   * is created
    */
   TreeNode createDefaultTree();
 
   /**
-   * Creates immutable View over the tree which should correspond to this type
-   * If the tree structure doesn't correspond this type that fact could only be detected
-   * later during access to View members
+   * Creates immutable View over the tree which should correspond to this type If the tree structure
+   * doesn't correspond this type that fact could only be detected later during access to View
+   * members
    */
   ViewRead createFromTreeNode(TreeNode node);
 
-  /**
-   * Creates a default immutable View
-   */
+  /** Creates a default immutable View */
   default ViewRead createDefault() {
     return createFromTreeNode(createDefaultTree());
   }
 
   /**
-   * Returns the number of bits the element of this type occupies in a tree node
-   * More correct definition is: how many elements of this type one tree node may contain
-   * All complex types occupies the whole tree node and their bitsize assumed to be 256
-   * Normally the bitsize < 256 is for basic types that can be packed into a single leaf node
+   * Returns the number of bits the element of this type occupies in a tree node More correct
+   * definition is: how many elements of this type one tree node may contain All complex types
+   * occupies the whole tree node and their bitsize assumed to be 256 Normally the bitsize < 256 is
+   * for basic types that can be packed into a single leaf node
    */
   default int getBitsSize() {
     return 256;
   }
 
   /**
-   * For packed basic values.
-   * Extracts a packed value from the tree node by its 'internal index'.
-   * For example in `Bitvector(512)` the bit value at index `300` is stored
-   * at the second leaf node and it's 'internal index' in this node would be `45`
+   * For packed basic values. Extracts a packed value from the tree node by its 'internal index'.
+   * For example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node
+   * and it's 'internal index' in this node would be `45`
    */
   default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
     return createFromTreeNode(node);
   }
 
   /**
-   * For packed basic values.
-   * Packs the value to the existing node at 'internal index'
-   * For example in `Bitvector(512)` the bit value at index `300` is stored
-   * at the second leaf node and it's 'internal index' in this node would be `45`
+   * For packed basic values. Packs the value to the existing node at 'internal index' For example
+   * in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and it's
+   * 'internal index' in this node would be `45`
    */
   default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return newValue.getBackingNode();

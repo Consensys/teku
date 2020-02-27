@@ -17,27 +17,22 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 /**
- * Base class of immutable views over Binary Backing Tree ({@link TreeNode})
- * Overlay views concept described here:
+ * Base class of immutable views over Binary Backing Tree ({@link TreeNode}) Overlay views concept
+ * described here:
  * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#views
  */
 public interface ViewRead {
 
   /**
-   * Creates a corresponding writeable copy of this immutable structure
-   * Any modifications made to the returned copy doesn't affect neither
-   * this structure nor its descendant structures
+   * Creates a corresponding writeable copy of this immutable structure Any modifications made to
+   * the returned copy doesn't affect neither this structure nor its descendant structures
    */
   ViewWrite createWritableCopy();
 
-  /**
-   * Gets the type of this structure
-   */
+  /** Gets the type of this structure */
   ViewType getType();
 
-  /**
-   * Returns Backing Tree this structure is backed by
-   */
+  /** Returns Backing Tree this structure is backed by */
   TreeNode getBackingNode();
 
   /**

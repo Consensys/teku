@@ -18,28 +18,32 @@ import java.util.function.Function;
 
 /**
  * Represents composite mutable view which has descendant views
+ *
  * @param <R> the type of children
  */
 public interface CompositeViewWrite<R> extends ViewWrite, CompositeViewRead<R> {
 
   /**
-   * Sets the function which should called by the implementation on
-   * any changes in this view or its descendant views
-   * @param listener listener to ba called with this view instance as a parameter
+   * Sets the function which should called by the implementation on any changes in this view or its
+   * descendant views This is to propagate changes up in the data hierarchy from child mutable views
+   * to parent mutable views.
+   *
+   * @param listener listener to be called with this view instance as a parameter
    */
   void setInvalidator(Consumer<ViewWrite> listener);
 
   /**
-   * Sets the child at index
-   * If the index == size() and the structure is extendable (e.g. List) then this is
-   * treated as `append()` operation
+   * Sets the child at index If the index == size() and the structure is extendable (e.g. List) then
+   * this is treated as `append()` operation and the size incremented. In the latter case `size`
+   * should be less than `maxSize`
+   *
    * @throws IllegalArgumentException if index > size() or if index == size() but size() == maxSize
    */
   void set(int index, R value);
 
   /**
-   * Similar to {@link #set(int, Object)} but using modifier function
-   * The implementation may potentially optimize this case
+   * Similar to {@link #set(int, Object)} but using modifier function which may consider old value
+   * to calculate new value The implementation may potentially optimize this case
    */
   default void update(int index, Function<R, R> mutator) {
     set(index, mutator.apply(get(index)));
