@@ -74,7 +74,7 @@ public class MapDbDatabase implements Database {
         Files.deleteIfExists(databaseFile.toPath());
       }
     } catch (IOException e) {
-      STDOUT.log(Level.WARN, "Failed to clear old database");
+      STDOUT.log(Level.ERROR, "Failed to clear old database");
     }
     return new MapDbDatabase(DBMaker.fileDB(databaseFile));
   }
