@@ -57,7 +57,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
 
     blockPublisher = mockFlowablePublisher();
 
-    Constants.SECONDS_PER_DAY = 1;
+    Constants.MIN_GENESIS_DELAY = 1;
     // calculateCandidateGenesisTimestamp will return
     // blockTime + 2
   }
