@@ -45,7 +45,7 @@ class DiscoveryNetworkTest {
     doReturn(discoveryStart).when(discoveryService).start();
     doReturn(new SafeFuture<>()).when(connectionManager).start();
 
-    discoveryNetwork.start();
+    discoveryNetwork.start().join();
 
     verify(p2pNetwork).start();
     verify(discoveryService).start();
