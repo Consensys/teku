@@ -226,5 +226,3 @@ YourKit is the creator of <a href="https://www.yourkit.com/java/profiler/">YourK
 and <a href="https://www.yourkit.com/youmonitor/">YourKit YouMonitor</a>.
 
 ![YourKit Logo](https://www.yourkit.com/images/yklogo.png)
-
-
