@@ -24,7 +24,6 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
@@ -87,7 +86,7 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
   private final UnsignedLong withdrawable_epoch = null;
 
   private ValidatorImpl(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

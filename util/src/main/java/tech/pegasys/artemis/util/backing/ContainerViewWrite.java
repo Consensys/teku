@@ -13,5 +13,5 @@
 
 package tech.pegasys.artemis.util.backing;
 
-public interface ContainerViewWrite<C extends ViewRead>
-    extends CompositeViewWrite<C>, ContainerViewRead<C> {}
+public interface ContainerViewWrite
+    extends CompositeViewWrite<ViewRead>, ContainerViewRead {}

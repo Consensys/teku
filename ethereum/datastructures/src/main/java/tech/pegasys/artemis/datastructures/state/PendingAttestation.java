@@ -31,7 +31,6 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewRead;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
@@ -78,7 +77,7 @@ public class PendingAttestation extends ContainerViewImpl<PendingAttestation>
   private final UnsignedLong proposer_index = null;
 
   private PendingAttestation(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

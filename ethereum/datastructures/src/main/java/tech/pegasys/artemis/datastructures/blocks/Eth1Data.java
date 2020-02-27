@@ -25,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
@@ -57,8 +56,7 @@ public class Eth1Data extends ContainerViewImpl<Eth1Data>
   @SuppressWarnings("unused")
   private final Bytes32 block_hash = null;
 
-  private Eth1Data(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+  private Eth1Data(ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

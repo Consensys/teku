@@ -26,7 +26,6 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
@@ -58,8 +57,7 @@ public class Fork extends ContainerViewImpl<Fork>
               BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES4_TYPE, BasicViewTypes.UINT64_TYPE),
           Fork::new);
 
-  private Fork(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+  private Fork(ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

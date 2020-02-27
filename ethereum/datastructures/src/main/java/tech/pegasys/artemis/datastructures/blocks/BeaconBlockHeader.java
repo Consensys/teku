@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
@@ -65,7 +64,7 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
   private final Bytes32 body_root = null;
 
   private BeaconBlockHeader(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

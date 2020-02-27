@@ -31,28 +31,28 @@ import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 
 public class ContainerViewTest {
 
-  public interface ImmutableSubContainer extends ContainerViewRead<ViewRead> {
+  public interface ImmutableSubContainer extends ContainerViewRead {
 
     UnsignedLong getLong1();
 
     Bytes32 getBytes1();
   }
 
-  public interface SubContainerRead extends ContainerViewRead<ViewRead> {
+  public interface SubContainerRead extends ContainerViewRead {
 
     UnsignedLong getLong1();
 
     UnsignedLong getLong2();
   }
 
-  public interface SubContainerWrite extends SubContainerRead, ContainerViewWrite<ViewRead> {
+  public interface SubContainerWrite extends SubContainerRead, ContainerViewWrite {
 
     void setLong1(UnsignedLong val);
 
     void setLong2(UnsignedLong val);
   }
 
-  public interface ContainerRead extends ContainerViewRead<ViewRead> {
+  public interface ContainerRead extends ContainerViewRead {
 
     UnsignedLong getLong1();
 
@@ -70,8 +70,7 @@ public class ContainerViewTest {
     ContainerWrite createWritableCopy();
   }
 
-  public interface ContainerWrite
-      extends ContainerRead, ContainerViewWriteRef<ViewRead, ViewWrite> {
+  public interface ContainerWrite extends ContainerRead, ContainerViewWriteRef {
 
     void setLong1(UnsignedLong val);
 

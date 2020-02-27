@@ -42,7 +42,6 @@ import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewWriteRef;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
@@ -211,7 +210,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
   private final Checkpoint finalized_checkpoint = null;
 
   private BeaconStateImpl(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
     builder = false;

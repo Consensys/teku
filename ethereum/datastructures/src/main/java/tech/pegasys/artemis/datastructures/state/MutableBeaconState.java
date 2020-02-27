@@ -22,11 +22,8 @@ import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
-import tech.pegasys.artemis.util.backing.ViewRead;
-import tech.pegasys.artemis.util.backing.ViewWrite;
 
-public interface MutableBeaconState
-    extends BeaconState, ContainerViewWriteRef<ViewRead, ViewWrite> {
+public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
 
   static MutableBeaconState createBuilder() {
     return new BeaconStateImpl(true);

@@ -15,10 +15,9 @@ package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-public interface MutableValidator extends Validator, ContainerViewWrite<ViewRead> {
+public interface MutableValidator extends Validator, ContainerViewWrite {
 
   void setPubkey(BLSPublicKey pubkey);
 

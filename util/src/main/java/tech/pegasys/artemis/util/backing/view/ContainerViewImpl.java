@@ -24,24 +24,23 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
 public class ContainerViewImpl<C extends ContainerViewImpl<C>>
-    extends AbstractCompositeViewWrite<C, ViewRead>
-    implements ContainerViewWriteRef<ViewRead, ViewWrite> {
+    extends AbstractCompositeViewWrite<C, ViewRead> implements ContainerViewWriteRef {
 
-  private final ContainerViewType<? extends ContainerViewWrite<ViewRead>> type;
+  private final ContainerViewType<? extends ContainerViewWrite> type;
   private TreeNode backingNode;
 
-  public ContainerViewImpl(ContainerViewType<? extends ContainerViewWrite<ViewRead>> type) {
+  public ContainerViewImpl(ContainerViewType<? extends ContainerViewWrite> type) {
     this(type, type.createDefaultTree());
   }
 
   public ContainerViewImpl(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, TreeNode backingNode) {
+      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }
 
   public ContainerViewImpl(
-      ContainerViewType<? extends ContainerViewWrite<ViewRead>> type, ViewRead... memberValues) {
+      ContainerViewType<? extends ContainerViewWrite> type, ViewRead... memberValues) {
     this(type, type.createDefaultTree());
     checkArgument(
         memberValues.length == getType().getMaxLength(),
@@ -53,7 +52,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
   }
 
   @Override
-  public ContainerViewType<? extends ContainerViewWrite<ViewRead>> getType() {
+  public ContainerViewType<? extends ContainerViewWrite> getType() {
     return type;
   }
 

@@ -38,17 +38,17 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   // see https://github.com/ethereum/eth2.0-specs/pull/1625
   public static boolean THROW_OUT_OF_BOUNDS = true;
 
-  private final ContainerViewWrite<ViewRead> container;
+  private final ContainerViewWrite container;
 
   public ListViewImpl(VectorViewType<R> vectorType) {
-    ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
+    ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
             List.of(vectorType, BasicViewTypes.UINT64_TYPE), ContainerViewImpl::new);
     container = containerViewType.createDefault();
   }
 
   public ListViewImpl(ListViewType<R> type, TreeNode node) {
-    ContainerViewType<ContainerViewWrite<ViewRead>> containerViewType =
+    ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
             ContainerViewImpl::new);

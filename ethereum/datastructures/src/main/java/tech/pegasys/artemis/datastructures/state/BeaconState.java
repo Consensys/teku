@@ -25,13 +25,12 @@ import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @JsonAutoDetect(getterVisibility = Visibility.NONE)
 public interface BeaconState
-    extends ContainerViewRead<ViewRead>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   static BeaconState createEmpty() {
     return new BeaconStateImpl();
