@@ -13,27 +13,22 @@
 
 package tech.pegasys.artemis.storage;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,7 +47,6 @@ import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 
 public class MapDbDatabase implements Database {
-  public static final String VERSION = "1.0";
   private static final Logger LOG = LogManager.getLogger();
   private final DB db;
   private final Var<UnsignedLong> genesisTime;
@@ -73,58 +67,15 @@ public class MapDbDatabase implements Database {
   private final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
       new ConcurrentSkipListMap<>();
 
-  private static void validateDatabaseVersion(File databaseVersionFile) {
-    try {
-      if (databaseVersionFile.exists()) {
-        Scanner contents = new Scanner(databaseVersionFile, UTF_8.name());
-        String ver = contents.nextLine();
-        if (StringUtils.isEmpty(ver) || !ver.equals(VERSION)) {
-          throw new DatabaseStorageException(
-              String.format(
-                  "The database version found (%s) does not match the expected version(%s).\n"
-                      + "Aborting startup to prevent corruption of the database.\n",
-                  ver, VERSION));
-        }
-        STDOUT.log(
-            Level.INFO,
-            String.format(
-                "The existing database is version %s, from file: %s",
-                VERSION, databaseVersionFile.getAbsolutePath()));
-      } else {
-        STDOUT.log(
-            Level.INFO,
-            String.format(
-                "Recording database version %s to file: %s",
-                VERSION, databaseVersionFile.getAbsolutePath()));
-        FileWriter fileWriter = new FileWriter(databaseVersionFile.getPath(), UTF_8);
-        fileWriter.write(VERSION);
-        fileWriter.close();
-      }
-    } catch (FileNotFoundException ex) {
-      STDOUT.log(Level.ERROR, "File not found", ex);
-    } catch (IOException e) {
-      STDOUT.log(Level.ERROR, "Failed to write database version to file", e);
-    }
-  }
-
   public static Database createOnDisk(final File directory, final boolean startFromDisk) {
     final File databaseFile = new File(directory, "teku.db");
-    final File databaseVersionFile = new File(directory, "teku.db.version");
     try {
-      if (!directory.exists() && !directory.mkdirs()) {
-        throw new DatabaseStorageException(
-            String.format(
-                "Unable to create the path to store database files at %s",
-                directory.getAbsolutePath()));
-      }
       if (!startFromDisk) {
         Files.deleteIfExists(databaseFile.toPath());
-        Files.deleteIfExists(databaseVersionFile.toPath());
       }
     } catch (IOException e) {
       STDOUT.log(Level.ERROR, "Failed to clear old database");
     }
-    validateDatabaseVersion(databaseVersionFile);
     return new MapDbDatabase(DBMaker.fileDB(databaseFile));
   }
 
@@ -395,11 +346,5 @@ public class MapDbDatabase implements Database {
   @Override
   public void close() {
     db.close();
-  }
-
-  public static class DatabaseStorageException extends RuntimeException {
-    public DatabaseStorageException(String s) {
-      super(s);
-    }
   }
 }

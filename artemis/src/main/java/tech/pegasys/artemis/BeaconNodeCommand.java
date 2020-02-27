@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.storage.MapDbDatabase.DatabaseStorageException;
+import tech.pegasys.artemis.storage.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
