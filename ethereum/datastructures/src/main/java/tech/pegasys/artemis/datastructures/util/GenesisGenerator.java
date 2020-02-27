@@ -26,8 +26,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -101,18 +99,13 @@ public class GenesisGenerator {
     }
   }
 
-  public BeaconStateWithCache getGenesisState() {
-    return getGenesisStateIfValid(state -> true).orElseThrow();
+  public BeaconStateWithCache getCandidateState() {
+    return BeaconStateWithCache.deepCopy(state);
   }
 
-  public Optional<BeaconStateWithCache> getGenesisStateIfValid(
-      Predicate<BeaconState> validityCriteria) {
-    if (!validityCriteria.test(state)) {
-      return Optional.empty();
-    }
-
+  public BeaconStateWithCache getGenesisState() {
     finalizeState();
-    return Optional.of(BeaconStateWithCache.deepCopy(state));
+    return BeaconStateWithCache.deepCopy(state);
   }
 
   private void finalizeState() {

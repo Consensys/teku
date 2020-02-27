@@ -81,7 +81,7 @@ public class BeaconStateUtil {
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     final GenesisGenerator genesisGenerator = new GenesisGenerator();
     genesisGenerator.addDepositsFromBlock(eth1_block_hash, eth1_timestamp, deposits);
-    return genesisGenerator.getGenesisState();
+    return genesisGenerator.getCandidateState();
   }
 
   /**
@@ -176,9 +176,16 @@ public class BeaconStateUtil {
   }
 
   public static boolean is_valid_genesis_state(BeaconState state) {
-    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) < 0)
-        && !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-            < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+    return isItMinGenesisTimeYet(state) && isThereEnoughNumberOfValidators(state);
+  }
+
+  public static boolean isThereEnoughNumberOfValidators(BeaconState state) {
+    return !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
+        < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  }
+
+  public static boolean isItMinGenesisTimeYet(BeaconState state) {
+    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) < 0);
   }
 
   public static boolean is_valid_genesis_stateSim(BeaconState state) {

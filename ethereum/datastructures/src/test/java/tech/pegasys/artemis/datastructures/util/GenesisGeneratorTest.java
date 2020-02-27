@@ -75,7 +75,7 @@ class GenesisGeneratorTest {
     genesisGenerator.addDepositsFromBlock(
         eth1BlockHash2, genesisTime, INITIAL_DEPOSITS.subList(8, INITIAL_DEPOSITS.size()));
 
-    final BeaconStateWithCache actualState = genesisGenerator.getGenesisState();
+    final BeaconStateWithCache actualState = genesisGenerator.getCandidateState();
     assertThat(actualState).isEqualTo(expectedState);
     assertThat(get_active_validator_indices(expectedState, GENESIS_EPOCH))
         .hasSize(VALIDATOR_KEYS.size());
@@ -87,7 +87,7 @@ class GenesisGeneratorTest {
       genesisGenerator.addDepositsFromBlock(
           Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
 
-      final BeaconStateWithCache state = genesisGenerator.getGenesisState();
+      final BeaconStateWithCache state = genesisGenerator.getCandidateState();
       assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
     }
   }
@@ -130,7 +130,7 @@ class GenesisGeneratorTest {
     deposits.add(0, new Deposit(invalidData));
 
     genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
-    final BeaconStateWithCache state = genesisGenerator.getGenesisState();
+    final BeaconStateWithCache state = genesisGenerator.getCandidateState();
     // All deposits were processed
     assertThat(state.getEth1_deposit_index()).isEqualTo(UnsignedLong.valueOf(deposits.size()));
     // But one didn't result in a new validator
