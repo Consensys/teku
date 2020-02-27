@@ -14,7 +14,11 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
@@ -61,18 +65,18 @@ public class BeaconBlockHandler implements Handler {
       summary = "Request that the node return the specified beacon chain block.",
       tags = {"Beacon"},
       queryParams = {
-        @OpenApiParam(name = "epoch", description = "Query by epoch number (uint64)"),
-        @OpenApiParam(name = "slot", description = "Query by slot number (uint64)"),
-        @OpenApiParam(name = "root", description = "Query by tree hash root (Bytes32)")
+        @OpenApiParam(name = EPOCH, description = "Query by epoch number (uint64)"),
+        @OpenApiParam(name = SLOT, description = "Query by slot number (uint64)"),
+        @OpenApiParam(name = ROOT, description = "Query by tree hash root (Bytes32)")
       },
       description =
           "Request that the node return the beacon chain block that matches the provided criteria.",
       responses = {
         @OpenApiResponse(
-            status = "200",
+            status = RES_OK,
             content = @OpenApiContent(from = BeaconBlockResponse.class)),
-        @OpenApiResponse(status = "400", description = "Invalid parameter supplied"),
-        @OpenApiResponse(status = "404", description = "Specified block not found")
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
+        @OpenApiResponse(status = RES_NOT_FOUND, description = "Specified block not found")
       })
   @Override
   public void handle(final Context ctx) throws Exception {
@@ -85,7 +89,9 @@ public class BeaconBlockHandler implements Handler {
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       if (ctx.queryParamMap().containsKey(ROOT)) {
         final Bytes32 root = Bytes32.fromHexString(validateQueryParameter(queryParamMap, ROOT));
-        if (client.getStore() != null) {
+        if (client.getStore() == null) {
+          ctx.status(SC_NO_CONTENT);
+        } else {
           final SignedBeaconBlock block = client.getStore().getSignedBlock(root);
           if (block != null) {
             ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(block)));
