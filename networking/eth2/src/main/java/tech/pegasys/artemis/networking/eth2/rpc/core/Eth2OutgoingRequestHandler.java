@@ -41,6 +41,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final AsyncRunner timeoutRunner;
   private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
+  private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
   private final ResponseRpcDecoder<TResponse> responseHandler;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
@@ -56,7 +57,8 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     this.method = method;
     this.maximumResponseChunks = maximumResponseChunks;
 
-    responseProcessor = new AsyncResponseProcessor<>(asyncRunner, responseStream, this::onError);
+    responseProcessor =
+        new AsyncResponseProcessor<>(asyncRunner, responseStream, this::onAsyncProcessorError);
     responseHandler = new ResponseRpcDecoder<>(responseProcessor::processResponse, this.method);
   }
 
@@ -93,7 +95,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     completeRequest(this.rpcStream);
   }
 
-  private void onError(final Throwable throwable) {
+  private void onAsyncProcessorError(final Throwable throwable) {
     cancelRequest(this.rpcStream, throwable);
   }
 
@@ -110,6 +112,9 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   private void completeRequest(final RpcStream rpcStream) {
+    if (!isClosed.compareAndSet(false, true)) {
+      return;
+    }
     if (rpcStream != null) {
       rpcStream.close().reportExceptions();
     }
@@ -135,6 +140,9 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   private void cancelRequest(final RpcStream rpcStream, Throwable error) {
+    if (!isClosed.compareAndSet(false, true)) {
+      return;
+    }
     LOG.debug("Cancel request: {}", error.getMessage());
     rpcStream.close().reportExceptions();
     responseHandler.closeSilently();
@@ -151,9 +159,6 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
         .thenAccept(
             (__) -> {
               if (!hasReceivedInitialBytes.get()) {
-                LOG.debug(
-                    "Failed to receive initial response within {} sec. Close stream.",
-                    timeout.getSeconds());
                 cancelRequest(
                     stream,
                     new RpcTimeoutException("Timed out waiting for initial response", timeout));
@@ -172,10 +177,6 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
         .thenAccept(
             (__) -> {
               if (previousResponseCount == currentResponseCount.get()) {
-                LOG.debug(
-                    "Failed to receive response chunk {} within {} sec. Close stream.",
-                    previousResponseCount,
-                    timeout.getSeconds());
                 cancelRequest(
                     stream,
                     new RpcTimeoutException(
