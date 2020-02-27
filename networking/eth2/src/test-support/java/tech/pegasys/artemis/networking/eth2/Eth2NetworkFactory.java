@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
@@ -129,6 +130,7 @@ public class Eth2NetworkFactory {
           port,
           port,
           peerAddresses,
+          emptyList(),
           false,
           false,
           false);

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -27,7 +28,12 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public SafeFuture<?> connect(final String peer) {
+  public SafeFuture<Peer> connect(final String peer) {
+    return network.connect(peer);
+  }
+
+  @Override
+  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
     return network.connect(peer);
   }
 

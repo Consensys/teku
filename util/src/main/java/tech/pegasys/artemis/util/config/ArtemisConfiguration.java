@@ -182,8 +182,8 @@ public class ArtemisConfiguration {
     return config.getString("node.discovery");
   }
 
-  public String getBootnodes() {
-    return config.getString("node.bootnodes");
+  public List<String> getBootnodes() {
+    return config.getListOfString("node.bootnodes");
   }
 
   /** @return the port this node will advertise as its own */

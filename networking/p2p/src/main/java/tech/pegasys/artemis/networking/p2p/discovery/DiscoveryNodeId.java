@@ -14,11 +14,10 @@
 package tech.pegasys.artemis.networking.p2p.discovery;
 
 import io.libp2p.etc.encode.Base58;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
-public class DiscoveryNodeId implements NodeId {
+public class DiscoveryNodeId extends NodeId {
   private final Bytes nodeId;
 
   public DiscoveryNodeId(final Bytes nodeId) {
@@ -33,27 +32,5 @@ public class DiscoveryNodeId implements NodeId {
   @Override
   public String toBase58() {
     return Base58.INSTANCE.encode(nodeId.toArrayUnsafe());
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final DiscoveryNodeId that = (DiscoveryNodeId) o;
-    return Objects.equals(nodeId, that.nodeId);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(nodeId);
-  }
-
-  @Override
-  public String toString() {
-    return nodeId.toHexString();
   }
 }

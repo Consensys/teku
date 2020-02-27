@@ -21,7 +21,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -44,7 +46,7 @@ public class Eth2NetworkBuilder {
     return new Eth2NetworkBuilder();
   }
 
-  public Eth2Network build() {
+  public DiscoveryNetwork<Eth2Peer> build() {
     validate();
 
     // Setup eth2 handlers
@@ -58,7 +60,8 @@ public class Eth2NetworkBuilder {
     // Build core network and inject eth2 handlers
     final P2PNetwork<?> network = buildNetwork();
 
-    return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
+    return new DiscoveryNetwork<>(
+        new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient), null, null);
   }
 
   protected P2PNetwork<?> buildNetwork() {

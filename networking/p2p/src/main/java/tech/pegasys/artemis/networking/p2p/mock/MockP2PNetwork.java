@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.mock;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -33,7 +34,12 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public SafeFuture<?> connect(String peer) {
+  public SafeFuture<Peer> connect(String peer) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  }
+
+  @Override
+  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 

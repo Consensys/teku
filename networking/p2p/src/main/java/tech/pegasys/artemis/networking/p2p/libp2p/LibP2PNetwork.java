@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
+import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
@@ -42,6 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
@@ -54,7 +56,6 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -92,9 +93,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(method)));
 
     // Setup peers
-    peerManager =
-        new PeerManager(
-            DelayedExecutorAsyncRunner.create(), metricsSystem, peerHandlers, rpcHandlers);
+    peerManager = new PeerManager(metricsSystem, peerHandlers, rpcHandlers);
 
     host =
         BuilderJKt.hostJ(
@@ -154,7 +153,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
             })
-        .thenRun(() -> config.getPeers().forEach(reportExceptions(this::connect)));
+        .thenRun(() -> config.getStaticPeers().forEach(reportExceptions(this::connect)));
   }
 
   @Override
@@ -163,8 +162,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public SafeFuture<?> connect(final String peer) {
+  public SafeFuture<Peer> connect(final String peer) {
     return peerManager.connect(new Multiaddr(peer), host.getNetwork());
+  }
+
+  @Override
+  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
+    return peerManager.connect(convertToMultiAddr(peer), host.getNetwork());
   }
 
   @Override

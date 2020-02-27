@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.discovery.discv5;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadLocalRandom;
@@ -43,11 +44,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   public static DiscoveryService create(
-      final Bytes privateKey, final String address, final int port, final String... bootnodes) {
+      final Bytes privateKey, final String address, final int port, final List<String> bootnodes) {
     final DiscoverySystem discoveryManager =
         new DiscoverySystemBuilder()
             .privateKey(privateKey)
-            .bootnodes(bootnodes)
+            .bootnodes(bootnodes.toArray(new String[0]))
             .localNodeRecord(
                 new NodeRecordBuilder().privateKey(privateKey).address(address, port).build())
             .build();
