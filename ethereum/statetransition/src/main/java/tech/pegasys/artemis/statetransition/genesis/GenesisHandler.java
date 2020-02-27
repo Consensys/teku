@@ -137,11 +137,11 @@ public class GenesisHandler implements DepositEventChannel, MinGenesisTimeBlockE
   }
 
   private void eth2Genesis(GenesisEvent genesisEvent) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
+    LOG.info("******* Eth2Genesis Event******* : ");
     final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
     chainStorageClient.initializeFromGenesis(initialState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
-    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
+    LOG.info("Initial state root is " + initialState.hash_tree_root().toHexString());
+    LOG.info("Genesis block root is " + genesisBlockRoot.toHexString());
   }
 }
