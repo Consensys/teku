@@ -1,11 +1,3 @@
-jar {
-    baseName 'teku-data-keystore'
-    manifest {
-        attributes('Implementation-Title': baseName,
-                'Implementation-Version': project.version)
-    }
-}
-
 dependencies {
     implementation project(":util")
 
