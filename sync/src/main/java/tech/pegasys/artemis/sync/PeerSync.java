@@ -47,6 +47,8 @@ public class PeerSync {
 
   private final AsyncRunner asyncRunner;
 
+  private volatile UnsignedLong startingSlot = UnsignedLong.valueOf(0);
+
   public PeerSync(
       final AsyncRunner asyncRunner,
       final ChainStorageClient storageClient,
@@ -62,6 +64,8 @@ public class PeerSync {
     final UnsignedLong finalizedEpoch = storageClient.getFinalizedEpoch();
     final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
+
+    this.startingSlot = firstNonFinalSlot;
 
     return executeSync(peer, peer.getStatus(), firstNonFinalSlot, SafeFuture.COMPLETE)
         .whenComplete(
@@ -184,5 +188,9 @@ public class PeerSync {
 
   private void disconnectFromPeer(Eth2Peer peer) {
     peer.sendGoodbye(REASON_FAULT_ERROR).reportExceptions();
+  }
+
+  public UnsignedLong getStartingSlot() {
+    return startingSlot;
   }
 }

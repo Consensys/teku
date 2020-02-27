@@ -24,7 +24,6 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 public class StoreDiskUpdateEvent {
 
   private final long transactionId;
-  private final Optional<UnsignedLong> time;
   private final Optional<UnsignedLong> genesisTime;
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> finalizedCheckpoint;
@@ -36,7 +35,6 @@ public class StoreDiskUpdateEvent {
 
   public StoreDiskUpdateEvent(
       final long transactionId,
-      final Optional<UnsignedLong> time,
       final Optional<UnsignedLong> genesisTime,
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> finalizedCheckpoint,
@@ -46,7 +44,6 @@ public class StoreDiskUpdateEvent {
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UnsignedLong, Checkpoint> latestMessages) {
     this.transactionId = transactionId;
-    this.time = time;
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.finalizedCheckpoint = finalizedCheckpoint;
@@ -57,12 +54,19 @@ public class StoreDiskUpdateEvent {
     this.latestMessages = latestMessages;
   }
 
-  public long getTransactionId() {
-    return transactionId;
+  public boolean isEmpty() {
+    return genesisTime.isEmpty()
+        && justifiedCheckpoint.isEmpty()
+        && finalizedCheckpoint.isEmpty()
+        && bestJustifiedCheckpoint.isEmpty()
+        && blocks.isEmpty()
+        && blockStates.isEmpty()
+        && checkpointStates.isEmpty()
+        && latestMessages.isEmpty();
   }
 
-  public Optional<UnsignedLong> getTime() {
-    return time;
+  public long getTransactionId() {
+    return transactionId;
   }
 
   public Optional<UnsignedLong> getGenesisTime() {
