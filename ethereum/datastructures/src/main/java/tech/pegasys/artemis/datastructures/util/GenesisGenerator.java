@@ -59,11 +59,6 @@ public class GenesisGenerator {
 
   public void addDepositsFromBlock(
       Bytes32 eth1BlockHash, UnsignedLong eth1Timestamp, List<? extends Deposit> deposits) {
-    updateGenesisTime(eth1Timestamp);
-
-    final Eth1Data eth1Data = state.getEth1_data();
-    eth1Data.setBlock_hash(eth1BlockHash);
-    eth1Data.setDeposit_count(UnsignedLong.valueOf(depositDataList.size() + deposits.size()));
 
     // Process deposits
     deposits.forEach(
@@ -77,6 +72,15 @@ public class GenesisGenerator {
 
           processActivation(deposit);
         });
+
+    setBlockInformation(eth1BlockHash, eth1Timestamp);
+  }
+
+  public void setBlockInformation(Bytes32 eth1BlockHash, UnsignedLong eth1Timestamp) {
+    final Eth1Data eth1Data = state.getEth1_data();
+    eth1Data.setBlock_hash(eth1BlockHash);
+    eth1Data.setDeposit_count(UnsignedLong.valueOf(depositDataList.size()));
+    updateGenesisTime(eth1Timestamp);
   }
 
   private void processActivation(final Deposit deposit) {

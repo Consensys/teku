@@ -122,11 +122,13 @@ public class GenesisHandler implements DepositEventChannel, MinGenesisTimeBlockE
     while (bufferedDepositsFromBlockEvents.peek() != null) {
       DepositsFromBlockEvent depositsFromBlockEvent = bufferedDepositsFromBlockEvents.remove();
       if (depositsFromBlockEvent.getBlockNumber().compareTo(genesisBlockNumber) > 0) {
-        triggerGenesis();
+        break;
       } else {
         addDepositsToState(depositsFromBlockEvent);
       }
     }
+    genesisGenerator.setBlockInformation(event.getBlockHash(), genesisBlockNumber);
+    triggerGenesis();
   }
 
   private void triggerGenesis() {
