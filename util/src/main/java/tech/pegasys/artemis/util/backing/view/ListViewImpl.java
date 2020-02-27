@@ -63,13 +63,13 @@ public class ListViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public R get(int index) {
-    checkPositionIndex(index, size());
+    checkPositionIndex(index, size() - 1);
     return getVector().get(index);
   }
 
   @Override
   public W getByRef(int index) {
-    checkPositionIndex(index, size());
+    checkPositionIndex(index, size() - 1);
     @SuppressWarnings("unchecked")
     W writableCopy = (W) get(index).createWritableCopy();
 

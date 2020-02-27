@@ -75,21 +75,21 @@ public class BasicListViewTest {
     Assertions.assertEquals(0x222, listType.createFromTreeNode(n5).get(1).longValue());
 
     Assertions.assertThrows(
-        IllegalArgumentException.class,
+        IndexOutOfBoundsException.class,
         () ->
             listType
                 .createFromTreeNode(n3)
                 .createWritableCopy()
                 .set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
     Assertions.assertThrows(
-        IllegalArgumentException.class, () -> listType.createFromTreeNode(n3).get(7));
+        IndexOutOfBoundsException.class, () -> listType.createFromTreeNode(n3).get(7));
     Assertions.assertThrows(
-        IllegalArgumentException.class, () -> listType.createFromTreeNode(n3).get(8));
+        IndexOutOfBoundsException.class, () -> listType.createFromTreeNode(n3).get(8));
     Assertions.assertThrows(
-        IllegalArgumentException.class,
+        IndexOutOfBoundsException.class,
         () -> listView.set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
     Assertions.assertThrows(
-        IllegalArgumentException.class,
+        IndexOutOfBoundsException.class,
         () -> listView.append(new UInt64View(UnsignedLong.valueOf(0xaaa))));
 
     listView.clear();

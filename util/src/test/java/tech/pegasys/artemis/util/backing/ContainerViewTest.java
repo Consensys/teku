@@ -231,7 +231,7 @@ public class ContainerViewTest {
       Assertions.assertEquals(UnsignedLong.ZERO, c1.getList3().get(1).getLong1());
       Assertions.assertEquals(Bytes32.ZERO, c1.getList3().get(1).getBytes1());
       Assertions.assertThrows(
-          IllegalArgumentException.class,
+          IndexOutOfBoundsException.class,
           () -> {
             c1.getList3().get(2);
           });
@@ -280,7 +280,7 @@ public class ContainerViewTest {
       Assertions.assertEquals(UnsignedLong.valueOf(0x333), c1w.getList1().get(0).get());
       Assertions.assertEquals(UnsignedLong.valueOf(0x444), c1w.getList1().get(1).get());
       Assertions.assertThrows(
-          IllegalArgumentException.class,
+          IndexOutOfBoundsException.class,
           () -> {
             c1w.getList1().get(2);
           });
@@ -316,7 +316,7 @@ public class ContainerViewTest {
       Assertions.assertEquals(UnsignedLong.valueOf(0x333), c1r.getList1().get(0).get());
       Assertions.assertEquals(UnsignedLong.valueOf(0x444), c1r.getList1().get(1).get());
       Assertions.assertThrows(
-          IllegalArgumentException.class,
+          IndexOutOfBoundsException.class,
           () -> {
             c1r.getList1().get(2);
           });
