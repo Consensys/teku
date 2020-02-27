@@ -46,7 +46,7 @@ public class Eth2NetworkBuilder {
     return new Eth2NetworkBuilder();
   }
 
-  public DiscoveryNetwork<Eth2Peer> build() {
+  public P2PNetwork<Eth2Peer> build() {
     validate();
 
     // Setup eth2 handlers
