@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.util.backing.view;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkPositionIndex;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
@@ -63,13 +63,13 @@ public class ListViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public R get(int index) {
-    int size = size();
-    checkArgument(index >= 0 && index < size, "Index out of bounds: %s, size=%s", index, size);
+    checkPositionIndex(index, size());
     return getVector().get(index);
   }
 
   @Override
   public W getByRef(int index) {
+    checkPositionIndex(index, size());
     @SuppressWarnings("unchecked")
     W writableCopy = (W) get(index).createWritableCopy();
 
@@ -87,11 +87,9 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     if (!THROW_OUT_OF_BOUNDS && index >= getType().getMaxLength()) {
       return;
     }
-    checkArgument(
-        (index >= 0 && index < size) || (index == size && index < getType().getMaxLength()),
-        "Index out of bounds: %s, size=%s",
-        index,
-        size());
+    if ((index >= 0 && index < size) || (index == size && index < getType().getMaxLength())) {
+      throw new IndexOutOfBoundsException("Index out of bounds: " + index + ", size=" + size);
+    }
 
     if (index == size) {
       container.set(1, new UInt64View(UnsignedLong.valueOf(size + 1)));
