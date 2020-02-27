@@ -11,12 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.artemis.sync.util;
 
 import com.google.common.eventbus.EventBus;
+import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.sync.SyncStatus;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class NoopSyncService extends SyncService {
@@ -40,7 +43,7 @@ public class NoopSyncService extends SyncService {
   }
 
   @Override
-  public boolean isSyncActive() {
-    return false;
+  public SyncStatus getSyncStatus() {
+    return new SyncStatus(false, UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO);
   }
 }

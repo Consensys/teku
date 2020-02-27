@@ -11,41 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.sync;
+package tech.pegasys.artemis.beaconrestapi.schema;
 
 import com.google.common.primitives.UnsignedLong;
 
-public class SyncStatus {
-  private final boolean is_syncing;
+public class SyncingResponse {
+  public final boolean is_syncing;
+  public final UnsignedLong starting_slot;
+  public final UnsignedLong current_slot;
+  public final UnsignedLong highest_slot;
 
-  private final UnsignedLong starting_slot;
-  private final UnsignedLong current_slot;
-  private final UnsignedLong highest_slot;
-
-  public SyncStatus(
-      final boolean is_syncing,
-      final UnsignedLong starting_slot,
-      final UnsignedLong current_slot,
-      final UnsignedLong highest_slot) {
+  public SyncingResponse(
+      boolean is_syncing,
+      UnsignedLong starting_slot,
+      UnsignedLong current_slot,
+      UnsignedLong highest_slot) {
     this.is_syncing = is_syncing;
     this.starting_slot = starting_slot;
     this.current_slot = current_slot;
     this.highest_slot = highest_slot;
-  }
-
-  public UnsignedLong getStarting_slot() {
-    return starting_slot;
-  }
-
-  public UnsignedLong getCurrent_slot() {
-    return current_slot;
-  }
-
-  public UnsignedLong getHighest_slot() {
-    return highest_slot;
-  }
-
-  public boolean isIs_syncing() {
-    return is_syncing;
   }
 }
