@@ -135,7 +135,8 @@ public class BeaconRestApi {
                 new License()
                     .name("Apache 2.0")
                     .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
-    OpenApiOptions options = new OpenApiOptions(applicationInfo).modelConverterFactory(factory);
+    final OpenApiOptions options =
+        new OpenApiOptions(applicationInfo).modelConverterFactory(factory);
     if (config.getBeaconRestAPIEnableSwagger()) {
       options.path("/swagger-docs").swagger(new SwaggerOptions("/swagger-ui"));
     }

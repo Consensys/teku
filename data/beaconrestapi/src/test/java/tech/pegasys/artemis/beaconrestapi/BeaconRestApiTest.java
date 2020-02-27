@@ -42,13 +42,14 @@ class BeaconRestApiTest {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
-  private static final Integer THE_PORT = 5051;
+  private static final Integer THE_PORT = 12345;
+  private static final String THE_CONFIG =
+      String.format(
+          "beaconrestapi.portNumber=%d\nbeaconrestapi.enableSwagger=%s", THE_PORT, "false");
 
   @BeforeEach
   public void setup() {
-    ArtemisConfiguration config =
-        ArtemisConfiguration.fromString(
-            "beaconrestapi.portNumber=5051\nbeaconrestapi.enableSwagger=false");
+    ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
     when(app.server()).thenReturn(server);
     new BeaconRestApi(storageClient, null, null, combinedChainDataClient, config, app);
   }
