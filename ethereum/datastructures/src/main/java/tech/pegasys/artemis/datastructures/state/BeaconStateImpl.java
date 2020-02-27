@@ -643,7 +643,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
   @SuppressWarnings("unchecked")
   @Override
   public Bitvector getJustification_bits() {
-    return ViewUtils.getBitlist((VectorViewRead<BitView>) get(16));
+    return ViewUtils.getBitvector((VectorViewRead<BitView>) get(16));
   }
 
   @Override

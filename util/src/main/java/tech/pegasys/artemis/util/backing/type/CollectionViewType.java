@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.backing.type;
 import java.util.Objects;
 import tech.pegasys.artemis.util.backing.ViewType;
 
+/** Type of homogeneous collections (like List and Vector) */
 public abstract class CollectionViewType implements CompositeViewType {
 
   private final long maxLength;
@@ -41,8 +42,8 @@ public abstract class CollectionViewType implements CompositeViewType {
   }
 
   @Override
-  public int getBitsPerElement() {
-    return getElementType().getBitsSize();
+  public int getElementsPerChunk() {
+    return 256 / getElementType().getBitsSize();
   }
 
   @Override

@@ -18,6 +18,11 @@ import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
+/**
+ * Represents primitive view type
+ *
+ * @param <C> Class of the basic view of this type
+ */
 public abstract class BasicViewType<C extends ViewRead> implements ViewType {
 
   private final int bitsSize;

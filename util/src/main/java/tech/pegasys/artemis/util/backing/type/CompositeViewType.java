@@ -16,26 +16,46 @@ package tech.pegasys.artemis.util.backing.type;
 import tech.pegasys.artemis.util.backing.Utils;
 import tech.pegasys.artemis.util.backing.ViewType;
 
+/** Abstract type of {@link tech.pegasys.artemis.util.backing.CompositeViewRead} views */
 public interface CompositeViewType extends ViewType {
 
+  /**
+   * Returns the maximum number of elements in views of this type. For views with fixed number of
+   * children (like Containers and Vectors) their size should always be equal to maxLength
+   */
   long getMaxLength();
 
+  /**
+   * Returns the child view type at index. For homogeneous structures (like Vector, List) the
+   * returned type is the same for any index For heterogeneous structures (like Container) each
+   * child has individual type
+   *
+   * @throws IndexOutOfBoundsException if index >= getMaxLength
+   */
   ViewType getChildType(int index);
 
-  int getBitsPerElement();
-
+  /**
+   * Return the number of elements that may be stored in a single tree node This value is 1 for all
+   * types except of packed basic lists/vectors
+   */
   default int getElementsPerChunk() {
-    return 256 / getBitsPerElement();
+    return 1;
   }
 
+  /**
+   * Returns the maximum number of this view backed subtree 'leaf' nodes required to store maxLength
+   * elements
+   */
   default long maxChunks() {
-    return (getMaxLength() * getBitsPerElement() - 1) / 256 + 1;
+    return (getMaxLength() - 1) / getElementsPerChunk() + 1;
   }
 
+  /** Returns the backed binary tree depth to store maxLength elements */
   default int treeDepth() {
     return Long.bitCount(Utils.nextPowerOf2(maxChunks()) - 1);
   }
 
+  /** Returns the backed binary tree width to store maxLength elements */
   default long treeWidth() {
     return Utils.nextPowerOf2(maxChunks());
   }

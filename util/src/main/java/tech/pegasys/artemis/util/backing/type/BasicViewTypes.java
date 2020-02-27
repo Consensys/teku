@@ -28,6 +28,7 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes4View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
+/** The collection of commonly used basic types */
 public class BasicViewTypes {
 
   public static final BasicViewType<BitView> BIT_TYPE =

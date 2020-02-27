@@ -18,6 +18,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 
+/** Collection of basic view classes */
 public class BasicViews {
 
   public static class BitView extends AbstractBasicView<Boolean, BitView> {

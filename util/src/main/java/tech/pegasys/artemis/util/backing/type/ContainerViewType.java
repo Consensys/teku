@@ -63,11 +63,6 @@ public class ContainerViewType<C extends ContainerViewWrite> implements Composit
   }
 
   @Override
-  public int getBitsPerElement() {
-    return 256;
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) {
       return true;

@@ -184,7 +184,7 @@ public class PendingAttestation extends ContainerViewImpl<PendingAttestation>
   @SuppressWarnings("unchecked")
   @JsonProperty
   public Bitlist getAggregation_bits() {
-    return ViewUtils.getBitlist((ListViewRead<BitView>) get(0));
+    return ViewUtils.getBitvector((ListViewRead<BitView>) get(0));
   }
 
   @JsonProperty
