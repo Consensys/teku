@@ -1,7 +1,7 @@
 # teku
 
  [![Build Status](https://circleci.com/gh/PegaSysEng/teku.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/teku)
- [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/artemis/blob/master/LICENSE)
+ [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/teku/blob/master/LICENSE)
  [![Gitter chat](https://badges.gitter.im/PegaSysEng/artemis.png)](https://gitter.im/PegaSysEng/artemis)
 
 Implementation of the Ethereum 2.0 Beacon Chain.
@@ -88,7 +88,7 @@ After a successful build, distribution packages will be available in `build/dist
 | installDist  | Builds an expanded distribution in build/install/teku
 | distDocker   | Builds the pegasyseng/teku docker image
 
-## Run Multiple Artemis nodes
+## Run Multiple Teku nodes
 
 ### Prereqs:
 
@@ -114,7 +114,7 @@ configure their respective nodes.
 
 ## Run in Interop Mode
 
-An interop script is provided to create a network with Artemis and a number of other clients. 
+An interop script is provided to create a network with Teku and a number of other clients. 
 
 ### Prereqs:
 
@@ -134,7 +134,7 @@ Help is available for this script as well:
 sh interop.sh 
 Runs a multiclient testnet
 Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
-Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Artemis
+Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Teku
          sh interop.sh 16 0 16 10
 ```
 
@@ -226,4 +226,5 @@ YourKit is the creator of <a href="https://www.yourkit.com/java/profiler/">YourK
 and <a href="https://www.yourkit.com/youmonitor/">YourKit YouMonitor</a>.
 
 ![YourKit Logo](https://www.yourkit.com/images/yklogo.png)
+
 
