@@ -15,14 +15,12 @@ package tech.pegasys.artemis.statetransition.genesis;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.isThereEnoughNumberOfValidators;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.is_valid_genesis_state;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,9 +34,6 @@ import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class GenesisHandler implements DepositEventChannel, MinGenesisTimeBlockEventChannel {
 
@@ -46,38 +41,13 @@ public class GenesisHandler implements DepositEventChannel, MinGenesisTimeBlockE
 
   private final ChainStorageClient chainStorageClient;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
-  private final TimeProvider timeProvider;
-  private final AsyncRunner asyncRunner;
 
   private Queue<DepositsFromBlockEvent> bufferedDepositsFromBlockEvents = new LinkedList<>();
   private volatile boolean genesisAlreadyTriggered = false;
 
-  public GenesisHandler(
-      final ArtemisConfiguration config,
-      final ChainStorageClient chainStorageClient,
-      final TimeProvider timeProvider,
-      final AsyncRunner asyncRunner) {
+  public GenesisHandler(final ChainStorageClient chainStorageClient) {
     this.chainStorageClient = chainStorageClient;
-    this.timeProvider = timeProvider;
-    this.asyncRunner = asyncRunner;
   }
-
-  /*
-  on DepositsFromBlockEvent:
-    if num active indices >= min genesis active validator count:
-      add the Event to queue
-    else:
-     add deposits to state
-    if num active indices >= min genesis active validator count && block >= min genesis time block number
-  	  trigger genesis
-
-  onMinGenesisTimeBlockEvent:
-      if num active indices >= min genesis active validator count:
-        process all the events in queue up to and including min genesis time block number
-        trigger genesis
-      else:
-        set min genesis time block number to block number in event (edited)
-   */
 
   @Override
   public synchronized void onDepositsFromBlock(final DepositsFromBlockEvent event) {
