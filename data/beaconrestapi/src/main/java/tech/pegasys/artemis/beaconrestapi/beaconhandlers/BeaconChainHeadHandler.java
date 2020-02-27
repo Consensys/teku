@@ -14,6 +14,11 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,15 +54,14 @@ public class BeaconChainHeadHandler implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the canonical head from the beacon node.",
-      tags = {"Beacon"},
+      tags = {TAG_BEACON},
       description = "Requests the canonical head from the beacon node.",
       responses = {
         @OpenApiResponse(
-            status = "200",
+            status = RES_OK,
             content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
-        @OpenApiResponse(
-            status = "204",
-            description = "No Content will be returned if pre Genesis state")
+        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws JsonProcessingException {

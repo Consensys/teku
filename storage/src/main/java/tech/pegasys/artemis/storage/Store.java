@@ -324,7 +324,6 @@ public class Store implements ReadOnlyStore {
       final StoreDiskUpdateEvent updateEvent =
           new StoreDiskUpdateEvent(
               id,
-              time,
               genesis_time,
               justified_checkpoint,
               finalized_checkpoint,
