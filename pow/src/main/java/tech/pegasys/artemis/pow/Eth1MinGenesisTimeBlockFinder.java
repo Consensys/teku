@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.pow;
 
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
+import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_DELAY;
 
 import com.google.common.primitives.UnsignedLong;
 import io.reactivex.disposables.Disposable;
@@ -223,8 +224,8 @@ public class Eth1MinGenesisTimeBlockFinder {
   static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
     UnsignedLong timestamp = UnsignedLong.valueOf(eth1Timestamp);
     return timestamp
-        .minus(timestamp.mod(UnsignedLong.valueOf(Constants.SECONDS_PER_DAY)))
-        .plus(UnsignedLong.valueOf(2 * Constants.SECONDS_PER_DAY));
+        .minus(timestamp.mod(UnsignedLong.valueOf(MIN_GENESIS_DELAY)))
+        .plus(UnsignedLong.valueOf(2 * MIN_GENESIS_DELAY));
   }
 
   /**
