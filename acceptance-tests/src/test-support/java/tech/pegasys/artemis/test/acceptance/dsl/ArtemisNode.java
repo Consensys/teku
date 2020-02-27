@@ -270,9 +270,12 @@ public class ArtemisNode extends Node {
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", REST_API_PORT);
+      beaconRestApi.put("enableSwagger", false);
 
       final Map<String, Object> output = getSection(OUTPUT_SECTION);
       output.put("transitionRecordDir", ARTIFACTS_PATH + "transitions/");
+      output.put("logDir", ARTIFACTS_PATH + "logs/");
+      output.put("dataDir", ARTIFACTS_PATH + "data/");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
