@@ -23,7 +23,6 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
@@ -48,7 +47,7 @@ public class VersionHandler implements Handler {
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(@NotNull Context ctx) throws Exception {
+  public void handle(Context ctx) throws Exception {
     ctx.result(jsonProvider.objectToJSON(VersionProvider.VERSION));
   }
 }
