@@ -62,7 +62,8 @@ public class KeyStoreLoader {
       final JsonMappingException e) {
     final String cause;
     if (e.getCause() instanceof KeyStoreValidationException) {
-      // this is wrapped because it is raised from custom deserializer in KeyStoreBytesModule to validate enums
+      // this is wrapped because it is raised from custom deserializer in KeyStoreBytesModule to
+      // validate enums
       throw (KeyStoreValidationException) e.getCause();
     }
 
@@ -81,7 +82,8 @@ public class KeyStoreLoader {
     return "Invalid KeyStore: " + e.getMessage();
   }
 
-  public static void saveToFile(final Path keystoreFile, final KeyStoreData keyStoreData) throws IOException {
+  public static void saveToFile(final Path keystoreFile, final KeyStoreData keyStoreData)
+      throws IOException {
     checkNotNull(keystoreFile, "KeyStore path cannot be null");
     checkNotNull(keyStoreData, "KeyStore data cannot be null");
 

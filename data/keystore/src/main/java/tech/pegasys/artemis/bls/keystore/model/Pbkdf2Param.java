@@ -16,6 +16,7 @@ package tech.pegasys.artemis.bls.keystore.model;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.nio.charset.StandardCharsets;
@@ -68,6 +69,7 @@ public class Pbkdf2Param extends KdfParam {
   }
 
   @Override
+  @JsonIgnore
   public KdfFunction getKdfFunction() {
     return KdfFunction.PBKDF2;
   }

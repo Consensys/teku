@@ -14,14 +14,18 @@
 package tech.pegasys.artemis.bls.keystore;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -131,7 +135,8 @@ class KeyStoreTest {
   void invalidJsonLoadingThrowsException() {
     Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(MISSING_SECTION_KEYSTORE_RESOURCE))
-        .withMessageStartingWith("Invalid KeyStore: Missing property 'params' for external type id 'function'");
+        .withMessageStartingWith(
+            "Invalid KeyStore: Missing property 'params' for external type id 'function'");
   }
 
   @Test
@@ -166,15 +171,42 @@ class KeyStoreTest {
   void unsupportedPBKDF2PrfFunctionThrowsException() {
     Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_PKKDF2_PRF_FUNCTION_JSON))
-        .withMessage(
-            "PBKDF2 pseudorandom function (prf) [hmac-sha512] is not supported.");
+        .withMessage("PBKDF2 pseudorandom function (prf) [hmac-sha512] is not supported.");
   }
 
   @Test
   void unsupportedDkLenThrowsException() {
     Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_DKLEN_FUNCTION_JSON))
-        .withMessage(
-            "Generated key length parameter dklen must be >= 32.");
+        .withMessage("Generated key length parameter dklen must be >= 32.");
+  }
+
+  @Test
+  void encryptUsingSCryptAndSaveKeyStore(@TempDir final Path tempDir) throws IOException {
+    final KdfParam kdfParam =
+        new SCryptParam(DKLEN, MEMORY_CPU_COST, PARALLELIZATION, BLOCKSIZE, SALT);
+    encryptSaveAndReloadKeyStore(tempDir, kdfParam);
+  }
+
+  @Test
+  void encryptUsingPBKDF2AndSaveKeyStore(@TempDir final Path tempDir) throws IOException {
+    final KdfParam kdfParam =
+        new Pbkdf2Param(DKLEN, ITERATIVE_COUNT, Pbkdf2PseudoRandomFunction.HMAC_SHA256, SALT);
+    encryptSaveAndReloadKeyStore(tempDir, kdfParam);
+  }
+
+  private void encryptSaveAndReloadKeyStore(final Path tempDir, final KdfParam kdfParam)
+      throws IOException {
+    final KeyStoreData keyStoreData =
+        KeyStore.encrypt(BLS_PRIVATE_KEY, PASSWORD, "", kdfParam, CIPHER);
+    final Path tempKeyStoreFile = Files.createTempFile(tempDir, "keystore", ".json");
+    assertThatCode(() -> KeyStoreLoader.saveToFile(tempKeyStoreFile, keyStoreData))
+        .doesNotThrowAnyException();
+
+    // reload it back
+    final KeyStoreData loadedKeyStore = KeyStoreLoader.loadFromFile(tempKeyStoreFile);
+    assertThat(loadedKeyStore.getUuid()).isEqualByComparingTo(keyStoreData.getUuid());
+    assertThat(loadedKeyStore.getCrypto().getChecksum().getMessage())
+        .isEqualTo(keyStoreData.getCrypto().getChecksum().getMessage());
   }
 }

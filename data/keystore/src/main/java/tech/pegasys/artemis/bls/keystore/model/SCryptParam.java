@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.apache.tuweni.bytes.Bytes;
@@ -90,6 +91,7 @@ public class SCryptParam extends KdfParam {
   }
 
   @Override
+  @JsonIgnore
   public KdfFunction getKdfFunction() {
     return KdfFunction.SCRYPT;
   }
