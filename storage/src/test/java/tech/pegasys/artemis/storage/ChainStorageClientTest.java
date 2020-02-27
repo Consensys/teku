@@ -180,7 +180,8 @@ class ChainStorageClientTest {
     storageClient.setStore(store);
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
-    final BeaconState bestState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final MutableBeaconState bestState =
+        DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
     bestState.getBlock_roots().set(0, GENESIS_BLOCK_ROOT);
     when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);

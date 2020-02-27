@@ -499,40 +499,40 @@ class MapDbDatabaseTest {
       final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
       final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
 
-    addBlocks(
-        block1,
-        block2,
-        block3,
-        block7,
-        block8,
-        block9,
-        forkBlock6,
-        forkBlock7,
-        forkBlock8,
-        forkBlock9);
-    assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
-    assertLatestUpdateResultPrunedCollectionsAreEmpty();
+      addBlocks(
+          block1,
+          block2,
+          block3,
+          block7,
+          block8,
+          block9,
+          forkBlock6,
+          forkBlock7,
+          forkBlock8,
+          forkBlock9);
+      assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
+      assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
       finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
 
-    // Upon finalization, we should prune data
-    final Set<Bytes32> blocksToPrune =
-        Set.of(block1, block2, block3, forkBlock6).stream()
-            .map(b -> b.getMessage().hash_tree_root())
-            .collect(Collectors.toSet());
-    blocksToPrune.add(genesisBlock.hash_tree_root());
-    final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
-    assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
+      // Upon finalization, we should prune data
+      final Set<Bytes32> blocksToPrune =
+          Set.of(block1, block2, block3, forkBlock6).stream()
+              .map(b -> b.getMessage().hash_tree_root())
+              .collect(Collectors.toSet());
+      blocksToPrune.add(genesisBlock.hash_tree_root());
+      final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
+      assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
 
-    // Check data was pruned from store
-    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
+      // Check data was pruned from store
+      assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
 
-    // Close and re-read from disk store.
-    database.close();
-    database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
-    assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
-    assertBlocksFinalized(block1, block2, block3, block7);
-    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
+      // Close and re-read from disk store.
+      database.close();
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
+      assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
+      assertBlocksFinalized(block1, block2, block3, block7);
+      assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
 
       // Should still be able to retrieve finalized blocks by root
       assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
