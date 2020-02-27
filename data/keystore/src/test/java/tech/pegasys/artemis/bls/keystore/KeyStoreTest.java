@@ -15,6 +15,7 @@ package tech.pegasys.artemis.bls.keystore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -23,7 +24,6 @@ import java.nio.file.Path;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -133,7 +133,7 @@ class KeyStoreTest {
 
   @Test
   void invalidJsonLoadingThrowsException() {
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(MISSING_SECTION_KEYSTORE_RESOURCE))
         .withMessageStartingWith(
             "Invalid KeyStore: Missing property 'params' for external type id 'function'");
@@ -141,42 +141,42 @@ class KeyStoreTest {
 
   @Test
   void unsupportedVersionThrowsException() {
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_VERSION_JSON_RESOURCE))
         .withMessage("The KeyStore version 3 is not supported");
   }
 
   @Test
   void unsupportedChecksumFunctionThrowsException() {
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_CHECKSUM_FUNCTION_JSON))
         .withMessage("Checksum function [sha128] is not supported.");
   }
 
   @Test
   void unsupportedCipherFunctionThrowsException() {
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_CIPHER_FUNCTION_JSON))
         .withMessage("Cipher function [aes-256-ctr] is not supported.");
   }
 
   @Test
   void unsupportedKdfFunctionThrowsException() {
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_KDF_FUNCTION_JSON))
         .withMessage("Kdf function [pbkdf3] is not supported.");
   }
 
   @Test
   void unsupportedPBKDF2PrfFunctionThrowsException() {
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_PKKDF2_PRF_FUNCTION_JSON))
         .withMessage("PBKDF2 pseudorandom function (prf) [hmac-sha512] is not supported.");
   }
 
   @Test
   void unsupportedDkLenThrowsException() {
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> loadKeyStoreFromResource(UNSUPPORTED_DKLEN_FUNCTION_JSON))
         .withMessage("Generated key length parameter dklen must be >= 32.");
   }
@@ -186,6 +186,14 @@ class KeyStoreTest {
     final KdfParam kdfParam =
         new SCryptParam(DKLEN, MEMORY_CPU_COST, PARALLELIZATION, BLOCKSIZE, SALT);
     encryptSaveAndReloadKeyStore(tempDir, kdfParam);
+  }
+
+  @Test
+  void loadingNonExistentKeyStoreFileThrowsError(@TempDir final Path tempDir) {
+    final Path keyStoreFile = tempDir.resolve("nonexistent.json");
+    assertThatExceptionOfType(KeyStoreValidationException.class)
+        .isThrownBy(() -> KeyStoreLoader.loadFromFile(keyStoreFile))
+        .withMessage("KeyStore file not found: " + keyStoreFile);
   }
 
   @Test

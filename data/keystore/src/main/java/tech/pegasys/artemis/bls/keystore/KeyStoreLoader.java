@@ -50,7 +50,7 @@ public class KeyStoreLoader {
     } catch (final JsonMappingException e) {
       throw convertToKeyStoreValidationException(e);
     } catch (final FileNotFoundException e) {
-      throw new KeyStoreValidationException("KeyStore file not found", e);
+      throw new KeyStoreValidationException("KeyStore file not found: " + keystoreFile, e);
     } catch (final IOException e) {
       LOG.error("Unexpected IO error while reading KeyStore: " + e.getMessage());
       throw new KeyStoreValidationException(
