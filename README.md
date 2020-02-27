@@ -1,7 +1,7 @@
-# artemis
+# teku
 
- [![Build Status](https://circleci.com/gh/PegaSysEng/artemis.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/artemis)
- [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/artemis/blob/master/LICENSE)
+ [![Build Status](https://circleci.com/gh/PegaSysEng/teku.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/teku)
+ [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/teku/blob/master/LICENSE)
  [![Gitter chat](https://badges.gitter.im/PegaSysEng/artemis.png)](https://gitter.im/PegaSysEng/artemis)
 
 Implementation of the Ethereum 2.0 Beacon Chain.
@@ -52,29 +52,29 @@ OSX: `brew install gradle`
 To create a ready to run distribution:
 
 ```shell script
-git clone https://github.com/PegaSysEng/artemis.git
-cd artemis && ./gradlew distTar installDist
+git clone https://github.com/PegaSysEng/teku.git
+cd teku && ./gradlew distTar installDist
 ```
 
 This will produce:
 - a fully packaged distribution in `build/distributions` 
-- an expanded distribution, ready to run in `build/install/artemis`
+- an expanded distribution, ready to run in `build/install/teku`
 
 ### Build and Test
 
 To build, clone this repo and run with `gradle` like so:
 
 ```shell script
-git clone https://github.com/PegaSysEng/artemis.git
-cd artemis && ./gradlew
+git clone https://github.com/PegaSysEng/teku.git
+cd teku && ./gradlew
 
 ```
 
 Or clone it manually:
 
 ```shell script
-git clone https://github.com/PegaSysEng/artemis.git
-cd artemis && ./gradlew
+git clone https://github.com/PegaSysEng/teku.git
+cd teku && ./gradlew
 ```
 
 After a successful build, distribution packages will be available in `build/distributions`.
@@ -85,10 +85,10 @@ After a successful build, distribution packages will be available in `build/dist
 |--------------|--------------------------------------------
 | distTar      | Builds a full distribution in build/distributions (as .tar.gz)
 | distZip      | Builds a full distribution in build/distributions (as .zip)
-| installDist  | Builds an expanded distribution in build/install/artemis
-| distDocker   | Builds the pegasyseng/artemis docker image
+| installDist  | Builds an expanded distribution in build/install/teku
+| distDocker   | Builds the pegasyseng/teku docker image
 
-## Run Multiple Artemis nodes
+## Run Multiple Teku nodes
 
 ### Prereqs:
 
@@ -104,7 +104,7 @@ Help is available for this script as well:
 
 ```
 sh run.sh -h
-Runs a simulation of artemis with NODES nodes, where NODES > 0 and NODES < 256
+Runs a simulation of Teku with NODES nodes, where NODES > 0 and NODES < 256
 Usage: sh run.sh [--numNodes, -n=NODES]  [--config=/path/to/your-config.toml] [--logging, -l=OFF|FATAL|WARN|INFO|DEBUG|TRACE|ALL]
                  [--help, -h]
 - If config files are specifed for specific nodes, those input files will be used to
@@ -114,7 +114,7 @@ configure their respective nodes.
 
 ## Run in Interop Mode
 
-An interop script is provided to create a network with Artemis and a number of other clients. 
+An interop script is provided to create a network with Teku and a number of other clients. 
 
 ### Prereqs:
 
@@ -134,7 +134,7 @@ Help is available for this script as well:
 sh interop.sh 
 Runs a multiclient testnet
 Usage: sh interop.sh [validator_count] [owned_validator_start_index] [owned_validator_count] [start_delay]
-Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Artemis
+Example: Run multiple clients in interop mode using static peering. 16 validators and all are assigned to Teku
          sh interop.sh 16 0 16 10
 ```
 

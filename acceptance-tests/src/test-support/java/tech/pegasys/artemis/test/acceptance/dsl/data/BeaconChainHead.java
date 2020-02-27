@@ -36,7 +36,7 @@ public class BeaconChainHead {
   public BeaconChainHead(
       @JsonProperty("head_slot") UnsignedLong head_slot,
       @JsonProperty("head_epoch") UnsignedLong head_epoch,
-      @JsonProperty("head_lockroot") Bytes32 head_block_root,
+      @JsonProperty("head_block_root") Bytes32 head_block_root,
       @JsonProperty("finalized_slot") UnsignedLong finalized_slot,
       @JsonProperty("finalized_epoch") UnsignedLong finalized_epoch,
       @JsonProperty("finalized_block_root") Bytes32 finalized_block_root,
