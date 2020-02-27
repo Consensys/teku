@@ -24,6 +24,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.beaconrestapi.schema.SyncingResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.sync.SyncService;
 
@@ -44,9 +45,9 @@ public class NodeSyncingHandler implements Handler {
       method = HttpMethod.GET,
       summary = "Get syncing info from the running beacon node.",
       tags = {TAG_NODE},
-      description = "Requests that the beacon node identify information about its syncing state",
+      description = "Requests that the beacon node gives information about its syncing state",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = boolean.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
