@@ -76,20 +76,13 @@ public class ConnectionManager extends Service {
   }
 
   private void attemptConnection(final DiscoveryPeer discoveryPeer) {
-    if (network.getPeer(discoveryPeer.getNodeId()).isPresent()) {
-      LOG.trace("Not connecting to {} as we are already connected", discoveryPeer::getNodeId);
-      return;
-    }
-    LOG.trace(
-        "Attempting connection to {} at {}",
-        discoveryPeer::getNodeId,
-        discoveryPeer::getNodeAddress);
     network
         .connect(discoveryPeer)
         .finish(
             peer -> LOG.trace("Successfully connected to peer {}", peer.getId()),
             error ->
-                LOG.trace(() -> "Failed to connect to peer: " + discoveryPeer.getNodeId(), error));
+                LOG.trace(
+                    () -> "Failed to connect to peer: " + discoveryPeer.getPublicKey(), error));
   }
 
   @Override

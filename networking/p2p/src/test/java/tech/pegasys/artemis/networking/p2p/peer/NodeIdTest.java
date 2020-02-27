@@ -15,28 +15,33 @@ package tech.pegasys.artemis.networking.p2p.peer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import io.libp2p.core.PeerId;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryNodeId;
+import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 
 class NodeIdTest {
+
+  public static final String ID =
+      "075a94fea63205f0893570157ca45487bc47fdcb2714ebe08a6e942cb86005e6";
+
   @Test
   public void shouldBeEqualToNodeIdsOfDifferentTypes() {
-    final Bytes nodeIdBytes = Bytes.fromHexString("0x01");
-    final DiscoveryNodeId discoveryNodeId = new DiscoveryNodeId(nodeIdBytes);
-    final MockNodeId mockNodeId = new MockNodeId(nodeIdBytes);
-    assertThat(mockNodeId).isEqualTo(discoveryNodeId);
-    assertThat(discoveryNodeId).isEqualTo(mockNodeId);
-    assertThat(mockNodeId.hashCode()).isEqualTo(discoveryNodeId.hashCode());
+    final PeerId peerId = PeerId.fromHex(ID);
+    final NodeId libP2PNodeId = new LibP2PNodeId(peerId);
+    final MockNodeId mockNodeId = new MockNodeId(Bytes.fromHexString(ID));
+    assertThat(mockNodeId).isEqualTo(libP2PNodeId);
+    assertThat(libP2PNodeId).isEqualTo(mockNodeId);
+    assertThat(mockNodeId.hashCode()).isEqualTo(libP2PNodeId.hashCode());
   }
 
   @Test
   public void shouldBeDifferentWhenBytesAreDifferent() {
-    final DiscoveryNodeId discoveryNodeId = new DiscoveryNodeId(Bytes.fromHexString("0x01"));
-    final MockNodeId mockNodeId = new MockNodeId(Bytes.fromHexString("0x02"));
-    assertThat(mockNodeId).isNotEqualTo(discoveryNodeId);
-    assertThat(discoveryNodeId).isNotEqualTo(mockNodeId);
-    assertThat(mockNodeId.hashCode()).isNotEqualTo(discoveryNodeId.hashCode());
+    final LibP2PNodeId libP2PNodeId = new LibP2PNodeId(PeerId.fromHex(ID));
+    final MockNodeId mockNodeId = new MockNodeId(1);
+    assertThat(mockNodeId).isNotEqualTo(libP2PNodeId);
+    assertThat(libP2PNodeId).isNotEqualTo(mockNodeId);
+    assertThat(mockNodeId.hashCode()).isNotEqualTo(libP2PNodeId.hashCode());
   }
 }

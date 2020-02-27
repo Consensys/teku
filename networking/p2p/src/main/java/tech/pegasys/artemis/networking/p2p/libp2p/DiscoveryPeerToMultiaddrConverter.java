@@ -13,6 +13,10 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
+import static io.libp2p.crypto.keys.Secp256k1Kt.unmarshalSecp256k1PublicKey;
+
+import io.libp2p.core.PeerId;
+import io.libp2p.core.crypto.PubKey;
 import io.libp2p.core.multiformats.Multiaddr;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -23,13 +27,14 @@ public class DiscoveryPeerToMultiaddrConverter {
 
   public static Multiaddr convertToMultiAddr(final DiscoveryPeer peer) {
     final InetSocketAddress address = peer.getNodeAddress();
+    final PubKey pubKey = unmarshalSecp256k1PublicKey(peer.getPublicKey().toArrayUnsafe());
     final String addrString =
         String.format(
             "/%s/%s/tcp/%d/p2p/%s",
             protocol(address.getAddress()),
             address.getAddress().getHostAddress(),
             address.getPort(),
-            peer.getNodeId().toBase58());
+            new LibP2PNodeId(PeerId.fromPubKey(pubKey)));
     return Multiaddr.fromString(addrString);
   }
 

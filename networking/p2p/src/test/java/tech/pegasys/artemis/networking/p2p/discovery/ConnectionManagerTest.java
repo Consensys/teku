@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.network.p2p.peer.StubPeer;
@@ -92,10 +93,8 @@ class ConnectionManagerTest {
   @Test
   public void shouldConnectToKnownPeersWhenStarted() {
     final ConnectionManager manager = createManager();
-    final DiscoveryPeer discoveryPeer1 =
-        new DiscoveryPeer(new MockNodeId(), new InetSocketAddress(1));
-    final DiscoveryPeer discoveryPeer2 =
-        new DiscoveryPeer(new MockNodeId(), new InetSocketAddress(2));
+    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
+    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
     when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(discoveryPeer1, discoveryPeer2));
     when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
 
@@ -108,8 +107,7 @@ class ConnectionManagerTest {
   @Test
   public void shouldNotRetryConnectionsToDiscoveredPeersOnFailure() {
     final ConnectionManager manager = createManager();
-    final DiscoveryPeer discoveryPeer =
-        new DiscoveryPeer(new MockNodeId(), new InetSocketAddress(1));
+    final DiscoveryPeer discoveryPeer = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
     when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(discoveryPeer));
     final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
     when(network.connect(any(DiscoveryPeer.class))).thenReturn(connectionFuture);
@@ -126,8 +124,7 @@ class ConnectionManagerTest {
   @Test
   public void shouldNotRetryConnectionsToDiscoveredPeersOnDisconnect() {
     final ConnectionManager manager = createManager();
-    final DiscoveryPeer discoveryPeer =
-        new DiscoveryPeer(new MockNodeId(), new InetSocketAddress(1));
+    final DiscoveryPeer discoveryPeer = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
     when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(discoveryPeer));
     final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
     when(network.connect(any(DiscoveryPeer.class))).thenReturn(connectionFuture);
@@ -135,7 +132,7 @@ class ConnectionManagerTest {
     manager.start().join();
     verify(network).connect(discoveryPeer);
 
-    final StubPeer peer = new StubPeer(discoveryPeer.getNodeId());
+    final StubPeer peer = new StubPeer(new MockNodeId(discoveryPeer.getPublicKey()));
     connectionFuture.complete(peer);
 
     peer.disconnect();
@@ -199,10 +196,8 @@ class ConnectionManagerTest {
 
   @Test
   public void shouldConnectToKnownPeersWhenDiscoverySearchCompletes() {
-    final DiscoveryPeer discoveryPeer1 =
-        new DiscoveryPeer(new MockNodeId(), new InetSocketAddress(1));
-    final DiscoveryPeer discoveryPeer2 =
-        new DiscoveryPeer(new MockNodeId(), new InetSocketAddress(2));
+    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
+    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
     final SafeFuture<Void> search1 = new SafeFuture<>();
     when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
     when(discoveryService.searchForPeers()).thenReturn(search1);
