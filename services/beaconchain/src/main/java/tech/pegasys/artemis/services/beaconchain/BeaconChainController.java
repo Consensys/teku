@@ -82,7 +82,7 @@ public class BeaconChainController {
   private EventBus eventBus;
   private Timer timer;
   private ChainStorageClient chainStorageClient;
-  private P2PNetwork<?> p2pNetwork;
+  private P2PNetwork<Eth2Peer> p2pNetwork;
   private final MetricsSystem metricsSystem;
   private SettableGauge currentSlotGauge;
   private SettableGauge currentEpochGauge;
@@ -195,7 +195,7 @@ public class BeaconChainController {
   public void initP2PNetwork() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initP2PNetwork()");
     if ("mock".equals(config.getNetworkMode())) {
-      this.p2pNetwork = new MockP2PNetwork(eventBus);
+      this.p2pNetwork = new MockP2PNetwork<>(eventBus);
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
       PrivKey pk =
@@ -251,7 +251,6 @@ public class BeaconChainController {
             config.getBeaconRestAPIPortNumber());
   }
 
-  @SuppressWarnings("unchecked")
   public void initSyncManager() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
@@ -260,7 +259,7 @@ public class BeaconChainController {
       syncService =
           new SyncService(
               eventBus,
-              (P2PNetwork<Eth2Peer>) p2pNetwork,
+              p2pNetwork,
               chainStorageClient,
               new BlockImporter(chainStorageClient, eventBus));
     }
