@@ -16,18 +16,14 @@ package tech.pegasys.artemis.sync;
 import com.google.common.primitives.UnsignedLong;
 
 public class SyncStatus {
-  private final boolean is_syncing;
-
   private final UnsignedLong starting_slot;
   private final UnsignedLong current_slot;
   private final UnsignedLong highest_slot;
 
   public SyncStatus(
-      final boolean is_syncing,
       final UnsignedLong starting_slot,
       final UnsignedLong current_slot,
       final UnsignedLong highest_slot) {
-    this.is_syncing = is_syncing;
     this.starting_slot = starting_slot;
     this.current_slot = current_slot;
     this.highest_slot = highest_slot;
@@ -43,9 +39,5 @@ public class SyncStatus {
 
   public UnsignedLong getHighest_slot() {
     return highest_slot;
-  }
-
-  public boolean isIs_syncing() {
-    return is_syncing;
   }
 }

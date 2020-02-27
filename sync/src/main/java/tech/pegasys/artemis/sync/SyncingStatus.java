@@ -11,14 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.sync;
 
-public class SyncingResponse {
-  public final boolean is_syncing;
-  public final SyncingStatus sync_status;
+public class SyncingStatus {
+  private final boolean is_syncing;
+  private final SyncStatus syncStatus;
 
-  public SyncingResponse(boolean is_syncing, SyncingStatus sync_status) {
+  public SyncingStatus(final boolean is_syncing, final SyncStatus syncStatus) {
     this.is_syncing = is_syncing;
-    this.sync_status = sync_status;
+    this.syncStatus = syncStatus;
+  }
+
+  public SyncStatus getSync_status() {
+    return syncStatus;
+  }
+
+  public boolean isIs_syncing() {
+    return is_syncing;
   }
 }

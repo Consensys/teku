@@ -24,6 +24,7 @@ import tech.pegasys.artemis.beaconrestapi.schema.SyncingResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.SyncStatus;
+import tech.pegasys.artemis.sync.SyncingStatus;
 
 public class NodeSyncingHandlerTest {
   private Context context = mock(Context.class);
@@ -36,10 +37,13 @@ public class NodeSyncingHandlerTest {
     final UnsignedLong startSlot = UnsignedLong.ONE;
     final UnsignedLong currentSlot = UnsignedLong.valueOf(5);
     final UnsignedLong highestSlot = UnsignedLong.valueOf(10);
-    SyncingResponse syncingResponse =
-        new SyncingResponse(isSyncing, startSlot, currentSlot, highestSlot);
-    SyncStatus syncStatus = new SyncStatus(isSyncing, startSlot, currentSlot, highestSlot);
-    when(syncService.getSyncStatus()).thenReturn(syncStatus);
+    SyncingStatus syncingStatus =
+        new SyncingStatus(isSyncing, new SyncStatus(startSlot, currentSlot, highestSlot));
+    tech.pegasys.artemis.beaconrestapi.schema.SyncingStatus syncStatus =
+        new tech.pegasys.artemis.beaconrestapi.schema.SyncingStatus(
+            startSlot, currentSlot, highestSlot);
+    SyncingResponse syncingResponse = new SyncingResponse(isSyncing, syncStatus);
+    when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(syncingResponse));
@@ -51,10 +55,13 @@ public class NodeSyncingHandlerTest {
     final UnsignedLong startSlot = UnsignedLong.ZERO;
     final UnsignedLong currentSlot = UnsignedLong.ZERO;
     final UnsignedLong highestSlot = UnsignedLong.ZERO;
-    SyncingResponse syncingResponse =
-        new SyncingResponse(isSyncing, startSlot, currentSlot, highestSlot);
-    SyncStatus syncStatus = new SyncStatus(isSyncing, startSlot, currentSlot, highestSlot);
-    when(syncService.getSyncStatus()).thenReturn(syncStatus);
+    SyncingStatus syncingStatus =
+        new SyncingStatus(isSyncing, new SyncStatus(startSlot, currentSlot, highestSlot));
+    tech.pegasys.artemis.beaconrestapi.schema.SyncingStatus syncStatus =
+        new tech.pegasys.artemis.beaconrestapi.schema.SyncingStatus(
+            startSlot, currentSlot, highestSlot);
+    SyncingResponse syncingResponse = new SyncingResponse(isSyncing, syncStatus);
+    when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(syncingResponse));

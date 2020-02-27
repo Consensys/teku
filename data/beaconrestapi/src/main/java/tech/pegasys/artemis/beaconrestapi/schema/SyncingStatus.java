@@ -13,12 +13,17 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-public class SyncingResponse {
-  public final boolean is_syncing;
-  public final SyncingStatus sync_status;
+import com.google.common.primitives.UnsignedLong;
 
-  public SyncingResponse(boolean is_syncing, SyncingStatus sync_status) {
-    this.is_syncing = is_syncing;
-    this.sync_status = sync_status;
+public class SyncingStatus {
+  public final UnsignedLong starting_slot;
+  public final UnsignedLong current_slot;
+  public final UnsignedLong highest_slot;
+
+  public SyncingStatus(
+      UnsignedLong starting_slot, UnsignedLong current_slot, UnsignedLong highest_slot) {
+    this.starting_slot = starting_slot;
+    this.current_slot = current_slot;
+    this.highest_slot = highest_slot;
   }
 }

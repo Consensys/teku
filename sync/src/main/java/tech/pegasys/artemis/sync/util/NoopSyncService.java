@@ -20,6 +20,7 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.SyncStatus;
+import tech.pegasys.artemis.sync.SyncingStatus;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class NoopSyncService extends SyncService {
@@ -43,7 +44,8 @@ public class NoopSyncService extends SyncService {
   }
 
   @Override
-  public SyncStatus getSyncStatus() {
-    return new SyncStatus(false, UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO);
+  public SyncingStatus getSyncStatus() {
+    return new SyncingStatus(
+        false, new SyncStatus(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO));
   }
 }

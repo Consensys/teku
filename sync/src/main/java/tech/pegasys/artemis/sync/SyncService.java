@@ -45,7 +45,7 @@ public class SyncService extends Service {
     return SafeFuture.allOf(syncManager.stop(), blockPropagationManager.stop());
   }
 
-  public SyncStatus getSyncStatus() {
+  public SyncingStatus getSyncStatus() {
     return syncManager.getSyncStatus();
   }
 }
