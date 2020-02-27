@@ -41,11 +41,12 @@ class DiscoveryNetworkTest {
   public void shouldStartConnectionManagerAfterP2pAndDiscoveryStarted() {
     final SafeFuture<Void> p2pStart = new SafeFuture<>();
     final SafeFuture<Void> discoveryStart = new SafeFuture<>();
+    final SafeFuture<Object> connectionManagerStart = new SafeFuture<>();
     doReturn(p2pStart).when(p2pNetwork).start();
     doReturn(discoveryStart).when(discoveryService).start();
-    doReturn(new SafeFuture<>()).when(connectionManager).start();
+    doReturn(connectionManagerStart).when(connectionManager).start();
 
-    discoveryNetwork.start().join();
+    final SafeFuture<?> started = discoveryNetwork.start();
 
     verify(p2pNetwork).start();
     verify(discoveryService).start();
@@ -56,6 +57,10 @@ class DiscoveryNetworkTest {
 
     discoveryStart.complete(null);
     verify(connectionManager).start();
+    assertThat(started).isNotDone();
+
+    connectionManagerStart.complete(null);
+    assertThat(started).isCompleted();
   }
 
   @Test
