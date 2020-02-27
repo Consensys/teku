@@ -5,6 +5,7 @@ dependencies {
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
   implementation project(':services:serviceutils')
+  implementation project(':storage')
   implementation project(':util')
   implementation project(':data')
   implementation project(':data:metrics')
