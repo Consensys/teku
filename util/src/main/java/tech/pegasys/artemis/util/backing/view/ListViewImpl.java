@@ -87,7 +87,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     if (!THROW_OUT_OF_BOUNDS && index >= getType().getMaxLength()) {
       return;
     }
-    if ((index >= 0 && index < size) || (index == size && index < getType().getMaxLength())) {
+    if (!((index >= 0 && index < size) || (index == size && index < getType().getMaxLength()))) {
       throw new IndexOutOfBoundsException("Index out of bounds: " + index + ", size=" + size);
     }
 

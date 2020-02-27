@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.util.backing.view;
 
-import static com.google.common.base.Preconditions.checkPositionIndex;
-
 import java.util.function.Function;
 import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
@@ -36,8 +34,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public void set(int index, R value) {
-    checkPositionIndex(index, size());
-
+    checkIndex(index);
     backingNode =
         updateNode(
             index / type.getElementsPerChunk(),
@@ -55,7 +52,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public R get(int index) {
-    checkPositionIndex(index, size());
+    checkIndex(index);
 
     TreeNode node = getNode(index / type.getElementsPerChunk());
     @SuppressWarnings("unchecked")
@@ -65,7 +62,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public W getByRef(int index) {
-    checkPositionIndex(index, size());
+    checkIndex(index);
 
     @SuppressWarnings("unchecked")
     W writableCopy = (W) get(index).createWritableCopy();
@@ -92,5 +89,12 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   @Override
   public TreeNode getBackingNode() {
     return backingNode;
+  }
+
+  private void checkIndex(int index) {
+    if (index < 0 || index >= getType().getMaxLength()) {
+      throw new IndexOutOfBoundsException(
+          "Index out of bounds: " + index + ", size=" + getType().getMaxLength());
+    }
   }
 }
