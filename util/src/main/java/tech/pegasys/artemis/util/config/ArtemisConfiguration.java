@@ -110,6 +110,8 @@ public class ArtemisConfiguration {
     builder.addString(
         "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
     builder.addString(
+        "output.dataPath", ".", "Path to output data files", PropertyValidator.isPresent());
+    builder.addString(
         "output.transitionRecordDir",
         "",
         "Directory to record transition pre and post states",
@@ -311,6 +313,10 @@ public class ArtemisConfiguration {
   /** @return the name of the log file */
   public String getLogFile() {
     return config.getString("output.logFile");
+  }
+
+  public String getDataPath() {
+    return config.getString("output.dataPath");
   }
 
   public boolean startFromDisk() {

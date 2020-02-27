@@ -84,4 +84,16 @@ final class ArtemisConfigurationTest {
     assertEquals(config.getBeaconRestAPIPortNumber(), 1);
     assertEquals(config.getBeaconRestAPIEnableSwagger(), false);
   }
+
+  @Test
+  void dataPathCanBeSet() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.dataPath=\".\"");
+    assertThat(config.getDataPath()).isEqualTo(".");
+  }
+
+  @Test
+  void logPathCanBeSet() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.logPath=\".\"");
+    assertThat(config.getLogPath()).isEqualTo(".");
+  }
 }
