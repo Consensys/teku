@@ -13,11 +13,10 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static com.google.common.primitives.UnsignedLong.ZERO;
-
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;

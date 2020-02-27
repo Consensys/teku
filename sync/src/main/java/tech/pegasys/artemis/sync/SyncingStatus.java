@@ -14,19 +14,11 @@
 package tech.pegasys.artemis.sync;
 
 public class SyncingStatus {
-  private final boolean is_syncing;
-  private final SyncStatus syncStatus;
+  public final boolean is_syncing;
+  public final SyncStatus sync_status;
 
-  public SyncingStatus(final boolean is_syncing, final SyncStatus syncStatus) {
+  public SyncingStatus(final boolean is_syncing, final SyncStatus sync_status) {
     this.is_syncing = is_syncing;
-    this.syncStatus = syncStatus;
-  }
-
-  public SyncStatus getSync_status() {
-    return syncStatus;
-  }
-
-  public boolean isIs_syncing() {
-    return is_syncing;
+    this.sync_status = sync_status;
   }
 }
