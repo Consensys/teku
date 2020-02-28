@@ -13,10 +13,10 @@
 
 package tech.pegasys.artemis.util.backing.type;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 
 /**
  * Represents primitive view type
@@ -38,7 +38,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
 
   @Override
   public TreeNode getDefaultTree() {
-    return TreeNode.createRoot(Bytes32.ZERO);
+    return TreeUtil.ZERO_LEAF;
   }
 
   @Override
@@ -50,7 +50,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   public abstract C createFromTreeNode(TreeNode node, int internalIndex);
 
   public TreeNode createTreeNode(C newValue) {
-    return updateTreeNode(TreeNode.createRoot(Bytes32.ZERO), 0, newValue);
+    return updateTreeNode(TreeUtil.ZERO_LEAF, 0, newValue);
   }
 
   @Override
