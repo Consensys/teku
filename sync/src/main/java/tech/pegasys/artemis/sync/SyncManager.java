@@ -128,9 +128,18 @@ public class SyncManager extends Service {
     return syncQueued;
   }
 
-  public SyncStatus getSyncStatus() {
-    final UnsignedLong highestSlot = findBestSyncPeer().get().getStatus().getHeadSlot();
-    return new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
+  public SyncingStatus getSyncStatus() {
+    final boolean isSyncActive = isSyncActive();
+    if (!isSyncActive) {
+      final SyncStatus syncStatus =
+          new SyncStatus(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO);
+      return new SyncingStatus(false, syncStatus);
+    } else {
+      final UnsignedLong highestSlot = findBestSyncPeer().get().getStatus().getHeadSlot();
+      final SyncStatus syncStatus =
+          new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
+      return new SyncingStatus(isSyncActive(), syncStatus);
+    }
   }
 
   private SafeFuture<Void> executeSync() {
