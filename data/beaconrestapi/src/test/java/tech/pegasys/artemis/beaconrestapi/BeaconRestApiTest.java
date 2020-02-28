@@ -27,12 +27,16 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class BeaconRestApiTest {
   private final ChainStorageClient storageClient =
@@ -41,12 +45,17 @@ class BeaconRestApiTest {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
+  private final SyncService syncService = mock(SyncService.class);
   private static final Integer THE_PORT = 12345;
+  private static final String THE_CONFIG =
+      String.format(
+          "beaconrestapi.portNumber=%d\nbeaconrestapi.enableSwagger=%s", THE_PORT, "false");
 
   @BeforeEach
   public void setup() {
+    ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
     when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, combinedChainDataClient, THE_PORT, app);
+    new BeaconRestApi(storageClient, null, null, combinedChainDataClient, syncService, config, app);
   }
 
   @Test
@@ -87,5 +96,15 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveBeaconStateEndpoint() {
     verify(app).get(eq(BeaconStateHandler.ROUTE), any(BeaconStateHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveSyncingEndpoint() {
+    verify(app).get(eq(NodeSyncingHandler.ROUTE), any(NodeSyncingHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveBeaconValidatorsEndpoint() {
+    verify(app).get(eq(BeaconValidatorsHandler.ROUTE), any(BeaconValidatorsHandler.class));
   }
 }

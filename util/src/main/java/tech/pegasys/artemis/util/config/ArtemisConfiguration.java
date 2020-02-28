@@ -104,13 +104,12 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
+
     // Outputs
     builder.addString(
         "output.logPath", ".", "Path to output the log file", PropertyValidator.isPresent());
     builder.addString(
         "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
-    builder.addString(
-        "output.dataPath", ".", "Path to output data files", PropertyValidator.isPresent());
     builder.addString(
         "output.transitionRecordDir",
         "",
@@ -119,6 +118,8 @@ public class ArtemisConfiguration {
 
     // Database
     builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
+    builder.addString(
+        "database.dataPath", ".", "Path to output data files", PropertyValidator.isPresent());
 
     // Beacon Rest API
     builder.addInteger("beaconrestapi.portNumber", 5051, "Port number of Beacon Rest API", null);
@@ -316,7 +317,7 @@ public class ArtemisConfiguration {
   }
 
   public String getDataPath() {
-    return config.getString("output.dataPath");
+    return config.getString("database.dataPath");
   }
 
   public boolean startFromDisk() {
@@ -331,5 +332,9 @@ public class ArtemisConfiguration {
 
   public int getBeaconRestAPIPortNumber() {
     return config.getInteger("beaconrestapi.portNumber");
+  }
+
+  public boolean getBeaconRestAPIEnableSwagger() {
+    return config.getBoolean("beaconrestapi.enableSwagger");
   }
 }
