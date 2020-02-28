@@ -209,7 +209,7 @@ public class SyncManagerTest {
     UnsignedLong currentSlot = UnsignedLong.valueOf(17);
     when(storageClient.getBestSlot()).thenReturn(currentSlot);
 
-    SyncStatus syncStatus = syncManager.getSyncStatus();
+    SyncStatus syncStatus = syncManager.getSyncStatus().sync_status;
     assertThat(syncStatus.getCurrent_slot()).isEqualTo(currentSlot);
     assertThat(syncStatus.getStarting_slot()).isEqualTo(startingSlot);
     assertThat(syncStatus.getHighest_slot()).isEqualTo(PEER_HEAD_SLOT);
