@@ -73,7 +73,7 @@ public class BeaconValidatorsHandler implements Handler {
                 if (state.isEmpty()) {
                   // empty list
                   return jsonProvider.objectToJSON(
-                      new BeaconValidatorsResponse(new SSZList<>(Validator.class, 0L)));
+                      new BeaconValidatorsResponse(SSZList.create(Validator.class, 0L)));
                 }
                 return jsonProvider.objectToJSON(
                     new BeaconValidatorsResponse(state.get().getValidators()));

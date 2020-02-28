@@ -29,6 +29,7 @@ import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -69,12 +70,12 @@ public class BeaconValidatorsHandlerTest {
   @Test
   public void shouldReturnEmptyListWhenNoValidators() throws Exception {
     BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
-    SSZList<Validator> emptyListOfValidators = new SSZList<>(Validator.class, 0L);
-    beaconState.setValidators(emptyListOfValidators);
+    MutableBeaconState beaconStateW = this.beaconState.createWritableCopy();
+    beaconStateW.getValidators().clear();
 
     when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(combinedClient.getStateByBlockRoot(blockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateW.commitChanges())));
 
     handler.handle(context);
 
@@ -84,7 +85,9 @@ public class BeaconValidatorsHandlerTest {
 
     SafeFuture<String> data = args.getValue();
     assertEquals(
-        data.get(), jsonProvider.objectToJSON(new BeaconValidatorsResponse(emptyListOfValidators)));
+        data.get(),
+        jsonProvider.objectToJSON(
+            new BeaconValidatorsResponse(SSZList.create(Validator.class, 0L))));
   }
 
   @Test
