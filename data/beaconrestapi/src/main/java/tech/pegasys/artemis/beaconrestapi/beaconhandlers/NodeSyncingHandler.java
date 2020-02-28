@@ -23,31 +23,34 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import tech.pegasys.artemis.beaconrestapi.schema.SyncingResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.sync.SyncService;
 
-public class VersionHandler implements Handler {
+public class NodeSyncingHandler implements Handler {
 
-  public VersionHandler(JsonProvider jsonProvider) {
+  private final SyncService syncService;
+
+  public NodeSyncingHandler(SyncService syncService, JsonProvider jsonProvider) {
+    this.syncService = syncService;
     this.jsonProvider = jsonProvider;
   }
 
-  public static final String ROUTE = "/node/version/";
+  public static final String ROUTE = "/node/syncing";
   private final JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get version string of the running beacon node.",
+      summary = "Get syncing info from the running beacon node.",
       tags = {TAG_NODE},
-      description =
-          "Requests that the beacon node identify information about its implementation in a format similar to a HTTP User-Agent field.",
+      description = "Requests that the beacon node gives information about its syncing state",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.result(jsonProvider.objectToJSON(VersionProvider.VERSION));
+    ctx.result(jsonProvider.objectToJSON(syncService.getSyncStatus()));
   }
 }

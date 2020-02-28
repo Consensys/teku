@@ -10,6 +10,8 @@ dependencies {
     implementation project(':storage')
     implementation project(':networking:p2p')
     implementation project(':data:provider')
+    implementation project(':sync')
+    implementation project(':services:serviceutils')
 
     implementation 'org.apache.tuweni:tuweni-crypto'
     implementation 'org.apache.tuweni:tuweni-units'
