@@ -274,7 +274,9 @@ public class ArtemisNode extends Node {
 
       final Map<String, Object> output = getSection(OUTPUT_SECTION);
       output.put("transitionRecordDir", ARTIFACTS_PATH + "transitions/");
-      output.put("dataDir", ARTIFACTS_PATH + "data/");
+
+      final Map<String, Object> database = getSection(DATABASE_SECTION);
+      database.put("dataDir", ARTIFACTS_PATH + "data/");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
