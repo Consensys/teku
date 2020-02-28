@@ -16,7 +16,6 @@ package tech.pegasys.artemis.sync;
 import com.google.common.primitives.UnsignedLong;
 
 public class SyncStatus {
-
   private final UnsignedLong starting_slot;
   private final UnsignedLong current_slot;
   private final UnsignedLong highest_slot;
