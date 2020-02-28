@@ -28,11 +28,13 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.sync.SyncService;
 
 class BeaconRestApiTest {
   private final ChainStorageClient storageClient =
@@ -41,12 +43,14 @@ class BeaconRestApiTest {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
+  private final SyncService syncService = mock(SyncService.class);
   private static final Integer THE_PORT = 12345;
 
   @BeforeEach
   public void setup() {
     when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, null, combinedChainDataClient, THE_PORT, app);
+    new BeaconRestApi(
+        storageClient, null, null, combinedChainDataClient, syncService, THE_PORT, app);
   }
 
   @Test
@@ -87,5 +91,10 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveBeaconStateEndpoint() {
     verify(app).get(eq(BeaconStateHandler.ROUTE), any(BeaconStateHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveSyncingEndpoint() {
+    verify(app).get(eq(NodeSyncingHandler.ROUTE), any(NodeSyncingHandler.class));
   }
 }
