@@ -29,6 +29,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
@@ -63,7 +64,7 @@ public class BeaconRestApi {
     addNodeHandlers(chainStorageClient, syncService);
     addBeaconHandlers(chainStorageClient, historicalChainData, combinedChainDataClient);
     addNetworkHandlers(p2pNetwork);
-    addValidatorHandlers();
+    addValidatorHandlers(combinedChainDataClient);
   }
 
   public BeaconRestApi(
@@ -175,7 +176,10 @@ public class BeaconRestApi {
     handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
   }
 
-  private void addValidatorHandlers() {
+  private void addValidatorHandlers(CombinedChainDataClient combinedChainDataClient) {
+    app.get(
+        BeaconValidatorsHandler.ROUTE,
+        new BeaconValidatorsHandler(combinedChainDataClient, jsonProvider));
     /*
      * TODO:
      *   reference: https://ethereum.github.io/eth2.0-APIs/#/
