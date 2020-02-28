@@ -247,7 +247,7 @@ public class BeaconChainController {
             historicalChainData,
             combinedChainDataClient,
             syncService,
-            config.getBeaconRestAPIPortNumber());
+            config);
   }
 
   public void initSyncManager() {
