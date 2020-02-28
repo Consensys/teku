@@ -104,11 +104,8 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
+
     // Outputs
-    builder.addString(
-        "output.logPath", ".", "Path to output the log file", PropertyValidator.isPresent());
-    builder.addString(
-        "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
     builder.addString(
         "output.dataPath", ".", "Path to output data files", PropertyValidator.isPresent());
     builder.addString(
@@ -303,16 +300,6 @@ public class ArtemisConfiguration {
   /** @return the mode of the network to use - mock or libp2p */
   public String getNetworkMode() {
     return config.getString("node.networkMode");
-  }
-
-  /** @return the path to the log file */
-  public String getLogPath() {
-    return config.getString("output.logPath");
-  }
-
-  /** @return the name of the log file */
-  public String getLogFile() {
-    return config.getString("output.logFile");
   }
 
   public String getDataPath() {
