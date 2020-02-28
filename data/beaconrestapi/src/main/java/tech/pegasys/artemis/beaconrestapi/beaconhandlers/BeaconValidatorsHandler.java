@@ -13,9 +13,10 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
@@ -29,8 +30,10 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconValidatorsHandler implements Handler {
@@ -51,11 +54,12 @@ public class BeaconValidatorsHandler implements Handler {
       method = HttpMethod.GET,
       summary = "Get validators from the running beacon node.",
       tags = {TAG_BEACON},
-      description = "Requests that the beacon node gives information about validators",
+      description = "Requests validator information",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = BeaconValidatorsResponse.class)),
+        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
@@ -67,8 +71,9 @@ public class BeaconValidatorsHandler implements Handler {
           future.thenApplyChecked(
               state -> {
                 if (state.isEmpty()) {
-                  ctx.status(SC_NOT_FOUND);
-                  return null;
+                  // empty list
+                  return jsonProvider.objectToJSON(
+                      new BeaconValidatorsResponse(new SSZList<>(Validator.class, 0L)));
                 }
                 return jsonProvider.objectToJSON(
                     new BeaconValidatorsResponse(state.get().getValidators()));
