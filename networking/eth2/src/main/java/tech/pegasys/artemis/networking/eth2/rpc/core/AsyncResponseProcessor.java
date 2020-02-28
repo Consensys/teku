@@ -92,6 +92,7 @@ class AsyncResponseProcessor<TResponse> {
     if (!cancelled.get() && !isProcessing.get() && !queuedResponses.isEmpty()) {
       processNextResponse();
     } else if (allResponsesDelivered.get() && !isProcessing.get() && queuedResponses.isEmpty()) {
+      LOG.trace("Finished processing responses.");
       finishedProcessing.complete(null);
     }
   }

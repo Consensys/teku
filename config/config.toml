@@ -49,3 +49,4 @@ startFromDisk = false
 
 [beaconrestapi]
 portNumber = 5051
+enableSwagger = true

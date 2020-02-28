@@ -45,8 +45,6 @@ import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
-import tech.pegasys.artemis.service.serviceutils.NoopService;
-import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
@@ -65,6 +63,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.sync.util.NoopSyncService;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
@@ -92,7 +91,7 @@ public class BeaconChainController {
   private AttestationAggregator attestationAggregator;
   private BlockAttestationsPool blockAttestationsPool;
   private DepositProvider depositProvider;
-  private Service syncService;
+  private SyncService syncService;
   private boolean testMode;
   private AttestationManager attestationManager;
 
@@ -129,9 +128,9 @@ public class BeaconChainController {
 
   public void initTimer() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initTimer()");
-    int timerPeriodInMiliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
+    int timerPeriodInMilliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
-      this.timer = new Timer(eventBus, 0, timerPeriodInMiliseconds);
+      this.timer = new Timer(eventBus, 0, timerPeriodInMilliseconds);
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
@@ -247,13 +246,14 @@ public class BeaconChainController {
             p2pNetwork,
             historicalChainData,
             combinedChainDataClient,
-            config.getBeaconRestAPIPortNumber());
+            syncService,
+            config);
   }
 
   public void initSyncManager() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
-      syncService = new NoopService();
+      syncService = new NoopSyncService(null, null, null, null);
     } else {
       syncService =
           new SyncService(
