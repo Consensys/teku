@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.util.backing.tree;
 
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
@@ -35,11 +34,7 @@ class TreeNodeImpl {
 
     @Override
     public String toString() {
-      Bytes trimmed = root.trimLeadingZeros();
-      if (trimmed.size() > 4) {
-        trimmed = root;
-      }
-      return "[" + trimmed + "]";
+      return "[" + (Bytes32.ZERO.equals(root) ? "0x0" : root) + "]";
     }
   }
 
