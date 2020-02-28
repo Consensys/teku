@@ -82,7 +82,7 @@ public class TreeUtil {
       checkArgument(leafNodes.size() == 1);
       return leafNodes.get(0);
     } else {
-      long index = 1 << (depth - 1);
+      long index = 1L << (depth - 1);
       int iIndex = index > leafNodes.size() ? leafNodes.size() : (int) index;
 
       List<TreeNode> leftSublist = leafNodes.subList(0, iIndex);
