@@ -59,7 +59,7 @@ public class GenesisGenerator {
         new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));
   }
 
-  public void addDepositsFromBlock(
+  public void updateCandidateState(
       Bytes32 eth1BlockHash, UnsignedLong eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 

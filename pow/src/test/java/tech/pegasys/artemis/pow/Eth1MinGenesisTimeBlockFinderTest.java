@@ -42,7 +42,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
   private MinGenesisTimeBlockEventChannel minGenesisTimeBlockEventChannel;
   private StubAsyncRunner asyncRunner;
 
-  private Eth1MinGenesisTimeBlockFinder eth1MinGenesisTimeBlockFinder;
+  private Eth1Manager eth1Manager;
   private PublishSubject<EthBlock.Block> blockPublisher;
 
   @BeforeEach
@@ -51,9 +51,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
     minGenesisTimeBlockEventChannel = mock(MinGenesisTimeBlockEventChannel.class);
     asyncRunner = new StubAsyncRunner();
 
-    eth1MinGenesisTimeBlockFinder =
-        new Eth1MinGenesisTimeBlockFinder(
-            eth1Provider, minGenesisTimeBlockEventChannel, asyncRunner);
+    eth1Manager = new Eth1Manager(eth1Provider, minGenesisTimeBlockEventChannel, asyncRunner);
 
     blockPublisher = mockFlowablePublisher();
 
@@ -67,7 +65,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
     when(eth1Provider.getLatestEth1BlockFuture())
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Nope")));
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
     verify(eth1Provider).getLatestEth1BlockFuture();
 
     asyncRunner.executeQueuedActions();
@@ -81,7 +79,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
     mockLatestCanonicalBlock(10);
     mockBlockForEth1Provider("0x01", 10, 8);
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
     verify(minGenesisTimeBlockEventChannel).onMinGenesisTimeBlock(argThat(isEvent("0x01", 10, 8)));
   }
 
@@ -113,7 +111,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
     // the block
     // right before this as the first valid block
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
 
     verify(minGenesisTimeBlockEventChannel)
         .onMinGenesisTimeBlock(argThat(isEvent("0x08", 899, 510)));
@@ -146,7 +144,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
     // since the last requested block now had higher timestamp than min genesis, we should publish
     // the block
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
 
     verify(minGenesisTimeBlockEventChannel)
         .onMinGenesisTimeBlock(argThat(isEvent("0x08", 902, 510)));
@@ -168,7 +166,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
 
     // since the genesis time calculated from the , we should publish the block
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
 
     verify(minGenesisTimeBlockEventChannel)
         .onMinGenesisTimeBlock(argThat(isEvent("0x08", 900, 500)));
@@ -181,7 +179,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
 
     setMinGenesisTime(1100);
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
 
     verify(eth1Provider).getLatestBlockFlowable();
 
@@ -209,7 +207,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Nope")))
         .thenReturn(SafeFuture.completedFuture(mockBlock));
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
 
     verify(eth1Provider).getLatestBlockFlowable();
 
@@ -237,7 +235,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
 
     setMinGenesisTime(1100);
 
-    eth1MinGenesisTimeBlockFinder.start();
+    eth1Manager.start();
 
     verify(eth1Provider).getLatestBlockFlowable();
 

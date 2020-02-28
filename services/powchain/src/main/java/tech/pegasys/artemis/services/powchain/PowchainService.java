@@ -44,7 +44,7 @@ import tech.pegasys.artemis.pow.Eth1DataManager;
 import tech.pegasys.artemis.pow.Eth1Provider;
 import tech.pegasys.artemis.pow.ThrottlingEth1Provider;
 import tech.pegasys.artemis.pow.Web3jEth1Provider;
-import tech.pegasys.artemis.pow.api.DepositEventChannel;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.Deposit;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
@@ -68,13 +68,13 @@ public class PowchainService implements ServiceInterface {
 
   private String depositSimFile;
   private TimeProvider timeProvider;
-  private DepositEventChannel depositEventChannel;
+  private Eth1EventsChannel depositEventChannel;
 
   @Override
   public void init(ServiceConfig config) {
     this.timeProvider = config.getTimeProvider();
     this.eventBus = config.getEventBus();
-    this.depositEventChannel = config.getEventChannels().getPublisher(DepositEventChannel.class);
+    this.depositEventChannel = config.getEventChannels().getPublisher(Eth1EventsChannel.class);
     this.depositMode = config.getConfig().getDepositMode();
     if (config.getConfig().getInputFile() != null)
       this.depositSimFile = System.getProperty(USER_DIR) + "/" + config.getConfig().getInputFile();

@@ -13,113 +13,121 @@
 
 package tech.pegasys.artemis.pow;
 
-import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.primitives.UnsignedLong;
-import io.reactivex.disposables.Disposable;
 import java.math.BigInteger;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.artemis.pow.api.MinGenesisTimeBlockEventChannel;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class Eth1MinGenesisTimeBlockFinder {
+public class Eth1Manager {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1Provider eth1Provider;
-  private final MinGenesisTimeBlockEventChannel minGenesisTimeBlockEventChannel;
   private final AsyncRunner asyncRunner;
+  private final Eth1EventsChannel eth1EventsChannel;
+  private final DepositProcessingController depositProcessingController;
 
-  private volatile Disposable latestBlockDisposable;
-
-  public Eth1MinGenesisTimeBlockFinder(
+  public Eth1Manager(
       Eth1Provider eth1Provider,
-      MinGenesisTimeBlockEventChannel minGenesisTimeBlockEventChannel,
-      AsyncRunner asyncRunner) {
+      AsyncRunner asyncRunner,
+      Eth1EventsChannel eth1EventsChannel,
+      DepositProcessingController depositProcessingController) {
     this.eth1Provider = eth1Provider;
-    this.minGenesisTimeBlockEventChannel = minGenesisTimeBlockEventChannel;
     this.asyncRunner = asyncRunner;
+    this.eth1EventsChannel = eth1EventsChannel;
+    this.depositProcessingController = depositProcessingController;
   }
 
   public void start() {
-    findAndPublishFirstValidBlock()
-        .finish(
-            () ->
-                LOG.info(
-                    "Eth1MinGenesisBlockFinder successfully found first "
-                        + "(time) valid genesis block"));
+
+    SafeFuture<EthBlock.Block> headBlock = getHead();
+
+    SafeFuture<Boolean> isHeadBeforeMinGenesis = isHeadBeforeMinGenesis(headBlock);
+
+    isHeadBeforeMinGenesis.thenAccept(
+        bool -> {
+          if (bool) headBeforeMinGenesisMode(headBlock);
+          else headAfterMinGenesisMode(headBlock);
+        });
   }
 
-  public SafeFuture<Void> findAndPublishFirstValidBlock() {
+  public SafeFuture<Void> headBeforeMinGenesisMode(SafeFuture<EthBlock.Block> head) {
+    return head.thenCompose(
+            headBlock ->
+                depositProcessingController.fetchDepositsFromGenesisTo(headBlock.getNumber()))
+        .thenRun(
+            () -> {
+              EthBlock.Block block = checkNotNull(head.getNow(null));
+              depositProcessingController.switchToBlockByBlockMode();
+              depositProcessingController.startSubscription(block.getNumber());
+            });
+  }
+
+  public SafeFuture<Void> headAfterMinGenesisMode(SafeFuture<EthBlock.Block> head) {
+    SafeFuture<EthBlock.Block> minGenesisBlock =
+        head.thenCompose(this::findMinGenesisTimeBlockInHistory);
+
+    return minGenesisBlock
+        .thenCompose(
+            block -> depositProcessingController.fetchDepositsFromGenesisTo(block.getNumber()))
+        .thenRun(
+            () -> {
+              EthBlock.Block block = checkNotNull(minGenesisBlock.getNow(null));
+              postMinGenesisTimeBlock(eth1EventsChannel, block);
+              depositProcessingController.startSubscription(block.getNumber());
+            });
+  }
+
+  public SafeFuture<EthBlock.Block> getHead() {
     return eth1Provider
         .getLatestEth1BlockFuture()
         .thenApply(EthBlock.Block::getNumber)
         .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
         .thenApply(UnsignedLong::valueOf)
-        .thenCompose(eth1Provider::getEth1BlockFuture)
-        .thenCompose(
-            block -> {
-              int comparison = compareBlockTimestampToMinGenesisTime(block);
-              if (comparison > 0) {
-                // If block timestamp is greater than min genesis time
-                // find first valid block in history
-                return findFirstValidBlockInHistory(block);
-              } else if (comparison < 0) {
-                // If block timestamp is less than min genesis time
-                // subscribe to new block events and wait for the first
-                // valid block
-                return waitForFirstValidBlock();
-              } else {
-                return SafeFuture.completedFuture(block);
-              }
-            })
-        .thenAccept(this::publishFirstValidBlock)
-        .exceptionallyCompose(
-            err -> {
-              if (latestBlockDisposable != null) {
-                latestBlockDisposable.dispose();
-              }
-
-              LOG.debug(
-                  "Eth1MinGenesisTimeBlockFinder failed to find first valid block. Retry in "
-                      + Constants.ETH1_MIN_GENESIS_TIME_BLOCK_RETRY_TIMEOUT
-                      + " seconds",
-                  err);
-
-              System.out.println("adding one delayed run");
-              return asyncRunner.runAfterDelay(
-                  this::findAndPublishFirstValidBlock,
-                  Constants.ETH1_MIN_GENESIS_TIME_BLOCK_RETRY_TIMEOUT,
-                  TimeUnit.SECONDS);
-            });
+        .thenCompose(eth1Provider::getEth1BlockFuture);
   }
 
-  private void publishFirstValidBlock(EthBlock.Block block) {
-    minGenesisTimeBlockEventChannel.onMinGenesisTimeBlock(
+  public SafeFuture<Boolean> isHeadBeforeMinGenesis(SafeFuture<EthBlock.Block> headBlock) {
+    return headBlock.thenApply(
+        block -> {
+          int comparison = compareBlockTimestampToMinGenesisTime(block);
+          // If block timestamp is greater than min genesis time,
+          // min genesis block must have been in history
+          return comparison > 0;
+        });
+  }
+
+  public static EthBlock.Block postMinGenesisTimeBlock(
+      Eth1EventsChannel eth1EventsChannel, EthBlock.Block block) {
+    eth1EventsChannel.onMinGenesisTimeBlock(
         new MinGenesisTimeBlockEvent(
             UnsignedLong.valueOf(block.getTimestamp()),
             UnsignedLong.valueOf(block.getNumber()),
             Bytes32.fromHexString(block.getHash())));
+    return block;
   }
 
   /**
-   * Find first valid block in history that has timestamp greater than MIN_GENESIS_TIME
+   * Find first block in history that has timestamp greater than MIN_GENESIS_TIME
    *
    * @param estimationBlock estimationBlock that will be used for estimation
-   * @return first valid block in history
+   * @return min genesis time block
    */
-  private SafeFuture<EthBlock.Block> findFirstValidBlockInHistory(EthBlock.Block estimationBlock) {
-    UnsignedLong estimatedFirstValidBlockNumber =
-        getEstimatedFirstValidBlockNumber(estimationBlock, Constants.SECONDS_PER_ETH1_BLOCK);
+  private SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(
+      EthBlock.Block estimationBlock) {
+    UnsignedLong estimatedBlockNumber =
+        getEstimatedMinGenesisTimeBlockNumber(estimationBlock, Constants.SECONDS_PER_ETH1_BLOCK);
     return eth1Provider
-        .getEth1BlockFuture(estimatedFirstValidBlockNumber)
+        .getEth1BlockFuture(estimatedBlockNumber)
         .thenCompose(
             block -> {
               int comparison = compareBlockTimestampToMinGenesisTime(block);
@@ -155,7 +163,7 @@ public class Eth1MinGenesisTimeBlockFinder {
             return exploreBlocksDownwards(block);
           } else if (comparison < 0) {
             // If exploring downwards and block timestamp < min genesis time,
-            // then previous block must have been the first valid block.
+            // then previous block must have been the min genesis time block.
             return SafeFuture.completedFuture(previousBlock);
           } else {
             return SafeFuture.completedFuture(block);
@@ -172,51 +180,14 @@ public class Eth1MinGenesisTimeBlockFinder {
           int comparison = compareBlockTimestampToMinGenesisTime(block);
           if (comparison >= 0) {
             // If exploring upwards and block timestamp >= min genesis time,
-            // then current block must be the first valid block.
+            // then current block must be the min genesis time block.
             return SafeFuture.completedFuture(block);
           } else {
             // If exploring upwards and block timestamp < min genesis time,
-            // then previous block must have been the first valid block.
+            // then previous block must have been the min genesis time block.
             return exploreBlocksUpwards(block);
           }
         });
-  }
-
-  /**
-   * Subscribes to latest block events and sees if the latest canonical block, i.e. the block at
-   * follow distance, is the first valid block.
-   *
-   * @return first valid block
-   */
-  private SafeFuture<EthBlock.Block> waitForFirstValidBlock() {
-    SafeFuture<EthBlock.Block> firstValidBlockFuture = new SafeFuture<>();
-
-    latestBlockDisposable =
-        eth1Provider
-            .getLatestBlockFlowable()
-            .map(EthBlock.Block::getNumber)
-            .map(number -> number.subtract(ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
-            .map(UnsignedLong::valueOf)
-            .subscribe(
-                blockNumber -> onNewBlock(blockNumber, firstValidBlockFuture),
-                firstValidBlockFuture::completeExceptionally);
-
-    return firstValidBlockFuture;
-  }
-
-  private void onNewBlock(
-      UnsignedLong blockNumber, SafeFuture<EthBlock.Block> firstValidBlockFuture) {
-
-    eth1Provider
-        .getEth1BlockFuture(blockNumber)
-        .thenAccept(
-            block -> {
-              if (compareBlockTimestampToMinGenesisTime(block) >= 0) {
-                firstValidBlockFuture.complete(block);
-                latestBlockDisposable.dispose();
-              }
-            })
-        .finish(() -> {}, firstValidBlockFuture::completeExceptionally);
   }
 
   // TODO: this function changes a tiny bit in 10.1
@@ -228,13 +199,13 @@ public class Eth1MinGenesisTimeBlockFinder {
   }
 
   /**
-   * Given that blockTimestamp is greater than min genesis time, find the first valid block
+   * Given that blockTimestamp is greater than min genesis time, find the min genesis time block
    *
    * @param block that is going to be used for estimation
    * @param secondsPerEth1Block seconds per Eth1 Block
-   * @return estimated block number of first valid block
+   * @return estimated block number of min genesis time block
    */
-  private static UnsignedLong getEstimatedFirstValidBlockNumber(
+  private static UnsignedLong getEstimatedMinGenesisTimeBlockNumber(
       EthBlock.Block block, UnsignedLong secondsPerEth1Block) {
     UnsignedLong blockNumber = UnsignedLong.valueOf(block.getNumber());
     UnsignedLong blockTimestamp = UnsignedLong.valueOf(block.getTimestamp());
@@ -245,7 +216,7 @@ public class Eth1MinGenesisTimeBlockFinder {
     return blockNumber.minus(blockNumberDiff);
   }
 
-  private static int compareBlockTimestampToMinGenesisTime(EthBlock.Block block) {
+  public static int compareBlockTimestampToMinGenesisTime(EthBlock.Block block) {
     return calculateCandidateGenesisTimestamp(block.getTimestamp())
         .compareTo(Constants.MIN_GENESIS_TIME);
   }

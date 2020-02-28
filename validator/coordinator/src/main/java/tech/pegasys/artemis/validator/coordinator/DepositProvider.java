@@ -28,14 +28,14 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
-import tech.pegasys.artemis.pow.api.DepositEventChannel;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
-public class DepositProvider implements DepositEventChannel, FinalizedCheckpointEventChannel {
+public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEventChannel {
 
   private final ChainStorageClient chainStorageClient;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);

@@ -44,14 +44,14 @@ import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.pow.api.DepositEventChannel;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
-import tech.pegasys.artemis.statetransition.genesis.PreGenesisDepositHandler;
+import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -160,7 +160,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositProvider()");
     depositProvider = new DepositProvider(chainStorageClient);
     eventChannels
-        .subscribe(DepositEventChannel.class, depositProvider)
+        .subscribe(Eth1EventsChannel.class, depositProvider)
         .subscribe(FinalizedCheckpointEventChannel.class, depositProvider);
   }
 
@@ -184,7 +184,7 @@ public class BeaconChainController {
   private void initPreGenesisDepositHandler() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initPreGenesisDepositHandler()");
     eventChannels.subscribe(
-        DepositEventChannel.class, new PreGenesisDepositHandler(config, chainStorageClient));
+        Eth1EventsChannel.class, new GenesisHandler(config, chainStorageClient));
   }
 
   private void initAttestationPropagationManager() {

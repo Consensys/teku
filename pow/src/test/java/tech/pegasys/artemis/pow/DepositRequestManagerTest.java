@@ -35,7 +35,7 @@ import org.mockito.ArgumentMatcher;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.utils.Numeric;
-import tech.pegasys.artemis.pow.api.DepositEventChannel;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -44,22 +44,23 @@ import tech.pegasys.artemis.util.async.StubAsyncRunner;
 public class DepositRequestManagerTest {
 
   private Eth1Provider eth1Provider;
-  private DepositEventChannel depositEventChannel;
+  private Eth1EventsChannel depositEventChannel;
   private DepositContract depositContract;
   private StubAsyncRunner asyncRunner;
 
-  private DepositRequestManager depositRequestManager;
+  private DepositProcessingController depositEventRequester;
   private PublishSubject<EthBlock.Block> blockPublisher;
 
   @BeforeEach
   void setUp() {
     eth1Provider = mock(Eth1Provider.class);
-    depositEventChannel = mock(DepositEventChannel.class);
+    depositEventChannel = mock(Eth1EventsChannel.class);
     depositContract = mock(DepositContract.class);
     asyncRunner = new StubAsyncRunner();
 
-    depositRequestManager =
-        new DepositRequestManager(eth1Provider, asyncRunner, depositEventChannel, depositContract);
+    depositEventRequester =
+        new DepositProcessingController(
+            eth1Provider, asyncRunner, depositEventChannel, depositContract);
 
     blockPublisher = mockFlowablePublisher();
   }
@@ -67,7 +68,7 @@ public class DepositRequestManagerTest {
   @Test
   void restartOnSubscriptionFailure() {
     blockPublisher.onError(new RuntimeException("Nope"));
-    depositRequestManager.start();
+    depositEventRequester.startSubscription();
     verify(eth1Provider).getLatestBlockFlowable();
 
     asyncRunner.executeQueuedActions();
@@ -83,7 +84,7 @@ public class DepositRequestManagerTest {
     mockBlockForEth1Provider("0x1234", 1, 1000);
     mockBlockForEth1Provider("0x2345", 2, 1014);
 
-    depositRequestManager.start();
+    depositEventRequester.startSubscription();
 
     pushLatestCanonicalBlockWithNumber(10);
 
@@ -107,7 +108,7 @@ public class DepositRequestManagerTest {
     mockBlockForEth1Provider("0x2345", 2, 1014);
     mockBlockForEth1Provider("0x4567", 4, 1042);
 
-    depositRequestManager.start();
+    depositEventRequester.startSubscription();
 
     pushLatestCanonicalBlockWithNumber(10);
 
@@ -139,7 +140,7 @@ public class DepositRequestManagerTest {
     mockBlockForEth1Provider("0x0011", 11, 1154);
     mockBlockForEth1Provider("0x0014", 14, 1196);
 
-    depositRequestManager.start();
+    depositEventRequester.startSubscription();
 
     pushLatestCanonicalBlockWithNumber(10);
 
@@ -176,7 +177,7 @@ public class DepositRequestManagerTest {
     mockBlockForEth1Provider("0x0001", 1, 1000);
     mockBlockForEth1Provider("0x0002", 2, 1014);
 
-    depositRequestManager.start();
+    depositEventRequester.startSubscription();
 
     pushLatestCanonicalBlockWithNumber(10);
 

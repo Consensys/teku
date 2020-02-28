@@ -25,19 +25,10 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public class DepositContractListener {
   private final Eth1Provider eth1Provider;
   private final DepositContract contract;
-  private final DepositRequestManager depositRequestManager;
 
-  public DepositContractListener(
-      Eth1Provider eth1Provider,
-      DepositContract contract,
-      DepositRequestManager depositRequestManager) {
+  public DepositContractListener(Eth1Provider eth1Provider, DepositContract contract) {
     this.eth1Provider = eth1Provider;
     this.contract = contract;
-    this.depositRequestManager = depositRequestManager;
-  }
-
-  public void start() {
-    depositRequestManager.start();
   }
 
   @SuppressWarnings("rawtypes")
@@ -66,10 +57,6 @@ public class DepositContractListener {
 
   public DepositContract getContract() {
     return contract;
-  }
-
-  public void stop() {
-    depositRequestManager.stop();
   }
 
   private SafeFuture<String> callFunctionAtBlockNumber(
