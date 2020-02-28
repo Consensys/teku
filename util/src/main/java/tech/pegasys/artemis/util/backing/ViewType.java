@@ -27,7 +27,7 @@ public interface ViewType {
    * nested vectors and containers then the complete tree including all descendant members subtrees
    * is created
    */
-  TreeNode createDefaultTree();
+  TreeNode getDefaultTree();
 
   /**
    * Creates immutable View over the tree which should correspond to this type If the tree structure
@@ -37,8 +37,8 @@ public interface ViewType {
   ViewRead createFromTreeNode(TreeNode node);
 
   /** Creates a default immutable View */
-  default ViewRead createDefault() {
-    return createFromTreeNode(createDefaultTree());
+  default ViewRead getDefault() {
+    return createFromTreeNode(getDefaultTree());
   }
 
   /**

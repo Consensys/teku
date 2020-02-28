@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.backing.tree;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
@@ -30,6 +31,23 @@ class TreeNodeImpl {
     @Override
     public Bytes32 getRoot() {
       return root;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      RootImpl root1 = (RootImpl) o;
+      return Objects.equals(root, root1.root);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(root);
     }
 
     @Override

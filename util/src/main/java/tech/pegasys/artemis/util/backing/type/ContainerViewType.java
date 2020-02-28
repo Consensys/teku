@@ -26,6 +26,7 @@ public class ContainerViewType<C extends ContainerViewWrite> implements Composit
 
   private final List<ViewType> childrenTypes;
   private final BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor;
+  private volatile TreeNode defaultTree;
 
   public ContainerViewType(
       List<ViewType> childrenTypes, BiFunction<ContainerViewType<C>, TreeNode, C> instanceCtor) {
@@ -34,15 +35,22 @@ public class ContainerViewType<C extends ContainerViewWrite> implements Composit
   }
 
   @Override
-  public C createDefault() {
-    return createFromTreeNode(createDefaultTree());
+  public C getDefault() {
+    return createFromTreeNode(getDefaultTree());
   }
 
   @Override
-  public TreeNode createDefaultTree() {
+  public TreeNode getDefaultTree() {
+    if (defaultTree == null) {
+      this.defaultTree = createDefaultTree();
+    }
+    return defaultTree;
+  }
+
+  private TreeNode createDefaultTree() {
     List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
     for (int i = 0; i < getMaxLength(); i++) {
-      defaultChildren.add(getChildType(i).createDefault().getBackingNode());
+      defaultChildren.add(getChildType(i).getDefault().getBackingNode());
     }
     return TreeUtil.createTree(defaultChildren);
   }

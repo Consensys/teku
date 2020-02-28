@@ -39,7 +39,7 @@ public interface ListViewWriteRef<R extends ViewRead, W extends R>
    */
   default W append() {
     @SuppressWarnings("unchecked")
-    R newElement = (R) getType().getElementType().createDefault();
+    R newElement = (R) getType().getElementType().getDefault();
     append(newElement);
     return getByRef(size() - 1);
   }

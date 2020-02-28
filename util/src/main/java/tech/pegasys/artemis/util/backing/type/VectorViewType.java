@@ -32,16 +32,14 @@ public class VectorViewType<C> extends CollectionViewType {
   }
 
   @Override
-  public VectorViewRead<C> createDefault() {
-    return createFromTreeNode(createDefaultTree());
+  public VectorViewRead<C> getDefault() {
+    return createFromTreeNode(getDefaultTree());
   }
 
   @Override
-  public TreeNode createDefaultTree() {
-    return isListBacking
-        ? TreeUtil.createZeroTree(maxChunks())
-        : TreeUtil.createDefaultTree(
-            (int) maxChunks(), getElementType().createDefault().getBackingNode());
+  protected TreeNode createDefaultTree() {
+    return TreeUtil.createDefaultTree(
+        maxChunks(), isListBacking ? TreeUtil.ZERO_LEAF : getElementType().getDefaultTree());
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})

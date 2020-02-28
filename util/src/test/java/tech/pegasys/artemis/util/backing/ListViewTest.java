@@ -55,7 +55,7 @@ public class ListViewTest {
   @Test
   void clearTest() {
     ListViewType<SubContainer> type = new ListViewType<>(SubContainer.TYPE, 100);
-    ListViewRead<SubContainer> lr1 = type.createDefault();
+    ListViewRead<SubContainer> lr1 = type.getDefault();
     ListViewWrite<SubContainer> lw1 = lr1.createWritableCopy();
     lw1.append(new SubContainer(UnsignedLong.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
     lw1.append(new SubContainer(UnsignedLong.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));

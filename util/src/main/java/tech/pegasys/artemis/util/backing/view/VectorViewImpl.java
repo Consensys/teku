@@ -46,7 +46,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public void clear() {
-    backingNode = getType().createDefaultTree();
+    backingNode = getType().getDefaultTree();
     invalidate();
   }
 

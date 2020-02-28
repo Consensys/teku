@@ -171,7 +171,7 @@ public class ContainerViewTest {
     }
 
     public static ContainerRead createDefault() {
-      return TYPE.createDefault();
+      return TYPE.getDefault();
     }
 
     @Override
@@ -342,7 +342,7 @@ public class ContainerViewTest {
 
   @Test
   public void readWriteContainerTest2() {
-    ContainerRead c1 = ContainerImpl.TYPE.createDefault();
+    ContainerRead c1 = ContainerImpl.TYPE.getDefault();
     ContainerWrite c1w = c1.createWritableCopy();
     c1w.setLong1(UnsignedLong.valueOf(0x111));
     SubContainerWrite sc1w = c1w.getList2().append();
@@ -354,7 +354,7 @@ public class ContainerViewTest {
 
   @Test
   public void simpleContainerTest() {
-    ContainerImpl c1 = ContainerImpl.TYPE.createDefault();
+    ContainerImpl c1 = ContainerImpl.TYPE.getDefault();
     c1.setLong1(UnsignedLong.valueOf(0x111));
     c1.setLong2(UnsignedLong.valueOf(0x222));
     ListViewWrite<UInt64View> list1 = c1.getList1();

@@ -30,7 +30,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
   private TreeNode backingNode;
 
   public ContainerViewImpl(ContainerViewType<? extends ContainerViewWrite> type) {
-    this(type, type.createDefaultTree());
+    this(type, type.getDefaultTree());
   }
 
   public ContainerViewImpl(
@@ -41,7 +41,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
 
   public ContainerViewImpl(
       ContainerViewType<? extends ContainerViewWrite> type, ViewRead... memberValues) {
-    this(type, type.createDefaultTree());
+    this(type, type.getDefaultTree());
     checkArgument(
         memberValues.length == getType().getMaxLength(),
         "Wrong number of member values: %s",
@@ -92,7 +92,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
 
   @Override
   public void clear() {
-    backingNode = getType().createDefaultTree();
+    backingNode = getType().getDefaultTree();
     invalidate();
   }
 

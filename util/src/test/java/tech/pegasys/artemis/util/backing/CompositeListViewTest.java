@@ -30,12 +30,12 @@ public class CompositeListViewTest {
       new ViewType() {
 
         @Override
-        public TreeNode createDefaultTree() {
+        public TreeNode getDefaultTree() {
           throw new UnsupportedOperationException();
         }
 
         @Override
-        public TestView createDefault() {
+        public TestView getDefault() {
           return new TestView(0);
         }
 
@@ -80,7 +80,7 @@ public class CompositeListViewTest {
   @Test
   public void simpleTest1() {
     ListViewType<TestView> listType = new ListViewType<>(testType, 3);
-    ListViewWrite<TestView> list = listType.createDefault().createWritableCopy();
+    ListViewWrite<TestView> list = listType.getDefault().createWritableCopy();
     TreeNode n0 = list.getBackingNode();
     list.set(0, new TestView(0x111));
     TreeNode n1 = list.getBackingNode();

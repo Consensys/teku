@@ -34,7 +34,7 @@ public class ViewUtils {
   public static VectorViewRead<ByteView> createVectorFromBytes(Bytes bytes) {
     VectorViewType<ByteView> type = new VectorViewType<>(BasicViewTypes.BYTE_TYPE, bytes.size());
     // TODO optimize
-    VectorViewWrite<ByteView> ret = type.createDefault().createWritableCopy();
+    VectorViewWrite<ByteView> ret = type.getDefault().createWritableCopy();
     for (int i = 0; i < bytes.size(); i++) {
       ret.set(i, new ByteView(bytes.get(i)));
     }
@@ -58,7 +58,7 @@ public class ViewUtils {
   public static ListViewRead<BitView> createBitlistView(Bitlist bitlist) {
     ListViewWrite<BitView> viewWrite =
         new ListViewType<BitView>(BasicViewTypes.BIT_TYPE, bitlist.getMaxSize())
-            .createDefault()
+            .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitlist.getCurrentSize(); i++) {
       viewWrite.append(new BitView(bitlist.getBit(i) > 0));
@@ -81,7 +81,7 @@ public class ViewUtils {
   public static VectorViewRead<BitView> createBitvectorView(Bitvector bitvector) {
     VectorViewWrite<BitView> viewWrite =
         new VectorViewType<BitView>(BasicViewTypes.BIT_TYPE, bitvector.getSize())
-            .createDefault()
+            .getDefault()
             .createWritableCopy();
     for (int i = 0; i < bitvector.getSize(); i++) {
       viewWrite.set(i, new BitView(bitvector.getBit(i) > 0));

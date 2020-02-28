@@ -44,7 +44,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
             List.of(vectorType, BasicViewTypes.UINT64_TYPE), ContainerViewImpl::new);
-    container = containerViewType.createDefault();
+    container = containerViewType.getDefault();
   }
 
   public ListViewImpl(ListViewType<R> type, TreeNode node) {

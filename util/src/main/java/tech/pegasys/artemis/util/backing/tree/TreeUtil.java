@@ -13,12 +13,9 @@
 
 package tech.pegasys.artemis.util.backing.tree;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.Utils;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
@@ -29,7 +26,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  private static final TreeNode ZERO_LEAF = new RootImpl(Bytes32.ZERO);
+  public static final TreeNode ZERO_LEAF = new RootImpl(Bytes32.ZERO);
   private static final TreeNode[] ZERO_TREES;
 
   static {
@@ -47,44 +44,52 @@ public class TreeUtil {
    * </code>
    *
    * @param maxLength max number of leaf nodes
-   * @param zeroElement default leaf element. For complex vectors it could be default vector element
+   * @param defaultNode default leaf element. For complex vectors it could be default vector element
    *     struct subtree
    */
-  public static TreeNode createDefaultTree(int maxLength, TreeNode zeroElement) {
-    List<TreeNode> nodes =
-        Stream.concat(
-                IntStream.range(0, maxLength).mapToObj(i -> zeroElement),
-                IntStream.range(maxLength, (int) Utils.nextPowerOf2(maxLength))
-                    .mapToObj(i -> ZERO_LEAF))
-            .collect(Collectors.toList());
-    while (nodes.size() > 1) {
-      List<TreeNode> parentNodes = new ArrayList<>(nodes.size() / 2);
-      for (int i = 0; i < nodes.size(); i += 2) {
-        parentNodes.add(new CommitImpl(nodes.get(i), nodes.get(i + 1)));
-      }
-      nodes = parentNodes;
-    }
-    return nodes.get(0);
-  }
-
-  /** Creates a binary tree with `nextPowerOf2(maxLength)` width and ZERO leaf nodes. */
-  public static TreeNode createZeroTree(long maxLength) {
-    return ZERO_TREES[treeDepth(maxLength)];
+  public static TreeNode createDefaultTree(long maxLength, TreeNode defaultNode) {
+    return createTree(
+        defaultNode, ZERO_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
   public static TreeNode createTree(List<TreeNode> leafNodes) {
-    int treeWidth = (int) Utils.nextPowerOf2(leafNodes.size());
-    List<TreeNode> nodes = new ArrayList<>(leafNodes);
-    nodes.addAll(Collections.nCopies(treeWidth - leafNodes.size(), ZERO_LEAF));
-    while (nodes.size() > 1) {
-      List<TreeNode> upperLevelNodes = new ArrayList<>(nodes.size() / 2);
-      for (int i = 0; i < nodes.size() / 2; i++) {
-        upperLevelNodes.add(new CommitImpl(nodes.get(i * 2), nodes.get(i * 2 + 1)));
-      }
-      nodes = upperLevelNodes;
+    return createTree(leafNodes, treeDepth(leafNodes.size()));
+  }
+
+  private static TreeNode createTree(TreeNode defaultNode, long defaultNodesCount, int depth) {
+    if (defaultNodesCount == 0) {
+      return ZERO_TREES[depth];
+    } else if (depth == 0) {
+      checkArgument(defaultNodesCount == 1);
+      return defaultNode;
+    } else {
+      long leftNodesCount = Math.min(defaultNodesCount, 1 << (depth - 1));
+      long rightNodesCount = defaultNodesCount - leftNodesCount;
+      TreeNode lTree = createTree(defaultNode, leftNodesCount, depth - 1);
+      TreeNode rTree =
+          leftNodesCount == rightNodesCount
+              ? lTree
+              : createTree(defaultNode, rightNodesCount, depth - 1);
+      return new CommitImpl(lTree, rTree);
     }
-    return nodes.get(0);
+  }
+
+  private static TreeNode createTree(List<TreeNode> leafNodes, int depth) {
+    if (leafNodes.isEmpty()) {
+      return ZERO_TREES[depth];
+    } else if (depth == 0) {
+      checkArgument(leafNodes.size() == 1);
+      return leafNodes.get(0);
+    } else {
+      long index = 1 << (depth - 1);
+      int iIndex = index > leafNodes.size() ? leafNodes.size() : (int) index;
+
+      List<TreeNode> leftSublist = leafNodes.subList(0, iIndex);
+      List<TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
+      return new CommitImpl(
+          createTree(leftSublist, depth - 1), createTree(rightSublist, depth - 1));
+    }
   }
 
   public static int treeDepth(long maxChunks) {

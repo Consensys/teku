@@ -45,7 +45,7 @@ public class ListBenchmark {
 
   public ListBenchmark() {
     ListViewType<UInt64View> type = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 100_000_000);
-    ListViewRead<UInt64View> l1 = type.createDefault();
+    ListViewRead<UInt64View> l1 = type.getDefault();
 
     ListViewWrite<UInt64View> l2w = l1.createWritableCopy();
     for (int i = 0; i < 1000000; i++) {
@@ -62,7 +62,7 @@ public class ListBenchmark {
   public void init() throws Exception {
     ListViewType<UInt64View> type =
         new ListViewType<>(BasicViewTypes.UINT64_TYPE, getListMaxSize());
-    ListViewRead<UInt64View> l1 = type.createDefault();
+    ListViewRead<UInt64View> l1 = type.getDefault();
     l1w = l1.createWritableCopy();
   }
 
@@ -72,7 +72,7 @@ public class ListBenchmark {
   public void createDefaultUIntList(Blackhole bh) {
     ListViewType<UInt64View> type =
         new ListViewType<>(BasicViewTypes.UINT64_TYPE, getListMaxSize());
-    ListViewRead<UInt64View> l1 = type.createDefault();
+    ListViewRead<UInt64View> l1 = type.getDefault();
     bh.consume(l1);
   }
 
