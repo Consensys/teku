@@ -18,8 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 
+import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -30,6 +34,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -39,6 +44,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 @ExtendWith(MockitoExtension.class)
 public class BeaconValidatorsHandlerTest {
   private Context context = mock(Context.class);
+  private final UnsignedLong epoch = DataStructureUtil.randomUnsignedLong(99);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final CombinedChainDataClient combinedClient = mock(CombinedChainDataClient.class);
   private final Bytes32 blockRoot = DataStructureUtil.randomBytes32(99);
@@ -94,5 +100,27 @@ public class BeaconValidatorsHandlerTest {
     when(combinedClient.getBestBlockRoot()).thenReturn(Optional.empty());
     handler.handle(context);
     verify(context).status(SC_NO_CONTENT);
+  }
+
+  @Test
+  public void shouldReturnValidatorsWhenQueryByEpoch() throws Exception {
+    BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
+    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final Bytes32 nullBlockRoot = null;
+
+
+    BeaconValidatorsResponse beaconValidators =
+        new BeaconValidatorsResponse(beaconState.getValidators());
+
+    when(combinedClient.getStateAtSlot(slot, nullBlockRoot)).thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+
+    handler.handle(context);
+
+    verify(combinedClient).getStateAtSlot(slot, nullBlockRoot);
+    verify(context).result(args.capture());
+
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
   }
 }
