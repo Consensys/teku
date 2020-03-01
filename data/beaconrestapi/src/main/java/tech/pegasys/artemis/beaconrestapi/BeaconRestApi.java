@@ -29,7 +29,9 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
 import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler.RequestParams;
@@ -41,38 +43,43 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class BeaconRestApi {
 
-  private List<BeaconRestApiHandler> handlers = new ArrayList<>();
-  private Javalin app;
-  private JsonProvider jsonProvider = new JsonProvider();
+  private final List<BeaconRestApiHandler> handlers = new ArrayList<>();
+  private final Javalin app;
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   private void initialise(
-      ChainStorageClient chainStorageClient,
-      P2PNetwork<?> p2pNetwork,
-      HistoricalChainData historicalChainData,
-      CombinedChainDataClient combinedChainDataClient,
+      final ChainStorageClient chainStorageClient,
+      final P2PNetwork<?> p2pNetwork,
+      final HistoricalChainData historicalChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final SyncService syncService,
       final int requestedPortNumber) {
     app.server().setServerPort(requestedPortNumber);
 
-    addNodeHandlers(chainStorageClient);
+    addNodeHandlers(chainStorageClient, syncService);
     addBeaconHandlers(chainStorageClient, historicalChainData, combinedChainDataClient);
     addNetworkHandlers(p2pNetwork);
-    addValidatorHandlers();
+    addValidatorHandlers(combinedChainDataClient);
   }
 
   public BeaconRestApi(
-      ChainStorageClient chainStorageClient,
-      P2PNetwork<?> p2pNetwork,
-      HistoricalChainData historicalChainData,
-      CombinedChainDataClient combinedChainDataClient,
-      final int requestedPortNumber) {
+      final ChainStorageClient chainStorageClient,
+      final P2PNetwork<?> p2pNetwork,
+      final HistoricalChainData historicalChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final SyncService syncService,
+      final ArtemisConfiguration configuration) {
     this.app =
         Javalin.create(
             config -> {
-              config.registerPlugin(new OpenApiPlugin(getOpenApiOptions(jsonProvider)));
+              config.registerPlugin(
+                  new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
             });
     initialise(
@@ -80,23 +87,26 @@ public class BeaconRestApi {
         p2pNetwork,
         historicalChainData,
         combinedChainDataClient,
-        requestedPortNumber);
+        syncService,
+        configuration.getBeaconRestAPIPortNumber());
   }
 
   BeaconRestApi(
-      ChainStorageClient chainStorageClient,
-      P2PNetwork<?> p2pNetwork,
-      HistoricalChainData historicalChainData,
-      CombinedChainDataClient combinedChainDataClient,
-      final int requestedPortNumber,
-      Javalin app) {
+      final ChainStorageClient chainStorageClient,
+      final P2PNetwork<?> p2pNetwork,
+      final HistoricalChainData historicalChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final SyncService syncService,
+      final ArtemisConfiguration configuration,
+      final Javalin app) {
     this.app = app;
     initialise(
         chainStorageClient,
         p2pNetwork,
         historicalChainData,
         combinedChainDataClient,
-        requestedPortNumber);
+        syncService,
+        configuration.getBeaconRestAPIPortNumber());
   }
 
   public void start() {
@@ -117,7 +127,8 @@ public class BeaconRestApi {
     app.start();
   }
 
-  private static OpenApiOptions getOpenApiOptions(JsonProvider jsonProvider) {
+  private static OpenApiOptions getOpenApiOptions(
+      JsonProvider jsonProvider, ArtemisConfiguration config) {
     JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
@@ -132,23 +143,20 @@ public class BeaconRestApi {
                 new License()
                     .name("Apache 2.0")
                     .url("https://www.apache.org/licenses/LICENSE-2.0.html"));
-    OpenApiOptions options =
-        new OpenApiOptions(applicationInfo)
-            //            .jacksonMapper(factory.getObjectMapper())
-            .modelConverterFactory(factory)
-            .path("/swagger-docs")
-            .swagger(new SwaggerOptions("/swagger-ui"));
-    // TODO: allow swagger-ui to be turned off - ideally still leave swagger-docs, just dont add the
-    // swagger-ui endpoint
+    final OpenApiOptions options =
+        new OpenApiOptions(applicationInfo).modelConverterFactory(factory);
+    if (config.getBeaconRestAPIEnableSwagger()) {
+      options.path("/swagger-docs").swagger(new SwaggerOptions("/swagger-ui"));
+    }
     return options;
   }
 
-  private void addNodeHandlers(ChainStorageClient chainStorageClient) {
+  private void addNodeHandlers(ChainStorageClient chainStorageClient, SyncService syncService) {
     app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient, jsonProvider));
     app.get(VersionHandler.ROUTE, new VersionHandler(jsonProvider));
+    app.get(NodeSyncingHandler.ROUTE, new NodeSyncingHandler(syncService, jsonProvider));
     /*
      * TODO:
-     *    /node/syncing
      *  Optional:
      *    /node/fork
      */
@@ -168,7 +176,10 @@ public class BeaconRestApi {
     handlers.add(new BeaconBlockHandler(chainStorageClient, historicalChainData));
   }
 
-  private void addValidatorHandlers() {
+  private void addValidatorHandlers(CombinedChainDataClient combinedChainDataClient) {
+    app.get(
+        BeaconValidatorsHandler.ROUTE,
+        new BeaconValidatorsHandler(combinedChainDataClient, jsonProvider));
     /*
      * TODO:
      *   reference: https://ethereum.github.io/eth2.0-APIs/#/

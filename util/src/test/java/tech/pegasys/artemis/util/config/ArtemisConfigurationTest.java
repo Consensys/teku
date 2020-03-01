@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterEach;
@@ -76,14 +77,17 @@ final class ArtemisConfigurationTest {
   }
 
   @Test
-  void dataPathCanBeSet() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.dataPath=\".\"");
-    assertThat(config.getDataPath()).isEqualTo(".");
+  void shouldReadRestApiSettings() {
+    ArtemisConfiguration config =
+        ArtemisConfiguration.fromString(
+            "beaconrestapi.portNumber=1\nbeaconrestapi.enableSwagger=false");
+    assertEquals(config.getBeaconRestAPIPortNumber(), 1);
+    assertEquals(config.getBeaconRestAPIEnableSwagger(), false);
   }
 
   @Test
-  void logPathCanBeSet() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.logPath=\".\"");
-    assertThat(config.getLogPath()).isEqualTo(".");
+  void dataPathCanBeSet() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.dataPath=\".\"");
+    assertThat(config.getDataPath()).isEqualTo(".");
   }
 }
