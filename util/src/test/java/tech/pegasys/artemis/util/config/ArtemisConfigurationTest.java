@@ -90,10 +90,4 @@ final class ArtemisConfigurationTest {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.dataPath=\".\"");
     assertThat(config.getDataPath()).isEqualTo(".");
   }
-
-  @Test
-  void logPathCanBeSet() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.logPath=\".\"");
-    assertThat(config.getLogPath()).isEqualTo(".");
-  }
 }

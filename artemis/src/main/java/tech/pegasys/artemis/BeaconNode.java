@@ -25,6 +25,7 @@ import io.vertx.core.Vertx;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
@@ -55,12 +56,10 @@ public class BeaconNode {
   private final ServiceController serviceController = new ServiceController();
   private final ServiceConfig serviceConfig;
   private final EventChannels eventChannels;
-  private EventBus eventBus;
-  private MetricsEndpoint metricsEndpoint;
+  private final MetricsEndpoint metricsEndpoint;
+  private final EventBus eventBus;
 
-  BeaconNode(Optional<Level> loggingLevel, ArtemisConfiguration config) {
-    System.setProperty("logPath", config.getLogPath());
-    System.setProperty("rollingFile", config.getLogFile());
+  BeaconNode(final Optional<Level> loggingLevel, final ArtemisConfiguration config) {
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
@@ -101,9 +100,9 @@ public class BeaconNode {
       // Start services
       serviceController.startAll();
 
-    } catch (java.util.concurrent.CompletionException e) {
+    } catch (final CompletionException e) {
       STDOUT.log(Level.FATAL, e.toString());
-    } catch (IllegalArgumentException e) {
+    } catch (final IllegalArgumentException e) {
       STDOUT.log(Level.FATAL, e.getMessage());
     }
   }
