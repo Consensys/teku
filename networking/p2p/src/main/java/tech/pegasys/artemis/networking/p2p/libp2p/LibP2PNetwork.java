@@ -152,8 +152,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             i -> {
               STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
-            })
-        .thenRun(() -> config.getStaticPeers().forEach(reportExceptions(this::connect)));
+            });
   }
 
   @Override
