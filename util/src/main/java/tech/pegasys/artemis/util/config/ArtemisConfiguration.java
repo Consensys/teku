@@ -54,6 +54,12 @@ public class ArtemisConfiguration {
     builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
+    builder.addString(
+        "validator.validatorsKeystoreConfFile",
+        "",
+        "The file containing paths to encrypted keystore files and password files to decrypt them",
+        null);
+
     builder.addInteger(
         "deposit.numValidators",
         64,
@@ -238,6 +244,11 @@ public class ArtemisConfiguration {
   public String getValidatorsKeyFile() {
     final String keyFile = config.getString("validator.validatorsKeyFile");
     return keyFile == null || keyFile.isEmpty() ? null : keyFile;
+  }
+
+  public String getValidatorsKeystoreConfFile() {
+    final String keystoreConfFile = config.getString("validator.validatorsKeystoreConfFile");
+    return keystoreConfFile == null || keystoreConfFile.trim().isBlank() ? null : keystoreConfFile;
   }
 
   /** @return the Deposit simulation flag, w/ optional input file */
