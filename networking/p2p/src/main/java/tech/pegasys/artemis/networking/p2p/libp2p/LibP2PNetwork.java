@@ -61,7 +61,6 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final PrivKey privKey;
-  private final NetworkConfig config;
   private final NodeId nodeId;
 
   private final Host host;
@@ -80,7 +79,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final List<PeerHandler> peerHandlers) {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
-    this.config = config;
 
     advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
 
