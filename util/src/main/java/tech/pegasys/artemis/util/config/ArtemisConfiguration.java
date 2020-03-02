@@ -57,14 +57,14 @@ public class ArtemisConfiguration {
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
     builder.addListOfString(
-        "validator.validatorsKeystoreFiles",
+        "validator.keystoreFiles",
         Collections.emptyList(),
         "The list of encrypted keystore files to load the validator keys from",
         null);
     builder.addListOfString(
-        "validator.validatorsKeystorePasswordFiles",
+        "validator.keystorePasswordFiles",
         Collections.emptyList(),
-        "The list of password files to decrypt the keystores",
+        "The list of password files to decrypt the validator keystore files",
         null);
 
     builder.addInteger(
@@ -272,7 +272,7 @@ public class ArtemisConfiguration {
   }
 
   private List<String> getValidatorKeystoreFiles() {
-    final List<String> list = config.getListOfString("validator.validatorsKeystoreFiles");
+    final List<String> list = config.getListOfString("validator.keystoreFiles");
     if (list == null) {
       return Collections.emptyList();
     }
@@ -280,7 +280,7 @@ public class ArtemisConfiguration {
   }
 
   private List<String> getValidatorKeystorePasswordFiles() {
-    final List<String> list = config.getListOfString("validator.validatorsKeystorePasswordFiles");
+    final List<String> list = config.getListOfString("validator.keystorePasswordFiles");
     if (list == null) {
       return Collections.emptyList();
     }

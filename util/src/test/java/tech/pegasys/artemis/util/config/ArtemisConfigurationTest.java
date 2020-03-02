@@ -98,10 +98,10 @@ final class ArtemisConfigurationTest {
   void validatorKeyStoreAndPasswordFileCanBeSet() {
     final ArtemisConfiguration config =
         ArtemisConfiguration.fromString(
-            "validator.validatorsKeystoreFiles=["
+            "validator.keystoreFiles=["
                 + "\"/path/to/Keystore1.json\",\"/path/to/Keystore2.json\""
                 + "]\n"
-                + "validator.validatorsKeystorePasswordFiles=["
+                + "validator.keystorePasswordFiles=["
                 + "\"/path/to/Keystore1password.txt\", \"/path/to/Keystore2password.txt\""
                 + "]");
     assertThat(config.getValidatorKeystorePasswordFilePairs()).size().isEqualTo(2);
@@ -115,10 +115,10 @@ final class ArtemisConfigurationTest {
   void invalidKeystoreAndPasswordParametersThrowsException() {
     final ArtemisConfiguration config =
         ArtemisConfiguration.fromString(
-            "validator.validatorsKeystoreFiles=["
+            "validator.keystoreFiles=["
                 + "\"/path/to/Keystore1.json\",\"/path/to/Keystore2.json\""
                 + "]\n"
-                + "validator.validatorsKeystorePasswordFiles=["
+                + "validator.keystorePasswordFiles=["
                 + "\"/path/to/Keystore1password.txt\""
                 + "]");
 
