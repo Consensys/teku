@@ -438,6 +438,24 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     return validators;
   }
 
+  public SSZList<Validator> getActiveValidators() {
+    List<Validator> activeValidatorsList =
+        getValidators().stream()
+            .filter(
+                v ->
+                    (v.getExit_epoch().compareTo(getCurrent_justified_checkpoint().getEpoch())
+                        >= 0))
+            .filter(
+                v ->
+                    (v.getActivation_epoch().compareTo(getCurrent_justified_checkpoint().getEpoch())
+                        <= 0))
+            .collect(Collectors.toList());
+    final SSZList<Validator> activeValidators =
+        new SSZList<>(Validator.class, activeValidatorsList.size());
+    activeValidators.addAll(activeValidatorsList);
+    return activeValidators;
+  }
+
   public void setValidators(SSZList<Validator> validators) {
     this.validators = validators;
   }
