@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
@@ -130,7 +131,7 @@ public class BeaconValidatorsHandlerTest {
   public void shouldReturnActiveValidatorsWhenQueryByActiveAndEpoch() throws Exception {
     BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
     when(context.queryParamMap())
-        .thenReturn(Map.of("active", List.of("true"), EPOCH, List.of(epoch.toString())));
+        .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(epoch.toString())));
     when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
     SSZList<Validator> allValidators = beaconState.getValidators();
