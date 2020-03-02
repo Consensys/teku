@@ -21,6 +21,8 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
+    // final List<Pair> validatorKeystorePasswordFilePairs =
+    // config.getValidatorKeystorePasswordFilePairs();
     return Collections.emptyList(); // TODO: Implement actual logic
   }
 }

@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.config.Configuration;
 import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
@@ -54,10 +56,15 @@ public class ArtemisConfiguration {
     builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
-    builder.addString(
-        "validator.validatorsKeystoreConfFile",
-        "",
-        "The file containing paths to encrypted keystore files and password files to decrypt them",
+    builder.addListOfString(
+        "validator.validatorsKeystoreFiles",
+        Collections.emptyList(),
+        "The list of encrypted keystore files to load the validator keys from",
+        null);
+    builder.addListOfString(
+        "validator.validatorsKeystorePasswordFiles",
+        Collections.emptyList(),
+        "The list of password files to decrypt the keystores",
         null);
 
     builder.addInteger(
@@ -246,9 +253,37 @@ public class ArtemisConfiguration {
     return keyFile == null || keyFile.isEmpty() ? null : keyFile;
   }
 
-  public String getValidatorsKeystoreConfFile() {
-    final String keystoreConfFile = config.getString("validator.validatorsKeystoreConfFile");
-    return keystoreConfFile == null || keystoreConfFile.isBlank() ? null : keystoreConfFile;
+  public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
+    final List<String> keystoreFiles = config.getListOfString("validator.validatorsKeystoreFiles");
+    final List<String> keystorePasswordFiles =
+        config.getListOfString("validator.validatorsKeystorePasswordFiles");
+
+    if (keystoreFiles == null
+        || keystorePasswordFiles == null
+        || keystoreFiles.isEmpty()
+        || keystorePasswordFiles.isEmpty()) {
+      return null;
+    }
+
+    if (keystoreFiles.size() != keystorePasswordFiles.size()) {
+      final String errorMessage =
+          String.format(
+              "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
+              keystoreFiles.size(), keystorePasswordFiles.size());
+      throw new IllegalArgumentException(errorMessage);
+    }
+
+    final List<Pair<Path, Path>> keystoreFilePasswordFilePairs = new ArrayList<>();
+    for (int i = 0; i < keystoreFiles.size(); i++) {
+      keystoreFilePasswordFilePairs.add(
+          Pair.of(Path.of(keystoreFiles.get(i)), Path.of(keystorePasswordFiles.get(i))));
+    }
+    return keystoreFilePasswordFilePairs;
+  }
+
+  public List<String> getValidatorKeystorePasswordFiles() {
+    final List<String> keystoreFiles = config.getListOfString("validator.validatorsKeystoreFiles");
+    return keystoreFiles == null || keystoreFiles.isEmpty() ? null : keystoreFiles;
   }
 
   /** @return the Deposit simulation flag, w/ optional input file */

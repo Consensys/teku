@@ -50,7 +50,8 @@ class ValidatorLoader {
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     final Set<ValidatorKeyProvider> keyProviders = new LinkedHashSet<>();
-    if (config.getValidatorsKeyFile() == null && config.getValidatorsKeystoreConfFile() == null) {
+    if (config.getValidatorsKeyFile() == null
+        && config.getValidatorKeystorePasswordFilePairs() == null) {
       keyProviders.add(new MockStartValidatorKeyProvider());
     } else {
       // support loading keys both from unencrypted yaml and encrypted keystores
@@ -58,7 +59,7 @@ class ValidatorLoader {
         keyProviders.add(new YamlValidatorKeyProvider());
       }
 
-      if (config.getValidatorsKeystoreConfFile() != null) {
+      if (config.getValidatorKeystorePasswordFilePairs() != null) {
         keyProviders.add(new KeystoresValidatorKeyProvider());
       }
     }
