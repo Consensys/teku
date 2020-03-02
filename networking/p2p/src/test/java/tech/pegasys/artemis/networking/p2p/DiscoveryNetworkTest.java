@@ -106,18 +106,20 @@ class DiscoveryNetworkTest {
 
   @Test
   public void shouldNotEnableDiscoveryWhenMethodIsStatic() {
-    final DiscoveryNetwork<Peer> network = DiscoveryNetwork.create(
-        p2pNetwork,
-        new NetworkConfig(null,
-            "127.0.0.1",
-            0,
-            0,
-            Collections.emptyList(),
-            "static",
-            Collections.emptyList(),
-            false,
-            false,
-            false));
+    final DiscoveryNetwork<Peer> network =
+        DiscoveryNetwork.create(
+            p2pNetwork,
+            new NetworkConfig(
+                null,
+                "127.0.0.1",
+                0,
+                0,
+                Collections.emptyList(),
+                "static",
+                Collections.emptyList(),
+                false,
+                false,
+                false));
     assertThat(network.getEnr()).isEmpty();
   }
 }
