@@ -16,6 +16,7 @@ package tech.pegasys.artemis.validator.coordinator;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import com.google.common.io.Files;
@@ -23,8 +24,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.keystore.KeyStore;
@@ -36,7 +38,7 @@ import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
-  private static final int KEY_LENGTH = 48;
+  static final int KEY_LENGTH = 48;
 
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
@@ -44,23 +46,28 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
         config.getValidatorKeystorePasswordFilePairs();
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");
 
-    return keystorePasswordFilePairs.stream()
-        .map(
-            pair -> {
-              final String password = getPassword(pair.getRight());
-
-              final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(pair.getLeft());
-              if (!KeyStore.validatePassword(password, keyStoreData)) {
-                throw new RuntimeException("Invalid password for keystore: " + pair.getLeft());
-              }
-
-              final Bytes privKey = KeyStore.decrypt(password, keyStoreData);
-              return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(padLeft(privKey))));
-            })
-        .collect(Collectors.toList());
+    // return distinct loaded key pairs
+    return new ArrayList<>(
+        keystorePasswordFilePairs.stream()
+            .map(
+                pair -> {
+                  final String password = loadPassword(pair.getRight());
+                  final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(pair.getLeft());
+                  if (!KeyStore.validatePassword(password, keyStoreData)) {
+                    throw new RuntimeException("Invalid keystore password: " + pair.getLeft());
+                  }
+                  final Bytes privKey = KeyStore.decrypt(password, keyStoreData);
+                  return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(padLeft(privKey))));
+                })
+            .collect(
+                toMap(
+                    blsKeyPair -> blsKeyPair.getPublicKey().toString(),
+                    Function.identity(),
+                    (dupKey1, dupKey2) -> dupKey2))
+            .values());
   }
 
-  private String getPassword(final Path passwordFile) {
+  private String loadPassword(final Path passwordFile) {
     final String password;
     try {
       password = Files.asCharSource(passwordFile.toFile(), UTF_8).readFirstLine();
