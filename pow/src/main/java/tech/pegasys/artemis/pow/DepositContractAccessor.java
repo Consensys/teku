@@ -22,11 +22,11 @@ import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class DepositContractListener {
+public class DepositContractAccessor {
   private final Eth1Provider eth1Provider;
   private final DepositContract contract;
 
-  public DepositContractListener(Eth1Provider eth1Provider, DepositContract contract) {
+  public DepositContractAccessor(Eth1Provider eth1Provider, DepositContract contract) {
     this.eth1Provider = eth1Provider;
     this.contract = contract;
   }

@@ -106,7 +106,6 @@ public class Constants {
   // Deposit
   public static String DEPOSIT_NORMAL = "normal";
   public static String DEPOSIT_TEST = "test";
-  public static String DEPOSIT_SIM = "simulation";
 
   // Fork Choice
   public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;

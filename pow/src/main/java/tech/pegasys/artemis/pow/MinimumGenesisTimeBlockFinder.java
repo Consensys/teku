@@ -13,107 +13,21 @@
 
 package tech.pegasys.artemis.pow;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class Eth1Manager {
+public class MinimumGenesisTimeBlockFinder {
 
-  private static final Logger LOG = LogManager.getLogger();
+  final Eth1Provider eth1Provider;
 
-  private final Eth1Provider eth1Provider;
-  private final AsyncRunner asyncRunner;
-  private final Eth1EventsChannel eth1EventsChannel;
-  private final DepositProcessingController depositProcessingController;
-
-  public Eth1Manager(
-      Eth1Provider eth1Provider,
-      AsyncRunner asyncRunner,
-      Eth1EventsChannel eth1EventsChannel,
-      DepositProcessingController depositProcessingController) {
+  public MinimumGenesisTimeBlockFinder(Eth1Provider eth1Provider) {
     this.eth1Provider = eth1Provider;
-    this.asyncRunner = asyncRunner;
-    this.eth1EventsChannel = eth1EventsChannel;
-    this.depositProcessingController = depositProcessingController;
-  }
-
-  public void start() {
-
-    SafeFuture<EthBlock.Block> headBlock = getHead();
-
-    SafeFuture<Boolean> isHeadBeforeMinGenesis = isHeadBeforeMinGenesis(headBlock);
-
-    isHeadBeforeMinGenesis.thenAccept(
-        bool -> {
-          if (bool) headBeforeMinGenesisMode(headBlock);
-          else headAfterMinGenesisMode(headBlock);
-        });
-  }
-
-  public SafeFuture<Void> headBeforeMinGenesisMode(SafeFuture<EthBlock.Block> head) {
-    return head.thenCompose(
-            headBlock ->
-                depositProcessingController.fetchDepositsFromGenesisTo(headBlock.getNumber()))
-        .thenRun(
-            () -> {
-              EthBlock.Block block = checkNotNull(head.getNow(null));
-              depositProcessingController.switchToBlockByBlockMode();
-              depositProcessingController.startSubscription(block.getNumber());
-            });
-  }
-
-  public SafeFuture<Void> headAfterMinGenesisMode(SafeFuture<EthBlock.Block> head) {
-    SafeFuture<EthBlock.Block> minGenesisBlock =
-        head.thenCompose(this::findMinGenesisTimeBlockInHistory);
-
-    return minGenesisBlock
-        .thenCompose(
-            block -> depositProcessingController.fetchDepositsFromGenesisTo(block.getNumber()))
-        .thenRun(
-            () -> {
-              EthBlock.Block block = checkNotNull(minGenesisBlock.getNow(null));
-              postMinGenesisTimeBlock(eth1EventsChannel, block);
-              depositProcessingController.startSubscription(block.getNumber());
-            });
-  }
-
-  public SafeFuture<EthBlock.Block> getHead() {
-    return eth1Provider
-        .getLatestEth1BlockFuture()
-        .thenApply(EthBlock.Block::getNumber)
-        .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
-        .thenApply(UnsignedLong::valueOf)
-        .thenCompose(eth1Provider::getEth1BlockFuture);
-  }
-
-  public SafeFuture<Boolean> isHeadBeforeMinGenesis(SafeFuture<EthBlock.Block> headBlock) {
-    return headBlock.thenApply(
-        block -> {
-          int comparison = compareBlockTimestampToMinGenesisTime(block);
-          // If block timestamp is greater than min genesis time,
-          // min genesis block must have been in history
-          return comparison > 0;
-        });
-  }
-
-  public static EthBlock.Block postMinGenesisTimeBlock(
-      Eth1EventsChannel eth1EventsChannel, EthBlock.Block block) {
-    eth1EventsChannel.onMinGenesisTimeBlock(
-        new MinGenesisTimeBlockEvent(
-            UnsignedLong.valueOf(block.getTimestamp()),
-            UnsignedLong.valueOf(block.getNumber()),
-            Bytes32.fromHexString(block.getHash())));
-    return block;
   }
 
   /**
@@ -122,7 +36,7 @@ public class Eth1Manager {
    * @param estimationBlock estimationBlock that will be used for estimation
    * @return min genesis time block
    */
-  private SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(
+  public SafeFuture<EthBlock.Block> findMinGenesisTimeBlockInHistory(
       EthBlock.Block estimationBlock) {
     UnsignedLong estimatedBlockNumber =
         getEstimatedMinGenesisTimeBlockNumber(estimationBlock, Constants.SECONDS_PER_ETH1_BLOCK);
@@ -191,7 +105,7 @@ public class Eth1Manager {
   }
 
   // TODO: this function changes a tiny bit in 10.1
-  static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
+  private static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
     UnsignedLong timestamp = UnsignedLong.valueOf(eth1Timestamp);
     return timestamp
         .minus(timestamp.mod(UnsignedLong.valueOf(Constants.SECONDS_PER_DAY)))
@@ -219,5 +133,22 @@ public class Eth1Manager {
   public static int compareBlockTimestampToMinGenesisTime(EthBlock.Block block) {
     return calculateCandidateGenesisTimestamp(block.getTimestamp())
         .compareTo(Constants.MIN_GENESIS_TIME);
+  }
+
+  public static Boolean isBlockBeforeMinGenesis(EthBlock.Block block) {
+    int comparison = compareBlockTimestampToMinGenesisTime(block);
+    // If block timestamp is greater than min genesis time,
+    // min genesis block must have been in history
+    return comparison >= 0;
+  }
+
+  public static EthBlock.Block notifyMinGenesisTimeBlockReached(
+      Eth1EventsChannel eth1EventsChannel, EthBlock.Block block) {
+    eth1EventsChannel.onMinGenesisTimeBlock(
+        new MinGenesisTimeBlockEvent(
+            UnsignedLong.valueOf(block.getTimestamp()),
+            UnsignedLong.valueOf(block.getNumber()),
+            Bytes32.fromHexString(block.getHash())));
+    return block;
   }
 }

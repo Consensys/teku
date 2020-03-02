@@ -183,8 +183,7 @@ public class BeaconChainController {
 
   private void initPreGenesisDepositHandler() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initPreGenesisDepositHandler()");
-    eventChannels.subscribe(
-        Eth1EventsChannel.class, new GenesisHandler(config, chainStorageClient));
+    eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(chainStorageClient));
   }
 
   private void initAttestationPropagationManager() {

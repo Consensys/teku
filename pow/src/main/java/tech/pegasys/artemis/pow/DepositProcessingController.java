@@ -13,8 +13,7 @@
 
 package tech.pegasys.artemis.pow;
 
-import static tech.pegasys.artemis.pow.Eth1Manager.compareBlockTimestampToMinGenesisTime;
-import static tech.pegasys.artemis.pow.Eth1Manager.postMinGenesisTimeBlock;
+import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
 import com.google.common.primitives.UnsignedLong;
@@ -38,12 +37,12 @@ public class DepositProcessingController {
   private final AsyncRunner asyncRunner;
   private final DepositsFetcher depositsFetcher;
 
-  private volatile Disposable newBlockSubscription;
+  private Disposable newBlockSubscription;
   private boolean active = false;
 
   // BlockByBlock mode is used to request deposit events and block information for each block
   private boolean isBlockByBlockModeOn = false;
-  private volatile BigInteger blockByBlockLastFetchedBlockNumber = BigInteger.ZERO;
+  private BigInteger blockByBlockLastFetchedBlockNumber = BigInteger.ZERO;
 
   private BigInteger latestCanonicalBlockNumber = BigInteger.ZERO;
 
@@ -58,12 +57,12 @@ public class DepositProcessingController {
     this.depositsFetcher = depositsFetcher;
   }
 
-  public void switchToBlockByBlockMode() {
+  public synchronized void switchToBlockByBlockMode() {
     isBlockByBlockModeOn = true;
   }
 
   // inclusive of start block
-  public void startSubscription(BigInteger subscriptionStartBlock) {
+  public synchronized void startSubscription(BigInteger subscriptionStartBlock) {
     depositsFetcher.setLatestFetchedBlockNumber(subscriptionStartBlock.subtract(BigInteger.ONE));
     newBlockSubscription =
         eth1Provider
@@ -73,16 +72,18 @@ public class DepositProcessingController {
             .subscribe(this::onNewCanonicalBlockNumber, this::onSubscriptionFailed);
   }
 
-  public void stopSubscription() {
-    newBlockSubscription.dispose();
+  public void stopIfSubscribed() {
+    if (newBlockSubscription != null) {
+      newBlockSubscription.dispose();
+    }
   }
 
   // Inclusive
-  public SafeFuture<Void> fetchDepositsFromGenesisTo(BigInteger toBlockNumber) {
-    depositsFetcher.fetchDepositsInRange(BigInteger.ZERO, toBlockNumber);
+  public synchronized SafeFuture<Void> fetchDepositsFromGenesisTo(BigInteger toBlockNumber) {
+    return depositsFetcher.fetchDepositsInRange(BigInteger.ZERO, toBlockNumber);
   }
 
-  private void onSubscriptionFailed(Throwable err) {
+  private synchronized void onSubscriptionFailed(Throwable err) {
     Disposable subscription = newBlockSubscription;
     if (subscription != null) {
       subscription.dispose();
@@ -153,8 +154,8 @@ public class DepositProcessingController {
         .thenCompose((__) -> eth1Provider.getEth1BlockFuture(UnsignedLong.valueOf(nextBlockNumber)))
         .thenAccept(
             block -> {
-              if (compareBlockTimestampToMinGenesisTime(block) >= 0) {
-                postMinGenesisTimeBlock(eth1EventsChannel, block);
+              if (MinimumGenesisTimeBlockFinder.compareBlockTimestampToMinGenesisTime(block) >= 0) {
+                notifyMinGenesisTimeBlockReached(eth1EventsChannel, block);
                 isBlockByBlockModeOn = false;
               }
               blockByBlockLastFetchedBlockNumber = block.getNumber();

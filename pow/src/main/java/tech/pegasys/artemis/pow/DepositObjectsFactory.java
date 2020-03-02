@@ -39,8 +39,17 @@ public class DepositObjectsFactory {
     return new DepositsFetcher(eth1Provider, eth1EventsChannel, depositContract, asyncRunner);
   }
 
-  public DepositProcessingController createDepositsSubscriber() {
+  public DepositProcessingController createDepositProcessingController() {
     return new DepositProcessingController(
         eth1Provider, eth1EventsChannel, asyncRunner, createDepositsFetcher());
+  }
+
+  public Eth1DepositsManager createEth1DepositsManager() {
+    return new Eth1DepositsManager(
+        eth1Provider,
+        asyncRunner,
+        eth1EventsChannel,
+        createDepositProcessingController(),
+        new MinimumGenesisTimeBlockFinder(eth1Provider));
   }
 }

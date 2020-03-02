@@ -30,6 +30,7 @@ import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
@@ -69,6 +70,10 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEv
 
     depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
   }
+
+  // It's sad that we have to do this. Is there any other way?
+  @Override
+  public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 
   public SSZList<Deposit> getDeposits(BeaconState state) {
     UnsignedLong eth1DepositCount = state.getEth1_data().getDeposit_count();

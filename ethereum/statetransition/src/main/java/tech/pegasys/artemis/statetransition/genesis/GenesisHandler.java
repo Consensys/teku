@@ -59,7 +59,7 @@ public class GenesisHandler implements Eth1EventsChannel {
 
   private void processNewData(
       Bytes32 blockHash, UnsignedLong timestamp, List<DepositWithIndex> deposits) {
-    genesisGenerator.updateCandidateState(blockHash, timestamp, List.of());
+    genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
 
     genesisGenerator
         .getGenesisStateIfValid(BeaconStateUtil::is_valid_genesis_state)

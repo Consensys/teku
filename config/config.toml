@@ -23,11 +23,10 @@ privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A
 #validatorsKeyFile = "keys.yaml"
 
 [deposit]
-# normal, test, simulation
+# normal, test
 # "test" pre-production
-# "simulation" to run a simulation of deposits with ganache-cli, if a inputFile is included the file will replay the deposits
 # "normal" production, must include contractAddr and nodeUrl
-mode = "test"
+mode = "normal"
 inputFile = "" #"validator_test_data.json"
 numValidators = 64
 numNodes = 1
