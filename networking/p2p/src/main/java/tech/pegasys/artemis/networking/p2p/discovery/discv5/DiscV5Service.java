@@ -81,8 +81,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
-  public String getEnr() {
-    return discoverySystem.getLocalNodeRecord().asEnr();
+  public Optional<String> getEnr() {
+    return Optional.of(discoverySystem.getLocalNodeRecord().asEnr());
   }
 
   private Optional<NodeRecord> randomActiveNode() {

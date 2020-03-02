@@ -20,9 +20,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.discovery.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -97,7 +100,24 @@ class DiscoveryNetworkTest {
 
   @Test
   public void shouldReturnEnrFromDiscoveryService() {
-    when(discoveryService.getEnr()).thenReturn("enr:-");
+    when(discoveryService.getEnr()).thenReturn(Optional.of("enr:-"));
     assertThat(discoveryNetwork.getEnr()).contains("enr:-");
+  }
+
+  @Test
+  public void shouldNotEnableDiscoveryWhenMethodIsStatic() {
+    final DiscoveryNetwork<Peer> network = DiscoveryNetwork.create(
+        p2pNetwork,
+        new NetworkConfig(null,
+            "127.0.0.1",
+            0,
+            0,
+            Collections.emptyList(),
+            "static",
+            Collections.emptyList(),
+            false,
+            false,
+            false));
+    assertThat(network.getEnr()).isEmpty();
   }
 }

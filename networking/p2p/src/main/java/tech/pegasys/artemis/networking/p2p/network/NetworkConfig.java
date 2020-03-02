@@ -23,6 +23,7 @@ public class NetworkConfig {
   private final int listenPort;
   private final int advertisedPort;
   private final List<String> staticPeers;
+  private final String discoveryMethod;
   private final List<String> bootnodes;
   private final boolean logWireCipher;
   private final boolean logWirePlain;
@@ -34,6 +35,7 @@ public class NetworkConfig {
       final int listenPort,
       final int advertisedPort,
       final List<String> staticPeers,
+      final String discoveryMethod,
       final List<String> bootnodes,
       final boolean logWireCipher,
       final boolean logWirePlain,
@@ -43,6 +45,7 @@ public class NetworkConfig {
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
     this.staticPeers = staticPeers;
+    this.discoveryMethod = discoveryMethod;
     this.bootnodes = bootnodes;
     this.logWireCipher = logWireCipher;
     this.logWirePlain = logWirePlain;
@@ -67,6 +70,10 @@ public class NetworkConfig {
 
   public List<String> getStaticPeers() {
     return staticPeers;
+  }
+
+  public String getDiscoveryMethod() {
+    return discoveryMethod;
   }
 
   public List<String> getBootnodes() {

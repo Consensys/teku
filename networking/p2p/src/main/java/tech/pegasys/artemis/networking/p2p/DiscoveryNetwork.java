@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.discovery.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.discovery.discv5.DiscV5Service;
+import tech.pegasys.artemis.networking.p2p.discovery.noop.NoOpDiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -36,7 +37,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   private final DiscoveryService discoveryService;
   private final ConnectionManager connectionManager;
 
-  public DiscoveryNetwork(
+  DiscoveryNetwork(
       final P2PNetwork<P> p2pNetwork,
       final DiscoveryService discoveryService,
       final ConnectionManager connectionManager) {
@@ -48,12 +49,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
       final P2PNetwork<P> p2pNetwork, final NetworkConfig p2pConfig) {
-    final DiscoveryService discoveryService =
-        DiscV5Service.create(
-            Bytes.wrap(p2pConfig.getPrivateKey().raw()),
-            p2pConfig.getNetworkInterface(),
-            p2pConfig.getListenPort(),
-            p2pConfig.getBootnodes());
+    final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
     final ConnectionManager connectionManager =
         new ConnectionManager(
             discoveryService,
@@ -61,6 +57,27 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             p2pNetwork,
             p2pConfig.getStaticPeers());
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
+  }
+
+  private static DiscoveryService createDiscoveryService(final NetworkConfig p2pConfig) {
+    final DiscoveryService discoveryService;
+    switch (p2pConfig.getDiscoveryMethod()) {
+      case "discv5":
+        discoveryService =
+            DiscV5Service.create(
+                Bytes.wrap(p2pConfig.getPrivateKey().raw()),
+                p2pConfig.getNetworkInterface(),
+                p2pConfig.getListenPort(),
+                p2pConfig.getBootnodes());
+        break;
+      case "static":
+        discoveryService = new NoOpDiscoveryService();
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unknown discovery method: " + p2pConfig.getDiscoveryMethod());
+    }
+    return discoveryService;
   }
 
   @Override
@@ -87,7 +104,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   @Override
   public Optional<String> getEnr() {
-    return Optional.of(discoveryService.getEnr());
+    return discoveryService.getEnr();
   }
 
   @Override

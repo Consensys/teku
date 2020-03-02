@@ -129,6 +129,7 @@ public class Eth2NetworkFactory {
           port,
           port,
           emptyList(),
+          "static",
           emptyList(),
           false,
           false,

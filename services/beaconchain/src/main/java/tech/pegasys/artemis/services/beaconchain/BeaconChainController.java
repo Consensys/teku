@@ -207,6 +207,7 @@ public class BeaconChainController {
               config.getPort(),
               config.getAdvertisedPort(),
               config.getStaticPeers(),
+              config.getDiscovery(),
               config.getBootnodes(),
               true,
               true,

@@ -76,6 +76,7 @@ public class DiscoveryNetworkFactory {
                 port,
                 port,
                 staticPeers,
+                "discv5",
                 bootnodes,
                 false,
                 false,
