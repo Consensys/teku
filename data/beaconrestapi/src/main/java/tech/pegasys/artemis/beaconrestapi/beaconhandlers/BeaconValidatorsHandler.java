@@ -44,6 +44,7 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconValidatorsHandler implements Handler {
 
@@ -91,10 +92,13 @@ public class BeaconValidatorsHandler implements Handler {
 
     Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
     if (optionalRoot.isPresent()) {
+      Bytes32 blockRoot = optionalRoot.get();
       if (parameters.containsKey(EPOCH)) {
-        future = queryByEpoch(validateQueryParameter(parameters, EPOCH), optionalRoot.get());
+        future = queryByEpoch(validateQueryParameter(parameters, EPOCH), blockRoot);
+      } else if (genesisOnly) {
+        future = queryByGenesis(blockRoot);
       } else {
-        future = queryByRootHash(optionalRoot.get());
+        future = queryByRootHash(blockRoot);
       }
       ctx.result(
           future.thenApplyChecked(
@@ -123,6 +127,10 @@ public class BeaconValidatorsHandler implements Handler {
 
   private SafeFuture<Optional<BeaconState>> queryByRootHash(final Bytes32 root32) {
     return combinedClient.getStateByBlockRoot(root32);
+  }
+
+  private SafeFuture<Optional<BeaconState>> queryByGenesis(final Bytes32 blockRoot) {
+    return combinedClient.getStateAtSlot(UnsignedLong.valueOf(Constants.GENESIS_EPOCH), blockRoot);
   }
 
   private SafeFuture<Optional<BeaconState>> queryByEpoch(

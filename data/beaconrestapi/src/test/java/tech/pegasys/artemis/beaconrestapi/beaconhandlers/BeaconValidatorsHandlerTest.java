@@ -42,6 +42,7 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(MockitoExtension.class)
 public class BeaconValidatorsHandlerTest {
@@ -202,23 +203,21 @@ public class BeaconValidatorsHandlerTest {
   }
 
   @Test
-  public void shouldReturnActiveValidatorsWhenQueryByGenesisOnly() throws Exception {
+  public void shouldReturnGenesisValidatorsWhenQueryByGenesisOnly() throws Exception {
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(beaconState.getValidators());
     BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(GENESIS, List.of("true")));
     when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(combinedClient.getStateByBlockRoot(blockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
-    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-
+    final UnsignedLong slot =
+        BeaconStateUtil.compute_start_slot_at_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
 
     handler.handle(context);
 
     verify(combinedClient).getBestBlockRoot();
-    verify(combinedClient).getStateByBlockRoot(blockRoot);
+    verify(combinedClient).getStateAtSlot(slot, blockRoot);
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
