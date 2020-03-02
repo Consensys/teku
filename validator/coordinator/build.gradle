@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':util')
   implementation project(':pow')
+  implementation project(':data:keystore')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3'

@@ -36,7 +36,7 @@ class ValidatorLoader {
         loadValidatorKeys(config).stream()
             .collect(
                 Collectors.toMap(
-                    blsKeyPair -> blsKeyPair.getPublicKey(),
+                    BLSKeyPair::getPublicKey,
                     blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
 
     if (STDOUT.isDebugEnabled()) {
