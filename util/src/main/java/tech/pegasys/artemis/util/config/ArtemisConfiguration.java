@@ -254,24 +254,14 @@ public class ArtemisConfiguration {
   }
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
-    final List<String> keystoreFiles = config.getListOfString("validator.validatorsKeystoreFiles");
-    final List<String> keystorePasswordFiles =
-        config.getListOfString("validator.validatorsKeystorePasswordFiles");
+    final List<String> keystoreFiles = getValidatorKeystoreFiles();
+    final List<String> keystorePasswordFiles = getValidatorKeystorePasswordFiles();
 
-    if (keystoreFiles == null
-        || keystorePasswordFiles == null
-        || keystoreFiles.isEmpty()
-        || keystorePasswordFiles.isEmpty()) {
+    if (keystoreFiles.isEmpty() || keystorePasswordFiles.isEmpty()) {
       return null;
     }
 
-    if (keystoreFiles.size() != keystorePasswordFiles.size()) {
-      final String errorMessage =
-          String.format(
-              "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
-              keystoreFiles.size(), keystorePasswordFiles.size());
-      throw new IllegalArgumentException(errorMessage);
-    }
+    validateKeyStoreFilesAndPasswordFilesSize();
 
     final List<Pair<Path, Path>> keystoreFilePasswordFilePairs = new ArrayList<>();
     for (int i = 0; i < keystoreFiles.size(); i++) {
@@ -279,6 +269,22 @@ public class ArtemisConfiguration {
           Pair.of(Path.of(keystoreFiles.get(i)), Path.of(keystorePasswordFiles.get(i))));
     }
     return keystoreFilePasswordFilePairs;
+  }
+
+  private List<String> getValidatorKeystoreFiles() {
+    final List<String> list = config.getListOfString("validator.validatorsKeystoreFiles");
+    if (list == null) {
+      return Collections.emptyList();
+    }
+    return list;
+  }
+
+  private List<String> getValidatorKeystorePasswordFiles() {
+    final List<String> list = config.getListOfString("validator.validatorsKeystorePasswordFiles");
+    if (list == null) {
+      return Collections.emptyList();
+    }
+    return list;
   }
 
   /** @return the Deposit simulation flag, w/ optional input file */
@@ -353,6 +359,20 @@ public class ArtemisConfiguration {
   public void validateConfig() throws IllegalArgumentException {
     if (getNumValidators() < Constants.SLOTS_PER_EPOCH) {
       throw new IllegalArgumentException("Invalid config.toml");
+    }
+    validateKeyStoreFilesAndPasswordFilesSize();
+  }
+
+  private void validateKeyStoreFilesAndPasswordFilesSize() {
+    final List<String> validatorKeystoreFiles = getValidatorKeystoreFiles();
+    final List<String> validatorKeystorePasswordFiles = getValidatorKeystorePasswordFiles();
+
+    if (validatorKeystoreFiles.size() != validatorKeystorePasswordFiles.size()) {
+      final String errorMessage =
+          String.format(
+              "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
+              validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
+      throw new IllegalArgumentException(errorMessage);
     }
   }
 
