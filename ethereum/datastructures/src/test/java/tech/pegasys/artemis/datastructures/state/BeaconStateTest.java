@@ -13,17 +13,50 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateTest {
+
+  @Test
+  public void getActiveValidators() {
+
+    BeaconState beaconState = DataStructureUtil.randomBeaconState(23);
+    SSZList<Validator> allValidators = beaconState.getValidators();
+    List<Validator> activeValidators = beaconState.getActiveValidators();
+    int originalValidatorCount = allValidators.size();
+
+    assertThat(activeValidators.size()).isLessThanOrEqualTo(allValidators.size());
+
+    // create one validator which IS active and add it to the list
+    Validator v = DataStructureUtil.randomValidator(77);
+    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
+    v.setActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch().minus(UnsignedLong.ONE));
+    allValidators.add(v);
+    beaconState.setValidators(allValidators);
+    int updatedValidatorCount = allValidators.size();
+    List<Validator> updatedActiveValidators = beaconState.getActiveValidators();
+
+    assertThat(updatedActiveValidators).contains(v);
+    assertThat(beaconState.getValidators()).contains(v);
+    assertThat(beaconState.getValidators()).containsAll(updatedActiveValidators);
+    assertThat(updatedValidatorCount).isEqualTo(originalValidatorCount + 1);
+    assertThat(updatedActiveValidators.size()).isLessThanOrEqualTo(updatedValidatorCount);
+    // same number of non-active validators before and after
+    assertThat(updatedValidatorCount - updatedActiveValidators.size())
+        .isEqualTo(originalValidatorCount - activeValidators.size());
+  }
 
   @Test
   void vectorLengthsTest() {
