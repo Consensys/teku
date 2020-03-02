@@ -18,6 +18,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.io.Files;
 import java.io.FileNotFoundException;
@@ -28,9 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.keystore.KeyStore;
 import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
+import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -47,16 +50,13 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");
 
     // return distinct loaded key pairs
+
     return new ArrayList<>(
         keystorePasswordFilePairs.stream()
             .map(
                 pair -> {
                   final String password = loadPassword(pair.getRight());
-                  final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(pair.getLeft());
-                  if (!KeyStore.validatePassword(password, keyStoreData)) {
-                    throw new RuntimeException("Invalid keystore password: " + pair.getLeft());
-                  }
-                  final Bytes privKey = KeyStore.decrypt(password, keyStoreData);
+                  final Bytes privKey = loadBLSPrivateKey(pair.getLeft(), password);
                   return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(padLeft(privKey))));
                 })
             .collect(
@@ -67,21 +67,34 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
             .values());
   }
 
+  private Bytes loadBLSPrivateKey(final Path keystoreFile, final String password) {
+    try {
+      final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
+      if (!KeyStore.validatePassword(password, keyStoreData)) {
+        throw new IllegalArgumentException("Invalid keystore password: " + keystoreFile);
+      }
+      return KeyStore.decrypt(password, keyStoreData);
+    } catch (final KeyStoreValidationException e) {
+      throw new IllegalArgumentException(e.getMessage(), e);
+    }
+  }
+
   private String loadPassword(final Path passwordFile) {
     final String password;
     try {
       password = Files.asCharSource(passwordFile.toFile(), UTF_8).readFirstLine();
       if (isEmpty(password)) {
-        throw new RuntimeException("Keystore password cannot be empty: " + passwordFile);
+        throw new IllegalArgumentException("Keystore password cannot be empty: " + passwordFile);
       }
     } catch (final FileNotFoundException e) {
-      throw new UncheckedIOException("Keystore password file not found: " + passwordFile, e);
+      throw new IllegalArgumentException("Keystore password file not found: " + passwordFile, e);
     } catch (final IOException e) {
-      throw new UncheckedIOException(
+      final String errorMessage =
           format(
               "Unexpected IO error while reading keystore password file [%s]: %s",
-              passwordFile, e.getMessage()),
-          e);
+              passwordFile, e.getMessage());
+      STDOUT.log(Level.FATAL, errorMessage);
+      throw new UncheckedIOException(errorMessage, e);
     }
     return password;
   }

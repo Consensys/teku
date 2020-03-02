@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.validator.coordinator.KeystoresValidatorKeyPr
 
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
@@ -29,7 +28,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
@@ -83,7 +81,7 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(RuntimeException.class)
+    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
         .withMessage("Keystore password cannot be empty: " + tempPasswordFile);
   }
@@ -104,7 +102,7 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(RuntimeException.class)
+    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
         .withMessage("Invalid keystore password: " + scryptKeystore);
   }
@@ -124,7 +122,7 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(UncheckedIOException.class)
+    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
         .withMessage("Keystore password file not found: " + tempPasswordFile);
   }
@@ -145,7 +143,7 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    Assertions.assertThatExceptionOfType(KeyStoreValidationException.class)
+    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
         .withMessage("KeyStore file not found: " + scryptKeystore);
   }
