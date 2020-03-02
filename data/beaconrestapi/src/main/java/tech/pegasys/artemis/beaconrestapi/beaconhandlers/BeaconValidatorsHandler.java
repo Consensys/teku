@@ -71,10 +71,9 @@ public class BeaconValidatorsHandler implements Handler {
             name = ACTIVE,
             description =
                 "If specified, return only validators which are active in the specified epoch."),
-          @OpenApiParam(
-              name = GENESIS,
-              description =
-                  "If specified, return only the genesis set of validators.")
+        @OpenApiParam(
+            name = GENESIS,
+            description = "If specified, return only the genesis set of validators.")
       },
       responses = {
         @OpenApiResponse(
@@ -108,11 +107,11 @@ public class BeaconValidatorsHandler implements Handler {
                 if (activeOnly) {
                   return jsonProvider.objectToJSON(
                       new BeaconValidatorsResponse(state.get().getActiveValidators()));
-                } else if (genesisOnly){
+                } else if (genesisOnly) {
                   // TODO how to get genesis set of validators
                   return jsonProvider.objectToJSON(
                       new BeaconValidatorsResponse(state.get().getValidators()));
-                  } else {
+                } else {
                   return jsonProvider.objectToJSON(
                       new BeaconValidatorsResponse(state.get().getValidators()));
                 }
@@ -129,6 +128,10 @@ public class BeaconValidatorsHandler implements Handler {
   private SafeFuture<Optional<BeaconState>> queryByEpoch(
       final String epochString, final Bytes32 blockRoot) {
     final UnsignedLong epoch = UnsignedLong.valueOf(epochString);
+    // according to spec, if epoch == 0 then return CURRENT validators
+    if (epoch.equals(UnsignedLong.ZERO)) {
+      return queryByRootHash(blockRoot);
+    }
     return combinedClient.getStateAtSlot(
         BeaconStateUtil.compute_start_slot_at_epoch(epoch), blockRoot);
   }

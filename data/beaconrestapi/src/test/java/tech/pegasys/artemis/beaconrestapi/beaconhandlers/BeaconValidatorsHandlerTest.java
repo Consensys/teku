@@ -129,6 +129,27 @@ public class BeaconValidatorsHandlerTest {
   }
 
   @Test
+  public void shouldReturnValidatorsWhenBlockRootAndQueryByEpochZero() throws Exception {
+    BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("0")));
+    BeaconValidatorsResponse beaconValidators =
+        new BeaconValidatorsResponse(beaconState.getValidators());
+
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(combinedClient.getStateByBlockRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+
+    handler.handle(context);
+
+    verify(combinedClient).getBestBlockRoot();
+    verify(combinedClient).getStateByBlockRoot(blockRoot);
+    verify(context).result(args.capture());
+
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
+  }
+
+  @Test
   public void shouldReturnActiveValidatorsWhenQueryByActiveAndEpoch() throws Exception {
     BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
     when(context.queryParamMap())
