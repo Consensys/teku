@@ -281,11 +281,6 @@ public class ArtemisConfiguration {
     return keystoreFilePasswordFilePairs;
   }
 
-  public List<String> getValidatorKeystorePasswordFiles() {
-    final List<String> keystoreFiles = config.getListOfString("validator.validatorsKeystoreFiles");
-    return keystoreFiles == null || keystoreFiles.isEmpty() ? null : keystoreFiles;
-  }
-
   /** @return the Deposit simulation flag, w/ optional input file */
   public String getInputFile() {
     String inputFile = config.getString("deposit.inputFile");
