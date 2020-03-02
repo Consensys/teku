@@ -134,20 +134,14 @@ public class BeaconValidatorsHandlerTest {
         .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(epoch.toString())));
     when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    SSZList<Validator> allValidators = beaconState.getValidators();
 
-    // create an ACTIVE validator and add it to the list
-    Validator v = DataStructureUtil.randomValidator(88);
-    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch());
-    allValidators.add(v);
-    beaconState.setValidators(allValidators);
+    final BeaconState beaconStateWithAddedActiveValidator = addActiveValidator(beaconState);
 
     BeaconValidatorsResponse beaconActiveValidators =
-        new BeaconValidatorsResponse(beaconState.getActiveValidators());
+        new BeaconValidatorsResponse(beaconStateWithAddedActiveValidator.getActiveValidators());
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateWithAddedActiveValidator)));
 
     handler.handle(context);
 
@@ -157,5 +151,43 @@ public class BeaconValidatorsHandlerTest {
 
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconActiveValidators));
+  }
+
+  @Test
+  public void shouldReturnActiveValidatorsWhenQueryByActiveOnly() throws Exception {
+    BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(ACTIVE, List.of("true")));
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(combinedClient.getStateByBlockRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+
+    final BeaconState beaconStateWithAddedValidator = addActiveValidator(beaconState);
+    BeaconValidatorsResponse beaconActiveValidators =
+        new BeaconValidatorsResponse(beaconStateWithAddedValidator.getActiveValidators());
+
+    when(combinedClient.getStateAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateWithAddedValidator)));
+
+    handler.handle(context);
+
+    verify(combinedClient).getBestBlockRoot();
+    verify(combinedClient).getStateByBlockRoot(blockRoot);
+    verify(context).result(args.capture());
+
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconActiveValidators));
+  }
+
+  private BeaconState addActiveValidator(final BeaconState beaconState) {
+    SSZList<Validator> allValidators = beaconState.getValidators();
+
+    // create an ACTIVE validator and add it to the list
+    Validator v = DataStructureUtil.randomValidator(88);
+    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
+    v.setActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch());
+    allValidators.add(v);
+    beaconState.setValidators(allValidators);
+    return beaconState;
   }
 }
