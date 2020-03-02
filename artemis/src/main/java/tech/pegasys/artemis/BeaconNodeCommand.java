@@ -16,6 +16,7 @@ package tech.pegasys.artemis;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import tech.pegasys.artemis.storage.DatabaseStorageException;
@@ -56,10 +57,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
       description = "Path/filename of the config file")
   private String configFile = "./config/config.toml";
 
-  public Optional<Level> getLoggingLevel() {
-    return Optional.ofNullable(this.logLevel);
-  }
-
   public String getConfigFile() {
     return configFile;
   }
@@ -67,8 +64,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      BeaconNode node =
-          new BeaconNode(getLoggingLevel(), ArtemisConfiguration.fromFile(getConfigFile()));
+      setLogLevelFromCli();
+
+      final BeaconNode node = new BeaconNode(ArtemisConfiguration.fromFile(getConfigFile()));
       node.start();
       // Detect SIGTERM
       Runtime.getRuntime()
@@ -88,5 +86,15 @@ public class BeaconNodeCommand implements Callable<Integer> {
       System.exit(1);
     }
     return 1;
+  }
+
+  private void setLogLevelFromCli() {
+    // set log level per CLI flags
+    Optional.ofNullable(this.logLevel)
+        .ifPresent(
+            level -> {
+              System.out.println("Setting logging level to " + level.name());
+              Configurator.setAllLevels("", level);
+            });
   }
 }
