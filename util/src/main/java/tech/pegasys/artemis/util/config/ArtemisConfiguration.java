@@ -248,7 +248,7 @@ public class ArtemisConfiguration {
 
   public String getValidatorsKeystoreConfFile() {
     final String keystoreConfFile = config.getString("validator.validatorsKeystoreConfFile");
-    return keystoreConfFile == null || keystoreConfFile.trim().isBlank() ? null : keystoreConfFile;
+    return keystoreConfFile == null || keystoreConfFile.isBlank() ? null : keystoreConfFile;
   }
 
   /** @return the Deposit simulation flag, w/ optional input file */
