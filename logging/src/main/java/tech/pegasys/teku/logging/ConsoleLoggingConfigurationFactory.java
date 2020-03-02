@@ -26,13 +26,12 @@ public class ConsoleLoggingConfigurationFactory extends ConfigurationFactory {
 
   @Override
   protected String[] getSupportedTypes() {
-    return new String[]{".xml"};
+    return new String[] {".xml"};
   }
 
   @Override
-  public Configuration getConfiguration(final LoggerContext loggerContext,
-      final ConfigurationSource source) {
+  public Configuration getConfiguration(
+      final LoggerContext loggerContext, final ConfigurationSource source) {
     return new ConsoleLoggingConfiguration(loggerContext, source);
   }
 }
-
