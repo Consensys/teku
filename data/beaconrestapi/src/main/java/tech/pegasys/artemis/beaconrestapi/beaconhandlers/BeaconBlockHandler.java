@@ -13,71 +13,122 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
+import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 
-public class BeaconBlockHandler implements BeaconRestApiHandler {
+public class BeaconBlockHandler implements Handler {
 
   private final ChainStorageClient client;
   private final HistoricalChainData historicalChainData;
+  public static final String ROUTE = "/beacon/block";
+  private final JsonProvider jsonProvider;
 
-  public BeaconBlockHandler(ChainStorageClient client, HistoricalChainData historicalChainData) {
+  public BeaconBlockHandler(
+      final ChainStorageClient client,
+      final HistoricalChainData historicalChainData,
+      final JsonProvider jsonProvider) {
     this.client = client;
     this.historicalChainData = historicalChainData;
+    this.jsonProvider = jsonProvider;
   }
 
+  @OpenApi(
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Request that the node return the specified beacon chain block.",
+      tags = {"Beacon"},
+      queryParams = {
+        @OpenApiParam(name = EPOCH, description = "Query by epoch number (uint64)"),
+        @OpenApiParam(name = SLOT, description = "Query by slot number (uint64)"),
+        @OpenApiParam(name = ROOT, description = "Query by tree hash root (Bytes32)")
+      },
+      description =
+          "Request that the node return the beacon chain block that matches the provided criteria.",
+      responses = {
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = BeaconBlockResponse.class)),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
+        @OpenApiResponse(status = RES_NOT_FOUND, description = "Specified block not found")
+      })
   @Override
-  public String getPath() {
-    return "/beacon/block";
+  public void handle(final Context ctx) throws Exception {
+    try {
+      if (ctx.queryParamMap().size() > 1) {
+        throw new IllegalArgumentException(
+            "Too many query parameters specified. Please supply only one.");
+      }
+
+      final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
+      if (ctx.queryParamMap().containsKey(ROOT)) {
+        final Bytes32 root = Bytes32.fromHexString(validateQueryParameter(queryParamMap, ROOT));
+        if (client.getStore() == null) {
+          ctx.status(SC_NO_CONTENT);
+        } else {
+          final SignedBeaconBlock block = client.getStore().getSignedBlock(root);
+          if (block != null) {
+            ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(block)));
+            return;
+          }
+          ctx.status(SC_NOT_FOUND);
+          return;
+        }
+      }
+
+      final UnsignedLong slot;
+      if (ctx.queryParamMap().containsKey(EPOCH)) {
+        slot =
+            compute_start_slot_at_epoch(
+                UnsignedLong.valueOf(validateQueryParameter(queryParamMap, EPOCH)));
+      } else if (ctx.queryParamMap().containsKey(SLOT)) {
+        slot = UnsignedLong.valueOf(validateQueryParameter(queryParamMap, SLOT));
+      } else {
+        throw new IllegalArgumentException(
+            "Query parameter missing. Must specify one of root or epoch or slot.");
+      }
+
+      final Optional<SignedBeaconBlock> blockBySlot = getBlockBySlot(slot);
+      if (blockBySlot.isPresent()) {
+        ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(blockBySlot.get())));
+        return;
+      }
+      ctx.status(SC_NOT_FOUND);
+    } catch (final IllegalArgumentException e) {
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+    }
   }
 
-  @Override
-  public Object handleRequest(RequestParams param) {
-    Map<String, List<String>> queryParamMap = param.getQueryParamMap();
-    if (queryParamMap.containsKey(ROOT)) {
-      Bytes32 root = Bytes32.fromHexString(param.getQueryParam(ROOT));
-      return client.getStore() != null ? client.getStore().getBlock(root) : null;
-    }
-
-    UnsignedLong slot;
-    if (queryParamMap.containsKey(EPOCH)) {
-      slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(param.getQueryParam(EPOCH)));
-    } else if (queryParamMap.containsKey(SLOT)) {
-      slot = UnsignedLong.valueOf(param.getQueryParam(SLOT));
-    } else {
-      return null;
-    }
-
-    return getBlockBySlot(slot)
-        .map(
-            block ->
-                ImmutableMap.of("block", block, "blockRoot", block.hash_tree_root().toHexString()))
-        .orElse(null);
-  }
-
-  private Optional<BeaconBlock> getBlockBySlot(UnsignedLong slot) {
+  private Optional<SignedBeaconBlock> getBlockBySlot(final UnsignedLong slot) {
     return client
         .getBlockRootBySlot(slot)
-        .map(root -> client.getStore().getBlock(root))
-        .or(
-            () -> {
-              Optional<SignedBeaconBlock> signedBeaconBlock =
-                  historicalChainData.getFinalizedBlockAtSlot(slot).join();
-              return signedBeaconBlock.map(SignedBeaconBlock::getMessage);
-            });
-  };
+        .map(root -> client.getStore().getSignedBlock(root))
+        .or(() -> historicalChainData.getFinalizedBlockAtSlot(slot).join());
+  }
 }
