@@ -32,8 +32,8 @@ import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
 public class PeersHandlerTest {
-  JsonProvider jsonProvider = new JsonProvider();
-  @Mock Context mockContext;
+  private final JsonProvider jsonProvider = new JsonProvider();
+  @Mock Context context;
   @Mock P2PNetwork<Peer> p2PNetwork;
 
   @Test
@@ -53,8 +53,8 @@ public class PeersHandlerTest {
     final String response =
         jsonProvider.objectToJSON(new String[] {peerId1.toBase58(), peerId2.toBase58()});
 
-    peersHandler.handle(mockContext);
-    verify(mockContext).result(response);
+    peersHandler.handle(context);
+    verify(context).result(response);
   }
 
   @Test
@@ -64,7 +64,7 @@ public class PeersHandlerTest {
 
     when(p2PNetwork.streamPeers()).thenReturn(Stream.empty());
 
-    peersHandler.handle(mockContext);
-    verify(mockContext).result(response);
+    peersHandler.handle(context);
+    verify(context).result(response);
   }
 }
