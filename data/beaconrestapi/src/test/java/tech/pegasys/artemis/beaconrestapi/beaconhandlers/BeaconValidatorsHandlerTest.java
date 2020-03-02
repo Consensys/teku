@@ -107,17 +107,19 @@ public class BeaconValidatorsHandlerTest {
     BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    final Bytes32 nullBlockRoot = null;
 
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(beaconState.getValidators());
 
-    when(combinedClient.getStateAtSlot(slot, nullBlockRoot)).thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+    when(combinedClient.getStateAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
 
     handler.handle(context);
 
-    verify(combinedClient).getStateAtSlot(slot, nullBlockRoot);
+    verify(combinedClient).getBestBlockRoot();
+    verify(combinedClient).getStateAtSlot(slot, blockRoot);
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
