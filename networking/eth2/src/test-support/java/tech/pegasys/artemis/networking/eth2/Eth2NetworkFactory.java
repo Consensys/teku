@@ -80,7 +80,9 @@ public class Eth2NetworkFactory {
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);
-          peers.stream().map(P2PNetwork::getNodeAddress).forEach(network::connect);
+          for (Eth2Network peer : peers) {
+            network.connect(peer.getNodeAddress()).join();
+          }
           Waiter.waitFor(() -> assertThat(network.getPeerCount()).isEqualTo(peers.size()));
           return network;
         } catch (ExecutionException e) {
