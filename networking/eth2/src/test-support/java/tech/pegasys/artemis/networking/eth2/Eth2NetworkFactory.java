@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -81,6 +80,7 @@ public class Eth2NetworkFactory {
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);
+          peers.stream().map(P2PNetwork::getNodeAddress).forEach(network::connect);
           Waiter.waitFor(() -> assertThat(network.getPeerCount()).isEqualTo(peers.size()));
           return network;
         } catch (ExecutionException e) {
@@ -118,9 +118,6 @@ public class Eth2NetworkFactory {
     }
 
     private NetworkConfig generateConfig() {
-      final List<String> peerAddresses =
-          peers.stream().map(P2PNetwork::getNodeAddress).collect(Collectors.toList());
-
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
@@ -129,7 +126,7 @@ public class Eth2NetworkFactory {
           "127.0.0.1",
           port,
           port,
-          peerAddresses,
+          emptyList(),
           emptyList(),
           false,
           false,
