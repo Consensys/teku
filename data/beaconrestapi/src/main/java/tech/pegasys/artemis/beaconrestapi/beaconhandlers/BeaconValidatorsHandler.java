@@ -16,6 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -69,7 +70,11 @@ public class BeaconValidatorsHandler implements Handler {
         @OpenApiParam(
             name = ACTIVE,
             description =
-                "If specified, return only validators which are active in the specified epoch")
+                "If specified, return only validators which are active in the specified epoch."),
+          @OpenApiParam(
+              name = GENESIS,
+              description =
+                  "If specified, return only the genesis set of validators.")
       },
       responses = {
         @OpenApiResponse(
@@ -83,6 +88,7 @@ public class BeaconValidatorsHandler implements Handler {
     final Map<String, List<String>> parameters = ctx.queryParamMap();
     SafeFuture<Optional<BeaconState>> future = null;
     final boolean activeOnly = parameters.containsKey(ACTIVE);
+    final boolean genesisOnly = parameters.containsKey(GENESIS);
 
     Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
     if (optionalRoot.isPresent()) {
@@ -102,7 +108,11 @@ public class BeaconValidatorsHandler implements Handler {
                 if (activeOnly) {
                   return jsonProvider.objectToJSON(
                       new BeaconValidatorsResponse(state.get().getActiveValidators()));
-                } else {
+                } else if (genesisOnly){
+                  // TODO how to get genesis set of validators
+                  return jsonProvider.objectToJSON(
+                      new BeaconValidatorsResponse(state.get().getValidators()));
+                  } else {
                   return jsonProvider.objectToJSON(
                       new BeaconValidatorsResponse(state.get().getValidators()));
                 }

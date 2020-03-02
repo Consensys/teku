@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.GENESIS;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
@@ -177,6 +178,30 @@ public class BeaconValidatorsHandlerTest {
 
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconActiveValidators));
+  }
+
+  @Test
+  public void shouldReturnActiveValidatorsWhenQueryByGenesisOnly() throws Exception {
+    BeaconValidatorsResponse beaconValidators =
+        new BeaconValidatorsResponse(beaconState.getValidators());
+    BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(GENESIS, List.of("true")));
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(combinedClient.getStateByBlockRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+
+    when(combinedClient.getStateAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+
+    handler.handle(context);
+
+    verify(combinedClient).getBestBlockRoot();
+    verify(combinedClient).getStateByBlockRoot(blockRoot);
+    verify(context).result(args.capture());
+
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
   }
 
   private BeaconState addActiveValidator(final BeaconState beaconState) {
