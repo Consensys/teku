@@ -35,8 +35,6 @@ contractAddr = "0x77f7bED277449F51505a4C54550B074030d989bC"
 nodeUrl = "http://localhost:8545"
 
 [output]
-logPath = "."
-logFile = "teku.log"
 #transitionRecordDir = "/tmp/teku"
 
 [metrics]
@@ -46,7 +44,9 @@ metricsNetworkInterface = "127.0.0.1"
 #metricsCategories = [ "BEACONCHAIN", "JVM", "PROCESS" ]
 
 [database]
+dataPath="."
 startFromDisk = false
 
 [beaconrestapi]
 portNumber = 5051
+enableSwagger = true

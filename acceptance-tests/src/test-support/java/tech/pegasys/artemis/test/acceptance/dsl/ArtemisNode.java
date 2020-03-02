@@ -59,7 +59,9 @@ public class ArtemisNode extends Node {
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.toml";
   protected static final String ARTIFACTS_PATH = "/artifacts/";
-  private static final String DATABASE_PATH = ARTIFACTS_PATH + "teku.db";
+  private static final String ARTIFACTS_DB_PATH = ARTIFACTS_PATH + "db/";
+  private static final String DATABASE_PATH = ARTIFACTS_DB_PATH + "teku.db";
+  private static final String DATABASE_VERSION_PATH = ARTIFACTS_PATH + "db.version";
   private static final int P2P_PORT = 9000;
 
   private final SimpleHttpClient httpClient;
@@ -170,14 +172,26 @@ public class ArtemisNode extends Node {
   }
 
   public File getDatabaseFileFromContainer() throws Exception {
-    File tempDatabaseFile = File.createTempFile("artemis", ".db");
+    File tempDatabaseFile = File.createTempFile("teku.db", ".db");
     tempDatabaseFile.deleteOnExit();
     container.copyFileFromContainer(DATABASE_PATH, tempDatabaseFile.getAbsolutePath());
     return tempDatabaseFile;
   }
 
+  public File getDatabaseVersionFileFromContainer() throws Exception {
+    File tempDatabaseVersionFile = File.createTempFile("teku.db", ".version");
+    tempDatabaseVersionFile.deleteOnExit();
+    container.copyFileFromContainer(
+        DATABASE_VERSION_PATH, tempDatabaseVersionFile.getAbsolutePath());
+    return tempDatabaseVersionFile;
+  }
+
   public void copyDatabaseFileToContainer(File databaseFile) {
     copyFileToContainer(databaseFile, DATABASE_PATH);
+  }
+
+  public void copyDatabaseVersionFileToContainer(File databaseVersionFile) {
+    copyFileToContainer(databaseVersionFile, DATABASE_VERSION_PATH);
   }
 
   public void copyFileToContainer(File file, String containerPath) {
@@ -256,9 +270,13 @@ public class ArtemisNode extends Node {
 
       final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
       beaconRestApi.put("portNumber", REST_API_PORT);
+      beaconRestApi.put("enableSwagger", false);
 
       final Map<String, Object> output = getSection(OUTPUT_SECTION);
       output.put("transitionRecordDir", ARTIFACTS_PATH + "transitions/");
+
+      final Map<String, Object> database = getSection(DATABASE_SECTION);
+      database.put("dataDir", ARTIFACTS_PATH + "data/");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
