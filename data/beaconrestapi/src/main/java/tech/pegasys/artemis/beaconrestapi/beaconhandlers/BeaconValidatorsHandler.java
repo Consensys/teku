@@ -63,7 +63,13 @@ public class BeaconValidatorsHandler implements Handler {
       tags = {TAG_BEACON},
       description =
           "Requests validator information. If no parameters specified, all current validators are returned.",
-      queryParams = {@OpenApiParam(name = EPOCH, description = "Epoch to query")},
+      queryParams = {
+        @OpenApiParam(name = EPOCH, description = "Epoch to query"),
+        @OpenApiParam(
+            name = "active",
+            description =
+                "If specified, return only validators which are active in the specified epoch")
+      },
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -75,6 +81,7 @@ public class BeaconValidatorsHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     final Map<String, List<String>> parameters = ctx.queryParamMap();
     SafeFuture<Optional<BeaconState>> future = null;
+    final boolean activeOnly = parameters.containsKey("active");
 
     Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
     if (optionalRoot.isPresent()) {
@@ -91,8 +98,13 @@ public class BeaconValidatorsHandler implements Handler {
                   return jsonProvider.objectToJSON(
                       new BeaconValidatorsResponse(new SSZList<>(Validator.class, 0L)));
                 }
-                return jsonProvider.objectToJSON(
-                    new BeaconValidatorsResponse(state.get().getValidators()));
+                if (activeOnly) {
+                  return jsonProvider.objectToJSON(
+                      new BeaconValidatorsResponse(state.get().getActiveValidators()));
+                } else {
+                  return jsonProvider.objectToJSON(
+                      new BeaconValidatorsResponse(state.get().getValidators()));
+                }
               }));
     } else {
       ctx.status(SC_NO_CONTENT);
