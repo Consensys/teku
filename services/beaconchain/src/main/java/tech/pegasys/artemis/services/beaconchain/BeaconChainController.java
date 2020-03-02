@@ -41,7 +41,6 @@ import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -213,14 +212,12 @@ public class BeaconChainController {
               true,
               true);
       this.p2pNetwork =
-          DiscoveryNetwork.create(
-              Eth2NetworkBuilder.create()
-                  .config(p2pConfig)
-                  .eventBus(eventBus)
-                  .chainStorageClient(chainStorageClient)
-                  .metricsSystem(metricsSystem)
-                  .build(),
-              p2pConfig);
+          Eth2NetworkBuilder.create()
+              .config(p2pConfig)
+              .eventBus(eventBus)
+              .chainStorageClient(chainStorageClient)
+              .metricsSystem(metricsSystem)
+              .build();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
