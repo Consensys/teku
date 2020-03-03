@@ -45,14 +45,14 @@ class BeaconBlockBodyTest {
   private Eth1Data eth1Data = randomEth1Data(seed++);
   private Bytes32 graffiti = randomBytes32(seed++);
   private SSZMutableList<ProposerSlashing> proposerSlashings =
-      SSZList.create(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
+      SSZList.createMutable(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
   private SSZMutableList<AttesterSlashing> attesterSlashings =
-      SSZList.create(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
+      SSZList.createMutable(AttesterSlashing.class, MAX_ATTESTER_SLASHINGS);
   private SSZMutableList<Attestation> attestations =
-      SSZList.create(Attestation.class, MAX_ATTESTATIONS);
-  private SSZMutableList<Deposit> deposits = SSZList.create(Deposit.class, MAX_DEPOSITS);
+      SSZList.createMutable(Attestation.class, MAX_ATTESTATIONS);
+  private SSZMutableList<Deposit> deposits = SSZList.createMutable(Deposit.class, MAX_DEPOSITS);
   private SSZMutableList<SignedVoluntaryExit> voluntaryExits =
-      SSZList.create(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);
+      SSZList.createMutable(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);
 
   {
     proposerSlashings.add(randomProposerSlashing(seed++));
@@ -112,7 +112,7 @@ class BeaconBlockBodyTest {
             blsSignature,
             eth1Data,
             graffiti,
-            SSZList.create(reverseProposerSlashings),
+            SSZList.createMutable(reverseProposerSlashings),
             attesterSlashings,
             attestations,
             deposits,

@@ -82,7 +82,7 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
             ? eth1DepositCount
             : latestDepositIndexWithMaxBlock;
 
-    return SSZList.create(
+    return SSZList.createMutable(
         getDepositsWithProof(fromDepositIndex, toDepositIndex, eth1DepositCount),
         MAX_DEPOSITS,
         Deposit.class);

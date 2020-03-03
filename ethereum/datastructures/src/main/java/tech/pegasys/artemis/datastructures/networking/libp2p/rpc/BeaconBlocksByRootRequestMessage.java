@@ -24,7 +24,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 public class BeaconBlocksByRootRequestMessage implements RpcRequest, SSZContainer {
 
   private final SSZMutableList<Bytes32> blockRoots =
-      SSZList.create(Bytes32.class, Integer.MAX_VALUE);
+      SSZList.createMutable(Bytes32.class, Integer.MAX_VALUE);
 
   public BeaconBlocksByRootRequestMessage(final List<Bytes32> blockRoots) {
     this.blockRoots.addAll(blockRoots);
