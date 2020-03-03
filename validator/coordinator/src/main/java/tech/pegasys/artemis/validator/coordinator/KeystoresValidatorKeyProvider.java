@@ -16,7 +16,7 @@ package tech.pegasys.artemis.validator.coordinator;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
@@ -25,9 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
@@ -50,21 +48,11 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");
 
     // return distinct loaded key pairs
-
-    return new ArrayList<>(
-        keystorePasswordFilePairs.stream()
-            .map(
-                pair -> {
-                  final String password = loadPassword(pair.getRight());
-                  final Bytes privKey = loadBLSPrivateKey(pair.getLeft(), password);
-                  return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(padLeft(privKey))));
-                })
-            .collect(
-                toMap(
-                    blsKeyPair -> blsKeyPair.getPublicKey().toString(),
-                    Function.identity(),
-                    (dupKey1, dupKey2) -> dupKey2))
-            .values());
+    return keystorePasswordFilePairs.stream()
+        .map(pair -> padLeft(loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()))))
+        .distinct()
+        .map(privKey -> new BLSKeyPair(new KeyPair(SecretKey.fromBytes(privKey))))
+        .collect(toList());
   }
 
   private Bytes loadBLSPrivateKey(final Path keystoreFile, final String password) {
