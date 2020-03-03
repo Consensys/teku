@@ -48,9 +48,7 @@ public interface ViewType {
    * occupies the whole tree node and their bitsize assumed to be 256 Normally the bitsize < 256 is
    * for basic types that can be packed into a single leaf node
    */
-  default int getBitsSize() {
-    return 256;
-  }
+  int getBitsSize();
 
   /**
    * For packed basic values. Extracts a packed value from the tree node by its 'internal index'.

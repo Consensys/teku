@@ -58,4 +58,9 @@ public interface CompositeViewType extends ViewType {
   default long treeWidth() {
     return Utils.nextPowerOf2(maxChunks());
   }
+
+  @Override
+  default int getBitsSize() {
+    return 256;
+  }
 }
