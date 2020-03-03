@@ -13,13 +13,15 @@
 
 package tech.pegasys.artemis.util.backing;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
@@ -228,18 +230,18 @@ public class ContainerViewTest {
     ContainerRead c1 = ContainerImpl.createDefault();
 
     {
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getSub1().getLong1());
-      Assertions.assertTrue(c1.getList1().isEmpty());
-      Assertions.assertTrue(c1.getList2().isEmpty());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getList3().get(0).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1.getList3().get(0).getBytes1());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getList3().get(1).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1.getList3().get(1).getBytes1());
-      Assertions.assertThrows(
-          IndexOutOfBoundsException.class,
-          () -> {
-            c1.getList3().get(2);
-          });
+      assertThat(c1.getSub1().getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList1().isEmpty()).isTrue();
+      assertThat(c1.getList2().isEmpty()).isTrue();
+      assertThat(c1.getList3().get(0).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList3().get(0).getBytes1()).isEqualTo(Bytes32.ZERO);
+      assertThat(c1.getList3().get(1).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList3().get(1).getBytes1()).isEqualTo(Bytes32.ZERO);
+      assertThatExceptionOfType(IndexOutOfBoundsException.class)
+          .isThrownBy(
+              () -> {
+                c1.getList3().get(2);
+              });
     }
 
     ContainerWrite c1w = c1.createWritableCopy();
@@ -269,79 +271,79 @@ public class ContainerViewTest {
                 UnsignedLong.valueOf(0x999), Bytes32.leftPad(Bytes.fromHexString("0xa999"))));
 
     {
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getSub1().getLong1());
-      Assertions.assertTrue(c1.getList1().isEmpty());
-      Assertions.assertTrue(c1.getList2().isEmpty());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getList3().get(0).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1.getList3().get(0).getBytes1());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getList3().get(1).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1.getList3().get(1).getBytes1());
+      assertThat(c1.getSub1().getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList1().isEmpty()).isTrue();
+      assertThat(c1.getList2().isEmpty()).isTrue();
+      assertThat(c1.getList3().get(0).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList3().get(0).getBytes1()).isEqualTo(Bytes32.ZERO);
+      assertThat(c1.getList3().get(1).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList3().get(1).getBytes1()).isEqualTo(Bytes32.ZERO);
 
-      Assertions.assertEquals(UnsignedLong.valueOf(0x1), c1w.getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x2), c1w.getLong2());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x111), c1w.getSub1().getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x222), c1w.getSub1().getLong2());
-      Assertions.assertEquals(2, c1w.getList1().size());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x333), c1w.getList1().get(0).get());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x444), c1w.getList1().get(1).get());
-      Assertions.assertThrows(
-          IndexOutOfBoundsException.class,
-          () -> {
-            c1w.getList1().get(2);
-          });
-      Assertions.assertEquals(2, c1w.getList2().size());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x555), c1w.getList2().get(0).getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x666), c1w.getList2().get(0).getLong2());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x777), c1w.getList2().get(1).getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x888), c1w.getList2().get(1).getLong2());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1w.getList3().get(0).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1w.getList3().get(0).getBytes1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x999), c1w.getList3().get(1).getLong1());
-      Assertions.assertEquals(
-          Bytes32.leftPad(Bytes.fromHexString("0xa999")), c1w.getList3().get(1).getBytes1());
+      assertThat(c1w.getLong1()).isEqualTo(UnsignedLong.valueOf(0x1));
+      assertThat(c1w.getLong2()).isEqualTo(UnsignedLong.valueOf(0x2));
+      assertThat(c1w.getSub1().getLong1()).isEqualTo(UnsignedLong.valueOf(0x111));
+      assertThat(c1w.getSub1().getLong2()).isEqualTo(UnsignedLong.valueOf(0x222));
+      assertThat(c1w.getList1().size()).isEqualTo(2);
+      assertThat(c1w.getList1().get(0).get()).isEqualTo(UnsignedLong.valueOf(0x333));
+      assertThat(c1w.getList1().get(1).get()).isEqualTo(UnsignedLong.valueOf(0x444));
+      assertThatExceptionOfType(IndexOutOfBoundsException.class)
+          .isThrownBy(
+              () -> {
+                c1w.getList1().get(2);
+              });
+      assertThat(c1w.getList2().size()).isEqualTo(2);
+      assertThat(c1w.getList2().get(0).getLong1()).isEqualTo(UnsignedLong.valueOf(0x555));
+      assertThat(c1w.getList2().get(0).getLong2()).isEqualTo(UnsignedLong.valueOf(0x666));
+      assertThat(c1w.getList2().get(1).getLong1()).isEqualTo(UnsignedLong.valueOf(0x777));
+      assertThat(c1w.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0x888));
+      assertThat(c1w.getList3().get(0).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1w.getList3().get(0).getBytes1()).isEqualTo(Bytes32.ZERO);
+      assertThat(c1w.getList3().get(1).getLong1()).isEqualTo(UnsignedLong.valueOf(0x999));
+      assertThat(c1w.getList3().get(1).getBytes1())
+          .isEqualTo(Bytes32.leftPad(Bytes.fromHexString("0xa999")));
     }
 
     ContainerRead c1r = c1w.commitChanges();
     LOG.error("\n" + TreeUtil.dumpBinaryTree(c1r.getBackingNode()));
 
     {
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getSub1().getLong1());
-      Assertions.assertTrue(c1.getList1().isEmpty());
-      Assertions.assertTrue(c1.getList2().isEmpty());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getList3().get(0).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1.getList3().get(0).getBytes1());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1.getList3().get(1).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1.getList3().get(1).getBytes1());
+      assertThat(c1.getSub1().getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList1().isEmpty()).isTrue();
+      assertThat(c1.getList2().isEmpty()).isTrue();
+      assertThat(c1.getList3().get(0).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList3().get(0).getBytes1()).isEqualTo(Bytes32.ZERO);
+      assertThat(c1.getList3().get(1).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1.getList3().get(1).getBytes1()).isEqualTo(Bytes32.ZERO);
 
-      Assertions.assertEquals(UnsignedLong.valueOf(0x1), c1r.getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x2), c1r.getLong2());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x111), c1r.getSub1().getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x222), c1r.getSub1().getLong2());
-      Assertions.assertEquals(2, c1r.getList1().size());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x333), c1r.getList1().get(0).get());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x444), c1r.getList1().get(1).get());
-      Assertions.assertThrows(
-          IndexOutOfBoundsException.class,
-          () -> {
-            c1r.getList1().get(2);
-          });
-      Assertions.assertEquals(2, c1r.getList2().size());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x555), c1r.getList2().get(0).getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x666), c1r.getList2().get(0).getLong2());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x777), c1r.getList2().get(1).getLong1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x888), c1r.getList2().get(1).getLong2());
-      Assertions.assertEquals(UnsignedLong.ZERO, c1r.getList3().get(0).getLong1());
-      Assertions.assertEquals(Bytes32.ZERO, c1r.getList3().get(0).getBytes1());
-      Assertions.assertEquals(UnsignedLong.valueOf(0x999), c1r.getList3().get(1).getLong1());
-      Assertions.assertEquals(
-          Bytes32.leftPad(Bytes.fromHexString("0xa999")), c1r.getList3().get(1).getBytes1());
+      assertThat(c1r.getLong1()).isEqualTo(UnsignedLong.valueOf(0x1));
+      assertThat(c1r.getLong2()).isEqualTo(UnsignedLong.valueOf(0x2));
+      assertThat(c1r.getSub1().getLong1()).isEqualTo(UnsignedLong.valueOf(0x111));
+      assertThat(c1r.getSub1().getLong2()).isEqualTo(UnsignedLong.valueOf(0x222));
+      assertThat(c1r.getList1().size()).isEqualTo(2);
+      assertThat(c1r.getList1().get(0).get()).isEqualTo(UnsignedLong.valueOf(0x333));
+      assertThat(c1r.getList1().get(1).get()).isEqualTo(UnsignedLong.valueOf(0x444));
+      assertThatExceptionOfType(IndexOutOfBoundsException.class)
+          .isThrownBy(
+              () -> {
+                c1r.getList1().get(2);
+              });
+      assertThat(c1r.getList2().size()).isEqualTo(2);
+      assertThat(c1r.getList2().get(0).getLong1()).isEqualTo(UnsignedLong.valueOf(0x555));
+      assertThat(c1r.getList2().get(0).getLong2()).isEqualTo(UnsignedLong.valueOf(0x666));
+      assertThat(c1r.getList2().get(1).getLong1()).isEqualTo(UnsignedLong.valueOf(0x777));
+      assertThat(c1r.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0x888));
+      assertThat(c1r.getList3().get(0).getLong1()).isEqualTo(UnsignedLong.ZERO);
+      assertThat(c1r.getList3().get(0).getBytes1()).isEqualTo(Bytes32.ZERO);
+      assertThat(c1r.getList3().get(1).getLong1()).isEqualTo(UnsignedLong.valueOf(0x999));
+      assertThat(c1r.getList3().get(1).getBytes1())
+          .isEqualTo(Bytes32.leftPad(Bytes.fromHexString("0xa999")));
     }
 
     ContainerWrite c2w = c1r.createWritableCopy();
     c2w.getList2().getByRef(1).setLong2(UnsignedLong.valueOf(0xaaa));
     ContainerRead c2r = c2w.commitChanges();
 
-    Assertions.assertEquals(UnsignedLong.valueOf(0x888), c1r.getList2().get(1).getLong2());
-    Assertions.assertEquals(UnsignedLong.valueOf(0xaaa), c2r.getList2().get(1).getLong2());
+    assertThat(c1r.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0x888));
+    assertThat(c2r.getList2().get(1).getLong2()).isEqualTo(UnsignedLong.valueOf(0xaaa));
   }
 }

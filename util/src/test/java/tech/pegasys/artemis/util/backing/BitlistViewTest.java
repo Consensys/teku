@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.util.backing;
 
-import org.junit.jupiter.api.Assertions;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
@@ -35,7 +35,7 @@ public class BitlistViewTest {
       ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
       Bitlist bitlist1 = ViewUtils.getBitvector(bitlistView);
 
-      Assertions.assertEquals(bitlist, bitlist1);
+      Assertions.assertThat(bitlist1).isEqualTo(bitlist);
     }
   }
 }

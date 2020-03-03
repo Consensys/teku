@@ -61,6 +61,7 @@ public interface CompositeViewType extends ViewType {
 
   /**
    * Returns binary backing tree generalized index corresponding to child element index
+   *
    * @see tech.pegasys.artemis.util.backing.tree.TreeNode#get(long)
    */
   default long getGeneralizedIndex(long elementIndex) {

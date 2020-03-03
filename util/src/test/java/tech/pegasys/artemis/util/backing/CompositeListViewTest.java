@@ -16,10 +16,10 @@ package tech.pegasys.artemis.util.backing;
 import static org.apache.tuweni.bytes.Bytes.concatenate;
 import static org.apache.tuweni.bytes.Bytes32.ZERO;
 import static org.apache.tuweni.crypto.Hash.sha2_256;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
@@ -97,79 +97,79 @@ public class CompositeListViewTest {
     list.set(0, new TestView(0x444));
     TreeNode n4 = list.getBackingNode();
 
-    Assertions.assertEquals(0, listType.createFromBackingNode(n0).size());
-    Assertions.assertEquals(1, listType.createFromBackingNode(n1).size());
-    Assertions.assertEquals(0x111, listType.createFromBackingNode(n1).get(0).v);
-    Assertions.assertEquals(2, listType.createFromBackingNode(n2).size());
-    Assertions.assertEquals(0x111, listType.createFromBackingNode(n2).get(0).v);
-    Assertions.assertEquals(0x222, listType.createFromBackingNode(n2).get(1).v);
-    Assertions.assertEquals(3, listType.createFromBackingNode(n3).size());
-    Assertions.assertEquals(0x111, listType.createFromBackingNode(n3).get(0).v);
-    Assertions.assertEquals(0x222, listType.createFromBackingNode(n3).get(1).v);
-    Assertions.assertEquals(0x333, listType.createFromBackingNode(n3).get(2).v);
-    Assertions.assertEquals(3, listType.createFromBackingNode(n4).size());
-    Assertions.assertEquals(0x444, listType.createFromBackingNode(n4).get(0).v);
-    Assertions.assertEquals(0x222, listType.createFromBackingNode(n4).get(1).v);
-    Assertions.assertEquals(0x333, listType.createFromBackingNode(n4).get(2).v);
+    assertThat(listType.createFromBackingNode(n0).size()).isEqualTo(0);
+    assertThat(listType.createFromBackingNode(n1).size()).isEqualTo(1);
+    assertThat(listType.createFromBackingNode(n1).get(0).v).isEqualTo(0x111);
+    assertThat(listType.createFromBackingNode(n2).size()).isEqualTo(2);
+    assertThat(listType.createFromBackingNode(n2).get(0).v).isEqualTo(0x111);
+    assertThat(listType.createFromBackingNode(n2).get(1).v).isEqualTo(0x222);
+    assertThat(listType.createFromBackingNode(n3).size()).isEqualTo(3);
+    assertThat(listType.createFromBackingNode(n3).get(0).v).isEqualTo(0x111);
+    assertThat(listType.createFromBackingNode(n3).get(1).v).isEqualTo(0x222);
+    assertThat(listType.createFromBackingNode(n3).get(2).v).isEqualTo(0x333);
+    assertThat(listType.createFromBackingNode(n4).size()).isEqualTo(3);
+    assertThat(listType.createFromBackingNode(n4).get(0).v).isEqualTo(0x444);
+    assertThat(listType.createFromBackingNode(n4).get(1).v).isEqualTo(0x222);
+    assertThat(listType.createFromBackingNode(n4).get(2).v).isEqualTo(0x333);
 
-    Assertions.assertEquals(
-        sha2_256(
-            concatenate(
-                sha2_256(
-                    concatenate(
-                        sha2_256(concatenate(ZERO, ZERO)), sha2_256(concatenate(ZERO, ZERO)))),
-                ZERO)),
-        n0.hashTreeRoot());
+    assertThat(n0.hashTreeRoot())
+        .isEqualTo(
+            sha2_256(
+                concatenate(
+                    sha2_256(
+                        concatenate(
+                            sha2_256(concatenate(ZERO, ZERO)), sha2_256(concatenate(ZERO, ZERO)))),
+                    ZERO)));
 
-    Assertions.assertEquals(
-        sha2_256(
-            concatenate(
-                sha2_256(
-                    concatenate(
-                        sha2_256(
-                            concatenate(
-                                Bytes32.fromHexString(
-                                    "0x0000000000000000000000000000000000000000000000000000000000000111"),
-                                ZERO)),
-                        sha2_256(concatenate(ZERO, ZERO)))),
-                Bytes32.fromHexString(
-                    "0x0100000000000000000000000000000000000000000000000000000000000000"))),
-        n1.hashTreeRoot());
+    assertThat(n1.hashTreeRoot())
+        .isEqualTo(
+            sha2_256(
+                concatenate(
+                    sha2_256(
+                        concatenate(
+                            sha2_256(
+                                concatenate(
+                                    Bytes32.fromHexString(
+                                        "0x0000000000000000000000000000000000000000000000000000000000000111"),
+                                    ZERO)),
+                            sha2_256(concatenate(ZERO, ZERO)))),
+                    Bytes32.fromHexString(
+                        "0x0100000000000000000000000000000000000000000000000000000000000000"))));
 
-    Assertions.assertEquals(
-        sha2_256(
-            concatenate(
-                sha2_256(
-                    concatenate(
-                        sha2_256(
-                            concatenate(
-                                Bytes32.fromHexString(
-                                    "0x0000000000000000000000000000000000000000000000000000000000000111"),
-                                Bytes32.fromHexString(
-                                    "0x0000000000000000000000000000000000000000000000000000000000000222"))),
-                        sha2_256(concatenate(ZERO, ZERO)))),
-                Bytes32.fromHexString(
-                    "0x0200000000000000000000000000000000000000000000000000000000000000"))),
-        n2.hashTreeRoot());
+    assertThat(n2.hashTreeRoot())
+        .isEqualTo(
+            sha2_256(
+                concatenate(
+                    sha2_256(
+                        concatenate(
+                            sha2_256(
+                                concatenate(
+                                    Bytes32.fromHexString(
+                                        "0x0000000000000000000000000000000000000000000000000000000000000111"),
+                                    Bytes32.fromHexString(
+                                        "0x0000000000000000000000000000000000000000000000000000000000000222"))),
+                            sha2_256(concatenate(ZERO, ZERO)))),
+                    Bytes32.fromHexString(
+                        "0x0200000000000000000000000000000000000000000000000000000000000000"))));
 
-    Assertions.assertEquals(
-        sha2_256(
-            concatenate(
-                sha2_256(
-                    concatenate(
-                        sha2_256(
-                            concatenate(
-                                Bytes32.fromHexString(
-                                    "0x0000000000000000000000000000000000000000000000000000000000000111"),
-                                Bytes32.fromHexString(
-                                    "0x0000000000000000000000000000000000000000000000000000000000000222"))),
-                        sha2_256(
-                            concatenate(
-                                Bytes32.fromHexString(
-                                    "0x0000000000000000000000000000000000000000000000000000000000000333"),
-                                ZERO)))),
-                Bytes32.fromHexString(
-                    "0x0300000000000000000000000000000000000000000000000000000000000000"))),
-        n3.hashTreeRoot());
+    assertThat(n3.hashTreeRoot())
+        .isEqualTo(
+            sha2_256(
+                concatenate(
+                    sha2_256(
+                        concatenate(
+                            sha2_256(
+                                concatenate(
+                                    Bytes32.fromHexString(
+                                        "0x0000000000000000000000000000000000000000000000000000000000000111"),
+                                    Bytes32.fromHexString(
+                                        "0x0000000000000000000000000000000000000000000000000000000000000222"))),
+                            sha2_256(
+                                concatenate(
+                                    Bytes32.fromHexString(
+                                        "0x0000000000000000000000000000000000000000000000000000000000000333"),
+                                    ZERO)))),
+                    Bytes32.fromHexString(
+                        "0x0300000000000000000000000000000000000000000000000000000000000000"))));
   }
 }

@@ -13,8 +13,10 @@
 
 package tech.pegasys.artemis.util.backing;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
 import com.google.common.primitives.UnsignedLong;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
@@ -46,51 +48,49 @@ public class BasicListViewTest {
     listView.set(3, new UInt64View(UnsignedLong.valueOf(0x803)));
     TreeNode n6 = listView.commitChanges().getBackingNode();
 
-    Assertions.assertEquals(0, listType.createFromBackingNode(n0).size());
-    Assertions.assertEquals(1, listType.createFromBackingNode(n1).size());
-    Assertions.assertEquals(0x111, listType.createFromBackingNode(n1).get(0).longValue());
-    Assertions.assertEquals(4, listType.createFromBackingNode(n2).size());
-    Assertions.assertEquals(0x111, listType.createFromBackingNode(n2).get(0).longValue());
-    Assertions.assertEquals(0x222, listType.createFromBackingNode(n2).get(1).longValue());
-    Assertions.assertEquals(0x333, listType.createFromBackingNode(n2).get(2).longValue());
-    Assertions.assertEquals(0x444, listType.createFromBackingNode(n2).get(3).longValue());
-    Assertions.assertEquals(5, listType.createFromBackingNode(n3).size());
-    Assertions.assertEquals(0x111, listType.createFromBackingNode(n3).get(0).longValue());
-    Assertions.assertEquals(0x222, listType.createFromBackingNode(n3).get(1).longValue());
-    Assertions.assertEquals(0x333, listType.createFromBackingNode(n3).get(2).longValue());
-    Assertions.assertEquals(0x444, listType.createFromBackingNode(n3).get(3).longValue());
-    Assertions.assertEquals(0x555, listType.createFromBackingNode(n3).get(4).longValue());
-    Assertions.assertEquals(7, listType.createFromBackingNode(n4).size());
-    Assertions.assertEquals(0x666, listType.createFromBackingNode(n4).get(5).longValue());
-    Assertions.assertEquals(0x777, listType.createFromBackingNode(n4).get(6).longValue());
-    Assertions.assertEquals(0x800, listType.createFromBackingNode(n5).get(0).longValue());
-    Assertions.assertEquals(0x222, listType.createFromBackingNode(n5).get(1).longValue());
-    Assertions.assertEquals(7, listType.createFromBackingNode(n6).size());
-    Assertions.assertEquals(0x800, listType.createFromBackingNode(n6).get(0).longValue());
-    Assertions.assertEquals(0x801, listType.createFromBackingNode(n6).get(1).longValue());
-    Assertions.assertEquals(0x802, listType.createFromBackingNode(n6).get(2).longValue());
-    Assertions.assertEquals(0x803, listType.createFromBackingNode(n6).get(3).longValue());
-    Assertions.assertEquals(0x555, listType.createFromBackingNode(n6).get(4).longValue());
+    assertThat(listType.createFromBackingNode(n0).size()).isEqualTo(0);
+    assertThat(listType.createFromBackingNode(n1).size()).isEqualTo(1);
+    assertThat(listType.createFromBackingNode(n1).get(0).longValue()).isEqualTo(0x111);
+    assertThat(listType.createFromBackingNode(n2).size()).isEqualTo(4);
+    assertThat(listType.createFromBackingNode(n2).get(0).longValue()).isEqualTo(0x111);
+    assertThat(listType.createFromBackingNode(n2).get(1).longValue()).isEqualTo(0x222);
+    assertThat(listType.createFromBackingNode(n2).get(2).longValue()).isEqualTo(0x333);
+    assertThat(listType.createFromBackingNode(n2).get(3).longValue()).isEqualTo(0x444);
+    assertThat(listType.createFromBackingNode(n3).size()).isEqualTo(5);
+    assertThat(listType.createFromBackingNode(n3).get(0).longValue()).isEqualTo(0x111);
+    assertThat(listType.createFromBackingNode(n3).get(1).longValue()).isEqualTo(0x222);
+    assertThat(listType.createFromBackingNode(n3).get(2).longValue()).isEqualTo(0x333);
+    assertThat(listType.createFromBackingNode(n3).get(3).longValue()).isEqualTo(0x444);
+    assertThat(listType.createFromBackingNode(n3).get(4).longValue()).isEqualTo(0x555);
+    assertThat(listType.createFromBackingNode(n4).size()).isEqualTo(7);
+    assertThat(listType.createFromBackingNode(n4).get(5).longValue()).isEqualTo(0x666);
+    assertThat(listType.createFromBackingNode(n4).get(6).longValue()).isEqualTo(0x777);
+    assertThat(listType.createFromBackingNode(n5).get(0).longValue()).isEqualTo(0x800);
+    assertThat(listType.createFromBackingNode(n5).get(1).longValue()).isEqualTo(0x222);
+    assertThat(listType.createFromBackingNode(n6).size()).isEqualTo(7);
+    assertThat(listType.createFromBackingNode(n6).get(0).longValue()).isEqualTo(0x800);
+    assertThat(listType.createFromBackingNode(n6).get(1).longValue()).isEqualTo(0x801);
+    assertThat(listType.createFromBackingNode(n6).get(2).longValue()).isEqualTo(0x802);
+    assertThat(listType.createFromBackingNode(n6).get(3).longValue()).isEqualTo(0x803);
+    assertThat(listType.createFromBackingNode(n6).get(4).longValue()).isEqualTo(0x555);
 
-    Assertions.assertThrows(
-        IndexOutOfBoundsException.class,
-        () ->
-            listType
-                .createFromBackingNode(n3)
-                .createWritableCopy()
-                .set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
-    Assertions.assertThrows(
-        IndexOutOfBoundsException.class, () -> listType.createFromBackingNode(n3).get(7));
-    Assertions.assertThrows(
-        IndexOutOfBoundsException.class, () -> listType.createFromBackingNode(n3).get(8));
-    Assertions.assertThrows(
-        IndexOutOfBoundsException.class,
-        () -> listView.set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
-    Assertions.assertThrows(
-        IndexOutOfBoundsException.class,
-        () -> listView.append(new UInt64View(UnsignedLong.valueOf(0xaaa))));
+    assertThatExceptionOfType(IndexOutOfBoundsException.class)
+        .isThrownBy(
+            () ->
+                listType
+                    .createFromBackingNode(n3)
+                    .createWritableCopy()
+                    .set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
+    assertThatExceptionOfType(IndexOutOfBoundsException.class)
+        .isThrownBy(() -> listType.createFromBackingNode(n3).get(7));
+    assertThatExceptionOfType(IndexOutOfBoundsException.class)
+        .isThrownBy(() -> listType.createFromBackingNode(n3).get(8));
+    assertThatExceptionOfType(IndexOutOfBoundsException.class)
+        .isThrownBy(() -> listView.set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
+    assertThatExceptionOfType(IndexOutOfBoundsException.class)
+        .isThrownBy(() -> listView.append(new UInt64View(UnsignedLong.valueOf(0xaaa))));
 
     listView.clear();
-    Assertions.assertEquals(n0.hashTreeRoot(), listView.hashTreeRoot());
+    assertThat(listView.hashTreeRoot()).isEqualTo(n0.hashTreeRoot());
   }
 }

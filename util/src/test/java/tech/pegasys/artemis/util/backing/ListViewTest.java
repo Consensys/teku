@@ -13,11 +13,12 @@
 
 package tech.pegasys.artemis.util.backing;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
@@ -62,6 +63,6 @@ public class ListViewTest {
     ListViewWrite<SubContainer> lw2 = lw1.commitChanges().createWritableCopy();
     lw2.clear();
     ListViewRead<SubContainer> lr2 = lw2.commitChanges();
-    Assertions.assertEquals(lr1.hashTreeRoot(), lr2.hashTreeRoot());
+    assertThat(lr1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
   }
 }
