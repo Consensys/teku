@@ -55,7 +55,7 @@ public abstract class AbstractImmutableContainer<C extends AbstractImmutableCont
     }
 
     for (int i = 0; i < memberValues.length; i++) {
-      backingNode = backingNode.set(type.getGeneralizedIndex(i), memberValues[i].getBackingNode());
+      backingNode = backingNode.updated(type.getGeneralizedIndex(i), memberValues[i].getBackingNode());
     }
   }
 

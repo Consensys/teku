@@ -86,7 +86,7 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
         index,
         type.getChildType(index),
         child.getType());
-    backingNode = backingNode.set(type.getGeneralizedIndex(index), child.getBackingNode());
+    backingNode = backingNode.updated(type.getGeneralizedIndex(index), child.getBackingNode());
     invalidate();
   }
 

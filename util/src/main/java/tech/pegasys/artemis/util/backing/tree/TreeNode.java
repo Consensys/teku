@@ -59,7 +59,7 @@ public interface TreeNode {
     }
 
     @Override
-    default TreeNode update(long target, Function<TreeNode, TreeNode> nodeUpdater) {
+    default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
       checkArgument(target == 1, "Invalid root index: %s", target);
       return nodeUpdater.apply(this);
     }
@@ -109,17 +109,17 @@ public interface TreeNode {
     }
 
     @Override
-    default TreeNode update(long target, Function<TreeNode, TreeNode> nodeUpdater) {
+    default TreeNode updated(long target, Function<TreeNode, TreeNode> nodeUpdater) {
       if (target == 1) {
         return nodeUpdater.apply(this);
       } else {
         long anchor = Long.highestOneBit(target);
         long pivot = anchor >> 1;
         if (target < (target | pivot)) {
-          TreeNode newLeftChild = left().update((target ^ anchor) | pivot, nodeUpdater);
+          TreeNode newLeftChild = left().updated((target ^ anchor) | pivot, nodeUpdater);
           return rebind(true, newLeftChild);
         } else {
-          TreeNode newRightChild = right().update((target ^ anchor) | pivot, nodeUpdater);
+          TreeNode newRightChild = right().updated((target ^ anchor) | pivot, nodeUpdater);
           return rebind(false, newRightChild);
         }
       }
@@ -141,10 +141,10 @@ public interface TreeNode {
   TreeNode get(long generalizedIndex);
 
   /**
-   * The same as {@link #set(long, TreeNode)} except that existing node can be used to calculate a
+   * The same as {@link #updated(long, TreeNode)} except that existing node can be used to calculate a
    * new node
    */
-  TreeNode update(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
+  TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
 
   /**
    * 'Sets' a new node on place of the node at generalized index. This node and all its descendants
@@ -154,7 +154,7 @@ public interface TreeNode {
    * @param node new node either leaf of subtree root node
    * @return the updated subtree root node
    */
-  default TreeNode set(long generalizedIndex, TreeNode node) {
-    return update(generalizedIndex, oldNode -> node);
+  default TreeNode updated(long generalizedIndex, TreeNode node) {
+    return updated(generalizedIndex, oldNode -> node);
   }
 }
