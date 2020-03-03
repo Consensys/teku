@@ -33,11 +33,6 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 public class ListViewImpl<R extends ViewRead, W extends R>
     extends AbstractCompositeViewWrite<ListViewImpl<R, W>, R> implements ListViewWriteRef<R, W> {
 
-  // TODO: temp workaround for the case
-  // SLOTS_PER_ETH1_VOTING_PERIOD % SLOTS_PER_EPOCH != 0
-  // see https://github.com/ethereum/eth2.0-specs/pull/1625
-  public static boolean THROW_OUT_OF_BOUNDS = true;
-
   private final ContainerViewWrite container;
 
   public ListViewImpl(VectorViewType<R> vectorType) {
@@ -83,10 +78,6 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   public void set(int index, R value) {
     int size = size();
 
-    // TODO: temp workaround
-    if (!THROW_OUT_OF_BOUNDS && index >= getType().getMaxLength()) {
-      return;
-    }
     if (!((index >= 0 && index < size) || (index == size && index < getType().getMaxLength()))) {
       throw new IndexOutOfBoundsException("Index out of bounds: " + index + ", size=" + size);
     }
