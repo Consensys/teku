@@ -65,10 +65,10 @@ public class BeaconValidatorsHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get validators from the running beacon node that match the specified query.",
+      summary = "Returns validators that match the specified query.",
       tags = {TAG_BEACON},
       description =
-          "Requests validator information. If no parameters specified, all current validators are returned.",
+          "Returns validator information. If no parameters specified, the first page of current validators are returned.",
       queryParams = {
         @OpenApiParam(name = EPOCH, description = "Epoch to query"),
         @OpenApiParam(
