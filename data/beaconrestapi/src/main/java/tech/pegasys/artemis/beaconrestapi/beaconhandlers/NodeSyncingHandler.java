@@ -51,6 +51,6 @@ public class NodeSyncingHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.result(jsonProvider.objectToJSON(syncService.getSyncStatus()));
+    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncService.getSyncStatus())));
   }
 }

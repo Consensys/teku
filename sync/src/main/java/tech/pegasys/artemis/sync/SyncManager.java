@@ -136,12 +136,10 @@ public class SyncManager extends Service {
         UnsignedLong highestSlot = bestPeer.get().getStatus().getHeadSlot();
         final SyncStatus syncStatus =
             new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
-        return new SyncingStatus(isSyncActive, syncStatus);
+        return new SyncingStatus(true, syncStatus);
       }
     }
-    final SyncStatus syncStatus =
-        new SyncStatus(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO);
-    return new SyncingStatus(false, syncStatus);
+    return new SyncingStatus(false, null);
   }
 
   private SafeFuture<Void> executeSync() {
