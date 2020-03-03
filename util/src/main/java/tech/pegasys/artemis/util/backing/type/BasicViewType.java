@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.util.backing.type;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
@@ -27,6 +29,8 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   private final int bitsSize;
 
   BasicViewType(int bitsSize) {
+    checkArgument(
+        bitsSize > 0 & bitsSize <= 256 & 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
     this.bitsSize = bitsSize;
   }
 
