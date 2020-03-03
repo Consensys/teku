@@ -89,7 +89,7 @@ public class Fork extends ContainerViewImpl<Fork>
 
   @Override
   public int hashCode() {
-    return Objects.hash(getPrevious_version(), getCurrent_version(), getEpoch());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -107,13 +107,7 @@ public class Fork extends ContainerViewImpl<Fork>
     }
 
     Fork other = (Fork) obj;
-    return Objects.equals(
-            this.getPrevious_version().getWrappedBytes(),
-            other.getPrevious_version().getWrappedBytes())
-        && Objects.equals(
-            this.getCurrent_version().getWrappedBytes(),
-            other.getCurrent_version().getWrappedBytes())
-        && Objects.equals(this.getEpoch(), other.getEpoch());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

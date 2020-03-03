@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -122,16 +121,12 @@ public class AttestationData extends ContainerViewImpl<AttestationData>
       return false;
     }
     final AttestationData that = (AttestationData) o;
-    return Objects.equals(getSlot(), that.getSlot())
-        && Objects.equals(getIndex(), that.getIndex())
-        && Objects.equals(getBeacon_block_root(), that.getBeacon_block_root())
-        && Objects.equals(getSource(), that.getSource())
-        && Objects.equals(getTarget(), that.getTarget());
+    return hashTreeRoot().equals(that.hashTreeRoot());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getSlot(), getIndex(), getBeacon_block_root(), getSource(), getTarget());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

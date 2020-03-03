@@ -110,7 +110,7 @@ public class Eth1Data extends ContainerViewImpl<Eth1Data>
 
   @Override
   public int hashCode() {
-    return Objects.hash(getDeposit_root(), getDeposit_count(), getBlock_hash());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -128,9 +128,7 @@ public class Eth1Data extends ContainerViewImpl<Eth1Data>
     }
 
     Eth1Data other = (Eth1Data) obj;
-    return Objects.equals(this.getDeposit_root(), other.getDeposit_root())
-        && Objects.equals(this.getDeposit_count(), other.getDeposit_count())
-        && Objects.equals(this.getBlock_hash(), other.getBlock_hash());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** @return the deposit_root */

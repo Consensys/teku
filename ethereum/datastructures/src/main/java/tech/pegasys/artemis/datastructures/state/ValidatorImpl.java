@@ -147,15 +147,7 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        getPubkey(),
-        getWithdrawal_credentials(),
-        getEffective_balance(),
-        isSlashed(),
-        getActivation_eligibility_epoch(),
-        getActivation_epoch(),
-        getExit_epoch(),
-        getWithdrawable_epoch());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -173,15 +165,7 @@ public class ValidatorImpl extends ContainerViewImpl<ValidatorImpl>
     }
 
     ValidatorImpl other = (ValidatorImpl) obj;
-    return Objects.equals(this.getPubkey(), other.getPubkey())
-        && Objects.equals(this.getWithdrawal_credentials(), other.getWithdrawal_credentials())
-        && Objects.equals(this.getEffective_balance(), other.getEffective_balance())
-        && Objects.equals(this.isSlashed(), other.isSlashed())
-        && Objects.equals(
-            this.getActivation_eligibility_epoch(), other.getActivation_eligibility_epoch())
-        && Objects.equals(this.getActivation_epoch(), other.getActivation_epoch())
-        && Objects.equals(this.getExit_epoch(), other.getExit_epoch())
-        && Objects.equals(this.getWithdrawable_epoch(), other.getWithdrawable_epoch());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

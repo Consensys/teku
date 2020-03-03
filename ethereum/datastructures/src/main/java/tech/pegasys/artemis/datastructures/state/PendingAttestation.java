@@ -141,8 +141,7 @@ public class PendingAttestation extends ContainerViewImpl<PendingAttestation>
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        getAggregation_bits(), getData(), getInclusion_delay(), getProposer_index());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -160,10 +159,7 @@ public class PendingAttestation extends ContainerViewImpl<PendingAttestation>
     }
 
     PendingAttestation other = (PendingAttestation) obj;
-    return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
-        && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getInclusion_delay(), other.getInclusion_delay())
-        && Objects.equals(this.getProposer_index(), other.getProposer_index());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

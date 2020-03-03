@@ -89,7 +89,7 @@ public class Checkpoint extends ContainerViewImpl<Fork>
 
   @Override
   public int hashCode() {
-    return Objects.hash(getEpoch(), getRoot());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -107,8 +107,7 @@ public class Checkpoint extends ContainerViewImpl<Fork>
     }
 
     Checkpoint other = (Checkpoint) obj;
-    return Objects.equals(this.getEpoch(), other.getEpoch())
-        && Objects.equals(this.getRoot(), other.getRoot());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override

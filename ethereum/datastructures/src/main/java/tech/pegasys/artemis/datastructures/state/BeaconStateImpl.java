@@ -377,42 +377,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        // Versioning
-        getGenesis_time(),
-        getSlot(),
-        getFork(),
-
-        // History
-        getLatest_block_header(),
-        getBlock_roots(),
-        getState_roots(),
-        getHistorical_roots(),
-
-        // Eth1
-        getEth1_data(),
-        getEth1_data_votes(),
-        getEth1_deposit_index(),
-
-        // Registry
-        getValidators(),
-        getBalances(),
-
-        // Randomness
-        getRandao_mixes(),
-
-        // Slashings
-        getSlashings(),
-
-        // Attestations
-        getPrevious_epoch_attestations(),
-        getCurrent_epoch_attestations(),
-
-        // Finality
-        getJustification_bits(),
-        getPrevious_justified_checkpoint(),
-        getCurrent_justified_checkpoint(),
-        getFinalized_checkpoint());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -430,30 +395,7 @@ public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
     }
 
     BeaconStateImpl other = (BeaconStateImpl) obj;
-    return Objects.equals(this.getGenesis_time(), other.getGenesis_time())
-        && Objects.equals(getSlot(), other.getSlot())
-        && Objects.equals(this.getFork(), other.getFork())
-        && Objects.equals(this.getLatest_block_header(), other.getLatest_block_header())
-        && Objects.equals(this.getBlock_roots(), other.getBlock_roots())
-        && Objects.equals(this.getState_roots(), other.getState_roots())
-        && Objects.equals(this.getHistorical_roots(), other.getHistorical_roots())
-        && Objects.equals(this.getEth1_data(), other.getEth1_data())
-        && Objects.equals(this.getEth1_data_votes(), other.getEth1_data_votes())
-        && Objects.equals(this.getEth1_deposit_index(), other.getEth1_deposit_index())
-        && Objects.equals(this.getValidators(), other.getValidators())
-        && Objects.equals(this.getBalances(), other.getBalances())
-        && Objects.equals(this.getRandao_mixes(), other.getRandao_mixes())
-        && Objects.equals(this.getSlashings(), other.getSlashings())
-        && Objects.equals(
-            this.getPrevious_epoch_attestations(), other.getPrevious_epoch_attestations())
-        && Objects.equals(
-            this.getCurrent_epoch_attestations(), other.getCurrent_epoch_attestations())
-        && Objects.equals(this.getJustification_bits(), other.getJustification_bits())
-        && Objects.equals(
-            this.getPrevious_justified_checkpoint(), other.getPrevious_justified_checkpoint())
-        && Objects.equals(
-            this.getCurrent_justified_checkpoint(), other.getCurrent_justified_checkpoint())
-        && Objects.equals(this.getFinalized_checkpoint(), other.getFinalized_checkpoint());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** ****************** * GETTERS & SETTERS * * ******************* */

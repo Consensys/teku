@@ -126,7 +126,7 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
 
   @Override
   public int hashCode() {
-    return Objects.hash(getSlot(), getParent_root(), getState_root(), getBody_root());
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -144,10 +144,7 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
     }
 
     BeaconBlockHeader other = (BeaconBlockHeader) obj;
-    return Objects.equals(this.getSlot(), other.getSlot())
-        && Objects.equals(this.getParent_root(), other.getParent_root())
-        && Objects.equals(this.getState_root(), other.getState_root())
-        && Objects.equals(this.getBody_root(), other.getBody_root());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** *************** * GETTERS & SETTERS * * ******************* */
