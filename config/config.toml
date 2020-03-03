@@ -35,8 +35,8 @@ contractAddr = "0x77f7bED277449F51505a4C54550B074030d989bC"
 nodeUrl = "http://localhost:8545"
 
 [output]
-enableStandardOut = true
-enableStatusUpdates = true
+#enableStandardOut = false
+#enableStatusUpdates = false
 #transitionRecordDir = "/tmp/teku"
 
 [metrics]

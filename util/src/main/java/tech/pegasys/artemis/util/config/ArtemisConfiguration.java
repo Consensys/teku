@@ -121,12 +121,12 @@ public class ArtemisConfiguration {
     // Outputs
     builder.addBoolean(
         "output.enableStandardOut",
-        false,
+        true,
         "Whether the application logging output is additionally routed to the standard out",
         PropertyValidator.isPresent());
     builder.addBoolean(
         "output.enableStatusUpdates",
-        false,
+        true,
         "Whether the frequent application updates are included in output",
         PropertyValidator.isPresent());
     builder.addString(
