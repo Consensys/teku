@@ -77,10 +77,16 @@ public class BeaconValidatorsHandler implements Handler {
                 "If specified, return only validators which are active in the specified epoch."),
         @OpenApiParam(
             name = PAGE_SIZE,
-            description = "If specified, return only this many results."),
+            description =
+                "If specified, return only this many results. If not specified, defaults to "
+                    + PAGE_SIZE_DEFAULT
+                    + " results."),
         @OpenApiParam(
             name = PAGE_TOKEN,
-            description = "If specified, return only this page of results.")
+            description =
+                "If specified, return only this page of results. If not specified, defaults to page "
+                    + PAGE_TOKEN_DEFAULT
+                    + ".")
       },
       responses = {
         @OpenApiResponse(
