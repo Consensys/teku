@@ -194,7 +194,7 @@ public class CombinedChainDataClient {
   /**
    * Gets a list of CommitteeAssignments for a specified epoch.
    *
-   * These committee assignments are calculated at the epoch prior to the specified epoch, unless
+   * <p>These committee assignments are calculated at the epoch prior to the specified epoch, unless
    * specifying epoch 0, in which case the committee assignments are correct.
    *
    * @param epoch - the current or historic epoch
