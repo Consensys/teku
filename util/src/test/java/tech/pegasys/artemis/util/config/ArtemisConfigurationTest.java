@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.config;
 
+import static org.apache.logging.log4j.util.Strings.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -86,6 +88,15 @@ final class ArtemisConfigurationTest {
             "beaconrestapi.portNumber=1\nbeaconrestapi.enableSwagger=false");
     assertEquals(config.getBeaconRestAPIPortNumber(), 1);
     assertEquals(config.getBeaconRestAPIEnableSwagger(), false);
+  }
+
+  @Test
+  void shouldDefaultRestApiSettings() {
+
+    ArtemisConfiguration config = ArtemisConfiguration.fromString(EMPTY);
+
+    assertEquals(false, config.getBeaconRestAPIEnableSwagger());
+    assertEquals(5051, config.getBeaconRestAPIPortNumber());
   }
 
   @Test
