@@ -136,7 +136,7 @@ public class SyncManager extends Service {
         UnsignedLong highestSlot = bestPeer.get().getStatus().getHeadSlot();
         final SyncStatus syncStatus =
             new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
-        return new SyncingStatus(isSyncActive(), syncStatus);
+        return new SyncingStatus(isSyncActive, syncStatus);
       }
     }
     final SyncStatus syncStatus =
