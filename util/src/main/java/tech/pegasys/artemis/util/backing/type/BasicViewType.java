@@ -30,7 +30,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
 
   BasicViewType(int bitsSize) {
     checkArgument(
-        bitsSize > 0 & bitsSize <= 256 & 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
+        bitsSize > 0 && bitsSize <= 256 && 256 % bitsSize == 0, "Invalid bitsize: %s", bitsSize);
     this.bitsSize = bitsSize;
   }
 
