@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import io.javalin.http.Context;
 import io.javalin.http.util.ContextUtil;
@@ -46,9 +45,7 @@ import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -58,14 +55,12 @@ public class BeaconBlockHandlerTest {
       new BadRequest("Query parameter missing. Must specify one of root or epoch or slot.");
 
   private final Context context = mock(Context.class);
-  private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
-  private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   private final Store store = mock(Store.class);
+  private final CombinedChainDataClient combinedChainDataClient =
+      mock(CombinedChainDataClient.class);
 
   private final Context realContext =
       spy(ContextUtil.init(mock(HttpServletRequest.class), mock(HttpServletResponse.class)));
-  private final CombinedChainDataClient combinedChainDataClient =
-      spy(new CombinedChainDataClient(storageClient, historicalChainData));
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Bytes32 blockRoot = Bytes32.random();
@@ -81,7 +76,7 @@ public class BeaconBlockHandlerTest {
     final String rootKey = "0xf22e4ec2";
     final Map<String, List<String>> params = Map.of(ROOT, List.of(rootKey));
 
-    when(storageClient.getStore()).thenReturn(null);
+    when(combinedChainDataClient.getStore()).thenReturn(null);
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(rootKey);
 
@@ -103,11 +98,10 @@ public class BeaconBlockHandlerTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(epochNum);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
-    when(storageClient.getStore()).thenReturn(store);
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
+    when(combinedChainDataClient.getStore()).thenReturn(store);
     when(store.getBlock(any())).thenReturn(null);
-    when(historicalChainData.getFinalizedBlockAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(empty()));
 
     handler.handle(context);
 
@@ -121,11 +115,10 @@ public class BeaconBlockHandlerTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(slotNum);
-    when(storageClient.getStore()).thenReturn(store);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getStore()).thenReturn(store);
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
     when(store.getBlock(any())).thenReturn(null);
-    when(historicalChainData.getFinalizedBlockAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(empty()));
 
     handler.handle(context);
 
@@ -139,9 +132,8 @@ public class BeaconBlockHandlerTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(epochNum);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(empty());
-    when(historicalChainData.getFinalizedBlockAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(empty()));
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(empty());
 
     handler.handle(context);
 
@@ -155,9 +147,8 @@ public class BeaconBlockHandlerTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(slotNum);
-    when(storageClient.getBlockRootBySlot(any())).thenReturn(empty());
-    when(historicalChainData.getFinalizedBlockAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(empty()));
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(empty());
 
     handler.handle(context);
 
@@ -171,7 +162,7 @@ public class BeaconBlockHandlerTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(hash);
-    when(storageClient.getStore()).thenReturn(store);
+    when(combinedChainDataClient.getStore()).thenReturn(store);
     when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
 
     handler.handle(context);
@@ -185,46 +176,40 @@ public class BeaconBlockHandlerTest {
   public void shouldReturnBlockWhenEpochQuery() throws Exception {
     final String epochNum = "1";
     final Map<String, List<String>> params = Map.of(EPOCH, List.of(epochNum));
-
-    doReturn(params).when(context).queryParamMap();
-    doReturn(epochNum).when(context).queryParam(any());
-    doReturn(Optional.of(blockRoot)).when(storageClient).getBlockRootBySlot(any());
-    doReturn(store).when(storageClient).getStore();
-    doReturn(signedBeaconBlock).when(store).getSignedBlock(any());
-    doReturn(SafeFuture.completedFuture(empty()))
-        .when(historicalChainData)
-        .getLatestFinalizedBlockAtSlot(any());
-
-    handler.handle(context);
-
     final String jsonResponse =
         jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
 
+    when(context.queryParamMap()).thenReturn(params);
+    when(context.queryParam(any())).thenReturn(epochNum);
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
+    when(combinedChainDataClient.getStore()).thenReturn(store);
+    when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
+
+    handler.handle(context);
+
     verify(context).result(argumentCaptor.capture());
-    assertThat(waitFor(argumentCaptor.getValue())).isEqualTo(jsonResponse);
+    assertThat(argumentCaptor.getValue().get()).isEqualTo(jsonResponse);
   }
 
   @Test
   public void shouldReturnBlockWhenSlotQuery() throws Exception {
     final String slotNum = "1";
     final Map<String, List<String>> params = Map.of(SLOT, List.of(slotNum));
-
-    doReturn(params).when(context).queryParamMap();
-    doReturn(slotNum).when(context).queryParam(any());
-    doReturn(store).when(storageClient).getStore();
-    doReturn(Optional.of(blockRoot)).when(storageClient).getBlockRootBySlot(any());
-    doReturn(signedBeaconBlock).when(store).getSignedBlock(any());
-    doReturn(SafeFuture.completedFuture(empty()))
-        .when(historicalChainData)
-        .getLatestFinalizedBlockAtSlot(any());
-
-    handler.handle(context);
-
     final String jsonResponse =
         jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
 
+    when(context.queryParamMap()).thenReturn(params);
+    when(context.queryParam(any())).thenReturn(slotNum);
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(Optional.of(blockRoot));
+    when(combinedChainDataClient.getStore()).thenReturn(store);
+    when(store.getSignedBlock(any())).thenReturn(signedBeaconBlock);
+
+    handler.handle(context);
+
     verify(context).result(argumentCaptor.capture());
-    assertThat(waitFor(argumentCaptor.getValue())).isEqualTo(jsonResponse);
+    assertThat(argumentCaptor.getValue().get()).isEqualTo(jsonResponse);
   }
 
   @Test
@@ -234,20 +219,19 @@ public class BeaconBlockHandlerTest {
     final String jsonResponse =
         jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
 
-    doReturn(params).when(context).queryParamMap();
-    doReturn(epochNum).when(context).queryParam(any());
-    doReturn(Optional.empty()).when(combinedChainDataClient).getBlockRootBySlot(any());
-    doReturn(Optional.of(signedBeaconBlock.getParent_root()))
-        .when(combinedChainDataClient)
-        .getBestBlockRoot();
-    doReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
-        .when(combinedChainDataClient)
-        .getBlockAtSlotExact(any(), any());
+    when(context.queryParamMap()).thenReturn(params);
+    when(context.queryParam(any())).thenReturn(epochNum);
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(Optional.empty());
+    when(combinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(signedBeaconBlock.getParent_root()));
+    when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
 
     handler.handle(context);
 
     verify(context).result(argumentCaptor.capture());
-    assertThat(waitFor(argumentCaptor.getValue())).isEqualTo(jsonResponse);
+    assertThat(argumentCaptor.getValue().get()).isEqualTo(jsonResponse);
   }
 
   @Test
@@ -257,20 +241,19 @@ public class BeaconBlockHandlerTest {
     final String jsonResponse =
         jsonProvider.objectToJSON(new BeaconBlockResponse(signedBeaconBlock));
 
-    doReturn(params).when(context).queryParamMap();
-    doReturn(slotNum).when(context).queryParam(any());
-    doReturn(Optional.empty()).when(combinedChainDataClient).getBlockRootBySlot(any());
-    doReturn(Optional.of(signedBeaconBlock.getParent_root()))
-        .when(combinedChainDataClient)
-        .getBestBlockRoot();
-    doReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
-        .when(combinedChainDataClient)
-        .getBlockAtSlotExact(any(), any());
+    when(context.queryParamMap()).thenReturn(params);
+    when(context.queryParam(any())).thenReturn(slotNum);
+    when(combinedChainDataClient.getBlockBySlot(any())).thenCallRealMethod();
+    when(combinedChainDataClient.getBlockRootBySlot(any())).thenReturn(Optional.empty());
+    when(combinedChainDataClient.getBestBlockRoot())
+        .thenReturn(Optional.of(signedBeaconBlock.getParent_root()));
+    when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
 
     handler.handle(context);
 
     verify(context).result(argumentCaptor.capture());
-    assertThat(waitFor(argumentCaptor.getValue())).isEqualTo(jsonResponse);
+    assertThat(argumentCaptor.getValue().get()).isEqualTo(jsonResponse);
   }
 
   @Test
