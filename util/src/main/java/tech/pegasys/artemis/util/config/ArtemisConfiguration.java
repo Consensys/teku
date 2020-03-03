@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.config.Configuration;
 import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
@@ -54,6 +56,17 @@ public class ArtemisConfiguration {
     builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
+    builder.addListOfString(
+        "validator.keystoreFiles",
+        Collections.emptyList(),
+        "The list of encrypted keystore files to load the validator keys from",
+        null);
+    builder.addListOfString(
+        "validator.keystorePasswordFiles",
+        Collections.emptyList(),
+        "The list of password files to decrypt the validator keystore files",
+        null);
+
     builder.addInteger(
         "deposit.numValidators",
         64,
@@ -104,12 +117,7 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
-
     // Outputs
-    builder.addString(
-        "output.logPath", ".", "Path to output the log file", PropertyValidator.isPresent());
-    builder.addString(
-        "output.logFile", "artemis.log", "Log file name", PropertyValidator.isPresent());
     builder.addString(
         "output.transitionRecordDir",
         "",
@@ -123,6 +131,8 @@ public class ArtemisConfiguration {
 
     // Beacon Rest API
     builder.addInteger("beaconrestapi.portNumber", 5051, "Port number of Beacon Rest API", null);
+    builder.addBoolean(
+        "beaconrestapi.enableSwagger", false, "Enable swagger-docs and swagger-ui endpoints", null);
 
     builder.validateConfiguration(
         config -> {
@@ -245,6 +255,40 @@ public class ArtemisConfiguration {
     return keyFile == null || keyFile.isEmpty() ? null : keyFile;
   }
 
+  public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
+    final List<String> keystoreFiles = getValidatorKeystoreFiles();
+    final List<String> keystorePasswordFiles = getValidatorKeystorePasswordFiles();
+
+    if (keystoreFiles.isEmpty() || keystorePasswordFiles.isEmpty()) {
+      return null;
+    }
+
+    validateKeyStoreFilesAndPasswordFilesSize();
+
+    final List<Pair<Path, Path>> keystoreFilePasswordFilePairs = new ArrayList<>();
+    for (int i = 0; i < keystoreFiles.size(); i++) {
+      keystoreFilePasswordFilePairs.add(
+          Pair.of(Path.of(keystoreFiles.get(i)), Path.of(keystorePasswordFiles.get(i))));
+    }
+    return keystoreFilePasswordFilePairs;
+  }
+
+  private List<String> getValidatorKeystoreFiles() {
+    final List<String> list = config.getListOfString("validator.keystoreFiles");
+    if (list == null) {
+      return Collections.emptyList();
+    }
+    return list;
+  }
+
+  private List<String> getValidatorKeystorePasswordFiles() {
+    final List<String> list = config.getListOfString("validator.keystorePasswordFiles");
+    if (list == null) {
+      return Collections.emptyList();
+    }
+    return list;
+  }
+
   /** @return the Deposit simulation flag, w/ optional input file */
   public String getInputFile() {
     String inputFile = config.getString("deposit.inputFile");
@@ -306,16 +350,6 @@ public class ArtemisConfiguration {
     return config.getString("node.networkMode");
   }
 
-  /** @return the path to the log file */
-  public String getLogPath() {
-    return config.getString("output.logPath");
-  }
-
-  /** @return the name of the log file */
-  public String getLogFile() {
-    return config.getString("output.logFile");
-  }
-
   public String getDataPath() {
     return config.getString("database.dataPath");
   }
@@ -327,6 +361,20 @@ public class ArtemisConfiguration {
   public void validateConfig() throws IllegalArgumentException {
     if (getNumValidators() < Constants.SLOTS_PER_EPOCH) {
       throw new IllegalArgumentException("Invalid config.toml");
+    }
+    validateKeyStoreFilesAndPasswordFilesSize();
+  }
+
+  private void validateKeyStoreFilesAndPasswordFilesSize() {
+    final List<String> validatorKeystoreFiles = getValidatorKeystoreFiles();
+    final List<String> validatorKeystorePasswordFiles = getValidatorKeystorePasswordFiles();
+
+    if (validatorKeystoreFiles.size() != validatorKeystorePasswordFiles.size()) {
+      final String errorMessage =
+          String.format(
+              "Invalid configuration. The size of validator.validatorsKeystoreFiles [%d] and validator.validatorsKeystorePasswordFiles [%d] must match",
+              validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
+      throw new IllegalArgumentException(errorMessage);
     }
   }
 
