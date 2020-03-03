@@ -64,7 +64,7 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
   @Override
   public ViewRead get(int index) {
     checkIndex(index);
-    TreeNode node = backingNode.get(type.treeWidth() + index);
+    TreeNode node = backingNode.get(type.getGeneralizedIndex(index));
     return type.getChildType(index).createFromBackingNode(node);
   }
 
@@ -86,7 +86,7 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
         index,
         type.getChildType(index),
         child.getType());
-    backingNode = backingNode.set(type.treeWidth() + index, child.getBackingNode());
+    backingNode = backingNode.set(type.getGeneralizedIndex(index), child.getBackingNode());
     invalidate();
   }
 

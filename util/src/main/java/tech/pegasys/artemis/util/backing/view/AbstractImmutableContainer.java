@@ -55,7 +55,7 @@ public abstract class AbstractImmutableContainer<C extends AbstractImmutableCont
     }
 
     for (int i = 0; i < memberValues.length; i++) {
-      backingNode = backingNode.set(type.treeWidth() + i, memberValues[i].getBackingNode());
+      backingNode = backingNode.set(type.getGeneralizedIndex(i), memberValues[i].getBackingNode());
     }
   }
 
@@ -72,7 +72,7 @@ public abstract class AbstractImmutableContainer<C extends AbstractImmutableCont
   @Override
   public ViewRead get(int index) {
     checkIndex(index);
-    TreeNode node = backingNode.get(type.treeWidth() + index);
+    TreeNode node = backingNode.get(type.getGeneralizedIndex(index));
     return type.getChildType(index).createFromBackingNode(node);
   }
 

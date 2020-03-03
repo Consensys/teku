@@ -75,11 +75,11 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   }
 
   private TreeNode updateNode(int listIndex, Function<TreeNode, TreeNode> nodeUpdater) {
-    return backingNode.update(type.treeWidth() + listIndex, nodeUpdater);
+    return backingNode.update(type.getGeneralizedIndex(listIndex), nodeUpdater);
   }
 
   private TreeNode getNode(int listIndex) {
-    return backingNode.get(type.treeWidth() + listIndex);
+    return backingNode.get(type.getGeneralizedIndex(listIndex));
   }
 
   @Override
