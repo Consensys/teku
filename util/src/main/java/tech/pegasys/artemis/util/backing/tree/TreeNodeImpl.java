@@ -16,15 +16,15 @@ package tech.pegasys.artemis.util.backing.tree;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.Root;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.BranchNode;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.LeafNode;
 
 class TreeNodeImpl {
 
-  static class RootImpl implements Root {
+  static class LeafNodeImpl implements LeafNode {
     private final Bytes32 root;
 
-    public RootImpl(Bytes32 root) {
+    public LeafNodeImpl(Bytes32 root) {
       this.root = root;
     }
 
@@ -41,7 +41,7 @@ class TreeNodeImpl {
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      RootImpl root1 = (RootImpl) o;
+      LeafNodeImpl root1 = (LeafNodeImpl) o;
       return Objects.equals(root, root1.root);
     }
 
@@ -56,12 +56,12 @@ class TreeNodeImpl {
     }
   }
 
-  static class CommitImpl implements Commit {
+  static class BranchNodeImpl implements BranchNode {
     private final TreeNode left;
     private final TreeNode right;
     private volatile Bytes32 cachedHash = null;
 
-    public CommitImpl(TreeNode left, TreeNode right) {
+    public BranchNodeImpl(TreeNode left, TreeNode right) {
       this.left = left;
       this.right = right;
     }
@@ -79,14 +79,14 @@ class TreeNodeImpl {
     }
 
     @Override
-    public Commit rebind(boolean left, TreeNode newNode) {
-      return left ? new CommitImpl(newNode, right()) : new CommitImpl(left(), newNode);
+    public BranchNode rebind(boolean left, TreeNode newNode) {
+      return left ? new BranchNodeImpl(newNode, right()) : new BranchNodeImpl(left(), newNode);
     }
 
     @Override
     public Bytes32 hashTreeRoot() {
       if (cachedHash == null) {
-        cachedHash = Commit.super.hashTreeRoot();
+        cachedHash = BranchNode.super.hashTreeRoot();
       }
       return cachedHash;
     }

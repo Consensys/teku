@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
+import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /**
  * Basic interface for Backing Tree node Backing Binary Tree concept for SSZ structures is described
@@ -31,12 +31,16 @@ import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
  */
 public interface TreeNode {
 
-  static TreeNode createRoot(Bytes32 val) {
-    return new RootImpl(val);
+  static TreeNode createLeafNode(Bytes32 val) {
+    return new LeafNodeImpl(val);
   }
 
-  /** Leaf node of a tree which contains 'bytes32' value */
-  interface Root extends TreeNode {
+  /**
+   * Leaf node of a tree which contains 'bytes32' value. This node type corresponds to the 'Root'
+   * node in the spec:
+   * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
+   */
+  interface LeafNode extends TreeNode {
 
     /** Returns node value */
     Bytes32 getRoot();
@@ -65,8 +69,11 @@ public interface TreeNode {
     }
   }
 
-  /** Branch node of a tree */
-  interface Commit extends TreeNode {
+  /**
+   * Branch node of a tree. This node type corresponds to the 'Commit' node in the spec:
+   * https://github.com/protolambda/eth-merkle-trees/blob/master/typing_partials.md#structure
+   */
+  interface BranchNode extends TreeNode {
 
     /**
      * Returns left child node. It can be either a default or non-default node. Note that both left
@@ -86,7 +93,7 @@ public interface TreeNode {
      * Rebind 'sets' a new left/right child of this node. Rebind doesn't modify this instance but
      * creates and returns a new one which contains a new assigned and old unmodified child
      */
-    Commit rebind(boolean left, TreeNode newNode);
+    BranchNode rebind(boolean left, TreeNode newNode);
 
     @Override
     default Bytes32 hashTreeRoot() {

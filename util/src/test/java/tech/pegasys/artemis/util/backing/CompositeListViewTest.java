@@ -72,7 +72,7 @@ public class CompositeListViewTest {
     @Override
     public TreeNode getBackingNode() {
       if (node == null) {
-        node = TreeNode.createRoot(Bytes32.leftPad(Bytes.ofUnsignedInt(v)));
+        node = TreeNode.createLeafNode(Bytes32.leftPad(Bytes.ofUnsignedInt(v)));
       }
       return node;
     }

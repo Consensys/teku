@@ -19,22 +19,22 @@ import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.Utils;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.Root;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.CommitImpl;
-import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.RootImpl;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.BranchNode;
+import tech.pegasys.artemis.util.backing.tree.TreeNode.LeafNode;
+import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.BranchNodeImpl;
+import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  public static final TreeNode ZERO_LEAF = new RootImpl(Bytes32.ZERO);
+  public static final TreeNode ZERO_LEAF = new LeafNodeImpl(Bytes32.ZERO);
   private static final TreeNode[] ZERO_TREES;
 
   static {
     ZERO_TREES = new TreeNode[64];
     ZERO_TREES[0] = ZERO_LEAF;
     for (int i = 1; i < ZERO_TREES.length; i++) {
-      ZERO_TREES[i] = new CommitImpl(ZERO_TREES[i - 1], ZERO_TREES[i - 1]);
+      ZERO_TREES[i] = new BranchNodeImpl(ZERO_TREES[i - 1], ZERO_TREES[i - 1]);
       ZERO_TREES[i].hashTreeRoot(); // pre-cache
     }
   }
@@ -72,7 +72,7 @@ public class TreeUtil {
           leftNodesCount == rightNodesCount
               ? lTree
               : createTree(defaultNode, rightNodesCount, depth - 1);
-      return new CommitImpl(lTree, rTree);
+      return new BranchNodeImpl(lTree, rTree);
     }
   }
 
@@ -88,7 +88,7 @@ public class TreeUtil {
 
       List<TreeNode> leftSublist = leafNodes.subList(0, iIndex);
       List<TreeNode> rightSublist = leafNodes.subList(iIndex, leafNodes.size());
-      return new CommitImpl(
+      return new BranchNodeImpl(
           createTree(leftSublist, depth - 1), createTree(rightSublist, depth - 1));
     }
   }
@@ -99,15 +99,15 @@ public class TreeUtil {
 
   /** Estimates the number of 'non-default' tree nodes */
   public static int estimateNonDefaultNodes(TreeNode node) {
-    if (node instanceof Root) {
+    if (node instanceof LeafNode) {
       return 1;
     } else {
-      Commit commitNode = (Commit) node;
-      if (commitNode.left() == commitNode.right()) {
+      BranchNode branchNode = (BranchNode) node;
+      if (branchNode.left() == branchNode.right()) {
         return 0;
       } else {
-        return estimateNonDefaultNodes(commitNode.left())
-            + estimateNonDefaultNodes(commitNode.right())
+        return estimateNonDefaultNodes(branchNode.left())
+            + estimateNonDefaultNodes(branchNode.right())
             + 1;
       }
     }
@@ -122,26 +122,26 @@ public class TreeUtil {
 
   private static void dumpBinaryTreeRec(
       TreeNode node, String prefix, boolean printCommit, Consumer<String> linesConsumer) {
-    if (node instanceof Root) {
-      Root rootNode = (Root) node;
-      linesConsumer.accept(prefix + rootNode);
+    if (node instanceof LeafNode) {
+      LeafNode leafNode = (LeafNode) node;
+      linesConsumer.accept(prefix + leafNode);
     } else {
-      Commit commitNode = (Commit) node;
+      BranchNode branchNode = (BranchNode) node;
       String s = "├─┐";
       if (printCommit) {
-        s += " " + commitNode;
+        s += " " + branchNode;
       }
-      if (commitNode.left() instanceof Root) {
-        linesConsumer.accept(prefix + "├─" + commitNode.left());
+      if (branchNode.left() instanceof LeafNode) {
+        linesConsumer.accept(prefix + "├─" + branchNode.left());
       } else {
         linesConsumer.accept(prefix + s);
-        dumpBinaryTreeRec(commitNode.left(), prefix + "│ ", printCommit, linesConsumer);
+        dumpBinaryTreeRec(branchNode.left(), prefix + "│ ", printCommit, linesConsumer);
       }
-      if (commitNode.right() instanceof Root) {
-        linesConsumer.accept(prefix + "└─" + commitNode.right());
+      if (branchNode.right() instanceof LeafNode) {
+        linesConsumer.accept(prefix + "└─" + branchNode.right());
       } else {
         linesConsumer.accept(prefix + "└─┐");
-        dumpBinaryTreeRec(commitNode.right(), prefix + "  ", printCommit, linesConsumer);
+        dumpBinaryTreeRec(branchNode.right(), prefix + "  ", printCommit, linesConsumer);
       }
     }
   }
