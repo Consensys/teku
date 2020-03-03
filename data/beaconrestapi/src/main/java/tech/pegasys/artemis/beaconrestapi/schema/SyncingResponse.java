@@ -13,14 +13,24 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-import tech.pegasys.artemis.sync.SyncStatus;
+import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import tech.pegasys.artemis.sync.SyncStatus;
+import tech.pegasys.artemis.sync.SyncingStatus;
+
+@JsonInclude(NON_NULL)
 public class SyncingResponse {
   public final boolean is_syncing;
   public final SyncStatus sync_status;
 
-  public SyncingResponse(boolean is_syncing, SyncStatus sync_status) {
-    this.is_syncing = is_syncing;
+  public SyncingResponse(boolean syncing, SyncStatus sync_status) {
+    this.is_syncing = syncing;
     this.sync_status = sync_status;
+  }
+
+  public SyncingResponse(SyncingStatus syncStatus) {
+    this.is_syncing = syncStatus.is_syncing;
+    this.sync_status = syncStatus.sync_status;
   }
 }

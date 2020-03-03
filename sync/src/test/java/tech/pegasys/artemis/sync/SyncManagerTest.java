@@ -229,11 +229,7 @@ public class SyncManagerTest {
     verifyNoInteractions(peerSync);
 
     // verify that getSyncStatus completes even when no peers
-    SyncStatus syncStatus = syncManager.getSyncStatus().sync_status;
-    assertThat(syncStatus.getCurrent_slot()).isEqualTo(UnsignedLong.ZERO);
-    assertThat(syncStatus.getStarting_slot()).isEqualTo(UnsignedLong.ZERO);
-    assertThat(syncStatus.getHighest_slot()).isEqualTo(UnsignedLong.ZERO);
-
+    assertThat(syncManager.getSyncStatus().sync_status).isNull();
     assertThat(syncManager.isSyncQueued()).isFalse();
   }
 }
