@@ -40,7 +40,7 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
 
   @Override
   public TreeNode getBackingNode() {
-    return getType().createTreeNode(getThis());
+    return getType().createBackingNode(getThis());
   }
 
   @SuppressWarnings("unchecked")

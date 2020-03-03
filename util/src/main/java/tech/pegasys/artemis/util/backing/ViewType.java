@@ -34,11 +34,11 @@ public interface ViewType {
    * doesn't correspond this type that fact could only be detected later during access to View
    * members
    */
-  ViewRead createFromTreeNode(TreeNode node);
+  ViewRead createFromBackingNode(TreeNode node);
 
   /** Creates a default immutable View */
   default ViewRead getDefault() {
-    return createFromTreeNode(getDefaultTree());
+    return createFromBackingNode(getDefaultTree());
   }
 
   /**
@@ -56,8 +56,8 @@ public interface ViewType {
    * For example in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node
    * and it's 'internal index' in this node would be `45`
    */
-  default ViewRead createFromTreeNode(TreeNode node, int internalIndex) {
-    return createFromTreeNode(node);
+  default ViewRead createFromBackingNode(TreeNode node, int internalIndex) {
+    return createFromBackingNode(node);
   }
 
   /**
@@ -65,7 +65,7 @@ public interface ViewType {
    * in `Bitvector(512)` the bit value at index `300` is stored at the second leaf node and it's
    * 'internal index' in this node would be `45`
    */
-  default TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+  default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return newValue.getBackingNode();
   }
 }

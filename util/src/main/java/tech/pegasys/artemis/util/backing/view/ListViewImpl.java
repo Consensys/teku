@@ -52,7 +52,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
             ContainerViewImpl::new);
-    container = containerViewType.createFromTreeNode(node);
+    container = containerViewType.createFromBackingNode(node);
   }
 
   @Override

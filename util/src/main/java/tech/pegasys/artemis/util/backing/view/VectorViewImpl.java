@@ -40,7 +40,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
             index / type.getElementsPerChunk(),
             oldBytes ->
                 type.getElementType()
-                    .updateTreeNode(oldBytes, index % type.getElementsPerChunk(), value));
+                    .updateBackingNode(oldBytes, index % type.getElementsPerChunk(), value));
     invalidate();
   }
 
@@ -56,7 +56,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
 
     TreeNode node = getNode(index / type.getElementsPerChunk());
     @SuppressWarnings("unchecked")
-    R ret = (R) type.getElementType().createFromTreeNode(node, index % type.getElementsPerChunk());
+    R ret = (R) type.getElementType().createFromBackingNode(node, index % type.getElementsPerChunk());
     return ret;
   }
 

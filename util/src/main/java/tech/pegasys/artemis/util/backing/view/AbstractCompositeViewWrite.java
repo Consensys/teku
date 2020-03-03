@@ -38,12 +38,12 @@ public abstract class AbstractCompositeViewWrite<
   @Override
   @SuppressWarnings("unchecked")
   public C createWritableCopy() {
-    return (C) getType().createFromTreeNode(getBackingNode());
+    return (C) getType().createFromBackingNode(getBackingNode());
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public C commitChanges() {
-    return (C) getType().createFromTreeNode(getBackingNode());
+    return (C) getType().createFromBackingNode(getBackingNode());
   }
 }

@@ -65,7 +65,7 @@ public class ContainerViewImpl<C extends ContainerViewImpl<C>>
   public ViewRead get(int index) {
     checkIndex(index);
     TreeNode node = backingNode.get(type.treeWidth() + index);
-    return type.getChildType(index).createFromTreeNode(node);
+    return type.getChildType(index).createFromBackingNode(node);
   }
 
   @Override

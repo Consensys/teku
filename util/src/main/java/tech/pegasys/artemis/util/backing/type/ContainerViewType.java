@@ -36,7 +36,7 @@ public class ContainerViewType<C extends ContainerViewWrite> implements Composit
 
   @Override
   public C getDefault() {
-    return createFromTreeNode(getDefaultTree());
+    return createFromBackingNode(getDefaultTree());
   }
 
   @Override
@@ -61,7 +61,7 @@ public class ContainerViewType<C extends ContainerViewWrite> implements Composit
   }
 
   @Override
-  public C createFromTreeNode(TreeNode node) {
+  public C createFromBackingNode(TreeNode node) {
     return instanceCtor.apply(this, node);
   }
 

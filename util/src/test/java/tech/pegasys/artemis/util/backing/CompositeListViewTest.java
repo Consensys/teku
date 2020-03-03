@@ -40,7 +40,7 @@ public class CompositeListViewTest {
         }
 
         @Override
-        public TestView createFromTreeNode(TreeNode node) {
+        public TestView createFromBackingNode(TreeNode node) {
           return new TestView(node);
         }
       };
@@ -96,20 +96,20 @@ public class CompositeListViewTest {
     System.out.println(n3);
     System.out.println(n4);
 
-    Assertions.assertEquals(0, listType.createFromTreeNode(n0).size());
-    Assertions.assertEquals(1, listType.createFromTreeNode(n1).size());
-    Assertions.assertEquals(0x111, listType.createFromTreeNode(n1).get(0).v);
-    Assertions.assertEquals(2, listType.createFromTreeNode(n2).size());
-    Assertions.assertEquals(0x111, listType.createFromTreeNode(n2).get(0).v);
-    Assertions.assertEquals(0x222, listType.createFromTreeNode(n2).get(1).v);
-    Assertions.assertEquals(3, listType.createFromTreeNode(n3).size());
-    Assertions.assertEquals(0x111, listType.createFromTreeNode(n3).get(0).v);
-    Assertions.assertEquals(0x222, listType.createFromTreeNode(n3).get(1).v);
-    Assertions.assertEquals(0x333, listType.createFromTreeNode(n3).get(2).v);
-    Assertions.assertEquals(3, listType.createFromTreeNode(n4).size());
-    Assertions.assertEquals(0x444, listType.createFromTreeNode(n4).get(0).v);
-    Assertions.assertEquals(0x222, listType.createFromTreeNode(n4).get(1).v);
-    Assertions.assertEquals(0x333, listType.createFromTreeNode(n4).get(2).v);
+    Assertions.assertEquals(0, listType.createFromBackingNode(n0).size());
+    Assertions.assertEquals(1, listType.createFromBackingNode(n1).size());
+    Assertions.assertEquals(0x111, listType.createFromBackingNode(n1).get(0).v);
+    Assertions.assertEquals(2, listType.createFromBackingNode(n2).size());
+    Assertions.assertEquals(0x111, listType.createFromBackingNode(n2).get(0).v);
+    Assertions.assertEquals(0x222, listType.createFromBackingNode(n2).get(1).v);
+    Assertions.assertEquals(3, listType.createFromBackingNode(n3).size());
+    Assertions.assertEquals(0x111, listType.createFromBackingNode(n3).get(0).v);
+    Assertions.assertEquals(0x222, listType.createFromBackingNode(n3).get(1).v);
+    Assertions.assertEquals(0x333, listType.createFromBackingNode(n3).get(2).v);
+    Assertions.assertEquals(3, listType.createFromBackingNode(n4).size());
+    Assertions.assertEquals(0x444, listType.createFromBackingNode(n4).get(0).v);
+    Assertions.assertEquals(0x222, listType.createFromBackingNode(n4).get(1).v);
+    Assertions.assertEquals(0x333, listType.createFromBackingNode(n4).get(2).v);
 
     Assertions.assertEquals(
         sha2_256(

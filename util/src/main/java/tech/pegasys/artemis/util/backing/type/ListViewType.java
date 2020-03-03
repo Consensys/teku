@@ -40,7 +40,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   @Override
-  public ListViewRead<C> createFromTreeNode(TreeNode node) {
+  public ListViewRead<C> createFromBackingNode(TreeNode node) {
     return new ListViewImpl<>(this, node);
   }
 

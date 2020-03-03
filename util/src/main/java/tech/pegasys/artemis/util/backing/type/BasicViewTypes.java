@@ -34,12 +34,12 @@ public class BasicViewTypes {
   public static final BasicViewType<BitView> BIT_TYPE =
       new BasicViewType<>(1) {
         @Override
-        public BitView createFromTreeNode(TreeNode node, int idx) {
+        public BitView createFromBackingNode(TreeNode node, int idx) {
           return new BitView((node.hashTreeRoot().get(idx / 8) & (1 << (idx % 8))) != 0);
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int idx, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int idx, ViewRead newValue) {
           MutableBytes32 dest = srcNode.hashTreeRoot().mutableCopy();
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
@@ -57,12 +57,12 @@ public class BasicViewTypes {
   public static final BasicViewType<ByteView> BYTE_TYPE =
       new BasicViewType<>(8) {
         @Override
-        public ByteView createFromTreeNode(TreeNode node, int internalIndex) {
+        public ByteView createFromBackingNode(TreeNode node, int internalIndex) {
           return new ByteView(node.hashTreeRoot().get(internalIndex));
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
           byte[] bytes = srcNode.hashTreeRoot().toArray();
           bytes[index] = ((ByteView) newValue).get();
           return TreeNode.createRoot(Bytes32.wrap(bytes));
@@ -72,13 +72,13 @@ public class BasicViewTypes {
   public static final BasicViewType<UInt64View> UINT64_TYPE =
       new BasicViewType<>(64) {
         @Override
-        public UInt64View createFromTreeNode(TreeNode node, int internalIndex) {
+        public UInt64View createFromBackingNode(TreeNode node, int internalIndex) {
           return UInt64View.fromLong(
               node.hashTreeRoot().slice(internalIndex * 8, 8).toLong(ByteOrder.LITTLE_ENDIAN));
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int index, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
           Bytes32 originalChunk = srcNode.hashTreeRoot();
           return TreeNode.createRoot(
               Bytes32.wrap(
@@ -93,12 +93,12 @@ public class BasicViewTypes {
   public static final BasicViewType<Bytes4View> BYTES4_TYPE =
       new BasicViewType<>(32) {
         @Override
-        public Bytes4View createFromTreeNode(TreeNode node, int internalIndex) {
+        public Bytes4View createFromBackingNode(TreeNode node, int internalIndex) {
           return new Bytes4View(new Bytes4(node.hashTreeRoot().slice(internalIndex * 4, 4)));
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
           checkArgument(
               internalIndex >= 0 && internalIndex < 8, "Invalid internal index: %s", internalIndex);
           Bytes32 originalChunk = srcNode.hashTreeRoot();
@@ -114,12 +114,12 @@ public class BasicViewTypes {
   public static final BasicViewType<Bytes32View> BYTES32_TYPE =
       new BasicViewType<>(256) {
         @Override
-        public Bytes32View createFromTreeNode(TreeNode node, int internalIndex) {
+        public Bytes32View createFromBackingNode(TreeNode node, int internalIndex) {
           return new Bytes32View(node.hashTreeRoot());
         }
 
         @Override
-        public TreeNode updateTreeNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
+        public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
           return TreeNode.createRoot(((Bytes32View) newValue).get());
         }
       };

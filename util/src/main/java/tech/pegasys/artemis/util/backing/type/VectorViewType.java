@@ -33,7 +33,7 @@ public class VectorViewType<C> extends CollectionViewType {
 
   @Override
   public VectorViewRead<C> getDefault() {
-    return createFromTreeNode(getDefaultTree());
+    return createFromBackingNode(getDefaultTree());
   }
 
   @Override
@@ -44,7 +44,7 @@ public class VectorViewType<C> extends CollectionViewType {
 
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
-  public VectorViewRead<C> createFromTreeNode(TreeNode node) {
+  public VectorViewRead<C> createFromBackingNode(TreeNode node) {
     return new VectorViewImpl(this, node);
   }
 }
