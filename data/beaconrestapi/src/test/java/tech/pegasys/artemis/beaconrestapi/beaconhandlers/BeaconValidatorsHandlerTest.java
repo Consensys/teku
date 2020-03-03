@@ -14,12 +14,16 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
@@ -32,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -78,6 +83,7 @@ public class BeaconValidatorsHandlerTest {
     BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
     SSZList<Validator> emptyListOfValidators = new SSZList<>(Validator.class, 0L);
     beaconState.setValidators(emptyListOfValidators);
+    BeaconValidatorsResponse expectedResponse = new BeaconValidatorsResponse(emptyListOfValidators);
 
     when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(combinedClient.getStateByBlockRoot(blockRoot))
@@ -90,8 +96,9 @@ public class BeaconValidatorsHandlerTest {
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
-    assertEquals(
-        data.get(), jsonProvider.objectToJSON(new BeaconValidatorsResponse(emptyListOfValidators)));
+    assertEquals(data.get(), jsonProvider.objectToJSON(expectedResponse));
+    assertThat(expectedResponse.getNextPageToken()).isEqualTo(0);
+    assertThat(expectedResponse.getTotalSize()).isEqualTo(0);
   }
 
   @Test
@@ -113,6 +120,10 @@ public class BeaconValidatorsHandlerTest {
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(beaconState.getValidators());
+
+    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.validatorList.size()).isEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
+    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
@@ -139,6 +150,11 @@ public class BeaconValidatorsHandlerTest {
 
     BeaconValidatorsResponse beaconActiveValidators =
         new BeaconValidatorsResponse(beaconStateWithAddedActiveValidator.getActiveValidators());
+    assertThat(beaconActiveValidators.getTotalSize())
+        .isEqualTo(beaconState.getActiveValidators().size());
+    assertThat(beaconActiveValidators.validatorList.size())
+        .isEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
+    assertThat(beaconActiveValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateWithAddedActiveValidator)));
@@ -177,6 +193,80 @@ public class BeaconValidatorsHandlerTest {
 
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconActiveValidators));
+  }
+
+  @Test
+  public void shouldReturnSubsetOfValidatorsWhenQueryByEpochAndPageSize() throws Exception {
+    BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    final int suppliedPageSizeParam = 10;
+    when(context.queryParamMap())
+        .thenReturn(
+            Map.of(
+                EPOCH,
+                List.of(epoch.toString()),
+                PAGE_SIZE,
+                List.of(String.valueOf(suppliedPageSizeParam))));
+    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+
+    BeaconValidatorsResponse beaconValidators =
+        new BeaconValidatorsResponse(
+            beaconState.getValidators(), suppliedPageSizeParam, PAGE_TOKEN_DEFAULT);
+    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
+    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
+
+    when(combinedClient.getStateAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+
+    handler.handle(context);
+
+    verify(combinedClient).getBestBlockRoot();
+    verify(combinedClient).getStateAtSlot(slot, blockRoot);
+    verify(context).result(args.capture());
+
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
+  }
+
+  @Test
+  public void shouldReturnSubsetOfValidatorsWhenQueryByEpochAndPageSizeAndPageToken()
+      throws Exception {
+    BeaconValidatorsHandler handler = new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    final int suppliedPageSizeParam = 10;
+    final int suppliedPageTokenParam = 1;
+    when(context.queryParamMap())
+        .thenReturn(
+            Map.of(
+                EPOCH,
+                List.of(epoch.toString()),
+                PAGE_SIZE,
+                List.of(String.valueOf(suppliedPageSizeParam)),
+                PAGE_TOKEN,
+                List.of(String.valueOf(suppliedPageTokenParam))));
+    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+
+    BeaconValidatorsResponse beaconValidators =
+        new BeaconValidatorsResponse(
+            beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
+    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
+    assertThat(beaconValidators.getNextPageToken()).isEqualTo(suppliedPageTokenParam + 1);
+
+    when(combinedClient.getStateAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+
+    handler.handle(context);
+
+    verify(combinedClient).getBestBlockRoot();
+    verify(combinedClient).getStateAtSlot(slot, blockRoot);
+    verify(context).result(args.capture());
+
+    SafeFuture<String> data = args.getValue();
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
   }
 
   private BeaconState addActiveValidator(final BeaconState beaconState) {

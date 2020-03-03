@@ -19,6 +19,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 public class BeaconValidatorsResponse {
   public final SSZList<Validator> validatorList;
   private int totalSize;
+  private int nextPageToken;
 
   public BeaconValidatorsResponse(SSZList<Validator> validatorList) {
     this(validatorList, 20, 0);
@@ -31,9 +32,10 @@ public class BeaconValidatorsResponse {
       int offset = pageToken * pageSize;
       SSZList<Validator> pageOfValidators = new SSZList<>(Validator.class, pageSize);
       this.totalSize = validatorList.size();
+      this.nextPageToken = totalSize == 0 ? 0 : pageToken + 1;
       // if the offset is outside the bounds, just return the list as is
       if (offset >= validatorList.size()) {
-        this.validatorList = validatorList;
+        this.validatorList = new SSZList<>(Validator.class, 0);
         return;
       }
       // otherwise get a page of results
@@ -42,13 +44,17 @@ public class BeaconValidatorsResponse {
       }
       this.validatorList = pageOfValidators;
     } else {
-      // TODO IllegalArgumentException ?
-      this.validatorList = validatorList;
+      this.validatorList = new SSZList<>(Validator.class, 0);
       this.totalSize = validatorList.size();
+      this.nextPageToken = 0;
     }
   }
 
   public int getTotalSize() {
     return totalSize;
+  }
+
+  public int getNextPageToken() {
+    return nextPageToken;
   }
 }
