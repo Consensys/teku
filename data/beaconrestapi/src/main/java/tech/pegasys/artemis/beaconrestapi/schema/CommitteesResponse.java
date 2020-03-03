@@ -13,24 +13,13 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
+import java.util.List;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import tech.pegasys.artemis.sync.SyncStatus;
-import tech.pegasys.artemis.sync.SyncingStatus;
+public class CommitteesResponse {
+  public final List<CommitteeAssignment> committeeAssignments;
 
-@JsonInclude(NON_NULL)
-public class SyncingResponse {
-  public final boolean is_syncing;
-  public final SyncStatus sync_status;
-
-  public SyncingResponse(boolean syncing, SyncStatus sync_status) {
-    this.is_syncing = syncing;
-    this.sync_status = sync_status;
-  }
-
-  public SyncingResponse(SyncingStatus syncStatus) {
-    this.is_syncing = syncStatus.is_syncing;
-    this.sync_status = syncStatus.sync_status;
+  public CommitteesResponse(List<CommitteeAssignment> committeeAssignments) {
+    this.committeeAssignments = committeeAssignments;
   }
 }

@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconCommitteesHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
@@ -42,7 +43,6 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -56,14 +56,13 @@ public class BeaconRestApi {
   private void initialise(
       final ChainStorageClient chainStorageClient,
       final P2PNetwork<?> p2pNetwork,
-      final HistoricalChainData historicalChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncService syncService,
       final int requestedPortNumber) {
     app.server().setServerPort(requestedPortNumber);
 
     addNodeHandlers(chainStorageClient, syncService);
-    addBeaconHandlers(chainStorageClient, historicalChainData, combinedChainDataClient);
+    addBeaconHandlers(chainStorageClient, combinedChainDataClient);
     addNetworkHandlers(p2pNetwork);
     addValidatorHandlers(combinedChainDataClient);
   }
@@ -71,7 +70,6 @@ public class BeaconRestApi {
   public BeaconRestApi(
       final ChainStorageClient chainStorageClient,
       final P2PNetwork<?> p2pNetwork,
-      final HistoricalChainData historicalChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncService syncService,
       final ArtemisConfiguration configuration) {
@@ -85,7 +83,6 @@ public class BeaconRestApi {
     initialise(
         chainStorageClient,
         p2pNetwork,
-        historicalChainData,
         combinedChainDataClient,
         syncService,
         configuration.getBeaconRestAPIPortNumber());
@@ -94,7 +91,6 @@ public class BeaconRestApi {
   BeaconRestApi(
       final ChainStorageClient chainStorageClient,
       final P2PNetwork<?> p2pNetwork,
-      final HistoricalChainData historicalChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final SyncService syncService,
       final ArtemisConfiguration configuration,
@@ -103,7 +99,6 @@ public class BeaconRestApi {
     initialise(
         chainStorageClient,
         p2pNetwork,
-        historicalChainData,
         combinedChainDataClient,
         syncService,
         configuration.getBeaconRestAPIPortNumber());
@@ -163,15 +158,15 @@ public class BeaconRestApi {
   }
 
   private void addBeaconHandlers(
-      ChainStorageClient chainStorageClient,
-      HistoricalChainData historicalChainData,
-      CombinedChainDataClient combinedChainDataClient) {
+      ChainStorageClient chainStorageClient, CombinedChainDataClient combinedChainDataClient) {
     app.get(
-        BeaconBlockHandler.ROUTE,
-        new BeaconBlockHandler(chainStorageClient, historicalChainData, jsonProvider));
+        BeaconBlockHandler.ROUTE, new BeaconBlockHandler(combinedChainDataClient, jsonProvider));
     app.get(
         BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainStorageClient, jsonProvider));
+    app.get(
+        BeaconCommitteesHandler.ROUTE,
+        new BeaconCommitteesHandler(combinedChainDataClient, jsonProvider));
     app.get(
         BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
   }

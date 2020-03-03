@@ -131,6 +131,8 @@ public class ArtemisConfiguration {
 
     // Beacon Rest API
     builder.addInteger("beaconrestapi.portNumber", 5051, "Port number of Beacon Rest API", null);
+    builder.addBoolean(
+        "beaconrestapi.enableSwagger", false, "Enable swagger-docs and swagger-ui endpoints", null);
 
     builder.validateConfiguration(
         config -> {

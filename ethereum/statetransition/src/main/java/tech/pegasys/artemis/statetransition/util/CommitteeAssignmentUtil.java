@@ -24,7 +24,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.statetransition.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 
 public class CommitteeAssignmentUtil {
 

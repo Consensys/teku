@@ -34,29 +34,24 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.Store;
 
 public class BeaconBlockHandler implements Handler {
 
-  private final ChainStorageClient client;
-  private final HistoricalChainData historicalChainData;
   public static final String ROUTE = "/beacon/block";
   private final JsonProvider jsonProvider;
+  private final CombinedChainDataClient combinedChainDataClient;
 
   public BeaconBlockHandler(
-      final ChainStorageClient client,
-      final HistoricalChainData historicalChainData,
-      final JsonProvider jsonProvider) {
-    this.client = client;
-    this.historicalChainData = historicalChainData;
+      final CombinedChainDataClient combinedChainDataClient, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
+    this.combinedChainDataClient = combinedChainDataClient;
   }
 
   @OpenApi(
@@ -89,10 +84,11 @@ public class BeaconBlockHandler implements Handler {
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       if (ctx.queryParamMap().containsKey(ROOT)) {
         final Bytes32 root = Bytes32.fromHexString(validateQueryParameter(queryParamMap, ROOT));
-        if (client.getStore() == null) {
+        final Store store = combinedChainDataClient.getStore();
+        if (store == null) {
           ctx.status(SC_NO_CONTENT);
         } else {
-          final SignedBeaconBlock block = client.getStore().getSignedBlock(root);
+          final SignedBeaconBlock block = store.getSignedBlock(root);
           if (block != null) {
             ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(block)));
             return;
@@ -114,21 +110,21 @@ public class BeaconBlockHandler implements Handler {
             "Query parameter missing. Must specify one of root or epoch or slot.");
       }
 
-      final Optional<SignedBeaconBlock> blockBySlot = getBlockBySlot(slot);
-      if (blockBySlot.isPresent()) {
-        ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(blockBySlot.get())));
-        return;
-      }
-      ctx.status(SC_NOT_FOUND);
+      ctx.result(
+          combinedChainDataClient
+              .getBlockBySlot(slot)
+              .thenApplyChecked(
+                  block -> {
+                    if (block.isPresent()) {
+                      return jsonProvider.objectToJSON(new BeaconBlockResponse(block.get()));
+                    } else {
+                      ctx.status(SC_NOT_FOUND);
+                      return null;
+                    }
+                  }));
+
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
     }
-  }
-
-  private Optional<SignedBeaconBlock> getBlockBySlot(final UnsignedLong slot) {
-    return client
-        .getBlockRootBySlot(slot)
-        .map(root -> client.getStore().getSignedBlock(root))
-        .or(() -> historicalChainData.getFinalizedBlockAtSlot(slot).join());
   }
 }

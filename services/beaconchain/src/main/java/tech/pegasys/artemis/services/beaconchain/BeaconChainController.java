@@ -241,12 +241,7 @@ public class BeaconChainController {
         new CombinedChainDataClient(chainStorageClient, historicalChainData);
     beaconRestAPI =
         new BeaconRestApi(
-            chainStorageClient,
-            p2pNetwork,
-            historicalChainData,
-            combinedChainDataClient,
-            syncService,
-            config);
+            chainStorageClient, p2pNetwork, combinedChainDataClient, syncService, config);
   }
 
   public void initSyncManager() {

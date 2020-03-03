@@ -8,7 +8,7 @@
 
 ## /node/genesis_time
 
-In [eth2-api]("https://github.com/ethereum/eth2.0-specs") genesis_time should either return
+In [eth2-spec]("https://github.com/ethereum/eth2.0-specs") genesis_time should either return
 * 200 code and a numeric
 * 500 internal error
 
