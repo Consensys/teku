@@ -6,7 +6,8 @@
 *.launch
 *.swp
 *.log
-*.db
+db/
+db.version
 .classpath
 .DS_Store
 .gradletasknamecache

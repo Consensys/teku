@@ -63,6 +63,10 @@ public class ALogger {
     this.logger.log(level, addColor(message, color), throwable);
   }
 
+  public boolean isDebugEnabled() {
+    return logger.isDebugEnabled();
+  }
+
   private String findColor(Color color) {
     String colorCode = "";
     switch (color) {

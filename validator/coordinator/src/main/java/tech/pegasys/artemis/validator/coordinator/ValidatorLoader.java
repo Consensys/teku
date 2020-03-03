@@ -15,9 +15,12 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
-import java.util.HashMap;
-import java.util.List;
+import com.google.common.collect.Streams;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -27,24 +30,41 @@ import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
 class ValidatorLoader {
 
   static Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
-    ValidatorKeyProvider keyProvider;
-    if (config.getValidatorsKeyFile() != null) {
-      keyProvider = new YamlValidatorKeyProvider();
-    } else {
-      keyProvider = new MockStartValidatorKeyProvider();
-    }
-    final List<BLSKeyPair> keypairs = keyProvider.loadValidatorKeys(config);
-    final Map<BLSPublicKey, ValidatorInfo> validators = new HashMap<>();
-
     // Get validator connection info and create a new ValidatorInfo object and put it into the
     // Validators map
-    for (int i = 0; i < keypairs.size(); i++) {
-      BLSKeyPair keypair = keypairs.get(i);
-      final LocalMessageSignerService signerService = new LocalMessageSignerService(keypair);
-      STDOUT.log(Level.DEBUG, "Validator " + i + ": " + keypair.getPublicKey().toString());
+    final Map<BLSPublicKey, ValidatorInfo> validators =
+        loadValidatorKeys(config).stream()
+            .collect(
+                Collectors.toMap(
+                    BLSKeyPair::getPublicKey,
+                    blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
 
-      validators.put(keypair.getPublicKey(), new ValidatorInfo(signerService));
+    if (STDOUT.isDebugEnabled()) {
+      Streams.mapWithIndex(
+              validators.keySet().stream(),
+              (publicKey, index) -> "Validator " + index + ": " + publicKey.toString())
+          .forEach(debugStatement -> STDOUT.log(Level.DEBUG, debugStatement));
     }
     return validators;
+  }
+
+  private static Collection<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
+    final Set<ValidatorKeyProvider> keyProviders = new LinkedHashSet<>();
+    if (config.getValidatorsKeyFile() == null
+        && config.getValidatorKeystorePasswordFilePairs() == null) {
+      keyProviders.add(new MockStartValidatorKeyProvider());
+    } else {
+      // support loading keys both from unencrypted yaml and encrypted keystores
+      if (config.getValidatorsKeyFile() != null) {
+        keyProviders.add(new YamlValidatorKeyProvider());
+      }
+
+      if (config.getValidatorKeystorePasswordFilePairs() != null) {
+        keyProviders.add(new KeystoresValidatorKeyProvider());
+      }
+    }
+    return keyProviders.stream()
+        .flatMap(validatorKeyProvider -> validatorKeyProvider.loadValidatorKeys(config).stream())
+        .collect(Collectors.toSet());
   }
 }
