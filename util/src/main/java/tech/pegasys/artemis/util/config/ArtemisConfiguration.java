@@ -117,8 +117,18 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
-    
+
     // Outputs
+    builder.addBoolean(
+        "output.enableStandardOut",
+        false,
+        "Whether the application logging output is additionally routed to the standard out",
+        PropertyValidator.isPresent());
+    builder.addBoolean(
+        "output.enableStatusUpdates",
+        false,
+        "Whether the frequent application updates are included in output",
+        PropertyValidator.isPresent());
     builder.addString(
         "output.transitionRecordDir",
         "",
@@ -383,5 +393,13 @@ public class ArtemisConfiguration {
 
   public boolean getBeaconRestAPIEnableSwagger() {
     return config.getBoolean("beaconrestapi.enableSwagger");
+  }
+
+  public boolean isStandardOutEnabled() {
+    return config.getBoolean("output.enableStandardOut");
+  }
+
+  public boolean isStatusUpdatesEnabled() {
+    return config.getBoolean("output.enableStatusUpdates");
   }
 }

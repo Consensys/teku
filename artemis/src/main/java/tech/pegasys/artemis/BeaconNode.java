@@ -75,11 +75,11 @@ public class BeaconNode {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
 
-    //TODO populate static members of ConsoleLoggingConfiguration
-    //TODO trigger reloading of logging properties with new config
+    // TODO populate static members of ConsoleLoggingConfiguration
+    // TODO trigger reloading of logging properties with new config
 
-    //TODO console enabled
-    //TODO status updates enabled
+    // TODO console enabled
+    // TODO status updates enabled
   }
 
   public void start() {

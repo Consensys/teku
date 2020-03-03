@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -127,5 +128,51 @@ final class ArtemisConfigurationTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> config.validateConfig())
         .withMessage(errorMessage);
+  }
+
+  @Test
+  public void shouldDefaultStandardOutAsFalse() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isStandardOutEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldSetStandardOutCorrectly() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("output.enableStandardOut=true");
+    assertThat(config.isStandardOutEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldErrorWhenInvalidStandardOut() {
+    assertThatThrownBy(
+            () -> {
+              ArtemisConfiguration.fromString("output.enableStandardOut=I'm not a boolean");
+            })
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Unexpected 'I'");
+  }
+
+  @Test
+  public void shouldDefaultStatusUpdatesAsFalse() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isStatusUpdatesEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldSetStatusUpdatesCorrectly() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("output.enableStatusUpdates=true");
+    assertThat(config.isStatusUpdatesEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldErrorWhenInvalidStatusUpdates() {
+    assertThatThrownBy(
+            () -> {
+              ArtemisConfiguration.fromString("output.enableStatusUpdates=I'm not a boolean");
+            })
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Unexpected 'I'");
   }
 }

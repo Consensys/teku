@@ -31,8 +31,8 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
   // TODO common name used by ALogger too!
   private static final String LOGGER_NAME = "stdout";
 
-  //TODO thread context?
-  private static volatile int STATE;
+  // TODO thread context?
+  // private static volatile int STATE;
 
   public ConsoleLoggingConfiguration(
       final LoggerContext loggerContext, final ConfigurationSource configSource) {
