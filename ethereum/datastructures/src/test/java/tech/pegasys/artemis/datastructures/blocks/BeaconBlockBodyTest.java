@@ -105,7 +105,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
-    SSZList<ProposerSlashing> reverseProposerSlashings = proposerSlashings.reverse();
+    SSZList<ProposerSlashing> reverseProposerSlashings = proposerSlashings.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
@@ -144,7 +144,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenAttestationsAreDifferent() {
     // Create copy of attestations and reverse to ensure it is different.
-    SSZList<Attestation> reverseAttestations = attestations.reverse();
+    SSZList<Attestation> reverseAttestations = attestations.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
@@ -163,7 +163,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenDepositsAreDifferent() {
     // Create copy of deposits and reverse to ensure it is different.
-    SSZList<Deposit> reverseDeposits = deposits.reverse();
+    SSZList<Deposit> reverseDeposits = deposits.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(
@@ -182,7 +182,7 @@ class BeaconBlockBodyTest {
   @Test
   void equalsReturnsFalseWhenExitsAreDifferent() {
     // Create copy of exits and reverse to ensure it is different.
-    SSZList<SignedVoluntaryExit> reverseVoluntaryExits = voluntaryExits.reverse();
+    SSZList<SignedVoluntaryExit> reverseVoluntaryExits = voluntaryExits.reversed();
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(

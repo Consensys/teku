@@ -57,7 +57,7 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
     return new SSZArrayCollection<>(1, obj, false);
   }
 
-  default SSZList<T> reverse() {
+  default SSZList<T> reversed() {
     SSZMutableList<T> ret = create(getElementType(), getMaxSize());
     for (int i = size() - 1; i >= 0; i--) {
       ret.add(get(i));
@@ -65,21 +65,21 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
     return ret;
   }
 
-  default SSZList<T> modify(Function<Stream<T>, Stream<T>> streamer) {
-    return modify(getElementType(), streamer);
+  default SSZList<T> modified(Function<Stream<T>, Stream<T>> streamer) {
+    return modified(getElementType(), streamer);
   }
 
-  default <D> SSZList<D> modify(
+  default <D> SSZList<D> modified(
       Class<? extends D> newElementType, Function<Stream<T>, Stream<D>> streamer) {
     return create(streamer.apply(stream()), getMaxSize(), newElementType);
   }
 
   default <D> SSZList<D> map(Class<? extends D> newElementType, Function<T, D> streamer) {
-    return modify(newElementType, steam -> stream().map(streamer));
+    return modified(newElementType, steam -> stream().map(streamer));
   }
 
   default SSZList<T> filter(Predicate<T> filter) {
-    return modify(steam -> stream().filter(filter));
+    return modified(steam -> stream().filter(filter));
   }
 
   @SuppressWarnings("unchecked")
