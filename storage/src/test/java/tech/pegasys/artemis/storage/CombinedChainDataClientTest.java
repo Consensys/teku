@@ -14,7 +14,10 @@
 package tech.pegasys.artemis.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -22,6 +25,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +35,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 class CombinedChainDataClientTest {
@@ -39,7 +44,7 @@ class CombinedChainDataClientTest {
   private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   private final Store store = mock(Store.class);
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(recentChainData, historicalChainData);
+      spy(new CombinedChainDataClient(recentChainData, historicalChainData));
 
   private int seed = 242842;
 
@@ -243,6 +248,56 @@ class CombinedChainDataClientTest {
         client.getCommitteesFromStateWithCache(
             Optional.of(stateWithCache), stateWithCache.getSlot());
     assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
+  }
+
+  @Test
+  public void getBlockBySlot_blockByBlockRoot() throws ExecutionException, InterruptedException {
+    final UnsignedLong slotParam = UnsignedLong.ONE;
+    final SignedBeaconBlock signedBeaconBlock =
+        DataStructureUtil.randomSignedBeaconBlock(slotParam.longValue(), 7);
+
+    doReturn(Optional.of(signedBeaconBlock.getParent_root()))
+        .when(client)
+        .getBlockRootBySlot(any());
+    doReturn(Optional.empty()).when(client).getBestBlockRoot();
+    doReturn(store).when(client).getStore();
+    doReturn(signedBeaconBlock).when(store).getSignedBlock(any());
+
+    assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
+    assertThat(client.getBlockBySlot(slotParam).get())
+        .isNotNull()
+        .isPresent()
+        .isEqualTo(Optional.of(signedBeaconBlock));
+  }
+
+  @Test
+  public void getBlockBySlot_blockByBestBlockRoot()
+      throws ExecutionException, InterruptedException {
+    final UnsignedLong slotParam = UnsignedLong.ONE;
+    final SignedBeaconBlock signedBeaconBlock =
+        DataStructureUtil.randomSignedBeaconBlock(slotParam.longValue(), 7);
+
+    doReturn(Optional.empty()).when(client).getBlockRootBySlot(any());
+    doReturn(Optional.of(signedBeaconBlock.getParent_root())).when(client).getBestBlockRoot();
+    doReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
+        .when(client)
+        .getBlockAtSlotExact(any(), any());
+
+    assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
+    assertThat(client.getBlockBySlot(slotParam).get())
+        .isNotNull()
+        .isPresent()
+        .isEqualTo(Optional.of(signedBeaconBlock));
+  }
+
+  @Test
+  public void getBlockBySlot_noBlockFound() throws ExecutionException, InterruptedException {
+    final UnsignedLong slotParam = UnsignedLong.MAX_VALUE;
+    doReturn(Optional.empty()).when(client).getBlockRootBySlot(any());
+    doReturn(Optional.empty()).when(client).getBestBlockRoot();
+
+    assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
+    assertThat(client.getBlockBySlot(slotParam).get()).isNotNull().isEmpty();
   }
 
   private SignedBeaconBlock block(final UnsignedLong slot) {
