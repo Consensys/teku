@@ -131,9 +131,7 @@ public class SyncManager extends Service {
   public SyncingStatus getSyncStatus() {
     final boolean isSyncActive = isSyncActive();
     if (!isSyncActive) {
-      final SyncStatus syncStatus =
-          new SyncStatus(UnsignedLong.ZERO, UnsignedLong.ZERO, UnsignedLong.ZERO);
-      return new SyncingStatus(false, syncStatus);
+      return new SyncingStatus(false, null);
     } else {
       final UnsignedLong highestSlot = findBestSyncPeer().get().getStatus().getHeadSlot();
       final SyncStatus syncStatus =
