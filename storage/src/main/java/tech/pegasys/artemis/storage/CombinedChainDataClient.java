@@ -198,7 +198,7 @@ public class CombinedChainDataClient {
    * @return list of CommitteeAssignments
    */
   public SafeFuture<List<CommitteeAssignment>> getCommitteeAssignmentAtEpoch(UnsignedLong epoch) {
-    final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
+    final UnsignedLong epochToCalculateCommittees = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
     final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
 
     SafeFuture<Optional<BeaconState>> future =
