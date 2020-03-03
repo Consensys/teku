@@ -64,6 +64,7 @@ public class ValidatorCoordinatorTest {
     config = mock(ArtemisConfiguration.class);
     when(config.getNumValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
+    when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(null);
     when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);
     when(config.getInteropOwnedValidatorCount()).thenReturn(NUM_VALIDATORS);
 
