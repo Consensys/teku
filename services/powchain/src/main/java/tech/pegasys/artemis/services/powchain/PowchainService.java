@@ -46,18 +46,20 @@ import tech.pegasys.artemis.pow.ThrottlingEth1Provider;
 import tech.pegasys.artemis.pow.Web3jEth1Provider;
 import tech.pegasys.artemis.pow.api.DepositEventChannel;
 import tech.pegasys.artemis.pow.event.Deposit;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
-public class PowchainService implements ServiceInterface {
+public class PowchainService extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final String EVENTS = "events";
   public static final String USER_DIR = "user.dir";
+
   private EventBus eventBus;
 
   private DepositContractListener depositContractListener;
@@ -70,8 +72,7 @@ public class PowchainService implements ServiceInterface {
   private TimeProvider timeProvider;
   private DepositEventChannel depositEventChannel;
 
-  @Override
-  public void init(ServiceConfig config) {
+  public PowchainService(final ServiceConfig config) {
     this.timeProvider = config.getTimeProvider();
     this.eventBus = config.getEventBus();
     this.depositEventChannel = config.getEventChannels().getPublisher(DepositEventChannel.class);
@@ -83,7 +84,7 @@ public class PowchainService implements ServiceInterface {
   }
 
   @Override
-  public void run() {
+  protected SafeFuture<?> doStart() {
     if (depositMode.equals(DEPOSIT_SIM) && depositSimFile == null) {
       final GanacheController controller =
           new GanacheController(Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT, 6000);
@@ -164,14 +165,17 @@ public class PowchainService implements ServiceInterface {
               timeProvider);
       eth1DataManager.start();
     }
+
+    return SafeFuture.COMPLETE;
   }
 
   @Override
-  public void stop() {
+  protected SafeFuture<?> doStop() {
     STDOUT.log(Level.DEBUG, "PowChainService.stop()");
     this.eventBus.unregister(this);
     if (depositContractListener != null) {
       depositContractListener.stop();
     }
+    return SafeFuture.COMPLETE;
   }
 }

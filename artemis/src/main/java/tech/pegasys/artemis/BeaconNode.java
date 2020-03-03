@@ -36,10 +36,7 @@ import tech.pegasys.artemis.events.ChannelExceptionHandler;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.service.serviceutils.ServiceController;
-import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
-import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
-import tech.pegasys.artemis.services.powchain.PowchainService;
+import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -53,7 +50,7 @@ public class BeaconNode {
       Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
-  private final ServiceController serviceController = new ServiceController();
+  private final ServiceController serviceController;
   private final ServiceConfig serviceConfig;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
@@ -70,12 +67,15 @@ public class BeaconNode {
 
     this.serviceConfig =
         new ServiceConfig(new SystemTimeProvider(), eventBus, eventChannels, metricsSystem, config);
+    this.serviceConfig.getConfig().validateConfig();
     Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDir();
     if (transitionRecordDir != null) {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
+
+    this.serviceController = new ServiceController(serviceConfig);
 
     // set log level per CLI flags
     loggingLevel.ifPresent(
@@ -88,18 +88,8 @@ public class BeaconNode {
   public void start() {
 
     try {
-      this.serviceConfig.getConfig().validateConfig();
       metricsEndpoint.start();
-      // Initialize services
-      serviceController.initAll(
-          serviceConfig,
-          BeaconChainService.class,
-          PowchainService.class,
-          ChainStorageService.class);
-
-      // Start services
-      serviceController.startAll();
-
+      serviceController.start().reportExceptions();
     } catch (final CompletionException e) {
       STDOUT.log(Level.FATAL, e.toString());
     } catch (final IllegalArgumentException e) {
@@ -108,9 +98,10 @@ public class BeaconNode {
   }
 
   public void stop() {
-    serviceController.stopAll();
+    serviceController.stop().reportExceptions();
     eventChannels.stop();
     metricsEndpoint.stop();
+    vertx.close();
   }
 }
 
