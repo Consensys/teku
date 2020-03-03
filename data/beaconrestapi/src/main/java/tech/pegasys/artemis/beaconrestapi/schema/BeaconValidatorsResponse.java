@@ -18,8 +18,14 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 public class BeaconValidatorsResponse {
   public final SSZList<Validator> validatorList;
+  private int totalSize;
 
   public BeaconValidatorsResponse(SSZList<Validator> validatorList) {
     this.validatorList = validatorList;
+    this.totalSize = validatorList.size();
+  }
+
+  public int getTotalSize() {
+    return totalSize;
   }
 }

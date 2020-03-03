@@ -17,6 +17,8 @@ import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
@@ -69,7 +71,15 @@ public class BeaconValidatorsHandler implements Handler {
         @OpenApiParam(
             name = ACTIVE,
             description =
-                "If specified, return only validators which are active in the specified epoch")
+                "If specified, return only validators which are active in the specified epoch."),
+          @OpenApiParam(
+              name = PAGE_SIZE,
+              description =
+                  "If specified, return only this many results."),
+          @OpenApiParam(
+              name = PAGE_TOKEN,
+              description =
+                  "If specified, return only this page of results.")
       },
       responses = {
         @OpenApiResponse(
@@ -97,14 +107,14 @@ public class BeaconValidatorsHandler implements Handler {
                 if (state.isEmpty()) {
                   // empty list
                   return jsonProvider.objectToJSON(
-                      new BeaconValidatorsResponse(new SSZList<>(Validator.class, 0L)));
+                      produceResponse(new SSZList<>(Validator.class, 0L)));
                 }
                 if (activeOnly) {
                   return jsonProvider.objectToJSON(
-                      new BeaconValidatorsResponse(state.get().getActiveValidators()));
+                      produceResponse(state.get().getActiveValidators()));
                 } else {
                   return jsonProvider.objectToJSON(
-                      new BeaconValidatorsResponse(state.get().getValidators()));
+                      produceResponse(state.get().getValidators()));
                 }
               }));
     } else {
@@ -121,5 +131,9 @@ public class BeaconValidatorsHandler implements Handler {
     final UnsignedLong epoch = UnsignedLong.valueOf(epochString);
     return combinedClient.getStateAtSlot(
         BeaconStateUtil.compute_start_slot_at_epoch(epoch), blockRoot);
+  }
+
+  private final BeaconValidatorsResponse produceResponse(final SSZList<Validator> validators) {
+    return new BeaconValidatorsResponse(validators);
   }
 }
