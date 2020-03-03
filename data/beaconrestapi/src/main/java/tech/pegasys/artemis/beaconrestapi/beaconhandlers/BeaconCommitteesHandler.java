@@ -64,7 +64,7 @@ public class BeaconCommitteesHandler implements Handler {
             description = "The epoch for which committees will be returned.",
             required = true),
       },
-      description = "Request a list of the Committee assignments for a given epoch.",
+      description = "Request a list of the committee assignments for a given epoch.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
