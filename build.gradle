@@ -44,6 +44,28 @@ gradle.startParameter.taskNames.each {
 gradle.startParameter.taskNames = expandedTaskList.flatten() as Iterable<String>
 
 def userHome = System.getProperty("user.home")
+
+apply plugin: 'com.jfrog.bintray'
+
+def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
+
+def bintrayPackage = bintray.pkg {
+  repo = 'pegasys-repo'
+  name = 'teku'
+  userOrg = 'consensys'
+  desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
+  licenses = ['Apache-2.0']
+  websiteUrl = 'https://github.com/PegaSysEng/artemis'
+  issueTrackerUrl = 'https://github.com/PegaSysEng/artemis/issues'
+  vcsUrl = 'https://github.com/PegaSysEng/artemis.git'
+
+  version {
+    name = project.version
+    released = new Date()
+  }
+}
+
 allprojects {
   apply plugin: 'java-library'
   apply plugin: 'io.spring.dependency-management'
@@ -436,7 +458,7 @@ subprojects {
               }
             }
             scm {
-              connection = 'scm:git:git://github.com/hyperledger/teku.git'
+              connection = 'scm:git:git://github.com/PegaSysEng/teku.git'
               developerConnection = 'https://github.com/PegaSysEng/teku.git'
               url = 'https://github.com/PegaSysEng/teku'
             }
@@ -676,27 +698,6 @@ configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
 
   tasks.withType(JavaCompile) {
     options.annotationProcessorPath = configurations.annotationProcessor
-  }
-}
-
-apply plugin: 'com.jfrog.bintray'
-
-def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
-def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
-
-def bintrayPackage = bintray.pkg {
-  repo = 'pegasys-repo'
-  name = 'teku'
-  userOrg = 'consensys'
-  desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
-  licenses = ['Apache-2.0']
-  websiteUrl = 'https://github.com/PegaSysEng/artemis'
-  issueTrackerUrl = 'https://github.com/PegaSysEng/artemis/issues'
-  vcsUrl = 'https://github.com/PegaSysEng/artemis.git'
-
-  version {
-    name = project.version
-    released = new Date()
   }
 }
 
