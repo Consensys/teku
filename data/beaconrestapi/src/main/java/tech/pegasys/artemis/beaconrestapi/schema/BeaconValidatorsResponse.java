@@ -21,8 +21,31 @@ public class BeaconValidatorsResponse {
   private int totalSize;
 
   public BeaconValidatorsResponse(SSZList<Validator> validatorList) {
-    this.validatorList = validatorList;
-    this.totalSize = validatorList.size();
+    this(validatorList, 20, 0);
+  }
+
+  public BeaconValidatorsResponse(
+      SSZList<Validator> validatorList, final int pageSize, final int pageToken) {
+    // first page is pageToken = 0
+    if (pageSize > 0 && pageToken >= 0) {
+      int offset = pageToken * pageSize;
+      SSZList<Validator> pageOfValidators = new SSZList<>(Validator.class, pageSize);
+      this.totalSize = validatorList.size();
+      // if the offset is outside the bounds, just return the list as is
+      if (offset >= validatorList.size()) {
+        this.validatorList = validatorList;
+        return;
+      }
+      // otherwise get a page of results
+      for (int i = offset; i < offset + pageSize; i++) {
+        pageOfValidators.add(validatorList.get(offset));
+      }
+      this.validatorList = pageOfValidators;
+    } else {
+      // TODO IllegalArgumentException ?
+      this.validatorList = validatorList;
+      this.totalSize = validatorList.size();
+    }
   }
 
   public int getTotalSize() {

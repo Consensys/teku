@@ -18,11 +18,14 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
 
 import com.google.common.primitives.UnsignedLong;
@@ -72,14 +75,12 @@ public class BeaconValidatorsHandler implements Handler {
             name = ACTIVE,
             description =
                 "If specified, return only validators which are active in the specified epoch."),
-          @OpenApiParam(
-              name = PAGE_SIZE,
-              description =
-                  "If specified, return only this many results."),
-          @OpenApiParam(
-              name = PAGE_TOKEN,
-              description =
-                  "If specified, return only this page of results.")
+        @OpenApiParam(
+            name = PAGE_SIZE,
+            description = "If specified, return only this many results."),
+        @OpenApiParam(
+            name = PAGE_TOKEN,
+            description = "If specified, return only this page of results.")
       },
       responses = {
         @OpenApiResponse(
@@ -93,6 +94,10 @@ public class BeaconValidatorsHandler implements Handler {
     final Map<String, List<String>> parameters = ctx.queryParamMap();
     SafeFuture<Optional<BeaconState>> future = null;
     final boolean activeOnly = parameters.containsKey(ACTIVE);
+    int pageSize =
+        getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_SIZE, PAGE_SIZE_DEFAULT);
+    int pageToken =
+        getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
 
     Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
     if (optionalRoot.isPresent()) {
@@ -107,19 +112,35 @@ public class BeaconValidatorsHandler implements Handler {
                 if (state.isEmpty()) {
                   // empty list
                   return jsonProvider.objectToJSON(
-                      produceResponse(new SSZList<>(Validator.class, 0L)));
+                      produceResponse(new SSZList<>(Validator.class, 0L), pageSize, pageToken));
                 }
                 if (activeOnly) {
                   return jsonProvider.objectToJSON(
-                      produceResponse(state.get().getActiveValidators()));
+                      produceResponse(state.get().getActiveValidators(), pageSize, pageToken));
                 } else {
                   return jsonProvider.objectToJSON(
-                      produceResponse(state.get().getValidators()));
+                      produceResponse(state.get().getValidators(), pageSize, pageToken));
                 }
               }));
     } else {
       ctx.status(SC_NO_CONTENT);
     }
+  }
+
+  private int getPositiveIntegerValueWithDefaultIfNotSupplied(
+      final Map<String, List<String>> parameters, final String key, final int defaultValue)
+      throws IllegalArgumentException {
+    int intValue;
+    if (!parameters.containsKey(key)) {
+      return defaultValue;
+    } else {
+      intValue = getParameterValueAsInt(parameters, key);
+      if (intValue < 0) {
+        throw new IllegalArgumentException(
+            String.format("%s must be a positive integer value", key));
+      }
+    }
+    return intValue;
   }
 
   private SafeFuture<Optional<BeaconState>> queryByRootHash(final Bytes32 root32) {
@@ -133,7 +154,8 @@ public class BeaconValidatorsHandler implements Handler {
         BeaconStateUtil.compute_start_slot_at_epoch(epoch), blockRoot);
   }
 
-  private final BeaconValidatorsResponse produceResponse(final SSZList<Validator> validators) {
-    return new BeaconValidatorsResponse(validators);
+  private final BeaconValidatorsResponse produceResponse(
+      final SSZList<Validator> validators, final int pageSize, final int pageToken) {
+    return new BeaconValidatorsResponse(validators, pageSize, pageToken);
   }
 }

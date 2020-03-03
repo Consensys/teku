@@ -20,6 +20,8 @@ public class RestApiConstants {
   public static final String ACTIVE = "active";
   public static final String PAGE_SIZE = "pageSize";
   public static final String PAGE_TOKEN = "pageToken";
+  public static final int PAGE_SIZE_DEFAULT = 20;
+  public static final int PAGE_TOKEN_DEFAULT = 0;
 
   public static final String TAG_BEACON = "Beacon";
   public static final String TAG_NODE = "Node";
