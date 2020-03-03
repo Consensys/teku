@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -242,7 +242,7 @@ class CombinedChainDataClientTest {
     List<CommitteeAssignment> data =
         client.getCommitteesFromStateWithCache(
             Optional.of(stateWithCache), stateWithCache.getSlot());
-    assertEquals(8, data.size());
+    assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
   }
 
   private SignedBeaconBlock block(final UnsignedLong slot) {

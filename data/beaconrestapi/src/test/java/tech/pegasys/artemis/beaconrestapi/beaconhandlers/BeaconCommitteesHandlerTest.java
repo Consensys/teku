@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -79,10 +80,13 @@ public class BeaconCommitteesHandlerTest {
         new BeaconCommitteesHandler(combinedChainDataClient, jsonProvider);
 
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("0")));
+    when(historicalChainData.getFinalizedStateAtSlot(ZERO))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);
 
     verify(context).result(args.capture());
+    verify(historicalChainData).getFinalizedStateAtSlot(ZERO);
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), EMPTY_LIST);
   }
@@ -119,7 +123,7 @@ public class BeaconCommitteesHandlerTest {
     final BeaconCommitteesHandler handler =
         new BeaconCommitteesHandler(combinedClient, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
-    when(client.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(client.getFinalizedEpoch()).thenReturn(ZERO);
     when(store.getBlockState(blockRoot)).thenReturn(beaconState);
     when(client.getStateBySlot(any())).thenReturn(Optional.of(beaconState));
     when(client.getStore()).thenReturn(store);

@@ -56,7 +56,7 @@ public class BeaconCommitteesHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the committees for all slots and committee indices in a given epoch.",
+      summary = "Get the committee assignments for a given epoch.",
       tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(

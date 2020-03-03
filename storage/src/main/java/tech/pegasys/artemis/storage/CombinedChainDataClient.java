@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.storage;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
@@ -197,19 +199,15 @@ public class CombinedChainDataClient {
    * @return list of CommitteeAssignments
    */
   public SafeFuture<List<CommitteeAssignment>> getCommitteeAssignmentAtEpoch(UnsignedLong epoch) {
-    final UnsignedLong startingSlot = compute_start_slot_at_epoch(epoch);
+    final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
+    final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
 
     SafeFuture<Optional<BeaconState>> future =
         getStateAtSlot(startingSlot, recentChainData.getBestBlockRoot());
-    if (future != null) {
-      return future
-          .thenCompose(
-              optionalState ->
-                  completedFuture(getCommitteesFromStateWithCache(optionalState, startingSlot)))
-          .exceptionallyCompose(err -> completedFuture(List.of()));
-    }
 
-    return completedFuture(List.of());
+    return future
+        .thenApply(optionalState -> getCommitteesFromStateWithCache(optionalState, startingSlot))
+        .exceptionally(err -> List.of());
   }
 
   List<CommitteeAssignment> getCommitteesFromStateWithCache(
