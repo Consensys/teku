@@ -70,7 +70,7 @@ public class CombinedChainDataClient {
    */
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
-    final Store store = recentChainData.getStore();
+    final Store store = getStore();
     if (store == null) {
       LOG.trace("No block at slot {} because the store is not set", slot);
       return BLOCK_NOT_AVAILABLE;
@@ -138,7 +138,7 @@ public class CombinedChainDataClient {
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
 
-    final Store store = recentChainData.getStore();
+    final Store store = getStore();
     if (store == null) {
       LOG.trace("No state at slot {} because the store is not set", slot);
       return STATE_NOT_AVAILABLE;
@@ -157,7 +157,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
-    final Store store = recentChainData.getStore();
+    final Store store = getStore();
     if (store == null) {
       LOG.trace("No state at blockRoot {} because the store is not set", blockRoot);
       return STATE_NOT_AVAILABLE;
@@ -171,11 +171,32 @@ public class CombinedChainDataClient {
   }
 
   public Optional<Bytes32> getBestBlockRoot() {
-    final Store store = recentChainData.getStore();
-    if (store == null) {
+    if (getStore() == null) {
       LOG.trace("No block found because the store is not set");
       return Optional.empty();
     }
     return Optional.ofNullable(recentChainData.getBestBlockRoot());
+  }
+
+  public Store getStore() {
+    return recentChainData.getStore();
+  }
+
+  public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
+    return recentChainData.getBlockRootBySlot(slot);
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(final UnsignedLong slot) {
+    final Optional<Bytes32> blockRootBySlot = getBlockRootBySlot(slot);
+    final Optional<Bytes32> bestBlockRoot = getBestBlockRoot();
+
+    if (blockRootBySlot.isPresent()) {
+      return SafeFuture.completedFuture(
+          Optional.ofNullable(getStore().getSignedBlock(blockRootBySlot.get())));
+    } else if (bestBlockRoot.isPresent()) {
+      return getBlockAtSlotExact(slot, bestBlockRoot.get());
+    } else {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
   }
 }
