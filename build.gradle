@@ -439,7 +439,7 @@ subprojects {
     publishing {
       publications {
         mavenJava(MavenPublication) {
-          groupId "tech.pegasys.teku"
+          groupId "tech.pegasys.teku.internal"
           version "${project.version}"
           if (sourceSetIsPopulated("main")) {
             from components.java
