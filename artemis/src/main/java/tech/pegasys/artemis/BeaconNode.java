@@ -59,7 +59,7 @@ public class BeaconNode {
 
   BeaconNode(final ArtemisConfiguration config) {
 
-    metricsEndpoint = new MetricsEndpoint(config, vertx);
+    this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final EventBusExceptionHandler subscriberExceptionHandler =
         new EventBusExceptionHandler(STDOUT);
@@ -74,6 +74,12 @@ public class BeaconNode {
     if (transitionRecordDir != null) {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
+
+    //TODO populate static members of ConsoleLoggingConfiguration
+    //TODO trigger reloading of logging properties with new config
+
+    //TODO console enabled
+    //TODO status updates enabled
   }
 
   public void start() {

@@ -77,10 +77,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
                     node.stop();
                   }));
       return 0;
-    } catch (DatabaseStorageException ex) {
+    } catch (final DatabaseStorageException ex) {
       System.err.println(ex.getMessage());
       System.exit(1);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       System.err.println("Teku failed to start.");
       t.printStackTrace();
       System.exit(1);

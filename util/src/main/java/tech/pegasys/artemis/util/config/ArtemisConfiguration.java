@@ -104,6 +104,7 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
+    
     // Outputs
     builder.addString(
         "output.transitionRecordDir",
