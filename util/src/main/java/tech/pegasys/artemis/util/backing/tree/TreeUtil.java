@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.backing.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.Utils;
 import tech.pegasys.artemis.util.backing.tree.TreeNode.Commit;
@@ -113,14 +114,17 @@ public class TreeUtil {
   }
 
   /** Dumps the tree to stdout */
-  public static void dumpBinaryTree(TreeNode node) {
-    dumpBinaryTreeRec(node, "", false);
+  public static String dumpBinaryTree(TreeNode node) {
+    StringBuilder ret = new StringBuilder();
+    dumpBinaryTreeRec(node, "", false, s -> ret.append(s).append('\n'));
+    return ret.toString();
   }
 
-  private static void dumpBinaryTreeRec(TreeNode node, String prefix, boolean printCommit) {
+  private static void dumpBinaryTreeRec(
+      TreeNode node, String prefix, boolean printCommit, Consumer<String> linesConsumer) {
     if (node instanceof Root) {
       Root rootNode = (Root) node;
-      System.out.println(prefix + rootNode);
+      linesConsumer.accept(prefix + rootNode);
     } else {
       Commit commitNode = (Commit) node;
       String s = "├─┐";
@@ -128,16 +132,16 @@ public class TreeUtil {
         s += " " + commitNode;
       }
       if (commitNode.left() instanceof Root) {
-        System.out.println(prefix + "├─" + commitNode.left());
+        linesConsumer.accept(prefix + "├─" + commitNode.left());
       } else {
-        System.out.println(prefix + s);
-        dumpBinaryTreeRec(commitNode.left(), prefix + "│ ", printCommit);
+        linesConsumer.accept(prefix + s);
+        dumpBinaryTreeRec(commitNode.left(), prefix + "│ ", printCommit, linesConsumer);
       }
       if (commitNode.right() instanceof Root) {
-        System.out.println(prefix + "└─" + commitNode.right());
+        linesConsumer.accept(prefix + "└─" + commitNode.right());
       } else {
-        System.out.println(prefix + "└─┐");
-        dumpBinaryTreeRec(commitNode.right(), prefix + "  ", printCommit);
+        linesConsumer.accept(prefix + "└─┐");
+        dumpBinaryTreeRec(commitNode.right(), prefix + "  ", printCommit, linesConsumer);
       }
     }
   }

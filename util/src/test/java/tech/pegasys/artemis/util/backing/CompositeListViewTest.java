@@ -96,11 +96,6 @@ public class CompositeListViewTest {
     TreeNode n3 = list.getBackingNode();
     list.set(0, new TestView(0x444));
     TreeNode n4 = list.getBackingNode();
-    System.out.println(n0);
-    System.out.println(n1);
-    System.out.println(n2);
-    System.out.println(n3);
-    System.out.println(n4);
 
     Assertions.assertEquals(0, listType.createFromBackingNode(n0).size());
     Assertions.assertEquals(1, listType.createFromBackingNode(n1).size());

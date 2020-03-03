@@ -46,13 +46,6 @@ public class BasicListViewTest {
     listView.set(3, new UInt64View(UnsignedLong.valueOf(0x803)));
     listView.set(4, new UInt64View(UnsignedLong.valueOf(0x804)));
     TreeNode n6 = listView.getBackingNode();
-    System.out.println(n0);
-    System.out.println(n1);
-    System.out.println(n2);
-    System.out.println(n3);
-    System.out.println(n4);
-    System.out.println(n5);
-    System.out.println(n6);
 
     Assertions.assertEquals(0, listType.createFromBackingNode(n0).size());
     Assertions.assertEquals(1, listType.createFromBackingNode(n1).size());

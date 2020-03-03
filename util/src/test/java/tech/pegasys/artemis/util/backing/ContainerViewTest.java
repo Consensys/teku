@@ -15,6 +15,8 @@ package tech.pegasys.artemis.util.backing;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
@@ -31,6 +33,7 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
 
 public class ContainerViewTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   public interface ImmutableSubContainer extends ContainerViewRead {
 
@@ -299,7 +302,7 @@ public class ContainerViewTest {
     }
 
     ContainerRead c1r = c1w.commitChanges();
-    TreeUtil.dumpBinaryTree(c1r.getBackingNode());
+    LOG.error("\n" + TreeUtil.dumpBinaryTree(c1r.getBackingNode()));
 
     {
       Assertions.assertEquals(UnsignedLong.ZERO, c1.getSub1().getLong1());
@@ -340,28 +343,5 @@ public class ContainerViewTest {
 
     Assertions.assertEquals(UnsignedLong.valueOf(0x888), c1r.getList2().get(1).getLong2());
     Assertions.assertEquals(UnsignedLong.valueOf(0xaaa), c2r.getList2().get(1).getLong2());
-  }
-
-  @Test
-  public void readWriteContainerTest2() {
-    ContainerRead c1 = ContainerImpl.TYPE.getDefault();
-    ContainerWrite c1w = c1.createWritableCopy();
-    c1w.setLong1(UnsignedLong.valueOf(0x111));
-    SubContainerWrite sc1w = c1w.getList2().append();
-    sc1w.setLong1(UnsignedLong.valueOf(0x222));
-    sc1w.setLong2(UnsignedLong.valueOf(0x333));
-    ContainerRead c1r = c1w.commitChanges();
-    TreeUtil.dumpBinaryTree(c1r.getBackingNode());
-  }
-
-  @Test
-  public void simpleContainerTest() {
-    ContainerImpl c1 = ContainerImpl.TYPE.getDefault();
-    c1.setLong1(UnsignedLong.valueOf(0x111));
-    c1.setLong2(UnsignedLong.valueOf(0x222));
-    ListViewWrite<UInt64View> list1 = c1.getList1();
-    list1.append(UInt64View.fromLong(0x333));
-    //    c1.setList1(list1);
-    TreeUtil.dumpBinaryTree(c1.getBackingNode());
   }
 }
