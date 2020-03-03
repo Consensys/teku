@@ -24,18 +24,17 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @JsonAutoDetect(getterVisibility = Visibility.NONE)
-public class Eth1Data extends ContainerViewImpl<Eth1Data>
+public class Eth1Data extends AbstractImmutableContainer<Eth1Data>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -56,7 +55,7 @@ public class Eth1Data extends ContainerViewImpl<Eth1Data>
   @SuppressWarnings("unused")
   private final Bytes32 block_hash = null;
 
-  private Eth1Data(ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
+  private Eth1Data(ContainerViewType<Eth1Data> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

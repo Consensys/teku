@@ -25,18 +25,17 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @JsonAutoDetect(getterVisibility = Visibility.NONE)
-public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
+public class BeaconBlockHeader extends AbstractImmutableContainer<BeaconBlockHeader>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -63,8 +62,7 @@ public class BeaconBlockHeader extends ContainerViewImpl<BeaconBlockHeader>
   @SuppressWarnings("unused")
   private final Bytes32 body_root = null;
 
-  private BeaconBlockHeader(
-      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
+  private BeaconBlockHeader(ContainerViewType<BeaconBlockHeader> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

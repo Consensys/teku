@@ -25,11 +25,11 @@ import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
+import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
 
 public class ListViewTest {
 
-  public static class SubContainer extends ContainerViewImpl<SubContainer> {
+  public static class SubContainer extends MutableContainerImpl<SubContainer> {
 
     public static final ContainerViewType<SubContainer> TYPE =
         new ContainerViewType<>(

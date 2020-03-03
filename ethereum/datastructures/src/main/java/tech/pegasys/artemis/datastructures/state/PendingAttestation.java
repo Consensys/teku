@@ -29,22 +29,21 @@ import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @JsonAutoDetect(getterVisibility = Visibility.NONE)
-public class PendingAttestation extends ContainerViewImpl<PendingAttestation>
+public class PendingAttestation extends AbstractImmutableContainer<PendingAttestation>
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -76,8 +75,7 @@ public class PendingAttestation extends ContainerViewImpl<PendingAttestation>
   @SuppressWarnings("unused")
   private final UnsignedLong proposer_index = null;
 
-  private PendingAttestation(
-      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
+  private PendingAttestation(ContainerViewType<PendingAttestation> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -51,11 +51,11 @@ import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
+import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
 import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class BeaconStateImpl extends ContainerViewImpl<BeaconStateImpl>
+public class BeaconStateImpl extends MutableContainerImpl<BeaconStateImpl>
     implements MutableBeaconState, BeaconStateCache {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.

@@ -44,6 +44,11 @@ public class CompositeListViewTest {
         public TestView createFromBackingNode(TreeNode node) {
           return new TestView(node);
         }
+
+        @Override
+        public int getBitsSize() {
+          return 256;
+        }
       };
 
   static class TestView implements ViewRead {

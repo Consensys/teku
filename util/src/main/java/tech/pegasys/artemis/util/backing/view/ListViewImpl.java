@@ -43,7 +43,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   public ListViewImpl(VectorViewType<R> vectorType) {
     ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
-            List.of(vectorType, BasicViewTypes.UINT64_TYPE), ContainerViewImpl::new);
+            List.of(vectorType, BasicViewTypes.UINT64_TYPE), MutableContainerImpl::new);
     container = containerViewType.getDefault();
   }
 
@@ -51,7 +51,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
-            ContainerViewImpl::new);
+            MutableContainerImpl::new);
     container = containerViewType.createFromBackingNode(node);
   }
 

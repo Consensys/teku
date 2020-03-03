@@ -23,23 +23,23 @@ import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
-public class ContainerViewImpl<C extends ContainerViewImpl<C>>
+public class MutableContainerImpl<C extends MutableContainerImpl<C>>
     extends AbstractCompositeViewWrite<C, ViewRead> implements ContainerViewWriteRef {
 
   private final ContainerViewType<? extends ContainerViewWrite> type;
   private TreeNode backingNode;
 
-  public ContainerViewImpl(ContainerViewType<? extends ContainerViewWrite> type) {
+  public MutableContainerImpl(ContainerViewType<? extends ContainerViewWrite> type) {
     this(type, type.getDefaultTree());
   }
 
-  public ContainerViewImpl(
+  public MutableContainerImpl(
       ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
   }
 
-  public ContainerViewImpl(
+  public MutableContainerImpl(
       ContainerViewType<? extends ContainerViewWrite> type, ViewRead... memberValues) {
     this(type, type.getDefaultTree());
     checkArgument(

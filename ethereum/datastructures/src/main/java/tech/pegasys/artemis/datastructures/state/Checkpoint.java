@@ -27,18 +27,17 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @JsonAutoDetect(getterVisibility = Visibility.NONE)
-public class Checkpoint extends ContainerViewImpl<Fork>
+public class Checkpoint extends AbstractImmutableContainer<Checkpoint>
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -54,7 +53,7 @@ public class Checkpoint extends ContainerViewImpl<Fork>
   @SuppressWarnings("unused")
   private final Bytes32 root = null;
 
-  public Checkpoint(ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
+  public Checkpoint(ContainerViewType<Checkpoint> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

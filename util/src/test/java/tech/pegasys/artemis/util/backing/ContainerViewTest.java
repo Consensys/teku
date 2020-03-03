@@ -25,9 +25,10 @@ import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.ContainerViewImpl;
+import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
 
 public class ContainerViewTest {
 
@@ -92,7 +93,8 @@ public class ContainerViewTest {
     ContainerRead commitChanges();
   }
 
-  public static class ImmutableSubContainerImpl extends ContainerViewImpl<ImmutableSubContainerImpl>
+  public static class ImmutableSubContainerImpl
+      extends AbstractImmutableContainer<ImmutableSubContainerImpl>
       implements ImmutableSubContainer {
 
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
@@ -120,7 +122,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerImpl extends ContainerViewImpl<SubContainerImpl>
+  public static class SubContainerImpl extends MutableContainerImpl<SubContainerImpl>
       implements SubContainerWrite {
 
     public static final ContainerViewType<SubContainerImpl> TYPE =
@@ -152,7 +154,7 @@ public class ContainerViewTest {
     }
   }
 
-  public static class ContainerImpl extends ContainerViewImpl<ContainerImpl>
+  public static class ContainerImpl extends MutableContainerImpl<ContainerImpl>
       implements ContainerWrite {
 
     public static final ContainerViewType<ContainerImpl> TYPE =
