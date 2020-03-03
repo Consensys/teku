@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,31 +37,25 @@ public class NodeSyncingHandlerTest {
     final UnsignedLong startSlot = UnsignedLong.ONE;
     final UnsignedLong currentSlot = UnsignedLong.valueOf(5);
     final UnsignedLong highestSlot = UnsignedLong.valueOf(10);
-    SyncingStatus syncingStatus =
+    final SyncingStatus syncingStatus =
         new SyncingStatus(isSyncing, new SyncStatus(startSlot, currentSlot, highestSlot));
-    SyncStatus syncStatus = new SyncStatus(startSlot, currentSlot, highestSlot);
-    SyncingResponse syncingResponse = new SyncingResponse(isSyncing, syncStatus);
-    NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
+    final NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
+    final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     handler.handle(context);
-    verify(context).result(jsonProvider.objectToJSON(syncingResponse));
+    verify(context).result(jsonProvider.objectToJSON(expectedResponse));
   }
 
   @Test
   public void shouldReturnFalseWhenNotSyncing() throws Exception {
-    final boolean isSyncing = true;
-    final UnsignedLong startSlot = ZERO;
-    final UnsignedLong currentSlot = ZERO;
-    final UnsignedLong highestSlot = ZERO;
-    SyncingStatus syncingStatus =
-        new SyncingStatus(isSyncing, new SyncStatus(startSlot, currentSlot, highestSlot));
-    SyncStatus syncStatus = new SyncStatus(startSlot, currentSlot, highestSlot);
-    SyncingResponse syncingResponse = new SyncingResponse(isSyncing, syncStatus);
-    NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
+    final boolean isSyncing = false;
+    final SyncingStatus syncingStatus = new SyncingStatus(isSyncing, null);
+    final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
+    final NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     handler.handle(context);
-    verify(context).result(jsonProvider.objectToJSON(syncingResponse));
+    verify(context).result(jsonProvider.objectToJSON(expectedResponse));
   }
 }
