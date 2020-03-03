@@ -31,8 +31,12 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
   // TODO common name used by ALogger too!
   private static final String LOGGER_NAME = "stdout";
 
-  // TODO thread context?
-  // private static volatile int STATE;
+  private static volatile boolean ADD_CONSOLE_LOGGER;
+  private static volatile ConsoleLoggingConfiguration CONFIGURATION;
+
+  public static void enableStandardOutLogger(final boolean enabled) {
+    ADD_CONSOLE_LOGGER = enabled;
+  }
 
   public ConsoleLoggingConfiguration(
       final LoggerContext loggerContext, final ConfigurationSource configSource) {
@@ -43,8 +47,10 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
   protected void doConfigure() {
     super.doConfigure();
 
-    final Appender consoleAppender = addConsoleAppender();
-    addConsoleLogger(consoleAppender);
+    if (ADD_CONSOLE_LOGGER) {
+      final Appender consoleAppender = addConsoleAppender();
+      addConsoleLogger(consoleAppender);
+    }
   }
 
   private Appender addConsoleAppender() {

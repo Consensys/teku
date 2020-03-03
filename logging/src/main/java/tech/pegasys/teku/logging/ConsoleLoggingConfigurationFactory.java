@@ -26,7 +26,7 @@ public class ConsoleLoggingConfigurationFactory extends ConfigurationFactory {
 
   @Override
   protected String[] getSupportedTypes() {
-    return new String[] {".xml"};
+    return new String[] {".xml", "*"};
   }
 
   @Override

@@ -28,6 +28,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.artemis.events.ChannelExceptionHandler;
@@ -43,6 +44,7 @@ import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
+import tech.pegasys.teku.logging.ConsoleLoggingConfiguration;
 
 public class BeaconNode {
 
@@ -75,11 +77,13 @@ public class BeaconNode {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
 
-    // TODO populate static members of ConsoleLoggingConfiguration
-    // TODO trigger reloading of logging properties with new config
-
-    // TODO console enabled
     // TODO status updates enabled
+
+    ConsoleLoggingConfiguration.enableStandardOutLogger(config.isStandardOutEnabled());
+
+    // TODO this reconfigure is triggering the INFO message 'Log4j appears to be running in a
+    // Servlet environment, but there's no log4j-web module available.'
+    Configurator.reconfigure();
   }
 
   public void start() {
