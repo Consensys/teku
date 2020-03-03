@@ -144,12 +144,12 @@ class BlockProcessorUtilTest {
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
     SSZMutableList<Validator> validatorList =
-        SSZList.create(
+        SSZList.createMutable(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             ValidatorImpl.class);
     SSZMutableList<UnsignedLong> balanceList =
-        SSZList.create(
+        SSZList.createMutable(
             Arrays.asList(
                 randomUnsignedLong(104), randomUnsignedLong(105), randomUnsignedLong(106)),
             Constants.VALIDATOR_REGISTRY_LIMIT,

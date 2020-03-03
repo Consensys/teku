@@ -17,15 +17,15 @@ import java.util.List;
 
 public interface SSZVector<T> extends SSZImmutableCollection<T> {
 
-  static <T> SSZMutableVector<T> create(int size, T object) {
+  static <T> SSZMutableVector<T> createMutable(int size, T object) {
     return new SSZArrayCollection<T>(size, object, true);
   }
 
-  static <T> SSZMutableVector<T> create(Class<T> classInfo, int size) {
+  static <T> SSZMutableVector<T> createMutable(Class<T> classInfo, int size) {
     return new SSZArrayCollection<T>(classInfo, size, true);
   }
 
-  static <T> SSZMutableVector<T> create(List<T> list, Class<T> classInfo) {
+  static <T> SSZMutableVector<T> createMutable(List<T> list, Class<T> classInfo) {
     return new SSZArrayCollection<>(list, list.size(), classInfo, true);
   }
 

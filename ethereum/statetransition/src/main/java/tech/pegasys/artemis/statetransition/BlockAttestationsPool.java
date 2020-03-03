@@ -113,7 +113,7 @@ public class BlockAttestationsPool {
 
   private SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {
     SSZMutableList<Attestation> attestations =
-        SSZList.create(Attestation.class, Constants.MAX_ATTESTATIONS);
+        SSZList.createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
 
     while (aggregateAttesationsQueue.peek() != null

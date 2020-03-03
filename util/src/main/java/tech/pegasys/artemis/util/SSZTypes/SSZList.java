@@ -23,20 +23,20 @@ import java.util.stream.Stream;
 
 public interface SSZList<T> extends SSZImmutableCollection<T> {
 
-  static <T> SSZMutableList<T> create(Class<? extends T> classInfo, long maxSize) {
+  static <T> SSZMutableList<T> createMutable(Class<? extends T> classInfo, long maxSize) {
     return new SSZArrayCollection<>(classInfo, maxSize, false);
   }
 
-  static <T> SSZMutableList<T> create(Stream<T> list, long maxSize, Class<? extends T> classInfo) {
+  static <T> SSZMutableList<T> createMutable(Stream<T> list, long maxSize, Class<? extends T> classInfo) {
     return new SSZArrayCollection<>(list.collect(Collectors.toList()), maxSize, classInfo, false);
   }
 
-  static <T> SSZMutableList<T> create(
+  static <T> SSZMutableList<T> createMutable(
       Collection<T> list, long maxSize, Class<? extends T> classInfo) {
-    return create(list.stream(), maxSize, classInfo);
+    return createMutable(list.stream(), maxSize, classInfo);
   }
 
-  static <T> SSZMutableList<T> create(SSZImmutableCollection<? extends T> list) {
+  static <T> SSZMutableList<T> createMutable(SSZImmutableCollection<? extends T> list) {
     return new SSZArrayCollection<>(list.asList(), list.getMaxSize(), list.getElementType(), false);
   }
 
@@ -47,7 +47,7 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
         "Incompatible list types: %s != %s",
         left.getElementType(),
         right.getElementType());
-    SSZMutableList<T> ret = create(left.getElementType(), left.getMaxSize() + right.getMaxSize());
+    SSZMutableList<T> ret = createMutable(left.getElementType(), left.getMaxSize() + right.getMaxSize());
     ret.addAll(left);
     ret.addAll(right);
     return ret;
@@ -58,7 +58,7 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
   }
 
   default SSZList<T> reversed() {
-    SSZMutableList<T> ret = create(getElementType(), getMaxSize());
+    SSZMutableList<T> ret = createMutable(getElementType(), getMaxSize());
     for (int i = size() - 1; i >= 0; i--) {
       ret.add(get(i));
     }
@@ -71,7 +71,7 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
 
   default <D> SSZList<D> modified(
       Class<? extends D> newElementType, Function<Stream<T>, Stream<D>> streamer) {
-    return create(streamer.apply(stream()), getMaxSize(), newElementType);
+    return createMutable(streamer.apply(stream()), getMaxSize(), newElementType);
   }
 
   default <D> SSZList<D> map(Class<? extends D> newElementType, Function<T, D> streamer) {

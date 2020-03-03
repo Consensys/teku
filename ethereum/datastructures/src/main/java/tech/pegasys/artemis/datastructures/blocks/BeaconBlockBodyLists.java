@@ -25,22 +25,22 @@ import tech.pegasys.artemis.util.config.Constants;
 public class BeaconBlockBodyLists {
 
   public static SSZMutableList<ProposerSlashing> createProposerSlashings() {
-    return SSZList.create(ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS);
+    return SSZList.createMutable(ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS);
   }
 
   public static SSZMutableList<AttesterSlashing> createAttesterSlashings() {
-    return SSZList.create(AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
+    return SSZList.createMutable(AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS);
   }
 
   public static SSZMutableList<Attestation> createAttestations() {
-    return SSZList.create(Attestation.class, Constants.MAX_ATTESTATIONS);
+    return SSZList.createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
   }
 
   public static SSZMutableList<Deposit> createDeposits() {
-    return SSZList.create(Deposit.class, Constants.MAX_DEPOSITS);
+    return SSZList.createMutable(Deposit.class, Constants.MAX_DEPOSITS);
   }
 
   public static SSZMutableList<SignedVoluntaryExit> createVoluntaryExits() {
-    return SSZList.create(SignedVoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
+    return SSZList.createMutable(SignedVoluntaryExit.class, Constants.MAX_VOLUNTARY_EXITS);
   }
 }

@@ -91,7 +91,7 @@ public class AttestationUtil {
         get_attesting_indices(state, attestation.getData(), attestation.getAggregation_bits());
 
     return new IndexedAttestation(
-        SSZList.create(
+        SSZList.createMutable(
             attesting_indices.stream()
                 .sorted()
                 .map(UnsignedLong::valueOf)

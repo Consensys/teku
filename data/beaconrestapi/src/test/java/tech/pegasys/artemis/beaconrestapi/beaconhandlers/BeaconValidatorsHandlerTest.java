@@ -96,7 +96,7 @@ public class BeaconValidatorsHandlerTest {
     assertEquals(
         data.get(),
         jsonProvider.objectToJSON(
-            new BeaconValidatorsResponse(SSZList.create(Validator.class, 0L))));
+            new BeaconValidatorsResponse(SSZList.createMutable(Validator.class, 0L))));
   }
 
   @Test

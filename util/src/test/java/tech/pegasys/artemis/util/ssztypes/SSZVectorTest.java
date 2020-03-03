@@ -22,7 +22,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 class SSZVectorTest {
   @Test
   void initTest() {
-    SSZVector<Bytes32> vector = SSZVector.create(10, Bytes32.ZERO);
+    SSZVector<Bytes32> vector = SSZVector.createMutable(10, Bytes32.ZERO);
     assertEquals(vector.get(0), Bytes32.ZERO);
     assertEquals(vector.get(9), Bytes32.ZERO);
   }

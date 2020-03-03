@@ -118,7 +118,7 @@ public class BeaconChainUtil {
         attestations.isEmpty()
             ? Optional.empty()
             : Optional.of(
-                SSZList.create(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
+                SSZList.createMutable(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
 
     return createAndImportBlockAtSlot(slot, sszList);
   }
@@ -205,7 +205,7 @@ public class BeaconChainUtil {
       BeaconBlock headBlock = storageClient.getStore().getBlock(storageClient.getBestBlockRoot());
       UnsignedLong slot = storageClient.getBestSlot();
       SSZList<Attestation> currentSlotAssignments =
-          SSZList.create(
+          SSZList.createMutable(
               attestationGenerator.getAttestationsForSlot(headState, headBlock, slot),
               Constants.MAX_ATTESTATIONS,
               Attestation.class);

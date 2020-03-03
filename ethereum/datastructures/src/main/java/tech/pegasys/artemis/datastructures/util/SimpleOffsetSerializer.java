@@ -326,7 +326,7 @@ public class SimpleOffsetSerializer {
             reflectionInformation.getListElementTypes().get(variableObjectCounter);
         Long listElementMaxSize =
             reflectionInformation.getListElementMaxSizes().get(variableObjectCounter);
-        SSZMutableList newSSZList = SSZList.create(listElementType, listElementMaxSize);
+        SSZMutableList newSSZList = SSZList.createMutable(listElementType, listElementMaxSize);
         if (!isVariable(listElementType)) {
           // If SSZList element is fixed size
           deserializeFixedElementList(
@@ -435,7 +435,7 @@ public class SimpleOffsetSerializer {
         newList.add(deserializeFixedContainer(classInfo, reader, bytePointer));
       }
     }
-    return SSZVector.create(newList, classInfo);
+    return SSZVector.createMutable(newList, classInfo);
   }
 
   public static Object deserializePrimitive(

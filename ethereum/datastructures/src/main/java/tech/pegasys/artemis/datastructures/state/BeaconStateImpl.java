@@ -125,19 +125,19 @@ public class BeaconStateImpl extends MutableContainerImpl<BeaconStateImpl>
 
   @SuppressWarnings("unused")
   private final SSZVector<Bytes32> block_roots =
-      SSZVector.create(
+      SSZVector.createMutable(
           Bytes32.class,
           Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
 
   @SuppressWarnings("unused")
   private final SSZVector<Bytes32> state_roots =
-      SSZVector.create(
+      SSZVector.createMutable(
           Bytes32.class,
           Constants.SLOTS_PER_HISTORICAL_ROOT); // Vector of length SLOTS_PER_HISTORICAL_ROOT
 
   @SuppressWarnings("unused")
   private final SSZList<Bytes32> historical_roots =
-      SSZList.create(
+      SSZList.createMutable(
           Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT); // Bounded by HISTORICAL_ROOTS_LIMIT
 
   // Ethereum 1.0 chain data
@@ -146,7 +146,7 @@ public class BeaconStateImpl extends MutableContainerImpl<BeaconStateImpl>
 
   @SuppressWarnings("unused")
   private final SSZList<Eth1Data> eth1_data_votes =
-      SSZList.create(
+      SSZList.createMutable(
           Eth1Data.class,
           Constants.SLOTS_PER_ETH1_VOTING_PERIOD); // List Bounded by SLOTS_PER_ETH1_VOTING_PERIOD
 
@@ -156,40 +156,40 @@ public class BeaconStateImpl extends MutableContainerImpl<BeaconStateImpl>
   // Validator registry
   @SuppressWarnings("unused")
   private final SSZList<ValidatorImpl> validators =
-      SSZList.create(
+      SSZList.createMutable(
           ValidatorImpl.class,
           Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
   @SuppressWarnings("unused")
   private final SSZList<UnsignedLong> balances =
-      SSZList.create(
+      SSZList.createMutable(
           UnsignedLong.class,
           Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
   @SuppressWarnings("unused")
   private final SSZVector<Bytes32> randao_mixes =
-      SSZVector.create(
+      SSZVector.createMutable(
           Bytes32.class,
           Constants.EPOCHS_PER_HISTORICAL_VECTOR); // Vector of length EPOCHS_PER_HISTORICAL_VECTOR
 
   // Slashings
   @SuppressWarnings("unused")
   private final SSZVector<UnsignedLong> slashings =
-      SSZVector.create(
+      SSZVector.createMutable(
           UnsignedLong.class,
           Constants.EPOCHS_PER_SLASHINGS_VECTOR); // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
   @SuppressWarnings("unused")
   private final SSZList<PendingAttestation> previous_epoch_attestations =
-      SSZList.create(
+      SSZList.createMutable(
           PendingAttestation.class,
           Constants.MAX_ATTESTATIONS
               * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH
 
   @SuppressWarnings("unused")
   private final SSZList<PendingAttestation> current_epoch_attestations =
-      SSZList.create(
+      SSZList.createMutable(
           PendingAttestation.class,
           Constants.MAX_ATTESTATIONS
               * Constants.SLOTS_PER_EPOCH); // List bounded by MAX_ATTESTATIONS * SLOTS_PER_EPOCH

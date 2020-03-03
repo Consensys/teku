@@ -49,7 +49,7 @@ public class GenesisGenerator {
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
   private final SSZMutableList<DepositData> depositDataList =
-      SSZList.create(DepositData.class, depositListLength);
+      SSZList.createMutable(DepositData.class, depositListLength);
 
   public GenesisGenerator() {
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();

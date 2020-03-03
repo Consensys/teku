@@ -621,6 +621,6 @@ public final class EpochProcessorUtil {
     state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
     state
         .getCurrent_epoch_attestations()
-        .setAll(SSZList.create(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
+        .setAll(SSZList.createMutable(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
   }
 }

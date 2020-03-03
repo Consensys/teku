@@ -206,13 +206,13 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static HistoricalBatch getHistoricalBatch(Map map) {
     SSZVector<Bytes32> block_roots =
-        SSZVector.create(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("block_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> state_roots =
-        SSZVector.create(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("state_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
@@ -229,19 +229,19 @@ public class MapObjectUtil {
     BeaconBlockHeader latest_block_header =
         getBeaconBlockHeader((Map) map.get("latest_block_header"));
     SSZVector<Bytes32> block_roots =
-        SSZVector.create(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("block_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<Bytes32> state_roots =
-        SSZVector.create(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("state_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZList<Bytes32> historical_roots =
-        SSZList.create(
+        SSZList.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("historical_roots"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
@@ -249,7 +249,7 @@ public class MapObjectUtil {
             Bytes32.class);
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     SSZList<Eth1Data> eth1_data_votes =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("eth1_data_votes"))
                 .stream().map(e -> getEth1Data(e)).collect(Collectors.toList()),
             Constants.SLOTS_PER_ETH1_VOTING_PERIOD,
@@ -257,13 +257,13 @@ public class MapObjectUtil {
     UnsignedLong eth1_deposit_index =
         UnsignedLong.valueOf(map.get("eth1_deposit_index").toString());
     SSZList<Validator> validators =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("validators"))
                 .stream().map(e -> getValidator(e)).collect(Collectors.toList()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             ValidatorImpl.class);
     SSZList<UnsignedLong> balances =
-        SSZList.create(
+        SSZList.createMutable(
             new ArrayList<>(
                 ((List<Object>) map.get("balances"))
                     .stream()
@@ -272,26 +272,26 @@ public class MapObjectUtil {
             Constants.VALIDATOR_REGISTRY_LIMIT,
             UnsignedLong.class);
     SSZVector<Bytes32> randao_mixes =
-        SSZVector.create(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("randao_mixes"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
             Bytes32.class);
     SSZVector<UnsignedLong> slashings =
-        SSZVector.create(
+        SSZVector.createMutable(
             new ArrayList<>((List<Object>) map.get("slashings"))
                 .stream()
                     .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
                     .collect(Collectors.toList()),
             UnsignedLong.class);
     SSZList<PendingAttestation> previous_epoch_attestations =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("previous_epoch_attestations"))
                 .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             PendingAttestation.class);
     SSZList<PendingAttestation> current_epoch_attestations =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("current_epoch_attestations"))
                 .stream().map(e -> getPendingAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
@@ -402,31 +402,31 @@ public class MapObjectUtil {
     Eth1Data eth1_data = getEth1Data((Map) map.get("eth1_data"));
     Bytes32 graffiti = Bytes32.fromHexString(map.get("graffiti").toString());
     SSZList<ProposerSlashing> proposer_slashings =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("proposer_slashings"))
                 .stream().map(e -> getProposerSlashing(e)).collect(Collectors.toList()),
             Constants.MAX_PROPOSER_SLASHINGS,
             ProposerSlashing.class);
     SSZList<AttesterSlashing> attester_slashings =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("attester_slashings"))
                 .stream().map(e -> getAttesterSlashing(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTER_SLASHINGS,
             AttesterSlashing.class);
     SSZList<Attestation> attestations =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("attestations"))
                 .stream().map(e -> getAttestation(e)).collect(Collectors.toList()),
             Constants.MAX_ATTESTATIONS,
             Attestation.class);
     SSZList<Deposit> deposits =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("deposits"))
                 .stream().map(e -> getDeposit(e)).collect(Collectors.toList()),
             Constants.MAX_DEPOSITS,
             Deposit.class);
     SSZList<SignedVoluntaryExit> voluntary_exits =
-        SSZList.create(
+        SSZList.createMutable(
             ((List<Map>) map.get("voluntary_exits"))
                 .stream().map(e -> getSignedVoluntaryExit(e)).collect(Collectors.toList()),
             Constants.MAX_VOLUNTARY_EXITS,
@@ -470,7 +470,7 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static Deposit getDeposit(Map map) {
     SSZVector<Bytes32> proof =
-        SSZVector.create(
+        SSZVector.createMutable(
             new ArrayList<>(
                 ((List<String>) map.get("proof"))
                     .stream().map(e -> Bytes32.fromHexString(e)).collect(Collectors.toList())),
@@ -540,7 +540,7 @@ public class MapObjectUtil {
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static IndexedAttestation getIndexedAttestation(Map map) {
     SSZList<UnsignedLong> attesting_indices =
-        SSZList.create(
+        SSZList.createMutable(
             new ArrayList<>((List<Object>) map.get("attesting_indices"))
                 .stream()
                     .map(e -> UnsignedLong.valueOf(convertUntypedNumericalClassesToString(e)))
