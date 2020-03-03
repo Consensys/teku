@@ -138,16 +138,6 @@ public interface BeaconState
   @JsonProperty
   SSZList<Validator> getValidators();
 
-  default SSZList<Validator> getActiveValidators() {
-    return getValidators()
-        .filter(
-            v -> (v.getExit_epoch().compareTo(getCurrent_justified_checkpoint().getEpoch()) >= 0))
-        .filter(
-            v ->
-                (v.getActivation_epoch().compareTo(getCurrent_justified_checkpoint().getEpoch())
-                    <= 0));
-  }
-
   @JsonProperty
   SSZList<UnsignedLong> getBalances();
 

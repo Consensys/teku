@@ -71,4 +71,6 @@ public interface Validator
 
   @JsonProperty
   UnsignedLong getWithdrawable_epoch();
+
+  ValidatorImpl createWritableCopy();
 }
