@@ -39,7 +39,7 @@ public class BeaconValidatorsResponse {
         return;
       }
       // otherwise get a page of results
-      for (int i = offset; i < offset + pageSize; i++) {
+      for (int i = offset; i < Math.min(offset + pageSize, validatorList.size()); i++) {
         pageOfValidators.add(validatorList.get(offset));
       }
       this.validatorList = pageOfValidators;

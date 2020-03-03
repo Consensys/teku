@@ -153,7 +153,7 @@ public class BeaconValidatorsHandlerTest {
     assertThat(beaconActiveValidators.getTotalSize())
         .isEqualTo(beaconState.getActiveValidators().size());
     assertThat(beaconActiveValidators.validatorList.size())
-        .isEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
+        .isLessThanOrEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
     assertThat(beaconActiveValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
