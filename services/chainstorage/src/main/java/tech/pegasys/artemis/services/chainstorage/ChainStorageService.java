@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.services.chainstorage;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+
+import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.storage.ChainStorageServer;
@@ -34,6 +37,7 @@ public class ChainStorageService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
+    STDOUT.log(Level.DEBUG, "ChainStorageService.stop()");
     return SafeFuture.COMPLETE;
   }
 }
