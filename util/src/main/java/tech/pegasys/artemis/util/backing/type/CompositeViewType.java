@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.backing.type;
 
 import tech.pegasys.artemis.util.backing.Utils;
-import tech.pegasys.artemis.util.backing.ViewType;
 
 /** Abstract type of {@link tech.pegasys.artemis.util.backing.CompositeViewRead} views */
 public interface CompositeViewType extends ViewType {

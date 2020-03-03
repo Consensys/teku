@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.backing.type;
 
 import java.util.Objects;
-import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 
 /** Type of homogeneous collections (like List and Vector) */

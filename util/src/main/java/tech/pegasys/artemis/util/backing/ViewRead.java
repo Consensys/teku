@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.backing;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.ViewType;
 
 /**
  * Base class of immutable views over Binary Backing Tree ({@link TreeNode}) Overlay views concept

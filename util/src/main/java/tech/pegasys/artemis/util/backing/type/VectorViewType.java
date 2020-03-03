@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.backing.type;
 
 import tech.pegasys.artemis.util.backing.VectorViewRead;
-import tech.pegasys.artemis.util.backing.ViewType;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.view.VectorViewImpl;
