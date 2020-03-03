@@ -33,6 +33,7 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
