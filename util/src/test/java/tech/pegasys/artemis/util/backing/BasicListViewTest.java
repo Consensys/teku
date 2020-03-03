@@ -27,25 +27,24 @@ public class BasicListViewTest {
   public void simpleUInt64ListTest() {
     ListViewType<UInt64View> listType = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 7);
     ListViewWrite<UInt64View> listView = listType.getDefault().createWritableCopy();
-    TreeNode n0 = listView.getBackingNode();
+    TreeNode n0 = listView.commitChanges().getBackingNode();
     listView.append(new UInt64View(UnsignedLong.valueOf(0x111)));
-    TreeNode n1 = listView.getBackingNode();
+    TreeNode n1 = listView.commitChanges().getBackingNode();
     listView.append(new UInt64View(UnsignedLong.valueOf(0x222)));
     listView.append(new UInt64View(UnsignedLong.valueOf(0x333)));
     listView.append(new UInt64View(UnsignedLong.valueOf(0x444)));
-    TreeNode n2 = listView.getBackingNode();
+    TreeNode n2 = listView.commitChanges().getBackingNode();
     listView.append(new UInt64View(UnsignedLong.valueOf(0x555)));
-    TreeNode n3 = listView.getBackingNode();
+    TreeNode n3 = listView.commitChanges().getBackingNode();
     listView.append(new UInt64View(UnsignedLong.valueOf(0x666)));
     listView.append(new UInt64View(UnsignedLong.valueOf(0x777)));
-    TreeNode n4 = listView.getBackingNode();
+    TreeNode n4 = listView.commitChanges().getBackingNode();
     listView.set(0, new UInt64View(UnsignedLong.valueOf(0x800)));
-    TreeNode n5 = listView.getBackingNode();
+    TreeNode n5 = listView.commitChanges().getBackingNode();
     listView.set(1, new UInt64View(UnsignedLong.valueOf(0x801)));
     listView.set(2, new UInt64View(UnsignedLong.valueOf(0x802)));
     listView.set(3, new UInt64View(UnsignedLong.valueOf(0x803)));
-    listView.set(4, new UInt64View(UnsignedLong.valueOf(0x804)));
-    TreeNode n6 = listView.getBackingNode();
+    TreeNode n6 = listView.commitChanges().getBackingNode();
 
     Assertions.assertEquals(0, listType.createFromBackingNode(n0).size());
     Assertions.assertEquals(1, listType.createFromBackingNode(n1).size());
@@ -66,6 +65,12 @@ public class BasicListViewTest {
     Assertions.assertEquals(0x777, listType.createFromBackingNode(n4).get(6).longValue());
     Assertions.assertEquals(0x800, listType.createFromBackingNode(n5).get(0).longValue());
     Assertions.assertEquals(0x222, listType.createFromBackingNode(n5).get(1).longValue());
+    Assertions.assertEquals(7, listType.createFromBackingNode(n6).size());
+    Assertions.assertEquals(0x800, listType.createFromBackingNode(n6).get(0).longValue());
+    Assertions.assertEquals(0x801, listType.createFromBackingNode(n6).get(1).longValue());
+    Assertions.assertEquals(0x802, listType.createFromBackingNode(n6).get(2).longValue());
+    Assertions.assertEquals(0x803, listType.createFromBackingNode(n6).get(3).longValue());
+    Assertions.assertEquals(0x555, listType.createFromBackingNode(n6).get(4).longValue());
 
     Assertions.assertThrows(
         IndexOutOfBoundsException.class,
