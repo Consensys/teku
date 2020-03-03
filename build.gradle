@@ -56,6 +56,16 @@ allprojects {
 
   jacoco { toolVersion = '0.8.5' }
 
+  task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+  }
+
+  task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+  }
+
   sourceCompatibility = '11'
   targetCompatibility = '11'
 
@@ -385,6 +395,66 @@ subprojects {
         srcDir file('src/referenceTest/java')
       }
       resources.srcDir file('src/referenceTest/resources')
+    }
+  }
+
+  def sourceSetIsPopulated = { sourceSetName ->
+    def result = project.sourceSets.names.contains(sourceSetName) && !project.sourceSets.getAt(sourceSetName).allSource.empty
+    logger.info("Project = " + project.name + " Has Source Set (" + sourceSetName + ") = " + result + "(" + project.sourceSets.names + ")")
+    return result
+  }
+
+  if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testSupport")) {
+    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'maven-publish'
+
+    publishing {
+      publications {
+        mavenJava(MavenPublication) {
+          groupId "tech.pegasys.teku"
+          version "${project.version}"
+          if (sourceSetIsPopulated("main")) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+          }
+
+          if (sourceSetIsPopulated("testSupport")) {
+            artifact testSupportJar
+          }
+          versionMapping {
+            usage('java-api') { fromResolutionOf('runtimeClasspath') }
+            usage('java-runtime') { fromResolutionResult() }
+          }
+          pom {
+            name = "Besu - ${project.name}"
+            url = 'https://github.com/PegaSysEng/teku'
+            licenses {
+              license {
+                name = 'The Apache License, Version 2.0'
+                url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+              }
+            }
+            scm {
+              connection = 'scm:git:git://github.com/hyperledger/teku.git'
+              developerConnection = 'https://github.com/PegaSysEng/teku.git'
+              url = 'https://github.com/PegaSysEng/teku'
+            }
+          }
+        }
+      }
+    }
+
+    bintray {
+      user = bintrayUser
+      key = bintrayKey
+
+      publications = ['mavenJava']
+      override = version.endsWith('SNAPSHOT')
+
+      publish = true
+
+      pkg = bintrayPackage
     }
   }
 
