@@ -56,9 +56,9 @@ def bintrayPackage = bintray.pkg {
   userOrg = 'consensys'
   desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
   licenses = ['Apache-2.0']
-  websiteUrl = 'https://github.com/PegaSysEng/artemis'
-  issueTrackerUrl = 'https://github.com/PegaSysEng/artemis/issues'
-  vcsUrl = 'https://github.com/PegaSysEng/artemis.git'
+  websiteUrl = 'https://github.com/PegaSysEng/teku'
+  issueTrackerUrl = 'https://github.com/PegaSysEng/teku/issues'
+  vcsUrl = 'https://github.com/PegaSysEng/teku.git'
 
   version {
     name = project.version
