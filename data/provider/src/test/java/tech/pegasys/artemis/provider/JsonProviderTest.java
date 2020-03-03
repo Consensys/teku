@@ -59,7 +59,8 @@ class JsonProviderTest {
   @Test
   public void sszVectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZVector<UnsignedLong> data =
-        SSZVector.createMutable(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
+        SSZVector.createMutable(
+            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[1,18446744073709551615]");
   }
@@ -79,7 +80,8 @@ class JsonProviderTest {
   @Test
   public void sszListOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZList<UnsignedLong> data =
-        SSZList.createMutable(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
+        SSZList.createMutable(
+            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[1,18446744073709551615]");
   }

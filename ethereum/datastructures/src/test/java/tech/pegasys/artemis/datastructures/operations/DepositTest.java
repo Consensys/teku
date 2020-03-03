@@ -58,7 +58,8 @@ class DepositTest {
     List<Bytes32> reverseBranch = new ArrayList<>(branch.asList());
     Collections.reverse(reverseBranch);
 
-    Deposit testDeposit = new Deposit(SSZVector.createMutable(reverseBranch, Bytes32.class), depositData);
+    Deposit testDeposit =
+        new Deposit(SSZVector.createMutable(reverseBranch, Bytes32.class), depositData);
 
     assertNotEquals(deposit, testDeposit);
   }

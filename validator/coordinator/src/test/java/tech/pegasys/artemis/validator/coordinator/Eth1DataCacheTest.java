@@ -230,7 +230,8 @@ public class Eth1DataCacheTest {
 
     Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
 
-    SSZMutableList<Eth1Data> eth1DataVotes = SSZList.createMutable(List.of(eth1Data), 10, Eth1Data.class);
+    SSZMutableList<Eth1Data> eth1DataVotes =
+        SSZList.createMutable(List.of(eth1Data), 10, Eth1Data.class);
     BeaconStateImpl beaconState = mock(BeaconStateImpl.class);
     when(beaconState.getEth1_data_votes()).thenReturn(eth1DataVotes);
     when(beaconState.getEth1_data()).thenReturn(eth1Data);

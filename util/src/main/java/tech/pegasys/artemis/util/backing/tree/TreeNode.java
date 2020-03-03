@@ -141,8 +141,8 @@ public interface TreeNode {
   TreeNode get(long generalizedIndex);
 
   /**
-   * The same as {@link #updated(long, TreeNode)} except that existing node can be used to calculate a
-   * new node
+   * The same as {@link #updated(long, TreeNode)} except that existing node can be used to calculate
+   * a new node
    */
   TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
 

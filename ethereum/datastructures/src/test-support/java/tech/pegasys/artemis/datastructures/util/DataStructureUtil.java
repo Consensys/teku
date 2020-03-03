@@ -88,7 +88,8 @@ public final class DataStructureUtil {
 
   public static <T> SSZVector<T> randomSSZVector(
       T defaultClassObject, long maxSize, Function<Integer, T> randomFunction, int seed) {
-    SSZMutableVector<T> sszvector = SSZVector.createMutable(toIntExact(maxSize), defaultClassObject);
+    SSZMutableVector<T> sszvector =
+        SSZVector.createMutable(toIntExact(maxSize), defaultClassObject);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems)
         .forEach(i -> sszvector.set(toIntExact(i), randomFunction.apply(seed)));

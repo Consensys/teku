@@ -300,11 +300,13 @@ class BeaconStateUtilTest {
     beaconState
         .getValidators()
         .addAll(
-            SSZList.createMutable(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
+            SSZList.createMutable(
+                validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
     beaconState
         .getBalances()
         .addAll(
-            SSZList.createMutable(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
+            SSZList.createMutable(
+                balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
     return beaconState.commitChanges();
   }
 

@@ -27,7 +27,8 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
     return new SSZArrayCollection<>(classInfo, maxSize, false);
   }
 
-  static <T> SSZMutableList<T> createMutable(Stream<T> list, long maxSize, Class<? extends T> classInfo) {
+  static <T> SSZMutableList<T> createMutable(
+      Stream<T> list, long maxSize, Class<? extends T> classInfo) {
     return new SSZArrayCollection<>(list.collect(Collectors.toList()), maxSize, classInfo, false);
   }
 
@@ -47,7 +48,8 @@ public interface SSZList<T> extends SSZImmutableCollection<T> {
         "Incompatible list types: %s != %s",
         left.getElementType(),
         right.getElementType());
-    SSZMutableList<T> ret = createMutable(left.getElementType(), left.getMaxSize() + right.getMaxSize());
+    SSZMutableList<T> ret =
+        createMutable(left.getElementType(), left.getMaxSize() + right.getMaxSize());
     ret.addAll(left);
     ret.addAll(right);
     return ret;
