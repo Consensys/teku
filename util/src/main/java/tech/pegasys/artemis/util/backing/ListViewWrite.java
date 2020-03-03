@@ -34,7 +34,5 @@ public interface ListViewWrite<R extends ViewRead> extends CompositeViewWrite<R>
   }
 
   @Override
-  default ListViewRead<R> commitChanges() {
-    throw new UnsupportedOperationException();
-  }
+  ListViewRead<R> commitChanges();
 }

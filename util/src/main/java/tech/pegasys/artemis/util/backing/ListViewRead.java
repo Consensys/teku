@@ -23,9 +23,7 @@ import tech.pegasys.artemis.util.backing.type.ListViewType;
 public interface ListViewRead<R extends ViewRead> extends CompositeViewRead<R> {
 
   @Override
-  default ListViewWrite<R> createWritableCopy() {
-    throw new UnsupportedOperationException();
-  }
+  ListViewWrite<R> createWritableCopy();
 
   @Override
   ListViewType<R> getType();
