@@ -60,12 +60,12 @@ public class Eth2NetworkBuilder {
     // Build core network and inject eth2 handlers
     final P2PNetwork<?> network = buildNetwork();
 
-    return DiscoveryNetwork.create(
-        new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient), config);
+    return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
   }
 
   protected P2PNetwork<?> buildNetwork() {
-    return new LibP2PNetwork(config, metricsSystem, rpcMethods, peerHandlers);
+    return DiscoveryNetwork.create(
+        new LibP2PNetwork(config, metricsSystem, rpcMethods, peerHandlers), config);
   }
 
   private void validate() {

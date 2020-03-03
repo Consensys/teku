@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
@@ -31,6 +32,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -80,9 +82,6 @@ public class Eth2NetworkFactory {
         try {
           network.start().get(30, TimeUnit.SECONDS);
           networks.add(network);
-          for (Eth2Network peer : peers) {
-            network.connect(peer.getNodeAddress()).join();
-          }
           Waiter.waitFor(() -> assertThat(network.getPeerCount()).isEqualTo(peers.size()));
           return network;
         } catch (ExecutionException e) {
@@ -113,13 +112,17 @@ public class Eth2NetworkFactory {
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
 
         final P2PNetwork<?> network =
-            new LibP2PNetwork(config, METRICS_SYSTEM, rpcMethods, peerHandlers);
+            DiscoveryNetwork.create(
+                new LibP2PNetwork(config, METRICS_SYSTEM, rpcMethods, peerHandlers), config);
 
         return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
       }
     }
 
     private NetworkConfig generateConfig() {
+      final List<String> peerAddresses =
+          peers.stream().map(P2PNetwork::getNodeAddress).collect(toList());
+
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
 
@@ -128,7 +131,7 @@ public class Eth2NetworkFactory {
           "127.0.0.1",
           port,
           port,
-          emptyList(),
+          peerAddresses,
           "static",
           emptyList(),
           false,
