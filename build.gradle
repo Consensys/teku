@@ -420,6 +420,12 @@ subprojects {
     }
   }
 
+  task testSupportJar(type: Jar) {
+    archiveBaseName = "${project.name}-support-test"
+    classifier = 'test-support'
+    from sourceSets.testSupport.output
+  }
+
   def sourceSetIsPopulated = { sourceSetName ->
     def result = project.sourceSets.names.contains(sourceSetName) && !project.sourceSets.getAt(sourceSetName).allSource.empty
     logger.info("Project = " + project.name + " Has Source Set (" + sourceSetName + ") = " + result + "(" + project.sourceSets.names + ")")
@@ -487,11 +493,6 @@ subprojects {
     compatibilityTestImplementation.extendsFrom implementation
     referenceTestImplementation.extendsFrom implementation
     testSupportArtifacts.extendsFrom testSupportImplementation
-  }
-
-  task testSupportJar (type: Jar) {
-    baseName = "${project.name}-support-test"
-    from sourceSets.testSupport.output
   }
 
   artifacts { testSupportArtifacts testSupportJar }
