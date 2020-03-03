@@ -56,7 +56,8 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
 
     TreeNode node = getNode(index / type.getElementsPerChunk());
     @SuppressWarnings("unchecked")
-    R ret = (R) type.getElementType().createFromBackingNode(node, index % type.getElementsPerChunk());
+    R ret =
+        (R) type.getElementType().createFromBackingNode(node, index % type.getElementsPerChunk());
     return ret;
   }
 

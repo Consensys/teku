@@ -53,5 +53,6 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   }
 
   @Override
-  public abstract TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue);
+  public abstract TreeNode updateBackingNode(
+      TreeNode srcNode, int internalIndex, ViewRead newValue);
 }
