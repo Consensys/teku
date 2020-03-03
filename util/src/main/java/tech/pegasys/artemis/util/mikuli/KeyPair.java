@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import java.security.SecureRandom;
+import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.ROM;
@@ -81,5 +82,18 @@ public final class KeyPair {
 
   public SecretKey secretKey() {
     return secretKey;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final KeyPair keyPair = (KeyPair) o;
+    return secretKey.equals(keyPair.secretKey) && publicKey.equals(keyPair.publicKey);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(secretKey, publicKey);
   }
 }
