@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZException;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
@@ -96,7 +96,7 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
 
   private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconState preState) {
     final StateTransition stateTransition = new StateTransition(false);
-    final BeaconStateWithCache postState = BeaconStateWithCache.fromBeaconState(preState);
+    final MutableBeaconState postState = preState.createWritableCopy();
 
     try {
       stateTransition.process_slots(postState, block.getMessage().getSlot(), false);

@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -27,47 +29,75 @@ import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
+import tech.pegasys.artemis.util.backing.ListViewRead;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
+import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class PendingAttestation
+@JsonAutoDetect(getterVisibility = Visibility.NONE)
+public class PendingAttestation extends AbstractImmutableContainer<PendingAttestation>
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
-  private final Bitlist aggregation_bits; // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
-  private final AttestationData data;
-  private final UnsignedLong inclusion_delay;
-  private final UnsignedLong proposer_index;
+  public static final ContainerViewType<PendingAttestation> TYPE =
+      new ContainerViewType<>(
+          List.of(
+              new ListViewType<BitView>(
+                  BasicViewTypes.BIT_TYPE, Constants.MAX_VALIDATORS_PER_COMMITTEE),
+              AttestationData.TYPE,
+              BasicViewTypes.UINT64_TYPE,
+              BasicViewTypes.UINT64_TYPE),
+          PendingAttestation::new);
+
+  @SuppressWarnings("unused")
+  private final Bitlist aggregation_bits =
+      new Bitlist(
+          0,
+          Constants
+              .MAX_VALIDATORS_PER_COMMITTEE); // bitlist bounded by MAX_VALIDATORS_PER_COMMITTEE
+
+  @SuppressWarnings("unused")
+  private final AttestationData data = null;
+
+  @SuppressWarnings("unused")
+  private final UnsignedLong inclusion_delay = null;
+
+  @SuppressWarnings("unused")
+  private final UnsignedLong proposer_index = null;
+
+  private PendingAttestation(ContainerViewType<PendingAttestation> type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public PendingAttestation(
       Bitlist aggregation_bitfield,
       AttestationData data,
       UnsignedLong inclusion_delay,
       UnsignedLong proposer_index) {
-    this.aggregation_bits = aggregation_bitfield;
-    this.data = data;
-    this.inclusion_delay = inclusion_delay;
-    this.proposer_index = proposer_index;
+    super(
+        TYPE,
+        ViewUtils.createBitlistView(aggregation_bitfield),
+        data,
+        new UInt64View(inclusion_delay),
+        new UInt64View(proposer_index));
   }
 
   public PendingAttestation() {
-    this.aggregation_bits =
-        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    this.data = null;
-    this.inclusion_delay = null;
-    this.proposer_index = null;
+    super(TYPE);
   }
 
   public PendingAttestation(PendingAttestation pendingAttestation) {
-    this.aggregation_bits = pendingAttestation.getAggregation_bits().copy();
-    this.data = pendingAttestation.getData();
-    this.inclusion_delay = pendingAttestation.getInclusion_delay();
-    this.proposer_index = pendingAttestation.getProposer_index();
+    super(TYPE, pendingAttestation.getBackingNode());
   }
 
   @Override
@@ -78,18 +108,18 @@ public class PendingAttestation
   @Override
   @JsonIgnore
   public int getSSZFieldCount() {
-    return data.getSSZFieldCount() + SSZ_FIELD_COUNT;
+    return getData().getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
     fixedPartsList.addAll(List.of(Bytes.EMPTY));
-    fixedPartsList.addAll(data.get_fixed_parts());
+    fixedPartsList.addAll(getData().get_fixed_parts());
     fixedPartsList.addAll(
         List.of(
-            SSZ.encodeUInt64(inclusion_delay.longValue()),
-            SSZ.encodeUInt64(proposer_index.longValue())));
+            SSZ.encodeUInt64(getInclusion_delay().longValue()),
+            SSZ.encodeUInt64(getProposer_index().longValue())));
     return fixedPartsList;
   }
 
@@ -101,15 +131,15 @@ public class PendingAttestation
     // Bytes serialized_aggregation_bits =
     // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
     // variablePartsList.addAll(List.of(serialized_aggregation_bits));
-    variablePartsList.addAll(List.of(aggregation_bits.serialize()));
-    variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
+    variablePartsList.addAll(List.of(getAggregation_bits().serialize()));
+    variablePartsList.addAll(Collections.nCopies(getData().getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
     return variablePartsList;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(aggregation_bits, data, inclusion_delay, proposer_index);
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -127,40 +157,47 @@ public class PendingAttestation
     }
 
     PendingAttestation other = (PendingAttestation) obj;
-    return Objects.equals(this.getAggregation_bits(), other.getAggregation_bits())
-        && Objects.equals(this.getData(), other.getData())
-        && Objects.equals(this.getInclusion_delay(), other.getInclusion_delay())
-        && Objects.equals(this.getProposer_index(), other.getProposer_index());
+    return hashTreeRoot().equals(other.hashTreeRoot());
+  }
+
+  @Override
+  public String toString() {
+    return "PendingAttestation{"
+        + "aggregation_bits="
+        + getAggregation_bits()
+        + ", data="
+        + getData()
+        + ", inclusion_delay="
+        + getInclusion_delay()
+        + ", proposer_index="
+        + getProposer_index()
+        + '}';
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+  @SuppressWarnings("unchecked")
+  @JsonProperty
   public Bitlist getAggregation_bits() {
-    return aggregation_bits;
+    return ViewUtils.getBitvector((ListViewRead<BitView>) get(0));
   }
 
+  @JsonProperty
   public AttestationData getData() {
-    return data;
+    return (AttestationData) get(1);
   }
 
+  @JsonProperty
   public UnsignedLong getInclusion_delay() {
-    return inclusion_delay;
+    return ((UInt64View) get(2)).get();
   }
 
+  @JsonProperty
   public UnsignedLong getProposer_index() {
-    return proposer_index;
+    return ((UInt64View) get(3)).get();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            // HashTreeUtil.hash_tree_root(
-            //   SSZTypes.BITLIST, Constants.MAX_VALIDATORS_PER_COMMITTEE, aggregation_bits),
-            HashTreeUtil.hash_tree_root_bitlist(aggregation_bits),
-            data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(inclusion_delay.longValue())),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue()))));
+    return hashTreeRoot();
   }
 }

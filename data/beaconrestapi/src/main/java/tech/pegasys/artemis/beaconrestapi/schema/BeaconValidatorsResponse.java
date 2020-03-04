@@ -19,12 +19,17 @@ import java.util.List;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconValidatorsResponse {
   public final List<ValidatorWithIndex> validatorList;
   private int totalSize;
   private int nextPageToken;
+
+  public BeaconValidatorsResponse(SSZList<Validator> sszList) {
+    this(sszList.asList());
+  }
 
   public BeaconValidatorsResponse(List<Validator> list) {
     this(
@@ -33,6 +38,15 @@ public class BeaconValidatorsResponse {
         Constants.FAR_FUTURE_EPOCH,
         RestApiConstants.PAGE_SIZE_DEFAULT,
         RestApiConstants.PAGE_TOKEN_DEFAULT);
+  }
+
+  public BeaconValidatorsResponse(
+      SSZList<Validator> list,
+      final boolean activeOnly,
+      final UnsignedLong epoch,
+      final int pageSize,
+      final int pageToken) {
+    this(list.asList(), activeOnly, epoch, pageSize, pageToken);
   }
 
   public BeaconValidatorsResponse(

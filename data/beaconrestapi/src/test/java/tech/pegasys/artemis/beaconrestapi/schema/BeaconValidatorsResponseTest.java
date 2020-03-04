@@ -17,13 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
 class BeaconValidatorsResponseTest {
@@ -31,7 +31,7 @@ class BeaconValidatorsResponseTest {
   @Test
   public void validatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(99);
-    List<Validator> validatorList = beaconState.getValidators();
+    SSZList<Validator> validatorList = beaconState.getValidators();
     BeaconValidatorsResponse response = new BeaconValidatorsResponse(validatorList);
     assertThat(response.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(response.validatorList.size())
@@ -117,7 +117,7 @@ class BeaconValidatorsResponseTest {
   @Test
   public void returnRemainderIfEdgeCasePageParams() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
-    final List<Validator> validators = beaconState.getValidators();
+    final SSZList<Validator> validators = beaconState.getValidators();
     final int validatorsSize = validators.size();
     final int suppliedPageSizeParam = validatorsSize / 10 - 1;
     final int suppliedPageTokenParam = 11;

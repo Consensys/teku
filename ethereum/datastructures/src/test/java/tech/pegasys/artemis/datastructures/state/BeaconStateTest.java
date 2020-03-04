@@ -35,6 +35,6 @@ class BeaconStateTest {
             Constants.EPOCHS_PER_SLASHINGS_VECTOR);
     assertEquals(
         vectorLengths,
-        SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).getVectorLengths());
+        SimpleOffsetSerializer.classReflectionInfo.get(BeaconStateImpl.class).getVectorLengths());
   }
 }

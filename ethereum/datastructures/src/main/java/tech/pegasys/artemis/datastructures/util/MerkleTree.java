@@ -82,7 +82,7 @@ public abstract class MerkleTree {
       itemIndex /= 2;
     }
     proof.add(calcMixInValue());
-    return new SSZVector<>(proof, Bytes32.class);
+    return SSZVector.createMutable(proof, Bytes32.class);
   }
 
   private Bytes32 calcViewBoundaryRoot(int depth, int viewLimit) {
@@ -146,7 +146,7 @@ public abstract class MerkleTree {
       itemIndex /= 2;
     }
     proof.add(calcMixInValue(viewLimit));
-    return new SSZVector<>(proof, Bytes32.class);
+    return SSZVector.createMutable(proof, Bytes32.class);
   }
 
   public Bytes32 calcMixInValue(int viewLimit) {

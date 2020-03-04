@@ -42,9 +42,12 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconValidatorsHandler implements Handler {
@@ -142,6 +145,13 @@ public class BeaconValidatorsHandler implements Handler {
       }
     }
     return intValue;
+  }
+
+  public static SSZList<Validator> getActiveValidators(BeaconState state) {
+    return state
+        .getValidators()
+        .filter(
+            v -> ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(state)));
   }
 
   private SafeFuture<Optional<BeaconState>> queryByRootHash(final Bytes32 root32) {

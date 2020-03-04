@@ -25,8 +25,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
@@ -40,7 +40,7 @@ public class SyncManager extends Service {
   private static final Duration LONG_DELAY = Duration.ofSeconds(20);
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Eth2Network network;
+  private final P2PNetwork<Eth2Peer> network;
   private final ChainStorageClient storageClient;
   private final PeerSync peerSync;
 
@@ -53,7 +53,7 @@ public class SyncManager extends Service {
 
   SyncManager(
       final AsyncRunner asyncRunner,
-      final Eth2Network network,
+      final P2PNetwork<Eth2Peer> network,
       final ChainStorageClient storageClient,
       final PeerSync peerSync) {
     this.asyncRunner = asyncRunner;
@@ -63,7 +63,7 @@ public class SyncManager extends Service {
   }
 
   public static SyncManager create(
-      final Eth2Network network,
+      final P2PNetwork<Eth2Peer> network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
     final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
