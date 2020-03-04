@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -95,5 +96,13 @@ class JsonProviderTest {
     BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
+  }
+
+  @Test
+  void committeeProviderShouldSerializeToJson() throws JsonProcessingException {
+    CommitteeAssignment committee =
+        new CommitteeAssignment(List.of(3, 4), UnsignedLong.ZERO, UnsignedLong.ONE);
+    String jsonCommittee = jsonProvider.objectToJSON(committee);
+    assertEquals("{\"slot\":1,\"index\":0,\"committee\":[3,4]}", jsonCommittee);
   }
 }

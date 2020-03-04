@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -46,6 +47,8 @@ public class JsonProvider {
     module.addSerializer(Bytes4.class, new Bytes4Serializer());
     module.addDeserializer(Bytes.class, new BytesDeserializer());
     module.addSerializer(Bytes.class, new BytesSerializer());
+
+    module.addSerializer(CommitteeAssignment.class, new CommitteeAssignmentSerializer());
 
     module.addDeserializer(UnsignedLong.class, new UnsignedLongDeserializer());
     module.addSerializer(UnsignedLong.class, new UnsignedLongSerializer());
