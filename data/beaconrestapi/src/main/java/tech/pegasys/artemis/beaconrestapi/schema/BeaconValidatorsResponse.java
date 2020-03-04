@@ -24,7 +24,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconValidatorsResponse {
   public final List<ValidatorWithIndex> validatorList;
-  private int totalSize;
+  private long totalSize;
   private int nextPageToken;
 
   public BeaconValidatorsResponse(SSZList<Validator> sszList) {
@@ -58,7 +58,7 @@ public class BeaconValidatorsResponse {
 
     if (pageSize > 0 && pageToken >= 0) {
       int offset = pageToken * pageSize;
-      this.totalSize = list.size();
+      this.totalSize = getEffectiveListSize(list, activeOnly, epoch);
       if (offset >= list.size()) {
         this.validatorList = List.of();
         this.nextPageToken = 0;
@@ -86,7 +86,7 @@ public class BeaconValidatorsResponse {
     }
   }
 
-  public int getTotalSize() {
+  public long getTotalSize() {
     return totalSize;
   }
 
@@ -102,5 +102,13 @@ public class BeaconValidatorsResponse {
       this.validator = validator;
       this.index = index;
     }
+  }
+
+  public static long getEffectiveListSize(List<Validator> list, boolean activeOnly, UnsignedLong epoch) {
+    if (!activeOnly) {
+      return list.size();
+    } else {
+      return list.stream().filter(v -> ValidatorsUtil.is_active_validator(v, epoch)).count();
+      }
   }
 }

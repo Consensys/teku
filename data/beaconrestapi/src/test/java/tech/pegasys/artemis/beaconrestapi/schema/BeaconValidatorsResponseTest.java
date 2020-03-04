@@ -17,9 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
 
+import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -53,10 +56,13 @@ class BeaconValidatorsResponseTest {
             BeaconStateUtil.get_current_epoch(beaconState),
             PAGE_SIZE_DEFAULT,
             PAGE_TOKEN_DEFAULT);
-    assertThat(validators.getTotalSize()).isLessThanOrEqualTo(beaconState.getValidators().size());
+    int expectedNextPageToken =
+        beaconState.getValidators().size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
+    long activeValidatorCount = BeaconValidatorsResponse.getEffectiveListSize(beaconState.getValidators().asList(), true, BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
     assertThat(validators.validatorList.size())
-        .isLessThanOrEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
-    assertThat(validators.getNextPageToken()).isLessThanOrEqualTo(PAGE_TOKEN_DEFAULT + 1);
+        .isEqualTo(Math.min(RestApiConstants.PAGE_SIZE_DEFAULT, activeValidatorCount));
+    assertThat(validators.getTotalSize()).isEqualTo(activeValidatorCount);
+    assertThat(validators.getNextPageToken()).isEqualTo(expectedNextPageToken);
   }
 
   @Test
@@ -136,5 +142,39 @@ class BeaconValidatorsResponseTest {
     assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT);
     assertThat(beaconValidators.validatorList.size()).isEqualTo(expectedRemainderSize);
+  }
+
+
+  @Test
+  public void getActiveValidatorsCount() {
+    BeaconState beaconState = DataStructureUtil.randomBeaconState(23);
+    MutableBeaconState beaconStateW = beaconState.createWritableCopy();
+
+    SSZList<Validator> allValidators = beaconState.getValidators();
+    long originalActiveValidatorCount = BeaconValidatorsResponse.getEffectiveListSize(allValidators.asList(), true, BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
+    int originalValidatorCount = allValidators.size();
+
+    assertThat(originalActiveValidatorCount)
+        .isLessThanOrEqualTo(beaconStateW.getValidators().size());
+
+    // create one validator which IS active and add it to the list
+    MutableValidator v = DataStructureUtil.randomValidator(77).createWritableCopy();
+    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
+    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+    beaconStateW.getValidators().add(v);
+    beaconStateW.commitChanges();
+
+    int updatedValidatorCount = beaconStateW.getValidators().size();
+    long updatedActiveValidatorCount = BeaconValidatorsResponse.getEffectiveListSize(beaconStateW.getValidators().asList(), true, BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
+
+    SSZList<Validator> updatedValidators = beaconStateW.getValidators();
+
+    assertThat(updatedValidators).contains(v);
+    assertThat(beaconStateW.getValidators()).contains(v);
+    assertThat(updatedValidatorCount).isEqualTo(originalValidatorCount + 1);
+    assertThat(updatedActiveValidatorCount).isLessThanOrEqualTo(updatedValidatorCount);
+    // same number of non-active validators before and after
+    assertThat(updatedValidatorCount - updatedActiveValidatorCount)
+        .isEqualTo(originalValidatorCount - originalActiveValidatorCount);
   }
 }

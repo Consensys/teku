@@ -454,14 +454,6 @@ public class BeaconStateUtil {
     slash_validator(state, slashed_index, -1);
   }
 
-  public static long get_active_validator_count(BeaconState state) {
-    return state.getValidators()
-        .filter(
-            v -> ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(state)))
-        .stream()
-        .count();
-  }
-
   /**
    * Return the block root at a recent ``epoch``.
    *
