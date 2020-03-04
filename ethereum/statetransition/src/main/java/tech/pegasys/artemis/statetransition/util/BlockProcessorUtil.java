@@ -66,9 +66,10 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
@@ -84,7 +85,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#block-header</a>
    */
-  public static void process_block_header(BeaconState state, BeaconBlock block)
+  public static void process_block_header(MutableBeaconState state, BeaconBlock block)
       throws BlockProcessingException {
     try {
       checkArgument(
@@ -121,7 +122,8 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#randao</a>
    */
-  public static void process_randao(BeaconState state, BeaconBlockBody body, boolean validateRandao)
+  public static void process_randao(
+      MutableBeaconState state, BeaconBlockBody body, boolean validateRandao)
       throws BlockProcessingException {
     try {
       UnsignedLong epoch = get_current_epoch(state);
@@ -157,7 +159,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#eth1-data</a>
    */
-  public static void process_eth1_data(BeaconState state, BeaconBlockBody body) {
+  public static void process_eth1_data(MutableBeaconState state, BeaconBlockBody body) {
     state.getEth1_data_votes().add(body.getEth1_data());
     long vote_count =
         state.getEth1_data_votes().stream()
@@ -177,7 +179,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#operations</a>
    */
-  public static void process_operations(BeaconState state, BeaconBlockBody body)
+  public static void process_operations(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
 
@@ -215,7 +217,8 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#proposer-slashings</a>
    */
   public static void process_proposer_slashings(
-      BeaconState state, List<ProposerSlashing> proposerSlashings) throws BlockProcessingException {
+      MutableBeaconState state, SSZList<ProposerSlashing> proposerSlashings)
+      throws BlockProcessingException {
     try {
       // For each proposer_slashing in block.body.proposer_slashings:
       for (ProposerSlashing proposer_slashing : proposerSlashings) {
@@ -287,7 +290,8 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attester-slashings</a>
    */
   public static void process_attester_slashings(
-      BeaconState state, List<AttesterSlashing> attesterSlashings) throws BlockProcessingException {
+      MutableBeaconState state, SSZList<AttesterSlashing> attesterSlashings)
+      throws BlockProcessingException {
     try {
 
       // For each attester_slashing in block.body.attester_slashings:
@@ -309,8 +313,9 @@ public final class BlockProcessorUtil {
 
         Set<UnsignedLong> indices =
             Sets.intersection(
-                new TreeSet<>(attestation_1.getAttesting_indices()), // TreeSet as must be sorted
-                new HashSet<>(attestation_2.getAttesting_indices()));
+                new TreeSet<>(
+                    attestation_1.getAttesting_indices().asList()), // TreeSet as must be sorted
+                new HashSet<>(attestation_2.getAttesting_indices().asList()));
 
         for (UnsignedLong index : indices) {
           if (is_slashable_validator(
@@ -337,8 +342,8 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
-  public static void process_attestations(BeaconState state, List<Attestation> attestations)
-      throws BlockProcessingException {
+  public static void process_attestations(
+      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
     try {
 
       for (Attestation attestation : attestations) {
@@ -414,7 +419,7 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
-  public static void process_deposits(BeaconState state, List<? extends Deposit> deposits)
+  public static void process_deposits(MutableBeaconState state, SSZList<? extends Deposit> deposits)
       throws BlockProcessingException {
     try {
       for (Deposit deposit : deposits) {
@@ -435,7 +440,8 @@ public final class BlockProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#voluntary-exits</a>
    */
-  public static void process_voluntary_exits(BeaconState state, List<SignedVoluntaryExit> exits)
+  public static void process_voluntary_exits(
+      MutableBeaconState state, SSZList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
     try {
 
