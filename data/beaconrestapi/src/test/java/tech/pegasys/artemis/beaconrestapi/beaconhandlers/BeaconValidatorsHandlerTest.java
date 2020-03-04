@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -274,6 +275,19 @@ public class BeaconValidatorsHandlerTest {
 
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenBadEpochParameterSpecified() throws Exception {
+    final BeaconValidatorsHandler handler =
+        new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    when(context.queryParamMap())
+        .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of("not-an-int")));
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
   }
 
   private BeaconState addActiveValidator(final BeaconState beaconState) {

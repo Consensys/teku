@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -99,32 +101,37 @@ public class BeaconValidatorsHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     final Map<String, List<String>> parameters = ctx.queryParamMap();
     SafeFuture<Optional<BeaconState>> future = null;
-    final boolean activeOnly = parameters.containsKey(ACTIVE);
-    int pageSize =
-        getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_SIZE, PAGE_SIZE_DEFAULT);
-    int pageToken =
-        getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
+    try {
+      final boolean activeOnly = parameters.containsKey(ACTIVE);
+      int pageSize =
+          getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_SIZE, PAGE_SIZE_DEFAULT);
+      int pageToken =
+          getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
 
-    Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
-    if (optionalRoot.isPresent()) {
-      if (parameters.containsKey(EPOCH)) {
-        future = queryByEpoch(validateQueryParameter(parameters, EPOCH), optionalRoot.get());
+      Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
+      if (optionalRoot.isPresent()) {
+        if (parameters.containsKey(EPOCH)) {
+          future = queryByEpoch(validateQueryParameter(parameters, EPOCH), optionalRoot.get());
+        } else {
+          future = queryByRootHash(optionalRoot.get());
+        }
+        ctx.result(
+            future.thenApplyChecked(
+                state -> {
+                  if (state.isEmpty()) {
+                    // empty list
+                    return jsonProvider.objectToJSON(produceEmptyListResponse());
+                  } else {
+                    return jsonProvider.objectToJSON(
+                        produceResponse(state.get(), activeOnly, pageSize, pageToken));
+                  }
+                }));
       } else {
-        future = queryByRootHash(optionalRoot.get());
+        ctx.status(SC_NO_CONTENT);
       }
-      ctx.result(
-          future.thenApplyChecked(
-              state -> {
-                if (state.isEmpty()) {
-                  // empty list
-                  return jsonProvider.objectToJSON(produceEmptyListResponse());
-                } else {
-                  return jsonProvider.objectToJSON(
-                      produceResponse(state.get(), activeOnly, pageSize, pageToken));
-                }
-              }));
-    } else {
-      ctx.status(SC_NO_CONTENT);
+    } catch (final IllegalArgumentException e) {
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.status(SC_BAD_REQUEST);
     }
   }
 
