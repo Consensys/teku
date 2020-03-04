@@ -36,7 +36,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 
 public class CommitteeUtil {
 
@@ -154,7 +154,7 @@ public class CommitteeUtil {
    */
   public static List<Integer> get_beacon_committee(
       BeaconState state, UnsignedLong slot, UnsignedLong index) {
-    return BeaconStateWithCache.getTransitionCaches(state)
+    return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
             Pair.of(slot, index),

@@ -20,7 +20,8 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 
 public class MockStartBeaconStateGenerator {
 
@@ -32,7 +33,7 @@ public class MockStartBeaconStateGenerator {
     BLOCK_HASH = Bytes32.wrap(eth1BlockHashBytes);
   }
 
-  public BeaconStateWithCache createInitialBeaconState(
+  public BeaconState createInitialBeaconState(
       final UnsignedLong genesisTime, final List<DepositData> initialDepositData) {
     final List<DepositWithIndex> deposits = new ArrayList<>();
     for (int index = 0; index < initialDepositData.size(); index++) {
@@ -40,9 +41,10 @@ public class MockStartBeaconStateGenerator {
       DepositWithIndex deposit = new DepositWithIndex(data, UnsignedLong.valueOf(index));
       deposits.add(deposit);
     }
-    final BeaconStateWithCache initialState =
-        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, genesisTime, deposits);
+    final MutableBeaconState initialState =
+        BeaconStateUtil.initialize_beacon_state_from_eth1(BLOCK_HASH, genesisTime, deposits)
+            .createWritableCopy();
     initialState.setGenesis_time(genesisTime);
-    return initialState;
+    return initialState.commitChanges();
   }
 }

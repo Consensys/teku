@@ -48,7 +48,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -69,7 +68,7 @@ class MockStartBeaconStateGeneratorTest {
     final List<DepositData> deposits =
         new MockStartDepositGenerator().createDeposits(validatorKeyPairs);
 
-    final BeaconStateWithCache initialBeaconState =
+    final BeaconState initialBeaconState =
         new MockStartBeaconStateGenerator().createInitialBeaconState(genesisTime, deposits);
 
     assertEquals(validatorCount, initialBeaconState.getValidators().size());
@@ -178,7 +177,7 @@ class MockStartBeaconStateGeneratorTest {
         new ExclusionStrategy() {
           @Override
           public boolean shouldSkipField(FieldAttributes field) {
-            return field.getDeclaringClass() == BeaconStateWithCache.class;
+            return BeaconState.class.isAssignableFrom(field.getDeclaringClass());
           }
 
           @Override

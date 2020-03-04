@@ -56,4 +56,7 @@ public class NoOpCache<K, V> implements Cache<K, V> {
   public Cache<K, V> copy() {
     return this;
   }
+
+  @Override
+  public void clear() {}
 }
