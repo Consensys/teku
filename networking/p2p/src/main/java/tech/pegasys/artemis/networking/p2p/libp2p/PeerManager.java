@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
@@ -23,6 +24,7 @@ import io.libp2p.core.multiformats.Multiaddr;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
@@ -63,7 +65,6 @@ public class PeerManager implements ConnectionHandler {
   public void handleConnection(@NotNull final Connection connection) {
     Peer peer = new LibP2PPeer(connection, rpcHandlers);
     onConnectedPeer(peer);
-    SafeFuture.of(connection.closeFuture()).finish(() -> onDisconnectedPeer(peer));
   }
 
   public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
@@ -78,8 +79,32 @@ public class PeerManager implements ConnectionHandler {
     LOG.debug("Connecting to {}", peer);
     return SafeFuture.of(network.connect(peer))
         .thenApply(
-            connection ->
-                connectedPeerMap.get(new LibP2PNodeId(connection.secureSession().getRemoteId())));
+            connection -> {
+              final LibP2PNodeId nodeId =
+                  new LibP2PNodeId(connection.secureSession().getRemoteId());
+              final Peer connectedPeer = connectedPeerMap.get(nodeId);
+              if (connectedPeer == null) {
+                if (connection.closeFuture().isDone()) {
+                  // Connection has been immediately closed and the peer already removed
+                  // Since the connection is closed anyway, we can create a new peer to wrap it.
+                  return new LibP2PPeer(connection, rpcHandlers);
+                } else {
+                  // Theoretically this should never happen because removing from the map is done
+                  // by the close future completing, but make a loud noise just in case.
+                  throw new IllegalStateException(
+                      "No peer registered for established connection to " + nodeId);
+                }
+              }
+              return connectedPeer;
+            })
+        .exceptionallyCompose(this::handleConcurrentConnectionInitiation);
+  }
+
+  private CompletionStage<Peer> handleConcurrentConnectionInitiation(final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    return rootCause instanceof PeerAlreadyConnectedException
+        ? SafeFuture.completedFuture(((PeerAlreadyConnectedException) rootCause).getPeer())
+        : SafeFuture.failedFuture(error);
   }
 
   public Optional<Peer> getPeer(NodeId id) {
@@ -93,6 +118,10 @@ public class PeerManager implements ConnectionHandler {
       STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
       connectSubscribers.forEach(c -> c.onConnected(peer));
+      peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
+    } else {
+      LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
+      throw new PeerAlreadyConnectedException(peer);
     }
   }
 
@@ -110,5 +139,26 @@ public class PeerManager implements ConnectionHandler {
 
   public int getPeerCount() {
     return connectedPeerMap.size();
+  }
+
+  /**
+   * Indicates that two connections to the same PeerID were incorrectly established.
+   *
+   * <p>LibP2P usually detects attempts to establish multiple connections at the same time, but if
+   * we have incoming and outgoing connections simultaneously to the same peer, sometimes it slips
+   * through. In that case this exception is thrown so that the new connection is terminated before
+   * handshakes complete and we are able to identify the situation and return the existing peer.
+   */
+  private static class PeerAlreadyConnectedException extends RuntimeException {
+    private final Peer peer;
+
+    public PeerAlreadyConnectedException(final Peer peer) {
+      super("Already connected to peer " + peer.getId().toBase58());
+      this.peer = peer;
+    }
+
+    public Peer getPeer() {
+      return peer;
+    }
   }
 }

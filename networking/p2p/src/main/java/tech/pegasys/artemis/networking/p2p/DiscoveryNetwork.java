@@ -102,6 +102,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             });
   }
 
+  public void addStaticPeer(final String peer) {
+    connectionManager.addStaticPeer(peer);
+  }
+
   @Override
   public Optional<String> getEnr() {
     return discoveryService.getEnr();
