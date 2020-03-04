@@ -13,15 +13,18 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class CommitteesResponse {
-  public final List<CommitteeAssignment> committeeAssignments;
+public class CommitteeAssignment {
+  public final UnsignedLong slot;
+  public final UnsignedLong index;
+  public final List<Integer> committee;
 
-  public CommitteesResponse(
-      List<tech.pegasys.artemis.datastructures.state.CommitteeAssignment> committeeAssignments) {
-    this.committeeAssignments =
-        committeeAssignments.stream().map(CommitteeAssignment::new).collect(Collectors.toList());
+  public CommitteeAssignment(
+      tech.pegasys.artemis.datastructures.state.CommitteeAssignment committeeAssignment) {
+    this.slot = committeeAssignment.getSlot();
+    this.index = committeeAssignment.getCommitteeIndex();
+    this.committee = committeeAssignment.getCommittee();
   }
 }
