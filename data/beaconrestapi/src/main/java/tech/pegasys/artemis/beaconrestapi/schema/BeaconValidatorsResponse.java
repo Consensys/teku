@@ -104,11 +104,12 @@ public class BeaconValidatorsResponse {
     }
   }
 
-  public static long getEffectiveListSize(List<Validator> list, boolean activeOnly, UnsignedLong epoch) {
+  public static long getEffectiveListSize(
+      List<Validator> list, boolean activeOnly, UnsignedLong epoch) {
     if (!activeOnly) {
       return list.size();
     } else {
       return list.stream().filter(v -> ValidatorsUtil.is_active_validator(v, epoch)).count();
-      }
+    }
   }
 }

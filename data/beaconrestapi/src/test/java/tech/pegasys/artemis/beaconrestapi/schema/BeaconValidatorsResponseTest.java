@@ -58,7 +58,11 @@ class BeaconValidatorsResponseTest {
             PAGE_TOKEN_DEFAULT);
     int expectedNextPageToken =
         beaconState.getValidators().size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
-    long activeValidatorCount = BeaconValidatorsResponse.getEffectiveListSize(beaconState.getValidators().asList(), true, BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
+    long activeValidatorCount =
+        BeaconValidatorsResponse.getEffectiveListSize(
+            beaconState.getValidators().asList(),
+            true,
+            BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
     assertThat(validators.validatorList.size())
         .isEqualTo(Math.min(RestApiConstants.PAGE_SIZE_DEFAULT, activeValidatorCount));
     assertThat(validators.getTotalSize()).isEqualTo(activeValidatorCount);
@@ -144,14 +148,17 @@ class BeaconValidatorsResponseTest {
     assertThat(beaconValidators.validatorList.size()).isEqualTo(expectedRemainderSize);
   }
 
-
   @Test
   public void getActiveValidatorsCount() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(23);
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
     SSZList<Validator> allValidators = beaconState.getValidators();
-    long originalActiveValidatorCount = BeaconValidatorsResponse.getEffectiveListSize(allValidators.asList(), true, BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
+    long originalActiveValidatorCount =
+        BeaconValidatorsResponse.getEffectiveListSize(
+            allValidators.asList(),
+            true,
+            BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
     int originalValidatorCount = allValidators.size();
 
     assertThat(originalActiveValidatorCount)
@@ -165,7 +172,11 @@ class BeaconValidatorsResponseTest {
     beaconStateW.commitChanges();
 
     int updatedValidatorCount = beaconStateW.getValidators().size();
-    long updatedActiveValidatorCount = BeaconValidatorsResponse.getEffectiveListSize(beaconStateW.getValidators().asList(), true, BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
+    long updatedActiveValidatorCount =
+        BeaconValidatorsResponse.getEffectiveListSize(
+            beaconStateW.getValidators().asList(),
+            true,
+            BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
 
     SSZList<Validator> updatedValidators = beaconStateW.getValidators();
 
