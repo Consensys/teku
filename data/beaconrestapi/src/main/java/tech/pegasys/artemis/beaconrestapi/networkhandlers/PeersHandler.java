@@ -46,7 +46,7 @@ public class PeersHandler implements Handler {
       summary = "Get an array containing the PeerId Strings of each connected peer.",
       tags = {TAG_NETWORK},
       description =
-          "Requests that the beacon node return a String array containing one base58 encoded MultiAddr for each connected peer.",
+          "Returns the base58-encoded multiaddr of each peer connected to the beacon node.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
