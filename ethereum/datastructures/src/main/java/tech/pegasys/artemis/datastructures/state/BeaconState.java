@@ -443,8 +443,7 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
     UnsignedLong currentEpoch = getCurrent_justified_checkpoint().getEpoch();
     List<Validator> activeValidatorsList =
         getValidators().stream()
-            .filter(
-                v -> ValidatorsUtil.is_active_validator(v, currentEpoch))
+            .filter(v -> ValidatorsUtil.is_active_validator(v, currentEpoch))
             .collect(Collectors.toList());
     final SSZList<Validator> activeValidators =
         new SSZList<>(Validator.class, activeValidatorsList.size());

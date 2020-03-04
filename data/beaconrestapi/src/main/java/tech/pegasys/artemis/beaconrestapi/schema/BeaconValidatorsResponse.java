@@ -13,18 +13,21 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
+import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.artemis.datastructures.state.Validator;
 
 public class BeaconValidatorsResponse {
-  public final List<?> validatorList;
+  public final List<ValidatorWithIndex> validatorList;
   private int totalSize;
   private int nextPageToken;
 
-  public BeaconValidatorsResponse(List<?> list) {
+  public BeaconValidatorsResponse(List<Validator> list) {
     this(list, 20, 0);
   }
 
-  public BeaconValidatorsResponse(final List<?> list, final int pageSize, final int pageToken) {
+  public BeaconValidatorsResponse(
+      final List<Validator> list, final int pageSize, final int pageToken) {
     if (pageSize > 0 && pageToken >= 0) {
       int offset = pageToken * pageSize;
       this.totalSize = list.size();
@@ -33,7 +36,10 @@ public class BeaconValidatorsResponse {
         this.nextPageToken = 0;
         return;
       }
-      this.validatorList = list.subList(offset, Math.min(offset + pageSize, list.size()));
+      validatorList = new ArrayList<>();
+      for (int i = offset; i < Math.min(offset + pageSize, list.size()); i++) {
+        validatorList.add(new ValidatorWithIndex(list.get(i), i));
+      }
       if (totalSize == 0 || offset + pageSize >= list.size()) {
         this.nextPageToken = 0;
       } else {
@@ -52,5 +58,15 @@ public class BeaconValidatorsResponse {
 
   public int getNextPageToken() {
     return nextPageToken;
+  }
+
+  public static class ValidatorWithIndex {
+    public Validator validator;
+    public int index;
+
+    public ValidatorWithIndex(Validator validator, int index) {
+      this.validator = validator;
+      this.index = index;
+    }
   }
 }

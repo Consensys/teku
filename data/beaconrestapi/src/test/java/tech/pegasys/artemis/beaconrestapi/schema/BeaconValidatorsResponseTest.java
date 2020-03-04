@@ -29,11 +29,14 @@ class BeaconValidatorsResponseTest {
   @Test
   public void validatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(99);
-    BeaconValidatorsResponse validators = new BeaconValidatorsResponse(beaconState.getValidators());
-    assertThat(validators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(validators.validatorList.size())
+    List<Validator> validatorList = beaconState.getValidators();
+    BeaconValidatorsResponse response = new BeaconValidatorsResponse(validatorList);
+    assertThat(response.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(response.validatorList.size())
         .isLessThanOrEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
-    assertThat(validators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
+    assertThat(response.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
+    assertThat(response.validatorList.get(0).validator).isEqualTo(validatorList.get(0));
+    assertThat(response.validatorList.get(0).index).isEqualTo(0);
   }
 
   @Test

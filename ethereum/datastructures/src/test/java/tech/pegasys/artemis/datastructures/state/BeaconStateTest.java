@@ -44,13 +44,17 @@ class BeaconStateTest {
     // create one validator which IS active and add it to the list
     Validator v = DataStructureUtil.randomValidator(77);
     v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()).minus(UnsignedLong.ONE));
+    v.setActivation_epoch(
+        BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()).minus(UnsignedLong.ONE));
     allValidators.add(v);
     beaconState.setValidators(allValidators);
     int updatedValidatorCount = allValidators.size();
     List<Validator> updatedActiveValidators = beaconState.getActiveValidators();
 
-    assertThat(ValidatorsUtil.is_active_validator(v, BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()))).isTrue();
+    assertThat(
+            ValidatorsUtil.is_active_validator(
+                v, BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot())))
+        .isTrue();
     assertThat(updatedActiveValidators).contains(v);
     assertThat(beaconState.getValidators()).contains(v);
     assertThat(beaconState.getValidators()).containsAll(updatedActiveValidators);
