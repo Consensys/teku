@@ -106,7 +106,8 @@ public class BeaconValidatorsHandler implements Handler {
       int pageSize =
           getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_SIZE, PAGE_SIZE_DEFAULT);
       int pageToken =
-          getPositiveIntegerValueWithDefaultIfNotSupplied(parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
+          getPositiveIntegerValueWithDefaultIfNotSupplied(
+              parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
 
       Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
       if (optionalRoot.isPresent()) {
