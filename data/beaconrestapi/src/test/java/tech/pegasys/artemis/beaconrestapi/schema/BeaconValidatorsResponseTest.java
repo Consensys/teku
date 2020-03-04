@@ -35,8 +35,10 @@ class BeaconValidatorsResponseTest {
     BeaconValidatorsResponse response = new BeaconValidatorsResponse(validatorList);
     assertThat(response.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(response.validatorList.size())
-        .isLessThanOrEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
-    assertThat(response.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
+        .isEqualTo(Math.min(validatorList.size(), RestApiConstants.PAGE_SIZE_DEFAULT));
+    int expectedNextPageToken =
+        validatorList.size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
+    assertThat(response.getNextPageToken()).isEqualTo(expectedNextPageToken);
     assertThat(response.validatorList.get(0).validator).isEqualTo(validatorList.get(0));
     assertThat(response.validatorList.get(0).index).isEqualTo(0);
   }
