@@ -13,63 +13,23 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-@JsonSerialize(as = ArrayList.class)
-public class SSZVector<T> extends ArrayList<T> {
+public interface SSZVector<T> extends SSZImmutableCollection<T> {
 
-  private int maxSize;
-  private Class<T> classInfo;
-
-  public SSZVector() throws UnsupportedOperationException {
-    throw new UnsupportedOperationException("SSZVector must have specified size");
+  static <T> SSZMutableVector<T> createMutable(int size, T object) {
+    return new SSZArrayCollection<T>(size, object, true);
   }
 
-  @SuppressWarnings("unchecked")
-  public SSZVector(int size, T object) {
-    super(Collections.nCopies(size, object));
-    this.maxSize = size;
-    classInfo = (Class<T>) object.getClass();
+  static <T> SSZMutableVector<T> createMutable(Class<T> classInfo, int size) {
+    return new SSZArrayCollection<T>(classInfo, size, true);
   }
 
-  public SSZVector(List<T> list, Class<T> classInfo) {
-    super(list);
-    maxSize = list.size();
-    this.classInfo = classInfo;
+  static <T> SSZMutableVector<T> createMutable(List<T> list, Class<T> classInfo) {
+    return new SSZArrayCollection<>(list, list.size(), classInfo, true);
   }
 
-  @JsonCreator
-  @SuppressWarnings("unchecked")
-  public SSZVector(List<T> list) {
-    super(list);
-    maxSize = list.size();
-    if (maxSize < 1) {
-      throw new UnsupportedOperationException(
-          "SSZVector must have at least 1 element in the list used to initialize");
-    }
-    this.classInfo = (Class<T>) list.get(0).getClass();
-  }
-
-  public SSZVector(SSZVector<T> list) {
-    super(list);
-    maxSize = list.size();
-    this.classInfo = list.getElementType();
-  }
-
-  public int getSize() {
-    return maxSize;
-  }
-
-  @Override
-  public boolean add(T object) {
-    throw new UnsupportedOperationException("SSZVector does not support add, only set");
-  }
-
-  public Class<T> getElementType() {
-    return classInfo;
+  static <T> SSZVector<T> copy(SSZVector<T> vector) {
+    return new SSZArrayCollection<T>(vector.asList(), vector.size(), vector.getElementType(), true);
   }
 }

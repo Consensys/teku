@@ -40,4 +40,7 @@ public interface Cache<K, V> {
 
   /** Creates independent copy of this Cache instance */
   Cache<K, V> copy();
+
+  /** Clears all cached values */
+  void clear();
 }

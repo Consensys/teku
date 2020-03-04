@@ -13,48 +13,79 @@
 
 package tech.pegasys.artemis.util.SSZTypes;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.common.base.Preconditions;
+import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@JsonSerialize(as = ArrayList.class)
-public class SSZList<T> extends ArrayList<T> {
+public interface SSZList<T> extends SSZImmutableCollection<T> {
 
-  private long maxSize;
-  private Class<T> classInfo;
-
-  public SSZList(Class<T> classInfo, long maxSize) {
-    super();
-    this.classInfo = classInfo;
-    this.maxSize = maxSize;
+  static <T> SSZMutableList<T> createMutable(Class<? extends T> classInfo, long maxSize) {
+    return new SSZArrayCollection<>(classInfo, maxSize, false);
   }
 
-  public SSZList(SSZList<T> list) {
-    super(list);
-    maxSize = list.getMaxSize();
-    this.classInfo = list.getElementType();
+  static <T> SSZMutableList<T> createMutable(
+      Stream<T> list, long maxSize, Class<? extends T> classInfo) {
+    return new SSZArrayCollection<>(list.collect(Collectors.toList()), maxSize, classInfo, false);
   }
 
-  public SSZList(List<T> list, long maxSize, Class<T> classInfo) {
-    super(list);
-    this.maxSize = maxSize;
-    this.classInfo = classInfo;
+  static <T> SSZMutableList<T> createMutable(
+      Collection<T> list, long maxSize, Class<? extends T> classInfo) {
+    return createMutable(list.stream(), maxSize, classInfo);
   }
 
-  @Override
-  public boolean add(T object) {
-    if (super.size() < maxSize) {
-      return super.add(object);
-    } else {
-      return false;
+  static <T> SSZMutableList<T> createMutable(SSZImmutableCollection<? extends T> list) {
+    return new SSZArrayCollection<>(list.asList(), list.getMaxSize(), list.getElementType(), false);
+  }
+
+  static <T> SSZMutableList<T> concat(
+      SSZImmutableCollection<? extends T> left, SSZImmutableCollection<? extends T> right) {
+    Preconditions.checkArgument(
+        left.getElementType().equals(right.getElementType()),
+        "Incompatible list types: %s != %s",
+        left.getElementType(),
+        right.getElementType());
+    SSZMutableList<T> ret =
+        createMutable(left.getElementType(), left.getMaxSize() + right.getMaxSize());
+    ret.addAll(left);
+    ret.addAll(right);
+    return ret;
+  }
+
+  static <T> SSZList<T> singleton(T obj) {
+    return new SSZArrayCollection<>(1, obj, false);
+  }
+
+  default SSZList<T> reversed() {
+    SSZMutableList<T> ret = createMutable(getElementType(), getMaxSize());
+    for (int i = size() - 1; i >= 0; i--) {
+      ret.add(get(i));
     }
+    return ret;
   }
 
-  public long getMaxSize() {
-    return maxSize;
+  default SSZList<T> modified(Function<Stream<T>, Stream<T>> streamer) {
+    return modified(getElementType(), streamer);
   }
 
-  public Class<T> getElementType() {
-    return classInfo;
+  default <D> SSZList<D> modified(
+      Class<? extends D> newElementType, Function<Stream<T>, Stream<D>> streamer) {
+    return createMutable(streamer.apply(stream()), getMaxSize(), newElementType);
+  }
+
+  default <D> SSZList<D> map(Class<? extends D> newElementType, Function<T, D> streamer) {
+    return modified(newElementType, steam -> stream().map(streamer));
+  }
+
+  default SSZList<T> filter(Predicate<T> filter) {
+    return modified(steam -> stream().filter(filter));
+  }
+
+  @SuppressWarnings("unchecked")
+  default T[] toArray() {
+    return asList().toArray((T[]) Array.newInstance(getElementType(), 0));
   }
 }
