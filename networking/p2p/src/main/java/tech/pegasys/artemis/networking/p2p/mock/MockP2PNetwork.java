@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.mock;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -24,7 +25,7 @@ import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class MockP2PNetwork implements P2PNetwork<Peer> {
+public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   private final int port = 6000;
   private final NodeId nodeId = new MockNodeId();
 
@@ -33,12 +34,17 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public SafeFuture<?> connect(String peer) {
+  public SafeFuture<Peer> connect(String peer) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 
   @Override
-  public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
+  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  }
+
+  @Override
+  public long subscribeConnect(final PeerConnectedSubscriber<P> subscriber) {
     return 0;
   }
 
@@ -48,12 +54,12 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public Optional<Peer> getPeer(final NodeId id) {
+  public Optional<P> getPeer(final NodeId id) {
     return Optional.empty();
   }
 
   @Override
-  public Stream<Peer> streamPeers() {
+  public Stream<P> streamPeers() {
     return Stream.empty();
   }
 
@@ -70,6 +76,11 @@ public class MockP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public NodeId getNodeId() {
     return nodeId;
+  }
+
+  @Override
+  public Optional<String> getEnr() {
+    return Optional.empty();
   }
 
   /** Stops the P2P network layer. */

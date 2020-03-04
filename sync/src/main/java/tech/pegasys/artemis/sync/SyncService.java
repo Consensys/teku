@@ -14,7 +14,8 @@
 package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -27,7 +28,7 @@ public class SyncService extends Service {
 
   public SyncService(
       final EventBus eventBus,
-      final Eth2Network network,
+      final P2PNetwork<Eth2Peer> network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
     this.syncManager = SyncManager.create(network, storageClient, blockImporter);

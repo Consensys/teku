@@ -11,22 +11,39 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.discovery;
+package tech.pegasys.artemis.networking.p2p.discovery.noop;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public interface DiscoveryService {
+public class NoOpDiscoveryService implements DiscoveryService {
 
-  SafeFuture<?> start();
+  @Override
+  public SafeFuture<?> start() {
+    return SafeFuture.COMPLETE;
+  }
 
-  SafeFuture<?> stop();
+  @Override
+  public SafeFuture<?> stop() {
+    return SafeFuture.COMPLETE;
+  }
 
-  Stream<DiscoveryPeer> streamKnownPeers();
+  @Override
+  public Stream<DiscoveryPeer> streamKnownPeers() {
+    return Stream.empty();
+  }
 
-  CompletableFuture<Void> searchForPeers();
+  @Override
+  public CompletableFuture<Void> searchForPeers() {
+    return SafeFuture.COMPLETE;
+  }
 
-  Optional<String> getEnr();
+  @Override
+  public Optional<String> getEnr() {
+    return Optional.empty();
+  }
 }

@@ -24,14 +24,11 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
-import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class PeerManagerTest {
 
-  private final StubAsyncRunner asynRunner = new StubAsyncRunner();
   private final PeerManager peerManager =
-      new PeerManager(
-          asynRunner, new NoOpMetricsSystem(), Collections.emptyList(), Collections.emptyMap());
+      new PeerManager(new NoOpMetricsSystem(), Collections.emptyList(), Collections.emptyMap());
 
   @Test
   public void subscribeConnect_singleListener() {
@@ -42,13 +39,13 @@ public class PeerManagerTest {
 
     // Add a peer
     final Peer peer = mock(Peer.class);
-    when(peer.getId()).thenReturn(new MockNodeId());
+    when(peer.getId()).thenReturn(new MockNodeId(1));
     peerManager.onConnectedPeer(peer);
     assertThat(connectedPeers).containsExactly(peer);
 
     // Add another peer
     final Peer peer2 = mock(Peer.class);
-    when(peer2.getId()).thenReturn(new MockNodeId());
+    when(peer2.getId()).thenReturn(new MockNodeId(2));
     peerManager.onConnectedPeer(peer2);
     assertThat(connectedPeers).containsExactly(peer, peer2);
   }
@@ -63,7 +60,7 @@ public class PeerManagerTest {
     assertThat(connectedPeers).isEmpty();
 
     final Peer peer = mock(Peer.class);
-    when(peer.getId()).thenReturn(new MockNodeId());
+    when(peer.getId()).thenReturn(new MockNodeId(1));
     peerManager.onConnectedPeer(peer);
 
     assertThat(connectedPeers).containsExactly(peer);
