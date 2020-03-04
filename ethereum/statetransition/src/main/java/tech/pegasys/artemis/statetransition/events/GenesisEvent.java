@@ -13,16 +13,16 @@
 
 package tech.pegasys.artemis.statetransition.events;
 
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 
 public class GenesisEvent {
-  private final BeaconStateWithCache beaconState;
+  private final BeaconState beaconState;
 
-  public GenesisEvent(BeaconStateWithCache beaconState) {
+  public GenesisEvent(BeaconState beaconState) {
     this.beaconState = beaconState;
   }
 
-  public BeaconStateWithCache getBeaconState() {
+  public BeaconState getBeaconState() {
     return beaconState;
   }
 }

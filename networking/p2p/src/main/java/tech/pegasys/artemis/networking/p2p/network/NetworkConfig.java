@@ -22,7 +22,9 @@ public class NetworkConfig {
   private final String networkInterface;
   private final int listenPort;
   private final int advertisedPort;
-  private final List<String> peers;
+  private final List<String> staticPeers;
+  private final String discoveryMethod;
+  private final List<String> bootnodes;
   private final boolean logWireCipher;
   private final boolean logWirePlain;
   private final boolean logMuxFrames;
@@ -32,7 +34,9 @@ public class NetworkConfig {
       final String networkInterface,
       final int listenPort,
       final int advertisedPort,
-      final List<String> peers,
+      final List<String> staticPeers,
+      final String discoveryMethod,
+      final List<String> bootnodes,
       final boolean logWireCipher,
       final boolean logWirePlain,
       final boolean logMuxFrames) {
@@ -40,7 +44,9 @@ public class NetworkConfig {
     this.networkInterface = networkInterface;
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
-    this.peers = peers;
+    this.staticPeers = staticPeers;
+    this.discoveryMethod = discoveryMethod;
+    this.bootnodes = bootnodes;
     this.logWireCipher = logWireCipher;
     this.logWirePlain = logWirePlain;
     this.logMuxFrames = logMuxFrames;
@@ -62,8 +68,16 @@ public class NetworkConfig {
     return advertisedPort;
   }
 
-  public List<String> getPeers() {
-    return peers;
+  public List<String> getStaticPeers() {
+    return staticPeers;
+  }
+
+  public String getDiscoveryMethod() {
+    return discoveryMethod;
+  }
+
+  public List<String> getBootnodes() {
+    return bootnodes;
   }
 
   public boolean isLogWireCipher() {
