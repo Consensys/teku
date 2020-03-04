@@ -259,7 +259,7 @@ public class BeaconValidatorsHandlerTest {
     // create an ACTIVE validator and add it to the list
     Validator v = DataStructureUtil.randomValidator(88);
     v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch());
+    v.setActivation_epoch(BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
     allValidators.add(v);
     beaconState.setValidators(allValidators);
     return beaconState;
