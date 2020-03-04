@@ -13,29 +13,30 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
+import java.util.ArrayList;
+import java.util.List;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 public class BeaconValidatorsResponse {
-  public final SSZList<Validator> validatorList;
+  public final List<Validator> validatorList;
   private int totalSize;
   private int nextPageToken;
 
-  public BeaconValidatorsResponse(SSZList<Validator> validatorList) {
+  public BeaconValidatorsResponse(List<Validator> validatorList) {
     this(validatorList, 20, 0);
   }
 
   public BeaconValidatorsResponse(
-      SSZList<Validator> validatorList, final int pageSize, final int pageToken) {
+      List<Validator> validatorList, final int pageSize, final int pageToken) {
     // first page is pageToken = 0
     if (pageSize > 0 && pageToken >= 0) {
       int offset = pageToken * pageSize;
-      SSZList<Validator> pageOfValidators = new SSZList<>(Validator.class, pageSize);
+      List<Validator> pageOfValidators = new ArrayList<Validator>();
       this.totalSize = validatorList.size();
       this.nextPageToken = totalSize == 0 ? 0 : pageToken + 1;
       // if the offset is outside the bounds, just return the list as is
       if (offset >= validatorList.size()) {
-        this.validatorList = new SSZList<>(Validator.class, 0);
+        this.validatorList = new ArrayList<Validator>();
         return;
       }
       // otherwise get a page of results
@@ -44,7 +45,7 @@ public class BeaconValidatorsResponse {
       }
       this.validatorList = pageOfValidators;
     } else {
-      this.validatorList = new SSZList<>(Validator.class, 0);
+      this.validatorList = new ArrayList<Validator>();
       this.totalSize = validatorList.size();
       this.nextPageToken = 0;
     }

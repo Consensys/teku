@@ -36,7 +36,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
-import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
@@ -121,10 +120,6 @@ public class BeaconValidatorsHandlerTest {
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(beaconState.getValidators());
 
-    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
-    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
-
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
 
@@ -150,11 +145,6 @@ public class BeaconValidatorsHandlerTest {
 
     BeaconValidatorsResponse beaconActiveValidators =
         new BeaconValidatorsResponse(beaconStateWithAddedActiveValidator.getActiveValidators());
-    assertThat(beaconActiveValidators.getTotalSize())
-        .isEqualTo(beaconState.getActiveValidators().size());
-    assertThat(beaconActiveValidators.validatorList.size())
-        .isLessThanOrEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
-    assertThat(beaconActiveValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateWithAddedActiveValidator)));
@@ -213,9 +203,6 @@ public class BeaconValidatorsHandlerTest {
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
             beaconState.getValidators(), suppliedPageSizeParam, PAGE_TOKEN_DEFAULT);
-    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
-    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
@@ -252,9 +239,6 @@ public class BeaconValidatorsHandlerTest {
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
             beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
-    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
-    assertThat(beaconValidators.getNextPageToken()).isEqualTo(suppliedPageTokenParam + 1);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));

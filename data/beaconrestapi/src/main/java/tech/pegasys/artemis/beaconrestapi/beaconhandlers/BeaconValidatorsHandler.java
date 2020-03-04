@@ -70,7 +70,9 @@ public class BeaconValidatorsHandler implements Handler {
       description =
           "Returns validator information. If no parameters specified, the first page of current validators are returned.",
       queryParams = {
-        @OpenApiParam(name = EPOCH, description = "Epoch to query"),
+        @OpenApiParam(
+            name = EPOCH,
+            description = "Epoch to query. If not specified, current epoch is used."),
         @OpenApiParam(
             name = ACTIVE,
             description =
