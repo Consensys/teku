@@ -31,7 +31,8 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   /**
    * Connects to a Peer using a user supplied address. The address format is specific to the network
-   * implementation.
+   * implementation. If a connection already exists for this peer, the future completes with the
+   * existing peer.
    *
    * @param peer Peer to connect to.
    * @return A future which completes when the connection is establish, containing the newly
@@ -40,7 +41,8 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   SafeFuture<Peer> connect(String peer);
 
   /**
-   * Connects to a peer identified via discovery.
+   * Connects to a peer identified via discovery. If a connection already exists for this peer, the
+   * future completes with the existing peer.
    *
    * @param peer the peer to connect to.
    * @return A future which completes when the connection is establish, containing the newly

@@ -47,6 +47,24 @@ public class DiscoveryNetworkIntegrationTest {
   }
 
   @Test
+  public void shouldReconnectToStaticPeersWhenAlreadyConnected() throws Exception {
+    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
+    final DiscoveryNetwork<Peer> network2 =
+        discoveryNetworkFactory.builder().staticPeer(network1.getNodeAddress()).buildAndStart();
+    assertConnected(network1, network2);
+
+    // Already connected, but now tell network1 to maintain a persistent connection to network2.
+    network1.addStaticPeer(network2.getNodeAddress());
+
+    network1.getPeer(network2.getNodeId()).orElseThrow().disconnect();
+    assertConnected(network1, network2);
+
+    // Check we remain connected and didn't just briefly reconnect.
+    Thread.sleep(1000);
+    assertConnected(network1, network2);
+  }
+
+  @Test
   public void shouldConnectToBootnodes() throws Exception {
     final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
     final DiscoveryNetwork<Peer> network2 =
