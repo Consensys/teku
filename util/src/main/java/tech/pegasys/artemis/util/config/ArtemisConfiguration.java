@@ -72,11 +72,6 @@ public class ArtemisConfiguration {
         64,
         "represents the total number of validators in the network",
         PropertyValidator.inRange(1, 65535));
-    builder.addInteger(
-        "deposit.numNodes",
-        1,
-        "represents the total number of nodes on the network",
-        PropertyValidator.inRange(1, 65535));
     builder.addString("deposit.mode", "normal", "PoW Deposit Mode", null);
     builder.addString("deposit.inputFile", "", "PoW simulation optional input file", null);
     builder.addString("deposit.nodeUrl", null, "URL for Eth 1.0 node", null);
@@ -243,11 +238,6 @@ public class ArtemisConfiguration {
 
   public String getInteropPrivateKey() {
     return config.getString("interop.privateKey");
-  }
-
-  /** @return the total number of nodes on the network */
-  public int getNumNodes() {
-    return config.getInteger("deposit.numNodes");
   }
 
   public String getValidatorsKeyFile() {

@@ -39,6 +39,7 @@ import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -97,11 +98,11 @@ public class BeaconValidatorsHandler implements Handler {
                 if (state.isEmpty()) {
                   // empty list
                   return jsonProvider.objectToJSON(
-                      new BeaconValidatorsResponse(new SSZList<>(Validator.class, 0L)));
+                      new BeaconValidatorsResponse(SSZList.createMutable(Validator.class, 0L)));
                 }
                 if (activeOnly) {
                   return jsonProvider.objectToJSON(
-                      new BeaconValidatorsResponse(state.get().getActiveValidators()));
+                      new BeaconValidatorsResponse(getActiveValidators(state.get())));
                 } else {
                   return jsonProvider.objectToJSON(
                       new BeaconValidatorsResponse(state.get().getValidators()));
@@ -110,6 +111,15 @@ public class BeaconValidatorsHandler implements Handler {
     } else {
       ctx.status(SC_NO_CONTENT);
     }
+  }
+
+  public static SSZList<Validator> getActiveValidators(BeaconState state) {
+    return state
+        .getValidators()
+        .filter(
+            v ->
+                ValidatorsUtil.is_active_validator(
+                    v, state.getCurrent_justified_checkpoint().getEpoch()));
   }
 
   private SafeFuture<Optional<BeaconState>> queryByRootHash(final Bytes32 root32) {

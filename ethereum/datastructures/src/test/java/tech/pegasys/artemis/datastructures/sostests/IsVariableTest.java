@@ -29,12 +29,12 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 public class IsVariableTest {
@@ -114,7 +114,7 @@ public class IsVariableTest {
   @Test
   void isBeaconStateVariableTest() {
     assertEquals(
-        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconState.class).isVariable());
+        true, SimpleOffsetSerializer.classReflectionInfo.get(BeaconStateImpl.class).isVariable());
   }
 
   @Test
@@ -144,7 +144,7 @@ public class IsVariableTest {
   @Test
   void isValidatorVariableTest() {
     assertEquals(
-        false, SimpleOffsetSerializer.classReflectionInfo.get(Validator.class).isVariable());
+        false, SimpleOffsetSerializer.classReflectionInfo.get(ValidatorImpl.class).isVariable());
   }
 
   @Test
