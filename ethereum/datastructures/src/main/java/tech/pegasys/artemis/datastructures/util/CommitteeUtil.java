@@ -28,9 +28,9 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedBytes;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,7 +50,7 @@ public class CommitteeUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
-  public static Integer compute_shuffled_index(int index, int index_count, Bytes32 seed) {
+  public static int compute_shuffled_index(int index, int index_count, Bytes32 seed) {
     checkArgument(index < index_count, "CommitteeUtil.get_shuffled_index1");
 
     int indexRet = index;
@@ -89,6 +89,81 @@ public class CommitteeUtil {
     return indexRet;
   }
 
+  private static List<Integer> shuffle_list(List<Integer> input, Bytes32 seed) {
+    int[] indexes = input.stream().mapToInt(i -> i).toArray();
+    shuffle_list(indexes, seed);
+    return Arrays.stream(indexes).boxed().collect(Collectors.toList());
+  }
+
+  /**
+   * Ported from Lighthouse client:
+   * https://github.com/sigp/lighthouse/blob/master/eth2/utils/swap_or_not_shuffle/src/shuffle_list.rs
+   * NOTE: shuffling the whole list with this method 200x-300x faster than shuffling it by
+   * individual indexes
+   */
+  public static void shuffle_list(int[] input, Bytes32 seed) {
+    int rounds = SHUFFLE_ROUND_COUNT;
+    int list_size = input.length;
+
+    for (int r = rounds - 1; r >= 0; r--) {
+      Bytes roundAsByte = Bytes.of((byte) r);
+
+      int pivot =
+          toIntExact(
+              Long.remainderUnsigned(
+                  bytes_to_int(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  list_size));
+
+      int mirror = (pivot + 1) >> 1;
+      Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(pivot >> 8, 4)));
+      byte byte_v = source.get((pivot & 0xFF) >> 3);
+
+      for (int i = 0; i < mirror; i++) {
+        int j = pivot - i;
+
+        if ((j & 0xff) == 0xff) {
+          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(j >> 8, 4)));
+        }
+
+        if ((j & 0x07) == 0x07) {
+          byte_v = source.get((j & 0xff) >> 3);
+        }
+        int bit_v = (byte_v >> (j & 0x07)) & 0x01;
+
+        if (bit_v == 1) {
+          int tmp = input[i];
+          input[i] = input[j];
+          input[j] = tmp;
+        }
+      }
+      mirror = (pivot + list_size + 1) >> 1;
+      int end = list_size - 1;
+
+      source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(end >> 8, 4)));
+      byte_v = source.get((end & 0xff) >> 3);
+
+      for (int i = pivot + 1, loop_iter = 0; i < mirror; i++, loop_iter++) {
+
+        int j = end - loop_iter;
+
+        if ((j & 0xff) == 0xff) {
+          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(j >> 8, 4)));
+        }
+
+        if ((j & 0x07) == 0x07) {
+          byte_v = source.get((j & 0xff) >> 3);
+        }
+        int bit_v = (byte_v >> (j & 0x07)) & 0x01;
+
+        if (bit_v == 1) {
+          int tmp = input[i];
+          input[i] = input[j];
+          input[j] = tmp;
+        }
+      }
+    }
+  }
+
   /**
    * Return from ``indices`` a random index sampled by effective balance.
    *
@@ -123,6 +198,14 @@ public class CommitteeUtil {
     }
   }
 
+  private static List<Integer> compute_committee_shuffle(
+      BeaconState state, List<Integer> indices, Bytes32 seed, int fromIndex, int toIndex) {
+    return BeaconStateCache.getTransitionCaches(state)
+        .getCommitteeShuffle()
+        .get(seed, s -> shuffle_list(indices, s))
+        .subList(fromIndex, toIndex);
+  }
+
   /**
    * Computes indices of a new committee based upon the seed parameter
    *
@@ -135,13 +218,10 @@ public class CommitteeUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
   public static List<Integer> compute_committee(
-      List<Integer> indices, Bytes32 seed, int index, int count) {
+      BeaconState state, List<Integer> indices, Bytes32 seed, int index, int count) {
     int start = Math.floorDiv(indices.size() * index, count);
     int end = Math.floorDiv(indices.size() * (index + 1), count);
-    return IntStream.range(start, end)
-        .map(i -> indices.get(compute_shuffled_index(i, indices.size(), seed)))
-        .boxed()
-        .collect(Collectors.toList());
+    return compute_committee_shuffle(state, indices, seed, start, end);
   }
 
   /**
@@ -171,6 +251,7 @@ public class CommitteeUtil {
                   toIntExact(
                       committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).longValue());
               return compute_committee(
+                  state,
                   get_active_validator_indices(state, epoch),
                   get_seed(state, epoch, DOMAIN_BEACON_ATTESTER),
                   committeeIndex,
