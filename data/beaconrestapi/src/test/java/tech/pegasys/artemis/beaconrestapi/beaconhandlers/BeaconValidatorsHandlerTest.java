@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
 
@@ -41,10 +42,12 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(MockitoExtension.class)
 public class BeaconValidatorsHandlerTest {
@@ -144,7 +147,12 @@ public class BeaconValidatorsHandlerTest {
     final BeaconState beaconStateWithAddedActiveValidator = addActiveValidator(beaconState);
 
     BeaconValidatorsResponse beaconActiveValidators =
-        new BeaconValidatorsResponse(beaconStateWithAddedActiveValidator.getActiveValidators());
+        new BeaconValidatorsResponse(
+            beaconStateWithAddedActiveValidator.getValidators(),
+            true,
+            epoch,
+            PAGE_SIZE_DEFAULT,
+            PAGE_TOKEN_DEFAULT);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateWithAddedActiveValidator)));
@@ -170,7 +178,12 @@ public class BeaconValidatorsHandlerTest {
 
     final BeaconState beaconStateWithAddedValidator = addActiveValidator(beaconState);
     BeaconValidatorsResponse beaconActiveValidators =
-        new BeaconValidatorsResponse(beaconStateWithAddedValidator.getActiveValidators());
+        new BeaconValidatorsResponse(
+            beaconStateWithAddedValidator.getValidators(),
+            true,
+            BeaconStateUtil.get_current_epoch(beaconState),
+            PAGE_SIZE_DEFAULT,
+            PAGE_TOKEN_DEFAULT);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateWithAddedValidator)));
@@ -202,7 +215,7 @@ public class BeaconValidatorsHandlerTest {
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
-            beaconState.getValidators(), suppliedPageSizeParam, PAGE_TOKEN_DEFAULT);
+            beaconState.getValidators(), false, epoch, suppliedPageSizeParam, PAGE_TOKEN_DEFAULT);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
@@ -238,7 +251,11 @@ public class BeaconValidatorsHandlerTest {
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
-            beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
+            beaconState.getValidators(),
+            false,
+            epoch,
+            suppliedPageSizeParam,
+            suppliedPageTokenParam);
 
     when(combinedClient.getStateAtSlot(slot, blockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
@@ -259,7 +276,12 @@ public class BeaconValidatorsHandlerTest {
     // create an ACTIVE validator and add it to the list
     Validator v = DataStructureUtil.randomValidator(88);
     v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
+    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+
+    assertThat(
+            ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(beaconState)))
+        .isTrue();
+
     allValidators.add(v);
     beaconState.setValidators(allValidators);
     return beaconState;

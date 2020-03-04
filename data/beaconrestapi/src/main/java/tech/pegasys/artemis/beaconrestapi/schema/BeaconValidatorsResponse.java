@@ -13,9 +13,12 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconValidatorsResponse {
   public final List<ValidatorWithIndex> validatorList;
@@ -23,11 +26,16 @@ public class BeaconValidatorsResponse {
   private int nextPageToken;
 
   public BeaconValidatorsResponse(List<Validator> list) {
-    this(list, 20, 0);
+    this(list, false, Constants.FAR_FUTURE_EPOCH, 20, 0);
   }
 
   public BeaconValidatorsResponse(
-      final List<Validator> list, final int pageSize, final int pageToken) {
+      final List<Validator> list,
+      final boolean activeOnly,
+      final UnsignedLong epoch,
+      final int pageSize,
+      final int pageToken) {
+
     if (pageSize > 0 && pageToken >= 0) {
       int offset = pageToken * pageSize;
       this.totalSize = list.size();
@@ -37,10 +45,16 @@ public class BeaconValidatorsResponse {
         return;
       }
       validatorList = new ArrayList<>();
-      for (int i = offset; i < Math.min(offset + pageSize, list.size()); i++) {
-        validatorList.add(new ValidatorWithIndex(list.get(i), i));
+      int i = offset;
+      int numberAdded = 0;
+      while (i < list.size() && numberAdded < pageSize) {
+        if (!activeOnly || ValidatorsUtil.is_active_validator(list.get(i), epoch)) {
+          validatorList.add(new ValidatorWithIndex(list.get(i), i));
+          numberAdded++;
+        }
+        i++;
       }
-      if (totalSize == 0 || offset + pageSize >= list.size()) {
+      if (totalSize == 0 || offset + numberAdded >= list.size()) {
         this.nextPageToken = 0;
       } else {
         this.nextPageToken = pageToken + 1;

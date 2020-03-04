@@ -28,7 +28,6 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -437,18 +436,6 @@ public class BeaconState implements Merkleizable, SimpleOffsetSerializable, SSZC
   // Registry
   public SSZList<Validator> getValidators() {
     return validators;
-  }
-
-  public SSZList<Validator> getActiveValidators() {
-    UnsignedLong currentEpoch = getCurrent_justified_checkpoint().getEpoch();
-    List<Validator> activeValidatorsList =
-        getValidators().stream()
-            .filter(v -> ValidatorsUtil.is_active_validator(v, currentEpoch))
-            .collect(Collectors.toList());
-    final SSZList<Validator> activeValidators =
-        new SSZList<>(Validator.class, activeValidatorsList.size());
-    activeValidators.addAll(activeValidatorsList);
-    return activeValidators;
   }
 
   public void setValidators(SSZList<Validator> validators) {

@@ -42,11 +42,9 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconValidatorsHandler implements Handler {
@@ -119,15 +117,10 @@ public class BeaconValidatorsHandler implements Handler {
               state -> {
                 if (state.isEmpty()) {
                   // empty list
-                  return jsonProvider.objectToJSON(
-                      produceResponse(new SSZList<>(Validator.class, 0L), pageSize, pageToken));
-                }
-                if (activeOnly) {
-                  return jsonProvider.objectToJSON(
-                      produceResponse(state.get().getActiveValidators(), pageSize, pageToken));
+                  return jsonProvider.objectToJSON(produceEmptyListResponse());
                 } else {
                   return jsonProvider.objectToJSON(
-                      produceResponse(state.get().getValidators(), pageSize, pageToken));
+                      produceResponse(state.get(), activeOnly, pageSize, pageToken));
                 }
               }));
     } else {
@@ -163,7 +156,16 @@ public class BeaconValidatorsHandler implements Handler {
   }
 
   private final BeaconValidatorsResponse produceResponse(
-      final SSZList<Validator> validators, final int pageSize, final int pageToken) {
-    return new BeaconValidatorsResponse(validators, pageSize, pageToken);
+      final BeaconState state, final boolean activeOnly, final int pageSize, final int pageToken) {
+    return new BeaconValidatorsResponse(
+        state.getValidators(),
+        activeOnly,
+        BeaconStateUtil.get_current_epoch(state),
+        pageSize,
+        pageToken);
+  }
+
+  private final BeaconValidatorsResponse produceEmptyListResponse() {
+    return new BeaconValidatorsResponse(List.of());
   }
 }

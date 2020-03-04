@@ -22,7 +22,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.config.Constants;
 
 class BeaconValidatorsResponseTest {
 
@@ -43,8 +45,13 @@ class BeaconValidatorsResponseTest {
   public void activeValidatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(98);
     BeaconValidatorsResponse validators =
-        new BeaconValidatorsResponse(beaconState.getActiveValidators());
-    assertThat(validators.getTotalSize()).isEqualTo(beaconState.getActiveValidators().size());
+        new BeaconValidatorsResponse(
+            beaconState.getValidators(),
+            true,
+            BeaconStateUtil.get_current_epoch(beaconState),
+            PAGE_SIZE_DEFAULT,
+            PAGE_TOKEN_DEFAULT);
+    assertThat(validators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(validators.validatorList.size())
         .isLessThanOrEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
     assertThat(validators.getNextPageToken()).isLessThanOrEqualTo(PAGE_TOKEN_DEFAULT + 1);
@@ -57,7 +64,11 @@ class BeaconValidatorsResponseTest {
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
-            beaconState.getValidators(), suppliedPageSizeParam, PAGE_TOKEN_DEFAULT);
+            beaconState.getValidators(),
+            false,
+            Constants.FAR_FUTURE_EPOCH,
+            suppliedPageSizeParam,
+            PAGE_TOKEN_DEFAULT);
     assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
     assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
@@ -71,7 +82,11 @@ class BeaconValidatorsResponseTest {
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
-            beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
+            beaconState.getValidators(),
+            false,
+            Constants.FAR_FUTURE_EPOCH,
+            suppliedPageSizeParam,
+            suppliedPageTokenParam);
     assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(beaconValidators.getNextPageToken()).isEqualTo(suppliedPageTokenParam + 1);
     assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
@@ -85,7 +100,11 @@ class BeaconValidatorsResponseTest {
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
-            beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
+            beaconState.getValidators(),
+            false,
+            Constants.FAR_FUTURE_EPOCH,
+            suppliedPageSizeParam,
+            suppliedPageTokenParam);
     assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(suppliedPageSizeParam * suppliedPageTokenParam)
         .isGreaterThan(beaconValidators.validatorList.size());
@@ -106,7 +125,12 @@ class BeaconValidatorsResponseTest {
     assertThat(expectedRemainderSize).isGreaterThan(0);
 
     BeaconValidatorsResponse beaconValidators =
-        new BeaconValidatorsResponse(validators, suppliedPageSizeParam, suppliedPageTokenParam);
+        new BeaconValidatorsResponse(
+            validators,
+            false,
+            Constants.FAR_FUTURE_EPOCH,
+            suppliedPageSizeParam,
+            suppliedPageTokenParam);
     assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT);
     assertThat(beaconValidators.validatorList.size()).isEqualTo(expectedRemainderSize);
