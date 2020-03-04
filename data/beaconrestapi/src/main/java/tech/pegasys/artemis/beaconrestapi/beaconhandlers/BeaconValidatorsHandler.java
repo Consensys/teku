@@ -66,7 +66,7 @@ public class BeaconValidatorsHandler implements Handler {
       summary = "Returns validators that match the specified query.",
       tags = {TAG_BEACON},
       description =
-          "Returns validator information. If no parameters specified, the first page of current validators are returned.",
+          "Returns validator information. If no parameters specified, the first page of validators as of the current epoch are returned.",
       queryParams = {
         @OpenApiParam(
             name = EPOCH,
