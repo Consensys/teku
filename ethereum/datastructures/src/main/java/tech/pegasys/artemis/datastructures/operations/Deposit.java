@@ -42,7 +42,7 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
   }
 
   public Deposit() {
-    this.proof = new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+    this.proof = SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
     this.data = new DepositData();
   }
 
@@ -59,7 +59,8 @@ public class Deposit implements Merkleizable, SimpleOffsetSerializable, SSZConta
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof))));
+    fixedPartsList.addAll(
+        List.of(SSZ.encode(writer -> writer.writeFixedBytesVector(proof.asList()))));
     fixedPartsList.addAll(data.get_fixed_parts());
     return fixedPartsList;
   }

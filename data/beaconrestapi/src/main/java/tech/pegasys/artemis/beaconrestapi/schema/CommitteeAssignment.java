@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,33 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.beaconrestapi.schema;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 
 public class CommitteeAssignment {
-
-  private List<Integer> committee;
-  private UnsignedLong committeeIndex;
-  private UnsignedLong slot;
+  public final UnsignedLong slot;
+  public final UnsignedLong index;
+  public final List<Integer> committee;
 
   public CommitteeAssignment(
-      List<Integer> committee, UnsignedLong committeeIndex, UnsignedLong slot) {
-    this.committee = committee;
-    this.committeeIndex = committeeIndex;
-    this.slot = slot;
-  }
-
-  public List<Integer> getCommittee() {
-    return committee;
-  }
-
-  public UnsignedLong getCommitteeIndex() {
-    return committeeIndex;
-  }
-
-  public UnsignedLong getSlot() {
-    return slot;
+      tech.pegasys.artemis.datastructures.state.CommitteeAssignment committeeAssignment) {
+    this.slot = committeeAssignment.getSlot();
+    this.index = committeeAssignment.getCommitteeIndex();
+    this.committee = committeeAssignment.getCommittee();
   }
 }

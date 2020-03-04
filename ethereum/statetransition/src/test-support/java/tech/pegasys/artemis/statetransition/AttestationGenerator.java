@@ -31,8 +31,9 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
@@ -238,10 +239,10 @@ public class AttestationGenerator {
     return attestations;
   }
 
-  private BeaconStateWithCache processStateToSlot(BeaconState preState, UnsignedLong slot)
+  private BeaconState processStateToSlot(BeaconState preState, UnsignedLong slot)
       throws EpochProcessingException, SlotProcessingException {
     final StateTransition stateTransition = new StateTransition(false);
-    final BeaconStateWithCache postState = BeaconStateWithCache.fromBeaconState(preState);
+    final MutableBeaconState postState = preState.createWritableCopy();
 
     stateTransition.process_slots(postState, slot, false);
     return postState;

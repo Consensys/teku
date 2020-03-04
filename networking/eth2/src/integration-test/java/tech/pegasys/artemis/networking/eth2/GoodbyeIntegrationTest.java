@@ -27,13 +27,11 @@ public class GoodbyeIntegrationTest {
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Peer peer1;
   private Eth2Peer peer2;
-  private Eth2Network network1;
-  private Eth2Network network2;
 
   @BeforeEach
   public void setUp() throws Exception {
-    network1 = networkFactory.builder().startNetwork();
-    network2 = networkFactory.builder().peer(network1).startNetwork();
+    final Eth2Network network1 = networkFactory.builder().startNetwork();
+    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
   }
@@ -48,7 +46,5 @@ public class GoodbyeIntegrationTest {
     waitFor(peer1.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN));
     Waiter.waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     Waiter.waitFor(() -> assertThat(peer2.isConnected()).isFalse());
-    assertThat(network1.getPeerCount()).isZero();
-    assertThat(network2.getPeerCount()).isZero();
   }
 }

@@ -14,19 +14,27 @@
 package tech.pegasys.artemis.storage;
 
 import static com.google.common.base.Preconditions.checkState;
+import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class CombinedChainDataClient {
@@ -70,7 +78,7 @@ public class CombinedChainDataClient {
    */
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
-    final Store store = recentChainData.getStore();
+    final Store store = getStore();
     if (store == null) {
       LOG.trace("No block at slot {} because the store is not set", slot);
       return BLOCK_NOT_AVAILABLE;
@@ -138,7 +146,7 @@ public class CombinedChainDataClient {
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
 
-    final Store store = recentChainData.getStore();
+    final Store store = getStore();
     if (store == null) {
       LOG.trace("No state at slot {} because the store is not set", slot);
       return STATE_NOT_AVAILABLE;
@@ -157,7 +165,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(final Bytes32 blockRoot) {
-    final Store store = recentChainData.getStore();
+    final Store store = getStore();
     if (store == null) {
       LOG.trace("No state at blockRoot {} because the store is not set", blockRoot);
       return STATE_NOT_AVAILABLE;
@@ -171,11 +179,73 @@ public class CombinedChainDataClient {
   }
 
   public Optional<Bytes32> getBestBlockRoot() {
-    final Store store = recentChainData.getStore();
-    if (store == null) {
+    if (getStore() == null) {
       LOG.trace("No block found because the store is not set");
       return Optional.empty();
     }
     return Optional.ofNullable(recentChainData.getBestBlockRoot());
+  }
+
+  public boolean isStoreAvailable() {
+    return (getStore() != null);
+  }
+
+  /**
+   * Gets a list of CommitteeAssignments for a specified epoch.
+   *
+   * <p>These committee assignments are calculated at the epoch prior to the specified epoch, unless
+   * specifying epoch 0, in which case the committee assignments are correct.
+   *
+   * @param epoch - the current or historic epoch
+   * @return list of CommitteeAssignments
+   */
+  public SafeFuture<List<CommitteeAssignment>> getCommitteeAssignmentAtEpoch(UnsignedLong epoch) {
+    final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
+    final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
+
+    SafeFuture<Optional<BeaconState>> future =
+        getStateAtSlot(startingSlot, recentChainData.getBestBlockRoot());
+
+    return future
+        .thenApply(
+            optionalState -> getCommitteesFromState(optionalState.orElseThrow(), startingSlot))
+        .exceptionally(err -> List.of());
+  }
+
+  List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UnsignedLong startingSlot) {
+    List<CommitteeAssignment> result = new ArrayList<>();
+    for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
+      UnsignedLong slot = startingSlot.plus(UnsignedLong.valueOf(i));
+      int committeeCount = get_committee_count_at_slot(state, slot).intValue();
+      for (int j = 0; j < committeeCount; j++) {
+        UnsignedLong idx = UnsignedLong.valueOf(j);
+        List<Integer> committee = CommitteeUtil.get_beacon_committee(state, slot, idx);
+        result.add(new CommitteeAssignment(committee, idx, slot));
+      }
+    }
+
+    return result;
+  }
+
+  public Store getStore() {
+    return recentChainData.getStore();
+  }
+
+  public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
+    return recentChainData.getBlockRootBySlot(slot);
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(final UnsignedLong slot) {
+    final Optional<Bytes32> blockRootBySlot = getBlockRootBySlot(slot);
+    final Optional<Bytes32> bestBlockRoot = getBestBlockRoot();
+
+    if (blockRootBySlot.isPresent()) {
+      return SafeFuture.completedFuture(
+          Optional.ofNullable(getStore().getSignedBlock(blockRootBySlot.get())));
+    } else if (bestBlockRoot.isPresent()) {
+      return getBlockAtSlotExact(slot, bestBlockRoot.get());
+    } else {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
   }
 }

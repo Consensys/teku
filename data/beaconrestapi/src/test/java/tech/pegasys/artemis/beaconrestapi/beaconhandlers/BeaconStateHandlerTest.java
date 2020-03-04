@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -160,5 +161,19 @@ public class BeaconStateHandlerTest {
     handler.handle(context);
 
     verify(context).status(SC_NOT_FOUND);
+  }
+
+  @Test
+  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
+    ChainStorageClient client = mock(ChainStorageClient.class);
+    CombinedChainDataClient combinedClient =
+        new CombinedChainDataClient(client, historicalChainData);
+    final BeaconStateHandler handler = new BeaconStateHandler(combinedClient, jsonProvider);
+    when(client.getStore()).thenReturn(null);
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
+
+    handler.handle(context);
+
+    verify(context).status(SC_NO_CONTENT);
   }
 }

@@ -39,8 +39,8 @@ import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -74,14 +74,13 @@ import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainController {
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
-  private Runnable networkTask;
   private final EventChannels eventChannels;
   private final ArtemisConfiguration config;
   private final TimeProvider timeProvider;
   private EventBus eventBus;
   private Timer timer;
   private ChainStorageClient chainStorageClient;
-  private P2PNetwork<?> p2pNetwork;
+  private P2PNetwork<Eth2Peer> p2pNetwork;
   private final MetricsSystem metricsSystem;
   private SettableGauge currentSlotGauge;
   private SettableGauge currentEpochGauge;
@@ -193,8 +192,7 @@ public class BeaconChainController {
   public void initP2PNetwork() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initP2PNetwork()");
     if ("mock".equals(config.getNetworkMode())) {
-      this.p2pNetwork = new MockP2PNetwork(eventBus);
-      this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
+      this.p2pNetwork = new MockP2PNetwork<>(eventBus);
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
       Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
       PrivKey pk =
@@ -208,6 +206,8 @@ public class BeaconChainController {
               config.getPort(),
               config.getAdvertisedPort(),
               config.getStaticPeers(),
+              config.getDiscovery(),
+              config.getBootnodes(),
               true,
               true,
               true);
@@ -218,7 +218,6 @@ public class BeaconChainController {
               .chainStorageClient(chainStorageClient)
               .metricsSystem(metricsSystem)
               .build();
-      this.networkTask = () -> this.p2pNetwork.start().reportExceptions();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
@@ -241,12 +240,7 @@ public class BeaconChainController {
         new CombinedChainDataClient(chainStorageClient, historicalChainData);
     beaconRestAPI =
         new BeaconRestApi(
-            chainStorageClient,
-            p2pNetwork,
-            historicalChainData,
-            combinedChainDataClient,
-            syncService,
-            config);
+            chainStorageClient, p2pNetwork, combinedChainDataClient, syncService, config);
   }
 
   public void initSyncManager() {
@@ -257,7 +251,7 @@ public class BeaconChainController {
       syncService =
           new SyncService(
               eventBus,
-              (Eth2Network) p2pNetwork,
+              p2pNetwork,
               chainStorageClient,
               new BlockImporter(chainStorageClient, eventBus));
     }
@@ -268,7 +262,7 @@ public class BeaconChainController {
         Level.DEBUG, "BeaconChainController.start(): starting AttestationPropagationManager");
     attestationManager.start().reportExceptions();
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting p2pNetwork");
-    networkExecutor.execute(networkTask);
+    this.p2pNetwork.start().reportExceptions();
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): emit NodeStartEvent");
     this.eventBus.post(new NodeStartEvent());
     STDOUT.log(Level.DEBUG, "BeaconChainController.start(): starting timer");

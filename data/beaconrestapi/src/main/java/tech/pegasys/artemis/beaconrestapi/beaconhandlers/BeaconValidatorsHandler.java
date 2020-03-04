@@ -14,23 +14,32 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
 
+import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -52,9 +61,17 @@ public class BeaconValidatorsHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get validators from the running beacon node.",
+      summary = "Get validators from the running beacon node that match the specified query.",
       tags = {TAG_BEACON},
-      description = "Requests validator information",
+      description =
+          "Requests validator information. If no parameters specified, all current validators are returned.",
+      queryParams = {
+        @OpenApiParam(name = EPOCH, description = "Epoch to query"),
+        @OpenApiParam(
+            name = ACTIVE,
+            description =
+                "If specified, return only validators which are active in the specified epoch")
+      },
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -64,26 +81,55 @@ public class BeaconValidatorsHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    final Map<String, List<String>> parameters = ctx.queryParamMap();
+    SafeFuture<Optional<BeaconState>> future = null;
+    final boolean activeOnly = parameters.containsKey(ACTIVE);
+
     Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
     if (optionalRoot.isPresent()) {
-      SafeFuture<Optional<BeaconState>> future = queryByRootHash(optionalRoot.get());
+      if (parameters.containsKey(EPOCH)) {
+        future = queryByEpoch(validateQueryParameter(parameters, EPOCH), optionalRoot.get());
+      } else {
+        future = queryByRootHash(optionalRoot.get());
+      }
       ctx.result(
           future.thenApplyChecked(
               state -> {
                 if (state.isEmpty()) {
                   // empty list
                   return jsonProvider.objectToJSON(
-                      new BeaconValidatorsResponse(new SSZList<>(Validator.class, 0L)));
+                      new BeaconValidatorsResponse(SSZList.createMutable(Validator.class, 0L)));
                 }
-                return jsonProvider.objectToJSON(
-                    new BeaconValidatorsResponse(state.get().getValidators()));
+                if (activeOnly) {
+                  return jsonProvider.objectToJSON(
+                      new BeaconValidatorsResponse(getActiveValidators(state.get())));
+                } else {
+                  return jsonProvider.objectToJSON(
+                      new BeaconValidatorsResponse(state.get().getValidators()));
+                }
               }));
     } else {
       ctx.status(SC_NO_CONTENT);
     }
   }
 
+  public static SSZList<Validator> getActiveValidators(BeaconState state) {
+    return state
+        .getValidators()
+        .filter(
+            v ->
+                ValidatorsUtil.is_active_validator(
+                    v, state.getCurrent_justified_checkpoint().getEpoch()));
+  }
+
   private SafeFuture<Optional<BeaconState>> queryByRootHash(final Bytes32 root32) {
     return combinedClient.getStateByBlockRoot(root32);
+  }
+
+  private SafeFuture<Optional<BeaconState>> queryByEpoch(
+      final String epochString, final Bytes32 blockRoot) {
+    final UnsignedLong epoch = UnsignedLong.valueOf(epochString);
+    return combinedClient.getStateAtSlot(
+        BeaconStateUtil.compute_start_slot_at_epoch(epoch), blockRoot);
   }
 }

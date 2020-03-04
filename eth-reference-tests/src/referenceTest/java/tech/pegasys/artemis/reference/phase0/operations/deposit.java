@@ -21,8 +21,6 @@ import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.proce
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,8 +29,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class deposit extends TestSuite {
@@ -40,18 +40,17 @@ public class deposit extends TestSuite {
   @ParameterizedTest(name = "{index}. process deposit success")
   @MethodSource({"mainnetDepositSuccessSetup", "minimalDepositSuccessSetup"})
   void processDepositSuccess(Deposit deposit, BeaconState pre, BeaconState post) {
-    List<Deposit> deposits = new ArrayList<>();
-    deposits.add(deposit);
-    assertDoesNotThrow(() -> process_deposits(pre, deposits));
-    assertEquals(pre, post);
+    MutableBeaconState wState = pre.createWritableCopy();
+    assertDoesNotThrow(() -> process_deposits(wState, SSZList.singleton(deposit)));
+    assertEquals(post, wState);
   }
 
   @ParameterizedTest(name = "{index}. process deposit")
   @MethodSource({"mainnetDepositSetup", "minimalDepositSetup"})
   void processDeposit(Deposit deposit, BeaconState pre) {
-    List<Deposit> deposits = new ArrayList<>();
-    deposits.add(deposit);
-    assertThrows(BlockProcessingException.class, () -> process_deposits(pre, deposits));
+    assertThrows(
+        BlockProcessingException.class,
+        () -> process_deposits(pre.createWritableCopy(), SSZList.singleton(deposit)));
   }
 
   @MustBeClosed

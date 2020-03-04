@@ -9,6 +9,8 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'com.google.guava:guava'
+
+  implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'

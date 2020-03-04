@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.GenesisGenerator;
@@ -67,7 +67,7 @@ public class GenesisHandler implements Eth1EventsChannel {
         .ifPresent(this::eth2Genesis);
   }
 
-  private void eth2Genesis(BeaconStateWithCache genesisState) {
+  private void eth2Genesis(BeaconState genesisState) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     chainStorageClient.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();

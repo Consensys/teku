@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
@@ -63,6 +64,11 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
+  public void subscribeDisconnect(final PeerDisconnectedSubscriber subscriber) {
+    SafeFuture.of(connection.closeFuture()).finish(subscriber::onDisconnected);
+  }
+
+  @Override
   public SafeFuture<RpcStream> sendRequest(
       RpcMethod rpcMethod, final Bytes initialPayload, final RpcRequestHandler handler) {
     RpcHandler rpcHandler = rpcHandlers.get(rpcMethod);
@@ -83,7 +89,7 @@ public class LibP2PPeer implements Peer {
   }
 
   private void handleConnectionClosed() {
-    LOG.debug("Disconnected from peer {}", this);
+    LOG.debug("Disconnected from peer {}", nodeId);
     connected.set(false);
   }
 }

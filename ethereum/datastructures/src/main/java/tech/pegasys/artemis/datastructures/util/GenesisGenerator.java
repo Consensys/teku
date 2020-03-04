@@ -36,10 +36,11 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
-import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
@@ -47,16 +48,16 @@ public class GenesisGenerator {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final BeaconState state = new BeaconState();
+  private final MutableBeaconState state = MutableBeaconState.createBuilder();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
-  private final SSZList<DepositData> depositDataList =
-      new SSZList<>(DepositData.class, depositListLength);
+  private final SSZMutableList<DepositData> depositDataList =
+      SSZList.createMutable(DepositData.class, depositListLength);
 
   public GenesisGenerator() {
-    BeaconBlockHeader beaconBlockHeader = new BeaconBlockHeader();
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
-    beaconBlockHeader.setBody_root(latestBlockRoot);
+    BeaconBlockHeader beaconBlockHeader =
+        new BeaconBlockHeader(UnsignedLong.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
     state.setFork(
         new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));
@@ -66,9 +67,11 @@ public class GenesisGenerator {
       Bytes32 eth1BlockHash, UnsignedLong eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
-    final Eth1Data eth1Data = state.getEth1_data();
-    eth1Data.setBlock_hash(eth1BlockHash);
-    eth1Data.setDeposit_count(UnsignedLong.valueOf(depositDataList.size() + deposits.size()));
+    state.setEth1_data(
+        new Eth1Data(
+            Bytes32.ZERO,
+            UnsignedLong.valueOf(depositDataList.size() + deposits.size()),
+            eth1BlockHash));
 
     // Process deposits
     deposits.forEach(
@@ -90,7 +93,7 @@ public class GenesisGenerator {
       // Could be null if the deposit was invalid
       return;
     }
-    Validator validator = state.getValidators().get(index);
+    MutableValidator validator = state.getValidators().get(index);
     UnsignedLong balance = state.getBalances().get(index);
     UnsignedLong effective_balance =
         BeaconStateUtil.min(
@@ -104,18 +107,19 @@ public class GenesisGenerator {
     }
   }
 
-  public BeaconStateWithCache getGenesisState() {
+  public MutableBeaconState getGenesisState() {
     return getGenesisStateIfValid(state -> true).orElseThrow();
   }
 
-  public Optional<BeaconStateWithCache> getGenesisStateIfValid(
+  public Optional<MutableBeaconState> getGenesisStateIfValid(
       Predicate<BeaconState> validityCriteria) {
     if (!validityCriteria.test(state)) {
       return Optional.empty();
     }
 
     finalizeState();
-    return Optional.of(BeaconStateWithCache.deepCopy(state));
+
+    return Optional.of(state.createWritableCopy());
   }
 
   private void finalizeState() {
@@ -130,11 +134,12 @@ public class GenesisGenerator {
   }
 
   private void calculateDepositRoot() {
-    state
-        .getEth1_data()
-        .setDeposit_root(
-            HashTreeUtil.hash_tree_root(
-                HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositListLength, depositDataList));
+    Eth1Data eth1Data = state.getEth1_data();
+    state.setEth1_data(
+        new Eth1Data(
+            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.LIST_OF_COMPOSITE, depositDataList),
+            eth1Data.getDeposit_count(),
+            eth1Data.getBlock_hash()));
   }
 
   private void updateGenesisTime(final UnsignedLong eth1Timestamp) {
