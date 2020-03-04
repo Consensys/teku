@@ -265,17 +265,20 @@ application {
 // simple for use in docker
 tasks.register("dockerDistUntar") {
   dependsOn distTar
-  def dockerBuildDir = "build/docker-teku/"
+  def dockerBuildPath = "build/docker-teku/"
   def distTarFile = distTar.outputs.files.singleFile
   def distTarFileName = distTar.outputs.files.singleFile.name.replace(".tar.gz", "")
 
   doFirst {
-    new File(dockerBuildDir).mkdir()
+    def dockerBuildDir = new File(dockerBuildPath)
+    dockerBuildDir.deleteDir()
+    dockerBuildDir.mkdir()
     copy {
       from tarTree(distTarFile)
-      into(dockerBuildDir)
+      into(dockerBuildPath)
     }
-    file("${dockerBuildDir}/${distTarFileName}").renameTo("${dockerBuildDir}/teku")
+    def dockerDist = file("${dockerBuildPath}/${distTarFileName}")
+    dockerDist.renameTo("${dockerBuildPath}/teku")
   }
 }
 
