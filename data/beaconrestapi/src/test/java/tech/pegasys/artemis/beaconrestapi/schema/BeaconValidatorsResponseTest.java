@@ -53,7 +53,7 @@ class BeaconValidatorsResponseTest {
             BeaconStateUtil.get_current_epoch(beaconState),
             PAGE_SIZE_DEFAULT,
             PAGE_TOKEN_DEFAULT);
-    assertThat(validators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(validators.getTotalSize()).isLessThanOrEqualTo(beaconState.getValidators().size());
     assertThat(validators.validatorList.size())
         .isLessThanOrEqualTo(RestApiConstants.PAGE_SIZE_DEFAULT);
     assertThat(validators.getNextPageToken()).isLessThanOrEqualTo(PAGE_TOKEN_DEFAULT + 1);

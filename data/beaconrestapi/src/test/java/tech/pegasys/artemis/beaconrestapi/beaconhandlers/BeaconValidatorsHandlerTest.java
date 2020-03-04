@@ -292,36 +292,4 @@ public class BeaconValidatorsHandlerTest {
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
   }
-
-  @Test
-  public void getActiveValidators() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(23);
-    MutableBeaconState beaconStateW = beaconState.createWritableCopy();
-
-    SSZList<Validator> allValidators = beaconState.getValidators();
-    SSZList<Validator> activeValidators = BeaconValidatorsHandler.getActiveValidators(beaconStateW);
-    int originalValidatorCount = allValidators.size();
-
-    assertThat(activeValidators.size()).isLessThanOrEqualTo(beaconStateW.getValidators().size());
-
-    // create one validator which IS active and add it to the list
-    MutableValidator v = DataStructureUtil.randomValidator(77).createWritableCopy();
-    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
-    beaconStateW.getValidators().add(v);
-    beaconStateW.commitChanges();
-
-    int updatedValidatorCount = beaconStateW.getValidators().size();
-    SSZList<Validator> updatedActiveValidators =
-        BeaconValidatorsHandler.getActiveValidators(beaconStateW);
-
-    assertThat(updatedActiveValidators).contains(v);
-    assertThat(beaconStateW.getValidators()).contains(v);
-    assertThat(beaconStateW.getValidators()).containsAll(updatedActiveValidators);
-    assertThat(updatedValidatorCount).isEqualTo(originalValidatorCount + 1);
-    assertThat(updatedActiveValidators.size()).isLessThanOrEqualTo(updatedValidatorCount);
-    // same number of non-active validators before and after
-    assertThat(updatedValidatorCount - updatedActiveValidators.size())
-        .isEqualTo(originalValidatorCount - activeValidators.size());
-  }
 }
