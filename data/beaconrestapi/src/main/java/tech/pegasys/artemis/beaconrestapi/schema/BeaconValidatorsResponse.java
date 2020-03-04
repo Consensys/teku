@@ -33,19 +33,20 @@ public class BeaconValidatorsResponse {
       int offset = pageToken * pageSize;
       List<Validator> pageOfValidators = new ArrayList<Validator>();
       this.totalSize = validatorList.size();
-      this.nextPageToken = totalSize == 0 ? 0 : pageToken + 1;
       // if the offset is outside the bounds, just return the list as is
       if (offset >= validatorList.size()) {
-        this.validatorList = new ArrayList<Validator>();
+        this.validatorList = List.of();
+        this.nextPageToken = 0;
         return;
       }
       // otherwise get a page of results
       for (int i = offset; i < Math.min(offset + pageSize, validatorList.size()); i++) {
         pageOfValidators.add(validatorList.get(offset));
       }
+      this.nextPageToken = totalSize == 0 ? 0 : pageToken + 1;
       this.validatorList = pageOfValidators;
     } else {
-      this.validatorList = new ArrayList<Validator>();
+      this.validatorList = List.of();
       this.totalSize = validatorList.size();
       this.nextPageToken = 0;
     }

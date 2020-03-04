@@ -70,4 +70,18 @@ class BeaconValidatorsResponseTest {
     assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
     assertThat(beaconValidators.getNextPageToken()).isEqualTo(suppliedPageTokenParam + 1);
   }
+
+  @Test
+  public void returnEmptyListIfPageParamsOutOfBounds() {
+    BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
+    final int suppliedPageSizeParam = 1000;
+    final int suppliedPageTokenParam = 1000;
+
+    BeaconValidatorsResponse beaconValidators =
+        new BeaconValidatorsResponse(
+            beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
+    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.validatorList.size()).isEqualTo(0);
+    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT);
+  }
 }
