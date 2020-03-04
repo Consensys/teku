@@ -22,6 +22,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
+import tech.pegasys.artemis.storage.events.GetBlockByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
@@ -40,12 +42,14 @@ public class HistoricalChainData {
       latestBlockAtSlotRequests;
   private final AsyncEventTracker<UnsignedLong, Optional<BeaconState>> stateAtSlotRequests;
   private final AsyncEventTracker<Bytes32, Optional<BeaconState>> stateByBlockRootRequests;
+  private final AsyncEventTracker<Bytes32, Optional<SignedBeaconBlock>> blockByBlockRootRequests;
 
   public HistoricalChainData(final EventBus eventBus) {
     this.blockAtSlotRequests = new AsyncEventTracker<>(eventBus);
     this.latestBlockAtSlotRequests = new AsyncEventTracker<>(eventBus);
     this.stateAtSlotRequests = new AsyncEventTracker<>(eventBus);
     this.stateByBlockRootRequests = new AsyncEventTracker<>(eventBus);
+    this.blockByBlockRootRequests = new AsyncEventTracker<>(eventBus);
     eventBus.register(this);
   }
 
@@ -70,6 +74,11 @@ public class HistoricalChainData {
         blockRoot, new GetFinalizedStateByBlockRootRequest(blockRoot), QUERY_TIMEOUT);
   }
 
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
+    return blockByBlockRootRequests.sendRequest(
+        blockRoot, new GetBlockByBlockRootRequest(blockRoot), QUERY_TIMEOUT);
+  }
+
   @Subscribe
   @AllowConcurrentEvents
   public void onBlockAtSlotResponse(final GetFinalizedBlockAtSlotResponse response) {
@@ -92,5 +101,11 @@ public class HistoricalChainData {
   @AllowConcurrentEvents
   public void onStateByBlockRootResponse(final GetFinalizedStateByBlockRootResponse response) {
     stateByBlockRootRequests.onResponse(response.getBlockRoot(), response.getState());
+  }
+
+  @Subscribe
+  @AllowConcurrentEvents
+  public void onBlockByBlockRootResponse(final GetBlockByBlockRootResponse response) {
+    blockByBlockRootRequests.onResponse(response.getBlockRoot(), response.getBlock());
   }
 }
