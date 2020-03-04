@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
 
 import java.util.List;
@@ -64,5 +65,23 @@ public class RestApiUtilsTest {
     Map<String, List<String>> data = Map.of(KEY, List.of(VALUE));
 
     assertEquals(VALUE, validateQueryParameter(data, KEY));
+  }
+
+  @Test
+  public void getParameterValueAsInt_shouldReturnValue() {
+    Map<String, List<String>> data = Map.of(KEY, List.of(VALUE));
+    assertEquals(1, getParameterValueAsInt(data, KEY));
+  }
+
+  @Test
+  public void getParameterValueAsInt_shouldThrowIllegalArgIfNotIntValue_String() {
+    Map<String, List<String>> data = Map.of(KEY, List.of("not-an-int"));
+    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsInt(data, KEY));
+  }
+
+  @Test
+  public void getParameterValueAsInt_shouldThrowIllegalArgIfNotIntValue_Decimal() {
+    Map<String, List<String>> data = Map.of(KEY, List.of("1.5"));
+    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsInt(data, KEY));
   }
 }
