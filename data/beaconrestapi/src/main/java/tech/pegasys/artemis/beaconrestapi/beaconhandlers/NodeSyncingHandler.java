@@ -44,7 +44,8 @@ public class NodeSyncingHandler implements Handler {
       method = HttpMethod.GET,
       summary = "Get synchronization information from the running beacon node.",
       tags = {TAG_NODE},
-      description = "Returns an object with data about the synchronization status, or false if not synchronizing.",
+      description =
+          "Returns an object with data about the synchronization status, or false if not synchronizing.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
