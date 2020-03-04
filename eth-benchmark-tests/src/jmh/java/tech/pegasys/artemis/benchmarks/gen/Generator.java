@@ -50,12 +50,11 @@ public class Generator {
   public void generateBlocks() throws Exception {
 
     Constants.setConstants("mainnet");
-    //    Constants.SLOTS_PER_EPOCH = 6;
 
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     System.out.println("Generating keypairs...");
-    int validatorsCount = 32 * 1024;
+    int validatorsCount = 16 * 1024;
 
     List<BLSKeyPair> validatorKeys =
         BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
@@ -87,7 +86,7 @@ public class Generator {
                   currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
           writer.accept(block);
           final BeaconState postState =
-              localStorage.getBlockState(block.getMessage().getState_root()).orElseThrow();
+              localStorage.getBlockState(block.getMessage().hash_tree_root()).orElseThrow();
 
           attestations =
               UnsignedLong.ONE.equals(currentSlot)
