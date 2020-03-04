@@ -109,12 +109,12 @@ public class MinimumGenesisTimeBlockFinder {
         });
   }
 
-  // TODO: this function changes a tiny bit in 10.1
-  private static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
+  // eth1_timestamp - eth1_timestamp % MIN_GENESIS_DELAY + 2 * MIN_GENESIS_DELAY,
+  static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
     UnsignedLong timestamp = UnsignedLong.valueOf(eth1Timestamp);
     return timestamp
-        .minus(timestamp.mod(UnsignedLong.valueOf(Constants.SECONDS_PER_DAY)))
-        .plus(UnsignedLong.valueOf(2 * Constants.SECONDS_PER_DAY));
+        .minus(timestamp.mod(UnsignedLong.valueOf(Constants.MIN_GENESIS_DELAY)))
+        .plus(UnsignedLong.valueOf(2 * Constants.MIN_GENESIS_DELAY));
   }
 
   /**
@@ -158,6 +158,6 @@ public class MinimumGenesisTimeBlockFinder {
             UnsignedLong.valueOf(block.getNumber()),
             Bytes32.fromHexString(block.getHash()));
     eth1EventsChannel.onMinGenesisTimeBlock(event);
-    LOG.trace("Notifying BeaconChainService of MinGenesisTimeBlock: {}", event);
+    LOG.debug("Notifying BeaconChainService of MinGenesisTimeBlock: {}", event);
   }
 }

@@ -35,8 +35,8 @@ public class DepositObjectsFactory {
     this.asyncRunner = asyncRunner;
   }
 
-  public DepositsFetcher createDepositsFetcher() {
-    return new DepositsFetcher(eth1Provider, eth1EventsChannel, depositContract, asyncRunner);
+  public DepositFetcher createDepositsFetcher() {
+    return new DepositFetcher(eth1Provider, eth1EventsChannel, depositContract, asyncRunner);
   }
 
   public DepositProcessingController createDepositProcessingController() {
@@ -44,8 +44,8 @@ public class DepositObjectsFactory {
         eth1Provider, eth1EventsChannel, asyncRunner, createDepositsFetcher());
   }
 
-  public Eth1DepositsManager createEth1DepositsManager() {
-    return new Eth1DepositsManager(
+  public Eth1DepositManager createEth1DepositsManager() {
+    return new Eth1DepositManager(
         eth1Provider,
         asyncRunner,
         eth1EventsChannel,

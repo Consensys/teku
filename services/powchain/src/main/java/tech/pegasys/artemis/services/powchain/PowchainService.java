@@ -23,7 +23,7 @@ import tech.pegasys.artemis.pow.DepositContractAccessor;
 import tech.pegasys.artemis.pow.DepositContractFactory;
 import tech.pegasys.artemis.pow.DepositObjectsFactory;
 import tech.pegasys.artemis.pow.Eth1DataManager;
-import tech.pegasys.artemis.pow.Eth1DepositsManager;
+import tech.pegasys.artemis.pow.Eth1DepositManager;
 import tech.pegasys.artemis.pow.Eth1Provider;
 import tech.pegasys.artemis.pow.ThrottlingEth1Provider;
 import tech.pegasys.artemis.pow.Web3jEth1Provider;
@@ -36,7 +36,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class PowchainService implements ServiceInterface {
 
-  private Eth1DepositsManager eth1DepositsManager;
+  private Eth1DepositManager eth1DepositManager;
   private Eth1DataManager eth1DataManager;
 
   @Override
@@ -60,7 +60,7 @@ public class PowchainService implements ServiceInterface {
             depositContractAccessor.getContract(),
             asyncRunner);
 
-    eth1DepositsManager = depositsObjectFactory.createEth1DepositsManager();
+    eth1DepositManager = depositsObjectFactory.createEth1DepositsManager();
     eth1DataManager =
         new Eth1DataManager(
             new Web3jEth1Provider(web3j),
@@ -72,13 +72,13 @@ public class PowchainService implements ServiceInterface {
 
   @Override
   public void run() {
-    eth1DepositsManager.start();
+    eth1DepositManager.start();
     eth1DataManager.start();
   }
 
   @Override
   public void stop() {
     STDOUT.log(Level.DEBUG, "PowChainService.stop()");
-    eth1DepositsManager.stop();
+    eth1DepositManager.stop();
   }
 }

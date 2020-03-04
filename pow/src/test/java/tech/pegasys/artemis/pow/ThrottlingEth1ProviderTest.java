@@ -27,7 +27,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 class ThrottlingEth1ProviderTest {
 
@@ -42,14 +44,16 @@ class ThrottlingEth1ProviderTest {
   private final ThrottlingEth1Provider provider = new ThrottlingEth1Provider(delegateProvider, 3);
   private final List<SafeFuture<Block>> blockRequests = new ArrayList<>();
 
+  private final Answer<Object> returnBlockFuture =
+          call -> {
+            final SafeFuture<Block> future = new SafeFuture<>();
+            blockRequests.add(future);
+            return future;
+          };
+
   @BeforeEach
   void setUp() {
-    final Answer<Object> returnBlockFuture =
-        call -> {
-          final SafeFuture<Block> future = new SafeFuture<>();
-          blockRequests.add(future);
-          return future;
-        };
+
     when(delegateProvider.getEth1BlockFuture(any(UnsignedLong.class)))
         .thenAnswer(returnBlockFuture);
     when(delegateProvider.getEth1BlockFuture(any(String.class))).thenAnswer(returnBlockFuture);

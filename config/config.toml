@@ -26,7 +26,7 @@ privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A
 # normal, test
 # "test" pre-production
 # "normal" production, must include contractAddr and nodeUrl
-mode = "normal"
+mode = "test"
 inputFile = "" #"validator_test_data.json"
 numValidators = 64
 numNodes = 1

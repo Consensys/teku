@@ -40,7 +40,7 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class DepositsFetcher {
+public class DepositFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -49,7 +49,7 @@ public class DepositsFetcher {
   private final DepositContract depositContract;
   private final AsyncRunner asyncRunner;
 
-  public DepositsFetcher(
+  public DepositFetcher(
       Eth1Provider eth1Provider,
       Eth1EventsChannel eth1EventsChannel,
       DepositContract depositContract,
@@ -65,11 +65,11 @@ public class DepositsFetcher {
       BigInteger fromBlockNumber, BigInteger toBlockNumber) {
 
     if (fromBlockNumber.equals(toBlockNumber)) {
-      LOG.debug(
+      LOG.trace(
               "Attempting to fetch deposit events for block number {}",
               fromBlockNumber);
     } else {
-      LOG.debug(
+      LOG.trace(
               "Attempting to fetch deposit events for block numbers in the range ({}, {})",
               fromBlockNumber,
               toBlockNumber);

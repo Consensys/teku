@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.pow;
 
+import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.calculateCandidateGenesisTimestamp;
 import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 import static tech.pegasys.artemis.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
@@ -35,7 +36,7 @@ public class DepositProcessingController {
   private final Eth1Provider eth1Provider;
   private final Eth1EventsChannel eth1EventsChannel;
   private final AsyncRunner asyncRunner;
-  private final DepositsFetcher depositsFetcher;
+  private final DepositFetcher depositFetcher;
 
   private Disposable newBlockSubscription;
   private volatile boolean active = false;
@@ -50,11 +51,11 @@ public class DepositProcessingController {
       Eth1Provider eth1Provider,
       Eth1EventsChannel eth1EventsChannel,
       AsyncRunner asyncRunner,
-      DepositsFetcher depositsFetcher) {
+      DepositFetcher depositFetcher) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.asyncRunner = asyncRunner;
-    this.depositsFetcher = depositsFetcher;
+    this.depositFetcher = depositFetcher;
   }
 
   public synchronized void switchToBlockByBlockMode() {
@@ -64,7 +65,7 @@ public class DepositProcessingController {
 
   // inclusive of start block
   public synchronized void startSubscription(BigInteger subscriptionStartBlock) {
-    LOG.trace("Starting subscription at block {}", subscriptionStartBlock);
+    LOG.debug("Starting subscription at block {}", subscriptionStartBlock);
     latestSuccessfullyQueriedBlock = subscriptionStartBlock.subtract(BigInteger.ONE);
     newBlockSubscription =
         eth1Provider
@@ -82,7 +83,7 @@ public class DepositProcessingController {
 
   // Inclusive
   public synchronized SafeFuture<Void> fetchDepositsFromGenesisTo(BigInteger toBlockNumber) {
-    return depositsFetcher.fetchDepositsInRange(BigInteger.ZERO, toBlockNumber);
+    return depositFetcher.fetchDepositsInRange(BigInteger.ZERO, toBlockNumber);
   }
 
   private synchronized void onSubscriptionFailed(Throwable err) {
@@ -129,7 +130,7 @@ public class DepositProcessingController {
       fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
       toBlock = latestCanonicalBlockNumber;
 
-    depositsFetcher
+    depositFetcher
         .fetchDepositsInRange(fromBlock, toBlock)
         .finish(
             __ -> onSubscriptionDepositRequestSuccessful(toBlock),
@@ -148,16 +149,21 @@ public class DepositProcessingController {
       nextBlockNumber = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
     }
 
-    depositsFetcher
+    depositFetcher
         .fetchDepositsInRange(nextBlockNumber, nextBlockNumber)
-        .thenCompose((__) -> eth1Provider.getEth1BlockFuture(UnsignedLong.valueOf(nextBlockNumber)))
+        .thenCompose(__ -> eth1Provider
+                .getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(nextBlockNumber), asyncRunner))
         .thenAccept(
             block -> {
+              final BigInteger blockNumber = block.getNumber();
+              LOG.trace("Successfully fetched block {} for min genesis checking", blockNumber);
+              LOG.trace("Seconds until min genesis block {}",
+                      Constants.MIN_GENESIS_TIME.minus(calculateCandidateGenesisTimestamp(block.getTimestamp())));
               if (MinimumGenesisTimeBlockFinder.compareBlockTimestampToMinGenesisTime(block) >= 0) {
                 notifyMinGenesisTimeBlockReached(eth1EventsChannel, block);
                 isBlockByBlockModeOn = false;
+                LOG.debug("Switching back to fetching deposits by range");
               }
-              latestSuccessfullyQueriedBlock = block.getNumber();
             })
         .finish(
             __ -> onSubscriptionDepositRequestSuccessful(nextBlockNumber),

@@ -22,12 +22,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class Eth1DepositsManager {
+public class Eth1DepositManager {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -37,7 +38,7 @@ public class Eth1DepositsManager {
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
 
-  public Eth1DepositsManager(
+  public Eth1DepositManager(
       Eth1Provider eth1Provider,
       AsyncRunner asyncRunner,
       Eth1EventsChannel eth1EventsChannel,
@@ -60,8 +61,8 @@ public class Eth1DepositsManager {
                 return headBeforeMinGenesisMode(headBlock);
               }
             })
-        .finish(() -> LOG.trace("Eth1Manager successfully ran startup sequence."),
-                (err) -> LOG.warn("Eth1Manager unable to run startup sequence.", err)
+        .finish(() -> LOG.info("Eth1DepositsManager successfully ran startup sequence."),
+                (err) -> LOG.warn("Eth1DepositsManager unable to run startup sequence.", err)
         );
   }
 
@@ -70,18 +71,19 @@ public class Eth1DepositsManager {
   }
 
   private SafeFuture<Void> headBeforeMinGenesisMode(EthBlock.Block headBlock) {
-    LOG.trace("Eth1 manager initiating head before genesis mode");
+    LOG.debug("Eth1DepositsManager initiating head before genesis mode");
     BigInteger headBlockNumber = headBlock.getNumber();
     return depositProcessingController
         .fetchDepositsFromGenesisTo(headBlockNumber)
         .thenRun(
             () -> {
               depositProcessingController.switchToBlockByBlockMode();
-              depositProcessingController.startSubscription(headBlockNumber);
+              depositProcessingController.startSubscription(headBlockNumber.add(BigInteger.ONE));
             });
   }
 
   private SafeFuture<Void> headAfterMinGenesisMode(EthBlock.Block headBlock) {
+    LOG.debug("Eth1DepositsManager initiating head after genesis mode");
     return minimumGenesisTimeBlockFinder
         .findMinGenesisTimeBlockInHistory(headBlock)
         .thenCompose(this::sendDepositsUpToMinGenesis)
@@ -105,12 +107,17 @@ public class Eth1DepositsManager {
         .thenApply(EthBlock.Block::getNumber)
         .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
         .thenApply(UnsignedLong::valueOf)
-        .thenCompose(eth1Provider::getEth1BlockFuture)
+        .thenCompose(number -> eth1Provider.getGuaranteedEth1BlockFuture(number, asyncRunner))
         .exceptionallyCompose(
-            (err) ->
-                asyncRunner
-                    .getDelayedFuture(
-                        Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
-                    .thenCompose((__) -> getHead()));
+            (err) -> {
+
+              LOG.warn("Eth1DepositManager failed to get the head of Eth1. Retrying in {} seconds.",
+                      Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT);
+
+              return asyncRunner
+                      .getDelayedFuture(
+                              Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
+                      .thenCompose((__) -> getHead());
+            });
   }
 }
