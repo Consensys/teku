@@ -27,7 +27,12 @@ public class BeaconValidatorsResponse {
   private int nextPageToken;
 
   public BeaconValidatorsResponse(List<Validator> list) {
-    this(list, false, Constants.FAR_FUTURE_EPOCH, RestApiConstants.PAGE_SIZE_DEFAULT, RestApiConstants.PAGE_TOKEN_DEFAULT);
+    this(
+        list,
+        false,
+        Constants.FAR_FUTURE_EPOCH,
+        RestApiConstants.PAGE_SIZE_DEFAULT,
+        RestApiConstants.PAGE_TOKEN_DEFAULT);
   }
 
   public BeaconValidatorsResponse(
