@@ -32,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.CommitteeUtil;
@@ -208,16 +207,13 @@ public class CombinedChainDataClient {
         getStateAtSlot(startingSlot, recentChainData.getBestBlockRoot());
 
     return future
-        .thenApply(optionalState -> getCommitteesFromStateWithCache(optionalState, startingSlot))
+        .thenApply(
+            optionalState -> getCommitteesFromState(optionalState.orElseThrow(), startingSlot))
         .exceptionally(err -> List.of());
   }
 
-  List<CommitteeAssignment> getCommitteesFromStateWithCache(
-      Optional<BeaconState> beaconStateOptional, UnsignedLong startingSlot) {
+  List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UnsignedLong startingSlot) {
     List<CommitteeAssignment> result = new ArrayList<>();
-    BeaconStateWithCache state =
-        BeaconStateWithCache.fromBeaconState(beaconStateOptional.orElse(null));
-
     for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
       UnsignedLong slot = startingSlot.plus(UnsignedLong.valueOf(i));
       int committeeCount = get_committee_count_at_slot(state, slot).intValue();

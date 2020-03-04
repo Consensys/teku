@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -244,11 +243,8 @@ class CombinedChainDataClientTest {
 
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
-    BeaconStateWithCache stateWithCache =
-        BeaconStateWithCache.fromBeaconState(DataStructureUtil.randomBeaconState(11233));
-    List<CommitteeAssignment> data =
-        client.getCommitteesFromStateWithCache(
-            Optional.of(stateWithCache), stateWithCache.getSlot());
+    BeaconState state = DataStructureUtil.randomBeaconState(11233);
+    List<CommitteeAssignment> data = client.getCommitteesFromState(state, state.getSlot());
     assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
   }
 
