@@ -84,7 +84,7 @@ public class BeaconCommitteesHandler implements Handler {
           getCommitteesAtEpoch(validateQueryParameter(ctx.queryParamMap(), EPOCH));
       ctx.result(
           future.thenApplyChecked(
-              result -> jsonProvider.objectToJSON(new CommitteesResponse(result))));
+              result -> jsonProvider.objectToJSON(CommitteesResponse.fromList(result))));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
