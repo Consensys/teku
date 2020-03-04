@@ -14,11 +14,14 @@
 package tech.pegasys.artemis.beaconrestapi.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 class BeaconValidatorsResponseTest {
@@ -60,15 +63,15 @@ class BeaconValidatorsResponseTest {
   @Test
   public void suppliedPageParamsAreUsed() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
-    final int suppliedPageSizeParam = 10;
-    final int suppliedPageTokenParam = 1;
+    final int suppliedPageSizeParam = 9;
+    final int suppliedPageTokenParam = 2;
 
     BeaconValidatorsResponse beaconValidators =
         new BeaconValidatorsResponse(
             beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
     assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
     assertThat(beaconValidators.getNextPageToken()).isEqualTo(suppliedPageTokenParam + 1);
+    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
   }
 
   @Test
@@ -81,7 +84,25 @@ class BeaconValidatorsResponseTest {
         new BeaconValidatorsResponse(
             beaconState.getValidators(), suppliedPageSizeParam, suppliedPageTokenParam);
     assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(0);
     assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT);
+    assertThat(beaconValidators.validatorList.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void returnRemainderIfEdgeCasePageParams() {
+    BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
+    final List<Validator> validators = beaconState.getValidators();
+    final int validatorsSize = validators.size();
+    final int suppliedPageSizeParam = validatorsSize / 10 - 1;
+    final int suppliedPageTokenParam = 11;
+    final int expectedRemainderSize =
+        validatorsSize - (suppliedPageSizeParam * suppliedPageTokenParam);
+    assertThat(expectedRemainderSize).isLessThan(PAGE_SIZE_DEFAULT);
+
+    BeaconValidatorsResponse beaconValidators =
+        new BeaconValidatorsResponse(validators, suppliedPageSizeParam, suppliedPageTokenParam);
+    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT);
+    assertThat(beaconValidators.validatorList.size()).isEqualTo(expectedRemainderSize);
   }
 }

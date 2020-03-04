@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
-import java.util.ArrayList;
 import java.util.List;
 import tech.pegasys.artemis.datastructures.state.Validator;
 
@@ -27,24 +26,22 @@ public class BeaconValidatorsResponse {
   }
 
   public BeaconValidatorsResponse(
-      List<Validator> validatorList, final int pageSize, final int pageToken) {
-    // first page is pageToken = 0
+      final List<Validator> validatorList, final int pageSize, final int pageToken) {
     if (pageSize > 0 && pageToken >= 0) {
       int offset = pageToken * pageSize;
-      List<Validator> pageOfValidators = new ArrayList<Validator>();
       this.totalSize = validatorList.size();
-      // if the offset is outside the bounds, just return the list as is
       if (offset >= validatorList.size()) {
         this.validatorList = List.of();
         this.nextPageToken = 0;
         return;
       }
-      // otherwise get a page of results
-      for (int i = offset; i < Math.min(offset + pageSize, validatorList.size()); i++) {
-        pageOfValidators.add(validatorList.get(offset));
+      this.validatorList =
+          validatorList.subList(offset, Math.min(offset + pageSize, validatorList.size()));
+      if (totalSize == 0 || offset + pageSize >= validatorList.size()) {
+        this.nextPageToken = 0;
+      } else {
+        this.nextPageToken = pageToken + 1;
       }
-      this.nextPageToken = totalSize == 0 ? 0 : pageToken + 1;
-      this.validatorList = pageOfValidators;
     } else {
       this.validatorList = List.of();
       this.totalSize = validatorList.size();
