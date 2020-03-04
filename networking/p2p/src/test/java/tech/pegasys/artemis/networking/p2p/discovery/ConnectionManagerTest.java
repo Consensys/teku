@@ -91,6 +91,42 @@ class ConnectionManagerTest {
   }
 
   @Test
+  public void shouldAddNewPeerToStaticList() {
+    final ConnectionManager manager = createManager();
+
+    final MockNodeId peerId = new MockNodeId();
+    final StubPeer peer = new StubPeer(peerId);
+    when(network.connect("peer1"))
+        .thenReturn(SafeFuture.completedFuture(peer))
+        .thenReturn(new SafeFuture<>());
+    manager.start().join();
+
+    manager.addStaticPeer("peer1");
+    verify(network).connect("peer1");
+    peer.disconnect();
+
+    verify(network, times(2)).connect("peer1");
+  }
+
+  @Test
+  public void shouldNotAddDuplicatePeerToStaticList() {
+    final ConnectionManager manager = createManager("peer1");
+
+    final MockNodeId peerId = new MockNodeId();
+    final StubPeer peer = new StubPeer(peerId);
+    when(network.connect("peer1"))
+        .thenReturn(SafeFuture.completedFuture(peer))
+        .thenReturn(new SafeFuture<>());
+    manager.start().join();
+
+    verify(network).connect("peer1");
+
+    manager.addStaticPeer("peer1");
+    // Doesn't attempt to connect a second time.
+    verify(network, times(1)).connect("peer1");
+  }
+
+  @Test
   public void shouldConnectToKnownPeersWhenStarted() {
     final ConnectionManager manager = createManager();
     final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
