@@ -13,13 +13,22 @@
 
 package tech.pegasys.artemis.beaconrestapi.schema;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import java.util.stream.Collectors;
 
-public class CommitteesResponse {
-  public final List<CommitteeAssignment> committeeAssignments;
+@JsonSerialize(as = ArrayList.class)
+public class CommitteesResponse extends ArrayList<CommitteeAssignment> {
 
-  public CommitteesResponse(List<CommitteeAssignment> committeeAssignments) {
-    this.committeeAssignments = committeeAssignments;
+  private CommitteesResponse(List<CommitteeAssignment> committeeAssignments) {
+    super(committeeAssignments);
+  }
+
+  public static CommitteesResponse fromList(
+      List<tech.pegasys.artemis.datastructures.state.CommitteeAssignment> committeeAssignments) {
+    List<CommitteeAssignment> input =
+        committeeAssignments.stream().map(CommitteeAssignment::new).collect(Collectors.toList());
+    return new CommitteesResponse(input);
   }
 }
