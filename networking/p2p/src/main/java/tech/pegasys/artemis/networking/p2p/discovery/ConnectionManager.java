@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.networking.p2p.discovery;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +32,7 @@ public class ConnectionManager extends Service {
   private static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
-  private final List<String> staticPeers;
+  private final Set<String> staticPeers;
   private final DiscoveryService discoveryService;
 
   public ConnectionManager(
@@ -40,13 +42,15 @@ public class ConnectionManager extends Service {
       final List<String> staticPeers) {
     this.asyncRunner = asyncRunner;
     this.network = network;
-    this.staticPeers = staticPeers;
+    this.staticPeers = new HashSet<>(staticPeers);
     this.discoveryService = discoveryService;
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    staticPeers.forEach(this::createPersistentConnection);
+    synchronized (this) {
+      staticPeers.forEach(this::createPersistentConnection);
+    }
     connectToKnownPeers();
     searchForPeers().reportExceptions();
     return SafeFuture.COMPLETE;
@@ -88,6 +92,13 @@ public class ConnectionManager extends Service {
   @Override
   protected SafeFuture<?> doStop() {
     return SafeFuture.COMPLETE;
+  }
+
+  public synchronized void addStaticPeer(final String peerAddress) {
+    if (!staticPeers.contains(peerAddress)) {
+      staticPeers.add(peerAddress);
+      createPersistentConnection(peerAddress);
+    }
   }
 
   private void createPersistentConnection(final String peerAddress) {

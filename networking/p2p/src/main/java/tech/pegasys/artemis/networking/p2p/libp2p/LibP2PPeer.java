@@ -89,7 +89,7 @@ public class LibP2PPeer implements Peer {
   }
 
   private void handleConnectionClosed() {
-    LOG.debug("Disconnected from peer {}", this);
+    LOG.debug("Disconnected from peer {}", nodeId);
     connected.set(false);
   }
 }
