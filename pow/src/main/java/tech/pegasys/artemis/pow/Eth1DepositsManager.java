@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.pow;
 
-import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.isBlockBeforeMinGenesis;
+import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.isBlockAfterMinGenesis;
 import static tech.pegasys.artemis.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 
 import com.google.common.primitives.UnsignedLong;
@@ -54,13 +54,15 @@ public class Eth1DepositsManager {
     getHead()
         .thenCompose(
             headBlock -> {
-              if (isBlockBeforeMinGenesis(headBlock)) {
-                return headBeforeMinGenesisMode(headBlock);
-              } else {
+              if (isBlockAfterMinGenesis(headBlock)) {
                 return headAfterMinGenesisMode(headBlock);
+              } else {
+                return headBeforeMinGenesisMode(headBlock);
               }
             })
-        .finish(() -> LOG.trace("Eth1Manager successfully ran startup sequence."));
+        .finish(() -> LOG.trace("Eth1Manager successfully ran startup sequence."),
+                (err) -> LOG.warn("Eth1Manager unable to run startup sequence.", err)
+        );
   }
 
   public void stop() {
@@ -68,6 +70,7 @@ public class Eth1DepositsManager {
   }
 
   private SafeFuture<Void> headBeforeMinGenesisMode(EthBlock.Block headBlock) {
+    LOG.trace("Eth1 manager initiating head before genesis mode");
     BigInteger headBlockNumber = headBlock.getNumber();
     return depositProcessingController
         .fetchDepositsFromGenesisTo(headBlockNumber)

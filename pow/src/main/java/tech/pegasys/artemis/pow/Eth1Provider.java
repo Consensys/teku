@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import io.reactivex.Flowable;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface Eth1Provider {
@@ -26,6 +27,8 @@ public interface Eth1Provider {
   SafeFuture<Block> getEth1BlockFuture(UnsignedLong blockNumber);
 
   SafeFuture<Block> getEth1BlockFuture(String blockHash);
+
+  SafeFuture<Block> getGuaranteedEth1BlockFuture(String blockHash, AsyncRunner asyncRunner);
 
   SafeFuture<Block> getLatestEth1BlockFuture();
 

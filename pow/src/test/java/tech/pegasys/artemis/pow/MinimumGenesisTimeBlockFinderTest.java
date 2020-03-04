@@ -36,7 +36,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class Eth1MinGenesisTimeBlockFinderTest {
+public class MinimumGenesisTimeBlockFinderTest {
 
   private Eth1Provider eth1Provider;
   private MinGenesisTimeBlockEventChannel minGenesisTimeBlockEventChannel;
@@ -47,6 +47,7 @@ public class Eth1MinGenesisTimeBlockFinderTest {
 
   @BeforeEach
   void setUp() {
+    eth1Provider = mock(Eth1Provider.class);
     eth1Provider = mock(Eth1Provider.class);
     minGenesisTimeBlockEventChannel = mock(MinGenesisTimeBlockEventChannel.class);
     asyncRunner = new StubAsyncRunner();
@@ -213,8 +214,6 @@ public class Eth1MinGenesisTimeBlockFinderTest {
     verify(eth1Provider).getLatestBlockFlowable();
 
     pushLatestCanonicalBlockWithNumber(1001);
-
-    System.out.println(asyncRunner.countDelayedActions());
 
     pushLatestCanonicalBlockWithNumber(1002);
 

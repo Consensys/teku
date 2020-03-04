@@ -219,7 +219,7 @@ public class DepositRequestManagerTest {
     SafeFuture<List<DepositContract.DepositEventEventResponse>> safeFuture = new SafeFuture<>();
     doReturn(safeFuture)
         .when(depositContract)
-        .depositEventEventsInRange(
+        .depositEventInRange(
             argThat(
                 argument ->
                     Numeric.decodeQuantity(argument.getValue())

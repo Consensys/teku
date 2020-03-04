@@ -40,4 +40,13 @@ public class MinGenesisTimeBlockEvent {
   public Bytes32 getBlockHash() {
     return blockHash;
   }
+
+  @Override
+  public String toString() {
+    return "MinGenesisTimeBlockEvent{" +
+            "timestamp=" + timestamp +
+            ", blockNumber=" + blockNumber +
+            ", blockHash=" + blockHash +
+            '}';
+  }
 }

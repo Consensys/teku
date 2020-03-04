@@ -23,7 +23,11 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
+
+import java.util.concurrent.TimeUnit;
 
 public class Web3jEth1Provider implements Eth1Provider {
   private static final Logger LOG = LogManager.getLogger();
@@ -53,6 +57,17 @@ public class Web3jEth1Provider implements Eth1Provider {
     LOG.trace("Getting eth1 block {}", blockHash);
     return SafeFuture.of(web3j.ethGetBlockByHash(blockHash, false).sendAsync())
         .thenApply(EthBlock::getBlock);
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(String blockHash, AsyncRunner asyncRunner) {
+    return getEth1BlockFuture(blockHash)
+            .exceptionallyCompose((err) -> {
+              LOG.warn("Retrying Eth1 request for block: {}", blockHash);
+              return asyncRunner
+                      .getDelayedFuture(Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
+                      .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockHash, asyncRunner));
+            });
   }
 
   private SafeFuture<EthBlock.Block> getEth1BlockFuture(DefaultBlockParameter blockParameter) {

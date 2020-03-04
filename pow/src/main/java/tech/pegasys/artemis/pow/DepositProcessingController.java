@@ -38,12 +38,12 @@ public class DepositProcessingController {
   private final DepositsFetcher depositsFetcher;
 
   private Disposable newBlockSubscription;
-  private boolean active = false;
+  private volatile boolean active = false;
 
   // BlockByBlock mode is used to request deposit events and block information for each block
-  private boolean isBlockByBlockModeOn = false;
-  private BigInteger blockByBlockLastFetchedBlockNumber = BigInteger.ZERO;
+  private volatile boolean isBlockByBlockModeOn = false;
 
+  private BigInteger latestSuccessfullyQueriedBlock = BigInteger.ZERO;
   private BigInteger latestCanonicalBlockNumber = BigInteger.ZERO;
 
   public DepositProcessingController(
@@ -58,12 +58,14 @@ public class DepositProcessingController {
   }
 
   public synchronized void switchToBlockByBlockMode() {
+    LOG.debug("Switching to blockByBlock mode");
     isBlockByBlockModeOn = true;
   }
 
   // inclusive of start block
   public synchronized void startSubscription(BigInteger subscriptionStartBlock) {
-    depositsFetcher.setLatestFetchedBlockNumber(subscriptionStartBlock.subtract(BigInteger.ONE));
+    LOG.trace("Starting subscription at block {}", subscriptionStartBlock);
+    latestSuccessfullyQueriedBlock = subscriptionStartBlock.subtract(BigInteger.ONE);
     newBlockSubscription =
         eth1Provider
             .getLatestBlockFlowable()
@@ -92,7 +94,7 @@ public class DepositProcessingController {
     asyncRunner
         .getDelayedFuture(Constants.ETH1_SUBSCRIPTION_RETRY_TIMEOUT, TimeUnit.SECONDS)
         .finish(
-            () -> startSubscription(depositsFetcher.getLatestFetchedBlockNumber()),
+            () -> startSubscription(latestSuccessfullyQueriedBlock),
             (error) ->
                 LOG.warn(
                     "Unable to subscribe to the Eth1Node. Node won't "
@@ -110,7 +112,6 @@ public class DepositProcessingController {
 
   private synchronized void fetchLatestSubscriptionDeposits() {
     if (isBlockByBlockModeOn) {
-      blockByBlockLastFetchedBlockNumber = depositsFetcher.getLatestFetchedBlockNumber();
       fetchLatestDepositsOneBlockAtATime();
     } else fetchLatestSubscriptionDepositsOverRange();
   }
@@ -119,21 +120,19 @@ public class DepositProcessingController {
     final BigInteger toBlock;
     final BigInteger fromBlock;
 
-    synchronized (DepositProcessingController.this) {
       if (active
-          || latestCanonicalBlockNumber.equals(depositsFetcher.getLatestFetchedBlockNumber())) {
+          || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlock)) {
         return;
       }
       active = true;
 
-      fromBlock = depositsFetcher.getLatestFetchedBlockNumber().add(BigInteger.ONE);
-      toBlock = this.latestCanonicalBlockNumber;
-    }
+      fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
+      toBlock = latestCanonicalBlockNumber;
 
     depositsFetcher
         .fetchDepositsInRange(fromBlock, toBlock)
         .finish(
-            this::onSubscriptionDepositRequestSuccessful,
+            __ -> onSubscriptionDepositRequestSuccessful(toBlock),
             (err) -> onSubscriptionDepositRequestFailed(err, fromBlock, toBlock));
   }
 
@@ -141,12 +140,12 @@ public class DepositProcessingController {
     final BigInteger nextBlockNumber;
 
     synchronized (DepositProcessingController.this) {
-      if (active || latestCanonicalBlockNumber.equals(blockByBlockLastFetchedBlockNumber)) {
+      if (active || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlock)) {
         return;
       }
       active = true;
 
-      nextBlockNumber = blockByBlockLastFetchedBlockNumber.add(BigInteger.ONE);
+      nextBlockNumber = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
     }
 
     depositsFetcher
@@ -158,17 +157,18 @@ public class DepositProcessingController {
                 notifyMinGenesisTimeBlockReached(eth1EventsChannel, block);
                 isBlockByBlockModeOn = false;
               }
-              blockByBlockLastFetchedBlockNumber = block.getNumber();
+              latestSuccessfullyQueriedBlock = block.getNumber();
             })
         .finish(
-            this::onSubscriptionDepositRequestSuccessful,
+            __ -> onSubscriptionDepositRequestSuccessful(nextBlockNumber),
             (err) -> onSubscriptionDepositRequestFailed(err, nextBlockNumber));
   }
 
-  private synchronized void onSubscriptionDepositRequestSuccessful() {
+  private synchronized void onSubscriptionDepositRequestSuccessful(BigInteger requestToBlock) {
     active = false;
+    latestSuccessfullyQueriedBlock = requestToBlock;
 
-    if (latestCanonicalBlockNumber.compareTo(depositsFetcher.getLatestFetchedBlockNumber()) > 0) {
+    if (latestCanonicalBlockNumber.compareTo(latestSuccessfullyQueriedBlock) > 0) {
       fetchLatestSubscriptionDeposits();
     }
   }

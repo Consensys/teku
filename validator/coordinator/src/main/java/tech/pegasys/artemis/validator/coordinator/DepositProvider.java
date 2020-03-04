@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.lang.StrictMath.toIntExact;
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 
@@ -22,6 +23,10 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -37,6 +42,8 @@ import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEventChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ChainStorageClient chainStorageClient;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
@@ -54,6 +61,10 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEv
         .forEach(
             deposit -> {
               synchronized (DepositProvider.this) {
+                if (!chainStorageClient.isPreGenesis()) {
+                  LOG.debug("About to process deposit: {}", deposit.getIndex());
+                }
+
                 depositNavigableMap.put(deposit.getIndex(), deposit);
                 depositMerkleTree.add(deposit.getData().hash_tree_root());
               }

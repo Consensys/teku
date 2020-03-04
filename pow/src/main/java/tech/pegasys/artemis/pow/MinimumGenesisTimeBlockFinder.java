@@ -15,6 +15,9 @@ package tech.pegasys.artemis.pow;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
@@ -24,7 +27,9 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class MinimumGenesisTimeBlockFinder {
 
-  final Eth1Provider eth1Provider;
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final Eth1Provider eth1Provider;
 
   public MinimumGenesisTimeBlockFinder(Eth1Provider eth1Provider) {
     this.eth1Provider = eth1Provider;
@@ -61,10 +66,10 @@ public class MinimumGenesisTimeBlockFinder {
 
   private SafeFuture<EthBlock.Block> exploreBlocksDownwards(EthBlock.Block previousBlock) {
     if (previousBlock.getNumber().equals(BigInteger.ZERO)) {
-      throw new RuntimeException(
-          "Reached Eth1Genesis before reaching a valid min Eth2 genesis time, "
-              + "MIN_GENESIS_TIME constant must be wrong");
+      // We reached genesis and thus should be returning genesis as the min genesis block.
+      return SafeFuture.completedFuture(previousBlock);
     }
+
     UnsignedLong previousBlockNumber = UnsignedLong.valueOf(previousBlock.getNumber());
     UnsignedLong newBlockNumber = previousBlockNumber.minus(UnsignedLong.ONE);
     SafeFuture<EthBlock.Block> blockFuture = eth1Provider.getEth1BlockFuture(newBlockNumber);
@@ -127,7 +132,11 @@ public class MinimumGenesisTimeBlockFinder {
         calculateCandidateGenesisTimestamp(blockTimestamp.bigIntegerValue())
             .minus(Constants.MIN_GENESIS_TIME);
     UnsignedLong blockNumberDiff = timeDiff.dividedBy(secondsPerEth1Block);
-    return blockNumber.minus(blockNumberDiff);
+    if (blockNumberDiff.compareTo(blockNumber) > 0) {
+      return UnsignedLong.ZERO;
+    } else {
+      return blockNumber.minus(blockNumberDiff);
+    }
   }
 
   public static int compareBlockTimestampToMinGenesisTime(EthBlock.Block block) {
@@ -135,20 +144,20 @@ public class MinimumGenesisTimeBlockFinder {
         .compareTo(Constants.MIN_GENESIS_TIME);
   }
 
-  public static Boolean isBlockBeforeMinGenesis(EthBlock.Block block) {
+  public static Boolean isBlockAfterMinGenesis(EthBlock.Block block) {
     int comparison = compareBlockTimestampToMinGenesisTime(block);
     // If block timestamp is greater than min genesis time,
-    // min genesis block must have been in history
-    return comparison >= 0;
+    // min genesis block must be in the future
+    return comparison > 0;
   }
 
-  public static EthBlock.Block notifyMinGenesisTimeBlockReached(
+  public static void notifyMinGenesisTimeBlockReached(
       Eth1EventsChannel eth1EventsChannel, EthBlock.Block block) {
-    eth1EventsChannel.onMinGenesisTimeBlock(
-        new MinGenesisTimeBlockEvent(
+    MinGenesisTimeBlockEvent event = new MinGenesisTimeBlockEvent(
             UnsignedLong.valueOf(block.getTimestamp()),
             UnsignedLong.valueOf(block.getNumber()),
-            Bytes32.fromHexString(block.getHash())));
-    return block;
+            Bytes32.fromHexString(block.getHash()));
+    eth1EventsChannel.onMinGenesisTimeBlock(event);
+    LOG.trace("Notifying BeaconChainService of MinGenesisTimeBlock: {}", event);
   }
 }

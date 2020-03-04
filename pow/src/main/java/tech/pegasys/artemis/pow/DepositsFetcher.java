@@ -49,8 +49,6 @@ public class DepositsFetcher {
   private final DepositContract depositContract;
   private final AsyncRunner asyncRunner;
 
-  private volatile BigInteger latestFetchedBlockNumber;
-
   public DepositsFetcher(
       Eth1Provider eth1Provider,
       Eth1EventsChannel eth1EventsChannel,
@@ -66,38 +64,62 @@ public class DepositsFetcher {
   public synchronized SafeFuture<Void> fetchDepositsInRange(
       BigInteger fromBlockNumber, BigInteger toBlockNumber) {
 
-    LOG.trace(
-        "Attempting to fetch deposit events for block numbers in the range ({}, {})",
-        fromBlockNumber,
-        toBlockNumber);
+    if (fromBlockNumber.equals(toBlockNumber)) {
+      LOG.debug(
+              "Attempting to fetch deposit events for block number {}",
+              fromBlockNumber);
+    } else {
+      LOG.debug(
+              "Attempting to fetch deposit events for block numbers in the range ({}, {})",
+              fromBlockNumber,
+              toBlockNumber);
+    }
+
+
+    return getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber)
+            .thenApply(this::groupDepositEventResponsesByBlockHash)
+            .thenCompose(
+                    eventResponsesByBlockHash ->
+                            postDepositEvents(
+                                    getListOfEthBlockFutures(eventResponsesByBlockHash.keySet()),
+                                    eventResponsesByBlockHash));
+  }
+
+  private SafeFuture<List<DepositContract.DepositEventEventResponse>> getDepositEventsInRangeFromContract(
+          BigInteger fromBlockNumber, BigInteger toBlockNumber) {
 
     DefaultBlockParameter fromBlock = DefaultBlockParameter.valueOf(fromBlockNumber);
     DefaultBlockParameter toBlock = DefaultBlockParameter.valueOf(toBlockNumber);
 
-    SafeFuture<List<DepositContract.DepositEventEventResponse>> eventsFuture =
-        depositContract.depositEventEventsInRange(fromBlock, toBlock);
+    return depositContract.depositEventInRange(fromBlock, toBlock)
+            .exceptionallyCompose(
+                    (err) -> {
 
-    return eventsFuture
-        .thenApply(this::groupDepositEventResponsesByBlockHash)
-        .thenCompose(
-            eventResponsesByBlockHash ->
-                postDepositEvents(
-                    getMapOfEthBlockFutures(eventResponsesByBlockHash.keySet()),
-                    eventResponsesByBlockHash))
-        .exceptionallyCompose(
-            (err) ->
-                asyncRunner
-                    .getDelayedFuture(
-                        Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
-                    .thenCompose(
-                        (__) ->
-                            fetchDepositsInRange(getLatestFetchedBlockNumber(), toBlockNumber)));
+                      if (fromBlockNumber.equals(toBlockNumber)) {
+                        LOG.warn(
+                                "Retrying request of deposit events for block number {}",
+                                fromBlockNumber);
+                      } else {
+                        LOG.warn(
+                                "Retrying request of deposit events for " +
+                                        "block numbers in the range ({}, {})",
+                                fromBlockNumber,
+                                toBlockNumber);
+                      }
+
+                      return asyncRunner
+                              .getDelayedFuture(
+                                      Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
+                              .thenCompose(__ ->
+                                      getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber));
+                    });
   }
 
+
   private SafeFuture<Void> postDepositEvents(
-      List<SafeFuture<EthBlock.Block>> blockRequests,
-      Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
-          depositEventsByBlock) {
+          List<SafeFuture<EthBlock.Block>> blockRequests,
+          Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
+                  depositEventsByBlock) {
 
     // First process completed requests using iteration.
     // Avoid StackOverflowException when there is a long string of requests already completed.
@@ -108,13 +130,13 @@ public class DepositsFetcher {
 
     // All requests have completed and been processed.
     if (blockRequests.isEmpty()) {
-      return SafeFuture.completedFuture(null);
+      return SafeFuture.COMPLETE;
     }
 
     // Reached a block request that isn't complete so wait for it and recurse back into this method.
     return blockRequests
-        .get(blockRequests.size() - 1)
-        .thenCompose(block -> postDepositEvents(blockRequests, depositEventsByBlock));
+            .get(blockRequests.size() - 1)
+            .thenCompose(block -> postDepositEvents(blockRequests, depositEventsByBlock));
   }
 
   private synchronized void postEventsForBlock(
@@ -125,9 +147,8 @@ public class DepositsFetcher {
     final List<DepositContract.DepositEventEventResponse> deposits =
         depositEventsByBlock.get(new BlockNumberAndHash(blockNumber, block.getHash()));
     checkNotNull(deposits, "Did not find any deposits for block {}", blockNumber);
+    LOG.debug("Successfully fetched deposit events for block: {} ", blockNumber);
     postDeposits(createDepositFromBlockEvent(block, deposits));
-    latestFetchedBlockNumber = blockNumber;
-    LOG.trace("Successfully fetched deposit events for block: {} ", blockNumber);
   }
 
   private DepositsFromBlockEvent createDepositFromBlockEvent(
@@ -143,10 +164,10 @@ public class DepositsFetcher {
             .collect(toList()));
   }
 
-  private List<SafeFuture<EthBlock.Block>> getMapOfEthBlockFutures(
+  private List<SafeFuture<EthBlock.Block>> getListOfEthBlockFutures(
       Set<BlockNumberAndHash> neededBlockHashes) {
     return neededBlockHashes.stream()
-        .map(blockInfo -> eth1Provider.getEth1BlockFuture(blockInfo.getHash()))
+        .map(blockInfo -> eth1Provider.getGuaranteedEth1BlockFuture(blockInfo.getHash(), asyncRunner))
         .collect(toList());
   }
 
@@ -164,14 +185,6 @@ public class DepositsFetcher {
 
   private void postDeposits(DepositsFromBlockEvent event) {
     depositEventChannel.onDepositsFromBlock(event);
-  }
-
-  public void setLatestFetchedBlockNumber(BigInteger latestFetchedBlockNumber) {
-    this.latestFetchedBlockNumber = latestFetchedBlockNumber;
-  }
-
-  public BigInteger getLatestFetchedBlockNumber() {
-    return latestFetchedBlockNumber;
   }
 
   private static class BlockNumberAndHash implements Comparable<BlockNumberAndHash> {
@@ -220,3 +233,4 @@ public class DepositsFetcher {
     }
   }
 }
+

@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ThrottlingEth1Provider implements Eth1Provider {
@@ -41,6 +42,11 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   @Override
   public SafeFuture<Block> getEth1BlockFuture(final UnsignedLong blockNumber) {
     return queueRequest(() -> delegate.getEth1BlockFuture(blockNumber));
+  }
+
+  @Override
+  public SafeFuture<Block> getGuaranteedEth1BlockFuture(String blockHash, AsyncRunner asyncRunner) {
+    return queueRequest(() -> delegate.getGuaranteedEth1BlockFuture(blockHash, asyncRunner));
   }
 
   @Override
