@@ -146,7 +146,7 @@ public class BeaconStateUtil {
                     deposit.getData().getSignature(),
                     compute_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
-          LOG.warn( "Skipping invalid deposit");
+          LOG.warn("Skipping invalid deposit");
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);

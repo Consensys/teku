@@ -1,6 +1,28 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.pow;
 
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
 import com.google.common.primitives.Longs;
+import java.math.BigInteger;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,16 +37,6 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
-import java.math.BigInteger;
-import java.util.List;
-
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-
 public class DepositsFetcherTest {
 
   private Eth1Provider eth1Provider;
@@ -34,7 +46,7 @@ public class DepositsFetcherTest {
 
   private DepositFetcher depositFetcher;
 
-    @BeforeEach
+  @BeforeEach
   void setUp() {
     eth1Provider = mock(Eth1Provider.class);
     eth1EventsChannel = mock(Eth1EventsChannel.class);
@@ -42,8 +54,7 @@ public class DepositsFetcherTest {
     asyncRunner = new StubAsyncRunner();
 
     depositFetcher =
-        new DepositFetcher(
-            eth1Provider, eth1EventsChannel, depositContract, asyncRunner);
+        new DepositFetcher(eth1Provider, eth1EventsChannel, depositContract, asyncRunner);
   }
 
   @Test
@@ -56,11 +67,11 @@ public class DepositsFetcherTest {
     mockBlockForEth1Provider("0x5678", 5, 1014);
 
     depositEventsFuture.complete(
-            List.of(
-                    mockDepositEventEventResponse(1, "0x1234", 1),
-                    mockDepositEventEventResponse(2, "0x1234", 1),
-                    mockDepositEventEventResponse(3, "0x2345", 2),
-                    mockDepositEventEventResponse(4, "0x5678", 5)));
+        List.of(
+            mockDepositEventEventResponse(1, "0x1234", 1),
+            mockDepositEventEventResponse(2, "0x1234", 1),
+            mockDepositEventEventResponse(3, "0x2345", 2),
+            mockDepositEventEventResponse(4, "0x5678", 5)));
 
     depositFetcher.fetchDepositsInRange(BigInteger.ZERO, BigInteger.valueOf(10)).join();
 
@@ -75,7 +86,8 @@ public class DepositsFetcherTest {
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(block.getHash()).thenReturn(blockHash);
-    when(eth1Provider.getGuaranteedEth1BlockFuture(blockHash, asyncRunner)).thenReturn(SafeFuture.completedFuture(block));
+    when(eth1Provider.getGuaranteedEth1BlockFuture(blockHash, asyncRunner))
+        .thenReturn(SafeFuture.completedFuture(block));
   }
 
   private SafeFuture<List<DepositContract.DepositEventEventResponse>> mockContractEventsInRange(
@@ -102,7 +114,7 @@ public class DepositsFetcherTest {
     when(log.getBlockNumber()).thenReturn(BigInteger.valueOf(blockNumber));
 
     DepositContract.DepositEventEventResponse depositEventEventResponse =
-            new DepositContract.DepositEventEventResponse();
+        new DepositContract.DepositEventEventResponse();
     depositEventEventResponse.pubkey = new byte[48];
     depositEventEventResponse.withdrawal_credentials = new byte[32];
     depositEventEventResponse.amount = Longs.toByteArray(0);

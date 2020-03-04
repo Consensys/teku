@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit_without_checking_merkle_proof;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
@@ -28,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;

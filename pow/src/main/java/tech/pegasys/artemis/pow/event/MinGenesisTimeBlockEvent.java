@@ -43,10 +43,13 @@ public class MinGenesisTimeBlockEvent {
 
   @Override
   public String toString() {
-    return "MinGenesisTimeBlockEvent{" +
-            "timestamp=" + timestamp +
-            ", blockNumber=" + blockNumber +
-            ", blockHash=" + blockHash +
-            '}';
+    return "MinGenesisTimeBlockEvent{"
+        + "timestamp="
+        + timestamp
+        + ", blockNumber="
+        + blockNumber
+        + ", blockHash="
+        + blockHash
+        + '}';
   }
 }

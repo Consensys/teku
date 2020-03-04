@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.lang.StrictMath.toIntExact;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 
@@ -23,8 +22,6 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.operations.Deposit;

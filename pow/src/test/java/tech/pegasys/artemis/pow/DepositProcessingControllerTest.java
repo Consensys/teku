@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.pow;
 
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,19 +25,13 @@ import com.google.common.primitives.UnsignedLong;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.subjects.PublishSubject;
-
 import java.math.BigInteger;
-import java.util.List;
-
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.TestOnly;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
-import tech.pegasys.artemis.pow.contract.DepositContract;
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
@@ -84,7 +77,7 @@ public class DepositProcessingControllerTest {
 
     SafeFuture<Void> future = new SafeFuture<>();
     when(depositFetcher.fetchDepositsInRange(BigInteger.ONE, BigInteger.valueOf(10)))
-            .thenReturn(future);
+        .thenReturn(future);
 
     depositProcessingController.startSubscription(BigInteger.ONE);
 
@@ -107,7 +100,7 @@ public class DepositProcessingControllerTest {
     SafeFuture<Void> firstFuture = new SafeFuture<>();
 
     when(depositFetcher.fetchDepositsInRange(BigInteger.ONE, BigInteger.valueOf(10)))
-            .thenReturn(firstFuture);
+        .thenReturn(firstFuture);
 
     depositProcessingController.startSubscription(BigInteger.ONE);
 
@@ -117,8 +110,7 @@ public class DepositProcessingControllerTest {
 
     asyncRunner.executeQueuedActions();
 
-    verify(depositFetcher, times(2))
-            .fetchDepositsInRange(BigInteger.ONE, BigInteger.valueOf(10));
+    verify(depositFetcher, times(2)).fetchDepositsInRange(BigInteger.ONE, BigInteger.valueOf(10));
 
     verifyNoMoreInteractions(depositFetcher);
   }
@@ -136,42 +128,37 @@ public class DepositProcessingControllerTest {
     depositProcessingController.startSubscription(BigInteger.ONE);
 
     SafeFuture<Void> future1 = new SafeFuture<>();
-    when(depositFetcher.fetchDepositsInRange(BigInteger.ONE, BigInteger.ONE))
-            .thenReturn(future1);
+    when(depositFetcher.fetchDepositsInRange(BigInteger.ONE, BigInteger.ONE)).thenReturn(future1);
 
     mockBlockForEth1Provider("0xab", 1, 10);
 
     SafeFuture<Void> future2 = new SafeFuture<>();
     when(depositFetcher.fetchDepositsInRange(BigInteger.valueOf(2), BigInteger.valueOf(2)))
-            .thenReturn(future2);
+        .thenReturn(future2);
 
     mockBlockForEth1Provider("0xbb", 2, 15);
 
     SafeFuture<Void> future3 = new SafeFuture<>();
     when(depositFetcher.fetchDepositsInRange(BigInteger.valueOf(3), BigInteger.valueOf(3)))
-            .thenReturn(future3);
+        .thenReturn(future3);
 
     mockBlockForEth1Provider("0xbc", 3, 98);
 
     pushLatestCanonicalBlockWithNumber(3);
 
-    verify(depositFetcher)
-            .fetchDepositsInRange(BigInteger.valueOf(1), BigInteger.valueOf(1));
+    verify(depositFetcher).fetchDepositsInRange(BigInteger.valueOf(1), BigInteger.valueOf(1));
 
     future1.complete(null);
 
-    verify(depositFetcher)
-            .fetchDepositsInRange(BigInteger.valueOf(2), BigInteger.valueOf(2));
+    verify(depositFetcher).fetchDepositsInRange(BigInteger.valueOf(2), BigInteger.valueOf(2));
 
     future2.complete(null);
 
-    verify(depositFetcher)
-            .fetchDepositsInRange(BigInteger.valueOf(3), BigInteger.valueOf(3));
+    verify(depositFetcher).fetchDepositsInRange(BigInteger.valueOf(3), BigInteger.valueOf(3));
 
     future3.complete(null);
 
-    verify(eth1EventsChannel).onMinGenesisTimeBlock(
-            argThat(isEvent("0xbc", 3, 98)));
+    verify(eth1EventsChannel).onMinGenesisTimeBlock(argThat(isEvent("0xbc", 3, 98)));
   }
 
   private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {
@@ -180,7 +167,7 @@ public class DepositProcessingControllerTest {
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(block.getHash()).thenReturn(blockHash);
     when(eth1Provider.getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(blockNumber), asyncRunner))
-            .thenReturn(SafeFuture.completedFuture(block));
+        .thenReturn(SafeFuture.completedFuture(block));
   }
 
   private void pushLatestCanonicalBlockWithNumber(long latestBlockNumber) {
@@ -198,7 +185,7 @@ public class DepositProcessingControllerTest {
     return ps;
   }
 
-    private ArgumentMatcher<MinGenesisTimeBlockEvent> isEvent(
+  private ArgumentMatcher<MinGenesisTimeBlockEvent> isEvent(
       final String expectedBlockHash,
       final long expectedBlockNumber,
       final long expectedTimestamp) {

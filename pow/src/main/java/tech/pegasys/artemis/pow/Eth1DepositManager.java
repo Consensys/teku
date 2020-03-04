@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.Log;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -61,9 +60,9 @@ public class Eth1DepositManager {
                 return headBeforeMinGenesisMode(headBlock);
               }
             })
-        .finish(() -> LOG.info("Eth1DepositsManager successfully ran startup sequence."),
-                (err) -> LOG.warn("Eth1DepositsManager unable to run startup sequence.", err)
-        );
+        .finish(
+            () -> LOG.info("Eth1DepositsManager successfully ran startup sequence."),
+            (err) -> LOG.warn("Eth1DepositsManager unable to run startup sequence.", err));
   }
 
   public void stop() {
@@ -110,14 +109,13 @@ public class Eth1DepositManager {
         .thenCompose(number -> eth1Provider.getGuaranteedEth1BlockFuture(number, asyncRunner))
         .exceptionallyCompose(
             (err) -> {
-
-              LOG.warn("Eth1DepositManager failed to get the head of Eth1. Retrying in {} seconds.",
-                      Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT);
+              LOG.warn(
+                  "Eth1DepositManager failed to get the head of Eth1. Retrying in {} seconds.",
+                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT);
 
               return asyncRunner
-                      .getDelayedFuture(
-                              Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
-                      .thenCompose((__) -> getHead());
+                  .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
+                  .thenCompose((__) -> getHead());
             });
   }
 }

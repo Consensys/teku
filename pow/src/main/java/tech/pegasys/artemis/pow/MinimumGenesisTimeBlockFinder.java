@@ -15,7 +15,6 @@ package tech.pegasys.artemis.pow;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -153,7 +152,8 @@ public class MinimumGenesisTimeBlockFinder {
 
   public static void notifyMinGenesisTimeBlockReached(
       Eth1EventsChannel eth1EventsChannel, EthBlock.Block block) {
-    MinGenesisTimeBlockEvent event = new MinGenesisTimeBlockEvent(
+    MinGenesisTimeBlockEvent event =
+        new MinGenesisTimeBlockEvent(
             UnsignedLong.valueOf(block.getTimestamp()),
             UnsignedLong.valueOf(block.getNumber()),
             Bytes32.fromHexString(block.getHash()));

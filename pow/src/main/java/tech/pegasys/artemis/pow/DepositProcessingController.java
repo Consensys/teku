@@ -121,14 +121,13 @@ public class DepositProcessingController {
     final BigInteger toBlock;
     final BigInteger fromBlock;
 
-      if (active
-          || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlock)) {
-        return;
-      }
-      active = true;
+    if (active || latestCanonicalBlockNumber.equals(latestSuccessfullyQueriedBlock)) {
+      return;
+    }
+    active = true;
 
-      fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
-      toBlock = latestCanonicalBlockNumber;
+    fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
+    toBlock = latestCanonicalBlockNumber;
 
     depositFetcher
         .fetchDepositsInRange(fromBlock, toBlock)
@@ -151,14 +150,18 @@ public class DepositProcessingController {
 
     depositFetcher
         .fetchDepositsInRange(nextBlockNumber, nextBlockNumber)
-        .thenCompose(__ -> eth1Provider
-                .getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(nextBlockNumber), asyncRunner))
+        .thenCompose(
+            __ ->
+                eth1Provider.getGuaranteedEth1BlockFuture(
+                    UnsignedLong.valueOf(nextBlockNumber), asyncRunner))
         .thenAccept(
             block -> {
               final BigInteger blockNumber = block.getNumber();
               LOG.trace("Successfully fetched block {} for min genesis checking", blockNumber);
-              LOG.trace("Seconds until min genesis block {}",
-                      Constants.MIN_GENESIS_TIME.minus(calculateCandidateGenesisTimestamp(block.getTimestamp())));
+              LOG.trace(
+                  "Seconds until min genesis block {}",
+                  Constants.MIN_GENESIS_TIME.minus(
+                      calculateCandidateGenesisTimestamp(block.getTimestamp())));
               if (MinimumGenesisTimeBlockFinder.compareBlockTimestampToMinGenesisTime(block) >= 0) {
                 notifyMinGenesisTimeBlockReached(eth1EventsChannel, block);
                 isBlockByBlockModeOn = false;
