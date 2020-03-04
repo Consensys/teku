@@ -20,8 +20,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,6 +31,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -234,6 +238,16 @@ class CombinedChainDataClientTest {
 
     assertThat(client.getBlockInEffectAtSlot(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
+  }
+
+  @Test
+  public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
+    BeaconStateWithCache stateWithCache =
+        BeaconStateWithCache.fromBeaconState(DataStructureUtil.randomBeaconState(11233));
+    List<CommitteeAssignment> data =
+        client.getCommitteesFromStateWithCache(
+            Optional.of(stateWithCache), stateWithCache.getSlot());
+    assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
   }
 
   @Test
