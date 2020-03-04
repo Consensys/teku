@@ -77,6 +77,8 @@ public class BeaconValidatorsHandlerTest {
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
+    assertThat(beaconValidators.validatorList.size())
+        .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, beaconState.getValidators().size()));
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
   }
 
@@ -133,6 +135,8 @@ public class BeaconValidatorsHandlerTest {
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
+    assertThat(beaconValidators.validatorList.size())
+        .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, beaconState.getValidators().size()));
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
   }
 
