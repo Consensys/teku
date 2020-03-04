@@ -36,13 +36,16 @@ import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -158,7 +161,7 @@ public class DeserializationTest {
   void BeaconStateTest() {
     BeaconState beaconState = randomBeaconState(100);
     Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
-    BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconState.class);
+    BeaconStateImpl state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
     assertEquals(beaconState, state);
   }
 
@@ -185,10 +188,10 @@ public class DeserializationTest {
 
   @Test
   void HistoricalBatchTest() {
-    SSZVector<Bytes32> block_roots =
-        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
-    SSZVector<Bytes32> state_roots =
-        new SSZVector<>(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZMutableVector<Bytes32> block_roots =
+        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
+    SSZMutableVector<Bytes32> state_roots =
+        SSZVector.createMutable(Constants.SLOTS_PER_HISTORICAL_ROOT, Bytes32.ZERO);
     IntStream.range(0, Constants.SLOTS_PER_HISTORICAL_ROOT)
         .forEach(
             i -> {
@@ -214,7 +217,7 @@ public class DeserializationTest {
     assertEquals(
         validator,
         SimpleOffsetSerializer.deserialize(
-            SimpleOffsetSerializer.serialize(validator), Validator.class));
+            SimpleOffsetSerializer.serialize(validator), ValidatorImpl.class));
   }
 
   @Test

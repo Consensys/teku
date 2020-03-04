@@ -47,8 +47,8 @@ import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
@@ -72,6 +72,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -247,7 +248,7 @@ public class ValidatorCoordinator {
       BeaconState previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
     try {
 
-      BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(previousState);
+      MutableBeaconState newState = previousState.createWritableCopy();
       // Process empty slots up to the new slot
       stateTransition.process_slots(newState, newSlot, false);
 
@@ -288,7 +289,8 @@ public class ValidatorCoordinator {
   }
 
   private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
-    SSZList<ProposerSlashing> slashingsForBlock = BeaconBlockBodyLists.createProposerSlashings();
+    SSZMutableList<ProposerSlashing> slashingsForBlock =
+        BeaconBlockBodyLists.createProposerSlashings();
     ProposerSlashing slashing = slashings.poll();
     while (slashing != null) {
       if (!state.getValidators().get(slashing.getProposer_index().intValue()).isSlashed()) {
@@ -329,7 +331,7 @@ public class ValidatorCoordinator {
   @VisibleForTesting
   static void getIndicesOfOurValidators(
       BeaconState state, Map<BLSPublicKey, ValidatorInfo> validators) {
-    List<Validator> validatorRegistry = state.getValidators();
+    SSZList<Validator> validatorRegistry = state.getValidators();
     IntStream.range(0, validatorRegistry.size())
         .forEach(
             i -> {
