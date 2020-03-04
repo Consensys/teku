@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition;
+package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;

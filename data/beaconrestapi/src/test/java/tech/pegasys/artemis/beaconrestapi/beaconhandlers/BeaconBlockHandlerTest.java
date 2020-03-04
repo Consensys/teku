@@ -45,6 +45,7 @@ import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -55,6 +56,7 @@ public class BeaconBlockHandlerTest {
       new BadRequest("Query parameter missing. Must specify one of root or epoch or slot.");
 
   private final Context context = mock(Context.class);
+  private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
   private final Store store = mock(Store.class);
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -76,7 +78,7 @@ public class BeaconBlockHandlerTest {
     final String rootKey = "0xf22e4ec2";
     final Map<String, List<String>> params = Map.of(ROOT, List.of(rootKey));
 
-    when(combinedChainDataClient.getStore()).thenReturn(null);
+    when(storageClient.getStore()).thenReturn(null);
     when(context.queryParamMap()).thenReturn(params);
     when(context.queryParam(any())).thenReturn(rootKey);
 
