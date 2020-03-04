@@ -20,12 +20,10 @@ import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
 import io.libp2p.core.multiformats.Multiaddr;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -38,15 +36,12 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final AsyncRunner asyncRunner;
-  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
@@ -56,11 +51,9 @@ public class PeerManager implements ConnectionHandler {
       Subscribers.create(true);
 
   public PeerManager(
-      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final List<PeerHandler> peerHandlers,
       final Map<RpcMethod, RpcHandler> rpcHandlers) {
-    this.asyncRunner = asyncRunner;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
@@ -81,36 +74,12 @@ public class PeerManager implements ConnectionHandler {
     connectSubscribers.unsubscribe(subscriptionId);
   }
 
-  public SafeFuture<?> connect(final Multiaddr peer, final Network network) {
+  public SafeFuture<Peer> connect(final Multiaddr peer, final Network network) {
     LOG.debug("Connecting to {}", peer);
-    final SafeFuture<Connection> initialConnectionFuture = SafeFuture.of(network.connect(peer));
-
-    // Retry if peer disconnects or we fail to connect
-    initialConnectionFuture
-        .thenCompose(
-            conn -> {
-              LOG.debug("Connection to peer {} was successful", conn.secureSession().getRemoteId());
-              return SafeFuture.of(conn.closeFuture());
-            })
-        .exceptionally(
-            (err) -> {
-              LOG.debug("Connection to {} failed: {}", peer, err);
-              return null;
-            })
-        .thenCompose(
-            (res) -> {
-              LOG.debug(
-                  "Connection to {} was closed. Will retry in {} sec",
-                  peer,
-                  RECONNECT_TIMEOUT.toSeconds());
-              return asyncRunner.runAfterDelay(
-                  () -> connect(peer, network).exceptionally(err -> null),
-                  RECONNECT_TIMEOUT.toMillis(),
-                  TimeUnit.MILLISECONDS);
-            })
-        .reportExceptions();
-
-    return initialConnectionFuture;
+    return SafeFuture.of(network.connect(peer))
+        .thenApply(
+            connection ->
+                connectedPeerMap.get(new LibP2PNodeId(connection.secureSession().getRemoteId())));
   }
 
   public Optional<Peer> getPeer(NodeId id) {
@@ -127,7 +96,8 @@ public class PeerManager implements ConnectionHandler {
     }
   }
 
-  private void onDisconnectedPeer(Peer peer) {
+  @VisibleForTesting
+  void onDisconnectedPeer(Peer peer) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
       STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getId());
       peerHandlers.forEach(h -> h.onDisconnect(peer));

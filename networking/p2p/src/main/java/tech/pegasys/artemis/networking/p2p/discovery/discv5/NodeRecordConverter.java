@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
-import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryNodeId;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 
 public class NodeRecordConverter {
@@ -37,8 +36,7 @@ public class NodeRecordConverter {
 
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
       final NodeRecord nodeRecord, final InetSocketAddress address) {
-    final DiscoveryNodeId nodeId = new DiscoveryNodeId(nodeRecord.getNodeId());
-    return new DiscoveryPeer(nodeId, address);
+    return new DiscoveryPeer(((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address);
   }
 
   private static Optional<InetSocketAddress> addressFromFields(
