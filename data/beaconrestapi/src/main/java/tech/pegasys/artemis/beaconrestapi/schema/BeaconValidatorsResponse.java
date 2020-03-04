@@ -16,6 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.schema;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.util.config.Constants;
@@ -26,7 +27,7 @@ public class BeaconValidatorsResponse {
   private int nextPageToken;
 
   public BeaconValidatorsResponse(List<Validator> list) {
-    this(list, false, Constants.FAR_FUTURE_EPOCH, 20, 0);
+    this(list, false, Constants.FAR_FUTURE_EPOCH, RestApiConstants.PAGE_SIZE_DEFAULT, RestApiConstants.PAGE_TOKEN_DEFAULT);
   }
 
   public BeaconValidatorsResponse(
