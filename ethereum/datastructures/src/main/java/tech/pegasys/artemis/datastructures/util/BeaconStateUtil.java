@@ -54,6 +54,8 @@ import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -70,6 +72,8 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconStateUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
@@ -142,7 +146,7 @@ public class BeaconStateUtil {
                     deposit.getData().getSignature(),
                     compute_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
-          STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
+          LOG.warn( "Skipping invalid deposit");
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);

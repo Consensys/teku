@@ -44,6 +44,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     if (!chainStorageClient.isPreGenesis()) {
       return;
     }
+
     final List<DepositWithIndex> deposits =
         event.getDeposits().stream()
             .map(DepositUtil::convertDepositEventToOperationDeposit)

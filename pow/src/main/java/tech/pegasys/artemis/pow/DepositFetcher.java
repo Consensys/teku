@@ -45,7 +45,7 @@ public class DepositsFetcher {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1Provider eth1Provider;
-  private final Eth1EventsChannel depositEventChannel;
+  private final Eth1EventsChannel eth1EventsChannel;
   private final DepositContract depositContract;
   private final AsyncRunner asyncRunner;
 
@@ -55,7 +55,7 @@ public class DepositsFetcher {
       DepositContract depositContract,
       AsyncRunner asyncRunner) {
     this.eth1Provider = eth1Provider;
-    this.depositEventChannel = eth1EventsChannel;
+    this.eth1EventsChannel = eth1EventsChannel;
     this.depositContract = depositContract;
     this.asyncRunner = asyncRunner;
   }
@@ -74,7 +74,6 @@ public class DepositsFetcher {
               fromBlockNumber,
               toBlockNumber);
     }
-
 
     return getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber)
             .thenApply(this::groupDepositEventResponsesByBlockHash)
@@ -121,6 +120,7 @@ public class DepositsFetcher {
           Map<BlockNumberAndHash, List<DepositContract.DepositEventEventResponse>>
                   depositEventsByBlock) {
 
+
     // First process completed requests using iteration.
     // Avoid StackOverflowException when there is a long string of requests already completed.
     while (!blockRequests.isEmpty() && blockRequests.get(blockRequests.size() - 1).isDone()) {
@@ -147,7 +147,7 @@ public class DepositsFetcher {
     final List<DepositContract.DepositEventEventResponse> deposits =
         depositEventsByBlock.get(new BlockNumberAndHash(blockNumber, block.getHash()));
     checkNotNull(deposits, "Did not find any deposits for block {}", blockNumber);
-    LOG.debug("Successfully fetched deposit events for block: {} ", blockNumber);
+    LOG.trace("Successfully fetched deposit events for block: {} ", blockNumber);
     postDeposits(createDepositFromBlockEvent(block, deposits));
   }
 
@@ -184,7 +184,7 @@ public class DepositsFetcher {
   }
 
   private void postDeposits(DepositsFromBlockEvent event) {
-    depositEventChannel.onDepositsFromBlock(event);
+    eth1EventsChannel.onDepositsFromBlock(event);
   }
 
   private static class BlockNumberAndHash implements Comparable<BlockNumberAndHash> {

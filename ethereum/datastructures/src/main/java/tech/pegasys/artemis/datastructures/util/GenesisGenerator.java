@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -44,6 +46,9 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final BeaconState state = new BeaconState();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
   private final long depositListLength = ((long) 1) << DEPOSIT_CONTRACT_TREE_DEPTH;
@@ -70,7 +75,7 @@ public class GenesisGenerator {
     // Process deposits
     deposits.forEach(
         deposit -> {
-          STDOUT.log(Level.DEBUG, "About to process deposit: " + depositDataList.size());
+          LOG.debug("About to process deposit: " + depositDataList.size());
           depositDataList.add(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.
