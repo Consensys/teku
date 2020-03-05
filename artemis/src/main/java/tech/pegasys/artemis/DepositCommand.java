@@ -101,7 +101,7 @@ public class DepositCommand implements Runnable {
               names = {"--output-file", "-o"},
               paramLabel = "<FILE>",
               description =
-                  "File to write validator keys to. Keys are printed to std out if not specified")
+                  "File to write unencrypted validator keys to. Keys are printed to std out if not specified")
           String outputFile,
       @Option(
               names = {"--encrypt-keys", "-e"},
