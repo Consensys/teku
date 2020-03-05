@@ -14,7 +14,10 @@
 package tech.pegasys.artemis.pow.api;
 
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 
-public interface DepositEventChannel {
+public interface Eth1EventsChannel {
   void onDepositsFromBlock(DepositsFromBlockEvent event);
+
+  void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
 }

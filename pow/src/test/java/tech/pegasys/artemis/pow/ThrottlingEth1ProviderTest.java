@@ -42,14 +42,16 @@ class ThrottlingEth1ProviderTest {
   private final ThrottlingEth1Provider provider = new ThrottlingEth1Provider(delegateProvider, 3);
   private final List<SafeFuture<Block>> blockRequests = new ArrayList<>();
 
+  private final Answer<Object> returnBlockFuture =
+      call -> {
+        final SafeFuture<Block> future = new SafeFuture<>();
+        blockRequests.add(future);
+        return future;
+      };
+
   @BeforeEach
   void setUp() {
-    final Answer<Object> returnBlockFuture =
-        call -> {
-          final SafeFuture<Block> future = new SafeFuture<>();
-          blockRequests.add(future);
-          return future;
-        };
+
     when(delegateProvider.getEth1BlockFuture(any(UnsignedLong.class)))
         .thenAnswer(returnBlockFuture);
     when(delegateProvider.getEth1BlockFuture(any(String.class))).thenAnswer(returnBlockFuture);
