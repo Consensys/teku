@@ -256,8 +256,7 @@ class ConnectionManagerTest {
 
   @Test
   public void shouldLimitNumberOfNewConnectionsToKnownPeersOnStartup() {
-    // Target range midpoint is 2
-    final ConnectionManager manager = createManager(new TargetPeerRange(1, 3));
+    final ConnectionManager manager = createManager(new TargetPeerRange(1, 2));
     final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
     final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
     final DiscoveryPeer discoveryPeer3 = new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
@@ -287,7 +286,7 @@ class ConnectionManagerTest {
         // After search
         .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3, discoveryPeer4));
 
-    final ConnectionManager manager = createManager(new TargetPeerRange(2, 4));
+    final ConnectionManager manager = createManager(new TargetPeerRange(2, 3));
 
     when(network.getPeerCount()).thenReturn(0);
     manager.start().join();
