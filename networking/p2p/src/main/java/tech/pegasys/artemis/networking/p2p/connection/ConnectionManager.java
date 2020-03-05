@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.util.async.AsyncRunner;
@@ -34,7 +35,7 @@ public class ConnectionManager extends Service {
   private static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
-  private final Set<String> staticPeers;
+  private final Set<PeerAddress> staticPeers;
   private final DiscoveryService discoveryService;
   private final TargetPeerRange targetPeerCountRange;
 
@@ -44,11 +45,11 @@ public class ConnectionManager extends Service {
       final DiscoveryService discoveryService,
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
-      final List<String> staticPeers,
+      final List<PeerAddress> peerAddresses,
       final TargetPeerRange targetPeerCountRange) {
     this.asyncRunner = asyncRunner;
     this.network = network;
-    this.staticPeers = new HashSet<>(staticPeers);
+    this.staticPeers = new HashSet<>(peerAddresses);
     this.discoveryService = discoveryService;
     this.targetPeerCountRange = targetPeerCountRange;
   }
@@ -113,18 +114,18 @@ public class ConnectionManager extends Service {
     return SafeFuture.COMPLETE;
   }
 
-  public synchronized void addStaticPeer(final String peerAddress) {
+  public synchronized void addStaticPeer(final PeerAddress peerAddress) {
     if (!staticPeers.contains(peerAddress)) {
       staticPeers.add(peerAddress);
       createPersistentConnection(peerAddress);
     }
   }
 
-  private void createPersistentConnection(final String peerAddress) {
+  private void createPersistentConnection(final PeerAddress peerAddress) {
     maintainPersistentConnection(peerAddress).reportExceptions();
   }
 
-  private SafeFuture<Peer> maintainPersistentConnection(final String peerAddress) {
+  private SafeFuture<Peer> maintainPersistentConnection(final PeerAddress peerAddress) {
     LOG.debug("Connecting to peer {}", peerAddress);
     return network
         .connect(peerAddress)

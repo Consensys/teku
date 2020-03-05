@@ -20,6 +20,7 @@ import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
@@ -34,8 +35,13 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public SafeFuture<Peer> connect(String peer) {
+  public SafeFuture<Peer> connect(PeerAddress peer) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
+  }
+
+  @Override
+  public PeerAddress parse(final String peerAddress) {
+    return new PeerAddress(new MockNodeId(peerAddress.hashCode()), peerAddress);
   }
 
   @Override

@@ -51,6 +51,7 @@ import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -159,8 +160,15 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public SafeFuture<Peer> connect(final String peer) {
-    return peerManager.connect(new Multiaddr(peer), host.getNetwork());
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
+    return peer.as(MultiaddrPeerAddress.class)
+        .thenCompose(
+            staticPeer -> peerManager.connect(staticPeer.getMultiaddr(), host.getNetwork()));
+  }
+
+  @Override
+  public PeerAddress parse(final String peerAddress) {
+    return MultiaddrPeerAddress.parse(peerAddress);
   }
 
   @Override

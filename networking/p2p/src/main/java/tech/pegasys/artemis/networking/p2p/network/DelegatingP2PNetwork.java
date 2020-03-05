@@ -29,7 +29,7 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public SafeFuture<Peer> connect(final String peer) {
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
     return network.connect(peer);
   }
 
@@ -41,6 +41,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public boolean isConnected(final DiscoveryPeer discoveryPeer) {
     return network.isConnected(discoveryPeer);
+  }
+
+  @Override
+  public PeerAddress parse(final String peerAddress) {
+    return network.parse(peerAddress);
   }
 
   @Override

@@ -35,11 +35,23 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
    * implementation. If a connection already exists for this peer, the future completes with the
    * existing peer.
    *
+   * <p>The {@link PeerAddress} must have been created using the {@link #parse(String)} method of
+   * this same implementation.
+   *
    * @param peer Peer to connect to.
    * @return A future which completes when the connection is establish, containing the newly
    *     connected peer.
    */
-  SafeFuture<Peer> connect(String peer);
+  SafeFuture<Peer> connect(PeerAddress peer);
+
+  /**
+   * Parses a peer address in any of this networks supported formats.
+   *
+   * @param peerAddress the address to parse
+   * @return a {@link PeerAddress} which is supported by {@link #connect(PeerAddress)} for
+   *     initiating connections
+   */
+  PeerAddress parse(String peerAddress);
 
   /**
    * Connects to a peer identified via discovery. If a connection already exists for this peer, the
