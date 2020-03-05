@@ -43,12 +43,16 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -75,8 +79,8 @@ public final class DataStructureUtil {
   }
 
   public static <T> SSZList<T> randomSSZList(
-      Class<T> classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
-    SSZList<T> sszList = new SSZList<>(classInfo, maxSize);
+      Class<? extends T> classInfo, long maxSize, Function<Integer, T> randomFunction, int seed) {
+    SSZMutableList<T> sszList = SSZList.createMutable(classInfo, maxSize);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems).forEach(i -> sszList.add(randomFunction.apply(seed)));
     return sszList;
@@ -84,7 +88,8 @@ public final class DataStructureUtil {
 
   public static <T> SSZVector<T> randomSSZVector(
       T defaultClassObject, long maxSize, Function<Integer, T> randomFunction, int seed) {
-    SSZVector<T> sszvector = new SSZVector<>(toIntExact(maxSize), defaultClassObject);
+    SSZMutableVector<T> sszvector =
+        SSZVector.createMutable(toIntExact(maxSize), defaultClassObject);
     long numItems = maxSize / 10;
     LongStream.range(0, numItems)
         .forEach(i -> sszvector.set(toIntExact(i), randomFunction.apply(seed)));
@@ -239,8 +244,8 @@ public final class DataStructureUtil {
   }
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
-    SSZList<UnsignedLong> attesting_indices =
-        new SSZList<>(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    SSZMutableList<UnsignedLong> attesting_indices =
+        SSZList.createMutable(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     attesting_indices.add(randomUnsignedLong(seed));
     attesting_indices.add(randomUnsignedLong(seed++));
     attesting_indices.add(randomUnsignedLong(seed++));
@@ -268,7 +273,7 @@ public final class DataStructureUtil {
 
   public static DepositWithIndex randomDepositWithIndex(int seed) {
     return new DepositWithIndex(
-        new SSZVector<>(32, randomBytes32(seed)),
+        SSZVector.createMutable(32, randomBytes32(seed)),
         randomDepositData(seed++),
         randomUnsignedLong(seed++)
             .mod(UnsignedLong.valueOf(Constants.DEPOSIT_CONTRACT_TREE_DEPTH)));
@@ -276,13 +281,13 @@ public final class DataStructureUtil {
 
   public static Deposit randomDepositWithoutIndex(int seed) {
     return new Deposit(
-        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
+        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
         randomDepositData(seed++));
   }
 
   public static Deposit randomDeposit(int seed) {
     return new Deposit(
-        new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
+        SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32(seed)),
         randomDepositData(seed));
   }
 
@@ -314,8 +319,9 @@ public final class DataStructureUtil {
     return new VoluntaryExit(randomUnsignedLong(seed), randomUnsignedLong(seed++));
   }
 
-  public static ArrayList<DepositWithIndex> newDeposits(int numDeposits) {
-    ArrayList<DepositWithIndex> deposits = new ArrayList<>();
+  public static SSZList<DepositWithIndex> newDeposits(int numDeposits) {
+    SSZMutableList<DepositWithIndex> deposits =
+        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
     final DepositGenerator depositGenerator = new DepositGenerator();
 
     for (int i = 0; i < numDeposits; i++) {
@@ -327,7 +333,7 @@ public final class DataStructureUtil {
               keypair.getPublicKey());
 
       SSZVector<Bytes32> proof =
-          new SSZVector<>(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
+          SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
       DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UnsignedLong.valueOf(i));
       deposits.add(deposit);
     }
@@ -335,7 +341,7 @@ public final class DataStructureUtil {
   }
 
   public static Validator randomValidator(int seed) {
-    return new Validator(
+    return Validator.create(
         randomPublicKey(seed),
         randomBytes32(seed++),
         UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -354,7 +360,7 @@ public final class DataStructureUtil {
   }
 
   public static BeaconState randomBeaconState(int seed) {
-    return new BeaconState(
+    return BeaconState.create(
         randomUnsignedLong(seed),
         randomUnsignedLong(seed++),
         randomFork(seed++),
@@ -379,7 +385,7 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed++),
 
         // Can't use the actual maxSize cause it is too big
-        randomSSZList(Validator.class, 1000, DataStructureUtil::randomValidator, seed++),
+        randomSSZList(ValidatorImpl.class, 1000, DataStructureUtil::randomValidator, seed++),
         randomSSZList(UnsignedLong.class, 1000, DataStructureUtil::randomUnsignedLong, seed++),
         randomSSZVector(
             Bytes32.ZERO,
@@ -402,8 +408,8 @@ public final class DataStructureUtil {
   }
 
   public static BeaconState randomBeaconState(UnsignedLong slot, int seed) {
-    BeaconState randomBeaconState = randomBeaconState(seed);
+    MutableBeaconState randomBeaconState = randomBeaconState(seed).createWritableCopy();
     randomBeaconState.setSlot(slot);
-    return randomBeaconState;
+    return randomBeaconState.commitChanges();
   }
 }

@@ -14,9 +14,16 @@
 package tech.pegasys.artemis.util.ssztypes;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.backing.ListViewRead;
+import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
+import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 class BitvectorTest {
 
@@ -65,5 +72,20 @@ class BitvectorTest {
     Bytes bitvectorSerialized = bitvector.serialize();
     Bitvector newBitvector = Bitvector.fromBytes(bitvectorSerialized, testBitvectorLength);
     Assertions.assertEquals(bitvector, newBitvector);
+  }
+
+  @Test
+  void bitlistHashTest() {
+    Bitlist bitlist =
+        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    for (int i = 0; i < 44; i++) {
+      bitlist.setBit(i);
+    }
+    Bytes32 hashOld = HashTreeUtil.hash_tree_root_bitlist(bitlist);
+
+    ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
+    Bytes32 hashNew = bitlistView.hashTreeRoot();
+
+    Assertions.assertEquals(hashOld, hashNew);
   }
 }

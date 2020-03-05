@@ -53,7 +53,7 @@ public class ArtemisConfiguration {
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addString("node.discovery", "", "static or discv5", null);
-    builder.addString("node.bootnodes", "", "ENR of the bootnode", null);
+    builder.addListOfString("node.bootnodes", Collections.emptyList(), "ENR of the bootnode", null);
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
     builder.addListOfString(
@@ -71,11 +71,6 @@ public class ArtemisConfiguration {
         "deposit.numValidators",
         64,
         "represents the total number of validators in the network",
-        PropertyValidator.inRange(1, 65535));
-    builder.addInteger(
-        "deposit.numNodes",
-        1,
-        "represents the total number of nodes on the network",
         PropertyValidator.inRange(1, 65535));
     builder.addString("deposit.mode", "normal", "PoW Deposit Mode", null);
     builder.addString("deposit.inputFile", "", "PoW simulation optional input file", null);
@@ -142,6 +137,8 @@ public class ArtemisConfiguration {
 
     // Beacon Rest API
     builder.addInteger("beaconrestapi.portNumber", 5051, "Port number of Beacon Rest API", null);
+    builder.addBoolean(
+        "beaconrestapi.enableSwagger", false, "Enable swagger-docs and swagger-ui endpoints", null);
 
     builder.validateConfiguration(
         config -> {
@@ -204,8 +201,8 @@ public class ArtemisConfiguration {
     return config.getString("node.discovery");
   }
 
-  public String getBootnodes() {
-    return config.getString("node.bootnodes");
+  public List<String> getBootnodes() {
+    return config.getListOfString("node.bootnodes");
   }
 
   /** @return the port this node will advertise as its own */
@@ -252,11 +249,6 @@ public class ArtemisConfiguration {
 
   public String getInteropPrivateKey() {
     return config.getString("interop.privateKey");
-  }
-
-  /** @return the total number of nodes on the network */
-  public int getNumNodes() {
-    return config.getInteger("deposit.numNodes");
   }
 
   public String getValidatorsKeyFile() {

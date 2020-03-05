@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -85,6 +86,10 @@ public class BeaconStateHandler implements Handler {
       SafeFuture<Optional<BeaconState>> future = null;
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
+      }
+      if (!combinedClient.isStoreAvailable()) {
+        ctx.status(SC_NO_CONTENT);
+        return;
       }
 
       if (parameters.containsKey(ROOT)) {

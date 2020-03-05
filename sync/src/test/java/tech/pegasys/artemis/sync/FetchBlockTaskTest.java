@@ -48,7 +48,7 @@ public class FetchBlockTaskTest {
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
     assertThat(task.getBlockRoot()).isEqualTo(blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
 
     final SafeFuture<FetchBlockResult> result = task.run();
@@ -77,7 +77,7 @@ public class FetchBlockTaskTest {
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
 
@@ -103,7 +103,7 @@ public class FetchBlockTaskTest {
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
 
@@ -115,7 +115,7 @@ public class FetchBlockTaskTest {
     assertThat(task.getNumberOfRetries()).isEqualTo(0);
 
     // Add another peer
-    final Eth2Peer peer2 = registerNewPeer();
+    final Eth2Peer peer2 = registerNewPeer(2);
     when(peer2.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
 
     // Retry
@@ -133,12 +133,12 @@ public class FetchBlockTaskTest {
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
     when(peer.getOutstandingRequests()).thenReturn(1);
     // Add another peer
-    final Eth2Peer peer2 = registerNewPeer();
+    final Eth2Peer peer2 = registerNewPeer(2);
     when(peer2.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
     when(peer2.getOutstandingRequests()).thenReturn(0);
 
@@ -156,7 +156,7 @@ public class FetchBlockTaskTest {
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     FetchBlockTask task = FetchBlockTask.create(eth2Network, blockRoot);
 
-    final Eth2Peer peer = registerNewPeer();
+    final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot)).thenReturn(SafeFuture.completedFuture(block));
 
     task.cancel();
@@ -167,10 +167,10 @@ public class FetchBlockTaskTest {
     assertThat(fetchBlockResult.getStatus()).isEqualTo(Status.CANCELLED);
   }
 
-  private Eth2Peer registerNewPeer() {
+  private Eth2Peer registerNewPeer(final int id) {
     final Eth2Peer peer = mock(Eth2Peer.class);
     when(peer.getOutstandingRequests()).thenReturn(0);
-    when(peer.getId()).thenReturn(new MockNodeId());
+    when(peer.getId()).thenReturn(new MockNodeId(id));
 
     peers.add(peer);
     return peer;

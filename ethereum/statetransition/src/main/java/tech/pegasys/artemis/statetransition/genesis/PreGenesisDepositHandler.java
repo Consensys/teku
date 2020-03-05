@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.GenesisGenerator;
@@ -66,7 +66,7 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
           .ifPresent(
               candidate_state -> {
                 setSimulationGenesisTime(candidate_state);
-                eth2Genesis(new GenesisEvent(candidate_state));
+                eth2Genesis(new GenesisEvent(candidate_state.commitChanges()));
               });
     } else {
       genesisGenerator
@@ -77,14 +77,14 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
 
   private void eth2Genesis(GenesisEvent genesisEvent) {
     STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
-    final BeaconStateWithCache initialState = genesisEvent.getBeaconState();
+    final BeaconState initialState = genesisEvent.getBeaconState();
     chainStorageClient.initializeFromGenesis(initialState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
     STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
     STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
-  private void setSimulationGenesisTime(BeaconState state) {
+  private void setSimulationGenesisTime(MutableBeaconState state) {
     Date date = new Date();
     state.setGenesis_time(
         UnsignedLong.valueOf((date.getTime() / 1000)).plus(Constants.GENESIS_START_DELAY));

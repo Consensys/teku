@@ -13,18 +13,19 @@
 
 package tech.pegasys.artemis.util.ssztypes;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 
 class SSZListTest {
 
   @Test
   void add1Test() {
-    SSZList<Bytes32> list = new SSZList<>(Bytes32.class, 10);
+    SSZMutableList<Bytes32> list = SSZList.createMutable(Bytes32.class, 10);
 
     Bytes32 randomBytes32 = Bytes32.random();
     list.add(randomBytes32);
@@ -35,12 +36,16 @@ class SSZListTest {
   @Test
   void limitTest() {
     int maxSize = 10;
-    SSZList<Bytes32> list = new SSZList<>(Bytes32.class, maxSize);
+    SSZMutableList<Bytes32> list = SSZList.createMutable(Bytes32.class, maxSize);
 
     for (int i = 0; i < maxSize; i++) {
       list.add(Bytes32.random());
     }
 
-    assertEquals(false, list.add(Bytes32.random()));
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          list.add(Bytes32.random());
+        });
   }
 }

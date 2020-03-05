@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.network;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -29,12 +30,25 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   }
 
   /**
-   * Connects to a Peer.
+   * Connects to a Peer using a user supplied address. The address format is specific to the network
+   * implementation. If a connection already exists for this peer, the future completes with the
+   * existing peer.
    *
    * @param peer Peer to connect to.
-   * @return Future of the established PeerConnection
+   * @return A future which completes when the connection is establish, containing the newly
+   *     connected peer.
    */
-  SafeFuture<?> connect(String peer);
+  SafeFuture<Peer> connect(String peer);
+
+  /**
+   * Connects to a peer identified via discovery. If a connection already exists for this peer, the
+   * future completes with the existing peer.
+   *
+   * @param peer the peer to connect to.
+   * @return A future which completes when the connection is establish, containing the newly
+   *     connected peer.
+   */
+  SafeFuture<Peer> connect(DiscoveryPeer peer);
 
   long subscribeConnect(PeerConnectedSubscriber<T> subscriber);
 
@@ -49,6 +63,13 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   String getNodeAddress();
 
   NodeId getNodeId();
+
+  /**
+   * Get the Ethereum Node Record (ENR) for the local node, if one exists.
+   *
+   * @return the local ENR.
+   */
+  Optional<String> getEnr();
 
   /**
    * starts the p2p network layer

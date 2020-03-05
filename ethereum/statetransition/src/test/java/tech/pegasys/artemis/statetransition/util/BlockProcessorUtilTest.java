@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomV
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Disabled;
@@ -31,10 +30,12 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -45,14 +46,14 @@ class BlockProcessorUtilTest {
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup
-    List<DepositWithIndex> deposits = newDeposits(1);
+    SSZList<DepositWithIndex> deposits = newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = deposit.getData().getAmount();
 
-    BeaconState beaconState = createBeaconState();
+    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
 
     int originalValidatorRegistrySize = beaconState.getValidators().size();
     int originalValidatorBalancesSize = beaconState.getBalances().size();
@@ -67,7 +68,7 @@ class BlockProcessorUtilTest {
         beaconState.getBalances().size() == (originalValidatorBalancesSize + 1),
         "No balance was added to the validator balances.");
     assertEquals(
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -85,7 +86,7 @@ class BlockProcessorUtilTest {
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup
-    List<DepositWithIndex> deposits = newDeposits(1);
+    SSZList<DepositWithIndex> deposits = newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();
@@ -93,7 +94,7 @@ class BlockProcessorUtilTest {
     UnsignedLong amount = deposit.getData().getAmount();
 
     Validator knownValidator =
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
@@ -103,7 +104,7 @@ class BlockProcessorUtilTest {
             Constants.FAR_FUTURE_EPOCH,
             Constants.FAR_FUTURE_EPOCH);
 
-    BeaconState beaconState = createBeaconState(amount, knownValidator);
+    MutableBeaconState beaconState = createBeaconState(amount, knownValidator).createWritableCopy();
 
     int originalValidatorRegistrySize = beaconState.getValidators().size();
     int originalValidatorBalancesSize = beaconState.getBalances().size();
@@ -134,7 +135,7 @@ class BlockProcessorUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
-    BeaconState beaconState = new BeaconStateWithCache();
+    MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
@@ -142,13 +143,13 @@ class BlockProcessorUtilTest {
             Constants.GENESIS_FORK_VERSION,
             UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
 
-    SSZList<Validator> validatorList =
-        new SSZList<>(
+    SSZMutableList<Validator> validatorList =
+        SSZList.createMutable(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
-            Validator.class);
-    SSZList<UnsignedLong> balanceList =
-        new SSZList<>(
+            ValidatorImpl.class);
+    SSZMutableList<UnsignedLong> balanceList =
+        SSZList.createMutable(
             Arrays.asList(
                 randomUnsignedLong(104), randomUnsignedLong(105), randomUnsignedLong(106)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
@@ -159,8 +160,8 @@ class BlockProcessorUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.setValidators(validatorList);
-    beaconState.setBalances(balanceList);
-    return beaconState;
+    beaconState.getValidators().addAll(validatorList);
+    beaconState.getBalances().addAll(balanceList);
+    return beaconState.commitChanges();
   }
 }

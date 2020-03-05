@@ -5,8 +5,11 @@
 networkMode = "mock"
 networkInterface = "0.0.0.0"
 port = 9000
+# discovery options:
+# "static" - no discovery, only connect to static peers
+# "discv5" - Enable discovery v5
 discovery = "static"
-bootnodes = ""
+bootnodes=[]
 advertisedPort = 9000
 constants = "minimal"
 
@@ -30,7 +33,6 @@ privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A
 mode = "test"
 inputFile = "" #"validator_test_data.json"
 numValidators = 64
-numNodes = 1
 contractAddr = "0x77f7bED277449F51505a4C54550B074030d989bC"
 nodeUrl = "http://localhost:8545"
 
