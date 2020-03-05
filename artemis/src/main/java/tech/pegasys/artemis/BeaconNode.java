@@ -78,7 +78,6 @@ public class BeaconNode {
     }
 
     // TODO status updates enabled
-
     ConsoleLoggingConfiguration.enableStandardOutLogger(config.isStandardOutEnabled());
 
     // TODO this reconfigure is triggering the INFO message 'Log4j appears to be running in a
