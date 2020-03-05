@@ -17,9 +17,10 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ContextualLogger {
+public class StatusLogger {
 
-  public static final ContextualLogger STDOUT = new ContextualLogger(ConsoleLoggingConfiguration.LOGGER_NAME);
+  public static final StatusLogger STDOUT =
+      new StatusLogger(ConsoleLoggingConfiguration.LOGGER_NAME);
 
   public enum Color {
     RED,
@@ -33,7 +34,7 @@ public class ContextualLogger {
 
   private final Logger logger;
 
-  protected ContextualLogger(String className) {
+  protected StatusLogger(String className) {
     this.logger = LogManager.getLogger(className);
   }
 

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.teku.logging.ContextualLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;

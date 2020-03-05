@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
-import static tech.pegasys.teku.logging.ContextualLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;

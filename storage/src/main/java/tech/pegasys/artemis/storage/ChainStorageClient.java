@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.logging.ContextualLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -37,7 +37,7 @@ import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.teku.logging.ContextualLogger;
+import tech.pegasys.teku.logging.StatusLogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
@@ -181,7 +181,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     STDOUT.log(
         Level.INFO,
         "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
-        ContextualLogger.Color.GREEN);
+        StatusLogger.Color.GREEN);
   }
 
   @Subscribe
@@ -191,7 +191,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
         "New Attestation with block root:  "
             + attestation.getData().getBeacon_block_root()
             + " detected.",
-        ContextualLogger.Color.GREEN);
+        StatusLogger.Color.GREEN);
   }
 
   @Subscribe
@@ -201,7 +201,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
         "New AggregateAndProof with block root:  "
             + attestation.getAggregate().getData().getBeacon_block_root()
             + " detected.",
-        ContextualLogger.Color.BLUE);
+        StatusLogger.Color.BLUE);
   }
 
   public boolean containsBlock(final Bytes32 root) {
