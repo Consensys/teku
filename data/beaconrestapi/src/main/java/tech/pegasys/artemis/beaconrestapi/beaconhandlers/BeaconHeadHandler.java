@@ -59,7 +59,8 @@ public class BeaconHeadHandler implements Handler {
       method = HttpMethod.GET,
       summary = "Get the head of the beacon chain from the node's perspective.",
       tags = {TAG_BEACON},
-      description = "Requests the context of the best slot and head block from the beacon node.",
+      description =
+          "Returns information about the head of the beacon chain from the node’s perspective.\n\nTo retrieve finalized and justified information use /beacon/chainhead instead.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
