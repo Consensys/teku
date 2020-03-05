@@ -46,12 +46,8 @@ public class StatusLogger {
     this.logger.log(level, message);
   }
 
-  public void log(Level level, String message, boolean printEnabled) {
-    if (printEnabled) {
-      this.logger.log(level, message);
-    }
-  }
-
+  // TODO printEnable seems to be used do decided whether StateTransition errors are printed
+  // TODO remove?
   public void log(Level level, String message, boolean printEnabled, Color color) {
     log(level, addColor(message, color), printEnabled);
   }
@@ -68,8 +64,15 @@ public class StatusLogger {
     this.logger.log(level, addColor(message, color), throwable);
   }
 
+  // TODO used once, should be repalced with Supplier arg
   public boolean isDebugEnabled() {
     return logger.isDebugEnabled();
+  }
+
+  private void log(Level level, String message, boolean printEnabled) {
+    if (printEnabled) {
+      this.logger.log(level, message);
+    }
   }
 
   private String findColor(Color color) {
