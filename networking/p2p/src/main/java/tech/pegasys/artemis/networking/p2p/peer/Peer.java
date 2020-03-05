@@ -28,6 +28,8 @@ public interface Peer {
 
   void disconnect();
 
+  void subscribeDisconnect(PeerDisconnectedSubscriber subscriber);
+
   SafeFuture<RpcStream> sendRequest(
       RpcMethod rpcMethod, Bytes initialPayload, RpcRequestHandler handler);
 

@@ -11,26 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.discovery;
+package tech.pegasys.artemis.datastructures.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.tuweni.bytes.Bytes;
+import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
-class DiscoveryNodeIdTest {
-  public static final Bytes NODE_ID_BYTES =
-      Bytes.fromHexString("0x833246C198388F1B5E06EF1950B0A6705FBF6370E002656CDA2C6C803C06258D");
-
-  private final DiscoveryNodeId id = new DiscoveryNodeId(NODE_ID_BYTES);
+public class CommitteeUtilTest {
 
   @Test
-  public void shouldSerializeToBytesCorrectly() {
-    assertThat(id.toBytes()).isEqualTo(NODE_ID_BYTES);
-  }
+  void testListShuffleAndShuffledIndexCompatibility() {
+    Bytes32 seed = Bytes32.ZERO;
+    int index_count = 3333;
+    int[] indexes = IntStream.range(0, index_count).toArray();
 
-  @Test
-  public void shouldSerializeToBase58Correctly() {
-    assertThat(id.toBase58()).isEqualTo("9q8se7jAA4ngArgS5U1kyyYHrdfdLcmfjebUFvkQpHVE");
+    CommitteeUtil.shuffle_list(indexes, seed);
+    assertThat(indexes)
+        .isEqualTo(
+            IntStream.range(0, index_count)
+                .map(i -> CommitteeUtil.compute_shuffled_index(i, indexes.length, seed))
+                .toArray());
   }
 }

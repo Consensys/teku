@@ -35,6 +35,9 @@ dependencies {
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
+  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  integrationTestImplementation 'org.assertj:assertj-core'
+
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
   testSupportCompile 'org.assertj:assertj-core'
