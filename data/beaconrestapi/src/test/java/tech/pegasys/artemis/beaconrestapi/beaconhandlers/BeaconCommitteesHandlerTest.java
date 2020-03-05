@@ -72,7 +72,7 @@ public class BeaconCommitteesHandlerTest {
     final EventBus localEventBus = new EventBus();
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
     beaconState = DataStructureUtil.randomBeaconState(11233);
-    storageClient.initializeFromGenesis(beaconState);
+    storageClient.setGenesisState(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
     blockRoot = storageClient.getBestBlockRoot();
     slot = storageClient.getBlockState(blockRoot).get().getSlot();

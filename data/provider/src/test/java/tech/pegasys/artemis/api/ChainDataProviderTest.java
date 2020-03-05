@@ -65,7 +65,7 @@ public class ChainDataProviderTest {
     chainStorageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
     beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
     beaconState = new BeaconState(beaconStateInternal);
-    chainStorageClient.initializeFromGenesis(beaconStateInternal);
+    chainStorageClient.setGenesisState(beaconStateInternal);
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
     blockRoot = chainStorageClient.getBestBlockRoot();
     slot = chainStorageClient.getBlockState(blockRoot).get().getSlot();

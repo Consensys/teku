@@ -63,7 +63,7 @@ public class BeaconStateRootHandlerTest {
     final EventBus localEventBus = new EventBus();
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
     beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
-    storageClient.initializeFromGenesis(beaconStateInternal);
+    storageClient.setGenesisState(beaconStateInternal);
     blockRoot = storageClient.getBestBlockRoot();
     slot = DataStructureUtil.randomUnsignedLong(99);
   }

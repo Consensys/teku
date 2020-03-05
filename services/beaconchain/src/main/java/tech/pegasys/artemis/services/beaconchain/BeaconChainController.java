@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
@@ -379,12 +378,5 @@ public class BeaconChainController {
     } catch (InterruptedException e) {
       STATUS_LOG.log(Level.FATAL, "onTick: " + e.toString());
     }
-  }
-
-  @Subscribe
-  public void setNodeSlotAccordingToDBStore(Store store) {
-    Bytes32 headBlockRoot = get_head(store);
-    chainStorageClient.initializeFromStore(store, headBlockRoot);
-    STATUS_LOG.log(Level.INFO, "Node being started from database.", StatusLogger.Color.GREEN);
   }
 }

@@ -68,8 +68,8 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.storage.events.BestBlockInitializedEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
@@ -119,24 +119,24 @@ public class ValidatorCoordinator {
   }
 
   @Subscribe
-  public void onStoreInitializedEvent(final StoreInitializedEvent event) {
+  public void onBestBlockInitialized(final BestBlockInitializedEvent event) {
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = chainStorageClient.getBestBlockRoot();
-    final BeaconState genesisState = store.getBlockState(head);
+    final BeaconState headState = store.getBlockState(head);
 
     // Get validator indices of our own validators
-    getIndicesOfOurValidators(genesisState, validators);
+    getIndicesOfOurValidators(headState, validators);
 
     this.committeeAssignmentManager =
         new CommitteeAssignmentManager(validators, committeeAssignments);
-    eth1DataCache.startBeaconChainMode(genesisState);
+    eth1DataCache.startBeaconChainMode(headState);
 
     // Update committee assignments and subscribe to required committee indices for the next 2
     // epochs
     UnsignedLong genesisEpoch = UnsignedLong.valueOf(GENESIS_EPOCH);
-    committeeAssignmentManager.updateCommitteeAssignments(genesisState, genesisEpoch, eventBus);
+    committeeAssignmentManager.updateCommitteeAssignments(headState, genesisEpoch, eventBus);
     committeeAssignmentManager.updateCommitteeAssignments(
-        genesisState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
+        headState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
   }
 
   @Subscribe

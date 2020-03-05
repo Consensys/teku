@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.storage.Store.get_genesis_store;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -41,33 +40,35 @@ class ChainStorageClientTest {
   private static final Bytes32 GENESIS_BLOCK_ROOT = GENESIS_BLOCK.hash_tree_root();
   private final EventBus eventBus = mock(EventBus.class);
   private final Store store = mock(Store.class);
-  private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+  private final ChainStorageClient storageClient =
+      ChainStorageClient.memoryOnlyClientWithStore(eventBus, store);
+  private final ChainStorageClient preGenesisStorageClient =
+      ChainStorageClient.memoryOnlyClient(eventBus);
   private int seed = 428942;
 
   @Test
   public void initialize_setupInitialState() {
     final BeaconState initialState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
-    storageClient.initializeFromGenesis(initialState);
-    assertThat(storageClient.getGenesisTime()).isEqualTo(initialState.getGenesis_time());
-    assertThat(storageClient.getBestSlot()).isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
-    assertThat(storageClient.getBestBlockRootState()).isEqualTo(initialState);
-    assertThat(storageClient.getStore()).isNotNull();
+    preGenesisStorageClient.setGenesisState(initialState);
+    assertThat(preGenesisStorageClient.getGenesisTime()).isEqualTo(initialState.getGenesis_time());
+    assertThat(preGenesisStorageClient.getBestSlot())
+        .isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
+    assertThat(preGenesisStorageClient.getBestBlockRootState()).isEqualTo(initialState);
+    assertThat(preGenesisStorageClient.getStore()).isNotNull();
   }
 
   @Test
   public void getBlockBySlot_returnEmptyWhenStoreNotSet() {
-    assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
+    assertThat(preGenesisStorageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
   }
 
   @Test
   public void getBlockBySlot_returnEmptyWhenBestBlockNotSet() {
-    storageClient.setStore(store);
     assertThat(storageClient.getBlockBySlot(UnsignedLong.ZERO)).isEmpty();
   }
 
   @Test
   public void getBlockBySlot_returnGenesisBlockWhenItIsTheBestState() {
-    storageClient.setStore(store);
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
     final MutableBeaconState bestState =
@@ -82,7 +83,6 @@ class ChainStorageClientTest {
 
   @Test
   public void getBlockBySlot_returnGenesisBlockWhenItIsNotTheBestState() {
-    storageClient.setStore(store);
     final UnsignedLong bestSlot = UnsignedLong.ONE;
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
@@ -100,7 +100,6 @@ class ChainStorageClientTest {
 
   @Test
   public void getBlockBySlot_returnEmptyWhenSlotBeforeHistoricalRootWindow() {
-    storageClient.setStore(store);
     // First slot where the block roots start overwriting themselves and dropping history
     final UnsignedLong bestSlot =
         UnsignedLong.valueOf(Constants.SLOTS_PER_HISTORICAL_ROOT).plus(UnsignedLong.ONE);
@@ -123,7 +122,6 @@ class ChainStorageClientTest {
 
   @Test
   public void getBlockBySlot_returnCorrectBlockFromHistoricalWindow() {
-    storageClient.setStore(store);
     // We've wrapped around a lot of times and are 5 slots into the next "loop"
     final int historicalIndex = 5;
     final UnsignedLong requestedSlot =
@@ -151,7 +149,6 @@ class ChainStorageClientTest {
 
   @Test
   public void getBlockBySlot_returnEmptyWhenSlotWasEmpty() {
-    storageClient.setStore(store);
     // Requesting block for an empty slot immediately after BLOCK1
     final UnsignedLong reqeustedSlot = GENESIS_BLOCK.getSlot().plus(UnsignedLong.ONE);
     final UnsignedLong bestSlot = reqeustedSlot.plus(UnsignedLong.ONE);
@@ -172,12 +169,11 @@ class ChainStorageClientTest {
 
   @Test
   void getStateBySlot_returnEmptyWhenStoreNotSet() {
-    assertThat(storageClient.getStateBySlot(UnsignedLong.ZERO)).isEmpty();
+    assertThat(preGenesisStorageClient.getStateBySlot(UnsignedLong.ZERO)).isEmpty();
   }
 
   @Test
   public void getStateBySlot_returnGenesisBlockWhenItIsTheBestState() {
-    storageClient.setStore(store);
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
     final MutableBeaconState bestState =
@@ -191,18 +187,16 @@ class ChainStorageClientTest {
 
   @Test
   public void isIncludedInBestState_falseWhenNoStoreSet() {
-    assertThat(storageClient.isIncludedInBestState(GENESIS_BLOCK_ROOT)).isFalse();
+    assertThat(preGenesisStorageClient.isIncludedInBestState(GENESIS_BLOCK_ROOT)).isFalse();
   }
 
   @Test
   public void isIncludedInBestState_falseWhenBestBlockNotSet() {
-    storageClient.setStore(store);
     assertThat(storageClient.isIncludedInBestState(GENESIS_BLOCK_ROOT)).isFalse();
   }
 
   @Test
   public void isIncludedInBestState_falseWhenNoBlockAtSlot() {
-    storageClient.setStore(store);
     final UnsignedLong bestSlot = UnsignedLong.ONE;
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
@@ -217,7 +211,6 @@ class ChainStorageClientTest {
 
   @Test
   public void isIncludedInBestState_falseWhenBlockAtSlotDoesNotMatch() {
-    storageClient.setStore(store);
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, UnsignedLong.ONE);
 
     final MutableBeaconState bestState =
@@ -234,7 +227,6 @@ class ChainStorageClientTest {
 
   @Test
   public void isIncludedInBestState_trueWhenBlockAtSlotDoesMatch() {
-    storageClient.setStore(store);
     final UnsignedLong bestSlot = UnsignedLong.ONE;
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
@@ -251,14 +243,14 @@ class ChainStorageClientTest {
 
   @Test
   public void startStoreTransaction_mutateFinalizedCheckpoint() {
-    Store store = get_genesis_store(DataStructureUtil.randomBeaconState(1));
-    storageClient.setStore(store);
+    preGenesisStorageClient.setGenesisState(DataStructureUtil.randomBeaconState(1));
 
-    final Checkpoint originalCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint originalCheckpoint =
+        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
     final Checkpoint newCheckpoint = DataStructureUtil.randomCheckpoint(1);
     assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
 
-    final Transaction tx = storageClient.startStoreTransaction();
+    final Transaction tx = preGenesisStorageClient.startStoreTransaction();
     tx.setFinalizedCheckpoint(newCheckpoint);
     verify(eventBus, never()).post(new FinalizedCheckpointEvent(newCheckpoint));
 
@@ -266,22 +258,24 @@ class ChainStorageClientTest {
     verify(eventBus).post(new FinalizedCheckpointEvent(newCheckpoint));
 
     // Check that store was updated
-    final Checkpoint currentCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint currentCheckpoint =
+        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(newCheckpoint);
   }
 
   @Test
   public void startStoreTransaction_doNotMutateFinalizedCheckpoint() {
-    Store store = get_genesis_store(DataStructureUtil.randomBeaconState(1));
-    storageClient.setStore(store);
-    final Checkpoint originalCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    preGenesisStorageClient.setGenesisState(DataStructureUtil.randomBeaconState(1));
+    final Checkpoint originalCheckpoint =
+        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
 
-    final Transaction tx = storageClient.startStoreTransaction();
+    final Transaction tx = preGenesisStorageClient.startStoreTransaction();
     tx.setTime(UnsignedLong.valueOf(11L));
     tx.commit().reportExceptions();
     verify(eventBus, never()).post(argThat(this::isFinalizedCheckpointEvent));
 
-    final Checkpoint currentCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint currentCheckpoint =
+        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
   }
 

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -22,15 +21,14 @@ import static org.mockito.Mockito.verify;
 import com.google.common.eventbus.EventBus;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.AttestationGenerator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -84,10 +82,10 @@ public class AttestationTopicHandlerTest {
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
 
     // Set up state to be missing
-    final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
-    Store mockStore = mock(Store.class);
-    storageClient.setStore(mockStore);
-    doReturn(null).when(mockStore).getBlockState(blockRoot);
+    final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
+    storageClient.setGenesisState(DataStructureUtil.randomBeaconState(1));
+    final AttestationTopicHandler topicHandler =
+        new AttestationTopicHandler(eventBus, storageClient, 1);
 
     final boolean result = topicHandler.handleMessage(serialized);
     assertThat(result).isEqualTo(false);
