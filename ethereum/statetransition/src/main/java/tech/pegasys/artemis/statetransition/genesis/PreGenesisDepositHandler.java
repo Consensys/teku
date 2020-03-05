@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.genesis;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.Date;
 import java.util.List;
@@ -33,8 +31,11 @@ import tech.pegasys.artemis.statetransition.events.GenesisEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class PreGenesisDepositHandler implements DepositEventChannel {
+
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final ArtemisConfiguration config;
   private final ChainStorageClient chainStorageClient;
@@ -76,12 +77,13 @@ public class PreGenesisDepositHandler implements DepositEventChannel {
   }
 
   private void eth2Genesis(GenesisEvent genesisEvent) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
+    STATUS_LOG.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     final BeaconState initialState = genesisEvent.getBeaconState();
     chainStorageClient.initializeFromGenesis(initialState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STDOUT.log(Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
-    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
+    STATUS_LOG.log(
+        Level.INFO, "Initial state root is " + initialState.hash_tree_root().toHexString());
+    STATUS_LOG.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
   private void setSimulationGenesisTime(MutableBeaconState state) {

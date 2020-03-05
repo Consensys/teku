@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -41,7 +40,10 @@ import tech.pegasys.teku.logging.StatusLogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
+
   private static final Logger LOG = LogManager.getLogger();
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+
   protected final EventBus eventBus;
   private final TransactionPrecommit transactionPrecommit;
 
@@ -178,7 +180,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    STDOUT.log(
+    STATUS_LOG.log(
         Level.INFO,
         "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
         StatusLogger.Color.GREEN);
@@ -186,7 +188,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    STDOUT.log(
+    STATUS_LOG.log(
         Level.INFO,
         "New Attestation with block root:  "
             + attestation.getData().getBeacon_block_root()
@@ -196,7 +198,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   @Subscribe
   public void onNewAggregateAndProof(AggregateAndProof attestation) {
-    STDOUT.log(
+    STATUS_LOG.log(
         Level.INFO,
         "New AggregateAndProof with block root:  "
             + attestation.getAggregate().getData().getBeacon_block_root()

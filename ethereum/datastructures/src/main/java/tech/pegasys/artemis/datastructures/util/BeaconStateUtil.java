@@ -42,7 +42,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
@@ -71,8 +70,11 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconStateUtil {
+
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
@@ -145,7 +147,7 @@ public class BeaconStateUtil {
                     deposit.getData().getSignature(),
                     compute_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
-          STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
+          STATUS_LOG.log(Level.DEBUG, "Skipping invalid deposit");
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);
@@ -155,7 +157,8 @@ public class BeaconStateUtil {
       }
 
       if (pubKeyToIndexMap == null) {
-        STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+        STATUS_LOG.log(
+            Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
       }
       state
           .getValidators()

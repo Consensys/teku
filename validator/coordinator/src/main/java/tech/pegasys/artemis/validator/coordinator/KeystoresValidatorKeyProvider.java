@@ -18,7 +18,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.io.Files;
 import java.io.FileNotFoundException;
@@ -37,8 +36,12 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
+
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+
   static final int KEY_LENGTH = 48;
 
   @Override
@@ -81,7 +84,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
           format(
               "Unexpected IO error while reading keystore password file [%s]: %s",
               passwordFile, e.getMessage());
-      STDOUT.log(Level.FATAL, errorMessage);
+      STATUS_LOG.log(Level.FATAL, errorMessage);
       throw new UncheckedIOException(errorMessage, e);
     }
     return password;

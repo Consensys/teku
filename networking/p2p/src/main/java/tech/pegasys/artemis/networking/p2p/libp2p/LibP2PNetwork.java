@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -58,8 +57,12 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
+
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+
   private final PrivKey privKey;
   private final NodeId nodeId;
 
@@ -144,11 +147,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
       return SafeFuture.failedFuture(new IllegalStateException("Network already started"));
     }
-    STDOUT.log(Level.INFO, "Starting libp2p network...");
+    STATUS_LOG.log(Level.INFO, "Starting libp2p network...");
     return SafeFuture.of(host.start())
         .thenApply(
             i -> {
-              STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
+              STATUS_LOG.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
             });
   }
@@ -198,7 +201,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return;
     }
-    STDOUT.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
+    STATUS_LOG.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
     reportExceptions(host.stop());
   }
 

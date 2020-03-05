@@ -19,8 +19,12 @@ import org.apache.logging.log4j.Logger;
 
 public class StatusLogger {
 
-  public static final StatusLogger STDOUT =
+  private static final StatusLogger INSTANCE =
       new StatusLogger(ConsoleLoggingConfiguration.LOGGER_NAME);
+
+  public static StatusLogger getLogger() {
+    return INSTANCE;
+  }
 
   public enum Color {
     RED,

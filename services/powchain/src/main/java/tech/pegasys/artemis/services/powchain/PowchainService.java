@@ -18,7 +18,6 @@ import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -52,10 +51,13 @@ import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class PowchainService implements ServiceInterface {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+
   public static final String EVENTS = "events";
   public static final String USER_DIR = "user.dir";
   private EventBus eventBus;
@@ -168,7 +170,7 @@ public class PowchainService implements ServiceInterface {
 
   @Override
   public void stop() {
-    STDOUT.log(Level.DEBUG, "PowChainService.stop()");
+    STATUS_LOG.log(Level.DEBUG, "PowChainService.stop()");
     this.eventBus.unregister(this);
     if (depositContractListener != null) {
       depositContractListener.stop();
