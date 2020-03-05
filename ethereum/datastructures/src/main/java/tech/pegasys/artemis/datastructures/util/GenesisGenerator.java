@@ -27,7 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -42,11 +43,10 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class GenesisGenerator {
 
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   private final MutableBeaconState state = MutableBeaconState.createBuilder();
   private final Map<BLSPublicKey, Integer> keyCache = new HashMap<>();
@@ -63,7 +63,7 @@ public class GenesisGenerator {
         new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));
   }
 
-  public void addDepositsFromBlock(
+  public void updateCandidateState(
       Bytes32 eth1BlockHash, UnsignedLong eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
@@ -76,7 +76,7 @@ public class GenesisGenerator {
     // Process deposits
     deposits.forEach(
         deposit -> {
-          STATUS_LOG.log(Level.DEBUG, "About to process deposit: " + depositDataList.size());
+          LOG.debug("About to process deposit: " + depositDataList.size());
           depositDataList.add(deposit.getData());
 
           // Skip verifying the merkle proof as these deposits come directly from an Eth1 event.

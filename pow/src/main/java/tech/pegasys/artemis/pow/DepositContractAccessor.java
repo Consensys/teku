@@ -18,26 +18,30 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.abi.datatypes.Type;
+import org.web3j.protocol.Web3j;
+import org.web3j.tx.ClientTransactionManager;
+import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class DepositContractListener {
+public class DepositContractAccessor {
   private final Eth1Provider eth1Provider;
   private final DepositContract contract;
-  private final DepositRequestManager depositRequestManager;
 
-  public DepositContractListener(
-      Eth1Provider eth1Provider,
-      DepositContract contract,
-      DepositRequestManager depositRequestManager) {
+  private DepositContractAccessor(Eth1Provider eth1Provider, DepositContract contract) {
     this.eth1Provider = eth1Provider;
     this.contract = contract;
-    this.depositRequestManager = depositRequestManager;
   }
 
-  public void start() {
-    depositRequestManager.start();
+  public static DepositContractAccessor create(
+      Eth1Provider eth1Provider, Web3j web3j, String address) {
+
+    DepositContract contract =
+        DepositContract.load(
+            address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
+
+    return new DepositContractAccessor(eth1Provider, contract);
   }
 
   @SuppressWarnings("rawtypes")
@@ -66,10 +70,6 @@ public class DepositContractListener {
 
   public DepositContract getContract() {
     return contract;
-  }
-
-  public void stop() {
-    depositRequestManager.stop();
   }
 
   private SafeFuture<String> callFunctionAtBlockNumber(

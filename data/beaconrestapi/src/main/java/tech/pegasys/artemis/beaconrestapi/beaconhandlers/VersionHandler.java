@@ -38,10 +38,9 @@ public class VersionHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get version string of the running beacon node.",
+      summary = "Get the version of the beacon node.",
       tags = {TAG_NODE},
-      description =
-          "Requests that the beacon node identify information about its implementation in a format similar to a HTTP User-Agent field.",
+      description = "Returns the beacon node version information.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
