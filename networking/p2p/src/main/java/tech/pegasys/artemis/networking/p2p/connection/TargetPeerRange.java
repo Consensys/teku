@@ -13,25 +13,28 @@
 
 package tech.pegasys.artemis.networking.p2p.connection;
 
+import com.google.common.base.Preconditions;
+
 public class TargetPeerRange {
   private final int addPeersWhenLessThan;
   private final int dropPeersWhenGreaterThan;
-  private final int midpoint;
 
   public TargetPeerRange(final int addPeersWhenLessThan, final int dropPeersWhenGreaterThan) {
+    Preconditions.checkArgument(
+        addPeersWhenLessThan <= dropPeersWhenGreaterThan, "Invalid target peer count range");
     this.addPeersWhenLessThan = addPeersWhenLessThan;
     this.dropPeersWhenGreaterThan = dropPeersWhenGreaterThan;
-    // Half way between the lower and upper bounds, rounded up
-    this.midpoint = (addPeersWhenLessThan + dropPeersWhenGreaterThan + 1) / 2;
   }
 
   public int getPeersToAdd(final int currentPeerCount) {
-    return currentPeerCount < addPeersWhenLessThan ? Math.max(0, midpoint - currentPeerCount) : 0;
+    return currentPeerCount < addPeersWhenLessThan
+        ? dropPeersWhenGreaterThan - currentPeerCount
+        : 0;
   }
 
   public int getPeersToDrop(final int currentPeerCount) {
     return currentPeerCount > dropPeersWhenGreaterThan
-        ? Math.max(0, currentPeerCount - midpoint)
+        ? currentPeerCount - dropPeersWhenGreaterThan
         : 0;
   }
 }

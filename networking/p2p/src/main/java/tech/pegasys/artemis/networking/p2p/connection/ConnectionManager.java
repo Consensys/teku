@@ -38,6 +38,8 @@ public class ConnectionManager extends Service {
   private final DiscoveryService discoveryService;
   private final TargetPeerRange targetPeerCountRange;
 
+  private volatile long peerConnectedSubscriptionId;
+
   public ConnectionManager(
       final DiscoveryService discoveryService,
       final AsyncRunner asyncRunner,
@@ -58,6 +60,7 @@ public class ConnectionManager extends Service {
     }
     connectToKnownPeers();
     searchForPeers().reportExceptions();
+    peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
   }
 
@@ -99,8 +102,14 @@ public class ConnectionManager extends Service {
                     () -> "Failed to connect to peer: " + discoveryPeer.getPublicKey(), error));
   }
 
+  private void onPeerConnected(final Peer peer) {
+    final int peersToDrop = targetPeerCountRange.getPeersToDrop(network.getPeerCount());
+    network.streamPeers().limit(peersToDrop).forEach(Peer::disconnect);
+  }
+
   @Override
   protected SafeFuture<?> doStop() {
+    network.unsubscribeConnect(peerConnectedSubscriptionId);
     return SafeFuture.COMPLETE;
   }
 

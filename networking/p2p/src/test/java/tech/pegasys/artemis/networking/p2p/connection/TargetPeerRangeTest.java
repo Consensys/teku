@@ -34,9 +34,8 @@ class TargetPeerRangeTest {
   }
 
   @Test
-  public void shouldAddEnoughPeersToReachMidpointWhenPeerCountIsBelowRange() {
-    // Midpoint rounds up to 8, 4 existing peers so should add 4.
-    assertThat(new TargetPeerRange(5, 10).getPeersToAdd(4)).isEqualTo(4);
+  public void shouldAddEnoughPeersToReachUpperBoundWhenPeerCountIsBelowRange() {
+    assertThat(new TargetPeerRange(5, 10).getPeersToAdd(4)).isEqualTo(6);
   }
 
   @Test
@@ -50,8 +49,7 @@ class TargetPeerRangeTest {
   }
 
   @Test
-  public void shouldDropPeersToReachMidpointWhenPeerCountIsAboveRange() {
-    // Midpoint rounds up to 8, so 3 peers should be dropped
-    assertThat(new TargetPeerRange(5, 10).getPeersToDrop(11)).isEqualTo(3);
+  public void shouldDropPeersToReachUpperBoundWhenPeerCountIsAboveRange() {
+    assertThat(new TargetPeerRange(5, 10).getPeersToDrop(12)).isEqualTo(2);
   }
 }
