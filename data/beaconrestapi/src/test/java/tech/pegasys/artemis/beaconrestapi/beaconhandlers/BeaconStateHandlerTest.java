@@ -96,6 +96,17 @@ public class BeaconStateHandlerTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenBadSlotSpecified() throws Exception {
+    final BeaconStateHandler handler =
+        new BeaconStateHandler(combinedChainDataClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("not-an-int")));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnBeaconStateObjectWhenQueryByRoot() throws Exception {
     final BeaconStateHandler handler =
         new BeaconStateHandler(combinedChainDataClient, jsonProvider);

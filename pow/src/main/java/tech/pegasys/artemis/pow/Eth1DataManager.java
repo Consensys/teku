@@ -95,7 +95,7 @@ public class Eth1DataManager {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1Provider eth1Provider;
-  private final DepositContractListener depositContractListener;
+  private final DepositContractAccessor depositContractAccessor;
   private final EventBus eventBus;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
@@ -107,12 +107,12 @@ public class Eth1DataManager {
   public Eth1DataManager(
       Eth1Provider eth1Provider,
       EventBus eventBus,
-      DepositContractListener depositContractListener,
+      DepositContractAccessor depositContractAccessor,
       AsyncRunner asyncRunner,
       TimeProvider timeProvider) {
     this.eth1Provider = eth1Provider;
     this.eventBus = eventBus;
-    this.depositContractListener = depositContractListener;
+    this.depositContractAccessor = depositContractAccessor;
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
   }
@@ -125,6 +125,10 @@ public class Eth1DataManager {
               cacheStartupDone.set(true);
               eventBus.register(this);
             });
+  }
+
+  public void stop() {
+    eventBus.unregister(this);
   }
 
   @Subscribe
@@ -316,9 +320,9 @@ public class Eth1DataManager {
 
   private SafeFuture<Void> postCacheEth1BlockEvent(UnsignedLong blockNumber, EthBlock.Block block) {
     SafeFuture<UnsignedLong> countFuture =
-        SafeFuture.of(depositContractListener.getDepositCount(blockNumber));
+        SafeFuture.of(depositContractAccessor.getDepositCount(blockNumber));
     SafeFuture<Bytes32> rootFuture =
-        SafeFuture.of(depositContractListener.getDepositRoot(blockNumber));
+        SafeFuture.of(depositContractAccessor.getDepositRoot(blockNumber));
 
     return SafeFuture.allOf(countFuture, rootFuture)
         .thenRun(
