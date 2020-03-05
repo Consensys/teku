@@ -9,7 +9,7 @@ port = 9000
 # "static" - no discovery, only connect to static peers
 # "discv5" - Enable discovery v5
 discovery = "static"
-#bootnodes = ""
+bootnodes=[]
 advertisedPort = 9000
 constants = "minimal"
 
