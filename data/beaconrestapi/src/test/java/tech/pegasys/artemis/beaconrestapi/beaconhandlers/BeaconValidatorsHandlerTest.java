@@ -290,6 +290,33 @@ public class BeaconValidatorsHandlerTest {
     verify(context).status(SC_BAD_REQUEST);
   }
 
+  @Test
+  public void shouldReturnEmptyListWhenFutureEpochSpecified() throws Exception {
+    final BeaconValidatorsHandler handler =
+        new BeaconValidatorsHandler(combinedClient, jsonProvider);
+    when(context.queryParamMap())
+        .thenReturn(
+            Map.of(
+                ACTIVE,
+                List.of("true"),
+                EPOCH,
+                List.of(String.valueOf(Constants.FAR_FUTURE_EPOCH))));
+    when(combinedClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(combinedClient.getStateAtSlot(
+            BeaconStateUtil.compute_start_slot_at_epoch(Constants.FAR_FUTURE_EPOCH), blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+
+    handler.handle(context);
+
+    verify(context).result(args.capture());
+
+    SafeFuture<String> data = args.getValue();
+    assertEquals(
+        data.get(),
+        jsonProvider.objectToJSON(
+            new BeaconValidatorsResponse(SSZList.createMutable(Validator.class, 0L))));
+  }
+
   private BeaconState addActiveValidator(final BeaconState beaconState) {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
