@@ -18,7 +18,7 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ContextualLogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -70,7 +70,7 @@ import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
-import tech.pegasys.teku.logging.ALogger;
+import tech.pegasys.teku.logging.ContextualLogger;
 
 public class BeaconChainController {
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
@@ -317,7 +317,7 @@ public class BeaconChainController {
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
-      STDOUT.log(Level.INFO, timeUntilGenesis + " seconds until genesis.", ALogger.Color.GREEN);
+      STDOUT.log(Level.INFO, timeUntilGenesis + " seconds until genesis.", ContextualLogger.Color.GREEN);
     }
     nodeSlot = currentSlot;
   }
@@ -346,7 +346,7 @@ public class BeaconChainController {
       this.eventBus.post(new SlotEvent(nodeSlot));
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
-      STDOUT.log(Level.INFO, "******* Slot Event *******", ALogger.Color.WHITE);
+      STDOUT.log(Level.INFO, "******* Slot Event *******", ContextualLogger.Color.WHITE);
       STDOUT.log(Level.INFO, "Node slot:                             " + nodeSlot);
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
@@ -378,6 +378,6 @@ public class BeaconChainController {
   public void setNodeSlotAccordingToDBStore(Store store) {
     Bytes32 headBlockRoot = get_head(store);
     chainStorageClient.initializeFromStore(store, headBlockRoot);
-    STDOUT.log(Level.INFO, "Node being started from database.", ALogger.Color.GREEN);
+    STDOUT.log(Level.INFO, "Node being started from database.", ContextualLogger.Color.GREEN);
   }
 }

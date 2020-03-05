@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ContextualLogger.STDOUT;
 
 import java.util.Objects;
 import org.apache.logging.log4j.Level;

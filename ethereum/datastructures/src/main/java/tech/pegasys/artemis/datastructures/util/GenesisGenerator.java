@@ -20,7 +20,7 @@ import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_DAY;
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ContextualLogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ContextualLogger.STDOUT;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
