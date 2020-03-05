@@ -53,7 +53,7 @@ class ChainStorageClientTest {
     assertThat(preGenesisStorageClient.getGenesisTime()).isEqualTo(initialState.getGenesis_time());
     assertThat(preGenesisStorageClient.getBestSlot())
         .isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
-    assertThat(preGenesisStorageClient.getBestBlockRootState()).isEqualTo(initialState);
+    assertThat(preGenesisStorageClient.getBestBlockRootState()).hasValue(initialState);
     assertThat(preGenesisStorageClient.getStore()).isNotNull();
   }
 

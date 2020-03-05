@@ -24,6 +24,7 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -52,14 +53,15 @@ public class ChainDataProvider {
       return Optional.empty();
     }
 
-    Bytes32 headBlockRoot = chainStorageClient.getBestBlockRoot();
-    if (headBlockRoot == null) {
+    Optional<Bytes32> headBlockRoot = chainStorageClient.getBestBlockRoot();
+    Optional<Bytes32> headStateRoot =
+        headBlockRoot.flatMap(chainStorageClient::getBlockByRoot).map(BeaconBlock::getState_root);
+    if (headBlockRoot.isEmpty() || headStateRoot.isEmpty()) {
       return Optional.empty();
     }
 
-    Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
     BeaconHead result =
-        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot, headStateRoot);
+        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot.get(), headStateRoot.get());
     return Optional.of(result);
   }
 
@@ -121,9 +123,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       return completedFuture(Optional.empty());
     }
-    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
     return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
+        .getStateAtSlot(slot)
         .thenApply(state -> state.map(BeaconState::new))
         .exceptionally(err -> Optional.empty());
   }
@@ -132,9 +133,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       return completedFuture(Optional.empty());
     }
-    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
     return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
+        .getStateAtSlot(slot)
         .thenApply(state -> Optional.of(state.get().hash_tree_root()))
         .exceptionally(err -> Optional.empty());
   }

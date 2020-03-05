@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHeadResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -66,14 +67,14 @@ public class BeaconChainHeadHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws JsonProcessingException {
-    Bytes32 head_block_root = client.getBestBlockRoot();
-    if (head_block_root == null) {
+    Optional<Bytes32> headBlockRoot = client.getBestBlockRoot();
+    if (headBlockRoot.isEmpty()) {
       ctx.status(SC_NO_CONTENT);
       return;
     }
 
     // derive all other state from the head_block_root
-    BeaconState beaconState = client.getStore().getBlockState(head_block_root);
+    BeaconState beaconState = client.getStore().getBlockState(headBlockRoot.get());
     Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
     Checkpoint justifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
     Checkpoint previousJustifiedCheckpoint = beaconState.getPrevious_justified_checkpoint();
@@ -82,7 +83,7 @@ public class BeaconChainHeadHandler implements Handler {
         new BeaconChainHeadResponse(
             beaconState.getSlot(),
             compute_epoch_at_slot(beaconState.getSlot()),
-            head_block_root,
+            headBlockRoot.get(),
             finalizedCheckpoint.getEpochSlot(),
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),

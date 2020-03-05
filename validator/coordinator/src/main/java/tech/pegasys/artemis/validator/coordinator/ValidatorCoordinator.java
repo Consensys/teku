@@ -31,6 +31,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.IntStream;
@@ -121,7 +122,7 @@ public class ValidatorCoordinator {
   @Subscribe
   public void onBestBlockInitialized(final BestBlockInitializedEvent event) {
     final Store store = chainStorageClient.getStore();
-    final Bytes32 head = chainStorageClient.getBestBlockRoot();
+    final Bytes32 head = chainStorageClient.getBestBlockRoot().orElseThrow();
     final BeaconState headState = store.getBlockState(head);
 
     // Get validator indices of our own validators
@@ -143,15 +144,12 @@ public class ValidatorCoordinator {
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
     UnsignedLong slot = slotEvent.getSlot();
-    BeaconState headState =
-        chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
-    BeaconBlock headBlock =
-        chainStorageClient.getStore().getBlock(chainStorageClient.getBestBlockRoot());
     eth1DataCache.onSlot(slotEvent);
 
-    // Copy state so that state transition during block creation
-    // does not manipulate headState in storage
-    if (!isGenesis(slot)) {
+    final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
+    if (!isGenesis(slot) && headRoot.isPresent()) {
+      BeaconState headState = chainStorageClient.getStore().getBlockState(headRoot.get());
+      BeaconBlock headBlock = chainStorageClient.getStore().getBlock(headRoot.get());
       createBlockIfNecessary(headState, headBlock, slot);
     }
   }

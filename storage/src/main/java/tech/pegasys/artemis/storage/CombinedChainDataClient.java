@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
@@ -138,6 +139,17 @@ public class CombinedChainDataClient {
   }
 
   /**
+   * Returns the state at the given slot on the current canonical chain.
+   *
+   * @param slot the slot to get the state for
+   * @return the State at slot
+   */
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
+    final Optional<Bytes32> headRoot = getBestBlockRoot();
+    return headRoot.map(root -> getStateAtSlot(slot, root)).orElse(STATE_NOT_AVAILABLE);
+  }
+
+  /**
    * Returns the state on the chain specified by <code>headBlockRoot</code>.
    *
    * @param slot the slot to get the state for
@@ -145,7 +157,7 @@ public class CombinedChainDataClient {
    */
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
-
+    checkNotNull(headBlockRoot);
     final Store store = getStore();
     if (store == null) {
       LOG.trace("No state at slot {} because the store is not set", slot);
@@ -179,11 +191,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<Bytes32> getBestBlockRoot() {
-    if (getStore() == null) {
-      LOG.trace("No block found because the store is not set");
-      return Optional.empty();
-    }
-    return Optional.ofNullable(recentChainData.getBestBlockRoot());
+    return recentChainData.getBestBlockRoot();
   }
 
   public boolean isStoreAvailable() {
@@ -203,8 +211,7 @@ public class CombinedChainDataClient {
     final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
     final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
 
-    SafeFuture<Optional<BeaconState>> future =
-        getStateAtSlot(startingSlot, recentChainData.getBestBlockRoot());
+    SafeFuture<Optional<BeaconState>> future = getStateAtSlot(startingSlot);
 
     return future
         .thenApply(

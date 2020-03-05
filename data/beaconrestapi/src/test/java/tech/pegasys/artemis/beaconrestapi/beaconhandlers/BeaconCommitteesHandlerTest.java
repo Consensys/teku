@@ -74,7 +74,7 @@ public class BeaconCommitteesHandlerTest {
     beaconState = DataStructureUtil.randomBeaconState(11233);
     storageClient.setGenesisState(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
-    blockRoot = storageClient.getBestBlockRoot();
+    blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = storageClient.getBlockState(blockRoot).get().getSlot();
     epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
@@ -134,7 +134,7 @@ public class BeaconCommitteesHandlerTest {
     when(store.getBlockState(blockRoot)).thenReturn(beaconState);
     when(client.getStateBySlot(any())).thenReturn(Optional.of(beaconState));
     when(client.getStore()).thenReturn(store);
-    when(client.getBestBlockRoot()).thenReturn(blockRoot);
+    when(client.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
 
     handler.handle(context);
 

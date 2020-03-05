@@ -61,8 +61,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   private volatile OptionalLong getStoreRequestId = OptionalLong.empty();
 
   private volatile Store store;
-  private volatile Bytes32 bestBlockRoot =
-      Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
+  private volatile Optional<Bytes32> bestBlockRoot =
+      Optional.empty(); // block chosen by lmd ghost to build and attest on
   private volatile UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
   // Time
@@ -176,7 +176,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    * @param slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
-    this.bestBlockRoot = root;
+    this.bestBlockRoot = Optional.of(root);
     this.bestSlot = slot;
 
     if (bestBlockInitialized.compareAndSet(false, true)) {
@@ -194,12 +194,13 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   public Bytes4 getForkAtEpoch(UnsignedLong epoch) {
     // TODO - add better fork configuration management
-    if (isPreGenesis()) {
+    final Optional<BeaconState> bestStateRoot = getBestBlockRootState();
+    if (isPreGenesis() || bestStateRoot.isEmpty()) {
       // We don't have anywhere to look for fork data, so just return the initial fork
       return Constants.GENESIS_FORK_VERSION;
     }
     // For now, we don't have any forks, so just use the latest
-    Fork latestFork = getBestBlockRootState().getFork();
+    Fork latestFork = bestStateRoot.get().getFork();
     return epoch.compareTo(latestFork.getEpoch()) < 0
         ? latestFork.getPrevious_version()
         : latestFork.getCurrent_version();
@@ -210,7 +211,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    *
    * @return
    */
-  public Bytes32 getBestBlockRoot() {
+  public Optional<Bytes32> getBestBlockRoot() {
     return this.bestBlockRoot;
   }
 
@@ -219,8 +220,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    *
    * @return
    */
-  public BeaconState getBestBlockRootState() {
-    return this.store.getBlockState(this.bestBlockRoot);
+  public Optional<BeaconState> getBestBlockRootState() {
+    return bestBlockRoot.map(this.store::getBlockState);
   }
 
   /**
@@ -304,16 +305,16 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
-    if (store == null || Bytes32.ZERO.equals(bestBlockRoot)) {
+    if (store == null || bestBlockRoot.isEmpty()) {
       LOG.trace("No block root at slot {} because store or best block root is not set", slot);
       return Optional.empty();
     }
     if (bestSlot.equals(slot)) {
       LOG.trace("Block root at slot {} is the current best slot root", slot);
-      return Optional.of(bestBlockRoot);
+      return bestBlockRoot;
     }
 
-    final BeaconState bestState = store.getBlockState(bestBlockRoot);
+    final BeaconState bestState = store.getBlockState(bestBlockRoot.get());
     if (bestState == null) {
       LOG.trace("No block root at slot {} because best state is not available", slot);
       return Optional.empty();

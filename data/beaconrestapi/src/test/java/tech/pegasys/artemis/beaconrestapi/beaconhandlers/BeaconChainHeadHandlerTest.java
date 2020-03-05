@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHeadResponse;
@@ -48,7 +49,7 @@ public class BeaconChainHeadHandlerTest {
 
   @Test
   public void shouldReturnBeaconChainHeadResponse() throws Exception {
-    when(storageClient.getBestBlockRoot()).thenReturn(headBlockRoot);
+    when(storageClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
     when(storageClient.getStore()).thenReturn(store);
 
     when(store.getBlockState(headBlockRoot)).thenReturn(beaconState);
@@ -61,7 +62,7 @@ public class BeaconChainHeadHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenHeadBlockRootIsNull() throws Exception {
-    when(storageClient.getBestBlockRoot()).thenReturn(null);
+    when(storageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     BeaconChainHeadHandler handler = new BeaconChainHeadHandler(storageClient, jsonProvider);
     handler.handle(context);

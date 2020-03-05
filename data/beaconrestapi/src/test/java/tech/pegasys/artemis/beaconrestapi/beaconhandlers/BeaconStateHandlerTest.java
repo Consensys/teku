@@ -71,7 +71,7 @@ public class BeaconStateHandlerTest {
     storageClient.setGenesisState(beaconStateInternal);
     CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(storageClient, historicalChainData);
-    blockRoot = storageClient.getBestBlockRoot();
+    blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = beaconStateInternal.getSlot();
     provider = new ChainDataProvider(storageClient, combinedChainDataClient);
     beaconState = new BeaconState(beaconStateInternal);
