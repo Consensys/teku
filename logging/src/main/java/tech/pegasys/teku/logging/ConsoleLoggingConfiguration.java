@@ -25,11 +25,10 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 
 public class ConsoleLoggingConfiguration extends XmlConfiguration {
 
+  public static final String LOGGER_NAME = "stdout";
+
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} [%-5level] - %msg%n";
   private static final String CONSOLE_APPENDER_NAME = "Console";
-
-  // TODO common name used by ALogger too!
-  private static final String LOGGER_NAME = "stdout";
 
   private static volatile boolean ADD_CONSOLE_LOGGER;
 

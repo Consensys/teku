@@ -19,7 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ALogger {
 
-  public static final ALogger STDOUT = new ALogger("stdout");
+  public static final ALogger STDOUT = new ALogger(ConsoleLoggingConfiguration.LOGGER_NAME);
 
   public enum Color {
     RED,
