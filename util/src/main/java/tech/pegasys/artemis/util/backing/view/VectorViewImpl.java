@@ -26,8 +26,10 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
 
   protected final VectorViewType<R> type;
   private TreeNode backingNode;
+  private final long size;
 
   public VectorViewImpl(VectorViewType<R> type, TreeNode backingNode) {
+    this.size = type.getMaxLength();
     this.type = type;
     this.backingNode = backingNode;
   }
@@ -93,7 +95,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   }
 
   private void checkIndex(int index) {
-    if (index < 0 || index >= getType().getMaxLength()) {
+    if (index < 0 || index >= size) {
       throw new IndexOutOfBoundsException(
           "Index out of bounds: " + index + ", size=" + getType().getMaxLength());
     }

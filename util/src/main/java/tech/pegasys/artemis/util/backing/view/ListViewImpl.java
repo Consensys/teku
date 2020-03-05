@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkPositionIndex;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewWriteRef;
@@ -34,12 +35,14 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     extends AbstractCompositeViewWrite<ListViewImpl<R, W>, R> implements ListViewWriteRef<R, W> {
 
   private final ContainerViewWrite container;
+  private final AtomicInteger size;
 
   public ListViewImpl(VectorViewType<R> vectorType) {
     ContainerViewType<ContainerViewWrite> containerViewType =
         new ContainerViewType<>(
             List.of(vectorType, BasicViewTypes.UINT64_TYPE), MutableContainerImpl::new);
     container = containerViewType.getDefault();
+    size = new AtomicInteger(0);
   }
 
   public ListViewImpl(ListViewType<R> type, TreeNode node) {
@@ -48,10 +51,15 @@ public class ListViewImpl<R extends ViewRead, W extends R>
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
             MutableContainerImpl::new);
     container = containerViewType.createFromBackingNode(node);
+    size = new AtomicInteger(getSizeFromTree());
   }
 
   @Override
   public int size() {
+    return size.get();
+  }
+
+  private int getSizeFromTree() {
     UInt64View sizeView = (UInt64View) container.get(1);
     return sizeView.get().intValue();
   }
@@ -76,14 +84,12 @@ public class ListViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public void set(int index, R value) {
-    int size = size();
-
-    if (!((index >= 0 && index < size) || (index == size && index < getType().getMaxLength()))) {
+    if (!((index >= 0 && index < size()) || (index == size() && index < getType().getMaxLength()))) {
       throw new IndexOutOfBoundsException("Index out of bounds: " + index + ", size=" + size);
     }
 
-    if (index == size) {
-      container.set(1, new UInt64View(UnsignedLong.valueOf(size + 1)));
+    if (index == size()) {
+      container.set(1, new UInt64View(UnsignedLong.valueOf(size.incrementAndGet())));
     }
 
     container.update(
@@ -101,6 +107,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   @Override
   public void clear() {
     container.clear();
+    size.set(0);
     invalidate();
   }
 

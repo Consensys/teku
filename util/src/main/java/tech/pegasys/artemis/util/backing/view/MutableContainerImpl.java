@@ -28,6 +28,7 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
 
   private final ContainerViewType<? extends ContainerViewWrite> type;
   private TreeNode backingNode;
+  private final int size;
 
   public MutableContainerImpl(ContainerViewType<? extends ContainerViewWrite> type) {
     this(type, type.getDefaultTree());
@@ -37,6 +38,7 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
       ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
+    this.size = (int) type.getMaxLength();
   }
 
   public MutableContainerImpl(
@@ -97,6 +99,6 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
   }
 
   private void checkIndex(int index) {
-    checkArgument(index >= 0 && index < type.getMaxLength(), "Index out of bounds: %s", index);
+    checkArgument(index >= 0 && index < size, "Index out of bounds: %s", index);
   }
 }
