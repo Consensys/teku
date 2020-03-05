@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
@@ -36,9 +36,9 @@ import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.teku.logging.ALogger;
+import tech.pegasys.teku.logging.ALogger.Color;
 
 public final class StartupUtil {
 

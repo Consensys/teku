@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.genesis;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Date;

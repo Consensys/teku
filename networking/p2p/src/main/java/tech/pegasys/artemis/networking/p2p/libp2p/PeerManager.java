@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;

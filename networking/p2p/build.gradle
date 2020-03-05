@@ -1,13 +1,15 @@
 dependencies {
-  implementation project(':pow')
-  implementation project(':util')
-  implementation project(':storage')
-  implementation project(':ethereum:datastructures')
-  implementation project(':ethereum:statetransition')
   implementation project(':data')
   implementation project(':data:metrics')
+  implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
+  implementation project(':logging')
+  implementation project(':pow')
   implementation project(':services:serviceutils')
+  implementation project(':storage')
+  implementation project(':util')
   implementation project(':validator:coordinator')
+
   implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'

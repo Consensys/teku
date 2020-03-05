@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.compute_pro
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
@@ -43,6 +42,7 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.util.config.Constants.TARGET_COMMITTEE_SIZE;
 import static tech.pegasys.artemis.util.config.Constants.WHISTLEBLOWER_REWARD_QUOTIENT;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;

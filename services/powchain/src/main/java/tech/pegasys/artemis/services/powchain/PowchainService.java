@@ -14,11 +14,11 @@
 package tech.pegasys.artemis.services.powchain;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_NORMAL;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_SIM;
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;

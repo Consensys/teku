@@ -141,9 +141,9 @@ final class ArtemisConfigurationTest {
   }
 
   @Test
-  public void shouldDefaultStandardOutAsFalse() {
+  public void shouldDefaultStandardOutAsTrue() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
-    assertThat(config.isStandardOutEnabled()).isFalse();
+    assertThat(config.isStandardOutEnabled()).isTrue();
   }
 
   @Test
@@ -164,9 +164,9 @@ final class ArtemisConfigurationTest {
   }
 
   @Test
-  public void shouldDefaultStatusUpdatesAsFalse() {
+  public void shouldDefaultStatusUpdatesAsTrue() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
-    assertThat(config.isStatusUpdatesEnabled()).isFalse();
+    assertThat(config.isStatusUpdatesEnabled()).isTrue();
   }
 
   @Test

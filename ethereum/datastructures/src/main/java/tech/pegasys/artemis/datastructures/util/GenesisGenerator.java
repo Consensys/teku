@@ -14,13 +14,13 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.process_deposit_without_checking_merkle_proof;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCREMENT;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_DAY;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
