@@ -53,6 +53,16 @@ public class ArtemisConfiguration {
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addString("node.discovery", "", "static or discv5", null);
+    builder.addInteger(
+        "node.targetPeerCountRangeLowerBound",
+        20,
+        "Lower bound on the target number of peers",
+        null);
+    builder.addInteger(
+        "node.targetPeerCountRangeUpperBound",
+        30,
+        "Upper bound on the target number of peers",
+        null);
     builder.addListOfString("node.bootnodes", Collections.emptyList(), "ENR of the bootnode", null);
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
@@ -192,6 +202,14 @@ public class ArtemisConfiguration {
 
   public List<String> getBootnodes() {
     return config.getListOfString("node.bootnodes");
+  }
+
+  public int getTargetPeerCountRangeLowerBound() {
+    return config.getInteger("node.targetPeerCountRangeLowerBound");
+  }
+
+  public int getTargetPeerCountRangeUpperBound() {
+    return config.getInteger("node.targetPeerCountRangeUpperBound");
   }
 
   /** @return the port this node will advertise as its own */
