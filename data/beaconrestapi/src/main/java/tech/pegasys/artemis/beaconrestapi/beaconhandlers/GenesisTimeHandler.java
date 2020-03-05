@@ -46,10 +46,9 @@ public class GenesisTimeHandler implements Handler {
   @OpenApi(
       path = GenesisTimeHandler.ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the genesis_time parameter from beacon node configuration.",
+      summary = "Get the genesis time from the beacon node.",
       tags = {TAG_NODE},
-      description =
-          "Requests the genesis_time parameter from the beacon node, which should be consistent across all beacon nodes that follow the same beacon chain.",
+      description = "Returns the genesis time from the beacon node.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = UnsignedLong.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
