@@ -13,19 +13,43 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
 
-public class ENRHandler implements BeaconRestApiHandler {
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.provider.JsonProvider;
 
-  public ENRHandler() {}
+public class ENRHandler implements Handler {
+  public static final String ROUTE = "/network/enr";
+  private final JsonProvider jsonProvider;
+  private final P2PNetwork<?> network;
 
-  @Override
-  public String getPath() {
-    return "/network/enr";
+  public ENRHandler(P2PNetwork<?> network, JsonProvider jsonProvider) {
+    this.network = network;
+    this.jsonProvider = jsonProvider;
   }
 
+  @OpenApi(
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Requests the listening ENR address of the beacon node.",
+      tags = {TAG_NETWORK},
+      description =
+          "Returns a base64 encoded string representing the beacon node listening address.",
+      responses = {
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = String.class),
+            description = "Base64 encoded ENR or an empty string if discovery v5 is not in use.")
+      })
   @Override
-  public Object handleRequest(RequestParams params) {
-    return "Discovery service not yet implemented";
+  public void handle(Context ctx) throws Exception {
+    ctx.result(jsonProvider.objectToJSON(network.getEnr().orElse("")));
   }
 }
