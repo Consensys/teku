@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_DAY;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -21,25 +23,24 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;
 
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Optional;
+import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class GenesisTimeHandler implements Handler {
-  private final Logger LOG = LogManager.getLogger();
   private final JsonProvider jsonProvider;
   public static final String ROUTE = "/node/genesis_time/";
-  private final ChainStorageClient chainStorageClient;
+  private final ChainDataProvider provider;
 
-  public GenesisTimeHandler(ChainStorageClient chainStorageClient, JsonProvider jsonProvider) {
-    this.chainStorageClient = chainStorageClient;
+  public GenesisTimeHandler(ChainDataProvider provider, JsonProvider jsonProvider) {
+    this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
 
@@ -57,11 +58,12 @@ public class GenesisTimeHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    try {
-      UnsignedLong result = chainStorageClient.getGenesisTime();
-      ctx.result(jsonProvider.objectToJSON(result));
-    } catch (Exception exception) {
-      LOG.debug("Failed to get genesis time", exception);
+    Optional<UnsignedLong> optionalResult = provider.getGenesisTime();
+    if (optionalResult.isPresent()) {
+      ctx.header(Header.CACHE_CONTROL, CACHE_ONE_DAY);
+      ctx.result(jsonProvider.objectToJSON(optionalResult.get()));
+    } else {
+      ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
       ctx.status(SC_NO_CONTENT);
     }
   }

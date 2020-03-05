@@ -15,13 +15,16 @@ package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_HOUR;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -35,19 +38,23 @@ public class ENRHandlerTest {
 
   @Test
   public void shouldReturnEmptyStringWhenDiscoveryNotInUse() throws Exception {
-    ENRHandler handler = new ENRHandler(p2pNetwork, jsonProvider);
+    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    ENRHandler handler = new ENRHandler(network, jsonProvider);
     when(p2pNetwork.getEnr()).thenReturn(Optional.empty());
     handler.handle(context);
 
+    verify(context).header(Header.CACHE_CONTROL, CACHE_ONE_HOUR);
     verify(context).result(jsonProvider.objectToJSON(""));
   }
 
   @Test
   public void shouldReturnPopulatedStringWhenDiscoveryIsInUse() throws Exception {
-    ENRHandler handler = new ENRHandler(p2pNetwork, jsonProvider);
+    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    ENRHandler handler = new ENRHandler(network, jsonProvider);
     when(p2pNetwork.getEnr()).thenReturn(Optional.of(ENR));
     handler.handle(context);
 
+    verify(context).header(Header.CACHE_CONTROL, CACHE_ONE_HOUR);
     verify(context).result(jsonProvider.objectToJSON(ENR));
   }
 }

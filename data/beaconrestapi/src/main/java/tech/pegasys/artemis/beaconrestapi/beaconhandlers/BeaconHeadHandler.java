@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -26,32 +28,19 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.beaconrestapi.schema.BeaconHeadResponse;
+import java.util.Optional;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconHeadHandler implements Handler {
-  private final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/beacon/head";
   private final JsonProvider jsonProvider;
+  private final ChainDataProvider provider;
 
-  private final ChainStorageClient client;
-
-  public BeaconHeadHandler(ChainStorageClient client, JsonProvider jsonProvider) {
-    this.client = client;
+  public BeaconHeadHandler(ChainDataProvider provider, JsonProvider jsonProvider) {
+    this.provider = provider;
     this.jsonProvider = jsonProvider;
-  }
-
-  private BeaconHeadResponse getBeaconHead() {
-    Bytes32 headBlockRoot = client.getBestBlockRoot();
-    if (headBlockRoot == null) {
-      return null;
-    }
-    Bytes32 headStateRoot = client.getBestBlockRootState().hash_tree_root();
-    return new BeaconHeadResponse(client.getBestSlot(), headBlockRoot, headStateRoot);
   }
 
   @OpenApi(
@@ -61,20 +50,20 @@ public class BeaconHeadHandler implements Handler {
       tags = {TAG_BEACON},
       description = "Requests the context of the best slot and head block from the beacon node.",
       responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = BeaconHeadResponse.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconHead.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    BeaconHeadResponse result = getBeaconHead();
-    if (result == null) {
-      LOG.trace("Failed to get beacon head");
+    Optional<BeaconHead> optionalResult = provider.getBeaconHead();
+    ctx.header(CACHE_CONTROL, CACHE_NONE);
+
+    if (optionalResult.isEmpty()) {
       ctx.status(SC_NO_CONTENT);
-    } else {
-      ctx.result(jsonProvider.objectToJSON(getBeaconHead()));
+      return;
     }
+
+    ctx.result(jsonProvider.objectToJSON(optionalResult.get()));
   }
 }

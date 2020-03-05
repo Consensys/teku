@@ -16,11 +16,15 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_DAY;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
@@ -34,16 +38,21 @@ public class GenesisTimeHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenGenesisTimeIsNotSet() throws Exception {
-    GenesisTimeHandler handler = new GenesisTimeHandler(null, jsonProvider);
+    storageClient.setGenesisTime(null);
+    ChainDataProvider provider = new ChainDataProvider(storageClient, null);
+    GenesisTimeHandler handler = new GenesisTimeHandler(provider, jsonProvider);
     handler.handle(context);
     verify(context).status(SC_NO_CONTENT);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 
   @Test
   public void shouldReturnGenesisTimeWhenSet() throws Exception {
     storageClient.setGenesisTime(genesisTime);
-    GenesisTimeHandler handler = new GenesisTimeHandler(storageClient, jsonProvider);
+    ChainDataProvider provider = new ChainDataProvider(storageClient, null);
+    GenesisTimeHandler handler = new GenesisTimeHandler(provider, jsonProvider);
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(genesisTime));
+    verify(context).header(Header.CACHE_CONTROL, CACHE_ONE_DAY);
   }
 }

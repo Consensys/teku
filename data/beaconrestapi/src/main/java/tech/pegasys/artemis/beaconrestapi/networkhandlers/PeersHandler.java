@@ -13,29 +13,28 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_MINUTE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.stream.Collectors;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PeersHandler implements Handler {
 
   public static final String ROUTE = "/network/peers";
   private final JsonProvider jsonProvider;
-  private final P2PNetwork<?> network;
+  private final NetworkDataProvider network;
 
-  public PeersHandler(P2PNetwork<?> network, JsonProvider jsonProvider) {
+  public PeersHandler(NetworkDataProvider network, JsonProvider jsonProvider) {
     this.network = network;
     this.jsonProvider = jsonProvider;
   }
@@ -55,12 +54,7 @@ public class PeersHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.result(
-        jsonProvider.objectToJSON(
-            network
-                .streamPeers()
-                .map(Peer::getId)
-                .map(NodeId::toBase58)
-                .collect(Collectors.toList())));
+    ctx.header(Header.CACHE_CONTROL, CACHE_ONE_MINUTE);
+    ctx.result(jsonProvider.objectToJSON(network.getPeersAsBase58()));
   }
 }

@@ -1,6 +1,8 @@
 dependencies {
     implementation project(':util')
     implementation project(':data')
+    implementation project(':networking:p2p')
+    implementation project(':storage')
     implementation project(':ethereum:datastructures')
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
