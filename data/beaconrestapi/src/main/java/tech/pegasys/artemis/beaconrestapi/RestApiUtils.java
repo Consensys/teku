@@ -36,4 +36,11 @@ public class RestApiUtils {
     }
     throw new IllegalArgumentException(String.format("'%s' cannot be null or empty.", key));
   }
+
+  public static int getParameterValueAsInt(
+      final Map<String, List<String>> parameterMap, final String key)
+      throws IllegalArgumentException {
+    String stringValue = validateQueryParameter(parameterMap, key);
+    return Integer.valueOf(stringValue);
+  }
 }
