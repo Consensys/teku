@@ -103,19 +103,17 @@ public class ForkChoiceUtil {
   public static UnsignedLong get_latest_attesting_balance(Store store, Bytes32 root) {
     BeaconState state = store.getCheckpointState(store.getJustifiedCheckpoint());
     List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
-    return UnsignedLong.valueOf(
-        active_indices.stream()
-            .filter(
-                i ->
-                    store.containsLatestMessage(UnsignedLong.valueOf(i))
-                        && get_ancestor(
-                                store,
-                                store.getLatestMessage(UnsignedLong.valueOf(i)).getRoot(),
-                                store.getBlock(root).getSlot())
-                            .equals(root))
-            .map(i -> state.getValidators().get(i).getEffective_balance())
-            .mapToLong(UnsignedLong::longValue)
-            .sum());
+    return active_indices.stream()
+        .filter(
+            i ->
+                store.containsLatestMessage(UnsignedLong.valueOf(i))
+                    && get_ancestor(
+                            store,
+                            store.getLatestMessage(UnsignedLong.valueOf(i)).getRoot(),
+                            store.getBlock(root).getSlot())
+                        .equals(root))
+        .map(i -> state.getValidators().get(i).getEffective_balance())
+        .reduce(UnsignedLong.ZERO, UnsignedLong::plus);
   }
 
   public static boolean filter_block_tree(
