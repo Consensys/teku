@@ -717,7 +717,7 @@ public class BeaconStateUtil {
   public static UnsignedLong integer_squareroot(UnsignedLong n) {
     checkArgument(
         n.compareTo(UnsignedLong.ZERO) >= 0,
-        "checkArgument threw and exception in integer_squareroot()");
+        "checkArgument threw an exception in integer_squareroot()");
     UnsignedLong TWO = UnsignedLong.valueOf(2L);
     UnsignedLong x = n;
     UnsignedLong y = x.plus(UnsignedLong.ONE).dividedBy(TWO);
