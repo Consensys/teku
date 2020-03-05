@@ -96,13 +96,15 @@ public class DepositCommand implements Runnable {
           int validatorCount,
       @Option(
               names = {"--output-file", "-o"},
+              paramLabel = "<FILE>",
               description =
                   "File to write validator keys to. Keys are printed to std out if not specified")
           String outputFile,
       @Option(
               names = {"--encrypt-keys", "-e"},
               defaultValue = "false",
-              description = "Encrypt validator keys. Defaults to <false>",
+              paramLabel = "<TRUE|FALSE>",
+              description = "Encrypt validator keys. (Default: false)",
               arity = "1")
           boolean encryptKeys,
       @Option(
