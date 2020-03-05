@@ -144,7 +144,9 @@ public class DepositCommand implements Runnable {
                       } else if (printOnStandardOut) {
                         System.out.println(yamlFormattedString);
                       } else {
-                        yamlStringBuilder.append(yamlFormattedString);
+                        yamlStringBuilder
+                            .append(yamlFormattedString)
+                            .append(System.lineSeparator());
                       }
 
                       return sendDeposit(
