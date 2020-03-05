@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-
 import io.javalin.Javalin;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -22,8 +20,6 @@ import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
@@ -35,8 +31,6 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler;
-import tech.pegasys.artemis.beaconrestapi.handlerinterfaces.BeaconRestApiHandler.RequestParams;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
@@ -49,8 +43,6 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class BeaconRestApi {
-
-  private final List<BeaconRestApiHandler> handlers = new ArrayList<>();
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
 
@@ -106,20 +98,6 @@ public class BeaconRestApi {
   }
 
   public void start() {
-    handlers.forEach(
-        handler ->
-            app.get(
-                handler.getPath(),
-                ctx -> {
-                  ctx.contentType("application/json");
-                  final Object response = handler.handleRequest(new RequestParams(ctx));
-                  if (response != null) {
-                    ctx.result(jsonProvider.objectToJSON(response));
-                  } else {
-                    ctx.status(SC_NOT_FOUND).result(jsonProvider.objectToJSON("Not found"));
-                  }
-                }));
-
     app.start();
   }
 
@@ -151,11 +129,6 @@ public class BeaconRestApi {
     app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient, jsonProvider));
     app.get(VersionHandler.ROUTE, new VersionHandler(jsonProvider));
     app.get(NodeSyncingHandler.ROUTE, new NodeSyncingHandler(syncService, jsonProvider));
-    /*
-     * TODO:
-     *  Optional:
-     *    /node/fork
-     */
   }
 
   private void addBeaconHandlers(
@@ -179,22 +152,12 @@ public class BeaconRestApi {
     app.get(
         BeaconValidatorsHandler.ROUTE,
         new BeaconValidatorsHandler(combinedChainDataClient, jsonProvider));
-    /*
-     * TODO:
-     *   reference: https://ethereum.github.io/eth2.0-APIs/#/
-     *   /validator/{pubkey}
-     *   /validator/duties
-     *   /validator/block (GET/POST)
-     *   /validator/attestation (GET/POST)
-     **/
   }
 
   private void addNetworkHandlers(P2PNetwork<?> p2pNetwork) {
+    app.get(ENRHandler.ROUTE, new ENRHandler(p2pNetwork, jsonProvider));
     app.get(PeerIdHandler.ROUTE, new PeerIdHandler(p2pNetwork, jsonProvider));
     app.get(PeersHandler.ROUTE, new PeersHandler(p2pNetwork, jsonProvider));
-
-    // not in Minimal or optional specified set
-    handlers.add(new ENRHandler());
   }
 
   public void stop() {
