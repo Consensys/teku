@@ -47,14 +47,12 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.MIN_EPOCHS_TO_INACTIVITY_PENALTY;
 import static tech.pegasys.artemis.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -66,15 +64,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class EpochProcessorUtil {
@@ -91,7 +90,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private static List<PendingAttestation> get_matching_source_attestations(
+  private static SSZList<PendingAttestation> get_matching_source_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
     checkArgument(
         get_current_epoch(state).equals(epoch) || get_previous_epoch(state).equals(epoch),
@@ -112,11 +111,10 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private static List<PendingAttestation> get_matching_target_attestations(
+  private static SSZList<PendingAttestation> get_matching_target_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
-    return get_matching_source_attestations(state, epoch).stream()
-        .filter(a -> a.getData().getTarget().getRoot().equals(get_block_root(state, epoch)))
-        .collect(Collectors.toList());
+    return get_matching_source_attestations(state, epoch)
+        .filter(a -> a.getData().getTarget().getRoot().equals(get_block_root(state, epoch)));
   }
 
   /**
@@ -128,15 +126,14 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private static List<PendingAttestation> get_matching_head_attestations(
+  private static SSZList<PendingAttestation> get_matching_head_attestations(
       BeaconState state, UnsignedLong epoch) throws IllegalArgumentException {
-    return get_matching_source_attestations(state, epoch).stream()
+    return get_matching_source_attestations(state, epoch)
         .filter(
             a ->
                 a.getData()
                     .getBeacon_block_root()
-                    .equals(get_block_root_at_slot(state, a.getData().getSlot())))
-        .collect(Collectors.toList());
+                    .equals(get_block_root_at_slot(state, a.getData().getSlot())));
   }
 
   /**
@@ -150,13 +147,13 @@ public final class EpochProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static List<Integer> get_unslashed_attesting_indices(
-      BeaconState state, List<PendingAttestation> attestations) {
+      BeaconState state, SSZList<PendingAttestation> attestations) {
     return get_unslashed_attesting_indices(state, attestations, ArrayList::new);
   }
 
   private static <T extends Collection<Integer>> T get_unslashed_attesting_indices(
       BeaconState state,
-      List<PendingAttestation> attestations,
+      SSZList<PendingAttestation> attestations,
       final Supplier<T> collectionFactory) {
     TreeSet<Integer> output = new TreeSet<>();
     for (PendingAttestation a : attestations) {
@@ -179,7 +176,7 @@ public final class EpochProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
   private static UnsignedLong get_attesting_balance(
-      BeaconState state, List<PendingAttestation> attestations) {
+      BeaconState state, SSZList<PendingAttestation> attestations) {
     return get_total_balance(state, get_unslashed_attesting_indices(state, attestations));
   }
 
@@ -191,7 +188,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#justification-and-finalization</a>
    */
-  public static void process_justification_and_finalization(BeaconState state)
+  public static void process_justification_and_finalization(MutableBeaconState state)
       throws EpochProcessingException {
     try {
       if (get_current_epoch(state)
@@ -209,7 +206,7 @@ public final class EpochProcessorUtil {
       state.setPrevious_justified_checkpoint(state.getCurrent_justified_checkpoint());
       Bitvector justificationBits = state.getJustification_bits().rightShift(1);
 
-      List<PendingAttestation> matching_target_attestations =
+      SSZList<PendingAttestation> matching_target_attestations =
           get_matching_target_attestations(state, previous_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
               .times(UnsignedLong.valueOf(3))
@@ -329,17 +326,17 @@ public final class EpochProcessorUtil {
             .collect(Collectors.toList());
 
     // Micro-incentives for matching FFG source, FFG target, and head
-    List<PendingAttestation> matching_source_attestations =
+    SSZList<PendingAttestation> matching_source_attestations =
         get_matching_source_attestations(state, previous_epoch);
-    List<PendingAttestation> matching_target_attestations =
+    SSZList<PendingAttestation> matching_target_attestations =
         get_matching_target_attestations(state, previous_epoch);
-    List<PendingAttestation> matching_head_attestations =
+    SSZList<PendingAttestation> matching_head_attestations =
         get_matching_head_attestations(state, previous_epoch);
-    List<List<PendingAttestation>> attestation_lists = new ArrayList<>();
+    List<SSZList<PendingAttestation>> attestation_lists = new ArrayList<>();
     attestation_lists.add(matching_source_attestations);
     attestation_lists.add(matching_target_attestations);
     attestation_lists.add(matching_head_attestations);
-    for (List<PendingAttestation> attestations : attestation_lists) {
+    for (SSZList<PendingAttestation> attestations : attestation_lists) {
       Set<Integer> unslashed_attesting_indices =
           get_unslashed_attesting_indices(state, attestations, HashSet::new);
       UnsignedLong attesting_balance = get_total_balance(state, unslashed_attesting_indices);
@@ -365,7 +362,7 @@ public final class EpochProcessorUtil {
         matching_source_attestations.stream()
             .flatMap(
                 a ->
-                    get_unslashed_attesting_indices(state, Collections.singletonList(a)).stream()
+                    get_unslashed_attesting_indices(state, SSZList.singleton(a)).stream()
                         .map(i -> Pair.of(i, a)))
             .collect(
                 Collectors.groupingBy(
@@ -435,7 +432,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
-  public static void process_rewards_and_penalties(BeaconStateWithCache state)
+  public static void process_rewards_and_penalties(MutableBeaconState state)
       throws EpochProcessingException {
     try {
       if (get_current_epoch(state).equals(UnsignedLong.valueOf(GENESIS_EPOCH))) {
@@ -464,13 +461,14 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#registry-updates</a>
    */
-  public static void process_registry_updates(BeaconState state) throws EpochProcessingException {
+  public static void process_registry_updates(MutableBeaconState state)
+      throws EpochProcessingException {
     try {
 
       // Process activation eligibility and ejections
-      List<Validator> validators = state.getValidators();
+      SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
       for (int index = 0; index < validators.size(); index++) {
-        Validator validator = validators.get(index);
+        MutableValidator validator = validators.get(index);
 
         if (is_eligible_for_activation_queue(validator)) {
           validator.setActivation_eligibility_epoch(
@@ -518,7 +516,7 @@ public final class EpochProcessorUtil {
       int churn_limit = get_validator_churn_limit(state).intValue();
       int sublist_size = Math.min(churn_limit, activation_queue.size());
       for (Integer index : activation_queue.subList(0, sublist_size)) {
-        Validator validator = state.getValidators().get(index);
+        MutableValidator validator = state.getValidators().get(index);
         validator.setActivation_epoch(compute_activation_exit_epoch(get_current_epoch(state)));
       }
     } catch (IllegalArgumentException e) {
@@ -533,11 +531,11 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slashings</a>
    */
-  public static void process_slashings(BeaconState state) {
+  public static void process_slashings(MutableBeaconState state) {
     UnsignedLong epoch = get_current_epoch(state);
     UnsignedLong total_balance = get_total_active_balance(state);
 
-    List<Validator> validators = state.getValidators();
+    SSZList<Validator> validators = state.getValidators();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
       if (validator.isSlashed()
@@ -568,7 +566,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#final-updates</a>
    */
-  public static void process_final_updates(BeaconState state) {
+  public static void process_final_updates(MutableBeaconState state) {
     UnsignedLong current_epoch = get_current_epoch(state);
     UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
 
@@ -578,14 +576,14 @@ public final class EpochProcessorUtil {
         .plus(UnsignedLong.ONE)
         .mod(UnsignedLong.valueOf(Constants.SLOTS_PER_ETH1_VOTING_PERIOD))
         .equals(UnsignedLong.ZERO)) {
-      state.setEth1_data_votes(new SSZList<>(Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD));
+      state.getEth1_data_votes().clear();
     }
 
     // Update effective balances with hysteresis
-    List<Validator> validators = state.getValidators();
-    List<UnsignedLong> balances = state.getBalances();
+    SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
+    SSZList<UnsignedLong> balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
-      Validator validator = validators.get(index);
+      MutableValidator validator = validators.get(index);
       UnsignedLong balance = balances.get(index);
       long HALF_INCREMENT = Constants.EFFECTIVE_BALANCE_INCREMENT / 2;
       if (balance.compareTo(validator.getEffective_balance()) < 0
@@ -620,8 +618,10 @@ public final class EpochProcessorUtil {
     }
 
     // Rotate current/previous epoch attestations
-    state.setPrevious_epoch_attestations(state.getCurrent_epoch_attestations());
-    state.setCurrent_epoch_attestations(
-        new SSZList<>(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
+    state.getPrevious_epoch_attestations().setAll(state.getCurrent_epoch_attestations());
+    state
+        .getCurrent_epoch_attestations()
+        .setAll(
+            SSZList.createMutable(PendingAttestation.class, MAX_ATTESTATIONS * SLOTS_PER_EPOCH));
   }
 }

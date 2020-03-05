@@ -25,24 +25,29 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class slashings extends TestSuite {
 
-  @ParameterizedTest(name = "{index}. process slashings pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process slashings")
   @MethodSource("mainnetSlashingsSetup")
-  void mainnetProcessSlashings(BeaconState pre, BeaconState post) throws Exception {
-    EpochProcessorUtil.process_slashings(pre);
-    assertEquals(pre, post);
+  void mainnetProcessSlashings(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
+    MutableBeaconState wState = pre.createWritableCopy();
+    EpochProcessorUtil.process_slashings(wState);
+    assertEquals(post, wState);
   }
 
-  @ParameterizedTest(name = "{index}. process slashings pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process slashings")
   @MethodSource("minimalSlashingsSetup")
-  void minimalProcessSlashings(BeaconState pre, BeaconState post) throws Exception {
-    EpochProcessorUtil.process_slashings(pre);
-    assertEquals(pre, post);
+  void minimalProcessSlashings(BeaconState pre, BeaconState post, String testName)
+      throws Exception {
+    MutableBeaconState wState = pre.createWritableCopy();
+    EpochProcessorUtil.process_slashings(wState);
+    assertEquals(post, wState);
   }
 
   @MustBeClosed

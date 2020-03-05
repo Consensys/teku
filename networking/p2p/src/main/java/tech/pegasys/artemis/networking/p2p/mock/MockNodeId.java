@@ -13,12 +13,25 @@
 
 package tech.pegasys.artemis.networking.p2p.mock;
 
+import com.google.common.base.Strings;
+import io.libp2p.etc.encode.Base58;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
-public class MockNodeId implements NodeId {
-  private final Bytes bytes = Bytes.fromHexString("0x00", 32);
-  private final String base58 = "11111111111111111111111111111111";
+public class MockNodeId extends NodeId {
+  private final Bytes bytes;
+
+  public MockNodeId() {
+    this(Bytes.fromHexString("0x00", 32));
+  }
+
+  public MockNodeId(final int id) {
+    this(Bytes.fromHexString(Strings.padStart(Integer.toString(id), 2, '0'), 32));
+  }
+
+  public MockNodeId(final Bytes bytes) {
+    this.bytes = bytes;
+  }
 
   @Override
   public Bytes toBytes() {
@@ -27,11 +40,6 @@ public class MockNodeId implements NodeId {
 
   @Override
   public String toBase58() {
-    return base58;
-  }
-
-  @Override
-  public String toString() {
-    return toBase58();
+    return Base58.INSTANCE.encode(bytes.toArrayUnsafe());
   }
 }

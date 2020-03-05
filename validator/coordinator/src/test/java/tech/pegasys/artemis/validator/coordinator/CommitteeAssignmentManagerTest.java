@@ -35,7 +35,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
@@ -53,8 +53,10 @@ class CommitteeAssignmentManagerTest {
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 50);
   private final List<DepositData> depositDatas =
       new MockStartDepositGenerator().createDeposits(validatorKeys);
-  private final BeaconState state =
-      new MockStartBeaconStateGenerator().createInitialBeaconState(UnsignedLong.ONE, depositDatas);
+  private final MutableBeaconState state =
+      new MockStartBeaconStateGenerator()
+          .createInitialBeaconState(UnsignedLong.ONE, depositDatas)
+          .createWritableCopy();
 
   private CommitteeAssignmentManager committeeAssignmentManager;
   private Map<BLSPublicKey, ValidatorInfo> validators = new HashMap<>();
