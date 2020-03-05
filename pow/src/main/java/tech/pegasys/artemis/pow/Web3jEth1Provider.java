@@ -32,9 +32,11 @@ public class Web3jEth1Provider implements Eth1Provider {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Web3j web3j;
+  private final AsyncRunner asyncRunner;
 
-  public Web3jEth1Provider(Web3j web3j) {
+  public Web3jEth1Provider(Web3j web3j, AsyncRunner asyncRunner) {
     this.web3j = web3j;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
@@ -59,8 +61,7 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(
-      String blockHash, AsyncRunner asyncRunner) {
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(String blockHash) {
     return getEth1BlockFuture(blockHash)
         .exceptionallyCompose(
             (err) -> {
@@ -68,13 +69,12 @@ public class Web3jEth1Provider implements Eth1Provider {
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
-                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockHash, asyncRunner));
+                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockHash));
             });
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(
-      UnsignedLong blockNumber, AsyncRunner asyncRunner) {
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(UnsignedLong blockNumber) {
     return getEth1BlockFuture(blockNumber)
         .exceptionallyCompose(
             (err) -> {
@@ -82,7 +82,7 @@ public class Web3jEth1Provider implements Eth1Provider {
               return asyncRunner
                   .getDelayedFuture(
                       Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
-                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockNumber, asyncRunner));
+                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockNumber));
             });
   }
 

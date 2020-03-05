@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.compute_pro
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
@@ -53,7 +52,6 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -62,6 +60,7 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
@@ -149,7 +148,14 @@ public class BeaconStateUtil {
                     deposit.getData().getSignature(),
                     compute_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
-          LOG.warn("Skipping invalid deposit");
+          if (deposit instanceof DepositWithIndex) {
+            LOG.warn(
+                "Skipping invalid deposit with index {} of pubkey {}",
+                ((DepositWithIndex) deposit).getIndex(),
+                pubkey);
+          } else {
+            LOG.warn("Skipping invalid deposit with of pubkey {}", pubkey);
+          }
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);
@@ -159,7 +165,7 @@ public class BeaconStateUtil {
       }
 
       if (pubKeyToIndexMap == null) {
-        STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+        LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
       state
           .getValidators()

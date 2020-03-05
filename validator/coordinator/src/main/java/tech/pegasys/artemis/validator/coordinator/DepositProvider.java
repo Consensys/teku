@@ -79,7 +79,6 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEv
     depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
   }
 
-  // It's sad that we have to do this. Is there any other way?
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 

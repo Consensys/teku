@@ -102,7 +102,7 @@ public class Eth1DataManagerTest {
 
     eth1DataManager =
         new Eth1DataManager(
-            new Web3jEth1Provider(web3j),
+            new Web3jEth1Provider(web3j, asyncRunner),
             eventBus,
             depositContractAccessor,
             asyncRunner,
@@ -207,7 +207,7 @@ public class Eth1DataManagerTest {
     eventBus = mock(EventBus.class);
     eth1DataManager =
         new Eth1DataManager(
-            new Web3jEth1Provider(web3j),
+            new Web3jEth1Provider(web3j, asyncRunner),
             eventBus,
             depositContractAccessor,
             asyncRunner,
@@ -219,7 +219,7 @@ public class Eth1DataManagerTest {
   void onTick_startupDoneGetNewBlocks() {
     eth1DataManager =
         new Eth1DataManager(
-            new Web3jEth1Provider(web3j),
+            new Web3jEth1Provider(web3j, asyncRunner),
             eventBus,
             depositContractAccessor,
             asyncRunner,
@@ -268,7 +268,7 @@ public class Eth1DataManagerTest {
   void onTick_startupDone_LatestTimestampStillHigherThanUpperBound() {
     eth1DataManager =
         new Eth1DataManager(
-            new Web3jEth1Provider(web3j),
+            new Web3jEth1Provider(web3j, asyncRunner),
             eventBus,
             depositContractAccessor,
             asyncRunner,

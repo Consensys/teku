@@ -39,10 +39,10 @@ public class DepositProcessingController {
   private final DepositFetcher depositFetcher;
 
   private Disposable newBlockSubscription;
-  private volatile boolean active = false;
+  private boolean active = false;
 
   // BlockByBlock mode is used to request deposit events and block information for each block
-  private volatile boolean isBlockByBlockModeOn = false;
+  private boolean isBlockByBlockModeOn = false;
 
   private BigInteger latestSuccessfullyQueriedBlock = BigInteger.ZERO;
   private BigInteger latestCanonicalBlockNumber = BigInteger.ZERO;
@@ -98,8 +98,7 @@ public class DepositProcessingController {
             () -> startSubscription(latestSuccessfullyQueriedBlock),
             (error) ->
                 LOG.warn(
-                    "Unable to subscribe to the Eth1Node. Node won't "
-                        + "have access to new deposits after genesis.",
+                    "Unable to subscribe to the Eth1Node. Node won't have access to new deposits after genesis.",
                     error));
   }
 
@@ -111,10 +110,12 @@ public class DepositProcessingController {
     fetchLatestSubscriptionDeposits();
   }
 
-  private synchronized void fetchLatestSubscriptionDeposits() {
+  private void fetchLatestSubscriptionDeposits() {
     if (isBlockByBlockModeOn) {
       fetchLatestDepositsOneBlockAtATime();
-    } else fetchLatestSubscriptionDepositsOverRange();
+    } else {
+      fetchLatestSubscriptionDepositsOverRange();
+    }
   }
 
   private synchronized void fetchLatestSubscriptionDepositsOverRange() {
@@ -151,21 +152,21 @@ public class DepositProcessingController {
     depositFetcher
         .fetchDepositsInRange(nextBlockNumber, nextBlockNumber)
         .thenCompose(
-            __ ->
-                eth1Provider.getGuaranteedEth1BlockFuture(
-                    UnsignedLong.valueOf(nextBlockNumber), asyncRunner))
+            __ -> eth1Provider.getGuaranteedEth1BlockFuture(UnsignedLong.valueOf(nextBlockNumber)))
         .thenAccept(
             block -> {
               final BigInteger blockNumber = block.getNumber();
               LOG.trace("Successfully fetched block {} for min genesis checking", blockNumber);
-              LOG.trace(
-                  "Seconds until min genesis block {}",
-                  Constants.MIN_GENESIS_TIME.minus(
-                      calculateCandidateGenesisTimestamp(block.getTimestamp())));
               if (MinimumGenesisTimeBlockFinder.compareBlockTimestampToMinGenesisTime(block) >= 0) {
                 notifyMinGenesisTimeBlockReached(eth1EventsChannel, block);
                 isBlockByBlockModeOn = false;
-                LOG.debug("Switching back to fetching deposits by range");
+                LOG.debug(
+                    "Minimum genesis time block reached, switching back to fetching deposits by range");
+              } else {
+                LOG.trace(
+                    "Seconds until min genesis block {}",
+                    Constants.MIN_GENESIS_TIME.minus(
+                        calculateCandidateGenesisTimestamp(block.getTimestamp())));
               }
             })
         .finish(
@@ -191,15 +192,11 @@ public class DepositProcessingController {
       Throwable err, BigInteger fromBlock, BigInteger toBlock) {
     active = false;
 
-    if (!fromBlock.equals(toBlock)) {
-      LOG.warn(
-          "Failed to fetch deposit events for block numbers in the range ({}, {})",
-          fromBlock,
-          toBlock,
-          err);
-    } else {
-      LOG.warn("Failed to fetch deposit events for block: {}", fromBlock);
-    }
+    LOG.warn(
+        "Failed to fetch deposit events for block numbers in the range ({}, {}). Retrying.",
+        fromBlock,
+        toBlock,
+        err);
 
     asyncRunner
         .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)

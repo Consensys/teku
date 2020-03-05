@@ -62,7 +62,7 @@ public class Eth1DepositManager {
             })
         .finish(
             () -> LOG.info("Eth1DepositsManager successfully ran startup sequence."),
-            (err) -> LOG.warn("Eth1DepositsManager unable to run startup sequence.", err));
+            (err) -> LOG.fatal("Eth1DepositsManager unable to run startup sequence.", err));
   }
 
   public void stop() {
@@ -106,7 +106,7 @@ public class Eth1DepositManager {
         .thenApply(EthBlock.Block::getNumber)
         .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
         .thenApply(UnsignedLong::valueOf)
-        .thenCompose(number -> eth1Provider.getGuaranteedEth1BlockFuture(number, asyncRunner))
+        .thenCompose(eth1Provider::getGuaranteedEth1BlockFuture)
         .exceptionallyCompose(
             (err) -> {
               LOG.warn(

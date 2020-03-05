@@ -18,6 +18,9 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.abi.datatypes.Type;
+import org.web3j.protocol.Web3j;
+import org.web3j.tx.ClientTransactionManager;
+import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.artemis.pow.contract.DepositContract;
 import tech.pegasys.artemis.pow.exception.Eth1RequestException;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -26,9 +29,19 @@ public class DepositContractAccessor {
   private final Eth1Provider eth1Provider;
   private final DepositContract contract;
 
-  public DepositContractAccessor(Eth1Provider eth1Provider, DepositContract contract) {
+  private DepositContractAccessor(Eth1Provider eth1Provider, DepositContract contract) {
     this.eth1Provider = eth1Provider;
     this.contract = contract;
+  }
+
+  public static DepositContractAccessor create(
+      Eth1Provider eth1Provider, Web3j web3j, String address) {
+
+    DepositContract contract =
+        DepositContract.load(
+            address, web3j, new ClientTransactionManager(web3j, address), new DefaultGasProvider());
+
+    return new DepositContractAccessor(eth1Provider, contract);
   }
 
   @SuppressWarnings("rawtypes")

@@ -64,14 +64,10 @@ public class DepositFetcher {
   public synchronized SafeFuture<Void> fetchDepositsInRange(
       BigInteger fromBlockNumber, BigInteger toBlockNumber) {
 
-    if (fromBlockNumber.equals(toBlockNumber)) {
-      LOG.trace("Attempting to fetch deposit events for block number {}", fromBlockNumber);
-    } else {
-      LOG.trace(
-          "Attempting to fetch deposit events for block numbers in the range ({}, {})",
-          fromBlockNumber,
-          toBlockNumber);
-    }
+    LOG.trace(
+        "Attempting to fetch deposit events for block numbers in the range ({}, {})",
+        fromBlockNumber,
+        toBlockNumber);
 
     return getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber)
         .thenApply(this::groupDepositEventResponsesByBlockHash)
@@ -92,20 +88,16 @@ public class DepositFetcher {
         .depositEventInRange(fromBlock, toBlock)
         .exceptionallyCompose(
             (err) -> {
-              if (fromBlockNumber.equals(toBlockNumber)) {
-                LOG.warn("Retrying request of deposit events for block number {}", fromBlockNumber);
-              } else {
-                LOG.warn(
-                    "Retrying request of deposit events for "
-                        + "block numbers in the range ({}, {})",
-                    fromBlockNumber,
-                    toBlockNumber);
-              }
+              LOG.warn(
+                  "Failed to request deposit events for block numbers in the range ({}, {}). Retrying.",
+                  fromBlockNumber,
+                  toBlockNumber,
+                  err);
 
-              return asyncRunner
-                  .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
-                  .thenCompose(
-                      __ -> getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber));
+              return asyncRunner.runAfterDelay(
+                  () -> getDepositEventsInRangeFromContract(fromBlockNumber, toBlockNumber),
+                  Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,
+                  TimeUnit.SECONDS);
             });
   }
 
@@ -160,9 +152,8 @@ public class DepositFetcher {
   private List<SafeFuture<EthBlock.Block>> getListOfEthBlockFutures(
       Set<BlockNumberAndHash> neededBlockHashes) {
     return neededBlockHashes.stream()
-        .map(
-            blockInfo ->
-                eth1Provider.getGuaranteedEth1BlockFuture(blockInfo.getHash(), asyncRunner))
+        .map(BlockNumberAndHash::getHash)
+        .map(eth1Provider::getGuaranteedEth1BlockFuture)
         .collect(toList());
   }
 

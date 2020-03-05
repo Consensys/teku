@@ -20,7 +20,6 @@ import org.apache.logging.log4j.Level;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.pow.DepositContractAccessor;
-import tech.pegasys.artemis.pow.DepositContractFactory;
 import tech.pegasys.artemis.pow.DepositObjectsFactory;
 import tech.pegasys.artemis.pow.Eth1DataManager;
 import tech.pegasys.artemis.pow.Eth1DepositManager;
@@ -43,15 +42,16 @@ public class PowchainService implements ServiceInterface {
   public void init(ServiceConfig config) {
     ArtemisConfiguration artemisConfig = config.getConfig();
 
-    Web3j web3j = Web3j.build(new HttpService(artemisConfig.getNodeUrl()));
-    final Eth1Provider eth1Provider =
-        new ThrottlingEth1Provider(new Web3jEth1Provider(web3j), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
-
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
+    Web3j web3j = Web3j.build(new HttpService(artemisConfig.getNodeUrl()));
+
+    final Eth1Provider eth1Provider =
+        new ThrottlingEth1Provider(
+            new Web3jEth1Provider(web3j, asyncRunner), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
+
     DepositContractAccessor depositContractAccessor =
-        DepositContractFactory.eth1DepositContractAccessor(
-            eth1Provider, web3j, config.getConfig().getContractAddr());
+        DepositContractAccessor.create(eth1Provider, web3j, config.getConfig().getContractAddr());
 
     DepositObjectsFactory depositsObjectFactory =
         new DepositObjectsFactory(
@@ -63,7 +63,7 @@ public class PowchainService implements ServiceInterface {
     eth1DepositManager = depositsObjectFactory.createEth1DepositsManager();
     eth1DataManager =
         new Eth1DataManager(
-            new Web3jEth1Provider(web3j),
+            eth1Provider,
             config.getEventBus(),
             depositContractAccessor,
             asyncRunner,
