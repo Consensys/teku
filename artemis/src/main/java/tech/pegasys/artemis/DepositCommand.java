@@ -15,6 +15,7 @@ package tech.pegasys.artemis;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
@@ -25,9 +26,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -115,7 +118,7 @@ public class DepositCommand implements Runnable {
           String keystorePath) {
 
     try (params) {
-      // generate BLS validator key and withdrawl key
+      // generate BLS validator key and withdrawal key
       final List<Pair<BLSKeyPair, BLSKeyPair>> validatorKeyPairs =
           IntStream.range(0, validatorCount)
               .mapToObj(value -> Pair.of(BLSKeyPair.random(), BLSKeyPair.random()))
@@ -159,14 +162,25 @@ public class DepositCommand implements Runnable {
         }
       }
 
-      SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
+      waitForTransactionReceipts(futures);
     } catch (final Throwable t) {
       STDOUT.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
-      System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
+      exit(1);
     }
-    System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
+    exit(0);
+  }
+
+  @VisibleForTesting
+  void waitForTransactionReceipts(final List<SafeFuture<TransactionReceipt>> futures)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
+  }
+
+  @VisibleForTesting
+  void exit(final int status) {
+    System.exit(status); // Web3J creates a non-daemon thread we can't shut down. :(
   }
 
   private String getYamlFormattedString(final Pair<BLSKeyPair, BLSKeyPair> keyPair) {
@@ -216,7 +230,7 @@ public class DepositCommand implements Runnable {
     }
   }
 
-  public String generateRandomHexToken() {
+  private String generateRandomHexToken() {
     final SecureRandom secureRandom = SecureRandomProvider.createSecureRandom();
     byte[] token = new byte[32];
     secureRandom.nextBytes(token);

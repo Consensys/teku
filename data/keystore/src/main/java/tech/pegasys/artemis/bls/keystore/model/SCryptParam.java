@@ -54,13 +54,13 @@ public class SCryptParam extends KdfParam {
   }
 
   /**
-   * Create SCryptParam with dklen and salt and using reasonable defaults for n, p and r.
+   * Create SCryptParam with dklen and salt and using reasonable defaults for n (2^18), p and r.
    *
    * @param dklen The derivative key length to generate
    * @param salt The salt to use
    */
   public SCryptParam(final int dklen, final Bytes salt) {
-    this(dklen, 1000_000_000, 1, 8, salt);
+    this(dklen, 262_144, 1, 8, salt);
   }
 
   @Override
