@@ -15,9 +15,10 @@ dependencies {
   implementation project(':pow')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
-
+  implementation project(':data:keystore')
   
   api 'com.google.guava:guava'
+  implementation 'org.apache.commons:commons-lang3'
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-plumtree'

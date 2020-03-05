@@ -53,6 +53,16 @@ public class SCryptParam extends KdfParam {
     this.r = r;
   }
 
+  /**
+   * Create SCryptParam with dklen and salt and using reasonable defaults for n, p and r.
+   *
+   * @param dklen The derivative key length to generate
+   * @param salt The salt to use
+   */
+  public SCryptParam(final int dklen, final Bytes salt) {
+    this(dklen, 1000_000_000, 1, 8, salt);
+  }
+
   @Override
   public void validate() throws KeyStoreValidationException {
     super.validate();

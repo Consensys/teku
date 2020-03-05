@@ -18,18 +18,25 @@ import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
-import java.io.FileOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
@@ -38,11 +45,19 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import tech.pegasys.artemis.bls.keystore.KeyStore;
+import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
+import tech.pegasys.artemis.bls.keystore.model.Cipher;
+import tech.pegasys.artemis.bls.keystore.model.CipherFunction;
+import tech.pegasys.artemis.bls.keystore.model.KdfParam;
+import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
+import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
@@ -83,34 +98,65 @@ public class DepositCommand implements Runnable {
               names = {"--output-file", "-o"},
               description =
                   "File to write validator keys to. Keys are printed to std out if not specified")
-          String outputFile) {
+          String outputFile,
+      @Option(
+              names = {"--encrypt-keys", "-e"},
+              defaultValue = "false",
+              description = "Encrypt validator keys. Defaults to <false>",
+              arity = "1")
+          boolean encryptKeys,
+      @Option(
+              names = {"--keystore-output-dir", "-k"},
+              paramLabel = "<PATH>",
+              description =
+                  "Encrypted keystore output directory. Use current directory if not specified")
+          String keystorePath) {
+
     try (params) {
+      // generate BLS validator key and withdrawl key
+      final List<Pair<BLSKeyPair, BLSKeyPair>> validatorKeyPairs =
+          IntStream.range(0, validatorCount)
+              .mapToObj(value -> Pair.of(BLSKeyPair.random(), BLSKeyPair.random()))
+              .collect(Collectors.toList());
+
       final DepositTransactionSender sender = params.createTransactionSender();
-      final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
 
-      final PrintStream keyWriter;
-      if (outputFile == null || outputFile.isBlank()) {
-        keyWriter = System.out;
-      } else {
-        keyWriter = new PrintStream(new FileOutputStream(outputFile), true, StandardCharsets.UTF_8);
-      }
+      final StringBuilder yamlStringBuilder = new StringBuilder();
+      final boolean printOnStandardOut = outputFile == null || outputFile.isBlank();
+      final Path keyStoreOutputDirectory =
+          keystorePath == null || keystorePath.isBlank() ? Path.of(".") : Path.of(keystorePath);
+      final AtomicInteger counterSuffix = new AtomicInteger(0);
+      final List<SafeFuture<TransactionReceipt>> futures;
+      try {
+        futures =
+            validatorKeyPairs.stream()
+                .map(
+                    keyPair -> {
+                      final String yamlFormattedString = getYamlFormattedString(keyPair);
+                      if (encryptKeys) {
+                        generateKeystores(
+                            keyPair, keyStoreOutputDirectory, counterSuffix.incrementAndGet());
+                      } else if (printOnStandardOut) {
+                        System.out.println(yamlFormattedString);
+                      } else {
+                        yamlStringBuilder.append(yamlFormattedString);
+                      }
 
-      try (keyWriter) {
-        for (int i = 0; i < validatorCount; i++) {
-          final BLSKeyPair validatorKey = BLSKeyPair.random();
-          final BLSKeyPair withdrawalKey = BLSKeyPair.random();
+                      return sendDeposit(
+                          sender,
+                          keyPair.getLeft(),
+                          keyPair.getRight().getPublicKey(),
+                          params.amount);
+                    })
+                .collect(Collectors.toList());
 
-          keyWriter.println(
-              String.format(
-                  "- {privkey: '%s', pubkey: '%s', withdrawalPrivkey: '%s', withdrawalPubkey: '%s'}",
-                  validatorKey.getSecretKey().getSecretKey().toBytes(),
-                  validatorKey.getPublicKey().toBytesCompressed(),
-                  withdrawalKey.getSecretKey().getSecretKey().toBytes(),
-                  withdrawalKey.getPublicKey().toBytesCompressed()));
-          futures.add(
-              sendDeposit(sender, validatorKey, withdrawalKey.getPublicKey(), params.amount));
+      } finally {
+        if (!encryptKeys && !printOnStandardOut) {
+          // write keys yaml to file
+          Files.writeString(Path.of(outputFile), yamlStringBuilder.toString());
         }
       }
+
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
       STDOUT.log(
@@ -119,6 +165,60 @@ public class DepositCommand implements Runnable {
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
+  }
+
+  private String getYamlFormattedString(final Pair<BLSKeyPair, BLSKeyPair> keyPair) {
+    return String.format(
+        "- {privkey: '%s', pubkey: '%s', withdrawalPrivkey: '%s', withdrawalPubkey: '%s'}",
+        keyPair.getLeft().getSecretKey().getSecretKey().toBytes(),
+        keyPair.getLeft().getPublicKey().toBytesCompressed(),
+        keyPair.getRight().getSecretKey().getSecretKey().toBytes(),
+        keyPair.getRight().getPublicKey().toBytesCompressed());
+  }
+
+  private void generateKeystores(
+      final Pair<BLSKeyPair, BLSKeyPair> keyPair,
+      final Path keyStoreOutputDirectory,
+      final int counter) {
+    generateKeystore(keyPair.getLeft(), keyStoreOutputDirectory, "validator", counter);
+    generateKeystore(keyPair.getRight(), keyStoreOutputDirectory, "withdrawal", counter);
+  }
+
+  private void generateKeystore(
+      final BLSKeyPair key, final Path outputDir, final String prefix, final int counter) {
+    try {
+      final KdfParam kdfParam = new SCryptParam(32, Bytes32.random());
+      final Cipher cipher = new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16));
+      final String randomPassword = generateRandomHexToken();
+      final KeyStoreData keyStoreData =
+          KeyStore.encrypt(
+              key.getSecretKey().getSecretKey().toBytes(),
+              generateRandomHexToken(),
+              "",
+              kdfParam,
+              cipher);
+
+      // create sub directory
+      final Path keystoreDirectory =
+          Files.createDirectories(outputDir.resolve("validator_" + counter));
+
+      // save keystore
+      KeyStoreLoader.saveToFile(
+          keystoreDirectory.resolve(prefix + "_keystore_" + counter + ".json"), keyStoreData);
+
+      // save password
+      Files.writeString(
+          keystoreDirectory.resolve(prefix + "_password_" + counter + ".txt"), randomPassword);
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  public String generateRandomHexToken() {
+    final SecureRandom secureRandom = SecureRandomProvider.createSecureRandom();
+    byte[] token = new byte[32];
+    secureRandom.nextBytes(token);
+    return new BigInteger(1, token).toString(16); // hex encoding
   }
 
   @Command(
