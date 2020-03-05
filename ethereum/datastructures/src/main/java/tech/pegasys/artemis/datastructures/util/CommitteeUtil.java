@@ -102,6 +102,9 @@ public class CommitteeUtil {
    * individual indexes
    */
   public static void shuffle_list(int[] input, Bytes32 seed) {
+    if (input.length == 0) {
+      return;
+    }
     int rounds = SHUFFLE_ROUND_COUNT;
     int list_size = input.length;
 
