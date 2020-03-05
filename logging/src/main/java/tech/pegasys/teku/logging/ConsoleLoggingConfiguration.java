@@ -32,7 +32,6 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
   private static final String LOGGER_NAME = "stdout";
 
   private static volatile boolean ADD_CONSOLE_LOGGER;
-  private static volatile ConsoleLoggingConfiguration CONFIGURATION;
 
   public static void enableStandardOutLogger(final boolean enabled) {
     ADD_CONSOLE_LOGGER = enabled;
@@ -48,8 +47,8 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
     super.doConfigure();
 
     if (ADD_CONSOLE_LOGGER) {
-      final Appender consoleAppender = addConsoleAppender();
-      addConsoleLogger(consoleAppender);
+      final Appender console = addConsoleAppender();
+      addConsoleLogger(console);
     }
   }
 
@@ -68,6 +67,8 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
 
   private void addConsoleLogger(final Appender consoleAppender) {
     final LoggerConfig config = new LoggerConfig(LOGGER_NAME, Level.INFO, false);
+
+    // TODO choose the level?
     config.addAppender(consoleAppender, Level.INFO, null);
 
     removeLogger(LOGGER_NAME);

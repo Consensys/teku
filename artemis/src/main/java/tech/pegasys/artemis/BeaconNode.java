@@ -77,7 +77,7 @@ public class BeaconNode {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
 
-    // TODO status updates enabled
+    // TODO status updates enabled (enableStatusUpdates)
     ConsoleLoggingConfiguration.enableStandardOutLogger(config.isStandardOutEnabled());
 
     // TODO this reconfigure is triggering the INFO message 'Log4j appears to be running in a
