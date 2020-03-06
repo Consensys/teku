@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static io.javalin.core.util.Header.CACHE_CONTROL;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;
@@ -52,6 +54,7 @@ public class NodeSyncingHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    ctx.header(CACHE_CONTROL, CACHE_NONE);
     ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncService.getSyncStatus())));
   }
 }
