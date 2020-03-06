@@ -34,7 +34,6 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -86,7 +85,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     try {
       advertisedAddr = composeAdvertisedAddr(config);
     } catch (UnknownHostException err) {
-      throw new RuntimeException("Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
+      throw new RuntimeException(
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
     }
 
     // Setup gossip
