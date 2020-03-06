@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.networking.p2p.discovery;
+package tech.pegasys.artemis.networking.p2p.connection;
 
 import java.time.Duration;
 import java.util.HashSet;
@@ -20,6 +20,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -34,16 +36,21 @@ public class ConnectionManager extends Service {
   private final P2PNetwork<? extends Peer> network;
   private final Set<String> staticPeers;
   private final DiscoveryService discoveryService;
+  private final TargetPeerRange targetPeerCountRange;
+
+  private volatile long peerConnectedSubscriptionId;
 
   public ConnectionManager(
       final DiscoveryService discoveryService,
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
-      final List<String> staticPeers) {
+      final List<String> staticPeers,
+      final TargetPeerRange targetPeerCountRange) {
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.staticPeers = new HashSet<>(staticPeers);
     this.discoveryService = discoveryService;
+    this.targetPeerCountRange = targetPeerCountRange;
   }
 
   @Override
@@ -53,11 +60,17 @@ public class ConnectionManager extends Service {
     }
     connectToKnownPeers();
     searchForPeers().reportExceptions();
+    peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
   }
 
   private void connectToKnownPeers() {
-    discoveryService.streamKnownPeers().forEach(this::attemptConnection);
+    final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
+    discoveryService
+        .streamKnownPeers()
+        .filter(discoveryPeer -> !network.isConnected(discoveryPeer))
+        .limit(maxAttempts)
+        .forEach(this::attemptConnection);
   }
 
   private SafeFuture<Void> searchForPeers() {
@@ -89,8 +102,14 @@ public class ConnectionManager extends Service {
                     () -> "Failed to connect to peer: " + discoveryPeer.getPublicKey(), error));
   }
 
+  private void onPeerConnected(final Peer peer) {
+    final int peersToDrop = targetPeerCountRange.getPeersToDrop(network.getPeerCount());
+    network.streamPeers().limit(peersToDrop).forEach(Peer::disconnect);
+  }
+
   @Override
   protected SafeFuture<?> doStop() {
+    network.unsubscribeConnect(peerConnectedSubscriptionId);
     return SafeFuture.COMPLETE;
   }
 
