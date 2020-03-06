@@ -129,7 +129,7 @@ public class DepositContract extends Contract {
     return responses;
   }
 
-  public SafeFuture<List<DepositEventEventResponse>> depositEventEventsInRange(
+  public SafeFuture<List<DepositEventEventResponse>> depositEventInRange(
       DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
     final EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
     filter.addSingleTopic(EventEncoder.encode(DEPOSITEVENT_EVENT));

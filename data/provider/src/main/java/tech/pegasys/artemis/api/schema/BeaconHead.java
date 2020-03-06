@@ -11,17 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.api.schema;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class BeaconHeadResponse {
+public class BeaconHead {
   public final UnsignedLong slot;
   public final Bytes32 block_root;
   public final Bytes32 state_root;
 
-  public BeaconHeadResponse(UnsignedLong slot, Bytes32 block_root, Bytes32 state_root) {
+  public BeaconHead(UnsignedLong slot, Bytes32 block_root, Bytes32 state_root) {
     this.slot = slot;
     this.block_root = block_root;
     this.state_root = state_root;

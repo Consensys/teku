@@ -23,6 +23,7 @@ import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +99,7 @@ public class CombinedChainDataClient {
     }
     if (headState.getSlot().equals(slot)) {
       LOG.trace("Block root at slot {} is the specified head block root", slot);
-      return completedFuture(Optional.ofNullable(store.getSignedBlock(headBlockRoot)));
+      return getBlockByBlockRoot(headBlockRoot);
     }
     if (isFinalized(slot)) {
       LOG.trace("Block at slot {} is in a finalized epoch. Retrieving from historical data", slot);
@@ -123,8 +124,7 @@ public class CombinedChainDataClient {
           earliestAvailableSlot);
       state = store.getBlockState(get_block_root_at_slot(state, earliestAvailableSlot));
     }
-    return completedFuture(
-        Optional.ofNullable(store.getSignedBlock(get_block_root_at_slot(state, slot))));
+    return getBlockByBlockRoot(get_block_root_at_slot(state, slot));
   }
 
   private boolean isFinalized(final UnsignedLong slot) {
@@ -187,7 +187,7 @@ public class CombinedChainDataClient {
   }
 
   public boolean isStoreAvailable() {
-    return (getStore() != null);
+    return recentChainData != null && getStore() != null;
   }
 
   /**
@@ -227,6 +227,7 @@ public class CombinedChainDataClient {
     return result;
   }
 
+  @VisibleForTesting
   public Store getStore() {
     return recentChainData.getStore();
   }
@@ -240,12 +241,24 @@ public class CombinedChainDataClient {
     final Optional<Bytes32> bestBlockRoot = getBestBlockRoot();
 
     if (blockRootBySlot.isPresent()) {
-      return SafeFuture.completedFuture(
-          Optional.ofNullable(getStore().getSignedBlock(blockRootBySlot.get())));
+      return getBlockByBlockRoot(blockRootBySlot.get());
     } else if (bestBlockRoot.isPresent()) {
       return getBlockAtSlotExact(slot, bestBlockRoot.get());
     } else {
       return SafeFuture.completedFuture(Optional.empty());
     }
+  }
+
+  @VisibleForTesting
+  public Optional<SignedBeaconBlock> getBlockFromStore(final Bytes32 blockRoot) {
+    return isStoreAvailable()
+        ? Optional.ofNullable(recentChainData.getStore().getSignedBlock(blockRoot))
+        : Optional.empty();
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
+    return getBlockFromStore(blockRoot)
+        .map(value -> SafeFuture.completedFuture(Optional.of(value)))
+        .orElseGet(() -> historicalChainData.getBlockByBlockRoot(blockRoot));
   }
 }

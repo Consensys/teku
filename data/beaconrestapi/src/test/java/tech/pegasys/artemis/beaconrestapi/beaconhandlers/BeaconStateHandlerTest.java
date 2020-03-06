@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
@@ -89,6 +90,28 @@ public class BeaconStateHandlerTest {
     final BeaconStateHandler handler =
         new BeaconStateHandler(combinedChainDataClient, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of());
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenBadSlotSpecified() throws Exception {
+    final BeaconStateHandler handler =
+        new BeaconStateHandler(combinedChainDataClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("not-an-int")));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenBadParamSpecified() throws Exception {
+    final BeaconStateHandler handler =
+        new BeaconStateHandler(combinedChainDataClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("not-an-int")));
 
     handler.handle(context);
 

@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -38,16 +40,16 @@ public class VersionHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get version string of the running beacon node.",
+      summary = "Get the version of the beacon node.",
       tags = {TAG_NODE},
-      description =
-          "Requests that the beacon node identify information about its implementation in a format similar to a HTTP User-Agent field.",
+      description = "Returns the beacon node version information.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.result(jsonProvider.objectToJSON(VersionProvider.VERSION));
   }
 }

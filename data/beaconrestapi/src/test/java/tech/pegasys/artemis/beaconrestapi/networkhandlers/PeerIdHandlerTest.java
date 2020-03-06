@@ -16,13 +16,16 @@ package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.libp2p.core.PeerId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -32,17 +35,19 @@ import tech.pegasys.artemis.provider.JsonProvider;
 @ExtendWith(MockitoExtension.class)
 public class PeerIdHandlerTest {
   private Context context = mock(Context.class);
-  @Mock P2PNetwork<Peer> p2PNetwork;
+  @Mock P2PNetwork<Peer> p2pNetwork;
   @Mock private JsonProvider jsonProvider;
 
   @Test
   public void shouldReturnPeerId() throws Exception {
+    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
     final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
     final NodeId nodeId1 = new LibP2PNodeId(peerId1);
-    final PeerIdHandler peerIdHandler = new PeerIdHandler(p2PNetwork, jsonProvider);
+    final PeerIdHandler peerIdHandler = new PeerIdHandler(network, jsonProvider);
 
-    when(p2PNetwork.getNodeId()).thenReturn(nodeId1);
+    when(p2pNetwork.getNodeId()).thenReturn(nodeId1);
     peerIdHandler.handle(context);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(jsonProvider.objectToJSON(nodeId1.toBase58()));
   }
 }

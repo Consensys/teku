@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static io.javalin.core.util.Header.CACHE_CONTROL;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;
@@ -23,16 +25,16 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import tech.pegasys.artemis.api.SyncDataProvider;
 import tech.pegasys.artemis.beaconrestapi.schema.SyncingResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.sync.SyncService;
 
 public class NodeSyncingHandler implements Handler {
 
-  private final SyncService syncService;
+  private final SyncDataProvider syncDataProvider;
 
-  public NodeSyncingHandler(SyncService syncService, JsonProvider jsonProvider) {
-    this.syncService = syncService;
+  public NodeSyncingHandler(SyncDataProvider syncDataProvider, JsonProvider jsonProvider) {
+    this.syncDataProvider = syncDataProvider;
     this.jsonProvider = jsonProvider;
   }
 
@@ -52,6 +54,7 @@ public class NodeSyncingHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncService.getSyncStatus())));
+    ctx.header(CACHE_CONTROL, CACHE_NONE);
+    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncDataProvider.getSyncStatus())));
   }
 }

@@ -35,23 +35,25 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.pow.api.DepositEventChannel;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
-import tech.pegasys.artemis.statetransition.genesis.PreGenesisDepositHandler;
+import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -159,7 +161,7 @@ public class BeaconChainController {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initDepositProvider()");
     depositProvider = new DepositProvider(chainStorageClient);
     eventChannels
-        .subscribe(DepositEventChannel.class, depositProvider)
+        .subscribe(Eth1EventsChannel.class, depositProvider)
         .subscribe(FinalizedCheckpointEventChannel.class, depositProvider);
   }
 
@@ -182,8 +184,7 @@ public class BeaconChainController {
 
   private void initPreGenesisDepositHandler() {
     STDOUT.log(Level.DEBUG, "BeaconChainController.initPreGenesisDepositHandler()");
-    eventChannels.subscribe(
-        DepositEventChannel.class, new PreGenesisDepositHandler(config, chainStorageClient));
+    eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(chainStorageClient));
   }
 
   private void initAttestationPropagationManager() {
@@ -209,6 +210,9 @@ public class BeaconChainController {
               config.getStaticPeers(),
               config.getDiscovery(),
               config.getBootnodes(),
+              new TargetPeerRange(
+                  config.getTargetPeerCountRangeLowerBound(),
+                  config.getTargetPeerCountRangeUpperBound()),
               true,
               true,
               true);
@@ -239,9 +243,9 @@ public class BeaconChainController {
     HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(chainStorageClient, historicalChainData);
-    beaconRestAPI =
-        new BeaconRestApi(
-            chainStorageClient, p2pNetwork, combinedChainDataClient, syncService, config);
+    DataProvider dataProvider =
+        new DataProvider(chainStorageClient, combinedChainDataClient, p2pNetwork, syncService);
+    beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 
   public void initSyncManager() {

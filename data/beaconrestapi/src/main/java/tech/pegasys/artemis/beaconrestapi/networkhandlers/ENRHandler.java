@@ -13,24 +13,26 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class ENRHandler implements Handler {
   public static final String ROUTE = "/network/enr";
   private final JsonProvider jsonProvider;
-  private final P2PNetwork<?> network;
+  private final NetworkDataProvider network;
 
-  public ENRHandler(P2PNetwork<?> network, JsonProvider jsonProvider) {
+  public ENRHandler(NetworkDataProvider network, JsonProvider jsonProvider) {
     this.network = network;
     this.jsonProvider = jsonProvider;
   }
@@ -50,6 +52,7 @@ public class ENRHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.result(jsonProvider.objectToJSON(network.getEnr().orElse("")));
   }
 }

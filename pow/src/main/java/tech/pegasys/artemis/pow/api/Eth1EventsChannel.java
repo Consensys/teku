@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.statetransition.events;
+package tech.pegasys.artemis.pow.api;
 
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 
-public class GenesisEvent {
-  private final BeaconState beaconState;
+public interface Eth1EventsChannel {
+  void onDepositsFromBlock(DepositsFromBlockEvent event);
 
-  public GenesisEvent(BeaconState beaconState) {
-    this.beaconState = beaconState;
-  }
-
-  public BeaconState getBeaconState() {
-    return beaconState;
-  }
+  void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
 }
