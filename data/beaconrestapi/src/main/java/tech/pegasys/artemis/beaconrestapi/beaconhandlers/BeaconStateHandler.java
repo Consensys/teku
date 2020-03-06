@@ -97,7 +97,8 @@ public class BeaconStateHandler implements Handler {
       } else if (parameters.containsKey(SLOT)) {
         future = queryBySlot(validateQueryParameter(parameters, SLOT));
       } else {
-        ctx.result(jsonProvider.objectToJSON(new BadRequest("expected one of " + SLOT + " or " + ROOT)));
+        ctx.result(
+            jsonProvider.objectToJSON(new BadRequest("expected one of " + SLOT + " or " + ROOT)));
         ctx.status(SC_BAD_REQUEST);
         return;
       }
