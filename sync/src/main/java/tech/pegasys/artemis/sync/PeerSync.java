@@ -36,7 +36,7 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerSync {
-  private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
+  private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(5);
 
   private static final Logger LOG = LogManager.getLogger();
   private static final UnsignedLong STEP = UnsignedLong.ONE;
