@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -23,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +36,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.peers.PeerLookup;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.artemis.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
@@ -75,12 +79,17 @@ public class Eth2OutgoingRequestHandlerTest {
   private final RpcStream rpcStream = mock(RpcStream.class);
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
   private SafeFuture<Void> finishedProcessingFuture;
+  private final AtomicReference<ResponseListener<SignedBeaconBlock>> responseListener =
+      new AtomicReference<>(blocks::add);
 
   @BeforeEach
   public void setup() {
     lenient().when(rpcStream.close()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
-    finishedProcessingFuture = reqHandler.getResponseStream().expectMultipleResponses(blocks::add);
+    finishedProcessingFuture =
+        reqHandler
+            .getResponseStream()
+            .expectMultipleResponses(b -> responseListener.get().onResponse(b));
   }
 
   @Test
@@ -101,6 +110,34 @@ public class Eth2OutgoingRequestHandlerTest {
     verify(rpcStream).close();
     assertThat(blocks.size()).isEqualTo(3);
     assertThat(finishedProcessingFuture).isCompletedWithValue(null);
+  }
+
+  @Test
+  public void receiveAllChunksThenEncounterErrorWhileProcessing() {
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    for (int i = 0; i < maxChunks; i++) {
+      deliverChunk(i);
+      assertThat(finishedProcessingFuture).isNotDone();
+    }
+
+    asyncRequestRunner.executeRepeatedly(maxChunks - 1);
+    assertThat(finishedProcessingFuture).isNotDone();
+
+    // Fail to process the next block
+    final RuntimeException error = new RuntimeException("whoops");
+    responseListener.set(
+        b -> {
+          throw error;
+        });
+
+    asyncRequestRunner.executeUntilDone();
+    timeoutRunner.executeUntilDone();
+    verify(rpcStream, atLeastOnce()).close();
+    assertThat(blocks.size()).isEqualTo(maxChunks - 1);
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
+    assertThatThrownBy(finishedProcessingFuture::get).hasRootCause(error);
   }
 
   @Test
