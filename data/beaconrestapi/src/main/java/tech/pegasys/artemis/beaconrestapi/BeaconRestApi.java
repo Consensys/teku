@@ -122,7 +122,7 @@ public class BeaconRestApi {
         new GenesisTimeHandler(provider.getChainDataProvider(), jsonProvider));
     app.get(VersionHandler.ROUTE, new VersionHandler(jsonProvider));
     app.get(
-        NodeSyncingHandler.ROUTE, new NodeSyncingHandler(provider.getSyncService(), jsonProvider));
+        NodeSyncingHandler.ROUTE, new NodeSyncingHandler(provider.getSyncDataProvider(), jsonProvider));
   }
 
   private void addBeaconHandlers(

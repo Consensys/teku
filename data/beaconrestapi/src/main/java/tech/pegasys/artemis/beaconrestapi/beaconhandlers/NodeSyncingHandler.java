@@ -25,15 +25,15 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import tech.pegasys.artemis.api.SyncDataProvider;
 import tech.pegasys.artemis.beaconrestapi.schema.SyncingResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.sync.SyncService;
 
 public class NodeSyncingHandler implements Handler {
 
-  private final SyncService syncService;
+  private final SyncDataProvider syncService;
 
-  public NodeSyncingHandler(SyncService syncService, JsonProvider jsonProvider) {
+  public NodeSyncingHandler(SyncDataProvider syncService, JsonProvider jsonProvider) {
     this.syncService = syncService;
     this.jsonProvider = jsonProvider;
   }
