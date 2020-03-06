@@ -114,6 +114,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         return GoodbyeMessage.REASON_TOO_MANY_PEERS;
       case SHUTTING_DOWN:
         return GoodbyeMessage.REASON_CLIENT_SHUT_DOWN;
+      case REMOTE_FAULT:
+        return GoodbyeMessage.REASON_FAULT_ERROR;
+      case IRRELEVANT_NETWORK:
+        return GoodbyeMessage.REASON_IRRELEVANT_NETWORK;
+      case UNABLE_TO_VERIFY_NETWORK:
+        return GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK;
       default:
         LOG.warn("Unknown disconnect reason: " + reason);
         return GoodbyeMessage.REASON_FAULT_ERROR;

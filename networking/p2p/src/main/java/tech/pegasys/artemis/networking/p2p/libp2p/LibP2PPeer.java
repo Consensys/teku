@@ -76,7 +76,7 @@ public class LibP2PPeer implements Peer {
     disconnectRequestHandler
         .requestDisconnect(reason)
         .finish(
-            () -> LOG.trace("Disconnected peer {} cleanly", nodeId),
+            this::disconnectImmediately, // Request sent now close our side
             error -> {
               LOG.debug("Failed to disconnect from " + nodeId + " cleanly.", error);
               disconnectImmediately();
