@@ -42,7 +42,6 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
-  private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
   private final ResponseRpcDecoder<TResponse> responseHandler;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
@@ -152,10 +151,6 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private void cancelRequest(
       final RpcStream rpcStream, Throwable error, final boolean forceCancel) {
     if (!isClosed.compareAndSet(false, true) && !forceCancel) {
-      return;
-    }
-    if (!isCancelled.compareAndSet(false, true)) {
-      // Even if we're force cancelling, we don't want to cancel more than once
       return;
     }
 
