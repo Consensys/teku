@@ -83,8 +83,9 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependency 'org.mockito:mockito-core:3.1.0'
-    
+    dependency 'org.mockito:mockito-core:3.2.4'
+    dependency 'org.mockito:mockito-junit-jupiter:3.2.4'
+
     dependency 'org.openjdk.jmh:jmh-core:1.21'
     dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
