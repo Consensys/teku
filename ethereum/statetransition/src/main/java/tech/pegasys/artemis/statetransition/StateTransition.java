@@ -37,6 +37,8 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -54,6 +56,7 @@ import tech.pegasys.teku.logging.StatusLogger;
 
 public class StateTransition {
 
+  private static final Logger LOG = LogManager.getLogger();
   private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private boolean printEnabled;
@@ -235,7 +238,7 @@ public class StateTransition {
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new SlotProcessingException(e);
     }
   }

@@ -15,7 +15,6 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,12 +31,10 @@ import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class AttestationManager extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final EventBus eventBus;
   private final ForkChoiceAttestationProcessor attestationProcessor;
@@ -129,8 +126,7 @@ public class AttestationManager extends Service {
           futureAttestations.add(delayableAttestation);
           break;
         default:
-          STATUS_LOG.log(
-              Level.WARN, "Failed to process attestation: " + result.getFailureMessage());
+          LOG.warn("Failed to process attestation: " + result.getFailureMessage());
           break;
       }
     }

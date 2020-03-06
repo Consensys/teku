@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -27,13 +26,11 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     implements RpcRequestHandler {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final Eth2RpcMethod<TRequest, TResponse> method;
   private final int maximumResponseChunks;
@@ -75,7 +72,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
         // Setup initial chunk timeout
         ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
       }
-      STATUS_LOG.log(Level.TRACE, "Requester received " + bytes.capacity() + " bytes.");
+      LOG.trace("Requester received {} bytes.", bytes.capacity());
       responseHandler.onDataReceived(bytes);
 
       final int previousResponseCount = currentChunkCount.get();

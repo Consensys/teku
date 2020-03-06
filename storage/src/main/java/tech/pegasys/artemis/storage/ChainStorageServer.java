@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Optional;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
@@ -34,11 +35,10 @@ import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class ChainStorageServer {
 
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   private Database database;
   private final EventBus eventBus;
@@ -94,22 +94,20 @@ public class ChainStorageServer {
                       + "Aborting startup to prevent corruption of the database.\n",
                   ver, DATABASE_VERSION));
         }
-        STATUS_LOG.log(
-            Level.INFO,
-            String.format(
-                "The existing database is version %s, from file: %s",
-                DATABASE_VERSION, databaseVersionFile.getAbsolutePath()));
+        LOG.info(
+            "The existing database is version {}, from file: {}",
+            DATABASE_VERSION,
+            databaseVersionFile.getAbsolutePath());
       } else {
-        STATUS_LOG.log(
-            Level.INFO,
-            String.format(
-                "Recording database version %s to file: %s",
-                DATABASE_VERSION, databaseVersionFile.getAbsolutePath()));
+        LOG.info(
+            "Recording database version {} to file: {}",
+            DATABASE_VERSION,
+            databaseVersionFile.getAbsolutePath());
         Files.writeString(
             databaseVersionFile.toPath(), DATABASE_VERSION, StandardOpenOption.CREATE);
       }
     } catch (IOException e) {
-      STATUS_LOG.log(Level.ERROR, "Failed to write database version to file", e);
+      LOG.error("Failed to write database version to file", e);
     }
   }
 

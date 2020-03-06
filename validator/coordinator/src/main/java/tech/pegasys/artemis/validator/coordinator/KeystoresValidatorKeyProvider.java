@@ -26,7 +26,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.keystore.KeyStore;
 import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
@@ -36,11 +37,10 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   static final int KEY_LENGTH = 48;
 
@@ -84,7 +84,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
           format(
               "Unexpected IO error while reading keystore password file [%s]: %s",
               passwordFile, e.getMessage());
-      STATUS_LOG.log(Level.FATAL, errorMessage);
+      LOG.fatal(errorMessage);
       throw new UncheckedIOException(errorMessage, e);
     }
     return password;
