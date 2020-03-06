@@ -16,7 +16,6 @@ package tech.pegasys.teku.logging;
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -38,13 +37,13 @@ public class StatusLogger {
   }
 
   public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
-    log(Level.INFO, "******* Eth2Genesis Event*******", Color.WHITE);
-    log(Level.INFO, "Initial state root is " + hashTreeRoot.toHexString());
-    log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
+    info("******* Eth2Genesis Event*******", Color.WHITE);
+    info("Initial state root is " + hashTreeRoot.toHexString());
+    info("Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
   public void epochEvent() {
-    log(Level.INFO, "******* Epoch Event *******", Color.PURPLE);
+    info("******* Epoch Event *******", Color.PURPLE);
   }
 
   public void slotEvent(
@@ -52,40 +51,32 @@ public class StatusLogger {
       final UnsignedLong bestSlot,
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch) {
-    log(Level.INFO, "******* Slot Event *******", Color.WHITE);
-    log(Level.INFO, "Node slot:                             " + nodeSlot);
-    log(Level.INFO, "Head block slot:" + "                       " + bestSlot);
-    log(Level.INFO, "Justified epoch:" + "                       " + justifiedEpoch);
-    log(Level.INFO, "Finalized epoch:" + "                       " + finalizedEpoch);
+    info("******* Slot Event *******", Color.WHITE);
+    info("Node slot:                             " + nodeSlot);
+    info("Head block slot:" + "                       " + bestSlot);
+    info("Justified epoch:" + "                       " + justifiedEpoch);
+    info("Finalized epoch:" + "                       " + finalizedEpoch);
   }
 
   public void unprocessedAttestation(final Bytes32 beconBlockRoot) {
-    log(
-        Level.INFO,
-        "New Attestation with block root:  " + beconBlockRoot + " detected.",
-        Color.GREEN);
+    info("New Attestation with block root:  " + beconBlockRoot + " detected.", Color.GREEN);
   }
 
   public void aggregateAndProof(final Bytes32 beconBlockRoot) {
-    log(
-        Level.INFO,
-        "New AggregateAndProof with block root:  " + beconBlockRoot + " detected.",
-        Color.BLUE);
+    info("New AggregateAndProof with block root:  " + beconBlockRoot + " detected.", Color.BLUE);
   }
 
   public void unprocessedBlock(final Bytes32 stateRoot) {
-    log(
-        Level.INFO,
-        "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.",
-        Color.GREEN);
+    info(
+        "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
   }
 
   // TODO only add colour when it is enabled vai the config
-  private void log(Level level, String message, Color color) {
-    this.logger.log(level, print(message, color));
+  private void info(String message, Color color) {
+    logger.info(print(message, color));
   }
 
-  private void log(Level level, String message) {
-    this.logger.log(level, message);
+  private void info(String message) {
+    logger.info(message);
   }
 }
