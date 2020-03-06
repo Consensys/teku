@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Protocol;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
@@ -23,20 +24,28 @@ public class MultiaddrPeerAddress extends PeerAddress {
 
   private final Multiaddr multiaddr;
 
-  private MultiaddrPeerAddress(
-      final NodeId nodeId, final Multiaddr multiaddr, final String sourceAddress) {
-    super(nodeId, sourceAddress);
+  private MultiaddrPeerAddress(final NodeId nodeId, final Multiaddr multiaddr) {
+    super(nodeId);
     this.multiaddr = multiaddr;
   }
 
-  public static MultiaddrPeerAddress parse(final String address) {
+  public static MultiaddrPeerAddress fromAddress(final String address) {
     final Multiaddr multiaddr = Multiaddr.fromString(address);
+    return fromMultiaddr(multiaddr);
+  }
+
+  public static MultiaddrPeerAddress fromDiscoveryPeer(final DiscoveryPeer discoveryPeer) {
+    final Multiaddr multiaddr = DiscoveryPeerToMultiaddrConverter.convertToMultiAddr(discoveryPeer);
+    return fromMultiaddr(multiaddr);
+  }
+
+  private static MultiaddrPeerAddress fromMultiaddr(final Multiaddr multiaddr) {
     final String p2pComponent = multiaddr.getStringComponent(Protocol.P2P);
     if (p2pComponent == null) {
-      throw new IllegalArgumentException("No peer ID present in multiaddr: " + address);
+      throw new IllegalArgumentException("No peer ID present in multiaddr: " + multiaddr);
     }
     final LibP2PNodeId nodeId = new LibP2PNodeId(PeerId.fromBase58(p2pComponent));
-    return new MultiaddrPeerAddress(nodeId, multiaddr, address);
+    return new MultiaddrPeerAddress(nodeId, multiaddr);
   }
 
   public Multiaddr getMultiaddr() {

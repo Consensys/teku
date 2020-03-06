@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
@@ -167,13 +166,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public PeerAddress parse(final String peerAddress) {
-    return MultiaddrPeerAddress.parse(peerAddress);
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return MultiaddrPeerAddress.fromAddress(peerAddress);
   }
 
   @Override
-  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
-    return peerManager.connect(convertToMultiAddr(peer), host.getNetwork());
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    return MultiaddrPeerAddress.fromDiscoveryPeer(discoveryPeer);
   }
 
   @Override
@@ -187,10 +186,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
-    return peerManager
-        .getPeer(DiscoveryPeerToMultiaddrConverter.getNodeId(discoveryPeer))
-        .isPresent();
+  public boolean isConnected(final PeerAddress peerAddress) {
+    return peerManager.getPeer(peerAddress.getId()).isPresent();
   }
 
   @Override

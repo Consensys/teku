@@ -57,7 +57,9 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             discoveryService,
             DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
-            p2pConfig.getStaticPeers().stream().map(p2pNetwork::parse).collect(toList()),
+            p2pConfig.getStaticPeers().stream()
+                .map(p2pNetwork::createPeerAddress)
+                .collect(toList()),
             p2pConfig.getTargetPeerRange());
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
@@ -106,7 +108,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void addStaticPeer(final String peerAddress) {
-    connectionManager.addStaticPeer(p2pNetwork.parse(peerAddress));
+    connectionManager.addStaticPeer(p2pNetwork.createPeerAddress(peerAddress));
   }
 
   @Override

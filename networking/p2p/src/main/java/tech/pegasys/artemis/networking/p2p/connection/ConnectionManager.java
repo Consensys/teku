@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
@@ -69,7 +68,8 @@ public class ConnectionManager extends Service {
     final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
     discoveryService
         .streamKnownPeers()
-        .filter(discoveryPeer -> !network.isConnected(discoveryPeer))
+        .map(network::createPeerAddress)
+        .filter(peerAddress -> !network.isConnected(peerAddress))
         .limit(maxAttempts)
         .forEach(this::attemptConnection);
   }
@@ -93,14 +93,12 @@ public class ConnectionManager extends Service {
             });
   }
 
-  private void attemptConnection(final DiscoveryPeer discoveryPeer) {
+  private void attemptConnection(final PeerAddress discoveryPeer) {
     network
         .connect(discoveryPeer)
         .finish(
             peer -> LOG.trace("Successfully connected to peer {}", peer.getId()),
-            error ->
-                LOG.trace(
-                    () -> "Failed to connect to peer: " + discoveryPeer.getPublicKey(), error));
+            error -> LOG.trace(() -> "Failed to connect to peer: " + discoveryPeer.getId(), error));
   }
 
   private void onPeerConnected(final Peer peer) {

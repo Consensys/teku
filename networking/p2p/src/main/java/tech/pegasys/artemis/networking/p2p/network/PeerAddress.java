@@ -19,11 +19,9 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerAddress {
   private final NodeId id;
-  private final String sourceAddress;
 
-  public PeerAddress(final NodeId id, final String sourceAddress) {
+  public PeerAddress(final NodeId id) {
     this.id = id;
-    this.sourceAddress = sourceAddress;
   }
 
   public NodeId getId() {
@@ -42,7 +40,7 @@ public class PeerAddress {
 
   @Override
   public String toString() {
-    return sourceAddress;
+    return id.toString();
   }
 
   @Override

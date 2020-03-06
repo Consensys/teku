@@ -40,13 +40,13 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public PeerAddress parse(final String peerAddress) {
-    return new PeerAddress(new MockNodeId(peerAddress.hashCode()), peerAddress);
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return new PeerAddress(new MockNodeId(peerAddress.hashCode()));
   }
 
   @Override
-  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -60,7 +60,7 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
+  public boolean isConnected(final PeerAddress peerAddress) {
     return false;
   }
 
