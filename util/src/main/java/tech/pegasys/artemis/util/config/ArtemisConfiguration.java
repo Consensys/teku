@@ -47,6 +47,7 @@ public class ArtemisConfiguration {
 
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
+    builder.addString("node.advertisedIp", "127.0.0.1", "Peer to peer advertised ip", null);
     builder.addInteger(
         "node.advertisedPort",
         NO_VALUE,
@@ -221,6 +222,11 @@ public class ArtemisConfiguration {
   /** @return the network interface this node will bind to */
   public String getNetworkInterface() {
     return config.getString("node.networkInterface");
+  }
+
+  /** @return the ip this node will advertise to peers */
+  public String getAdvertisedIp() {
+    return config.getString("node.advertisedIp");
   }
 
   public String getConstants() {

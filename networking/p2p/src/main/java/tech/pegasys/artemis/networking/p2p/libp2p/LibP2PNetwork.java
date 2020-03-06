@@ -34,6 +34,9 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,7 +83,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
-    advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
+    try {
+      advertisedAddr = composeAdvertisedAddr(config);
+    } catch (UnknownHostException err) {
+      throw new RuntimeException("Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
+    }
 
     // Setup gossip
     gossip = new Gossip();
@@ -151,6 +158,19 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
             });
+  }
+
+  public Multiaddr composeAdvertisedAddr(NetworkConfig config) throws UnknownHostException {
+    String ip;
+    if (!config.getAdvertisedIp().trim().isEmpty()) {
+      ip = config.getAdvertisedIp();
+    } else if (!config.getNetworkInterface().equals("0.0.0.0")) {
+      ip = config.getNetworkInterface();
+    } else {
+      ip = InetAddress.getLocalHost().getHostAddress();
+    }
+
+    return new Multiaddr("/ip4/" + ip + "/tcp/" + config.getAdvertisedPort());
   }
 
   @Override

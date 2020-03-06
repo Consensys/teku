@@ -21,6 +21,7 @@ public class NetworkConfig {
 
   private final PrivKey privateKey;
   private final String networkInterface;
+  private final String advertisedIp;
   private final int listenPort;
   private final int advertisedPort;
   private final List<String> staticPeers;
@@ -34,6 +35,7 @@ public class NetworkConfig {
   public NetworkConfig(
       final PrivKey privateKey,
       final String networkInterface,
+      final String advertisedIp,
       final int listenPort,
       final int advertisedPort,
       final List<String> staticPeers,
@@ -45,6 +47,7 @@ public class NetworkConfig {
       final boolean logMuxFrames) {
     this.privateKey = privateKey;
     this.networkInterface = networkInterface;
+    this.advertisedIp = advertisedIp;
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
     this.staticPeers = staticPeers;
@@ -62,6 +65,10 @@ public class NetworkConfig {
 
   public String getNetworkInterface() {
     return networkInterface;
+  }
+
+  public String getAdvertisedIp() {
+    return advertisedIp;
   }
 
   public int getListenPort() {

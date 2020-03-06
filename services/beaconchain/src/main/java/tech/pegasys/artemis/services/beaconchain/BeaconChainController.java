@@ -205,6 +205,7 @@ public class BeaconChainController {
           new NetworkConfig(
               pk,
               config.getNetworkInterface(),
+              config.getAdvertisedIp(),
               config.getPort(),
               config.getAdvertisedPort(),
               config.getStaticPeers(),
