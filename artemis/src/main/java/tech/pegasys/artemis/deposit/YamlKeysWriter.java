@@ -29,14 +29,9 @@ public class YamlKeysWriter implements KeysWriter {
   private final Path outputPath;
   private final PrintStream standardOut;
 
-  public YamlKeysWriter() {
-    this.outputPath = null;
-    this.standardOut = System.out;
-  }
-
   public YamlKeysWriter(final Path outputPath) {
     this.outputPath = outputPath;
-    this.standardOut = null;
+    this.standardOut = outputPath == null ? System.out : null;
   }
 
   @VisibleForTesting

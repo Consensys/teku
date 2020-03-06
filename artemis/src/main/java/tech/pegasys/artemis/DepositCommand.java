@@ -16,31 +16,25 @@ package tech.pegasys.artemis;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.io.Files;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.math.BigInteger;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
@@ -49,19 +43,14 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.bls.keystore.KeyStore;
-import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
-import tech.pegasys.artemis.bls.keystore.model.Cipher;
-import tech.pegasys.artemis.bls.keystore.model.CipherFunction;
-import tech.pegasys.artemis.bls.keystore.model.KdfParam;
-import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
-import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
+import tech.pegasys.artemis.deposit.EncryptedKeystoreWriter;
+import tech.pegasys.artemis.deposit.KeysWriter;
+import tech.pegasys.artemis.deposit.YamlKeysWriter;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
@@ -110,73 +99,64 @@ public class DepositCommand implements Runnable {
               defaultValue = "1")
           int validatorCount,
       @Option(
-              names = {"--output-file", "-o"},
-              paramLabel = "<FILE>",
+              names = {"--output-path", "-o"},
+              paramLabel = "<FILE|DIR>",
               description =
-                  "File to write unencrypted validator keys to. Keys are printed to std out if not specified")
-          String outputFile,
+                  "Path to output file for unencrypted keys or output directory for encrypted keystore files. If not set, unencrypted keys will be written on standard out and encrypted keystores will be created in current directory")
+          String outputPath,
       @Option(
               names = {"--encrypt-keys", "-e"},
-              defaultValue = "false",
-              paramLabel = "<TRUE|FALSE>",
-              description = "Encrypt validator keys. (Default: false)",
+              defaultValue = "true",
+              paramLabel = "<true|false>",
+              description = "Encrypt validator and withdrawal keys. (Default: true)",
               arity = "1")
           boolean encryptKeys,
       @Option(
-              names = {"--keystore-output-dir", "-k"},
-              paramLabel = "<PATH>",
+              names = {"--validator-password-file", "-v"},
+              paramLabel = "<FILE>",
               description =
-                  "Encrypted keystore output directory. Use current directory if not specified")
-          String keystorePath) {
+                  "Path to the file containing password to encrypt the validator keys. Must be specified if encrypt keys is set to true")
+          String validatorPasswordFile,
+      @Option(
+              names = {"--withdrawal-password-file", "-w"},
+              paramLabel = "<FILE>",
+              description =
+                  "Path to the file containing password to encrypt the withdrawal keys. Must be specified if encrypt keys is set to true")
+          String withdrawalPasswordFile) {
 
     try (params) {
-      // generate BLS validator key and withdrawal key
-      final List<Pair<BLSKeyPair, BLSKeyPair>> validatorKeyPairs =
-          IntStream.range(0, validatorCount)
-              .mapToObj(value -> Pair.of(BLSKeyPair.random(), BLSKeyPair.random()))
-              .collect(Collectors.toList());
-
-      final DepositTransactionSender sender = params.createTransactionSender();
-
-      final StringBuilder yamlStringBuilder = new StringBuilder();
-      final boolean printOnStandardOut = outputFile == null || outputFile.isBlank();
-      final Path keyStoreOutputDirectory =
-          keystorePath == null || keystorePath.isBlank() ? Path.of(".") : Path.of(keystorePath);
-      final AtomicInteger counterSuffix = new AtomicInteger(0);
-      final List<SafeFuture<TransactionReceipt>> futures;
-      try {
-        futures =
-            validatorKeyPairs.stream()
-                .map(
-                    keyPair -> {
-                      final String yamlFormattedString = getYamlFormattedString(keyPair);
-                      if (encryptKeys) {
-                        generateKeystores(
-                            keyPair, keyStoreOutputDirectory, counterSuffix.incrementAndGet());
-                      } else if (printOnStandardOut) {
-                        System.out.println(yamlFormattedString);
-                      } else {
-                        yamlStringBuilder
-                            .append(yamlFormattedString)
-                            .append(System.lineSeparator());
-                      }
-
-                      return sendDeposit(
-                          sender,
-                          keyPair.getLeft(),
-                          keyPair.getRight().getPublicKey(),
-                          params.amount);
-                    })
-                .collect(Collectors.toList());
-
-      } finally {
-        if (!encryptKeys && !printOnStandardOut) {
-          // write keys yaml to file
-          Files.writeString(Path.of(outputFile), yamlStringBuilder.toString());
-        }
+      final KeysWriter keysWriter;
+      if (encryptKeys) {
+        STDOUT.log(Level.INFO, "Generating encrypted keystores ...");
+        final Path keystoreDir =
+            outputPath == null || outputPath.isBlank() ? Path.of(".") : Path.of(outputPath);
+        keysWriter =
+            new EncryptedKeystoreWriter(
+                readPasswordFromFile(validatorPasswordFile),
+                readPasswordFromFile(withdrawalPasswordFile),
+                keystoreDir);
+      } else {
+        STDOUT.log(Level.INFO, "Generating unencrypted keys ...");
+        keysWriter =
+            new YamlKeysWriter(
+                outputPath == null || outputPath.isBlank() ? null : Path.of(outputPath));
       }
 
-      waitForTransactionReceipts(futures);
+      final DepositTransactionSender sender = params.createTransactionSender();
+      final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
+      for (int i = 0; i < validatorCount; i++) {
+        final BLSKeyPair validatorKey = BLSKeyPair.random();
+        final BLSKeyPair withdrawalKey = BLSKeyPair.random();
+
+        keysWriter.writeKeys(validatorKey, withdrawalKey);
+
+        final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
+            sendDeposit(sender, validatorKey, withdrawalKey.getPublicKey(), params.amount);
+        futures.add(transactionReceiptSafeFuture);
+      }
+
+      SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
+      STDOUT.log(Level.INFO, "Deposit transaction(s) successful.");
     } catch (final Throwable t) {
       STDOUT.log(
           Level.FATAL,
@@ -184,66 +164,6 @@ public class DepositCommand implements Runnable {
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);
-  }
-
-  @VisibleForTesting
-  void waitForTransactionReceipts(final List<SafeFuture<TransactionReceipt>> futures)
-      throws InterruptedException, ExecutionException, TimeoutException {
-    SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
-  }
-
-  private String getYamlFormattedString(final Pair<BLSKeyPair, BLSKeyPair> keyPair) {
-    return String.format(
-        "- {privkey: '%s', pubkey: '%s', withdrawalPrivkey: '%s', withdrawalPubkey: '%s'}",
-        keyPair.getLeft().getSecretKey().getSecretKey().toBytes(),
-        keyPair.getLeft().getPublicKey().toBytesCompressed(),
-        keyPair.getRight().getSecretKey().getSecretKey().toBytes(),
-        keyPair.getRight().getPublicKey().toBytesCompressed());
-  }
-
-  private void generateKeystores(
-      final Pair<BLSKeyPair, BLSKeyPair> keyPair,
-      final Path keyStoreOutputDirectory,
-      final int counter) {
-    generateKeystore(keyPair.getLeft(), keyStoreOutputDirectory, "validator", counter);
-    generateKeystore(keyPair.getRight(), keyStoreOutputDirectory, "withdrawal", counter);
-  }
-
-  private void generateKeystore(
-      final BLSKeyPair key, final Path outputDir, final String prefix, final int counter) {
-    try {
-      final KdfParam kdfParam = new SCryptParam(32, Bytes32.random());
-      final Cipher cipher = new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16));
-      final String randomPassword = generateRandomHexToken();
-      final KeyStoreData keyStoreData =
-          KeyStore.encrypt(
-              key.getSecretKey().getSecretKey().toBytes(),
-              generateRandomHexToken(),
-              "",
-              kdfParam,
-              cipher);
-
-      // create sub directory
-      final Path keystoreDirectory =
-          Files.createDirectories(outputDir.resolve("validator_" + counter));
-
-      // save keystore
-      KeyStoreLoader.saveToFile(
-          keystoreDirectory.resolve(prefix + "_keystore_" + counter + ".json"), keyStoreData);
-
-      // save password
-      Files.writeString(
-          keystoreDirectory.resolve(prefix + "_password_" + counter + ".txt"), randomPassword);
-    } catch (final IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  private String generateRandomHexToken() {
-    final SecureRandom secureRandom = SecureRandomProvider.createSecureRandom();
-    byte[] token = new byte[32];
-    secureRandom.nextBytes(token);
-    return new BigInteger(1, token).toString(16); // hex encoding
   }
 
   @Command(
@@ -287,6 +207,31 @@ public class DepositCommand implements Runnable {
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
+  }
+
+  String readPasswordFromFile(final String path) throws IOException {
+    final Path passwordFilePath = Path.of(path);
+    final String password;
+    try {
+      password =
+          Files.asCharSource(passwordFilePath.toFile(), StandardCharsets.UTF_8).readFirstLine();
+    } catch (FileNotFoundException e) {
+      STDOUT.log(Level.FATAL, "Password file not found: " + passwordFilePath);
+      throw e;
+    } catch (IOException e) {
+      STDOUT.log(
+          Level.FATAL,
+          "Unexpected IO error while reading password file ["
+              + passwordFilePath
+              + "] : "
+              + e.getMessage());
+      throw e;
+    }
+    if (StringUtils.isBlank(password)) {
+      STDOUT.log(Level.FATAL, "Empty file: " + passwordFilePath);
+      throw new IOException("Empty file: " + passwordFilePath);
+    }
+    return password;
   }
 
   @Override
