@@ -32,6 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import okhttp3.ConnectionPool;
@@ -76,6 +77,17 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class DepositCommand implements Runnable {
+  private final Consumer<Integer> shutdownFunction;
+
+  public DepositCommand() {
+    this.shutdownFunction =
+        System::exit; // required because web3j use non-daemon threads which halts the program
+  }
+
+  @VisibleForTesting
+  DepositCommand(final Consumer<Integer> shutdownFunction) {
+    this.shutdownFunction = shutdownFunction;
+  }
 
   @Command(
       name = "generate",
@@ -169,20 +181,15 @@ public class DepositCommand implements Runnable {
       STDOUT.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
-      exit(1);
+      shutdownFunction.accept(1);
     }
-    exit(0);
+    shutdownFunction.accept(0);
   }
 
   @VisibleForTesting
   void waitForTransactionReceipts(final List<SafeFuture<TransactionReceipt>> futures)
       throws InterruptedException, ExecutionException, TimeoutException {
     SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
-  }
-
-  @VisibleForTesting
-  void exit(final int status) {
-    System.exit(status); // Web3J creates a non-daemon thread we can't shut down. :(
   }
 
   private String getYamlFormattedString(final Pair<BLSKeyPair, BLSKeyPair> keyPair) {

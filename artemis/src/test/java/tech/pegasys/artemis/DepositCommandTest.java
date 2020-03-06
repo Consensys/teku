@@ -34,13 +34,12 @@ class DepositCommandTest {
   private static final int VALIDATORS_COUNT = 2;
   @Mock private DepositCommand.CommonParams commonParams;
   @Mock private DepositTransactionSender depositTransactionSender;
-  @Spy private DepositCommand depositCommand = new DepositCommand();
+  @Spy private DepositCommand depositCommand = new DepositCommand(exitCode -> {});
 
   @Test
   void encryptedKeystoresAreCreated(@TempDir final Path tempDir) throws Exception {
     doReturn(depositTransactionSender).when(commonParams).createTransactionSender();
     doNothing().when(depositCommand).waitForTransactionReceipts(any());
-    doNothing().when(depositCommand).exit(0);
 
     depositCommand.generate(commonParams, VALIDATORS_COUNT, "", true, tempDir.toString());
 
