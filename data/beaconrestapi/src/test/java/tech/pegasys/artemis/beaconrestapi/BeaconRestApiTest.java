@@ -28,6 +28,7 @@ import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateRootHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
@@ -109,6 +110,11 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveBeaconValidatorsEndpoint() {
     verify(app).get(eq(BeaconValidatorsHandler.ROUTE), any(BeaconValidatorsHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveBeaconStateRootEndpoint() {
+    verify(app).get(eq(BeaconStateRootHandler.ROUTE), any(BeaconStateRootHandler.class));
   }
 
   @Test

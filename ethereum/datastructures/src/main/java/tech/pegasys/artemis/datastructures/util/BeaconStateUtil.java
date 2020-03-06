@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.compute_pro
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
@@ -53,13 +52,15 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
@@ -74,6 +75,8 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconStateUtil {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
    * Setting to <code>false</code> significantly speeds up state initialization
@@ -83,7 +86,7 @@ public class BeaconStateUtil {
   public static BeaconState initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     final GenesisGenerator genesisGenerator = new GenesisGenerator();
-    genesisGenerator.addDepositsFromBlock(eth1_block_hash, eth1_timestamp, deposits);
+    genesisGenerator.updateCandidateState(eth1_block_hash, eth1_timestamp, deposits);
     return genesisGenerator.getGenesisState();
   }
 
@@ -145,7 +148,14 @@ public class BeaconStateUtil {
                     deposit.getData().getSignature(),
                     compute_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
-          STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
+          if (deposit instanceof DepositWithIndex) {
+            LOG.warn(
+                "Skipping invalid deposit with index {} of pubkey {}",
+                ((DepositWithIndex) deposit).getIndex(),
+                pubkey);
+          } else {
+            LOG.warn("Skipping invalid deposit with of pubkey {}", pubkey);
+          }
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);
@@ -155,7 +165,7 @@ public class BeaconStateUtil {
       }
 
       if (pubKeyToIndexMap == null) {
-        STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+        LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
       state
           .getValidators()
@@ -179,14 +189,16 @@ public class BeaconStateUtil {
   }
 
   public static boolean is_valid_genesis_state(BeaconState state) {
-    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) < 0)
-        && !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-            < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+    return isItMinGenesisTimeYet(state) && isThereEnoughNumberOfValidators(state);
   }
 
-  public static boolean is_valid_genesis_stateSim(BeaconState state) {
-    return !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-        < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  public static boolean isThereEnoughNumberOfValidators(BeaconState state) {
+    return get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
+        >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+  }
+
+  public static boolean isItMinGenesisTimeYet(BeaconState state) {
+    return state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0;
   }
 
   /**
@@ -717,7 +729,7 @@ public class BeaconStateUtil {
   public static UnsignedLong integer_squareroot(UnsignedLong n) {
     checkArgument(
         n.compareTo(UnsignedLong.ZERO) >= 0,
-        "checkArgument threw and exception in integer_squareroot()");
+        "checkArgument threw an exception in integer_squareroot()");
     UnsignedLong TWO = UnsignedLong.valueOf(2L);
     UnsignedLong x = n;
     UnsignedLong y = x.plus(UnsignedLong.ONE).dividedBy(TWO);

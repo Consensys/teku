@@ -51,4 +51,11 @@ public class RestApiUtils {
     String stringValue = validateQueryParameter(parameterMap, key);
     return UnsignedLong.valueOf(stringValue);
   }
+
+  public static long getParameterValueAsLong(
+      final Map<String, List<String>> parameterMap, final String key)
+      throws IllegalArgumentException {
+    String stringValue = validateQueryParameter(parameterMap, key);
+    return Long.valueOf(stringValue);
+  }
 }

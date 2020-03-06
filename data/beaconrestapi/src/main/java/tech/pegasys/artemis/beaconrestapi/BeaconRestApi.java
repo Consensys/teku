@@ -29,6 +29,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconCommitteesHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateRootHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
@@ -135,6 +136,9 @@ public class BeaconRestApi {
     app.get(BeaconCommitteesHandler.ROUTE, new BeaconCommitteesHandler(provider, jsonProvider));
     app.get(
         BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
+    app.get(
+        BeaconStateRootHandler.ROUTE,
+        new BeaconStateRootHandler(combinedChainDataClient, jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
