@@ -87,10 +87,10 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
   }
 
   @Override
-  public long getPeerCount() {
+  public int getPeerCount() {
     // TODO - look into keep separate collections for pending peers / validated peers so
     // we don't have to iterate over the peer list to get this count.
-    return streamPeers().count();
+    return Math.toIntExact(streamPeers().count());
   }
 
   @Override

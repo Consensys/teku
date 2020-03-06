@@ -54,6 +54,11 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
+  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
+    return false;
+  }
+
+  @Override
   public Optional<P> getPeer(final NodeId id) {
     return Optional.empty();
   }
@@ -64,8 +69,8 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public long getPeerCount() {
-    return 0L;
+  public int getPeerCount() {
+    return 0;
   }
 
   @Override
