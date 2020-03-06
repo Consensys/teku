@@ -25,7 +25,8 @@ import java.nio.file.Path;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
@@ -41,12 +42,10 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
 import tech.pegasys.teku.logging.ConsoleLoggingConfiguration;
-import tech.pegasys.teku.logging.StatusLogger;
-import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public class BeaconNode {
 
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
@@ -63,8 +62,7 @@ public class BeaconNode {
 
     this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
-    final EventBusExceptionHandler subscriberExceptionHandler =
-        new EventBusExceptionHandler(STATUS_LOG);
+    final EventBusExceptionHandler subscriberExceptionHandler = new EventBusExceptionHandler();
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
@@ -101,9 +99,9 @@ public class BeaconNode {
       serviceController.startAll();
 
     } catch (final CompletionException e) {
-      STATUS_LOG.log(Level.FATAL, e.toString());
+      LOG.fatal(e.toString());
     } catch (final IllegalArgumentException e) {
-      STATUS_LOG.log(Level.FATAL, e.getMessage());
+      LOG.fatal(e.getMessage());
     }
   }
 
@@ -118,11 +116,7 @@ public class BeaconNode {
 final class EventBusExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler {
 
-  private final StatusLogger logger;
-
-  EventBusExceptionHandler(final StatusLogger logger) {
-    this.logger = logger;
-  }
+  private static final Logger LOG = LogManager.getLogger();
 
   @Override
   public void handleException(final Throwable exception, final SubscriberExceptionContext context) {
@@ -158,13 +152,9 @@ final class EventBusExceptionHandler
 
   private void handleException(final Throwable exception, final String subscriberDescription) {
     if (isSpecFailure(exception)) {
-      logger.log(Level.WARN, specFailedMessage(exception, subscriberDescription), exception);
+      LOG.warn(specFailedMessage(exception, subscriberDescription), exception);
     } else {
-      logger.log(
-          Level.FATAL,
-          unexpectedExceptionMessage(exception, subscriberDescription),
-          exception,
-          Color.RED);
+      LOG.fatal(unexpectedExceptionMessage(exception, subscriberDescription), exception);
     }
   }
 
