@@ -17,6 +17,7 @@ import java.util.function.Function;
 import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.tree.CachedBranchNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 
@@ -29,27 +30,34 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   private final long size;
 
   public VectorViewImpl(VectorViewType<R> type, TreeNode backingNode) {
-    this.size = type.getMaxLength();
     this.type = type;
-    this.backingNode = backingNode;
+    this.size = type.getMaxLength();
+//    cachedRoot = type.maxChunks() == Constants.VALIDATOR_REGISTRY_LIMIT;
+    setBackingNode(backingNode);
   }
+
+  public boolean cachedRoot = false;
 
   @Override
   public void set(int index, R value) {
     checkIndex(index);
-    backingNode =
+    setBackingNode(
         updateNode(
             index / type.getElementsPerChunk(),
             oldBytes ->
                 type.getElementType()
-                    .updateBackingNode(oldBytes, index % type.getElementsPerChunk(), value));
+                    .updateBackingNode(oldBytes, index % type.getElementsPerChunk(), value)));
     invalidate();
   }
 
   @Override
   public void clear() {
-    backingNode = getType().getDefaultTree();
+    setBackingNode(getType().getDefaultTree());
     invalidate();
+  }
+
+  private void setBackingNode(TreeNode backingNode) {
+    this.backingNode = cachedRoot ? CachedBranchNode.cacheNode(getType(), backingNode) : backingNode;
   }
 
   @Override

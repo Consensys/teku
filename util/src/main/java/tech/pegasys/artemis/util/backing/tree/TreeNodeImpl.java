@@ -14,14 +14,14 @@
 package tech.pegasys.artemis.util.backing.tree;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.BranchNode;
-import tech.pegasys.artemis.util.backing.tree.TreeNode.LeafNode;
+import tech.pegasys.artemis.util.backing.ViewRead;
 
-class TreeNodeImpl {
+abstract class TreeNodeImpl implements TreeNode{
 
-  static class LeafNodeImpl implements LeafNode {
+  static class LeafNodeImpl extends TreeNodeImpl implements LeafNode {
     private final Bytes32 root;
 
     public LeafNodeImpl(Bytes32 root) {
@@ -56,7 +56,7 @@ class TreeNodeImpl {
     }
   }
 
-  static class BranchNodeImpl implements BranchNode {
+  static class BranchNodeImpl extends TreeNodeImpl implements BranchNode {
     private final TreeNode left;
     private final TreeNode right;
     private volatile Bytes32 cachedHash = null;
@@ -95,5 +95,16 @@ class TreeNodeImpl {
     public String toString() {
       return "(" + (left == right ? "default" : left + ", " + right) + ')';
     }
+  }
+
+  private ViewRead cachedValue;
+  @Override
+  public <C extends ViewRead> C cachedValue(Supplier<C> supplier) {
+    if (cachedValue == null) {
+      cachedValue = supplier.get();
+    } else if (cachedValue.getBackingNode() != this){
+      cachedValue = supplier.get();
+    }
+    return (C) cachedValue;
   }
 }
