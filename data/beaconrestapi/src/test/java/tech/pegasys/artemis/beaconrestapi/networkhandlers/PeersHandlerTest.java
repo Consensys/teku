@@ -16,7 +16,9 @@ package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.libp2p.core.PeerId;
 import java.util.stream.Stream;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -34,11 +37,12 @@ import tech.pegasys.artemis.provider.JsonProvider;
 public class PeersHandlerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   @Mock Context context;
-  @Mock P2PNetwork<Peer> p2PNetwork;
+  @Mock P2PNetwork<Peer> p2pNetwork;
 
   @Test
   public void shouldReturnArrayOfPeersIfPresent() throws Exception {
-    final PeersHandler peersHandler = new PeersHandler(p2PNetwork, jsonProvider);
+    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    final PeersHandler peersHandler = new PeersHandler(network, jsonProvider);
     final Peer peer1 = mock(Peer.class);
     final Peer peer2 = mock(Peer.class);
     final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
@@ -48,23 +52,26 @@ public class PeersHandlerTest {
 
     when(peer1.getId()).thenReturn(nodeId1);
     when(peer2.getId()).thenReturn(nodeId2);
-    when(p2PNetwork.streamPeers()).thenReturn(Stream.of(peer1, peer2));
+    when(p2pNetwork.streamPeers()).thenReturn(Stream.of(peer1, peer2));
 
     final String response =
         jsonProvider.objectToJSON(new String[] {peerId1.toBase58(), peerId2.toBase58()});
 
     peersHandler.handle(context);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(response);
   }
 
   @Test
   public void shouldReturnEmptyPeersArrayIfNoneConnected() throws Exception {
-    final PeersHandler peersHandler = new PeersHandler(p2PNetwork, jsonProvider);
+    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    final PeersHandler peersHandler = new PeersHandler(network, jsonProvider);
     final String response = jsonProvider.objectToJSON(new String[] {});
 
-    when(p2PNetwork.streamPeers()).thenReturn(Stream.empty());
+    when(p2pNetwork.streamPeers()).thenReturn(Stream.empty());
 
     peersHandler.handle(context);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(response);
   }
 }

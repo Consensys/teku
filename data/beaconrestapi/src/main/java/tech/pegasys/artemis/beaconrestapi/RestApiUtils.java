@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +43,13 @@ public class RestApiUtils {
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
     return Integer.valueOf(stringValue);
+  }
+
+  public static UnsignedLong getParameterValueAsUnsignedLong(
+      final Map<String, List<String>> parameterMap, final String key)
+      throws IllegalArgumentException {
+    String stringValue = validateQueryParameter(parameterMap, key);
+    return UnsignedLong.valueOf(stringValue);
   }
 
   public static long getParameterValueAsLong(

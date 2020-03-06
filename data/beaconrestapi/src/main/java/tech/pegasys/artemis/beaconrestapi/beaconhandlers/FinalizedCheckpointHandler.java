@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -56,6 +58,7 @@ public class FinalizedCheckpointHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    ctx.header(CACHE_CONTROL, CACHE_NONE);
     Store store = client.getStore();
     if (store == null) {
       ctx.status(SC_NO_CONTENT);
