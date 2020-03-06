@@ -18,14 +18,19 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_HOUR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +42,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -59,6 +66,7 @@ public class BeaconCommitteesHandlerTest {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
+  @Mock private ChainDataProvider provider;
 
   @Captor private ArgumentCaptor<SafeFuture<String>> args;
 
@@ -76,40 +84,43 @@ public class BeaconCommitteesHandlerTest {
 
   @Test
   public void shouldReturnEmptyListWhenStateAtSlotIsNotFound() throws Exception {
-    final BeaconCommitteesHandler handler =
-        new BeaconCommitteesHandler(combinedChainDataClient, jsonProvider);
+    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
 
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("0")));
-    when(historicalChainData.getFinalizedStateAtSlot(ZERO))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.getCommitteesAtEpoch(ZERO)).thenReturn(SafeFuture.completedFuture(List.of()));
     handler.handle(context);
 
     verify(context).result(args.capture());
-    verify(historicalChainData).getFinalizedStateAtSlot(ZERO);
-    SafeFuture<String> data = args.getValue();
-    assertEquals(data.get(), EMPTY_LIST);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
+    verify(provider).getCommitteesAtEpoch(ZERO);
+    SafeFuture<String> future = args.getValue();
+    assertEquals(future.get(), EMPTY_LIST);
   }
 
   @Test
   public void shouldReturnBadRequestWhenNoEpochIsSupplied() throws Exception {
-    final BeaconCommitteesHandler handler =
-        new BeaconCommitteesHandler(combinedChainDataClient, jsonProvider);
+    ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
+    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
     handler.handle(context);
+
+    verify(context, never()).header(anyString(), anyString());
     verify(context).status(SC_BAD_REQUEST);
   }
 
   @Test
   public void shouldReturnEmptyListWhenAFutureEpochIsRequested() throws Exception {
-    final BeaconCommitteesHandler handler =
-        new BeaconCommitteesHandler(combinedChainDataClient, jsonProvider);
+    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
+    final UnsignedLong futureEpoch = slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
 
-    UnsignedLong futureEpoch = slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.getCommitteesAtEpoch(futureEpoch))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(futureEpoch.toString())));
-
     handler.handle(context);
 
     verify(context).result(args.capture());
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), EMPTY_LIST);
   }
@@ -120,8 +131,8 @@ public class BeaconCommitteesHandlerTest {
     Store store = mock(Store.class);
     CombinedChainDataClient combinedClient =
         new CombinedChainDataClient(client, historicalChainData);
-    final BeaconCommitteesHandler handler =
-        new BeaconCommitteesHandler(combinedClient, jsonProvider);
+    ChainDataProvider provider = new ChainDataProvider(client, combinedClient);
+    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
     when(client.getFinalizedEpoch()).thenReturn(ZERO);
     when(store.getBlockState(blockRoot)).thenReturn(beaconState);
@@ -132,6 +143,7 @@ public class BeaconCommitteesHandlerTest {
     handler.handle(context);
 
     verify(context).result(args.capture());
+    verify(context).header(Header.CACHE_CONTROL, CACHE_ONE_HOUR);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
 
@@ -144,12 +156,13 @@ public class BeaconCommitteesHandlerTest {
     ChainStorageClient client = mock(ChainStorageClient.class);
     CombinedChainDataClient combinedClient =
         new CombinedChainDataClient(client, historicalChainData);
-    final BeaconCommitteesHandler handler =
-        new BeaconCommitteesHandler(combinedClient, jsonProvider);
+    ChainDataProvider provider = new ChainDataProvider(client, combinedClient);
+    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
     when(client.getStore()).thenReturn(null);
 
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 }

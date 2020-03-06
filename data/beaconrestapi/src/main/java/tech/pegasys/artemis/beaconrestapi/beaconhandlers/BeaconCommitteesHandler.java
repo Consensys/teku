@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_HOUR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -22,9 +25,8 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_E
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsUnsignedLong;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -33,23 +35,21 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.beaconrestapi.schema.CommitteesResponse;
-import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconCommitteesHandler implements Handler {
 
   public static final String ROUTE = "/beacon/committees";
 
-  private final CombinedChainDataClient combinedClient;
+  private final ChainDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public BeaconCommitteesHandler(
-      CombinedChainDataClient combinedClient, JsonProvider jsonProvider) {
-    this.combinedClient = combinedClient;
+  public BeaconCommitteesHandler(ChainDataProvider provider, JsonProvider jsonProvider) {
+    this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
 
@@ -66,9 +66,7 @@ public class BeaconCommitteesHandler implements Handler {
       },
       description = "Request a list of the committee assignments for a given epoch.",
       responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = CommitteesResponse.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Committee.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter"),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
@@ -76,24 +74,25 @@ public class BeaconCommitteesHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      if (!combinedClient.isStoreAvailable()) {
+      if (!provider.isStoreAvailable()) {
+        ctx.header(CACHE_CONTROL, CACHE_NONE);
         ctx.status(SC_NO_CONTENT);
         return;
       }
-      SafeFuture<List<CommitteeAssignment>> future =
-          getCommitteesAtEpoch(validateQueryParameter(ctx.queryParamMap(), EPOCH));
+
+      SafeFuture<List<Committee>> future =
+          provider.getCommitteesAtEpoch(
+              getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH));
+
       ctx.result(
           future.thenApplyChecked(
-              result -> jsonProvider.objectToJSON(CommitteesResponse.fromList(result))));
+              result -> {
+                ctx.header(CACHE_CONTROL, result.size() > 0 ? CACHE_ONE_HOUR : CACHE_NONE);
+                return jsonProvider.objectToJSON(result);
+              }));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
-  }
-
-  private SafeFuture<List<CommitteeAssignment>> getCommitteesAtEpoch(final String epochString) {
-    final UnsignedLong epoch = UnsignedLong.valueOf(epochString);
-
-    return combinedClient.getCommitteeAssignmentAtEpoch(epoch);
   }
 }

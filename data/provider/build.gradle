@@ -2,6 +2,8 @@ dependencies {
     implementation project(':util')
     implementation project(':data')
     implementation project(':networking:p2p')
+    implementation project(':sync')
+    implementation project(':services:serviceutils')
     implementation project(':storage')
     implementation project(':ethereum:datastructures')
     implementation 'com.fasterxml.jackson.core:jackson-databind'
@@ -13,6 +15,8 @@ dependencies {
     runtime 'org.apache.logging.log4j:log4j-core'
 
     testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+
+    testCompile 'org.mockito:mockito-junit-jupiter:3.2.4'
 }
 
 test {

@@ -30,25 +30,25 @@ public class NetworkDataProvider {
   /**
    * get the Ethereum Node Record of the node
    *
-   * @return base64 encoded ENR.
+   * @return if discovery is in use, returns the Ethereum Node Record (base64).
    */
   public Optional<String> getEnr() {
     return p2pNetwork.getEnr();
   }
 
   /**
-   * Get the current node id in base58 format
+   * Get the current node
    *
-   * @return
+   * @return the node id (base58)
    */
   public String getNodeIdAsBase58() {
     return p2pNetwork.getNodeId().toBase58();
   }
 
   /**
-   * Get the list of Peers in base58 format
+   * Get the list of Peers
    *
-   * @return
+   * @return the current list of network peers (base58)
    */
   public List<String> getPeersAsBase58() {
     return p2pNetwork
@@ -56,5 +56,9 @@ public class NetworkDataProvider {
         .map(Peer::getId)
         .map(NodeId::toBase58)
         .collect(Collectors.toList());
+  }
+
+  P2PNetwork<?> getP2pNetwork() {
+    return p2pNetwork;
   }
 }

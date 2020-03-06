@@ -24,6 +24,7 @@ import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
@@ -56,7 +57,8 @@ class BeaconRestApiTest {
   public void setup() {
     ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
     when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, combinedChainDataClient, syncService, config, app);
+    new BeaconRestApi(
+        new DataProvider(storageClient, combinedChainDataClient, null, syncService), config, app);
   }
 
   @Test

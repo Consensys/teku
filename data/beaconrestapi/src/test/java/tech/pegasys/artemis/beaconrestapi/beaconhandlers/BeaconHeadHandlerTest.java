@@ -21,6 +21,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,26 +32,21 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 
 @ExtendWith(MockitoExtension.class)
 public class BeaconHeadHandlerTest {
+  @Mock private ChainDataProvider provider;
   @Mock private Context context;
-  @Mock private ChainStorageClient storageClient;
   private final JsonProvider jsonProvider = new JsonProvider();
   private BeaconState rootState = DataStructureUtil.randomBeaconState(1);
   private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);
 
   @Test
   public void shouldReturnBeaconHead() throws Exception {
-    ChainDataProvider provider = new ChainDataProvider(storageClient, null);
     BeaconHeadHandler handler = new BeaconHeadHandler(provider, jsonProvider);
     Bytes32 blockRoot = Bytes32.random();
     BeaconHead head = new BeaconHead(bestSlot, blockRoot, rootState.hash_tree_root());
-
-    when(storageClient.getBestBlockRoot()).thenReturn(blockRoot);
-    when(storageClient.getBestBlockRootState()).thenReturn(rootState);
-    when(storageClient.getBestSlot()).thenReturn(bestSlot);
+    when(provider.getBeaconHead()).thenReturn(Optional.of(head));
 
     handler.handle(context);
 
@@ -60,9 +56,8 @@ public class BeaconHeadHandlerTest {
 
   @Test
   public void shouldReturnNoContentIfBlockRootNotSet() throws Exception {
-    ChainDataProvider provider = new ChainDataProvider(storageClient, null);
     BeaconHeadHandler handler = new BeaconHeadHandler(provider, jsonProvider);
-    when(storageClient.getBestBlockRoot()).thenReturn(null);
+    when(provider.getBeaconHead()).thenReturn(Optional.empty());
     handler.handle(context);
 
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);

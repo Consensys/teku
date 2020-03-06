@@ -13,15 +13,20 @@
 
 package tech.pegasys.artemis.api;
 
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.BeaconHead;
+import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainDataProvider {
-  @SuppressWarnings("unused")
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final ChainStorageClient chainStorageClient;
@@ -34,14 +39,14 @@ public class ChainDataProvider {
   }
 
   public Optional<UnsignedLong> getGenesisTime() {
-    if (chainStorageClient == null) {
+    if (!isStoreAvailable()) {
       return Optional.empty();
     }
     return Optional.ofNullable(chainStorageClient.getGenesisTime());
   }
 
   public Optional<BeaconHead> getBeaconHead() {
-    if (chainStorageClient == null) {
+    if (!isStoreAvailable()) {
       return Optional.empty();
     }
 
@@ -49,9 +54,32 @@ public class ChainDataProvider {
     if (headBlockRoot == null) {
       return Optional.empty();
     }
+
     Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
     BeaconHead result =
         new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot, headStateRoot);
     return Optional.of(result);
+  }
+
+  public SafeFuture<List<Committee>> getCommitteesAtEpoch(UnsignedLong epoch) {
+    if (!isStoreAvailable()) {
+      return completedFuture(List.of());
+    }
+    return combinedChainDataClient
+        .getCommitteeAssignmentAtEpoch(epoch)
+        .thenApply(result -> result.stream().map(Committee::new).collect(Collectors.toList()))
+        .exceptionally(err -> List.of());
+  }
+
+  public boolean isStoreAvailable() {
+    return combinedChainDataClient != null && combinedChainDataClient.isStoreAvailable();
+  }
+
+  ChainStorageClient getChainStorageClient() {
+    return chainStorageClient;
+  }
+
+  CombinedChainDataClient getCombinedChainDataClient() {
+    return combinedChainDataClient;
   }
 }
