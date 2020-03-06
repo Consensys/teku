@@ -34,6 +34,8 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,6 +60,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final PrivKey privKey;
@@ -80,7 +83,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
-    advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
+    advertisedAddr = getAdvertisedAddr(config);
 
     // Setup gossip
     gossip = new Gossip();
@@ -151,6 +154,24 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
             });
+  }
+
+  public Multiaddr getAdvertisedAddr(NetworkConfig config) {
+    try {
+      String ip;
+      if (config.getAdvertisedIp().isPresent()) {
+        ip = config.getAdvertisedIp().get();
+      } else if (NetworkUtility.isUnspecifiedAddress(config.getNetworkInterface())) {
+        ip = config.getNetworkInterface();
+      } else {
+        ip = InetAddress.getLocalHost().getHostAddress();
+      }
+
+      return new Multiaddr("/ip4/" + ip + "/tcp/" + config.getAdvertisedPort());
+    } catch (UnknownHostException err) {
+      throw new RuntimeException(
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
+    }
   }
 
   @Override
