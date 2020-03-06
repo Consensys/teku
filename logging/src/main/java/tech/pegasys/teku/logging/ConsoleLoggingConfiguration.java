@@ -45,6 +45,8 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
   protected void doConfigure() {
     super.doConfigure();
 
+    // TODO get the root logger & add console appender, when all to console
+
     if (ADD_CONSOLE_LOGGER) {
       final Appender console = addConsoleAppender();
       addConsoleLogger(console);
@@ -67,7 +69,6 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
   private void addConsoleLogger(final Appender consoleAppender) {
     final LoggerConfig config = new LoggerConfig(LOGGER_NAME, Level.INFO, false);
 
-    // TODO choose the level?
     config.addAppender(consoleAppender, Level.INFO, null);
 
     removeLogger(LOGGER_NAME);

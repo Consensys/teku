@@ -31,9 +31,14 @@ public class StatusLogger {
   }
 
   private final Logger logger;
+  private boolean enabled;
 
-  private StatusLogger(String className) {
-    this.logger = LogManager.getLogger(className);
+  private StatusLogger(final String name) {
+    this.logger = LogManager.getLogger(name);
+  }
+
+  public void setEnabled(final boolean enabled) {
+    this.enabled = enabled;
   }
 
   public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
@@ -73,10 +78,14 @@ public class StatusLogger {
 
   // TODO only add colour when it is enabled vai the config
   private void info(String message, Color color) {
-    logger.info(print(message, color));
+    if (enabled) {
+      logger.info(print(message, color));
+    }
   }
 
   private void info(String message) {
-    logger.info(message);
+    if (enabled) {
+      logger.info(message);
+    }
   }
 }

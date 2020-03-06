@@ -42,6 +42,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
 import tech.pegasys.teku.logging.ConsoleLoggingConfiguration;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconNode {
 
@@ -75,7 +76,10 @@ public class BeaconNode {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
 
-    // TODO status updates enabled (enableStatusUpdates)
+    // TODO support all logs going to Stdout
+    // TODO color optional (only apply to Stdout)
+
+    StatusLogger.getLogger().setEnabled(config.isStatusUpdatesEnabled());
     ConsoleLoggingConfiguration.enableStandardOutLogger(config.isStandardOutEnabled());
 
     // TODO this reconfigure is triggering the INFO message 'Log4j appears to be running in a
