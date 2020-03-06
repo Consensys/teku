@@ -39,7 +39,7 @@ dependencies {
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testImplementation 'org.mockito:mockito-junit-jupiter'
+  testImplementation 'org.mockito:mockito-core'
 
   test {
     testLogging.showStandardStreams = true

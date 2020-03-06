@@ -84,7 +84,6 @@ dependencyManagement {
     }
 
     dependency 'org.mockito:mockito-core:3.1.0'
-    dependency 'org.mockito:mockito-junit-jupiter:3.1.0'
 
     dependency 'org.openjdk.jmh:jmh-core:1.21'
     dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.21'

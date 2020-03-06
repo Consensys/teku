@@ -13,34 +13,38 @@
 
 package tech.pegasys.artemis;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.stream.IntStream;
-import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 
-@ExtendWith(MockitoExtension.class)
 class DepositCommandTest {
   private static final int VALIDATORS_COUNT = 2;
-  @Mock private DepositCommand.CommonParams commonParams;
-  @Mock private DepositTransactionSender depositTransactionSender;
-  @Spy private DepositCommand depositCommand = new DepositCommand(exitCode -> {});
+  private DepositCommand.CommonParams commonParams;
+  private DepositTransactionSender depositTransactionSender;
+  private final DepositCommand depositCommand = new DepositCommand(exitCode -> {});
+
+  @BeforeEach
+  void setUp() {
+    commonParams = mock(DepositCommand.CommonParams.class);
+    depositTransactionSender = mock(DepositTransactionSender.class);
+
+    when(commonParams.createTransactionSender()).thenReturn(depositTransactionSender);
+    when(depositTransactionSender.sendDepositTransaction(any(), any(), any()))
+        .thenReturn(completedFuture(null));
+  }
 
   @Test
-  void encryptedKeystoresAreCreated(@TempDir final Path tempDir) throws Exception {
-    doReturn(depositTransactionSender).when(commonParams).createTransactionSender();
-    doNothing().when(depositCommand).waitForTransactionReceipts(any());
-
+  void encryptedKeystoresAreCreated(@TempDir final Path tempDir) {
     depositCommand.generate(commonParams, VALIDATORS_COUNT, "", true, tempDir.toString());
 
     // assert that sub directories exist
@@ -48,7 +52,7 @@ class DepositCommandTest {
         IntStream.range(1, VALIDATORS_COUNT + 1)
             .mapToObj(i -> tempDir.resolve("validator_" + i).toFile())
             .toArray(File[]::new);
-    Assertions.assertThat(tempDir.toFile().listFiles()).containsExactlyInAnyOrder(subDirectories);
+    assertThat(tempDir.toFile().listFiles()).containsExactlyInAnyOrder(subDirectories);
 
     for (int i = 0; i < subDirectories.length; i++) {
       assertKeyStoreAndPasswordExist(subDirectories[i].toPath(), i + 1);
@@ -61,7 +65,7 @@ class DepositCommandTest {
     final Path keystore2File = parentDir.resolve("withdrawal_keystore_" + suffix + ".json");
     final Path password2File = parentDir.resolve("withdrawal_password_" + suffix + ".txt");
 
-    Assertions.assertThat(parentDir.toFile().listFiles())
+    assertThat(parentDir.toFile().listFiles())
         .containsExactlyInAnyOrder(
             keystore1File.toFile(),
             password1File.toFile(),
