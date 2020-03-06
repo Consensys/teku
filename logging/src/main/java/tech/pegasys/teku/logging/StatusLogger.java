@@ -56,14 +56,6 @@ public class StatusLogger {
     this.logger.log(level, addColor(message, color));
   }
 
-  public void log(Level level, String message, Throwable throwable) {
-    this.logger.log(level, message, throwable);
-  }
-
-  public void log(Level level, String message, Throwable throwable, Color color) {
-    this.logger.log(level, addColor(message, color), throwable);
-  }
-
   private void log(Level level, String message, boolean printEnabled) {
     if (printEnabled) {
       this.logger.log(level, message);
