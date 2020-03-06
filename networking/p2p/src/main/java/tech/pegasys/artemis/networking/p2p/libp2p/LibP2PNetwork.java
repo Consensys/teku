@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
+import static com.google.common.net.InetAddresses.isInetAddress;
 import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
@@ -60,6 +61,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final PrivKey privKey;
@@ -162,9 +164,9 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   public Multiaddr composeAdvertisedAddr(NetworkConfig config) throws UnknownHostException {
     String ip;
-    if (!config.getAdvertisedIp().trim().isEmpty()) {
+    if (!config.getAdvertisedIp().trim().isEmpty() && isInetAddress(config.getAdvertisedIp())) {
       ip = config.getAdvertisedIp();
-    } else if (!config.getNetworkInterface().equals("0.0.0.0")) {
+    } else if (NetworkUtility.isNetworkInterfaceAvailable(config.getNetworkInterface())) {
       ip = config.getNetworkInterface();
     } else {
       ip = InetAddress.getLocalHost().getHostAddress();
