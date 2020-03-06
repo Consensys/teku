@@ -15,6 +15,7 @@ package tech.pegasys.teku.logging;
 
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,16 +37,26 @@ public class StatusLogger {
     this.logger = LogManager.getLogger(className);
   }
 
-  public void log(Level level, String message) {
-    this.logger.log(level, message);
+  public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
+    log(Level.INFO, "******* Eth2Genesis Event*******", Color.WHITE);
+    log(Level.INFO, "Initial state root is " + hashTreeRoot.toHexString());
+    log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 
   public void epochEvent() {
-    log(Level.INFO, "******* Epoch Event *******", Color.BLUE);
+    log(Level.INFO, "******* Epoch Event *******", Color.PURPLE);
   }
 
-  public void slotEvent() {
+  public void slotEvent(
+      final UnsignedLong nodeSlot,
+      final UnsignedLong bestSlot,
+      final UnsignedLong justifiedEpoch,
+      final UnsignedLong finalizedEpoch) {
     log(Level.INFO, "******* Slot Event *******", Color.WHITE);
+    log(Level.INFO, "Node slot:                             " + nodeSlot);
+    log(Level.INFO, "Head block slot:" + "                       " + bestSlot);
+    log(Level.INFO, "Justified epoch:" + "                       " + justifiedEpoch);
+    log(Level.INFO, "Finalized epoch:" + "                       " + finalizedEpoch);
   }
 
   public void unprocessedAttestation(final Bytes32 beconBlockRoot) {
@@ -72,5 +83,9 @@ public class StatusLogger {
   // TODO only add colour when it is enabled vai the config
   private void log(Level level, String message, Color color) {
     this.logger.log(level, print(message, color));
+  }
+
+  private void log(Level level, String message) {
+    this.logger.log(level, message);
   }
 }

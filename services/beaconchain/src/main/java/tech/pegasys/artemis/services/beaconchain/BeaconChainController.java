@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -349,25 +348,13 @@ public class BeaconChainController {
       this.eventBus.post(new SlotEvent(nodeSlot));
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
-      STATUS_LOG.slotEvent();
-      STATUS_LOG.log(Level.INFO, "Node slot:                             " + nodeSlot);
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
-      // Logging
-      STATUS_LOG.log(
-          Level.INFO,
-          "Head block slot:" + "                       " + chainStorageClient.getBestSlot());
-      STATUS_LOG.log(
-          Level.INFO,
-          "Justified epoch:"
-              + "                       "
-              + chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch());
-      STATUS_LOG.log(
-          Level.INFO,
-          "Finalized epoch:"
-              + "                       "
-              + chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
-
+      STATUS_LOG.slotEvent(
+          nodeSlot,
+          chainStorageClient.getBestSlot(),
+          chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),
+          chainStorageClient.getStore().getFinalizedCheckpoint().getEpoch());
       this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       this.eventBus.post(new BroadcastAggregatesEvent());
