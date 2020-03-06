@@ -187,7 +187,7 @@ public class CombinedChainDataClient {
   }
 
   public boolean isStoreAvailable() {
-    return (getStore() != null);
+    return recentChainData != null && getStore() != null;
   }
 
   /**
