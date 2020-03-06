@@ -11,17 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.provider;
+package tech.pegasys.artemis.api.schema;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import tech.pegasys.artemis.api.schema.BLSSignature;
+public class AttesterSlashing {
+  public final IndexedAttestation attestation_1;
+  public final IndexedAttestation attestation_2;
 
-public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
-  @Override
-  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return BLSSignature.fromHexString(p.getValueAsString());
+  public AttesterSlashing(
+      tech.pegasys.artemis.datastructures.operations.AttesterSlashing attesterSlashing) {
+    this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation_1());
+    this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation_2());
   }
 }

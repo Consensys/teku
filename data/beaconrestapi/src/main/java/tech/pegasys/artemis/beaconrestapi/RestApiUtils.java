@@ -17,8 +17,16 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class RestApiUtils {
+
+  public static final String INVALID_BYTES32_DATA =
+      "Unable to read Bytes32 data from query parameter.";
+  public static final String INVALID_NUMERIC_VALUE =
+      "Unable to read a numeric value from query parameter.";
+  public static final String NULL_OR_EMPTY_FORMAT = "'%s' cannot be null or empty.";
+  public static final String MUST_SPECIFY_ONLY_ONCE = "'%s' must have a single value in the query.";
 
   /**
    * Checks that a parameter exists, has a single entry, and is not an empty string
@@ -30,32 +38,58 @@ public class RestApiUtils {
   public static String validateQueryParameter(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
-    if (parameterMap.containsKey(key)
-        && parameterMap.get(key).size() == 1
-        && !StringUtils.isEmpty(parameterMap.get(key).get(0))) {
-      return parameterMap.get(key).get(0);
+    if (parameterMap.containsKey(key)) {
+      if (parameterMap.get(key).size() != 1) {
+        throw new IllegalArgumentException(String.format(MUST_SPECIFY_ONLY_ONCE, key));
+      }
+      if (!StringUtils.isEmpty(parameterMap.get(key).get(0))) {
+        return parameterMap.get(key).get(0);
+      }
     }
-    throw new IllegalArgumentException(String.format("'%s' cannot be null or empty.", key));
+    throw new IllegalArgumentException(String.format(NULL_OR_EMPTY_FORMAT, key));
   }
 
   public static int getParameterValueAsInt(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
-    return Integer.valueOf(stringValue);
+    try {
+      return Integer.valueOf(stringValue);
+    } catch (IllegalArgumentException ex) {
+      throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
+    }
   }
 
   public static UnsignedLong getParameterValueAsUnsignedLong(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
-    return UnsignedLong.valueOf(stringValue);
+    try {
+      return UnsignedLong.valueOf(stringValue);
+    } catch (IllegalArgumentException ex) {
+      throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
+    }
   }
 
   public static long getParameterValueAsLong(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
-    return Long.valueOf(stringValue);
+    try {
+      return Long.valueOf(stringValue);
+    } catch (IllegalArgumentException ex) {
+      throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
+    }
+  }
+
+  public static Bytes32 getParameterValueAsBytes32(
+      final Map<String, List<String>> parameterMap, final String key)
+      throws IllegalArgumentException {
+    String stringValue = validateQueryParameter(parameterMap, key);
+    try {
+      return Bytes32.fromHexString(stringValue);
+    } catch (IllegalArgumentException ex) {
+      throw new IllegalArgumentException(INVALID_BYTES32_DATA);
+    }
   }
 }

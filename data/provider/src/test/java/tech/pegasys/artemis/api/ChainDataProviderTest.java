@@ -15,6 +15,7 @@ package tech.pegasys.artemis.api;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.Committee;
+import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -51,9 +53,9 @@ public class ChainDataProviderTest {
   private static UnsignedLong slot;
   private static EventBus localEventBus;
   private static ChainStorageClient chainStorageClient;
-
-  @SuppressWarnings("unused")
-  private static UnsignedLong epoch;
+  private final tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
+      DataStructureUtil.randomSignedBeaconBlock(1, 1);
+  //  private static UnsignedLong epoch;
 
   @BeforeAll
   public static void setup() {
@@ -64,7 +66,7 @@ public class ChainDataProviderTest {
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
     blockRoot = chainStorageClient.getBestBlockRoot();
     slot = chainStorageClient.getBlockState(blockRoot).get().getSlot();
-    epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    //    epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
 
   @Test
@@ -173,5 +175,87 @@ public class ChainDataProviderTest {
 
     Optional<UnsignedLong> optionalData = provider.getGenesisTime();
     assertEquals(genesis, optionalData.get());
+  }
+
+  @Test
+  public void getBlockBySlot_shouldReturnEmptyWhenStoreNotFound()
+      throws ExecutionException, InterruptedException {
+    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
+    ChainDataProvider provider = new ChainDataProvider(null, myClient);
+
+    SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
+    assertTrue(future.get().isEmpty());
+  }
+
+  @Test
+  public void getBlockBySlot_shouldReturnEmptyWhenSlotNotFound()
+      throws ExecutionException, InterruptedException {
+    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
+    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+
+    when(myClient.isStoreAvailable()).thenReturn(true);
+    when(myClient.getBlockBySlot(ZERO)).thenReturn(completedFuture(Optional.empty()));
+    SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
+    assertTrue(future.get().isEmpty());
+  }
+
+  @Test
+  public void getBlockBySlot_shouldReturnBlockWhenFound()
+      throws ExecutionException, InterruptedException {
+    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
+    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+    SafeFuture<Optional<tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock>> data =
+        completedFuture(Optional.of(signedBeaconBlock));
+
+    when(myClient.isStoreAvailable()).thenReturn(true);
+    when(myClient.getBlockBySlot(ZERO)).thenReturn(data);
+    SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
+    verify(myClient).getBlockBySlot(ZERO);
+
+    SignedBeaconBlock result = future.get().get();
+    assertThat(result)
+        .usingRecursiveComparison()
+        .isEqualTo(new SignedBeaconBlock(signedBeaconBlock));
+  }
+
+  @Test
+  public void getBlockByBlockRoot_shouldReturnEmptyWhenStoreNotFound()
+      throws ExecutionException, InterruptedException {
+    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
+    ChainDataProvider provider = new ChainDataProvider(null, myClient);
+
+    SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
+    assertTrue(future.get().isEmpty());
+  }
+
+  @Test
+  public void getBlockByBlockRoot_shouldReturnEmptyWhenBlockNotFound()
+      throws ExecutionException, InterruptedException {
+    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
+    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+
+    when(myClient.isStoreAvailable()).thenReturn(true);
+    when(myClient.getBlockByBlockRoot(blockRoot)).thenReturn(completedFuture(Optional.empty()));
+    SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
+    assertTrue(future.get().isEmpty());
+  }
+
+  @Test
+  public void getBlockByBlockRoot_shouldReturnBlockWhenFound()
+      throws ExecutionException, InterruptedException {
+    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
+    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+    SafeFuture<Optional<tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock>> data =
+        completedFuture(Optional.of(signedBeaconBlock));
+
+    when(myClient.isStoreAvailable()).thenReturn(true);
+    when(myClient.getBlockByBlockRoot(blockRoot)).thenReturn(data);
+    SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
+    verify(myClient).getBlockByBlockRoot(blockRoot);
+
+    SignedBeaconBlock result = future.get().get();
+    assertThat(result)
+        .usingRecursiveComparison()
+        .isEqualTo(new SignedBeaconBlock(signedBeaconBlock));
   }
 }

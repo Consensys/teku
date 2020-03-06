@@ -15,17 +15,23 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsBytes32;
 import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsInt;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsLong;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsUnsignedLong;
 import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
 
+import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
 public class RestApiUtilsTest {
 
   public static final String KEY = "any";
   public static final String VALUE = "1";
+  public static final Map<String, List<String>> INVALID_DATA = Map.of(KEY, List.of("1.5"));
 
   @Test
   public void validateParameters_shouldDetectMissingKey() {
@@ -81,7 +87,45 @@ public class RestApiUtilsTest {
 
   @Test
   public void getParameterValueAsInt_shouldThrowIllegalArgIfNotIntValue_Decimal() {
-    Map<String, List<String>> data = Map.of(KEY, List.of("1.5"));
-    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsInt(data, KEY));
+    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsInt(INVALID_DATA, KEY));
+  }
+
+  @Test
+  public void getParameterAsUnsignedLong_shouldReturnValue() {
+    Map<String, List<String>> data = Map.of(KEY, List.of("1"));
+    UnsignedLong result = getParameterValueAsUnsignedLong(data, KEY);
+    assertEquals(UnsignedLong.ONE, result);
+  }
+
+  @Test
+  public void getParameterAsUnsignedLong_shouldThrowIfCannotParse() {
+    assertThrows(
+        IllegalArgumentException.class, () -> getParameterValueAsUnsignedLong(INVALID_DATA, KEY));
+  }
+
+  @Test
+  public void getParameterAsLong_shouldReturnValue() {
+    Map<String, List<String>> data = Map.of(KEY, List.of("1"));
+    long result = getParameterValueAsLong(data, KEY);
+    assertEquals(1L, result);
+  }
+
+  @Test
+  public void getParameterAsLong_shouldThrowIfCannotParse() {
+    assertThrows(IllegalArgumentException.class, () -> getParameterValueAsLong(INVALID_DATA, KEY));
+  }
+
+  @Test
+  public void getParameterAsBytes32_shouldThrowIfCannotParse() {
+    assertThrows(
+        IllegalArgumentException.class, () -> getParameterValueAsBytes32(INVALID_DATA, KEY));
+  }
+
+  @Test
+  public void getParameterAsBytes32_shouldParseHex32String() {
+    Bytes32 bytes32 = Bytes32.random();
+    Map<String, List<String>> data = Map.of(KEY, List.of(bytes32.toHexString()));
+    Bytes32 result = getParameterValueAsBytes32(data, KEY);
+    assertEquals(bytes32, result);
   }
 }

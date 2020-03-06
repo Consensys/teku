@@ -11,17 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.provider;
+package tech.pegasys.artemis.api.schema;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import tech.pegasys.artemis.api.schema.BLSSignature;
+import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
-  @Override
-  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return BLSSignature.fromHexString(p.getValueAsString());
+public class BeaconBlock {
+  public final UnsignedLong slot;
+  public final Bytes32 parent_root;
+  public final Bytes32 state_root;
+  public final BeaconBlockBody body;
+
+  public BeaconBlock(tech.pegasys.artemis.datastructures.blocks.BeaconBlock message) {
+    this.slot = message.getSlot();
+    this.parent_root = message.getParent_root();
+    this.state_root = message.getState_root();
+    this.body = new BeaconBlockBody(message.getBody());
   }
 }

@@ -11,17 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.provider;
+package tech.pegasys.artemis.api.schema;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import tech.pegasys.artemis.api.schema.BLSSignature;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
-  @Override
-  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return BLSSignature.fromHexString(p.getValueAsString());
+public class Deposit {
+  public final List<Bytes32> proof;
+  public final DepositData data;
+
+  public Deposit(tech.pegasys.artemis.datastructures.operations.Deposit deposit) {
+    this.proof = deposit.getProof().stream().collect(Collectors.toList());
+    this.data = new DepositData(deposit.getData());
   }
 }

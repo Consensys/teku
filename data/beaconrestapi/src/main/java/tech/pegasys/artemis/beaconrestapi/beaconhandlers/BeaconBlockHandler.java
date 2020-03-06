@@ -13,17 +13,21 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsBytes32;
+import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsUnsignedLong;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -34,21 +38,26 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
 
 public class BeaconBlockHandler implements Handler {
 
   public static final String ROUTE = "/beacon/block";
+  static final String TOO_MANY_PARAMETERS =
+      "Too many query parameters specified. Please supply only one.";
+  static final String NO_PARAMETERS =
+      "No parameters were provided; please supply slot, epoch, or root.";
+  static final String NO_VALID_PARAMETER =
+      "An invalid parameter was specified; please supply slot, epoch, or root.";
   private final JsonProvider jsonProvider;
-  private final CombinedChainDataClient combinedChainDataClient;
+  private final ChainDataProvider provider;
 
-  public BeaconBlockHandler(
-      final CombinedChainDataClient combinedChainDataClient, final JsonProvider jsonProvider) {
+  public BeaconBlockHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
-    this.combinedChainDataClient = combinedChainDataClient;
+    this.provider = provider;
   }
 
   @OpenApi(
@@ -66,30 +75,31 @@ public class BeaconBlockHandler implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = BeaconBlockResponse.class)),
+            content = @OpenApiContent(from = SignedBeaconBlock.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(status = RES_NOT_FOUND, description = "Specified block not found")
       })
   @Override
   public void handle(final Context ctx) throws Exception {
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     try {
-      if (ctx.queryParamMap().size() > 1) {
-        throw new IllegalArgumentException(
-            "Too many query parameters specified. Please supply only one.");
+      final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
+      if (queryParamMap.size() < 1) {
+        throw new IllegalArgumentException(NO_PARAMETERS);
+      } else if (queryParamMap.size() > 1) {
+        throw new IllegalArgumentException(TOO_MANY_PARAMETERS);
       }
 
-      final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-      if (ctx.queryParamMap().containsKey(ROOT)) {
-        final Bytes32 blockParam =
-            Bytes32.fromHexString(validateQueryParameter(queryParamMap, ROOT));
+      if (queryParamMap.containsKey(ROOT)) {
+        final Bytes32 blockParam = getParameterValueAsBytes32(queryParamMap, ROOT);
 
         ctx.result(
-            combinedChainDataClient
+            provider
                 .getBlockByBlockRoot(blockParam)
                 .thenApplyChecked(
                     block -> {
                       if (block.isPresent()) {
-                        return jsonProvider.objectToJSON(new BeaconBlockResponse(block.get()));
+                        return jsonProvider.objectToJSON(block.get());
                       } else {
                         ctx.status(SC_NOT_FOUND);
                         return null;
@@ -99,24 +109,22 @@ public class BeaconBlockHandler implements Handler {
       }
 
       final UnsignedLong slot;
-      if (ctx.queryParamMap().containsKey(EPOCH)) {
-        slot =
-            compute_start_slot_at_epoch(
-                UnsignedLong.valueOf(validateQueryParameter(queryParamMap, EPOCH)));
-      } else if (ctx.queryParamMap().containsKey(SLOT)) {
-        slot = UnsignedLong.valueOf(validateQueryParameter(queryParamMap, SLOT));
+      if (queryParamMap.containsKey(EPOCH)) {
+        UnsignedLong epoch = getParameterValueAsUnsignedLong(queryParamMap, EPOCH);
+        slot = compute_start_slot_at_epoch(epoch);
+      } else if (queryParamMap.containsKey(SLOT)) {
+        slot = getParameterValueAsUnsignedLong(queryParamMap, SLOT);
       } else {
-        throw new IllegalArgumentException(
-            "Query parameter missing. Must specify one of root or epoch or slot.");
+        throw new IllegalArgumentException(NO_VALID_PARAMETER);
       }
 
       ctx.result(
-          combinedChainDataClient
+          provider
               .getBlockBySlot(slot)
               .thenApplyChecked(
                   block -> {
                     if (block.isPresent()) {
-                      return jsonProvider.objectToJSON(new BeaconBlockResponse(block.get()));
+                      return jsonProvider.objectToJSON(block.get());
                     } else {
                       ctx.status(SC_NOT_FOUND);
                       return null;
@@ -124,6 +132,7 @@ public class BeaconBlockHandler implements Handler {
                   }));
 
     } catch (final IllegalArgumentException e) {
+      ctx.status(SC_BAD_REQUEST);
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
     }
   }
