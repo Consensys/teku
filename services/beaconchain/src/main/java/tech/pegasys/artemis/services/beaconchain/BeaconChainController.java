@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
@@ -242,9 +243,9 @@ public class BeaconChainController {
     HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(chainStorageClient, historicalChainData);
-    beaconRestAPI =
-        new BeaconRestApi(
-            chainStorageClient, p2pNetwork, combinedChainDataClient, syncService, config);
+    DataProvider dataProvider =
+        new DataProvider(chainStorageClient, combinedChainDataClient, p2pNetwork, syncService);
+    beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 
   public void initSyncManager() {

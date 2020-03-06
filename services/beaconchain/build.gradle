@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':events')
+  implementation project(':data:provider')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
   implementation project(':validator:coordinator')
