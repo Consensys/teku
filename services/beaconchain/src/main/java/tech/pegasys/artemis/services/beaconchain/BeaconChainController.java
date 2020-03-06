@@ -349,7 +349,7 @@ public class BeaconChainController {
       this.eventBus.post(new SlotEvent(nodeSlot));
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
-      STATUS_LOG.log(Level.INFO, "******* Slot Event *******", StatusLogger.Color.WHITE);
+      STATUS_LOG.slotEvent();
       STATUS_LOG.log(Level.INFO, "Node slot:                             " + nodeSlot);
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();

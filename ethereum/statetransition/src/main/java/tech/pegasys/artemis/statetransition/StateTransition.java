@@ -36,7 +36,6 @@ import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -226,7 +225,7 @@ public class StateTransition {
             .plus(UnsignedLong.ONE)
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
-          STATUS_LOG.log(Level.INFO, "******* Epoch Event *******", StatusLogger.Color.BLUE);
+          STATUS_LOG.epochEvent();
           process_epoch(state);
           reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(state)));
         }

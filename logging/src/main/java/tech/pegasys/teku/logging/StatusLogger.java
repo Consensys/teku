@@ -16,6 +16,7 @@ package tech.pegasys.teku.logging;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class StatusLogger {
 
@@ -26,7 +27,7 @@ public class StatusLogger {
     return INSTANCE;
   }
 
-  public enum Color {
+  private enum Color {
     RED,
     BLUE,
     PURPLE,
@@ -46,7 +47,37 @@ public class StatusLogger {
     this.logger.log(level, message);
   }
 
-  public void log(Level level, String message, Color color) {
+  public void epochEvent() {
+    log(Level.INFO, "******* Epoch Event *******", StatusLogger.Color.BLUE);
+  }
+
+  public void slotEvent() {
+    log(Level.INFO, "******* Slot Event *******", StatusLogger.Color.WHITE);
+  }
+
+  public void unprocessedAttestation(final Bytes32 beconBlockRoot) {
+    log(
+        Level.INFO,
+        "New Attestation with block root:  " + beconBlockRoot + " detected.",
+        StatusLogger.Color.GREEN);
+  }
+
+  public void aggregateAndProof(final Bytes32 beconBlockRoot) {
+    log(
+        Level.INFO,
+        "New AggregateAndProof with block root:  " + beconBlockRoot + " detected.",
+        StatusLogger.Color.BLUE);
+  }
+
+  public void unprocessedBlock(final Bytes32 stateRoot) {
+    log(
+        Level.INFO,
+        "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.",
+        StatusLogger.Color.GREEN);
+  }
+
+  // TODO only add colour when it is enabled vai the config
+  private void log(Level level, String message, Color color) {
     this.logger.log(level, addColor(message, color));
   }
 
