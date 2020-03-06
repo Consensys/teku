@@ -63,8 +63,8 @@ public class GossipMessageHandlerIntegrationTest {
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
-    waitFor(node1.network().connect(node2.network().getNodeAddress()));
-    waitFor(node2.network().connect(node3.network().getNodeAddress()));
+    waitFor(node1.connect(node2));
+    waitFor(node2.connect(node3));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -108,8 +108,8 @@ public class GossipMessageHandlerIntegrationTest {
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
-    waitFor(node1.network().connect(node2.network().getNodeAddress()));
-    waitFor(node2.network().connect(node3.network().getNodeAddress()));
+    waitFor(node1.connect(node2));
+    waitFor(node2.connect(node3));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -145,7 +145,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
-    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -175,7 +175,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
-    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
@@ -220,7 +220,7 @@ public class GossipMessageHandlerIntegrationTest {
     final Eth2Network network2 = node2.network();
 
     // Connect networks 1 -> 2
-    waitFor(network1.connect(network2.getNodeAddress()));
+    waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {
