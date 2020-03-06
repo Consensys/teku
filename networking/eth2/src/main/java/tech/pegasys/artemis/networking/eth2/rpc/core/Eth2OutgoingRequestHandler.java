@@ -42,6 +42,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
+  private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
   private final ResponseRpcDecoder<TResponse> responseHandler;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
@@ -136,20 +137,32 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
                 responseStream.completeWithError(t);
               }
             })
+        .exceptionally(
+            (err) -> {
+              cancelRequest(rpcStream, err, true);
+              return null;
+            })
         .reportExceptions();
   }
 
   private void cancelRequest(final RpcStream rpcStream, Throwable error) {
-    if (!isClosed.compareAndSet(false, true)) {
+    cancelRequest(rpcStream, error, false);
+  }
+
+  private void cancelRequest(
+      final RpcStream rpcStream, Throwable error, final boolean forceCancel) {
+    if (!isClosed.compareAndSet(false, true) && !forceCancel) {
       return;
     }
+    if (!isCancelled.compareAndSet(false, true)) {
+      // Even if we're force cancelling, we don't want to cancel more than once
+      return;
+    }
+
     LOG.debug("Cancel request: {}", error.getMessage());
     rpcStream.close().reportExceptions();
     responseHandler.closeSilently();
-    responseProcessor
-        .finishProcessing()
-        .thenAccept(__ -> responseStream.completeWithError(error))
-        .reportExceptions();
+    responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
   }
 
   private void ensureFirstBytesArriveWithinTimeLimit(final RpcStream stream) {
