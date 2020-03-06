@@ -257,7 +257,7 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldLimitNumberOfNewConnectionsToKnownPeersOnStartup() {
+  public void shouldLimitNumberOfNewConnectionsMadeToDiscoveryPeersOnStartup() {
     final ConnectionManager manager = createManager(new TargetPeerRange(1, 2));
     final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
     final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
@@ -274,7 +274,7 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldLimitNumberOfNewConnectionsToKnownPeersOnRetry() {
+  public void shouldLimitNumberOfNewConnectionsMadeToDiscoveryPeersOnRetry() {
     final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
     final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
     final DiscoveryPeer discoveryPeer3 = new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
