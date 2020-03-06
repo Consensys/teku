@@ -258,8 +258,9 @@ class CombinedChainDataClientTest {
         .when(client)
         .getBlockRootBySlot(any());
     doReturn(Optional.empty()).when(client).getBestBlockRoot();
-    doReturn(store).when(client).getStore();
-    doReturn(signedBeaconBlock).when(store).getSignedBlock(any());
+    doReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
+        .when(client)
+        .getBlockByBlockRoot(any());
 
     assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
     assertThat(client.getBlockBySlot(slotParam).get())
