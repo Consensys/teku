@@ -179,6 +179,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
+    return peerManager
+        .getPeer(DiscoveryPeerToMultiaddrConverter.getNodeId(discoveryPeer))
+        .isPresent();
+  }
+
+  @Override
   public Optional<Peer> getPeer(final NodeId id) {
     return peerManager.getPeer(id);
   }
@@ -189,7 +196,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public long getPeerCount() {
+  public int getPeerCount() {
     return peerManager.getPeerCount();
   }
 

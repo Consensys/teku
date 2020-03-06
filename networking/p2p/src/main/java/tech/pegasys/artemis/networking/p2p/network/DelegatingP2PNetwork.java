@@ -39,7 +39,12 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public long getPeerCount() {
+  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
+    return network.isConnected(discoveryPeer);
+  }
+
+  @Override
+  public int getPeerCount() {
     return network.getPeerCount();
   }
 

@@ -28,6 +28,7 @@ public class StubPeer implements Peer {
   private Subscribers<PeerDisconnectedSubscriber> disconnectedSubscribers =
       Subscribers.create(false);
   private final NodeId nodeId;
+  private boolean connected = true;
 
   public StubPeer(final NodeId nodeId) {
     this.nodeId = nodeId;
@@ -40,12 +41,13 @@ public class StubPeer implements Peer {
 
   @Override
   public boolean isConnected() {
-    return false;
+    return connected;
   }
 
   @Override
   public void disconnect() {
     disconnectedSubscribers.forEach(PeerDisconnectedSubscriber::onDisconnected);
+    connected = false;
   }
 
   @Override
