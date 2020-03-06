@@ -92,6 +92,8 @@ class ConnectionManagerTest {
     verify(network).connect("peer1");
     peer.disconnect();
 
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
     verify(network, times(2)).connect("peer1");
   }
 
@@ -110,6 +112,8 @@ class ConnectionManagerTest {
     verify(network).connect("peer1");
     peer.disconnect();
 
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
     verify(network, times(2)).connect("peer1");
   }
 
