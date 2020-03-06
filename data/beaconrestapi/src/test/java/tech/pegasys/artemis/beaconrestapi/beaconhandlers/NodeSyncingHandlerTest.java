@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.SyncDataProvider;
 import tech.pegasys.artemis.beaconrestapi.schema.SyncingResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.sync.SyncService;
@@ -30,6 +31,7 @@ public class NodeSyncingHandlerTest {
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final SyncService syncService = mock(SyncService.class);
+  private final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
 
   @Test
   public void shouldReturnTrueWhenSyncing() throws Exception {
@@ -39,7 +41,7 @@ public class NodeSyncingHandlerTest {
     final UnsignedLong highestSlot = UnsignedLong.valueOf(10);
     final SyncingStatus syncingStatus =
         new SyncingStatus(isSyncing, new SyncStatus(startSlot, currentSlot, highestSlot));
-    final NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
+    final NodeSyncingHandler handler = new NodeSyncingHandler(syncDataProvider, jsonProvider);
     final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
@@ -52,7 +54,7 @@ public class NodeSyncingHandlerTest {
     final boolean isSyncing = false;
     final SyncingStatus syncingStatus = new SyncingStatus(isSyncing, null);
     final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
-    final NodeSyncingHandler handler = new NodeSyncingHandler(syncService, jsonProvider);
+    final NodeSyncingHandler handler = new NodeSyncingHandler(syncDataProvider, jsonProvider);
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     handler.handle(context);
