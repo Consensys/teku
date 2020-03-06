@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,10 +28,14 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.network.p2p.peer.StubPeer;
+import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
@@ -251,7 +256,92 @@ class ConnectionManagerTest {
     verify(network).connect(discoveryPeer2);
   }
 
+  @Test
+  public void shouldLimitNumberOfNewConnectionsMadeToDiscoveryPeersOnStartup() {
+    final ConnectionManager manager = createManager(new TargetPeerRange(1, 2));
+    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
+    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
+    final DiscoveryPeer discoveryPeer3 = new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3));
+    when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
+
+    manager.start().join();
+
+    verify(network).connect(discoveryPeer1);
+    verify(network).connect(discoveryPeer2);
+    verify(network, never()).connect(discoveryPeer3);
+  }
+
+  @Test
+  public void shouldLimitNumberOfNewConnectionsMadeToDiscoveryPeersOnRetry() {
+    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
+    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
+    final DiscoveryPeer discoveryPeer3 = new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
+    final DiscoveryPeer discoveryPeer4 = new DiscoveryPeer(Bytes.of(4), new InetSocketAddress(4));
+    final SafeFuture<Void> search1 = new SafeFuture<>();
+    when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
+    when(discoveryService.searchForPeers()).thenReturn(search1);
+    when(discoveryService.streamKnownPeers())
+        // At startup
+        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3))
+        // After search
+        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3, discoveryPeer4));
+
+    final ConnectionManager manager = createManager(new TargetPeerRange(2, 3));
+
+    when(network.getPeerCount()).thenReturn(0);
+    manager.start().join();
+    verify(discoveryService).searchForPeers();
+    verify(network).connect(discoveryPeer1);
+    verify(network).connect(discoveryPeer2);
+    verify(network).connect(discoveryPeer3);
+    verify(network, never()).connect(discoveryPeer4);
+
+    // Only peer 2 actually connected, so should try to connect 2 more nodes
+    when(network.getPeerCount()).thenReturn(1);
+    when(network.isConnected(discoveryPeer2)).thenReturn(true);
+    search1.complete(null);
+
+    verify(network, times(2)).connect(discoveryPeer1);
+    verify(network, times(1)).connect(discoveryPeer2); // Not retried
+    verify(network, times(2)).connect(discoveryPeer3); // Retried
+    verify(network, never()).connect(discoveryPeer4); // Still not required
+  }
+
+  @Test
+  public void shouldDisconnectPeersWhenPeerCountExceedsLimit() {
+    final ConnectionManager manager = createManager(new TargetPeerRange(1, 1));
+    manager.start().join();
+
+    final PeerConnectedSubscriber<Peer> peerConnectedSubscriber = getPeerConnectedSubscriber();
+
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
+    when(network.streamPeers()).thenReturn(Stream.of(peer2, peer1));
+    when(network.getPeerCount()).thenReturn(2);
+    peerConnectedSubscriber.onConnected(peer1);
+
+    // Should disconnect one peer to get back down to our target of max 1 peer.
+    assertThat(peer2.isConnected()).isFalse();
+    assertThat(peer1.isConnected()).isTrue();
+  }
+
+  private PeerConnectedSubscriber<Peer> getPeerConnectedSubscriber() {
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<PeerConnectedSubscriber<Peer>> captor =
+        ArgumentCaptor.forClass(PeerConnectedSubscriber.class);
+    verify(network).subscribeConnect(captor.capture());
+    return captor.getValue();
+  }
+
   private ConnectionManager createManager(final String... peers) {
-    return new ConnectionManager(discoveryService, asyncRunner, network, Arrays.asList(peers));
+    return createManager(new TargetPeerRange(5, 10), peers);
+  }
+
+  private ConnectionManager createManager(
+      final TargetPeerRange targetPeerCount, final String... peers) {
+    return new ConnectionManager(
+        discoveryService, asyncRunner, network, Arrays.asList(peers), targetPeerCount);
   }
 }

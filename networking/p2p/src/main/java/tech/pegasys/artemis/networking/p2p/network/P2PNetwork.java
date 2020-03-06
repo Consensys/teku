@@ -23,6 +23,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface P2PNetwork<T extends Peer> extends GossipNetwork {
+
   enum State {
     IDLE,
     RUNNING,
@@ -54,11 +55,13 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   void unsubscribeConnect(long subscriptionId);
 
+  boolean isConnected(DiscoveryPeer discoveryPeer);
+
   Optional<T> getPeer(NodeId id);
 
   Stream<T> streamPeers();
 
-  long getPeerCount();
+  int getPeerCount();
 
   String getNodeAddress();
 

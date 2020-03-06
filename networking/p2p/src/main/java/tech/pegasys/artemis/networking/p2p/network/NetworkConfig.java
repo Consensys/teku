@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.network;
 
 import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
+import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 
 public class NetworkConfig {
 
@@ -25,6 +26,7 @@ public class NetworkConfig {
   private final List<String> staticPeers;
   private final String discoveryMethod;
   private final List<String> bootnodes;
+  private final TargetPeerRange targetPeerRange;
   private final boolean logWireCipher;
   private final boolean logWirePlain;
   private final boolean logMuxFrames;
@@ -37,6 +39,7 @@ public class NetworkConfig {
       final List<String> staticPeers,
       final String discoveryMethod,
       final List<String> bootnodes,
+      final TargetPeerRange targetPeerRange,
       final boolean logWireCipher,
       final boolean logWirePlain,
       final boolean logMuxFrames) {
@@ -47,6 +50,7 @@ public class NetworkConfig {
     this.staticPeers = staticPeers;
     this.discoveryMethod = discoveryMethod;
     this.bootnodes = bootnodes;
+    this.targetPeerRange = targetPeerRange;
     this.logWireCipher = logWireCipher;
     this.logWirePlain = logWirePlain;
     this.logMuxFrames = logMuxFrames;
@@ -78,6 +82,10 @@ public class NetworkConfig {
 
   public List<String> getBootnodes() {
     return bootnodes;
+  }
+
+  public TargetPeerRange getTargetPeerRange() {
+    return targetPeerRange;
   }
 
   public boolean isLogWireCipher() {
