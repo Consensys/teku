@@ -34,6 +34,7 @@ import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -90,7 +91,7 @@ class ConnectionManagerTest {
         .thenReturn(new SafeFuture<>());
     manager.start().join();
     verify(network).connect("peer1");
-    peer.disconnect();
+    peer.disconnectImmediately();
 
     verify(network, times(2)).connect("peer1");
   }
@@ -108,7 +109,7 @@ class ConnectionManagerTest {
 
     manager.addStaticPeer("peer1");
     verify(network).connect("peer1");
-    peer.disconnect();
+    peer.disconnectImmediately();
 
     verify(network, times(2)).connect("peer1");
   }
@@ -176,7 +177,7 @@ class ConnectionManagerTest {
     final StubPeer peer = new StubPeer(new MockNodeId(discoveryPeer.getPublicKey()));
     connectionFuture.complete(peer);
 
-    peer.disconnect();
+    peer.disconnectImmediately();
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     verify(network, times(1)).connect(discoveryPeer); // No further attempts to connect
   }
@@ -323,7 +324,7 @@ class ConnectionManagerTest {
     peerConnectedSubscriber.onConnected(peer1);
 
     // Should disconnect one peer to get back down to our target of max 1 peer.
-    assertThat(peer2.isConnected()).isFalse();
+    assertThat(peer2.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
     assertThat(peer1.isConnected()).isTrue();
   }
 
