@@ -113,6 +113,7 @@ class DiscoveryNetworkTest {
             new NetworkConfig(
                 null,
                 "127.0.0.1",
+                "127.0.0.1",
                 0,
                 0,
                 Collections.emptyList(),
