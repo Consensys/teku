@@ -26,6 +26,8 @@ import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
+import tech.pegasys.artemis.storage.events.GetBlockByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
@@ -144,5 +146,12 @@ public class ChainStorageServer {
     final Optional<SignedBeaconBlock> block =
         database.getLatestFinalizedRootAtSlot(request.getSlot()).flatMap(database::getSignedBlock);
     eventBus.post(new GetLatestFinalizedBlockAtSlotResponse(request.getSlot(), block));
+  }
+
+  @Subscribe
+  @AllowConcurrentEvents
+  public void onGetBlockByBlockRootRequest(final GetBlockByBlockRootRequest request) {
+    final Optional<SignedBeaconBlock> block = database.getSignedBlock(request.getBlockRoot());
+    eventBus.post(new GetBlockByBlockRootResponse(request.getBlockRoot(), block));
   }
 }
