@@ -21,7 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
@@ -36,12 +37,10 @@ import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.teku.logging.StatusLogger;
-import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public final class StartupUtil {
 
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
     UnsignedLong epochs_per_period =
@@ -92,21 +91,16 @@ public final class StartupUtil {
     BeaconState initialState;
     if (startState != null) {
       try {
-        STATUS_LOG.log(
-            Level.INFO, "Loading initial state from " + startState, StatusLogger.Color.GREEN);
+        LOG.info("Loading initial state from {}", startState);
         initialState = StartupUtil.loadBeaconStateFromFile(startState);
       } catch (final IOException e) {
         throw new IllegalStateException("Failed to load initial state", e);
       }
     } else {
-      STATUS_LOG.log(
-          Level.INFO,
-          "Starting with mocked start interoperability mode with genesis time "
-              + genesisTime
-              + " and "
-              + validatorKeyPairs.size()
-              + " validators",
-          Color.GREEN);
+      LOG.info(
+          "Starting with mocked start interoperability mode with genesis time {}  and {} validators",
+          genesisTime,
+          validatorKeyPairs.size());
       initialState =
           StartupUtil.createMockedStartInitialBeaconState(
               genesisTime, validatorKeyPairs, signDeposits);
