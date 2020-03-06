@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.networking.p2p.network;
 
 import java.util.Objects;
+import java.util.Optional;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PeerAddress {
   private final NodeId id;
@@ -29,12 +29,11 @@ public class PeerAddress {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> SafeFuture<T> as(final Class<T> clazz) {
+  public <T> Optional<T> as(final Class<T> clazz) {
     if (clazz.isInstance(this)) {
-      return SafeFuture.completedFuture((T) this);
+      return Optional.of((T) this);
     } else {
-      return SafeFuture.failedFuture(
-          new IllegalArgumentException("Unsupported static peer type: " + getClass().getName()));
+      return Optional.empty();
     }
   }
 

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import identify.pb.IdentifyOuterClass;
@@ -161,8 +162,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public SafeFuture<Peer> connect(final PeerAddress peer) {
     return peer.as(MultiaddrPeerAddress.class)
-        .thenCompose(
-            staticPeer -> peerManager.connect(staticPeer.getMultiaddr(), host.getNetwork()));
+        .map(staticPeer -> peerManager.connect(staticPeer.getMultiaddr(), host.getNetwork()))
+        .orElseGet(
+            () ->
+                failedFuture(
+                    new IllegalArgumentException(
+                        "Unsupported peer address: " + peer.getClass().getName())));
   }
 
   @Override
