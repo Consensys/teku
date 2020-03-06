@@ -64,11 +64,6 @@ public class StatusLogger {
     this.logger.log(level, addColor(message, color), throwable);
   }
 
-  // TODO used once, should be repalced with Supplier arg
-  public boolean isDebugEnabled() {
-    return logger.isDebugEnabled();
-  }
-
   private void log(Level level, String message, boolean printEnabled) {
     if (printEnabled) {
       this.logger.log(level, message);
