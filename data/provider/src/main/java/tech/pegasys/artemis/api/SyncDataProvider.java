@@ -14,12 +14,23 @@
 package tech.pegasys.artemis.api;
 
 import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.sync.SyncingStatus;
 
 public class SyncDataProvider {
   private final SyncService syncService;
 
   public SyncDataProvider(SyncService syncService) {
     this.syncService = syncService;
+  }
+
+  /**
+   * Get the sync status
+   *
+   * @return false if not syncing, otherwise true and a sync status object which indicates starting
+   *     slot, current slot and highest slot.
+   */
+  public SyncingStatus getSyncStatus() {
+    return syncService.getSyncStatus();
   }
 
   SyncService getSyncService() {
