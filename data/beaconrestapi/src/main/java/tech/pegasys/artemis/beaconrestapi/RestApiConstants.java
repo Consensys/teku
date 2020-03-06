@@ -37,8 +37,6 @@ public class RestApiConstants {
       "No content may be returned if the genesis block has not been set, meaning that there is no head to query.";
 
   public static final String CACHE_NONE = "max-age=0";
-  public static final String CACHE_ONE_MINUTE = "max-age=60";
-  public static final String CACHE_THIRTY_MINUTES = "max-age=1800";
-  public static final String CACHE_ONE_HOUR = "max-age=3600";
-  public static final String CACHE_ONE_DAY = "max-age=86400";
+  //Finalized max-age equates to 1 year
+  public static final String CACHE_FINALIZED = "max-age=31556952";
 }

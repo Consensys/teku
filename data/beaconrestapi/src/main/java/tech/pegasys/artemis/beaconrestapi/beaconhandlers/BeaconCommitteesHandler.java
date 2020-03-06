@@ -17,7 +17,6 @@ import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_HOUR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -73,9 +72,9 @@ public class BeaconCommitteesHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
+    ctx.header(CACHE_CONTROL, CACHE_NONE);
     try {
       if (!provider.isStoreAvailable()) {
-        ctx.header(CACHE_CONTROL, CACHE_NONE);
         ctx.status(SC_NO_CONTENT);
         return;
       }
@@ -84,12 +83,7 @@ public class BeaconCommitteesHandler implements Handler {
           provider.getCommitteesAtEpoch(
               getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH));
 
-      ctx.result(
-          future.thenApplyChecked(
-              result -> {
-                ctx.header(CACHE_CONTROL, result.size() > 0 ? CACHE_ONE_HOUR : CACHE_NONE);
-                return jsonProvider.objectToJSON(result);
-              }));
+      ctx.result(future.thenApplyChecked(jsonProvider::objectToJSON));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);

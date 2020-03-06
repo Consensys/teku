@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_MINUTE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
@@ -54,7 +54,7 @@ public class PeersHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_ONE_MINUTE);
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.result(jsonProvider.objectToJSON(network.getPeersAsBase58()));
   }
 }

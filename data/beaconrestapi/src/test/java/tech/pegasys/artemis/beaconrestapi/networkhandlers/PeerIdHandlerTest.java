@@ -16,7 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_DAY;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -47,7 +47,7 @@ public class PeerIdHandlerTest {
 
     when(p2pNetwork.getNodeId()).thenReturn(nodeId1);
     peerIdHandler.handle(context);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_ONE_DAY);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(jsonProvider.objectToJSON(nodeId1.toBase58()));
   }
 }

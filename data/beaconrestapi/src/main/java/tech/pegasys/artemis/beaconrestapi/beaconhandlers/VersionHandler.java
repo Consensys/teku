@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_THIRTY_MINUTES;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;
@@ -50,7 +50,7 @@ public class VersionHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_THIRTY_MINUTES);
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.result(jsonProvider.objectToJSON(VersionProvider.VERSION));
   }
 }

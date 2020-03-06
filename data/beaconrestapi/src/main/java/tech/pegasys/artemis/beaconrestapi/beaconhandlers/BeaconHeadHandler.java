@@ -56,14 +56,13 @@ public class BeaconHeadHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    Optional<BeaconHead> optionalResult = provider.getBeaconHead();
     ctx.header(CACHE_CONTROL, CACHE_NONE);
+    Optional<BeaconHead> optionalResult = provider.getBeaconHead();
 
     if (optionalResult.isEmpty()) {
       ctx.status(SC_NO_CONTENT);
       return;
     }
-
     ctx.result(jsonProvider.objectToJSON(optionalResult.get()));
   }
 }

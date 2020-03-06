@@ -27,10 +27,4 @@ public class Committee {
     this.index = committeeAssignment.getCommitteeIndex();
     this.committee = committeeAssignment.getCommittee();
   }
-
-  public Committee(UnsignedLong slot, UnsignedLong index, List<Integer> committee) {
-    this.slot = slot;
-    this.index = index;
-    this.committee = committee;
-  }
 }

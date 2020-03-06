@@ -18,13 +18,10 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_HOUR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -102,9 +99,9 @@ public class BeaconCommitteesHandlerTest {
   public void shouldReturnBadRequestWhenNoEpochIsSupplied() throws Exception {
     ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
     final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
-    handler.handle(context);
 
-    verify(context, never()).header(anyString(), anyString());
+    handler.handle(context);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).status(SC_BAD_REQUEST);
   }
 
@@ -143,7 +140,7 @@ public class BeaconCommitteesHandlerTest {
     handler.handle(context);
 
     verify(context).result(args.capture());
-    verify(context).header(Header.CACHE_CONTROL, CACHE_ONE_HOUR);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> future = args.getValue();
     String data = future.get();
 

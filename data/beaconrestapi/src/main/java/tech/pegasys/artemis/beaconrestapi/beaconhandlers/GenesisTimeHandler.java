@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_FINALIZED;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_DAY;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -60,7 +60,7 @@ public class GenesisTimeHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     Optional<UnsignedLong> optionalResult = provider.getGenesisTime();
     if (optionalResult.isPresent()) {
-      ctx.header(Header.CACHE_CONTROL, CACHE_ONE_DAY);
+      ctx.header(Header.CACHE_CONTROL, CACHE_FINALIZED);
       ctx.result(jsonProvider.objectToJSON(optionalResult.get()));
     } else {
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);

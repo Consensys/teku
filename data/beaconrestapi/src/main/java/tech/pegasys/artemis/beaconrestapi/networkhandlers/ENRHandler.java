@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_HOUR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
 
@@ -52,7 +52,7 @@ public class ENRHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_ONE_HOUR);
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     ctx.result(jsonProvider.objectToJSON(network.getEnr().orElse("")));
   }
 }

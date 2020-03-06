@@ -17,8 +17,8 @@ import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_FINALIZED;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_ONE_DAY;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
@@ -49,6 +49,6 @@ public class GenesisTimeHandlerTest {
     when(provider.getGenesisTime()).thenReturn(Optional.of(genesisTime));
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(genesisTime));
-    verify(context).header(Header.CACHE_CONTROL, CACHE_ONE_DAY);
+    verify(context).header(Header.CACHE_CONTROL, CACHE_FINALIZED);
   }
 }

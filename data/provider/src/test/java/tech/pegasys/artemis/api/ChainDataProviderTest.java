@@ -44,7 +44,6 @@ import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainDataProviderTest {
-  // FIXME add BeaconCommitteesHandler detailed tests here so that interface tests stay simple
   private static CombinedChainDataClient combinedChainDataClient;
   private static HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   private static BeaconState beaconState;
