@@ -54,7 +54,7 @@ public class NetworkConfig {
     if (advertisedIp.trim().isEmpty()) {
       this.advertisedIp = Optional.empty();
     } else if (!isInetAddress(advertisedIp)) {
-      throw new RuntimeException("Advertised ip is set incorrectly.");
+      throw new IllegalArgumentException("Advertised ip is set incorrectly.");
     } else {
       this.advertisedIp = Optional.of(advertisedIp);
     }

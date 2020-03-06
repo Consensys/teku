@@ -83,12 +83,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
-    try {
-      advertisedAddr = composeAdvertisedAddr(config);
-    } catch (UnknownHostException err) {
-      throw new RuntimeException(
-          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
-    }
+    advertisedAddr = getAdvertisedAddr(config);
 
     // Setup gossip
     gossip = new Gossip();
@@ -161,17 +156,22 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             });
   }
 
-  public Multiaddr composeAdvertisedAddr(NetworkConfig config) throws UnknownHostException {
-    String ip;
-    if (config.getAdvertisedIp().isPresent()) {
-      ip = config.getAdvertisedIp().get();
-    } else if (NetworkUtility.isNetworkInterfaceAvailable(config.getNetworkInterface())) {
-      ip = config.getNetworkInterface();
-    } else {
-      ip = InetAddress.getLocalHost().getHostAddress();
-    }
+  public Multiaddr getAdvertisedAddr(NetworkConfig config) {
+    try {
+      String ip;
+      if (config.getAdvertisedIp().isPresent()) {
+        ip = config.getAdvertisedIp().get();
+      } else if (NetworkUtility.isUnspecifiedAddress(config.getNetworkInterface())) {
+        ip = config.getNetworkInterface();
+      } else {
+        ip = InetAddress.getLocalHost().getHostAddress();
+      }
 
-    return new Multiaddr("/ip4/" + ip + "/tcp/" + config.getAdvertisedPort());
+      return new Multiaddr("/ip4/" + ip + "/tcp/" + config.getAdvertisedPort());
+    } catch (UnknownHostException err) {
+      throw new RuntimeException(
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
+    }
   }
 
   @Override
