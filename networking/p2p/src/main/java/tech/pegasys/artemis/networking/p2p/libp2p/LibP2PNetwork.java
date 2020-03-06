@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static com.google.common.net.InetAddresses.isInetAddress;
 import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
@@ -164,8 +163,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   public Multiaddr composeAdvertisedAddr(NetworkConfig config) throws UnknownHostException {
     String ip;
-    if (!config.getAdvertisedIp().trim().isEmpty() && isInetAddress(config.getAdvertisedIp())) {
-      ip = config.getAdvertisedIp();
+    if (config.getAdvertisedIp().isPresent()) {
+      ip = config.getAdvertisedIp().get();
     } else if (NetworkUtility.isNetworkInterfaceAvailable(config.getNetworkInterface())) {
       ip = config.getNetworkInterface();
     } else {
