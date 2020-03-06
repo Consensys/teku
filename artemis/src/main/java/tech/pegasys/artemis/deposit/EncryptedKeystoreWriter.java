@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.deposit;
 
+import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.crypto.SecureRandomProvider.createSecureRandom;
 
 import java.io.IOException;
@@ -20,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.keystore.KeyStore;
@@ -50,37 +52,43 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   @Override
   public void writeKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey)
       throws UncheckedIOException, KeyStoreValidationException {
-    // create sub directory
-    final Path keystoreDirectory;
-    try {
-      keystoreDirectory =
-          Files.createDirectories(outputPath.resolve("validator_" + counter.incrementAndGet()));
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    final Path keystoreDirectory = createKeystoreDirectory();
 
-    generateKeystore(
-        validatorKey, keystoreDirectory.resolve("validator_keystore.json"), validatorKeyPassword);
-    generateKeystore(
-        withdrawalKey,
-        keystoreDirectory.resolve("withdrawal_keystore.json"),
-        withdrawalKeyPassword);
+    final KeyStoreData validatorKeyStoreData =
+        generateKeystoreData(validatorKey, validatorKeyPassword);
+    final KeyStoreData withdrawalKeyStoreData =
+        generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
+
+    saveKeyStore(keystoreDirectory.resolve("validator_keystore.json"), validatorKeyStoreData);
+    saveKeyStore(keystoreDirectory.resolve("withdrawal_keystore.json"), withdrawalKeyStoreData);
   }
 
-  private void generateKeystore(
-      final BLSKeyPair key, final Path outputFile, final String password) {
+  private Path createKeystoreDirectory() {
+    final Path keystoreDirectory = outputPath.resolve("validator_" + counter.incrementAndGet());
     try {
-      final KdfParam kdfParam = new SCryptParam(32, Bytes32.random(createSecureRandom()));
-      final Cipher cipher =
-          new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16, createSecureRandom()));
-      final KeyStoreData keyStoreData =
-          KeyStore.encrypt(
-              key.getSecretKey().getSecretKey().toBytes(), password, "", kdfParam, cipher);
+      return Files.createDirectories(keystoreDirectory);
+    } catch (IOException e) {
+      STDOUT.log(
+          Level.FATAL,
+          "Unable to create directory [" + keystoreDirectory + "] : " + e.getMessage());
+      throw new UncheckedIOException(e);
+    }
+  }
 
-      // save keystore
-      KeyStoreLoader.saveToFile(outputFile, keyStoreData);
+  private KeyStoreData generateKeystoreData(final BLSKeyPair key, final String password) {
+    final KdfParam kdfParam = new SCryptParam(32, Bytes32.random(createSecureRandom()));
+    final Cipher cipher =
+        new Cipher(CipherFunction.AES_128_CTR, Bytes.random(16, createSecureRandom()));
+    return KeyStore.encrypt(
+        key.getSecretKey().getSecretKey().toBytes(), password, "", kdfParam, cipher);
+  }
 
+  private void saveKeyStore(final Path outputPath, final KeyStoreData keyStoreData) {
+    try {
+      KeyStoreLoader.saveToFile(outputPath, keyStoreData);
     } catch (final IOException e) {
+      STDOUT.log(
+          Level.FATAL, "Unable to save keystore file [" + outputPath + "] : " + e.getMessage());
       throw new UncheckedIOException(e);
     }
   }
