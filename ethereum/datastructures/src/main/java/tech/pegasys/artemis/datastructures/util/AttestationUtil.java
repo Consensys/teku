@@ -28,7 +28,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -43,11 +44,10 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class AttestationUtil {
 
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
@@ -141,16 +141,14 @@ public class AttestationUtil {
     SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
     if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
-      STATUS_LOG.log(
-          Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
+      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
 
     List<UnsignedLong> bit_0_indices_sorted =
         attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {
-      STATUS_LOG.log(
-          Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
+      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
 
@@ -167,8 +165,7 @@ public class AttestationUtil {
         get_domain(
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify(pubkey, message_hash, signature, domain)) {
-      STATUS_LOG.log(
-          Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
+      LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
     return true;

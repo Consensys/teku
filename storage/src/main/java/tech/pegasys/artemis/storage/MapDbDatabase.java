@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,12 +43,10 @@ import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
 import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class MapDbDatabase implements Database {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final DB db;
   private final Var<UnsignedLong> genesisTime;
@@ -77,7 +74,7 @@ public class MapDbDatabase implements Database {
         Files.deleteIfExists(databaseFile.toPath());
       }
     } catch (IOException e) {
-      STATUS_LOG.log(Level.ERROR, "Failed to clear old database");
+      LOG.error("Failed to clear old database");
     }
     return new MapDbDatabase(DBMaker.fileDB(databaseFile));
   }

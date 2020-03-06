@@ -26,7 +26,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -43,7 +44,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.teku.logging.StatusLogger;
 
 @Command(
     name = "validator",
@@ -58,7 +58,7 @@ import tech.pegasys.teku.logging.StatusLogger;
     footer = "Teku is licensed under the Apache License 2.0")
 public class DepositCommand implements Runnable {
 
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+  private static final Logger LOG = LogManager.getLogger();
 
   @Command(
       name = "generate",
@@ -114,9 +114,7 @@ public class DepositCommand implements Runnable {
       }
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
-      STATUS_LOG.log(
-          Level.FATAL,
-          "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
+      LOG.fatal("Failed to send deposit transaction: {} : {}", t.getClass(), t.getMessage());
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
@@ -157,9 +155,7 @@ public class DepositCommand implements Runnable {
               params.amount)
           .get();
     } catch (final Throwable t) {
-      STATUS_LOG.log(
-          Level.FATAL,
-          "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
+      LOG.fatal("Failed to send deposit transaction: {} : {}", t.getClass(), t.getMessage());
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
