@@ -31,10 +31,10 @@ import tech.pegasys.artemis.provider.JsonProvider;
 
 public class NodeSyncingHandler implements Handler {
 
-  private final SyncDataProvider syncService;
+  private final SyncDataProvider syncDataProvider;
 
-  public NodeSyncingHandler(SyncDataProvider syncService, JsonProvider jsonProvider) {
-    this.syncService = syncService;
+  public NodeSyncingHandler(SyncDataProvider syncDataProvider, JsonProvider jsonProvider) {
+    this.syncDataProvider = syncDataProvider;
     this.jsonProvider = jsonProvider;
   }
 
@@ -55,6 +55,6 @@ public class NodeSyncingHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     ctx.header(CACHE_CONTROL, CACHE_NONE);
-    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncService.getSyncStatus())));
+    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncDataProvider.getSyncStatus())));
   }
 }
