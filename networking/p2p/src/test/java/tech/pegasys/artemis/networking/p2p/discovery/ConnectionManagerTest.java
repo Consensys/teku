@@ -34,6 +34,7 @@ import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -115,7 +116,7 @@ class ConnectionManagerTest {
     asyncRunner.executeQueuedActions();
     verify(network, times(2)).connect(PEER1);
 
-    peer.disconnect();
+    peer.disconnectImmediately();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
     verify(network, times(3)).connect(PEER1);
@@ -132,7 +133,7 @@ class ConnectionManagerTest {
         .thenReturn(new SafeFuture<>());
     manager.start().join();
     verify(network).connect(PEER1);
-    peer.disconnect();
+    peer.disconnectImmediately();
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -152,7 +153,7 @@ class ConnectionManagerTest {
 
     manager.addStaticPeer(PEER1);
     verify(network).connect(PEER1);
-    peer.disconnect();
+    peer.disconnectImmediately();
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -219,7 +220,7 @@ class ConnectionManagerTest {
     final StubPeer peer = new StubPeer(new MockNodeId(DISCOVERY_PEER1.getPublicKey()));
     connectionFuture.complete(peer);
 
-    peer.disconnect();
+    peer.disconnectImmediately();
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
     verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
@@ -357,7 +358,7 @@ class ConnectionManagerTest {
     peerConnectedSubscriber.onConnected(peer1);
 
     // Should disconnect one peer to get back down to our target of max 1 peer.
-    assertThat(peer2.isConnected()).isFalse();
+    assertThat(peer2.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
     assertThat(peer1.isConnected()).isTrue();
   }
 

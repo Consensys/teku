@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.util.async.AsyncRunner;
@@ -103,7 +104,10 @@ public class ConnectionManager extends Service {
 
   private void onPeerConnected(final Peer peer) {
     final int peersToDrop = targetPeerCountRange.getPeersToDrop(network.getPeerCount());
-    network.streamPeers().limit(peersToDrop).forEach(Peer::disconnect);
+    network
+        .streamPeers()
+        .limit(peersToDrop)
+        .forEach(peerToDrop -> peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
   }
 
   @Override
