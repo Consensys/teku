@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -55,7 +57,9 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             discoveryService,
             DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
-            p2pConfig.getStaticPeers(),
+            p2pConfig.getStaticPeers().stream()
+                .map(p2pNetwork::createPeerAddress)
+                .collect(toList()),
             p2pConfig.getTargetPeerRange());
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
@@ -103,8 +107,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             });
   }
 
-  public void addStaticPeer(final String peer) {
-    connectionManager.addStaticPeer(peer);
+  public void addStaticPeer(final String peerAddress) {
+    connectionManager.addStaticPeer(p2pNetwork.createPeerAddress(peerAddress));
   }
 
   @Override

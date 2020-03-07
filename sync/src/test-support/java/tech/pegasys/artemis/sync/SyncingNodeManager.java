@@ -20,10 +20,13 @@ import java.util.function.Consumer;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
+import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class SyncingNodeManager {
@@ -74,6 +77,11 @@ public class SyncingNodeManager {
     syncService.start().join();
 
     return new SyncingNodeManager(eventBus, storageClient, chainUtil, eth2Network, syncService);
+  }
+
+  public SafeFuture<Peer> connect(final SyncingNodeManager peer) {
+    final PeerAddress peerAddress = eth2Network.createPeerAddress(peer.network().getNodeAddress());
+    return eth2Network.connect(peerAddress);
   }
 
   public EventBus eventBus() {

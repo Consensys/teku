@@ -17,8 +17,11 @@ import com.google.common.eventbus.EventBus;
 import java.util.List;
 import java.util.function.Consumer;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
+import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class NodeManager {
@@ -61,6 +64,11 @@ public class NodeManager {
     chainUtil.initializeStorage();
 
     return new NodeManager(eventBus, storageClient, chainUtil, eth2Network);
+  }
+
+  public SafeFuture<Peer> connect(final NodeManager peer) {
+    final PeerAddress peerAddress = eth2Network.createPeerAddress(peer.network().getNodeAddress());
+    return eth2Network.connect(peerAddress);
   }
 
   public EventBus eventBus() {

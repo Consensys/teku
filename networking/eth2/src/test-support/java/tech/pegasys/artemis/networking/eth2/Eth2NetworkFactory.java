@@ -130,6 +130,7 @@ public class Eth2NetworkFactory {
       return new NetworkConfig(
           KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
           "127.0.0.1",
+          "127.0.0.1",
           port,
           port,
           peerAddresses,

@@ -20,9 +20,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.service.serviceutils.Service;
@@ -35,7 +35,7 @@ public class ConnectionManager extends Service {
   private static final Duration DISCOVERY_INTERVAL = Duration.ofSeconds(30);
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<? extends Peer> network;
-  private final Set<String> staticPeers;
+  private final Set<PeerAddress> staticPeers;
   private final DiscoveryService discoveryService;
   private final TargetPeerRange targetPeerCountRange;
 
@@ -45,11 +45,11 @@ public class ConnectionManager extends Service {
       final DiscoveryService discoveryService,
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
-      final List<String> staticPeers,
+      final List<PeerAddress> peerAddresses,
       final TargetPeerRange targetPeerCountRange) {
     this.asyncRunner = asyncRunner;
     this.network = network;
-    this.staticPeers = new HashSet<>(staticPeers);
+    this.staticPeers = new HashSet<>(peerAddresses);
     this.discoveryService = discoveryService;
     this.targetPeerCountRange = targetPeerCountRange;
   }
@@ -69,7 +69,8 @@ public class ConnectionManager extends Service {
     final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
     discoveryService
         .streamKnownPeers()
-        .filter(discoveryPeer -> !network.isConnected(discoveryPeer))
+        .map(network::createPeerAddress)
+        .filter(peerAddress -> !network.isConnected(peerAddress))
         .limit(maxAttempts)
         .forEach(this::attemptConnection);
   }
@@ -93,14 +94,12 @@ public class ConnectionManager extends Service {
             });
   }
 
-  private void attemptConnection(final DiscoveryPeer discoveryPeer) {
+  private void attemptConnection(final PeerAddress discoveryPeer) {
     network
         .connect(discoveryPeer)
         .finish(
             peer -> LOG.trace("Successfully connected to peer {}", peer.getId()),
-            error ->
-                LOG.trace(
-                    () -> "Failed to connect to peer: " + discoveryPeer.getPublicKey(), error));
+            error -> LOG.trace(() -> "Failed to connect to peer: " + discoveryPeer.getId(), error));
   }
 
   private void onPeerConnected(final Peer peer) {
@@ -117,27 +116,45 @@ public class ConnectionManager extends Service {
     return SafeFuture.COMPLETE;
   }
 
-  public synchronized void addStaticPeer(final String peerAddress) {
+  public synchronized void addStaticPeer(final PeerAddress peerAddress) {
     if (!staticPeers.contains(peerAddress)) {
       staticPeers.add(peerAddress);
       createPersistentConnection(peerAddress);
     }
   }
 
-  private void createPersistentConnection(final String peerAddress) {
+  private void createPersistentConnection(final PeerAddress peerAddress) {
     maintainPersistentConnection(peerAddress).reportExceptions();
   }
 
-  private SafeFuture<Peer> maintainPersistentConnection(final String peerAddress) {
+  private SafeFuture<Peer> maintainPersistentConnection(final PeerAddress peerAddress) {
+    if (!isRunning()) {
+      // We've been stopped so halt the process.
+      return new SafeFuture<>();
+    }
     LOG.debug("Connecting to peer {}", peerAddress);
     return network
         .connect(peerAddress)
+        .thenApply(
+            peer -> {
+              LOG.debug("Connection to peer {} was successful", peer.getId());
+              peer.subscribeDisconnect(
+                  () -> {
+                    LOG.debug(
+                        "Peer {} disconnected. Will try to reconnect in {} sec",
+                        peerAddress,
+                        RECONNECT_TIMEOUT.toSeconds());
+                    asyncRunner
+                        .runAfterDelay(
+                            () -> maintainPersistentConnection(peerAddress),
+                            RECONNECT_TIMEOUT.toMillis(),
+                            TimeUnit.MILLISECONDS)
+                        .reportExceptions();
+                  });
+              return peer;
+            })
         .exceptionallyCompose(
             error -> {
-              if (!isRunning()) {
-                // We've been stopped so halt the process.
-                return new SafeFuture<>();
-              }
               LOG.debug(
                   "Connection to {} failed: {}. Will retry in {} sec",
                   peerAddress,
@@ -147,12 +164,6 @@ public class ConnectionManager extends Service {
                   () -> maintainPersistentConnection(peerAddress),
                   RECONNECT_TIMEOUT.toMillis(),
                   TimeUnit.MILLISECONDS);
-            })
-        .thenApply(
-            peer -> {
-              LOG.debug("Connection to peer {} was successful", peer.getId());
-              peer.subscribeDisconnect(() -> createPersistentConnection(peerAddress));
-              return peer;
             });
   }
 }
