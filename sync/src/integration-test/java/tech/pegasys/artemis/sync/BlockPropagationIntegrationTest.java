@@ -58,7 +58,7 @@ public class BlockPropagationIntegrationTest {
     SyncingNodeManager node2 = SyncingNodeManager.create(networkFactory, validatorKeys);
 
     // Connect networks
-    Waiter.waitFor(node1.network().connect(node2.network().getNodeAddress()));
+    Waiter.waitFor(node1.connect(node2));
     // Wait for connections to get set up
     Waiter.waitFor(
         () -> {

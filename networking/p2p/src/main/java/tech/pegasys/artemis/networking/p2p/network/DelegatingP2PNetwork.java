@@ -29,18 +29,23 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public SafeFuture<Peer> connect(final String peer) {
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
     return network.connect(peer);
   }
 
   @Override
-  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
-    return network.connect(peer);
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    return network.createPeerAddress(discoveryPeer);
   }
 
   @Override
-  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
-    return network.isConnected(discoveryPeer);
+  public boolean isConnected(final PeerAddress peerAddress) {
+    return network.isConnected(peerAddress);
+  }
+
+  @Override
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return network.createPeerAddress(peerAddress);
   }
 
   @Override

@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import identify.pb.IdentifyOuterClass;
@@ -53,6 +53,7 @@ import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -180,13 +181,24 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public SafeFuture<Peer> connect(final String peer) {
-    return peerManager.connect(new Multiaddr(peer), host.getNetwork());
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
+    return peer.as(MultiaddrPeerAddress.class)
+        .map(staticPeer -> peerManager.connect(staticPeer.getMultiaddr(), host.getNetwork()))
+        .orElseGet(
+            () ->
+                failedFuture(
+                    new IllegalArgumentException(
+                        "Unsupported peer address: " + peer.getClass().getName())));
   }
 
   @Override
-  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
-    return peerManager.connect(convertToMultiAddr(peer), host.getNetwork());
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return MultiaddrPeerAddress.fromAddress(peerAddress);
+  }
+
+  @Override
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    return MultiaddrPeerAddress.fromDiscoveryPeer(discoveryPeer);
   }
 
   @Override
@@ -200,10 +212,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
-    return peerManager
-        .getPeer(DiscoveryPeerToMultiaddrConverter.getNodeId(discoveryPeer))
-        .isPresent();
+  public boolean isConnected(final PeerAddress peerAddress) {
+    return peerManager.getPeer(peerAddress.getId()).isPresent();
   }
 
   @Override
