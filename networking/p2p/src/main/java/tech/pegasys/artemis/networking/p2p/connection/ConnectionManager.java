@@ -124,15 +124,33 @@ public class ConnectionManager extends Service {
   }
 
   private SafeFuture<Peer> maintainPersistentConnection(final PeerAddress peerAddress) {
+    if (!isRunning()) {
+      // We've been stopped so halt the process.
+      return new SafeFuture<>();
+    }
     LOG.debug("Connecting to peer {}", peerAddress);
     return network
         .connect(peerAddress)
+        .thenApply(
+            peer -> {
+              LOG.debug("Connection to peer {} was successful", peer.getId());
+              peer.subscribeDisconnect(
+                  () -> {
+                    LOG.debug(
+                        "Peer {} disconnected. Will try to reconnect in {} sec",
+                        peerAddress,
+                        RECONNECT_TIMEOUT.toSeconds());
+                    asyncRunner
+                        .runAfterDelay(
+                            () -> maintainPersistentConnection(peerAddress),
+                            RECONNECT_TIMEOUT.toMillis(),
+                            TimeUnit.MILLISECONDS)
+                        .reportExceptions();
+                  });
+              return peer;
+            })
         .exceptionallyCompose(
             error -> {
-              if (!isRunning()) {
-                // We've been stopped so halt the process.
-                return new SafeFuture<>();
-              }
               LOG.debug(
                   "Connection to {} failed: {}. Will retry in {} sec",
                   peerAddress,
@@ -142,12 +160,6 @@ public class ConnectionManager extends Service {
                   () -> maintainPersistentConnection(peerAddress),
                   RECONNECT_TIMEOUT.toMillis(),
                   TimeUnit.MILLISECONDS);
-            })
-        .thenApply(
-            peer -> {
-              LOG.debug("Connection to peer {} was successful", peer.getId());
-              peer.subscribeDisconnect(() -> createPersistentConnection(peerAddress));
-              return peer;
             });
   }
 }

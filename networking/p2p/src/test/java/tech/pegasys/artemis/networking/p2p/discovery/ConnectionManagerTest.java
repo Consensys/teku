@@ -98,6 +98,30 @@ class ConnectionManagerTest {
   }
 
   @Test
+  public void shouldRetryConnectionToStaticPeerAfterRetryAndDisconnect() {
+    final ConnectionManager manager = createManager(PEER1);
+    final MockNodeId peerId = new MockNodeId();
+    final StubPeer peer = new StubPeer(peerId);
+
+    final SafeFuture<Peer> connectionFuture1 = new SafeFuture<>();
+    final SafeFuture<Peer> connectionFuture2 = SafeFuture.completedFuture(peer);
+    when(network.connect(PEER1)).thenReturn(connectionFuture1).thenReturn(connectionFuture2);
+    manager.start().join();
+    verify(network).connect(PEER1);
+
+    connectionFuture1.completeExceptionally(new RuntimeException("Nope"));
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+    verify(network, times(2)).connect(PEER1);
+
+    peer.disconnect();
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+    verify(network, times(3)).connect(PEER1);
+  }
+
+  @Test
   public void shouldReconnectWhenPersistentPeerDisconnects() {
     final ConnectionManager manager = createManager(PEER1);
 
@@ -110,6 +134,8 @@ class ConnectionManagerTest {
     verify(network).connect(PEER1);
     peer.disconnect();
 
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
     verify(network, times(2)).connect(PEER1);
   }
 
@@ -128,6 +154,8 @@ class ConnectionManagerTest {
     verify(network).connect(PEER1);
     peer.disconnect();
 
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
     verify(network, times(2)).connect(PEER1);
   }
 
