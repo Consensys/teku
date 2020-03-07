@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedSubscriber;
@@ -36,6 +37,12 @@ public class LibP2PPeer implements Peer {
   private final Connection connection;
   private final NodeId nodeId;
   private final AtomicBoolean connected = new AtomicBoolean(true);
+
+  private volatile DisconnectRequestHandler disconnectRequestHandler =
+      reason -> {
+        disconnectImmediately();
+        return SafeFuture.COMPLETE;
+      };
 
   public LibP2PPeer(final Connection connection, final Map<RpcMethod, RpcHandler> rpcHandlers) {
     this.connection = connection;
@@ -58,9 +65,27 @@ public class LibP2PPeer implements Peer {
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public void disconnect() {
+  public void disconnectImmediately() {
     connected.set(false);
     connection.close();
+  }
+
+  @Override
+  public void disconnectCleanly(final DisconnectRequestHandler.DisconnectReason reason) {
+    connected.set(false);
+    disconnectRequestHandler
+        .requestDisconnect(reason)
+        .finish(
+            this::disconnectImmediately, // Request sent now close our side
+            error -> {
+              LOG.debug("Failed to disconnect from " + nodeId + " cleanly.", error);
+              disconnectImmediately();
+            });
+  }
+
+  @Override
+  public void setDisconnectRequestHandler(final DisconnectRequestHandler handler) {
+    this.disconnectRequestHandler = handler;
   }
 
   @Override

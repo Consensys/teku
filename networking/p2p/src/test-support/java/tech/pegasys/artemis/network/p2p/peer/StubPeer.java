@@ -13,8 +13,11 @@
 
 package tech.pegasys.artemis.network.p2p.peer;
 
+import java.util.Optional;
 import javax.naming.OperationNotSupportedException;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedSubscriber;
@@ -29,6 +32,7 @@ public class StubPeer implements Peer {
       Subscribers.create(false);
   private final NodeId nodeId;
   private boolean connected = true;
+  private Optional<DisconnectReason> disconnectReason = Optional.empty();
 
   public StubPeer(final NodeId nodeId) {
     this.nodeId = nodeId;
@@ -45,9 +49,25 @@ public class StubPeer implements Peer {
   }
 
   @Override
-  public void disconnect() {
+  public void disconnectImmediately() {
     disconnectedSubscribers.forEach(PeerDisconnectedSubscriber::onDisconnected);
     connected = false;
+  }
+
+  @Override
+  public void disconnectCleanly(final DisconnectReason reason) {
+    disconnectReason = Optional.of(reason);
+    disconnectedSubscribers.forEach(PeerDisconnectedSubscriber::onDisconnected);
+    connected = false;
+  }
+
+  public Optional<DisconnectReason> getDisconnectReason() {
+    return disconnectReason;
+  }
+
+  @Override
+  public void setDisconnectRequestHandler(final DisconnectRequestHandler handler) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
