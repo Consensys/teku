@@ -24,9 +24,11 @@ import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateRootHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
@@ -56,7 +58,8 @@ class BeaconRestApiTest {
   public void setup() {
     ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
     when(app.server()).thenReturn(server);
-    new BeaconRestApi(storageClient, null, combinedChainDataClient, syncService, config, app);
+    new BeaconRestApi(
+        new DataProvider(storageClient, combinedChainDataClient, null, syncService), config, app);
   }
 
   @Test
@@ -107,6 +110,11 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveBeaconValidatorsEndpoint() {
     verify(app).get(eq(BeaconValidatorsHandler.ROUTE), any(BeaconValidatorsHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveBeaconStateRootEndpoint() {
+    verify(app).get(eq(BeaconStateRootHandler.ROUTE), any(BeaconStateRootHandler.class));
   }
 
   @Test

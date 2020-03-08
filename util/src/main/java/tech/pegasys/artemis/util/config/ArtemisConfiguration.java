@@ -47,12 +47,23 @@ public class ArtemisConfiguration {
 
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
+    builder.addString("node.advertisedIp", "127.0.0.1", "Peer to peer advertised ip", null);
     builder.addInteger(
         "node.advertisedPort",
         NO_VALUE,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addString("node.discovery", "", "static or discv5", null);
+    builder.addInteger(
+        "node.targetPeerCountRangeLowerBound",
+        20,
+        "Lower bound on the target number of peers",
+        null);
+    builder.addInteger(
+        "node.targetPeerCountRangeUpperBound",
+        30,
+        "Upper bound on the target number of peers",
+        null);
     builder.addListOfString("node.bootnodes", Collections.emptyList(), "ENR of the bootnode", null);
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
@@ -205,6 +216,14 @@ public class ArtemisConfiguration {
     return config.getListOfString("node.bootnodes");
   }
 
+  public int getTargetPeerCountRangeLowerBound() {
+    return config.getInteger("node.targetPeerCountRangeLowerBound");
+  }
+
+  public int getTargetPeerCountRangeUpperBound() {
+    return config.getInteger("node.targetPeerCountRangeUpperBound");
+  }
+
   /** @return the port this node will advertise as its own */
   public int getAdvertisedPort() {
     final int advertisedPort = config.getInteger("node.advertisedPort");
@@ -214,6 +233,11 @@ public class ArtemisConfiguration {
   /** @return the network interface this node will bind to */
   public String getNetworkInterface() {
     return config.getString("node.networkInterface");
+  }
+
+  /** @return the ip this node will advertise to peers */
+  public String getAdvertisedIp() {
+    return config.getString("node.advertisedIp");
   }
 
   public String getConstants() {

@@ -13,18 +13,24 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
+import static com.google.common.net.InetAddresses.isInetAddress;
+
 import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
+import java.util.Optional;
+import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 
 public class NetworkConfig {
 
   private final PrivKey privateKey;
   private final String networkInterface;
+  private final Optional<String> advertisedIp;
   private final int listenPort;
   private final int advertisedPort;
   private final List<String> staticPeers;
   private final String discoveryMethod;
   private final List<String> bootnodes;
+  private final TargetPeerRange targetPeerRange;
   private final boolean logWireCipher;
   private final boolean logWirePlain;
   private final boolean logMuxFrames;
@@ -32,21 +38,33 @@ public class NetworkConfig {
   public NetworkConfig(
       final PrivKey privateKey,
       final String networkInterface,
+      final String advertisedIp,
       final int listenPort,
       final int advertisedPort,
       final List<String> staticPeers,
       final String discoveryMethod,
       final List<String> bootnodes,
+      final TargetPeerRange targetPeerRange,
       final boolean logWireCipher,
       final boolean logWirePlain,
       final boolean logMuxFrames) {
     this.privateKey = privateKey;
     this.networkInterface = networkInterface;
+
+    if (advertisedIp.trim().isEmpty()) {
+      this.advertisedIp = Optional.empty();
+    } else if (!isInetAddress(advertisedIp)) {
+      throw new IllegalArgumentException("Advertised ip is set incorrectly.");
+    } else {
+      this.advertisedIp = Optional.of(advertisedIp);
+    }
+
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
     this.staticPeers = staticPeers;
     this.discoveryMethod = discoveryMethod;
     this.bootnodes = bootnodes;
+    this.targetPeerRange = targetPeerRange;
     this.logWireCipher = logWireCipher;
     this.logWirePlain = logWirePlain;
     this.logMuxFrames = logMuxFrames;
@@ -58,6 +76,10 @@ public class NetworkConfig {
 
   public String getNetworkInterface() {
     return networkInterface;
+  }
+
+  public Optional<String> getAdvertisedIp() {
+    return advertisedIp;
   }
 
   public int getListenPort() {
@@ -78,6 +100,10 @@ public class NetworkConfig {
 
   public List<String> getBootnodes() {
     return bootnodes;
+  }
+
+  public TargetPeerRange getTargetPeerRange() {
+    return targetPeerRange;
   }
 
   public boolean isLogWireCipher() {

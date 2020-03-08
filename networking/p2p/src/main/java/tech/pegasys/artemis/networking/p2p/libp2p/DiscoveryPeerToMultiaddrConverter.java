@@ -27,15 +27,20 @@ public class DiscoveryPeerToMultiaddrConverter {
 
   public static Multiaddr convertToMultiAddr(final DiscoveryPeer peer) {
     final InetSocketAddress address = peer.getNodeAddress();
-    final PubKey pubKey = unmarshalSecp256k1PublicKey(peer.getPublicKey().toArrayUnsafe());
+    final LibP2PNodeId nodeId = getNodeId(peer);
     final String addrString =
         String.format(
             "/%s/%s/tcp/%d/p2p/%s",
             protocol(address.getAddress()),
             address.getAddress().getHostAddress(),
             address.getPort(),
-            new LibP2PNodeId(PeerId.fromPubKey(pubKey)));
+            nodeId);
     return Multiaddr.fromString(addrString);
+  }
+
+  public static LibP2PNodeId getNodeId(final DiscoveryPeer peer) {
+    final PubKey pubKey = unmarshalSecp256k1PublicKey(peer.getPublicKey().toArrayUnsafe());
+    return new LibP2PNodeId(PeerId.fromPubKey(pubKey));
   }
 
   private static String protocol(final InetAddress address) {

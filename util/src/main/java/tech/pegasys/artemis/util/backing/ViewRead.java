@@ -26,7 +26,7 @@ public interface ViewRead {
 
   /**
    * Creates a corresponding writeable copy of this immutable structure Any modifications made to
-   * the returned copy doesn't affect neither this structure nor its descendant structures
+   * the returned copy affect neither this structure nor its descendant structures
    */
   ViewWrite createWritableCopy();
 

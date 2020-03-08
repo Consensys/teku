@@ -35,12 +35,14 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.beaconrestapi.BeaconRestApi;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
 import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -207,11 +209,15 @@ public class BeaconChainController {
           new NetworkConfig(
               pk,
               config.getNetworkInterface(),
+              config.getAdvertisedIp(),
               config.getPort(),
               config.getAdvertisedPort(),
               config.getStaticPeers(),
               config.getDiscovery(),
               config.getBootnodes(),
+              new TargetPeerRange(
+                  config.getTargetPeerCountRangeLowerBound(),
+                  config.getTargetPeerCountRangeUpperBound()),
               true,
               true,
               true);
@@ -242,9 +248,9 @@ public class BeaconChainController {
     HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(chainStorageClient, historicalChainData);
-    beaconRestAPI =
-        new BeaconRestApi(
-            chainStorageClient, p2pNetwork, combinedChainDataClient, syncService, config);
+    DataProvider dataProvider =
+        new DataProvider(chainStorageClient, combinedChainDataClient, p2pNetwork, syncService);
+    beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 
   public void initSyncManager() {

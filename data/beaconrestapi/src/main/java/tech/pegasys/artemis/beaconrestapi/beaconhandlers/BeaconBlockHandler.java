@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
@@ -37,10 +36,8 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconBlockResponse;
-import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.Store;
 
 public class BeaconBlockHandler implements Handler {
 
@@ -83,19 +80,22 @@ public class BeaconBlockHandler implements Handler {
 
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       if (ctx.queryParamMap().containsKey(ROOT)) {
-        final Bytes32 root = Bytes32.fromHexString(validateQueryParameter(queryParamMap, ROOT));
-        final Store store = combinedChainDataClient.getStore();
-        if (store == null) {
-          ctx.status(SC_NO_CONTENT);
-        } else {
-          final SignedBeaconBlock block = store.getSignedBlock(root);
-          if (block != null) {
-            ctx.result(jsonProvider.objectToJSON(new BeaconBlockResponse(block)));
-            return;
-          }
-          ctx.status(SC_NOT_FOUND);
-          return;
-        }
+        final Bytes32 blockParam =
+            Bytes32.fromHexString(validateQueryParameter(queryParamMap, ROOT));
+
+        ctx.result(
+            combinedChainDataClient
+                .getBlockByBlockRoot(blockParam)
+                .thenApplyChecked(
+                    block -> {
+                      if (block.isPresent()) {
+                        return jsonProvider.objectToJSON(new BeaconBlockResponse(block.get()));
+                      } else {
+                        ctx.status(SC_NOT_FOUND);
+                        return null;
+                      }
+                    }));
+        return;
       }
 
       final UnsignedLong slot;

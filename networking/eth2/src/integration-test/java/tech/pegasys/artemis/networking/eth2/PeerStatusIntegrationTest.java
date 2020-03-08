@@ -52,7 +52,7 @@ public class PeerStatusIntegrationTest {
             .chainStorageClient(storageClient2)
             .startNetwork();
 
-    Waiter.waitFor(network1.connect(network2.getNodeAddress()));
+    Waiter.waitFor(network1.connect(network1.createPeerAddress(network2.getNodeAddress())));
     Waiter.waitFor(
         () -> {
           assertThat(network1.getPeerCount()).isEqualTo(1);

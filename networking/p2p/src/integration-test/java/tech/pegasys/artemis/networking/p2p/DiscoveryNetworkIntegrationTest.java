@@ -40,7 +40,7 @@ public class DiscoveryNetworkIntegrationTest {
     assertConnected(network1, network2);
 
     // Peers disconnect
-    network1.getPeer(network2.getNodeId()).orElseThrow().disconnect();
+    network1.getPeer(network2.getNodeId()).orElseThrow().disconnectImmediately();
 
     // But are automatically reconnected
     assertConnected(network1, network2);
@@ -56,7 +56,7 @@ public class DiscoveryNetworkIntegrationTest {
     // Already connected, but now tell network1 to maintain a persistent connection to network2.
     network1.addStaticPeer(network2.getNodeAddress());
 
-    network1.getPeer(network2.getNodeId()).orElseThrow().disconnect();
+    network1.getPeer(network2.getNodeId()).orElseThrow().disconnectImmediately();
     assertConnected(network1, network2);
 
     // Check we remain connected and didn't just briefly reconnect.

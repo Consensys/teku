@@ -11,19 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.util.network;
 
-import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes32;
+public class NetworkUtility {
+  public static final String INADDR_ANY = "0.0.0.0";
+  public static final String INADDR6_ANY = "0:0:0:0:0:0:0:0";
 
-public class BeaconHeadResponse {
-  public final UnsignedLong slot;
-  public final Bytes32 block_root;
-  public final Bytes32 state_root;
-
-  public BeaconHeadResponse(UnsignedLong slot, Bytes32 block_root, Bytes32 state_root) {
-    this.slot = slot;
-    this.block_root = block_root;
-    this.state_root = state_root;
+  public static boolean isUnspecifiedAddress(final String ipAddress) {
+    return INADDR_ANY.equals(ipAddress) || INADDR6_ANY.equals(ipAddress);
   }
 }

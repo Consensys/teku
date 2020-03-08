@@ -101,7 +101,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
             });
   }
 
-  public SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
+  SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
     final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodByeMethod = rpcMethods.goodBye();
     return sendMessage(goodByeMethod, new GoodbyeMessage(reason));
   }

@@ -5,11 +5,12 @@
 networkMode = "mock"
 networkInterface = "0.0.0.0"
 port = 9000
+advertisedIp = "127.0.0.1"
 # discovery options:
 # "static" - no discovery, only connect to static peers
 # "discv5" - Enable discovery v5
 discovery = "static"
-bootnodes = []
+bootnodes=[]
 advertisedPort = 9000
 constants = "minimal"
 

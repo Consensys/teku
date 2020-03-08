@@ -51,6 +51,7 @@ import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconChainHead;
 import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
+import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class ArtemisNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -254,7 +255,7 @@ public class ArtemisNode extends Node {
     public Config() {
       final Map<String, Object> node = getSection(NODE_SECTION);
       setNetworkMode("mock");
-      node.put("networkInterface", "0.0.0.0");
+      node.put("networkInterface", NetworkUtility.INADDR_ANY);
       node.put("port", P2P_PORT);
       node.put("discovery", "static");
       node.put("constants", "minimal");
