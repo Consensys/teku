@@ -46,7 +46,7 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
       final ResponseCallback<GoodbyeMessage> callback) {
     LOG.trace("Peer {} said goodbye.", peer.getId());
     goodbyeCounter.labels(labelForReason(message.getReason())).inc();
-    peer.disconnect();
+    peer.disconnectImmediately();
     callback.completeSuccessfully();
   }
 

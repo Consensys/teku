@@ -63,13 +63,11 @@ public class BeaconStateHandler implements Handler {
       summary = "Get the beacon chain state that matches the specified tree hash root, or slot.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(name = ROOT, description = "Tree hash root to query (Bytes32)"),
-        @OpenApiParam(
-            name = SLOT,
-            description = "Slot to query in the canonical chain (head or ancestor of the head)")
+        @OpenApiParam(name = ROOT, description = "Tree hash root to query."),
+        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain.")
       },
       description =
-          "Request that the node return a beacon chain state that matches the specified tree hash root.",
+          "Returns the beacon chain state that matches the specified slot or tree hash root.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
@@ -96,6 +94,11 @@ public class BeaconStateHandler implements Handler {
         future = queryByRootHash(validateQueryParameter(parameters, ROOT));
       } else if (parameters.containsKey(SLOT)) {
         future = queryBySlot(validateQueryParameter(parameters, SLOT));
+      } else {
+        ctx.result(
+            jsonProvider.objectToJSON(new BadRequest("expected one of " + SLOT + " or " + ROOT)));
+        ctx.status(SC_BAD_REQUEST);
+        return;
       }
       ctx.result(
           future.thenApplyChecked(

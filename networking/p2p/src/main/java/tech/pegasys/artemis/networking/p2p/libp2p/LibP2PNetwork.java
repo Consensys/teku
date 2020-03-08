@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import identify.pb.IdentifyOuterClass;
@@ -34,6 +34,8 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,6 +53,7 @@ import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -58,6 +61,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final PrivKey privKey;
@@ -80,7 +84,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
-    advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
+    advertisedAddr = getAdvertisedAddr(config);
 
     // Setup gossip
     gossip = new Gossip();
@@ -153,19 +157,48 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             });
   }
 
+  public Multiaddr getAdvertisedAddr(NetworkConfig config) {
+    try {
+      String ip;
+      if (config.getAdvertisedIp().isPresent()) {
+        ip = config.getAdvertisedIp().get();
+      } else if (NetworkUtility.isUnspecifiedAddress(config.getNetworkInterface())) {
+        ip = config.getNetworkInterface();
+      } else {
+        ip = InetAddress.getLocalHost().getHostAddress();
+      }
+
+      return new Multiaddr("/ip4/" + ip + "/tcp/" + config.getAdvertisedPort());
+    } catch (UnknownHostException err) {
+      throw new RuntimeException(
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
+    }
+  }
+
   @Override
   public String getNodeAddress() {
     return advertisedAddr + "/p2p/" + nodeId.toBase58();
   }
 
   @Override
-  public SafeFuture<Peer> connect(final String peer) {
-    return peerManager.connect(new Multiaddr(peer), host.getNetwork());
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
+    return peer.as(MultiaddrPeerAddress.class)
+        .map(staticPeer -> peerManager.connect(staticPeer.getMultiaddr(), host.getNetwork()))
+        .orElseGet(
+            () ->
+                failedFuture(
+                    new IllegalArgumentException(
+                        "Unsupported peer address: " + peer.getClass().getName())));
   }
 
   @Override
-  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
-    return peerManager.connect(convertToMultiAddr(peer), host.getNetwork());
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return MultiaddrPeerAddress.fromAddress(peerAddress);
+  }
+
+  @Override
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    return MultiaddrPeerAddress.fromDiscoveryPeer(discoveryPeer);
   }
 
   @Override
@@ -179,10 +212,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public boolean isConnected(final DiscoveryPeer discoveryPeer) {
-    return peerManager
-        .getPeer(DiscoveryPeerToMultiaddrConverter.getNodeId(discoveryPeer))
-        .isPresent();
+  public boolean isConnected(final PeerAddress peerAddress) {
+    return peerManager.getPeer(peerAddress.getId()).isPresent();
   }
 
   @Override
