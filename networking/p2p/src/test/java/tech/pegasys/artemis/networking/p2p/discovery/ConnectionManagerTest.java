@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.discovery;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -34,12 +33,28 @@ import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 class ConnectionManagerTest {
+
+  private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
+  private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
+  private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));
+  private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
+  private static final DiscoveryPeer DISCOVERY_PEER1 =
+      new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
+  private static final DiscoveryPeer DISCOVERY_PEER2 =
+      new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
+  private static final DiscoveryPeer DISCOVERY_PEER3 =
+      new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
+  private static final DiscoveryPeer DISCOVERY_PEER4 =
+      new DiscoveryPeer(Bytes.of(4), new InetSocketAddress(4));
+
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
 
@@ -50,49 +65,79 @@ class ConnectionManagerTest {
   @BeforeEach
   public void setUp() {
     when(discoveryService.searchForPeers()).thenReturn(new SafeFuture<>());
+    when(network.createPeerAddress(DISCOVERY_PEER1)).thenReturn(PEER1);
+    when(network.createPeerAddress(DISCOVERY_PEER2)).thenReturn(PEER2);
+    when(network.createPeerAddress(DISCOVERY_PEER3)).thenReturn(PEER3);
+    when(network.createPeerAddress(DISCOVERY_PEER4)).thenReturn(PEER4);
   }
 
   @Test
   public void shouldConnectToStaticPeersOnStart() {
-    final ConnectionManager manager = createManager("peer1", "peer2");
-    when(network.connect(anyString())).thenReturn(SafeFuture.completedFuture(null));
+    final ConnectionManager manager = createManager(PEER1, PEER2);
+    when(network.connect(any(PeerAddress.class))).thenReturn(SafeFuture.completedFuture(null));
     manager.start().join();
 
-    verify(network).connect("peer1");
-    verify(network).connect("peer2");
+    verify(network).connect(PEER1);
+    verify(network).connect(PEER2);
   }
 
   @Test
   public void shouldRetryConnectionToStaticPeerAfterDelayWhenInitialAttemptFails() {
-    final ConnectionManager manager = createManager("peer1");
+    final ConnectionManager manager = createManager(PEER1);
 
     final SafeFuture<Peer> connectionFuture1 = new SafeFuture<>();
     final SafeFuture<Peer> connectionFuture2 = new SafeFuture<>();
-    when(network.connect("peer1")).thenReturn(connectionFuture1).thenReturn(connectionFuture2);
+    when(network.connect(PEER1)).thenReturn(connectionFuture1).thenReturn(connectionFuture2);
     manager.start().join();
-    verify(network).connect("peer1");
+    verify(network).connect(PEER1);
 
     connectionFuture1.completeExceptionally(new RuntimeException("Nope"));
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(network, times(2)).connect("peer1");
+    verify(network, times(2)).connect(PEER1);
+  }
+
+  @Test
+  public void shouldRetryConnectionToStaticPeerAfterRetryAndDisconnect() {
+    final ConnectionManager manager = createManager(PEER1);
+    final MockNodeId peerId = new MockNodeId();
+    final StubPeer peer = new StubPeer(peerId);
+
+    final SafeFuture<Peer> connectionFuture1 = new SafeFuture<>();
+    final SafeFuture<Peer> connectionFuture2 = SafeFuture.completedFuture(peer);
+    when(network.connect(PEER1)).thenReturn(connectionFuture1).thenReturn(connectionFuture2);
+    manager.start().join();
+    verify(network).connect(PEER1);
+
+    connectionFuture1.completeExceptionally(new RuntimeException("Nope"));
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+    verify(network, times(2)).connect(PEER1);
+
+    peer.disconnectImmediately();
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+    verify(network, times(3)).connect(PEER1);
   }
 
   @Test
   public void shouldReconnectWhenPersistentPeerDisconnects() {
-    final ConnectionManager manager = createManager("peer1");
+    final ConnectionManager manager = createManager(PEER1);
 
     final MockNodeId peerId = new MockNodeId();
     final StubPeer peer = new StubPeer(peerId);
-    when(network.connect("peer1"))
+    when(network.connect(PEER1))
         .thenReturn(SafeFuture.completedFuture(peer))
         .thenReturn(new SafeFuture<>());
     manager.start().join();
-    verify(network).connect("peer1");
-    peer.disconnect();
+    verify(network).connect(PEER1);
+    peer.disconnectImmediately();
 
-    verify(network, times(2)).connect("peer1");
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+    verify(network, times(2)).connect(PEER1);
   }
 
   @Test
@@ -101,84 +146,83 @@ class ConnectionManagerTest {
 
     final MockNodeId peerId = new MockNodeId();
     final StubPeer peer = new StubPeer(peerId);
-    when(network.connect("peer1"))
+    when(network.connect(PEER1))
         .thenReturn(SafeFuture.completedFuture(peer))
         .thenReturn(new SafeFuture<>());
     manager.start().join();
 
-    manager.addStaticPeer("peer1");
-    verify(network).connect("peer1");
-    peer.disconnect();
+    manager.addStaticPeer(PEER1);
+    verify(network).connect(PEER1);
+    peer.disconnectImmediately();
 
-    verify(network, times(2)).connect("peer1");
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    asyncRunner.executeQueuedActions();
+    verify(network, times(2)).connect(PEER1);
   }
 
   @Test
   public void shouldNotAddDuplicatePeerToStaticList() {
-    final ConnectionManager manager = createManager("peer1");
+    final ConnectionManager manager = createManager(PEER1);
 
     final MockNodeId peerId = new MockNodeId();
     final StubPeer peer = new StubPeer(peerId);
-    when(network.connect("peer1"))
+    when(network.connect(PEER1))
         .thenReturn(SafeFuture.completedFuture(peer))
         .thenReturn(new SafeFuture<>());
     manager.start().join();
 
-    verify(network).connect("peer1");
+    verify(network).connect(PEER1);
 
-    manager.addStaticPeer("peer1");
+    manager.addStaticPeer(PEER1);
     // Doesn't attempt to connect a second time.
-    verify(network, times(1)).connect("peer1");
+    verify(network, times(1)).connect(PEER1);
   }
 
   @Test
   public void shouldConnectToKnownPeersWhenStarted() {
     final ConnectionManager manager = createManager();
-    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
-    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
-    when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(discoveryPeer1, discoveryPeer2));
-    when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2));
+    when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
 
     manager.start().join();
 
-    verify(network).connect(discoveryPeer1);
-    verify(network).connect(discoveryPeer2);
+    verify(network).connect(PEER1);
+    verify(network).connect(PEER2);
   }
 
   @Test
   public void shouldNotRetryConnectionsToDiscoveredPeersOnFailure() {
     final ConnectionManager manager = createManager();
-    final DiscoveryPeer discoveryPeer = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
-    when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(discoveryPeer));
+    when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(DISCOVERY_PEER1));
     final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
-    when(network.connect(any(DiscoveryPeer.class))).thenReturn(connectionFuture);
+    when(network.connect(any(PeerAddress.class))).thenReturn(connectionFuture);
 
     manager.start().join();
-    verify(network).connect(discoveryPeer);
+    verify(network).connect(PEER1);
 
     connectionFuture.completeExceptionally(new RuntimeException("Failed"));
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verify(network, times(1)).connect(discoveryPeer); // No further attempts to connect
+    verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
 
   @Test
   public void shouldNotRetryConnectionsToDiscoveredPeersOnDisconnect() {
     final ConnectionManager manager = createManager();
-    final DiscoveryPeer discoveryPeer = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
-    when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(discoveryPeer));
+    when(discoveryService.streamKnownPeers()).thenReturn(Stream.of(DISCOVERY_PEER1));
     final SafeFuture<Peer> connectionFuture = new SafeFuture<>();
-    when(network.connect(any(DiscoveryPeer.class))).thenReturn(connectionFuture);
+    when(network.connect(any(PeerAddress.class))).thenReturn(connectionFuture);
 
     manager.start().join();
-    verify(network).connect(discoveryPeer);
+    verify(network).connect(PEER1);
 
-    final StubPeer peer = new StubPeer(new MockNodeId(discoveryPeer.getPublicKey()));
+    final StubPeer peer = new StubPeer(new MockNodeId(DISCOVERY_PEER1.getPublicKey()));
     connectionFuture.complete(peer);
 
-    peer.disconnect();
+    peer.disconnectImmediately();
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
-    verify(network, times(1)).connect(discoveryPeer); // No further attempts to connect
+    verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
 
   @Test
@@ -237,14 +281,12 @@ class ConnectionManagerTest {
 
   @Test
   public void shouldConnectToKnownPeersWhenDiscoverySearchCompletes() {
-    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
-    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
     final SafeFuture<Void> search1 = new SafeFuture<>();
-    when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
+    when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
     when(discoveryService.searchForPeers()).thenReturn(search1);
     when(discoveryService.streamKnownPeers())
         .thenReturn(Stream.empty()) // No known peers at startup
-        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2)); // Search found some new peers
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2)); // Search found some new peers
     final ConnectionManager manager = createManager();
 
     manager.start().join();
@@ -252,61 +294,54 @@ class ConnectionManagerTest {
 
     search1.complete(null);
 
-    verify(network).connect(discoveryPeer1);
-    verify(network).connect(discoveryPeer2);
+    verify(network).connect(PEER1);
+    verify(network).connect(PEER2);
   }
 
   @Test
   public void shouldLimitNumberOfNewConnectionsMadeToDiscoveryPeersOnStartup() {
     final ConnectionManager manager = createManager(new TargetPeerRange(1, 2));
-    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
-    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
-    final DiscoveryPeer discoveryPeer3 = new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
     when(discoveryService.streamKnownPeers())
-        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3));
-    when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3));
+    when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
 
     manager.start().join();
 
-    verify(network).connect(discoveryPeer1);
-    verify(network).connect(discoveryPeer2);
-    verify(network, never()).connect(discoveryPeer3);
+    verify(network).connect(PEER1);
+    verify(network).connect(PEER2);
+    verify(network, never()).connect(PEER3);
   }
 
   @Test
   public void shouldLimitNumberOfNewConnectionsMadeToDiscoveryPeersOnRetry() {
-    final DiscoveryPeer discoveryPeer1 = new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1));
-    final DiscoveryPeer discoveryPeer2 = new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2));
-    final DiscoveryPeer discoveryPeer3 = new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3));
-    final DiscoveryPeer discoveryPeer4 = new DiscoveryPeer(Bytes.of(4), new InetSocketAddress(4));
     final SafeFuture<Void> search1 = new SafeFuture<>();
-    when(network.connect(any(DiscoveryPeer.class))).thenReturn(new SafeFuture<>());
+    when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
     when(discoveryService.searchForPeers()).thenReturn(search1);
     when(discoveryService.streamKnownPeers())
         // At startup
-        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3))
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3))
         // After search
-        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3, discoveryPeer4));
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3, DISCOVERY_PEER4));
 
     final ConnectionManager manager = createManager(new TargetPeerRange(2, 3));
 
     when(network.getPeerCount()).thenReturn(0);
     manager.start().join();
     verify(discoveryService).searchForPeers();
-    verify(network).connect(discoveryPeer1);
-    verify(network).connect(discoveryPeer2);
-    verify(network).connect(discoveryPeer3);
-    verify(network, never()).connect(discoveryPeer4);
+    verify(network).connect(PEER1);
+    verify(network).connect(PEER2);
+    verify(network).connect(PEER3);
+    verify(network, never()).connect(PEER4);
 
     // Only peer 2 actually connected, so should try to connect 2 more nodes
     when(network.getPeerCount()).thenReturn(1);
-    when(network.isConnected(discoveryPeer2)).thenReturn(true);
+    when(network.isConnected(PEER2)).thenReturn(true);
     search1.complete(null);
 
-    verify(network, times(2)).connect(discoveryPeer1);
-    verify(network, times(1)).connect(discoveryPeer2); // Not retried
-    verify(network, times(2)).connect(discoveryPeer3); // Retried
-    verify(network, never()).connect(discoveryPeer4); // Still not required
+    verify(network, times(2)).connect(PEER1);
+    verify(network, times(1)).connect(PEER2); // Not retried
+    verify(network, times(2)).connect(PEER3); // Retried
+    verify(network, never()).connect(PEER4); // Still not required
   }
 
   @Test
@@ -323,7 +358,7 @@ class ConnectionManagerTest {
     peerConnectedSubscriber.onConnected(peer1);
 
     // Should disconnect one peer to get back down to our target of max 1 peer.
-    assertThat(peer2.isConnected()).isFalse();
+    assertThat(peer2.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
     assertThat(peer1.isConnected()).isTrue();
   }
 
@@ -335,12 +370,12 @@ class ConnectionManagerTest {
     return captor.getValue();
   }
 
-  private ConnectionManager createManager(final String... peers) {
+  private ConnectionManager createManager(final PeerAddress... peers) {
     return createManager(new TargetPeerRange(5, 10), peers);
   }
 
   private ConnectionManager createManager(
-      final TargetPeerRange targetPeerCount, final String... peers) {
+      final TargetPeerRange targetPeerCount, final PeerAddress... peers) {
     return new ConnectionManager(
         discoveryService, asyncRunner, network, Arrays.asList(peers), targetPeerCount);
   }

@@ -66,7 +66,6 @@ public class SyncManagerTest {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
-    when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
   }
 
   @Test
