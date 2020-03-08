@@ -19,7 +19,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class RestApiUtils {
+public class SingleQueryParameterUtils {
 
   public static final String INVALID_BYTES32_DATA =
       "Unable to read Bytes32 data from query parameter.";

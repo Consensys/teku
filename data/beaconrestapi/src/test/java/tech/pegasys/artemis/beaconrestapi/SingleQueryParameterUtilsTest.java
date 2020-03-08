@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsBytes32;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsInt;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsLong;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsUnsignedLong;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsLong;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.validateQueryParameter;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -27,7 +27,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
-public class RestApiUtilsTest {
+public class SingleQueryParameterUtilsTest {
 
   public static final String KEY = "any";
   public static final String VALUE = "1";
@@ -37,33 +37,21 @@ public class RestApiUtilsTest {
   public void validateParameters_shouldDetectMissingKey() {
     Map<String, List<String>> data = Map.of();
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          validateQueryParameter(data, KEY);
-        });
+    assertThrows(IllegalArgumentException.class, () -> validateQueryParameter(data, KEY));
   }
 
   @Test
   public void validateParameters_shouldDetectEmptyString() {
     Map<String, List<String>> data = Map.of(KEY, List.of());
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          validateQueryParameter(data, KEY);
-        });
+    assertThrows(IllegalArgumentException.class, () -> validateQueryParameter(data, KEY));
   }
 
   @Test
   public void validateParameters_shouldDetectMultipleEntries() {
     Map<String, List<String>> data = Map.of(KEY, List.of("1", "2"));
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          validateQueryParameter(data, KEY);
-        });
+    assertThrows(IllegalArgumentException.class, () -> validateQueryParameter(data, KEY));
   }
 
   @Test

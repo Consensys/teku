@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static io.javalin.core.util.Header.CACHE_CONTROL;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NODE;

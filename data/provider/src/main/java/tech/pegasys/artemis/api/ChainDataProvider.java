@@ -101,4 +101,12 @@ public class ChainDataProvider {
         .getBlockByBlockRoot(blockParam)
         .thenApply(block -> block.map(SignedBeaconBlock::new));
   }
+
+  public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {
+    return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
+  }
+
+  public boolean isFinalized(UnsignedLong slot) {
+    return combinedChainDataClient.isFinalized(slot);
+  }
 }

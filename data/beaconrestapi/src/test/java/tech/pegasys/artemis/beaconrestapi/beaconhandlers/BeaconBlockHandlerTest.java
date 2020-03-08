@@ -19,13 +19,10 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.INVALID_BYTES32_DATA;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.INVALID_NUMERIC_VALUE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.MUST_SPECIFY_ONLY_ONCE;
 import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler.NO_PARAMETERS;
 import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler.NO_VALID_PARAMETER;
 import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler.TOO_MANY_PARAMETERS;
@@ -102,48 +99,6 @@ public class BeaconBlockHandlerTest {
   }
 
   @Test
-  public void shouldReturnBadRequestWhenRootNotParsable() throws Exception {
-    final Map<String, List<String>> params = Map.of(ROOT, List.of("foo"));
-    badRequestParamsTest(params, INVALID_BYTES32_DATA);
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenEpochNotParsable() throws Exception {
-    final Map<String, List<String>> params = Map.of(EPOCH, List.of("foo"));
-    badRequestParamsTest(params, INVALID_NUMERIC_VALUE);
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenSlotNotParsable() throws Exception {
-    final Map<String, List<String>> params = Map.of(SLOT, List.of("foo"));
-    badRequestParamsTest(params, INVALID_NUMERIC_VALUE);
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenMultipleRootValues() throws Exception {
-    final Map<String, List<String>> params = Map.of(ROOT, List.of("1", "2"));
-    badRequestParamsTest(params, String.format(MUST_SPECIFY_ONLY_ONCE, ROOT));
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenMultipleSlotValues() throws Exception {
-    final Map<String, List<String>> params = Map.of(SLOT, List.of("1", "2"));
-    badRequestParamsTest(params, String.format(MUST_SPECIFY_ONLY_ONCE, SLOT));
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenMultipleEpochValues() throws Exception {
-    final Map<String, List<String>> params = Map.of(EPOCH, List.of("1", "2"));
-    badRequestParamsTest(params, String.format(MUST_SPECIFY_ONLY_ONCE, EPOCH));
-  }
-
-  @Test
-  public void shouldReturnBadRequestWhenZeroEpochValues() throws Exception {
-    final Map<String, List<String>> params = Map.of(EPOCH, List.of());
-    badRequestParamsTest(params, String.format(MUST_SPECIFY_ONLY_ONCE, EPOCH));
-  }
-
-  @Test
   public void shouldReturnBlockWhenQueryByRoot() throws Exception {
     final Map<String, List<String>> params = Map.of(ROOT, List.of(blockRoot.toHexString()));
     SafeFuture<Optional<SignedBeaconBlock>> providerData =
@@ -168,7 +123,6 @@ public class BeaconBlockHandlerTest {
 
     handler.handle(context);
     verify(context).status(SC_NOT_FOUND);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 
   @Test
@@ -196,7 +150,6 @@ public class BeaconBlockHandlerTest {
 
     handler.handle(context);
     verify(context).status(SC_NOT_FOUND);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 
   @Test
@@ -224,6 +177,5 @@ public class BeaconBlockHandlerTest {
 
     handler.handle(context);
     verify(context).status(SC_NOT_FOUND);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 }

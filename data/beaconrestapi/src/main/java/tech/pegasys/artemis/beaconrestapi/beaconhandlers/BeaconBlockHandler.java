@@ -15,17 +15,18 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSignedBlock;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsBytes32;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -37,6 +38,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
@@ -81,7 +83,6 @@ public class BeaconBlockHandler implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws Exception {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     try {
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       if (queryParamMap.size() < 1) {
@@ -96,15 +97,8 @@ public class BeaconBlockHandler implements Handler {
         ctx.result(
             provider
                 .getBlockByBlockRoot(blockParam)
-                .thenApplyChecked(
-                    block -> {
-                      if (block.isPresent()) {
-                        return jsonProvider.objectToJSON(block.get());
-                      } else {
-                        ctx.status(SC_NOT_FOUND);
-                        return null;
-                      }
-                    }));
+                .thenApplyChecked(block -> handleResponseContext(ctx, block)));
+        ;
         return;
       }
 
@@ -121,19 +115,23 @@ public class BeaconBlockHandler implements Handler {
       ctx.result(
           provider
               .getBlockBySlot(slot)
-              .thenApplyChecked(
-                  block -> {
-                    if (block.isPresent()) {
-                      return jsonProvider.objectToJSON(block.get());
-                    } else {
-                      ctx.status(SC_NOT_FOUND);
-                      return null;
-                    }
-                  }));
+              .thenApplyChecked(block -> handleResponseContext(ctx, block)));
 
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+    }
+  }
+
+  private String handleResponseContext(Context ctx, Optional<SignedBeaconBlock> blockOptional)
+      throws JsonProcessingException {
+    if (blockOptional.isPresent()) {
+      SignedBeaconBlock signedBeaconBlock = blockOptional.get();
+      ctx.header(Header.CACHE_CONTROL, getMaxAgeForSignedBlock(provider, signedBeaconBlock));
+      return jsonProvider.objectToJSON(signedBeaconBlock);
+    } else {
+      ctx.status(SC_NOT_FOUND);
+      return null;
     }
   }
 }
