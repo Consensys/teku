@@ -35,7 +35,7 @@ public class CacheControlUtilsTest {
   @Mock private ChainDataProvider provider;
 
   @Test
-  void getMaxAgeForSignedBlock_shouldSetZeroIfNotFinalized() {
+  void getMaxAgeForSignedBlock_shouldReturnZeroIfNotFinalized() {
     when(provider.isFinalized(signedBlock)).thenReturn(false);
     String cacheControl = CacheControlUtils.getMaxAgeForSignedBlock(provider, signedBlock);
     assertThat(cacheControl).isEqualTo(CACHE_NONE);
