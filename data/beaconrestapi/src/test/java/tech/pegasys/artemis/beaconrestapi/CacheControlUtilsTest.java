@@ -35,28 +35,28 @@ public class CacheControlUtilsTest {
   @Mock private ChainDataProvider provider;
 
   @Test
-  void getMaxAgeForSignedBlock_shouldReturnZeroIfNotFinalized() {
+  void getMaxAgeForSignedBlock_shouldSetCacheNoneIfNotFinalized() {
     when(provider.isFinalized(signedBlock)).thenReturn(false);
     String cacheControl = CacheControlUtils.getMaxAgeForSignedBlock(provider, signedBlock);
     assertThat(cacheControl).isEqualTo(CACHE_NONE);
   }
 
   @Test
-  void getMaxAgeForSignedBlock_shouldSetZeroIfFinalized() {
+  void getMaxAgeForSignedBlock_shouldSetIfFinalized() {
     when(provider.isFinalized(signedBlock)).thenReturn(true);
     String cacheControl = CacheControlUtils.getMaxAgeForSignedBlock(provider, signedBlock);
     assertThat(cacheControl).isEqualTo(CACHE_FINALIZED);
   }
 
   @Test
-  void getMaxAgeForSlot_shouldSetZeroIfNotFinalized() {
+  void getMaxAgeForSlot_shouldSetCacheNoneIfNotFinalized() {
     when(provider.isFinalized(ZERO)).thenReturn(false);
     String cacheControl = CacheControlUtils.getMaxAgeForSlot(provider, ZERO);
     assertThat(cacheControl).isEqualTo(CACHE_NONE);
   }
 
   @Test
-  void getMaxAgeForSlot_shouldSetZeroIfFinalized() {
+  void getMaxAgeForSlot_shouldSetIfFinalized() {
     when(provider.isFinalized(ZERO)).thenReturn(true);
     String cacheControl = CacheControlUtils.getMaxAgeForSlot(provider, ZERO);
     assertThat(cacheControl).isEqualTo(CACHE_FINALIZED);
