@@ -21,10 +21,41 @@ import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomU
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class ValidatorTest {
+
+  public static Validator validatorFromBytes(Bytes bytes) {
+    return SSZ.decode(
+        bytes,
+        reader ->
+            Validator.create(
+                BLSPublicKey.fromBytes(reader.readFixedBytes(48)),
+                Bytes32.wrap(reader.readFixedBytes(32)),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                reader.readBoolean(),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64()),
+                UnsignedLong.fromLongBits(reader.readUInt64())));
+  }
+
+  public static Bytes validatorToBytes(Validator v) {
+    return SSZ.encode(
+        writer -> {
+          writer.writeFixedBytes(v.getPubkey().toBytes());
+          writer.writeFixedBytes(v.getWithdrawal_credentials());
+          writer.writeUInt64(v.getEffective_balance().longValue());
+          writer.writeBoolean(v.isSlashed());
+          writer.writeUInt64(v.getActivation_eligibility_epoch().longValue());
+          writer.writeUInt64(v.getActivation_epoch().longValue());
+          writer.writeUInt64(v.getExit_epoch().longValue());
+          writer.writeUInt64(v.getWithdrawable_epoch().longValue());
+        });
+  }
+
   private int seed = 100;
   private BLSPublicKey pubkey = BLSPublicKey.random(seed);
   private Bytes32 withdrawalCredentials = randomBytes32(seed++);
@@ -36,7 +67,7 @@ class ValidatorTest {
   private UnsignedLong effectiveBalance = randomUnsignedLong(seed++);
 
   private Validator validator =
-      new Validator(
+      Validator.create(
           pubkey,
           withdrawalCredentials,
           effectiveBalance,
@@ -56,7 +87,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
     Validator testValidator =
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -73,7 +104,7 @@ class ValidatorTest {
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
     BLSPublicKey differentPublicKey = BLSPublicKey.random(99);
     Validator testValidator =
-        new Validator(
+        Validator.create(
             differentPublicKey,
             withdrawalCredentials,
             effectiveBalance,
@@ -90,7 +121,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenWithdrawalCredentialsAreDifferent() {
     Validator testValidator =
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials.not(),
             effectiveBalance,
@@ -106,7 +137,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenActivationEpochsAreDifferent() {
     Validator testValidator =
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -122,7 +153,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenExitEpochsAreDifferent() {
     Validator testValidator =
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -138,7 +169,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenWithdrawalEpochsAreDifferent() {
     Validator testValidator =
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -154,7 +185,7 @@ class ValidatorTest {
   @Test
   void equalsReturnsFalseWhenInitiatedExitIsDifferent() {
     Validator testValidator =
-        new Validator(
+        Validator.create(
             pubkey,
             withdrawalCredentials,
             effectiveBalance,
@@ -169,7 +200,7 @@ class ValidatorTest {
 
   @Test
   void roundtripSSZ() {
-    Bytes sszValidatorBytes = validator.toBytes();
-    assertEquals(validator, Validator.fromBytes(sszValidatorBytes));
+    Bytes sszValidatorBytes = validatorToBytes(validator);
+    assertEquals(validator, validatorFromBytes(sszValidatorBytes));
   }
 }

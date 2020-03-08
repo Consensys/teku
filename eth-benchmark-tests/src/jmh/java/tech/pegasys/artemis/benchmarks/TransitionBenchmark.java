@@ -56,12 +56,12 @@ public abstract class TransitionBenchmark {
   BlockImportResult lastResult;
   SignedBeaconBlock prefetchedBlock;
 
-  @Param({"1024", "3072", "10240"})
+  @Param({"16384", "32768"})
   int validatorsCount;
 
   @Setup(Level.Trial)
   public void init() throws Exception {
-    Constants.SLOTS_PER_EPOCH = 6;
+    Constants.setConstants("mainnet");
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
     String blocksFile =
@@ -127,7 +127,7 @@ public abstract class TransitionBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 2, batchSize = 6)
+    @Warmup(iterations = 2, batchSize = 32)
     @Measurement(iterations = 50)
     public void importBlock() throws Exception {
       importNextBlock();

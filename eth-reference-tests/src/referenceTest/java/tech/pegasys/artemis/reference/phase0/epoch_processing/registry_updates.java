@@ -26,30 +26,33 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.EpochProcessorUtil;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class registry_updates extends TestSuite {
 
-  @ParameterizedTest(name = "{index}.{2} process registry updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process registry updates")
   @MethodSource({
     "mainnetProcessRegistryUpdates",
   })
   void mainnetProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    EpochProcessorUtil.process_registry_updates(pre);
-    assertEquals(pre, post);
+    MutableBeaconState wState = pre.createWritableCopy();
+    EpochProcessorUtil.process_registry_updates(wState);
+    assertEquals(post, wState);
   }
 
-  @ParameterizedTest(name = "{index}.{2} process registry updates pre={0} -> post={1}")
+  @ParameterizedTest(name = "{index}.{2} process registry updates")
   @MethodSource({
     "minimalProcessRegistryUpdates",
   })
   void minimalProcessRegistryUpdates(BeaconState pre, BeaconState post, String testName)
       throws Exception {
-    EpochProcessorUtil.process_registry_updates(pre);
-    assertThat(pre).usingRecursiveComparison().isEqualTo(post);
+    MutableBeaconState wState = pre.createWritableCopy();
+    EpochProcessorUtil.process_registry_updates(wState);
+    assertThat(wState).isEqualTo(post);
   }
 
   @MustBeClosed

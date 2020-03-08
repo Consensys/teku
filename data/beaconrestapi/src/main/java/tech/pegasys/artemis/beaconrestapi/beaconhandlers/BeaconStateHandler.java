@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -62,13 +63,11 @@ public class BeaconStateHandler implements Handler {
       summary = "Get the beacon chain state that matches the specified tree hash root, or slot.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(name = ROOT, description = "Tree hash root to query (Bytes32)"),
-        @OpenApiParam(
-            name = SLOT,
-            description = "Slot to query in the canonical chain (head or ancestor of the head)")
+        @OpenApiParam(name = ROOT, description = "Tree hash root to query."),
+        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain.")
       },
       description =
-          "Request that the node return a beacon chain state that matches the specified tree hash root.",
+          "Returns the beacon chain state that matches the specified slot or tree hash root.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
@@ -86,11 +85,20 @@ public class BeaconStateHandler implements Handler {
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
       }
+      if (!combinedClient.isStoreAvailable()) {
+        ctx.status(SC_NO_CONTENT);
+        return;
+      }
 
       if (parameters.containsKey(ROOT)) {
         future = queryByRootHash(validateQueryParameter(parameters, ROOT));
       } else if (parameters.containsKey(SLOT)) {
         future = queryBySlot(validateQueryParameter(parameters, SLOT));
+      } else {
+        ctx.result(
+            jsonProvider.objectToJSON(new BadRequest("expected one of " + SLOT + " or " + ROOT)));
+        ctx.status(SC_BAD_REQUEST);
+        return;
       }
       ctx.result(
           future.thenApplyChecked(

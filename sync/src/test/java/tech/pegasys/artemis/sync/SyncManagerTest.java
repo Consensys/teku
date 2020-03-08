@@ -66,7 +66,6 @@ public class SyncManagerTest {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
     when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
-    when(peer.sendGoodbye(any())).thenReturn(new SafeFuture<>());
   }
 
   @Test
@@ -209,7 +208,7 @@ public class SyncManagerTest {
     UnsignedLong currentSlot = UnsignedLong.valueOf(17);
     when(storageClient.getBestSlot()).thenReturn(currentSlot);
 
-    SyncStatus syncStatus = syncManager.getSyncStatus();
+    SyncStatus syncStatus = syncManager.getSyncStatus().sync_status;
     assertThat(syncStatus.getCurrent_slot()).isEqualTo(currentSlot);
     assertThat(syncStatus.getStarting_slot()).isEqualTo(startingSlot);
     assertThat(syncStatus.getHighest_slot()).isEqualTo(PEER_HEAD_SLOT);
@@ -217,5 +216,19 @@ public class SyncManagerTest {
     assertThat(syncManager.isSyncQueued()).isFalse();
 
     verify(peerSync).sync(peer);
+  }
+
+  @Test
+  void sync_isSyncing_noPeers() {
+    when(network.streamPeers()).thenReturn(Stream.empty());
+    // Should be immediately completed as there is nothing to do.
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    verifyNoInteractions(peerSync);
+
+    // verify that getSyncStatus completes even when no peers
+    assertThat(syncManager.getSyncStatus().sync_status).isNull();
+    assertThat(syncManager.isSyncQueued()).isFalse();
   }
 }

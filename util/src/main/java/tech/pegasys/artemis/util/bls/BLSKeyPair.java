@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.bls;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 
 public final class BLSKeyPair {
@@ -86,5 +87,18 @@ public final class BLSKeyPair {
         .add("publicKey", publicKey)
         .add("secretKey", secretKey)
         .toString();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final BLSKeyPair that = (BLSKeyPair) o;
+    return publicKey.equals(that.publicKey) && secretKey.equals(that.secretKey);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(publicKey, secretKey);
   }
 }

@@ -54,8 +54,8 @@ public class Constants {
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
-  public static int MIN_GENESIS_DELAY;
-  public static int SECONDS_PER_SLOT;
+  public static int MIN_GENESIS_DELAY = 86400;
+  public static int SECONDS_PER_SLOT = 12;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
@@ -106,7 +106,6 @@ public class Constants {
   // Deposit
   public static String DEPOSIT_NORMAL = "normal";
   public static String DEPOSIT_TEST = "test";
-  public static String DEPOSIT_SIM = "simulation";
 
   // Fork Choice
   public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
@@ -141,8 +140,8 @@ public class Constants {
   public static UnsignedLong ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10); // in sec
   public static long ETH1_CACHE_STARTUP_RETRY_TIMEOUT = 10; // in sec
   public static long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
-  public static long ETH1_MIN_GENESIS_TIME_BLOCK_RETRY_TIMEOUT = 10; // in sec
-  public static long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 5; // in sec
+  public static long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
+  public static long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
   public static long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
 

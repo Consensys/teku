@@ -15,10 +15,12 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
@@ -95,6 +97,28 @@ public class BeaconStateHandlerTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenBadSlotSpecified() throws Exception {
+    final BeaconStateHandler handler =
+        new BeaconStateHandler(combinedChainDataClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("not-an-int")));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenBadParamSpecified() throws Exception {
+    final BeaconStateHandler handler =
+        new BeaconStateHandler(combinedChainDataClient, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("not-an-int")));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnBeaconStateObjectWhenQueryByRoot() throws Exception {
     final BeaconStateHandler handler =
         new BeaconStateHandler(combinedChainDataClient, jsonProvider);
@@ -160,5 +184,19 @@ public class BeaconStateHandlerTest {
     handler.handle(context);
 
     verify(context).status(SC_NOT_FOUND);
+  }
+
+  @Test
+  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
+    ChainStorageClient client = mock(ChainStorageClient.class);
+    CombinedChainDataClient combinedClient =
+        new CombinedChainDataClient(client, historicalChainData);
+    final BeaconStateHandler handler = new BeaconStateHandler(combinedClient, jsonProvider);
+    when(client.getStore()).thenReturn(null);
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
+
+    handler.handle(context);
+
+    verify(context).status(SC_NO_CONTENT);
   }
 }

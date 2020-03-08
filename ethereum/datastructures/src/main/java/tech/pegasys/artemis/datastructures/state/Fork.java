@@ -13,10 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -24,30 +26,51 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes4View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
+@JsonAutoDetect(getterVisibility = Visibility.NONE)
+public class Fork extends AbstractImmutableContainer<Fork>
+    implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 3;
 
-  private final Bytes4 previous_version; // This is a Version type, aliased as a Bytes4
-  private final Bytes4 current_version; // This is a Version type, aliased as a Bytes4
-  private final UnsignedLong epoch;
+  @SuppressWarnings("unused")
+  private final Bytes4 previous_version = null; // This is a Version type, aliased as a Bytes4
+
+  @SuppressWarnings("unused")
+  private final Bytes4 current_version = null; // This is a Version type, aliased as a Bytes4
+
+  @SuppressWarnings("unused")
+  private final UnsignedLong epoch = null;
+
+  public static final ContainerViewType<Fork> TYPE =
+      new ContainerViewType<>(
+          List.of(
+              BasicViewTypes.BYTES4_TYPE, BasicViewTypes.BYTES4_TYPE, BasicViewTypes.UINT64_TYPE),
+          Fork::new);
+
+  private Fork(ContainerViewType<Fork> type, TreeNode backingNode) {
+    super(type, backingNode);
+  }
 
   public Fork(Bytes4 previous_version, Bytes4 current_version, UnsignedLong epoch) {
-    this.previous_version = previous_version;
-    this.current_version = current_version;
-    this.epoch = epoch;
+    super(
+        TYPE,
+        new Bytes4View(previous_version),
+        new Bytes4View(current_version),
+        new UInt64View(epoch));
   }
 
   public Fork(Fork fork) {
-    this.previous_version = fork.getPrevious_version();
-    this.current_version = fork.getCurrent_version();
-    this.epoch = fork.getEpoch();
+    super(TYPE, fork.getBackingNode());
   }
 
   @Override
@@ -59,14 +82,14 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
   @Override
   public List<Bytes> get_fixed_parts() {
     return List.of(
-        SSZ.encode(writer -> writer.writeFixedBytes(previous_version.getWrappedBytes())),
-        SSZ.encode(writer -> writer.writeFixedBytes(current_version.getWrappedBytes())),
-        SSZ.encodeUInt64(epoch.longValue()));
+        SSZ.encode(writer -> writer.writeFixedBytes(getPrevious_version().getWrappedBytes())),
+        SSZ.encode(writer -> writer.writeFixedBytes(getCurrent_version().getWrappedBytes())),
+        SSZ.encodeUInt64(getEpoch().longValue()));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(previous_version, current_version, epoch);
+    return hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
@@ -84,37 +107,28 @@ public class Fork implements Merkleizable, SimpleOffsetSerializable, SSZContaine
     }
 
     Fork other = (Fork) obj;
-    return Objects.equals(
-            this.getPrevious_version().getWrappedBytes(),
-            other.getPrevious_version().getWrappedBytes())
-        && Objects.equals(
-            this.getCurrent_version().getWrappedBytes(),
-            other.getCurrent_version().getWrappedBytes())
-        && Objects.equals(this.getEpoch(), other.getEpoch());
+    return hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
+  @JsonProperty
   public Bytes4 getPrevious_version() {
-    return previous_version;
+    return ((Bytes4View) get(0)).get();
   }
 
+  @JsonProperty
   public Bytes4 getCurrent_version() {
-    return current_version;
+    return ((Bytes4View) get(1)).get();
   }
 
+  @JsonProperty
   public UnsignedLong getEpoch() {
-    return epoch;
+    return ((UInt64View) get(2)).get();
   }
 
   @Override
   public Bytes32 hash_tree_root() {
-    return HashTreeUtil.merkleize(
-        Arrays.asList(
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_BASIC, previous_version.getWrappedBytes()),
-            HashTreeUtil.hash_tree_root(
-                SSZTypes.VECTOR_OF_BASIC, current_version.getWrappedBytes()),
-            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()))));
+    return hashTreeRoot();
   }
 
   @Override

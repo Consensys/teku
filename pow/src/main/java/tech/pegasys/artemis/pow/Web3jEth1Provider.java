@@ -15,6 +15,7 @@ package tech.pegasys.artemis.pow;
 
 import com.google.common.primitives.UnsignedLong;
 import io.reactivex.Flowable;
+import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
@@ -23,15 +24,19 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class Web3jEth1Provider implements Eth1Provider {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Web3j web3j;
+  private final AsyncRunner asyncRunner;
 
-  public Web3jEth1Provider(Web3j web3j) {
+  public Web3jEth1Provider(Web3j web3j, AsyncRunner asyncRunner) {
     this.web3j = web3j;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
@@ -53,6 +58,32 @@ public class Web3jEth1Provider implements Eth1Provider {
     LOG.trace("Getting eth1 block {}", blockHash);
     return SafeFuture.of(web3j.ethGetBlockByHash(blockHash, false).sendAsync())
         .thenApply(EthBlock::getBlock);
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(String blockHash) {
+    return getEth1BlockFuture(blockHash)
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.warn("Retrying Eth1 request for block: {}", blockHash, err);
+              return asyncRunner
+                  .getDelayedFuture(
+                      Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
+                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockHash));
+            });
+  }
+
+  @Override
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1BlockFuture(UnsignedLong blockNumber) {
+    return getEth1BlockFuture(blockNumber)
+        .exceptionallyCompose(
+            (err) -> {
+              LOG.warn("Retrying Eth1 request for block: {}", blockNumber, err);
+              return asyncRunner
+                  .getDelayedFuture(
+                      Constants.ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT, TimeUnit.MILLISECONDS)
+                  .thenCompose(__ -> getGuaranteedEth1BlockFuture(blockNumber));
+            });
   }
 
   private SafeFuture<EthBlock.Block> getEth1BlockFuture(DefaultBlockParameter blockParameter) {

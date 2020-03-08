@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
@@ -38,7 +39,15 @@ public final class BLSSecretKey {
   }
 
   @Override
-  public String toString() {
-    return secretKey.toString();
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final BLSSecretKey that = (BLSSecretKey) o;
+    return secretKey.equals(that.secretKey);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(secretKey);
   }
 }

@@ -120,7 +120,7 @@ public class DepositProviderTest {
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
   }
 
-  private void checkThatDepositProofIsValid(List<Deposit> deposits) {
+  private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {
     deposits.forEach(
         deposit ->
             assertThat(

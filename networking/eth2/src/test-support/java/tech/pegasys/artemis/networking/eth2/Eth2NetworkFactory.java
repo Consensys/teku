@@ -14,6 +14,8 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.eventbus.EventBus;
@@ -26,11 +28,12 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -110,7 +113,8 @@ public class Eth2NetworkFactory {
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
 
         final P2PNetwork<?> network =
-            new LibP2PNetwork(config, METRICS_SYSTEM, rpcMethods, peerHandlers);
+            DiscoveryNetwork.create(
+                new LibP2PNetwork(config, METRICS_SYSTEM, rpcMethods, peerHandlers), config);
 
         return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
       }
@@ -118,7 +122,7 @@ public class Eth2NetworkFactory {
 
     private NetworkConfig generateConfig() {
       final List<String> peerAddresses =
-          peers.stream().map(P2PNetwork::getNodeAddress).collect(Collectors.toList());
+          peers.stream().map(P2PNetwork::getNodeAddress).collect(toList());
 
       final Random random = new Random();
       final int port = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT);
@@ -126,9 +130,13 @@ public class Eth2NetworkFactory {
       return new NetworkConfig(
           KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1(),
           "127.0.0.1",
+          "127.0.0.1",
           port,
           port,
           peerAddresses,
+          "static",
+          emptyList(),
+          new TargetPeerRange(20, 30),
           false,
           false,
           false);

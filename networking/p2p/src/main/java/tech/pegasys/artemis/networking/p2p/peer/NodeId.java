@@ -15,9 +15,27 @@ package tech.pegasys.artemis.networking.p2p.peer;
 
 import org.apache.tuweni.bytes.Bytes;
 
-public interface NodeId {
+public abstract class NodeId {
 
-  Bytes toBytes();
+  public abstract Bytes toBytes();
 
-  String toBase58();
+  public abstract String toBase58();
+
+  @Override
+  public final int hashCode() {
+    return toBytes().hashCode();
+  }
+
+  @Override
+  public final boolean equals(final Object obj) {
+    if (!(obj instanceof NodeId)) {
+      return false;
+    }
+    return toBytes().equals(((NodeId) obj).toBytes());
+  }
+
+  @Override
+  public final String toString() {
+    return toBase58();
+  }
 }

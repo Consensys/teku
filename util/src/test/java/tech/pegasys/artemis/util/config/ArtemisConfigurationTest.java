@@ -13,9 +13,14 @@
 
 package tech.pegasys.artemis.util.config;
 
+import static org.apache.logging.log4j.util.Strings.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.nio.file.Path;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -76,14 +81,61 @@ final class ArtemisConfigurationTest {
   }
 
   @Test
+  void shouldReadRestApiSettings() {
+    ArtemisConfiguration config =
+        ArtemisConfiguration.fromString(
+            "beaconrestapi.portNumber=1\nbeaconrestapi.enableSwagger=false");
+    assertEquals(config.getBeaconRestAPIPortNumber(), 1);
+    assertEquals(config.getBeaconRestAPIEnableSwagger(), false);
+  }
+
+  @Test
+  void shouldDefaultRestApiSettings() {
+
+    ArtemisConfiguration config = ArtemisConfiguration.fromString(EMPTY);
+
+    assertEquals(false, config.getBeaconRestAPIEnableSwagger());
+    assertEquals(5051, config.getBeaconRestAPIPortNumber());
+  }
+
+  @Test
   void dataPathCanBeSet() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.dataPath=\".\"");
     assertThat(config.getDataPath()).isEqualTo(".");
   }
 
   @Test
-  void logPathCanBeSet() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.logPath=\".\"");
-    assertThat(config.getLogPath()).isEqualTo(".");
+  void validatorKeyStoreAndPasswordFileCanBeSet() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString(
+            "validator.keystoreFiles=["
+                + "\"/path/to/Keystore1.json\",\"/path/to/Keystore2.json\""
+                + "]\n"
+                + "validator.keystorePasswordFiles=["
+                + "\"/path/to/Keystore1password.txt\", \"/path/to/Keystore2password.txt\""
+                + "]");
+    assertThat(config.getValidatorKeystorePasswordFilePairs()).size().isEqualTo(2);
+    assertThat(config.getValidatorKeystorePasswordFilePairs())
+        .containsExactlyInAnyOrder(
+            Pair.of(Path.of("/path/to/Keystore1.json"), Path.of("/path/to/Keystore1password.txt")),
+            Pair.of(Path.of("/path/to/Keystore2.json"), Path.of("/path/to/Keystore2password.txt")));
+  }
+
+  @Test
+  void invalidKeystoreAndPasswordParametersThrowsException() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString(
+            "validator.keystoreFiles=["
+                + "\"/path/to/Keystore1.json\",\"/path/to/Keystore2.json\""
+                + "]\n"
+                + "validator.keystorePasswordFiles=["
+                + "\"/path/to/Keystore1password.txt\""
+                + "]");
+
+    final String errorMessage =
+        "Invalid configuration. The size of validator.validatorsKeystoreFiles [2] and validator.validatorsKeystorePasswordFiles [1] must match";
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> config.validateConfig())
+        .withMessage(errorMessage);
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 
 import identify.pb.IdentifyOuterClass;
@@ -33,6 +34,8 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.handler.logging.LogLevel;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,6 +45,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
@@ -49,18 +53,18 @@ import tech.pegasys.artemis.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final PrivKey privKey;
-  private final NetworkConfig config;
   private final NodeId nodeId;
 
   private final Host host;
@@ -79,9 +83,8 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final List<PeerHandler> peerHandlers) {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
-    this.config = config;
 
-    advertisedAddr = new Multiaddr("/ip4/127.0.0.1/tcp/" + config.getAdvertisedPort());
+    advertisedAddr = getAdvertisedAddr(config);
 
     // Setup gossip
     gossip = new Gossip();
@@ -92,9 +95,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(method)));
 
     // Setup peers
-    peerManager =
-        new PeerManager(
-            DelayedExecutorAsyncRunner.create(), metricsSystem, peerHandlers, rpcHandlers);
+    peerManager = new PeerManager(metricsSystem, peerHandlers, rpcHandlers);
 
     host =
         BuilderJKt.hostJ(
@@ -153,8 +154,25 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             i -> {
               STDOUT.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
               return null;
-            })
-        .thenRun(() -> config.getPeers().forEach(reportExceptions(this::connect)));
+            });
+  }
+
+  public Multiaddr getAdvertisedAddr(NetworkConfig config) {
+    try {
+      String ip;
+      if (config.getAdvertisedIp().isPresent()) {
+        ip = config.getAdvertisedIp().get();
+      } else if (NetworkUtility.isUnspecifiedAddress(config.getNetworkInterface())) {
+        ip = config.getNetworkInterface();
+      } else {
+        ip = InetAddress.getLocalHost().getHostAddress();
+      }
+
+      return new Multiaddr("/ip4/" + ip + "/tcp/" + config.getAdvertisedPort());
+    } catch (UnknownHostException err) {
+      throw new RuntimeException(
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
+    }
   }
 
   @Override
@@ -163,8 +181,24 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public SafeFuture<?> connect(final String peer) {
-    return peerManager.connect(new Multiaddr(peer), host.getNetwork());
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
+    return peer.as(MultiaddrPeerAddress.class)
+        .map(staticPeer -> peerManager.connect(staticPeer.getMultiaddr(), host.getNetwork()))
+        .orElseGet(
+            () ->
+                failedFuture(
+                    new IllegalArgumentException(
+                        "Unsupported peer address: " + peer.getClass().getName())));
+  }
+
+  @Override
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return MultiaddrPeerAddress.fromAddress(peerAddress);
+  }
+
+  @Override
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    return MultiaddrPeerAddress.fromDiscoveryPeer(discoveryPeer);
   }
 
   @Override
@@ -178,6 +212,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public boolean isConnected(final PeerAddress peerAddress) {
+    return peerManager.getPeer(peerAddress.getId()).isPresent();
+  }
+
+  @Override
   public Optional<Peer> getPeer(final NodeId id) {
     return peerManager.getPeer(id);
   }
@@ -188,7 +227,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public long getPeerCount() {
+  public int getPeerCount() {
     return peerManager.getPeerCount();
   }
 
@@ -204,6 +243,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public NodeId getNodeId() {
     return nodeId;
+  }
+
+  @Override
+  public Optional<String> getEnr() {
+    return Optional.empty();
   }
 
   @Override

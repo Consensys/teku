@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.network;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -22,6 +23,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface P2PNetwork<T extends Peer> extends GossipNetwork {
+
   enum State {
     IDLE,
     RUNNING,
@@ -29,26 +31,60 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   }
 
   /**
-   * Connects to a Peer.
+   * Connects to a Peer using a user supplied address. The address format is specific to the network
+   * implementation. If a connection already exists for this peer, the future completes with the
+   * existing peer.
+   *
+   * <p>The {@link PeerAddress} must have been created using the {@link #createPeerAddress(String)}
+   * method of this same implementation.
    *
    * @param peer Peer to connect to.
-   * @return Future of the established PeerConnection
+   * @return A future which completes when the connection is establish, containing the newly
+   *     connected peer.
    */
-  SafeFuture<?> connect(String peer);
+  SafeFuture<Peer> connect(PeerAddress peer);
+
+  /**
+   * Parses a peer address in any of this networks supported formats.
+   *
+   * @param peerAddress the address to parse
+   * @return a {@link PeerAddress} which is supported by {@link #connect(PeerAddress)} for
+   *     initiating connections
+   */
+  PeerAddress createPeerAddress(String peerAddress);
+
+  /**
+   * Converts a {@link DiscoveryPeer} to a {@link PeerAddress} which can be used with this network's
+   * {@link #connect(PeerAddress)} method.
+   *
+   * @param discoveryPeer the discovery peer to convert
+   * @return a {@link PeerAddress} which is supported by {@link #connect(PeerAddress)} for
+   *     initiating connections
+   */
+  PeerAddress createPeerAddress(DiscoveryPeer discoveryPeer);
 
   long subscribeConnect(PeerConnectedSubscriber<T> subscriber);
 
   void unsubscribeConnect(long subscriptionId);
 
+  boolean isConnected(PeerAddress peerAddress);
+
   Optional<T> getPeer(NodeId id);
 
   Stream<T> streamPeers();
 
-  long getPeerCount();
+  int getPeerCount();
 
   String getNodeAddress();
 
   NodeId getNodeId();
+
+  /**
+   * Get the Ethereum Node Record (ENR) for the local node, if one exists.
+   *
+   * @return the local ENR.
+   */
+  Optional<String> getEnr();
 
   /**
    * starts the p2p network layer

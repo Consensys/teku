@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.network;
 
+import java.util.Optional;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -27,12 +29,27 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public SafeFuture<?> connect(final String peer) {
+  public SafeFuture<Peer> connect(final PeerAddress peer) {
     return network.connect(peer);
   }
 
   @Override
-  public long getPeerCount() {
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    return network.createPeerAddress(discoveryPeer);
+  }
+
+  @Override
+  public boolean isConnected(final PeerAddress peerAddress) {
+    return network.isConnected(peerAddress);
+  }
+
+  @Override
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return network.createPeerAddress(peerAddress);
+  }
+
+  @Override
+  public int getPeerCount() {
     return network.getPeerCount();
   }
 
@@ -44,6 +61,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public NodeId getNodeId() {
     return network.getNodeId();
+  }
+
+  @Override
+  public Optional<String> getEnr() {
+    return network.getEnr();
   }
 
   @Override

@@ -29,6 +29,8 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZImmutableCollection;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -116,7 +118,7 @@ public final class HashTreeUtil {
   */
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public static Bytes32 hash_tree_root(SSZTypes sszType, List bytes) {
+  public static Bytes32 hash_tree_root(SSZTypes sszType, SSZImmutableCollection bytes) {
     switch (sszType) {
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
@@ -126,7 +128,7 @@ public final class HashTreeUtil {
             "Use HashTreeUtil.hash_tree_root(SSZTypes.LIST_OF_COMPOSITE, int, List) for a variable length list of composite SSZ types.");
       case VECTOR_OF_COMPOSITE:
         if (!bytes.isEmpty() && bytes.get(0) instanceof Bytes32) {
-          return hash_tree_root_vector_composite_type((List<Bytes32>) bytes);
+          return hash_tree_root_vector_composite_type((SSZVector<Bytes32>) bytes);
         }
         break;
       case BASIC:
@@ -143,12 +145,8 @@ public final class HashTreeUtil {
     return Bytes32.ZERO;
   }
 
-  public static Bytes32 hash_tree_root_list_ul(long maxSize, List<Bytes> bytes) {
-    return hash_tree_root_list_of_unsigned_long(bytes, maxSize, bytes.size());
-  }
-
-  public static Bytes32 hash_tree_root_list_bytes(long maxSize, List<Bytes32> bytes) {
-    return hash_tree_root_list_bytes(bytes, maxSize, bytes.size());
+  public static Bytes32 hash_tree_root_list_ul(SSZList<Bytes> bytes) {
+    return hash_tree_root_list_of_unsigned_long(bytes);
   }
 
   public static Bytes32 hash_tree_root_vector_unsigned_long(SSZVector<UnsignedLong> vector) {
@@ -158,11 +156,10 @@ public final class HashTreeUtil {
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
-  public static Bytes32 hash_tree_root(SSZTypes sszType, long maxSize, List bytes) {
+  public static Bytes32 hash_tree_root(SSZTypes sszType, SSZList bytes) {
     switch (sszType) {
       case LIST_OF_COMPOSITE:
-        return hash_tree_root_list_composite_type(
-            (List<Merkleizable>) bytes, maxSize, bytes.size());
+        return hash_tree_root_list_composite_type((SSZList<Merkleizable>) bytes);
       default:
         throw new UnsupportedOperationException(
             "The maxSize parameter is only applicable for SSZ Lists.");
@@ -312,11 +309,10 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_of_unsigned_long(
-      List<? extends Bytes> bytes, long maxSize, int length) {
+  private static Bytes32 hash_tree_root_list_of_unsigned_long(SSZList<? extends Bytes> bytes) {
     return mix_in_length(
-        merkleize(pack(bytes.toArray(new Bytes[0])), chunk_count_list_unsigned_long(maxSize)),
-        length);
+        merkleize(pack(bytes.toArray()), chunk_count_list_unsigned_long(bytes.getMaxSize())),
+        bytes.size());
   }
 
   /**
@@ -329,23 +325,21 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_bytes(List<Bytes32> bytes, long maxSize, int length) {
+  public static Bytes32 hash_tree_root_list_bytes(SSZList<Bytes32> bytes) {
     return mix_in_length(
-        merkleize(bytes, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize)), length);
+        merkleize(bytes.asList(), chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),
+        bytes.size());
   }
 
-  public static Bytes32 hash_tree_root_list_pubkey(List<BLSPublicKey> pubkeys, long maxSize) {
-    return hash_tree_root_list_pubkey(pubkeys, maxSize, pubkeys.size());
-  }
-
-  private static Bytes32 hash_tree_root_list_pubkey(
-      List<BLSPublicKey> bytes, long maxSize, int length) {
+  @SuppressWarnings("unused")
+  private static Bytes32 hash_tree_root_list_pubkey(SSZList<BLSPublicKey> bytes) {
     List<Bytes32> hashTreeRootList =
         bytes.stream()
             .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toBytes()))
             .collect(Collectors.toList());
     return mix_in_length(
-        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize)), length);
+        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),
+        bytes.size());
   }
 
   /**
@@ -358,12 +352,12 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_composite_type(
-      List<? extends Merkleizable> bytes, long maxSize, int length) {
+  private static Bytes32 hash_tree_root_list_composite_type(SSZList<? extends Merkleizable> bytes) {
     List<Bytes32> hashTreeRootList =
         bytes.stream().map(item -> item.hash_tree_root()).collect(Collectors.toList());
     return mix_in_length(
-        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, maxSize)), length);
+        merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),
+        bytes.size());
   }
 
   /**
@@ -377,7 +371,7 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_vector_composite_type(List<Bytes32> bytes) {
+  private static Bytes32 hash_tree_root_vector_composite_type(SSZVector<Bytes32> bytes) {
     return merkleize(
         bytes.stream()
             .map(item -> hash_tree_root_vector_of_basic_type(item))

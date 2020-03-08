@@ -42,9 +42,10 @@ import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
@@ -73,20 +74,19 @@ public class StateTransition {
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
    * Runs state transition up to and with the given block
    *
-   * @param state
+   * @param preState
    * @param signed_block
    * @param validateStateRootAndSignatures
    * @return
    * @throws StateTransitionException
    */
-  public BeaconStateWithCache initiate(
-      BeaconStateWithCache state,
-      SignedBeaconBlock signed_block,
-      boolean validateStateRootAndSignatures)
+  public BeaconState initiate(
+      BeaconState preState, SignedBeaconBlock signed_block, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
     try {
       final BeaconBlock block = signed_block.getMessage();
 
+      MutableBeaconState state = preState.createWritableCopy();
       // Process slots (including those with no blocks) since block
       process_slots(state, block.getSlot(), printEnabled);
 
@@ -110,7 +110,7 @@ public class StateTransition {
                 + stateRoot.toHexString());
       }
 
-      return state;
+      return state.commitChanges();
     } catch (SlotProcessingException
         | BlockProcessingException
         | EpochProcessingException
@@ -128,7 +128,7 @@ public class StateTransition {
     return BLS.verify(proposer.getPubkey(), signing_root, signed_block.getSignature());
   }
 
-  public BeaconStateWithCache initiate(BeaconStateWithCache state, SignedBeaconBlock block)
+  public BeaconState initiate(BeaconState state, SignedBeaconBlock block)
       throws StateTransitionException {
     return initiate(state, block, true);
   }
@@ -143,7 +143,7 @@ public class StateTransition {
    * @throws BlockProcessingException
    */
   private void process_block(
-      BeaconStateWithCache state, BeaconBlock block, boolean validateStateRootAndSignatures)
+      MutableBeaconState state, BeaconBlock block, boolean validateStateRootAndSignatures)
       throws BlockProcessingException {
     process_block_header(state, block);
     process_randao(state, block.getBody(), validateStateRootAndSignatures);
@@ -159,7 +159,7 @@ public class StateTransition {
    * @param state
    * @throws EpochProcessingException
    */
-  private static void process_epoch(BeaconStateWithCache state) throws EpochProcessingException {
+  private static void process_epoch(MutableBeaconState state) throws EpochProcessingException {
     // Note: the lines with @ label here will be inserted here in a future phase
     process_justification_and_finalization(state);
     process_rewards_and_penalties(state);
@@ -179,15 +179,22 @@ public class StateTransition {
    *
    * @param state
    */
-  private static void process_slot(BeaconState state) {
+  private static void process_slot(MutableBeaconState state) {
     // Cache state root
     Bytes32 previous_state_root = state.hash_tree_root();
     int index = state.getSlot().mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
     state.getState_roots().set(index, previous_state_root);
 
     // Cache latest block header state root
-    if (state.getLatest_block_header().getState_root().equals(ZERO_HASH)) {
-      state.getLatest_block_header().setState_root(previous_state_root);
+    BeaconBlockHeader latest_block_header = state.getLatest_block_header();
+    if (latest_block_header.getState_root().equals(ZERO_HASH)) {
+      BeaconBlockHeader latest_block_header_new =
+          new BeaconBlockHeader(
+              latest_block_header.getSlot(),
+              latest_block_header.getParent_root(),
+              previous_state_root,
+              latest_block_header.getBody_root());
+      state.setLatest_block_header(latest_block_header_new);
     }
 
     // Cache block root
@@ -205,7 +212,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public void process_slots(BeaconStateWithCache state, UnsignedLong slot, boolean printEnabled)
+  public void process_slots(MutableBeaconState state, UnsignedLong slot, boolean printEnabled)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -220,9 +227,7 @@ public class StateTransition {
             .equals(UnsignedLong.ZERO)) {
           STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
           process_epoch(state);
-          reportExceptions(
-              CompletableFuture.runAsync(
-                  () -> recordMetrics(BeaconStateWithCache.deepCopy(state))));
+          reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(state)));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }
@@ -232,7 +237,7 @@ public class StateTransition {
     }
   }
 
-  private synchronized void recordMetrics(BeaconStateWithCache state) {
+  private synchronized void recordMetrics(BeaconState state) {
     epochMetrics.ifPresent(
         metrics -> {
           final UnsignedLong currentEpoch = get_current_epoch(state);

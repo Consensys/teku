@@ -16,9 +16,11 @@ package tech.pegasys.artemis.datastructures.state;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.util.cache.Cache;
 import tech.pegasys.artemis.datastructures.util.cache.LRUCache;
 import tech.pegasys.artemis.datastructures.util.cache.NoOpCache;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 /** The container class for all transition caches. */
 public class TransitionCaches {
@@ -27,9 +29,12 @@ public class TransitionCaches {
   private static int MAX_BEACON_PROPOSER_INDEX_CACHE = 1;
   private static int MAX_BEACON_COMMITTEE_CACHE = 64 * 64;
   private static int MAX_TOTAL_ACTIVE_BALANCE_CACHE = 1;
+  private static int MAX_COMMITTEE_SHUFFLE_CACHE = 2;
 
   private static final TransitionCaches NO_OP_INSTANCE =
       new TransitionCaches(
+          NoOpCache.getNoOpCache(),
+          NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
@@ -55,23 +60,31 @@ public class TransitionCaches {
   private final Cache<UnsignedLong, Integer> beaconProposerIndex;
   private final Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee;
   private final Cache<UnsignedLong, UnsignedLong> totalActiveBalance;
+  private final Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys;
+  private final Cache<Bytes32, List<Integer>> committeeShuffle;
 
   private TransitionCaches() {
     activeValidators = new LRUCache<>(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = new LRUCache<>(MAX_BEACON_PROPOSER_INDEX_CACHE);
     beaconCommittee = new LRUCache<>(MAX_BEACON_COMMITTEE_CACHE);
     totalActiveBalance = new LRUCache<>(MAX_TOTAL_ACTIVE_BALANCE_CACHE);
+    validatorsPubKeys = new LRUCache<>(Integer.MAX_VALUE - 1);
+    committeeShuffle = new LRUCache<>(MAX_COMMITTEE_SHUFFLE_CACHE);
   }
 
-  private TransitionCaches(
+  public TransitionCaches(
       Cache<UnsignedLong, List<Integer>> activeValidators,
       Cache<UnsignedLong, Integer> beaconProposerIndex,
       Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee,
-      Cache<UnsignedLong, UnsignedLong> totalActiveBalance) {
+      Cache<UnsignedLong, UnsignedLong> totalActiveBalance,
+      Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys,
+      Cache<Bytes32, List<Integer>> committeeShuffle) {
     this.activeValidators = activeValidators;
     this.beaconProposerIndex = beaconProposerIndex;
     this.beaconCommittee = beaconCommittee;
     this.totalActiveBalance = totalActiveBalance;
+    this.validatorsPubKeys = validatorsPubKeys;
+    this.committeeShuffle = committeeShuffle;
   }
 
   /** (epoch) -> (active validators) cache */
@@ -94,6 +107,25 @@ public class TransitionCaches {
     return totalActiveBalance;
   }
 
+  /** (validator index) -> (validator pub key) cache */
+  public Cache<UnsignedLong, BLSPublicKey> getValidatorsPubKeys() {
+    return validatorsPubKeys;
+  }
+
+  /** (epoch committee seed) -> (validators shuffle for epoch) cache */
+  public Cache<Bytes32, List<Integer>> getCommitteeShuffle() {
+    return committeeShuffle;
+  }
+
+  public void invalidate() {
+    activeValidators.clear();
+    beaconProposerIndex.clear();
+    beaconCommittee.clear();
+    totalActiveBalance.clear();
+    validatorsPubKeys.clear();
+    committeeShuffle.clear();
+  }
+
   /**
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance
@@ -103,6 +135,8 @@ public class TransitionCaches {
         activeValidators.copy(),
         beaconProposerIndex.copy(),
         beaconCommittee.copy(),
-        totalActiveBalance.copy());
+        totalActiveBalance.copy(),
+        validatorsPubKeys,
+        committeeShuffle.copy());
   }
 }

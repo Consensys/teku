@@ -14,11 +14,10 @@
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import io.libp2p.core.PeerId;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 
-public class LibP2PNodeId implements NodeId {
+public class LibP2PNodeId extends NodeId {
   private final PeerId peerId;
 
   public LibP2PNodeId(final PeerId peerId) {
@@ -33,27 +32,5 @@ public class LibP2PNodeId implements NodeId {
   @Override
   public String toBase58() {
     return peerId.toBase58();
-  }
-
-  @Override
-  public String toString() {
-    return toBase58();
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof LibP2PNodeId)) {
-      return false;
-    }
-    final LibP2PNodeId that = (LibP2PNodeId) o;
-    return Objects.equals(peerId, that.peerId);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(peerId);
   }
 }

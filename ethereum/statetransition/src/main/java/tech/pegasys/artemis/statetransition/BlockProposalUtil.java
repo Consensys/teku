@@ -31,7 +31,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
@@ -54,7 +54,7 @@ public class BlockProposalUtil {
   public SignedBeaconBlock createNewBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
-      final BeaconState previousState,
+      final BeaconState state,
       final Bytes32 parentBlockSigningRoot,
       final Eth1Data eth1Data,
       final SSZList<Attestation> attestations,
@@ -62,7 +62,6 @@ public class BlockProposalUtil {
       final SSZList<Deposit> deposits)
       throws StateTransitionException {
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
-    final BeaconStateWithCache newState = BeaconStateWithCache.deepCopy(previousState);
 
     // Create block body
     BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
@@ -70,7 +69,7 @@ public class BlockProposalUtil {
     beaconBlockBody.setDeposits(deposits);
     beaconBlockBody.setAttestations(attestations);
     beaconBlockBody.setProposer_slashings(slashings);
-    beaconBlockBody.setRandao_reveal(get_epoch_signature(newState, newEpoch, signer));
+    beaconBlockBody.setRandao_reveal(get_epoch_signature(state, newEpoch, signer));
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
@@ -80,12 +79,12 @@ public class BlockProposalUtil {
     // Run state transition and set state root
     Bytes32 stateRoot =
         stateTransition
-            .initiate(newState, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false)
+            .initiate(state, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false)
             .hash_tree_root();
     newBlock.setState_root(stateRoot);
 
     // Sign block and set block signature
-    BLSSignature blockSignature = getBlockSignature(newState, newBlock, signer);
+    BLSSignature blockSignature = getBlockSignature(state, newBlock, signer);
 
     return new SignedBeaconBlock(newBlock, blockSignature);
   }
@@ -133,7 +132,7 @@ public class BlockProposalUtil {
   }
 
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
-    BeaconStateWithCache state = BeaconStateWithCache.deepCopy(preState);
+    MutableBeaconState state = preState.createWritableCopy();
     try {
       stateTransition.process_slots(state, slot, false);
     } catch (SlotProcessingException | EpochProcessingException e) {
