@@ -11,36 +11,32 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.api.schema;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
-public class BeaconValidatorsResponse {
+public class BeaconValidators {
+  public static final int PAGE_SIZE_DEFAULT = 250;
+  public static final int PAGE_TOKEN_DEFAULT = 0;
   public final List<ValidatorWithIndex> validatorList;
   private long totalSize;
   private int nextPageToken;
 
-  public BeaconValidatorsResponse(SSZList<Validator> sszList) {
+  public BeaconValidators(SSZList<Validator> sszList) {
     this(sszList.asList());
   }
 
-  public BeaconValidatorsResponse(List<Validator> list) {
-    this(
-        list,
-        false,
-        Constants.FAR_FUTURE_EPOCH,
-        RestApiConstants.PAGE_SIZE_DEFAULT,
-        RestApiConstants.PAGE_TOKEN_DEFAULT);
+  public BeaconValidators(List<Validator> list) {
+    this(list, false, Constants.FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
   }
 
-  public BeaconValidatorsResponse(
+  public BeaconValidators(
       SSZList<Validator> list,
       final boolean activeOnly,
       final UnsignedLong epoch,
@@ -49,7 +45,7 @@ public class BeaconValidatorsResponse {
     this(list.asList(), activeOnly, epoch, pageSize, pageToken);
   }
 
-  public BeaconValidatorsResponse(
+  public BeaconValidators(
       final List<Validator> list,
       final boolean activeOnly,
       final UnsignedLong epoch,

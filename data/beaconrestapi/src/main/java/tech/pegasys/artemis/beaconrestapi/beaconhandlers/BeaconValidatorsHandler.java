@@ -19,9 +19,9 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE_DEFAULT;
+import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
+import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
@@ -41,21 +41,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconValidatorsHandler implements Handler {
 
-  private final CombinedChainDataClient combinedClient;
+  private final ChainDataProvider chainDataProvider;
 
   public BeaconValidatorsHandler(
-      final CombinedChainDataClient combinedClient, final JsonProvider jsonProvider) {
-    this.combinedClient = combinedClient;
+      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+    this.chainDataProvider = chainDataProvider;
     this.jsonProvider = jsonProvider;
   }
 
@@ -91,9 +91,7 @@ public class BeaconValidatorsHandler implements Handler {
                     + ".")
       },
       responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = BeaconValidatorsResponse.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconValidators.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
@@ -109,7 +107,7 @@ public class BeaconValidatorsHandler implements Handler {
           getPositiveIntegerValueWithDefaultIfNotSupplied(
               parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
 
-      Optional<Bytes32> optionalRoot = combinedClient.getBestBlockRoot();
+      Optional<Bytes32> optionalRoot = chainDataProvider.getBestBlockRoot();
       if (optionalRoot.isPresent()) {
         if (parameters.containsKey(EPOCH)) {
           future = queryByEpoch(validateQueryParameter(parameters, EPOCH), optionalRoot.get());
@@ -153,19 +151,19 @@ public class BeaconValidatorsHandler implements Handler {
   }
 
   private SafeFuture<Optional<BeaconState>> queryByRootHash(final Bytes32 root32) {
-    return combinedClient.getStateByBlockRoot(root32);
+    return chainDataProvider.getStateByBlockRoot(root32);
   }
 
   private SafeFuture<Optional<BeaconState>> queryByEpoch(
       final String epochString, final Bytes32 blockRoot) {
     final UnsignedLong epoch = UnsignedLong.valueOf(epochString);
-    return combinedClient.getStateAtSlot(
+    return chainDataProvider.getStateAtSlot(
         BeaconStateUtil.compute_start_slot_at_epoch(epoch), blockRoot);
   }
 
-  private final BeaconValidatorsResponse produceResponse(
+  private final BeaconValidators produceResponse(
       final BeaconState state, final boolean activeOnly, final int pageSize, final int pageToken) {
-    return new BeaconValidatorsResponse(
+    return new BeaconValidators(
         state.getValidators(),
         activeOnly,
         BeaconStateUtil.get_current_epoch(state),
@@ -173,7 +171,7 @@ public class BeaconValidatorsHandler implements Handler {
         pageToken);
   }
 
-  private final BeaconValidatorsResponse produceEmptyListResponse() {
-    return new BeaconValidatorsResponse(List.of());
+  private final BeaconValidators produceEmptyListResponse() {
+    return new BeaconValidators(List.of());
   }
 }
