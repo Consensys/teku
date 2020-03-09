@@ -100,8 +100,10 @@ public class BeaconNode {
       // Start services
       serviceController.startAll();
 
-    } catch (final CompletionException | IllegalArgumentException e) {
-      STDOUT.log(Level.FATAL, "Startup failed", e);
+    } catch (final CompletionException e) {
+      STDOUT.log(Level.FATAL, e.toString());
+    } catch (final IllegalArgumentException e) {
+      STDOUT.log(Level.FATAL, e.getMessage());
     }
   }
 
