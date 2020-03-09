@@ -15,7 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.networkhandlers;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
