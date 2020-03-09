@@ -13,11 +13,8 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -129,8 +126,7 @@ public class AttestationManager extends Service {
           futureAttestations.add(delayableAttestation);
           break;
         default:
-          STATUS_LOG.log(
-              Level.WARN, "Failed to process attestation: " + result.getFailureMessage());
+          LOG.warn("Failed to process attestation: " + result.getFailureMessage());
           break;
       }
     }
