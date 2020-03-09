@@ -1,11 +1,12 @@
 dependencies {
-  implementation project(':util')
-  implementation project(':storage')
-  implementation project(':ethereum:datastructures')
-  implementation project(':ethereum:statetransition')
   implementation project(':data')
   implementation project(':data:metrics')
+  implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:statetransition')
   implementation project(':networking:p2p')
+  implementation project(':logging')
+  implementation project(':util')
+  implementation project(':storage')
 
   implementation 'com.google.guava:guava'
   implementation 'io.libp2p:jvm-libp2p-minimal'

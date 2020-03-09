@@ -28,8 +28,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.logging.ALogger;
 
 class EventBusExceptionHandlerTest {
 
