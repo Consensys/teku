@@ -22,8 +22,11 @@ import io.libp2p.core.multistream.ProtocolMatcher;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,36 +34,84 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
+import tech.pegasys.artemis.networking.p2p.rpc.StreamClosedException;
+import tech.pegasys.artemis.networking.p2p.rpc.StreamTimedOutException;
+import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class RpcHandler implements ProtocolBinding<Controller> {
+  private static final Duration TIMEOUT = Duration.ofSeconds(5);
   private static final Logger LOG = LogManager.getLogger();
 
   private final RpcMethod rpcMethod;
+  private final AsyncRunner asyncRunner;
 
-  public RpcHandler(RpcMethod rpcMethod) {
+  public RpcHandler(final AsyncRunner asyncRunner, RpcMethod rpcMethod) {
+    this.asyncRunner = asyncRunner;
     this.rpcMethod = rpcMethod;
   }
 
   @SuppressWarnings("unchecked")
   public SafeFuture<RpcStream> sendRequest(
       Connection connection, Bytes initialPayload, RpcRequestHandler handler) {
-    return SafeFuture.of(
-            connection
-                .muxerSession()
-                .createStream(
-                    Multistream.create(this.toInitiator(rpcMethod.getId())).toStreamHandler())
-                .getController())
-        .thenCompose(
+    if (connection.closeFuture().isDone()) {
+      return SafeFuture.failedFuture(new PeerDisconnectedException());
+    }
+
+    SafeFuture<RpcStream> streamFuture = new SafeFuture<>();
+
+    // Complete future if peer disconnects
+    SafeFuture.of(connection.closeFuture())
+        .always(() -> streamFuture.completeExceptionally(new PeerDisconnectedException()));
+    // Complete future if we fail to initialize
+    final AtomicBoolean timedOut = new AtomicBoolean(false);
+    asyncRunner
+        .getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+        .thenAccept(
+            __ -> {
+              timedOut.set(true);
+              streamFuture.completeExceptionally(
+                  new StreamTimedOutException("Timed out waiting to initialize stream"));
+            })
+        .reportExceptions();
+
+    // Try to initiate stream
+    connection
+        .muxerSession()
+        .createStream(Multistream.create(this.toInitiator(rpcMethod.getId())).toStreamHandler())
+        .getController()
+        .thenAccept(
             ctr -> {
               ctr.setRequestHandler(handler);
-              return ctr.getRpcStream()
+              ctr.getRpcStream()
                   .writeBytes(initialPayload)
-                  .thenApply(f -> ctr.getRpcStream());
+                  .thenApply(f -> ctr.getRpcStream())
+                  .thenAccept(
+                      rpcStream -> {
+                        if (!streamFuture.complete(rpcStream)) {
+                          // If future was already completed exceptionally, close down the
+                          // controller
+                          ctr.close();
+                        }
+                      })
+                  .exceptionally(
+                      err -> {
+                        streamFuture.completeExceptionally(err);
+                        return null;
+                      })
+                  .reportExceptions();
+            })
+        .exceptionally(
+            err -> {
+              streamFuture.completeExceptionally(err);
+              return null;
             });
+
+    return streamFuture;
   }
 
   @NotNull
@@ -78,7 +129,6 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   @NotNull
   @Override
   public SafeFuture<Controller> initChannel(P2PChannel channel, String s) {
-    // TODO timeout handlers
     final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
     Controller controller = new Controller(nodeId, channel);
@@ -86,6 +136,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
     }
     channel.pushHandler(controller);
+
     return controller.activeFuture;
   }
 
@@ -101,6 +152,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
       this.p2pChannel = p2pChannel;
+      SafeFuture.of(this.p2pChannel.closeFuture())
+          .always(() -> activeFuture.completeExceptionally(new StreamClosedException()));
     }
 
     @Override
@@ -145,8 +198,6 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
-      // If handler is removed before channel is activated, update future
-      activeFuture.completeExceptionally(new IllegalStateException("Stream closed."));
       close();
     }
 
@@ -157,6 +208,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       if (rpcRequestHandler != null) {
         rpcRequestHandler.onRequestComplete();
       }
+      // Make sure to complete activation future in case we are never activated
+      activeFuture.completeExceptionally(new StreamClosedException());
     }
   }
 }
