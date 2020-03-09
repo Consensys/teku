@@ -17,14 +17,14 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class Validator {
-  BLSPubKey pubkey;
-  Bytes32 withdrawal_credentials;
-  UnsignedLong effective_balance;
-  boolean slashed;
-  UnsignedLong activation_eligibility_epoch;
-  UnsignedLong activation_epoch;
-  UnsignedLong exit_epoch;
-  UnsignedLong withdrawable_epoch;
+  public final BLSPubKey pubkey;
+  public final Bytes32 withdrawal_credentials;
+  public final UnsignedLong effective_balance;
+  public final boolean slashed;
+  public final UnsignedLong activation_eligibility_epoch;
+  public final UnsignedLong activation_epoch;
+  public final UnsignedLong exit_epoch;
+  public final UnsignedLong withdrawable_epoch;
 
   public Validator(tech.pegasys.artemis.datastructures.state.Validator validator) {
     this.pubkey = new BLSPubKey(validator.getPubkey().toBytes());
