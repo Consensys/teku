@@ -17,14 +17,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.io.Files;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,13 +39,12 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.ParameterException;
-import tech.pegasys.artemis.cli.deposit.EncryptedKeysPasswordGroup;
+import picocli.CommandLine.Spec;
+import tech.pegasys.artemis.cli.deposit.EncryptedKeystorePasswordProvider;
 import tech.pegasys.artemis.cli.deposit.EncryptedKeystoreWriter;
 import tech.pegasys.artemis.cli.deposit.KeysWriter;
-import tech.pegasys.artemis.cli.deposit.ValidatorKeysPasswordGroup;
-import tech.pegasys.artemis.cli.deposit.WithdrawalKeysPasswordGroup;
 import tech.pegasys.artemis.cli.deposit.YamlKeysWriter;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -72,7 +67,7 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
     footer = "Teku is licensed under the Apache License 2.0")
 public class DepositCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
-  @CommandLine.Spec CommandLine.Model.CommandSpec spec;
+  private @Spec CommandSpec spec;
 
   public DepositCommand() {
     this.shutdownFunction =
@@ -125,19 +120,17 @@ public class DepositCommand implements Runnable {
       @Option(
               names = {"--validator-password:env"},
               paramLabel = "<ENV_VAR>",
-              description =
-                  "Read password from environment variable to encrypt the validator keys")
+              description = "Read password from environment variable to encrypt the validator keys")
           String validatorPasswordEnv,
       @Option(
               names = {"--validator-password"},
-              paramLabel = "<PASSWORD>",
               description = "Password to encrypt validator keys",
               interactive = true)
           String validatorPassword,
       @Option(
               names = {"--withdrawal-password:file"},
               paramLabel = "<FILE>",
-              description = "Path to the file containing password to encrypt the withdrawal keys")
+              description = "Read password from the file to encrypt the withdrawal keys")
           File withdrawalPasswordFile,
       @Option(
               names = {"--withdrawal-password:env"},
@@ -151,35 +144,32 @@ public class DepositCommand implements Runnable {
               interactive = true)
           String withdrawalPassword) {
 
+    final KeysWriter keysWriter;
     if (encryptKeys) {
-      validatorPassword =
-          readEncryptedKeystorePassword(
-              new ValidatorKeysPasswordGroup(
-                  validatorPasswordFile, validatorPasswordEnv, validatorPassword));
-      withdrawalPassword =
-          readEncryptedKeystorePassword(
-              new WithdrawalKeysPasswordGroup(
-                  withdrawalPasswordFile, withdrawalPasswordEnv, withdrawalPassword));
+      final String validatorKeystorePassword =
+          new EncryptedKeystorePasswordProvider(
+                  spec, validatorPassword, validatorPasswordEnv, validatorPasswordFile, "validator")
+              .retrievePassword();
+      final String withdrawalKeystorePassword =
+          new EncryptedKeystorePasswordProvider(
+                  spec,
+                  withdrawalPassword,
+                  withdrawalPasswordEnv,
+                  withdrawalPasswordFile,
+                  "withdrawal")
+              .retrievePassword();
+      final Path keystoreDir =
+          outputPath == null || outputPath.isBlank() ? Path.of(".") : Path.of(outputPath);
+      keysWriter =
+          new EncryptedKeystoreWriter(
+              validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
+      STDOUT.log(Level.INFO, "Generating Encrypted Keystores ...");
     } else {
-      validatorPassword = null;
-      withdrawalPassword = null;
+      keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
+      STDOUT.log(Level.INFO, "Generating unencrypted keys ...");
     }
 
     try (params) {
-      final KeysWriter keysWriter;
-      if (encryptKeys) {
-        STDOUT.log(Level.INFO, "Generating encrypted keystores ...");
-        final Path keystoreDir =
-            outputPath == null || outputPath.isBlank() ? Path.of(".") : Path.of(outputPath);
-        keysWriter =
-            new EncryptedKeystoreWriter(validatorPassword, withdrawalPassword, keystoreDir);
-      } else {
-        STDOUT.log(Level.INFO, "Generating unencrypted keys ...");
-        keysWriter =
-            new YamlKeysWriter(
-                outputPath == null || outputPath.isBlank() ? null : Path.of(outputPath));
-      }
-
       final DepositTransactionSender sender = params.createTransactionSender();
       final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
       for (int i = 0; i < validatorCount; i++) {
@@ -202,53 +192,6 @@ public class DepositCommand implements Runnable {
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);
-  }
-
-  private String readEncryptedKeystorePassword(
-      final EncryptedKeysPasswordGroup encryptedKeysPasswordGroup) {
-    if (encryptedKeysPasswordGroup == null) {
-      throw new ParameterException(
-          spec.commandLine(), "Error: Password is required for encrypting keystore");
-    }
-
-    if (!isBlank(encryptedKeysPasswordGroup.readPasswordInteractively())) {
-      return encryptedKeysPasswordGroup.readPasswordInteractively();
-    }
-
-    if (encryptedKeysPasswordGroup.readPasswordFromEnvironmentVariable() != null) {
-      final String password = System.getenv(encryptedKeysPasswordGroup.readPasswordFromEnvironmentVariable());
-      if (isBlank(password)) {
-        throw new ParameterException(
-            spec.commandLine(),
-            "Error in reading password from environment variable ["
-                + encryptedKeysPasswordGroup.readPasswordFromEnvironmentVariable()
-                + "]");
-      }
-      return password;
-    }
-
-    if (encryptedKeysPasswordGroup.readPasswordFromFile() != null) {
-      try {
-        final String password = readPasswordFromFile(encryptedKeysPasswordGroup.readPasswordFromFile());
-        if (isBlank(password)) {
-          throw new ParameterException(
-              spec.commandLine(),
-              "Error in reading password from file ["
-                  + encryptedKeysPasswordGroup.readPasswordFromFile()
-                  + "] : Empty password");
-        }
-      } catch (IOException e) {
-        throw new ParameterException(
-            spec.commandLine(),
-            "Error in reading password from file ["
-                + encryptedKeysPasswordGroup.readPasswordFromFile()
-                + "] : "
-                + e.getMessage());
-      }
-    }
-
-    throw new ParameterException(
-        spec.commandLine(), "Error: Password is required for encrypting keystore");
   }
 
   @Command(
@@ -292,26 +235,6 @@ public class DepositCommand implements Runnable {
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
-  }
-
-  private String readPasswordFromFile(final File passwordFile) throws IOException {
-    final String password;
-    try {
-      password = Files.asCharSource(passwordFile, StandardCharsets.UTF_8).readFirstLine();
-    } catch (FileNotFoundException e) {
-      STDOUT.log(Level.FATAL, "Password file not found: " + passwordFile);
-      throw e;
-    } catch (IOException e) {
-      STDOUT.log(
-          Level.FATAL,
-          "Unexpected IO error while reading password file ["
-              + passwordFile
-              + "] : "
-              + e.getMessage());
-      throw e;
-    }
-
-    return password;
   }
 
   @Override

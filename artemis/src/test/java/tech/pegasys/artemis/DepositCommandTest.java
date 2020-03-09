@@ -20,6 +20,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,8 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.bls.keystore.KeyStore;
 import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
-import tech.pegasys.artemis.cli.deposit.ValidatorKeysPasswordGroup;
-import tech.pegasys.artemis.cli.deposit.WithdrawalKeysPasswordGroup;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 
 class DepositCommandTest {
@@ -49,23 +49,17 @@ class DepositCommandTest {
 
   @Test
   void encryptedKeystoresAreCreatedWithPasswords(@TempDir final Path tempDir) {
-    final ValidatorKeysPasswordGroup validatorKeysPasswordGroup = new ValidatorKeysPasswordGroup();
-    validatorKeysPasswordGroup.setPassword("testpassword");
-    final WithdrawalKeysPasswordGroup withdrawalKeysPasswordGroup =
-        new WithdrawalKeysPasswordGroup();
-    withdrawalKeysPasswordGroup.setPassword("testpassword");
-
     depositCommand.generate(
         commonParams,
         VALIDATORS_COUNT,
         tempDir.toString(),
         true,
-        validatorKeysPasswordGroup.readPasswordFromFile(),
-        validatorKeysPasswordGroup.readPasswordFromEnvironmentVariable(),
-        validatorKeysPasswordGroup.readPasswordInteractively(),
-        withdrawalKeysPasswordGroup.readPasswordFromFile(),
-        withdrawalKeysPasswordGroup.readPasswordFromEnvironmentVariable(),
-        withdrawalKeysPasswordGroup.readPasswordInteractively());
+        null,
+        null,
+        "testpassword",
+        null,
+        null,
+        "testpassword");
 
     // assert that sub directories exist
     final File[] subDirectories =
@@ -75,11 +69,40 @@ class DepositCommandTest {
     assertThat(tempDir.toFile().listFiles()).containsExactlyInAnyOrder(subDirectories);
 
     for (int i = 0; i < subDirectories.length; i++) {
-      assertKeyStoreFilesExist(subDirectories[i].toPath(), i + 1);
+      assertKeyStoreFilesExist(subDirectories[i].toPath());
     }
   }
 
-  private void assertKeyStoreFilesExist(final Path parentDir, final int suffix) {
+  @Test
+  void encryptedKeystoresAreCreatedWithPasswordsFromFile(@TempDir final Path tempDir)
+      throws IOException {
+    final Path passwordFile = Files.writeString(tempDir.resolve("password.txt"), "testpassword");
+    final Path ksDir = Files.createDirectory(tempDir.resolve("ksDir"));
+    depositCommand.generate(
+        commonParams,
+        VALIDATORS_COUNT,
+        ksDir.toString(),
+        true,
+        passwordFile.toFile(),
+        null,
+        null,
+        passwordFile.toFile(),
+        null,
+        null);
+
+    // assert that sub directories exist
+    final File[] subDirectories =
+        IntStream.range(1, VALIDATORS_COUNT + 1)
+            .mapToObj(i -> ksDir.resolve("validator_" + i).toFile())
+            .toArray(File[]::new);
+    assertThat(ksDir.toFile().listFiles()).containsExactlyInAnyOrder(subDirectories);
+
+    for (int i = 0; i < subDirectories.length; i++) {
+      assertKeyStoreFilesExist(subDirectories[i].toPath());
+    }
+  }
+
+  private void assertKeyStoreFilesExist(final Path parentDir) {
     final Path keystore1File = parentDir.resolve("validator_keystore.json");
     final Path keystore2File = parentDir.resolve("withdrawal_keystore.json");
 
