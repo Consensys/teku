@@ -152,7 +152,7 @@ public final class HashTreeUtil {
   public static Bytes32 hash_tree_root_vector_unsigned_long(SSZVector<UnsignedLong> vector) {
     List<Bytes> bytes =
         vector.stream().map(i -> SSZ.encodeUInt64(i.longValue())).collect(Collectors.toList());
-    return merkleize(pack(bytes.toArray(new Bytes[0])));
+    return merkleize(separateIntoChunks(bytes.toArray(new Bytes[0])));
   }
 
   @SuppressWarnings({"rawtypes", "unchecked"})
@@ -216,7 +216,7 @@ public final class HashTreeUtil {
     return tmp.get(max_depth);
   }
 
-  private static void merge(Bytes32 h, int i, List<Bytes32> tmp, long count, int depth) {
+  static void merge(Bytes32 h, int i, List<Bytes32> tmp, long count, int depth) {
     int j = 0;
     while (true) {
       if ((i & (1 << j)) == 0) {
@@ -249,7 +249,7 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   private static Bytes32 hash_tree_root_basic_type(Bytes... bytes) {
-    return merkleize(pack(bytes));
+    return merkleize(separateIntoChunks(bytes));
   }
 
   /**
@@ -296,7 +296,7 @@ public final class HashTreeUtil {
    */
   public static Bytes32 hash_tree_root_bitvector(Bitvector bitvector) {
     return merkleize(
-        pack(bitvector.serialize()), chunk_count(SSZTypes.BITVECTOR, bitvector.getSize()));
+        separateIntoChunks(bitvector.serialize()), chunk_count(SSZTypes.BITVECTOR, bitvector.getSize()));
   }
 
   /**
@@ -311,7 +311,7 @@ public final class HashTreeUtil {
    */
   private static Bytes32 hash_tree_root_list_of_unsigned_long(SSZList<? extends Bytes> bytes) {
     return mix_in_length(
-        merkleize(pack(bytes.toArray()), chunk_count_list_unsigned_long(bytes.getMaxSize())),
+        merkleize(separateIntoChunks(bytes.toArray()), chunk_count_list_unsigned_long(bytes.getMaxSize())),
         bytes.size());
   }
 
@@ -389,27 +389,26 @@ public final class HashTreeUtil {
     // If removing marker bit allows bitfield to be packed in less bytes, trim as necessary.
     Bytes trimmedBitfield = resultantBitfield.trimLeadingZeros();
     // Turn bytes back into little endian, and pack.
-    return pack(trimmedBitfield.reverse());
+    return separateIntoChunks(trimmedBitfield.reverse());
   }
 
-  private static List<Bytes32> pack(Bytes... sszValues) {
+  /**
+   * Split a set of values into 32 byte chunks.
+   * The last chunk may be completed with zero bytes.
+   * @param sszValues the bytes to break into chunks
+   * @return the chunks
+   */
+  static List<Bytes32> separateIntoChunks(Bytes... sszValues) {
     // Join all varags sszValues into one Bytes type
     Bytes concatenatedBytes = Bytes.concatenate(sszValues);
-
-    // Pad so that concatenatedBytes length is divisible by BYTES_PER_CHUNK
-    int packingRemainder = concatenatedBytes.size() % BYTES_PER_CHUNK;
-    if (packingRemainder != 0) {
-      concatenatedBytes =
-          Bytes.concatenate(
-              concatenatedBytes, Bytes.wrap(new byte[BYTES_PER_CHUNK - packingRemainder]));
-    }
 
     // Wrap each BYTES_PER_CHUNK-byte value into a Bytes32
     List<Bytes32> chunkifiedBytes = new ArrayList<>();
     for (int chunk = 0; chunk < concatenatedBytes.size(); chunk += BYTES_PER_CHUNK) {
-      chunkifiedBytes.add(Bytes32.wrap(concatenatedBytes, chunk));
+      chunkifiedBytes.add(
+          Bytes32.rightPad(
+              concatenatedBytes.slice(chunk, Math.min(32, concatenatedBytes.size() - chunk))));
     }
-
     return chunkifiedBytes;
   }
 
