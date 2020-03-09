@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -63,7 +61,7 @@ public class BeaconNode {
 
   BeaconNode(final Optional<Level> loggingLevel, final ArtemisConfiguration config) {
 
-    metricsEndpoint = new MetricsEndpoint(config, vertx);
+    this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final EventBusExceptionHandler subscriberExceptionHandler = new EventBusExceptionHandler(LOG);
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
@@ -102,9 +100,9 @@ public class BeaconNode {
       serviceController.startAll();
 
     } catch (final CompletionException e) {
-      STATUS_LOG.log(Level.FATAL, e.toString());
+      LOG.fatal(e.toString());
     } catch (final IllegalArgumentException e) {
-      STATUS_LOG.log(Level.FATAL, e.getMessage());
+      LOG.fatal(e.getMessage());
     }
   }
 
@@ -119,10 +117,10 @@ public class BeaconNode {
 final class EventBusExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler {
 
-  private final Logger logger;
+  private final Logger log;
 
-  EventBusExceptionHandler(final Logger logger) {
-    this.logger = logger;
+  EventBusExceptionHandler(final Logger log) {
+    this.log = log;
   }
 
   @Override
@@ -159,10 +157,9 @@ final class EventBusExceptionHandler
 
   private void handleException(final Throwable exception, final String subscriberDescription) {
     if (isSpecFailure(exception)) {
-      logger.log(Level.WARN, specFailedMessage(exception, subscriberDescription), exception);
+      log.warn(specFailedMessage(exception, subscriberDescription), exception);
     } else {
-      logger.log(
-          Level.FATAL, unexpectedExceptionMessage(exception, subscriberDescription), exception);
+      log.fatal(unexpectedExceptionMessage(exception, subscriberDescription), exception);
     }
   }
 
