@@ -35,25 +35,22 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   private final Map<T, BlockingQueue<Runnable>> eventQueuesBySubscriber =
       synchronizedMap(new IdentityHashMap<>());
   private final AtomicBoolean stopped = new AtomicBoolean(false);
-  private final Channel channelOptions;
   private final ExecutorService executor;
 
   public AsyncEventDeliverer(
-      final Channel channelOptions,
       final ExecutorService executor,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     super(exceptionHandler, metricsSystem);
-    this.channelOptions = channelOptions;
     this.executor = executor;
   }
 
   @Override
-  void subscribe(final T subscriber) {
+  void subscribe(final T subscriber, final int numberOfThreads) {
     final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     eventQueuesBySubscriber.put(subscriber, queue);
-    super.subscribe(subscriber);
-    for (int i = 0; i < channelOptions.threadsPerSubscriber(); i++) {
+    super.subscribe(subscriber, numberOfThreads);
+    for (int i = 0; i < numberOfThreads; i++) {
       executor.execute(new QueueReader(queue));
     }
   }

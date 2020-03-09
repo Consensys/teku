@@ -22,9 +22,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -34,6 +39,14 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 class EventChannelTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final ChannelExceptionHandler exceptionHandler = mock(ChannelExceptionHandler.class);
+  private ExecutorService executor;
+
+  @AfterEach
+  public void tearDown() {
+    if (executor != null) {
+      executor.shutdownNow();
+    }
+  }
 
   @Test
   public void shouldRejectClassesThatAreNotInterfaces() {
@@ -48,12 +61,6 @@ class EventChannelTest {
   }
 
   @Test
-  public void shouldRejectInterfacesWithoutChannelAnnotation() {
-    assertThatThrownBy(() -> EventChannel.create(Runnable.class, metricsSystem))
-        .isInstanceOf(NullPointerException.class);
-  }
-
-  @Test
   public void shouldRejectInterfacesWithDeclaredExceptions() {
     assertThatThrownBy(() -> EventChannel.create(WithException.class, metricsSystem))
         .isInstanceOf(IllegalArgumentException.class);
@@ -61,8 +68,8 @@ class EventChannelTest {
 
   @Test
   public void shouldDeliverCallsToSubscribers() {
-    final EventChannel<TestChannel> channel = EventChannel.create(TestChannel.class, metricsSystem);
-    final TestChannel subscriber = mock(TestChannel.class);
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
+    final Runnable subscriber = mock(Runnable.class);
     channel.subscribe(subscriber);
 
     channel.getPublisher().run();
@@ -72,9 +79,9 @@ class EventChannelTest {
 
   @Test
   public void shouldDeliverCallsToMultipleSubscribers() {
-    final EventChannel<TestChannel> channel = EventChannel.create(TestChannel.class, metricsSystem);
-    final TestChannel subscriber1 = mock(TestChannel.class);
-    final TestChannel subscriber2 = mock(TestChannel.class);
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
+    final Runnable subscriber1 = mock(Runnable.class);
+    final Runnable subscriber2 = mock(Runnable.class);
     channel.subscribe(subscriber1);
     channel.subscribe(subscriber2);
 
@@ -124,9 +131,9 @@ class EventChannelTest {
 
   @Test
   public void shouldReportExceptionsToExceptionHandler() throws Exception {
-    final EventChannel<TestChannel> channel =
-        EventChannel.create(TestChannel.class, exceptionHandler, metricsSystem);
-    final TestChannel subscriber = mock(TestChannel.class);
+    final EventChannel<Runnable> channel =
+        EventChannel.create(Runnable.class, exceptionHandler, metricsSystem);
+    final Runnable subscriber = mock(Runnable.class);
     final RuntimeException exception = new RuntimeException("Nope");
     doThrow(exception).when(subscriber).run();
 
@@ -134,13 +141,13 @@ class EventChannelTest {
     channel.getPublisher().run();
 
     verify(exceptionHandler)
-        .handleException(exception, subscriber, TestChannel.class.getMethod("run"), null);
+        .handleException(exception, subscriber, Runnable.class.getMethod("run"), null);
   }
 
   @Test
   public void shouldNotProxyToString() {
-    final EventChannel<TestChannel> channel = EventChannel.create(TestChannel.class, metricsSystem);
-    final TestChannel publisher = channel.getPublisher();
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
+    final Runnable publisher = channel.getPublisher();
     final String toString = publisher.toString();
     assertThat(toString).contains(DirectEventDeliverer.class.getName());
   }
@@ -148,12 +155,12 @@ class EventChannelTest {
   @Test
   public void publisherShouldNotBeEqualToAnything() {
     // Mostly we just want it to not throw exceptions when equals is called.
-    final EventChannel<TestChannel> channel = EventChannel.create(TestChannel.class, metricsSystem);
-    final TestChannel publisher = channel.getPublisher();
+    final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
+    final Runnable publisher = channel.getPublisher();
     assertThat(publisher).isNotEqualTo("Foo");
     assertThat(publisher).isNotEqualTo(null);
     assertThat(publisher)
-        .isNotEqualTo(EventChannel.create(TestChannel.class, metricsSystem).getPublisher());
+        .isNotEqualTo(EventChannel.create(Runnable.class, metricsSystem).getPublisher());
     assertThat(publisher).isNotEqualTo(publisher);
   }
 
@@ -189,6 +196,54 @@ class EventChannelTest {
   }
 
   @Test
+  public void shouldDeliverAsyncEventsOnMultipleThreads() throws Exception {
+    executor =
+        Executors.newCachedThreadPool(
+            new ThreadFactoryBuilder()
+                .setDaemon(true)
+                .setNameFormat("shoudlDeliverAsyncEventsOnMultipleThreads-%d")
+                .build());
+    final EventChannel<WaitOnLatch> channel =
+        EventChannel.createAsync(WaitOnLatch.class, executor, metricsSystem);
+    final WaitOnLatch subscriber =
+        (started, await, completed) -> {
+          started.countDown();
+          try {
+            await.await();
+            completed.countDown();
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        };
+    channel.subscribeMultithreaded(subscriber, 2); // Two subscribing threads
+
+    final CountDownLatch started1 = new CountDownLatch(1);
+    final CountDownLatch await1 = new CountDownLatch(1);
+    final CountDownLatch completed1 = new CountDownLatch(1);
+    final CountDownLatch started2 = new CountDownLatch(1);
+    final CountDownLatch await2 = new CountDownLatch(1);
+    final CountDownLatch completed2 = new CountDownLatch(1);
+
+    // Publish two events
+    channel.getPublisher().waitFor(started1, await1, completed1);
+    channel.getPublisher().waitFor(started2, await2, completed2);
+
+    // Both events should start being processed
+    assertThat(started1.await(5, TimeUnit.SECONDS)).isTrue();
+    assertThat(started2.await(5, TimeUnit.SECONDS)).isTrue();
+
+    // Then allow the second event to process
+    await2.countDown();
+    // And it should complete
+    assertThat(completed2.await(5, TimeUnit.SECONDS)).isTrue();
+
+    // And finally allow the first event to process
+    await1.countDown();
+    // And it should also complete
+    assertThat(completed1.await(5, TimeUnit.SECONDS)).isTrue();
+  }
+
+  @Test
   @SuppressWarnings("rawtypes")
   public void shouldReturnFutureResultsAsync() throws Exception {
     final ExecutorService executor = mock(ExecutorService.class);
@@ -209,12 +264,10 @@ class EventChannelTest {
     assertThat(result).isCompletedWithValue("Yay");
   }
 
-  @Channel
   private interface WithException {
     void someMethod() throws Exception;
   }
 
-  @Channel
   private interface MultipleMethods {
     void method1();
 
@@ -223,20 +276,21 @@ class EventChannelTest {
     void method3();
   }
 
-  @Channel
   private interface EventWithArgument {
     void method1(String value);
 
     void method2(String value);
   }
 
-  @Channel
   private interface WithFuture {
     SafeFuture<String> getFutureString();
   }
 
-  @Channel
   private interface WithReturnType {
     boolean get();
+  }
+
+  private interface WaitOnLatch {
+    void waitFor(CountDownLatch started, CountDownLatch latch, CountDownLatch completed);
   }
 }

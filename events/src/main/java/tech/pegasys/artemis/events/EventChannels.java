@@ -39,7 +39,12 @@ public class EventChannels {
   }
 
   public <T> EventChannels subscribe(final Class<T> channelInterface, final T subscriber) {
-    getChannel(channelInterface).subscribe(subscriber);
+    return subscribeMultithreaded(channelInterface, subscriber, 1);
+  }
+
+  public <T> EventChannels subscribeMultithreaded(
+      final Class<T> channelInterface, final T subscriber, final int numberOfThreads) {
+    getChannel(channelInterface).subscribeMultithreaded(subscriber, numberOfThreads);
     return this;
   }
 

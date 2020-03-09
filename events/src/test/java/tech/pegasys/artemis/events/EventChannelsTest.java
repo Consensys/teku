@@ -28,10 +28,10 @@ class EventChannelsTest {
 
   @Test
   public void shouldBeAbleToGetPublisherBeforeSubscriber() {
-    final TestChannel publisher = channels.getPublisher(TestChannel.class);
+    final Runnable publisher = channels.getPublisher(Runnable.class);
 
-    final TestChannel subscriber = mock(TestChannel.class);
-    channels.subscribe(TestChannel.class, subscriber);
+    final Runnable subscriber = mock(Runnable.class);
+    channels.subscribe(Runnable.class, subscriber);
 
     publisher.run();
 
@@ -40,10 +40,10 @@ class EventChannelsTest {
 
   @Test
   public void shouldBeAbleToSubscribeBeforePublisherIsCreated() {
-    final TestChannel subscriber = mock(TestChannel.class);
-    channels.subscribe(TestChannel.class, subscriber);
+    final Runnable subscriber = mock(Runnable.class);
+    channels.subscribe(Runnable.class, subscriber);
 
-    final TestChannel publisher = channels.getPublisher(TestChannel.class);
+    final Runnable publisher = channels.getPublisher(Runnable.class);
 
     publisher.run();
 
@@ -52,12 +52,12 @@ class EventChannelsTest {
 
   @Test
   public void shouldBeAbleToAddMultipleSubscribers() {
-    final TestChannel subscriber1 = mock(TestChannel.class);
-    final TestChannel subscriber2 = mock(TestChannel.class);
+    final Runnable subscriber1 = mock(Runnable.class);
+    final Runnable subscriber2 = mock(Runnable.class);
 
-    channels.subscribe(TestChannel.class, subscriber1);
-    final TestChannel publisher = channels.getPublisher(TestChannel.class);
-    channels.subscribe(TestChannel.class, subscriber2);
+    channels.subscribe(Runnable.class, subscriber1);
+    final Runnable publisher = channels.getPublisher(Runnable.class);
+    channels.subscribe(Runnable.class, subscriber2);
 
     publisher.run();
 
@@ -67,32 +67,31 @@ class EventChannelsTest {
 
   @Test
   public void shouldReturnSamePublisherForSameChannel() {
-    final TestChannel publisher1 = channels.getPublisher(TestChannel.class);
-    final TestChannel publisher2 = channels.getPublisher(TestChannel.class);
+    final Runnable publisher1 = channels.getPublisher(Runnable.class);
+    final Runnable publisher2 = channels.getPublisher(Runnable.class);
 
     assertThat(publisher1).isSameAs(publisher2);
   }
 
   @Test
   public void shouldKeepDifferentChannelsSeparate() {
-    final TestChannel testChannelSubscriber = mock(TestChannel.class);
+    final Runnable RunnableSubscriber = mock(Runnable.class);
     final SimpleConsumer consumerSubscriber = mock(SimpleConsumer.class);
-    channels.subscribe(TestChannel.class, testChannelSubscriber);
+    channels.subscribe(Runnable.class, RunnableSubscriber);
     channels.subscribe(SimpleConsumer.class, consumerSubscriber);
 
-    final TestChannel testChannelPublisher = channels.getPublisher(TestChannel.class);
+    final Runnable RunnablePublisher = channels.getPublisher(Runnable.class);
     final SimpleConsumer consumerPublisher = channels.getPublisher(SimpleConsumer.class);
 
-    testChannelPublisher.run();
-    verify(testChannelSubscriber).run();
+    RunnablePublisher.run();
+    verify(RunnableSubscriber).run();
     verifyNoInteractions(consumerSubscriber);
 
     consumerPublisher.accept(1);
     verify(consumerSubscriber).accept(1);
-    verifyNoMoreInteractions(testChannelSubscriber);
+    verifyNoMoreInteractions(RunnableSubscriber);
   }
 
-  @Channel
   private interface SimpleConsumer {
     void accept(int value);
   }
