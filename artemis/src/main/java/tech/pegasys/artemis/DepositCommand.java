@@ -14,7 +14,7 @@
 package tech.pegasys.artemis;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
@@ -186,7 +186,7 @@ public class DepositCommand implements Runnable {
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
       STDOUT.log(Level.INFO, "Deposit transaction(s) successful.");
     } catch (final Throwable t) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
       shutdownFunction.accept(1);
@@ -229,7 +229,7 @@ public class DepositCommand implements Runnable {
               params.amount)
           .get();
     } catch (final Throwable t) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(

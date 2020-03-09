@@ -15,7 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
@@ -91,14 +91,14 @@ public final class StartupUtil {
     BeaconState initialState;
     if (startState != null) {
       try {
-        STDOUT.log(
+        STATUS_LOG.log(
             Level.INFO, "Loading initial state from " + startState, StatusLogger.Color.GREEN);
         initialState = StartupUtil.loadBeaconStateFromFile(startState);
       } catch (final IOException e) {
         throw new IllegalStateException("Failed to load initial state", e);
       }
     } else {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.INFO,
           "Starting with mocked start interoperability mode with genesis time "
               + genesisTime

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.services.powchain;
 
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import org.apache.logging.log4j.Level;
 import org.web3j.protocol.Web3j;
@@ -78,7 +78,7 @@ public class PowchainService implements ServiceInterface {
 
   @Override
   public void stop() {
-    STDOUT.log(Level.DEBUG, "PowChainService.stop()");
+    STATUS_LOG.log(Level.DEBUG, "PowChainService.stop()");
     eth1DepositManager.stop();
   }
 }

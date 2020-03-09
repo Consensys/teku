@@ -22,7 +22,7 @@ import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -80,6 +80,7 @@ import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
 public class ValidatorCoordinator {
+
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
   private final StateTransition stateTransition;
@@ -211,7 +212,7 @@ public class ValidatorCoordinator {
       // Save headState to check for slashings
       //      this.headState = headState;
     } catch (IllegalArgumentException e) {
-      STDOUT.log(Level.WARN, "Can not produce attestations or create a block" + e.toString());
+      STATUS_LOG.log(Level.WARN, "Can not produce attestations or create a block" + e.toString());
     }
   }
 
@@ -282,9 +283,9 @@ public class ValidatorCoordinator {
               deposits);
 
       this.eventBus.post(new ProposedBlockEvent(newBlock));
-      STDOUT.log(Level.DEBUG, "Local validator produced a new block");
+      STATUS_LOG.log(Level.DEBUG, "Local validator produced a new block");
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
-      STDOUT.log(Level.ERROR, "Error during block creation " + e.toString());
+      STATUS_LOG.log(Level.ERROR, "Error during block creation " + e.toString());
     }
   }
 
@@ -336,7 +337,7 @@ public class ValidatorCoordinator {
         .forEach(
             i -> {
               if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
-                STDOUT.log(
+                STATUS_LOG.log(
                     Level.DEBUG,
                     "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
                 validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
