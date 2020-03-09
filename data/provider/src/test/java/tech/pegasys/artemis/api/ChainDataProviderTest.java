@@ -55,7 +55,8 @@ public class ChainDataProviderTest {
   private static ChainStorageClient chainStorageClient;
   private final tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
       DataStructureUtil.randomSignedBeaconBlock(1, 1);
-  //  private static UnsignedLong epoch;
+  private CombinedChainDataClient mockCombinedChainDataClient = mock(CombinedChainDataClient.class);
+  private ChainStorageClient mockChainStorageClient = mock(ChainStorageClient.class);
 
   @BeforeAll
   public static void setup() {
@@ -66,7 +67,6 @@ public class ChainDataProviderTest {
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
     blockRoot = chainStorageClient.getBestBlockRoot();
     slot = chainStorageClient.getBlockState(blockRoot).get().getSlot();
-    //    epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
 
   @Test
@@ -95,19 +95,18 @@ public class ChainDataProviderTest {
   @Test
   public void getCommitteeAssignmentAtEpoch_shouldReturnAListOfCommittees()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myCombinedClient = mock(CombinedChainDataClient.class);
-    ChainStorageClient myClient = mock(ChainStorageClient.class);
     List<CommitteeAssignment> committeeAssignments =
         List.of(new CommitteeAssignment(List.of(1), ZERO, ONE));
-    ChainDataProvider provider = new ChainDataProvider(myClient, myCombinedClient);
+    ChainDataProvider provider =
+        new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
 
-    when(myCombinedClient.isStoreAvailable()).thenReturn(true);
-    when(myCombinedClient.getCommitteeAssignmentAtEpoch(beaconState.getSlot()))
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getCommitteeAssignmentAtEpoch(beaconState.getSlot()))
         .thenReturn(completedFuture(committeeAssignments));
     SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(beaconState.getSlot());
 
-    verify(myCombinedClient).isStoreAvailable();
-    verify(myCombinedClient).getCommitteeAssignmentAtEpoch(beaconState.getSlot());
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    verify(mockCombinedChainDataClient).getCommitteeAssignmentAtEpoch(beaconState.getSlot());
     Committee result = future.get().get(0);
     assertEquals(ONE, result.slot);
     assertEquals(ZERO, result.index);
@@ -117,9 +116,8 @@ public class ChainDataProviderTest {
   @Test
   public void getCommitteeAssignmentAtEpoch_shouldReturnEmptyListIfStoreNotAvailable()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(null, myClient);
-    when(myClient.isStoreAvailable()).thenReturn(false);
+    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(ZERO);
     verify(historicalChainData, never()).getFinalizedStateAtSlot(any());
     assertEquals(future.get(), List.of());
@@ -127,9 +125,8 @@ public class ChainDataProviderTest {
 
   @Test
   public void getBeaconHead_shouldReturnEmptyIfStoreNotReady() {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(null, myClient);
-    when(myClient.isStoreAvailable()).thenReturn(false);
+    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     Optional<BeaconHead> data = provider.getBeaconHead();
     assertTrue(data.isEmpty());
   }
@@ -149,10 +146,10 @@ public class ChainDataProviderTest {
 
   @Test
   public void getBeaconHead_shouldReturnEmptyIfHeadNotFound() {
-    ChainStorageClient myClient = mock(ChainStorageClient.class);
-    ChainDataProvider provider = new ChainDataProvider(myClient, combinedChainDataClient);
+    ChainDataProvider provider =
+        new ChainDataProvider(mockChainStorageClient, combinedChainDataClient);
 
-    when(myClient.getBestBlockRoot()).thenReturn(null);
+    when(mockChainStorageClient.getBestBlockRoot()).thenReturn(null);
 
     Optional<BeaconHead> data = provider.getBeaconHead();
     assertTrue(data.isEmpty());
@@ -160,9 +157,8 @@ public class ChainDataProviderTest {
 
   @Test
   public void getGenesisTime_shouldReturnEmptyIfStoreNotAvailable() {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(null, myClient);
-    when(myClient.isStoreAvailable()).thenReturn(false);
+    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
 
     Optional<UnsignedLong> optionalData = provider.getGenesisTime();
     assertTrue(optionalData.isEmpty());
@@ -180,8 +176,7 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockBySlot_shouldReturnEmptyWhenStoreNotFound()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(null, myClient);
+    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
     assertTrue(future.get().isEmpty());
@@ -190,11 +185,12 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockBySlot_shouldReturnEmptyWhenSlotNotFound()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
 
-    when(myClient.isStoreAvailable()).thenReturn(true);
-    when(myClient.getBlockBySlot(ZERO)).thenReturn(completedFuture(Optional.empty()));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBlockBySlot(ZERO))
+        .thenReturn(completedFuture(Optional.empty()));
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
     assertTrue(future.get().isEmpty());
   }
@@ -202,15 +198,15 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockBySlot_shouldReturnBlockWhenFound()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     SafeFuture<Optional<tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock>> data =
         completedFuture(Optional.of(signedBeaconBlock));
 
-    when(myClient.isStoreAvailable()).thenReturn(true);
-    when(myClient.getBlockBySlot(ZERO)).thenReturn(data);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBlockBySlot(ZERO)).thenReturn(data);
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
-    verify(myClient).getBlockBySlot(ZERO);
+    verify(mockCombinedChainDataClient).getBlockBySlot(ZERO);
 
     SignedBeaconBlock result = future.get().get();
     assertThat(result)
@@ -221,8 +217,7 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockByBlockRoot_shouldReturnEmptyWhenStoreNotFound()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(null, myClient);
+    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
     assertTrue(future.get().isEmpty());
@@ -231,11 +226,12 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockByBlockRoot_shouldReturnEmptyWhenBlockNotFound()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
 
-    when(myClient.isStoreAvailable()).thenReturn(true);
-    when(myClient.getBlockByBlockRoot(blockRoot)).thenReturn(completedFuture(Optional.empty()));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBlockByBlockRoot(blockRoot))
+        .thenReturn(completedFuture(Optional.empty()));
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
     assertTrue(future.get().isEmpty());
   }
@@ -243,15 +239,15 @@ public class ChainDataProviderTest {
   @Test
   public void getBlockByBlockRoot_shouldReturnBlockWhenFound()
       throws ExecutionException, InterruptedException {
-    CombinedChainDataClient myClient = mock(CombinedChainDataClient.class);
-    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, myClient);
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     SafeFuture<Optional<tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock>> data =
         completedFuture(Optional.of(signedBeaconBlock));
 
-    when(myClient.isStoreAvailable()).thenReturn(true);
-    when(myClient.getBlockByBlockRoot(blockRoot)).thenReturn(data);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBlockByBlockRoot(blockRoot)).thenReturn(data);
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
-    verify(myClient).getBlockByBlockRoot(blockRoot);
+    verify(mockCombinedChainDataClient).getBlockByBlockRoot(blockRoot);
 
     SignedBeaconBlock result = future.get().get();
     assertThat(result)

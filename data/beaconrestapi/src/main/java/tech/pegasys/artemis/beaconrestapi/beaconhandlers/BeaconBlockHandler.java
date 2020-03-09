@@ -92,11 +92,11 @@ public class BeaconBlockHandler implements Handler {
       }
 
       if (queryParamMap.containsKey(ROOT)) {
-        final Bytes32 blockParam = getParameterValueAsBytes32(queryParamMap, ROOT);
+        final Bytes32 blockRoot = getParameterValueAsBytes32(queryParamMap, ROOT);
 
         ctx.result(
             provider
-                .getBlockByBlockRoot(blockParam)
+                .getBlockByBlockRoot(blockRoot)
                 .thenApplyChecked(block -> handleResponseContext(ctx, block)));
         ;
         return;

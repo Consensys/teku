@@ -37,7 +37,6 @@ public class JsonProvider {
     module.addDeserializer(Bitvector.class, new BitvectorDeserializer());
     module.addSerializer(Bitvector.class, new BitvectorSerializer());
 
-    module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
     module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
     module.addSerializer(BLSPubKey.class, new BLSPubKeySerializer());
     module.addDeserializer(BLSSignature.class, new BLSSignatureDeserializer());
