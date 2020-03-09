@@ -13,18 +13,16 @@
 
 package tech.pegasys.artemis.provider;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 
-public class BLSPublicKeyDeserializer extends JsonDeserializer<BLSPublicKey> {
+public class BLSPubKeySerializer extends JsonSerializer<BLSPubKey> {
   @Override
-  public BLSPublicKey deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
-    return BLSPublicKey.fromBytes(Bytes32.fromHexString(p.getValueAsString()));
+  public void serialize(BLSPubKey value, JsonGenerator gen, SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toHexString().toLowerCase());
   }
 }

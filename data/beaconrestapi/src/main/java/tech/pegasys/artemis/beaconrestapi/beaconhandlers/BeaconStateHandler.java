@@ -25,7 +25,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.validateQueryParameter;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;

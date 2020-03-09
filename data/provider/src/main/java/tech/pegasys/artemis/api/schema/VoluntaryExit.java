@@ -11,17 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.provider;
+package tech.pegasys.artemis.api.schema;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import java.io.IOException;
-import tech.pegasys.artemis.api.schema.BLSSignature;
+import com.google.common.primitives.UnsignedLong;
 
-public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
-  @Override
-  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return BLSSignature.fromHexString(p.getValueAsString());
+public class VoluntaryExit {
+  public final UnsignedLong epoch;
+  public final UnsignedLong validator_index;
+
+  public VoluntaryExit(tech.pegasys.artemis.datastructures.operations.VoluntaryExit voluntaryExit) {
+    this.epoch = voluntaryExit.getEpoch();
+    this.validator_index = voluntaryExit.getValidator_index();
   }
 }
