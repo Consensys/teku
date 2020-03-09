@@ -36,11 +36,11 @@ public class ServiceController {
 
   // initialize/register all services
   public <U extends ServiceInterface, V extends ServiceInterface, W extends ServiceInterface>
-  void initAll(
-      ServiceConfig config,
-      Class<U> beaconChainServiceType,
-      Class<V> powchainServiceType,
-      Class<W> chainStorageServiceType) {
+      void initAll(
+          ServiceConfig config,
+          Class<U> beaconChainServiceType,
+          Class<V> powchainServiceType,
+          Class<W> chainStorageServiceType) {
     powChainServiceActive = !config.getConfig().getDepositMode().equals("test");
     chainStorageService = ServiceFactory.getInstance(chainStorageServiceType).getInstance();
     beaconChainService = ServiceFactory.getInstance(beaconChainServiceType).getInstance();
