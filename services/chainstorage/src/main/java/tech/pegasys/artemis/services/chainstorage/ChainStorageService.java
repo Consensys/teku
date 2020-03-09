@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.services.chainstorage;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
@@ -33,6 +33,6 @@ public class ChainStorageService implements ServiceInterface {
 
   @Override
   public void stop() {
-    STDOUT.log(Level.DEBUG, "ChainStorageService.stop()");
+    STATUS_LOG.log(Level.DEBUG, "ChainStorageService.stop()");
   }
 }
