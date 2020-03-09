@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
   private final ChannelExceptionHandler exceptionHandler;
@@ -47,15 +48,31 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   protected void deliverTo(final T subscriber, final Method method, final Object[] args) {
+    // The response will be null as the method is void so we can just ignore the result.
+    executeMethod(subscriber, method, args);
+  }
+
+  @Override
+  protected <X> SafeFuture<X> deliverToWithResponse(
+      final T subscriber, final Method method, final Object[] args) {
+    return executeMethod(subscriber, method, args);
+  }
+
+  @SuppressWarnings("unchecked")
+  private <X> SafeFuture<X> executeMethod(
+      final T subscriber, final Method method, final Object[] args) {
     try {
-      method.invoke(subscriber, args);
+      return (SafeFuture<X>) method.invoke(subscriber, args);
     } catch (IllegalAccessException e) {
       incrementCounter(failedEventCounter, subscriber, method);
       exceptionHandler.handleException(e, subscriber, method, args);
+      return SafeFuture.failedFuture(e);
     } catch (InvocationTargetException e) {
       incrementCounter(failedEventCounter, subscriber, method);
       exceptionHandler.handleException(e.getTargetException(), subscriber, method, args);
+      return SafeFuture.failedFuture(e);
     } finally {
       incrementCounter(consumedEventCounter, subscriber, method);
     }
