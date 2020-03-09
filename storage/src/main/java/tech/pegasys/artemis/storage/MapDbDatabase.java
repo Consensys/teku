@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
@@ -48,7 +48,9 @@ import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 
 public class MapDbDatabase implements Database {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private final DB db;
   private final Var<UnsignedLong> genesisTime;
   private final Atomic.Var<Checkpoint> justifiedCheckpoint;
@@ -75,7 +77,7 @@ public class MapDbDatabase implements Database {
         Files.deleteIfExists(databaseFile.toPath());
       }
     } catch (IOException e) {
-      STDOUT.log(Level.ERROR, "Failed to clear old database");
+      STATUS_LOG.log(Level.ERROR, "Failed to clear old database");
     }
     return new MapDbDatabase(DBMaker.fileDB(databaseFile));
   }

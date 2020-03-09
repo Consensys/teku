@@ -83,11 +83,6 @@ allprojects {
     from sourceSets.main.allSource
   }
 
-  task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-  }
-
   sourceCompatibility = '11'
   targetCompatibility = '11'
 
@@ -380,7 +375,6 @@ subprojects {
     options.fork = true
     options.incremental = true
   }
-  apply plugin: 'maven-publish'
 
   sourceSets {
     // test-support can be consumed as a library by other projects in their tests
@@ -448,7 +442,6 @@ subprojects {
           if (sourceSetIsPopulated("main")) {
             from components.java
             artifact sourcesJar
-            artifact javadocJar
           }
 
           if (sourceSetIsPopulated("testSupport")) {
@@ -459,7 +452,7 @@ subprojects {
             usage('java-runtime') { fromResolutionResult() }
           }
           pom {
-            name = "Besu - ${project.name}"
+            name = "Teku - ${project.name}"
             url = 'https://github.com/PegaSysEng/teku'
             licenses {
               license {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import java.util.List;
 import org.apache.logging.log4j.Level;
@@ -28,7 +28,7 @@ class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
-    STDOUT.log(
+    STATUS_LOG.log(
         Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
     return new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
   }

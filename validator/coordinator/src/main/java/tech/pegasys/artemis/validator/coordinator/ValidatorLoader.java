@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.collect.Streams;
 import java.util.Collection;
@@ -39,11 +39,11 @@ class ValidatorLoader {
                     BLSKeyPair::getPublicKey,
                     blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
 
-    if (STDOUT.isDebugEnabled()) {
+    if (STATUS_LOG.isDebugEnabled()) {
       Streams.mapWithIndex(
               validators.keySet().stream(),
               (publicKey, index) -> "Validator " + index + ": " + publicKey.toString())
-          .forEach(debugStatement -> STDOUT.log(Level.DEBUG, debugStatement));
+          .forEach(debugStatement -> STATUS_LOG.log(Level.DEBUG, debugStatement));
     }
     return validators;
   }
