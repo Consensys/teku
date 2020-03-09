@@ -99,10 +99,8 @@ public class BeaconNode {
       // Start services
       serviceController.startAll();
 
-    } catch (final CompletionException e) {
-      LOG.fatal(e.toString());
-    } catch (final IllegalArgumentException e) {
-      LOG.fatal(e.getMessage());
+    } catch (final CompletionException | IllegalArgumentException e) {
+      LOG.fatal("Startup failed", e);
     }
   }
 
