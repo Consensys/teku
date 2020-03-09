@@ -296,7 +296,8 @@ public final class HashTreeUtil {
    */
   public static Bytes32 hash_tree_root_bitvector(Bitvector bitvector) {
     return merkleize(
-        separateIntoChunks(bitvector.serialize()), chunk_count(SSZTypes.BITVECTOR, bitvector.getSize()));
+        separateIntoChunks(bitvector.serialize()),
+        chunk_count(SSZTypes.BITVECTOR, bitvector.getSize()));
   }
 
   /**
@@ -311,7 +312,9 @@ public final class HashTreeUtil {
    */
   private static Bytes32 hash_tree_root_list_of_unsigned_long(SSZList<? extends Bytes> bytes) {
     return mix_in_length(
-        merkleize(separateIntoChunks(bytes.toArray()), chunk_count_list_unsigned_long(bytes.getMaxSize())),
+        merkleize(
+            separateIntoChunks(bytes.toArray()),
+            chunk_count_list_unsigned_long(bytes.getMaxSize())),
         bytes.size());
   }
 
@@ -393,8 +396,8 @@ public final class HashTreeUtil {
   }
 
   /**
-   * Split a set of values into 32 byte chunks.
-   * The last chunk may be completed with zero bytes.
+   * Split a set of values into 32 byte chunks. The last chunk may be completed with zero bytes.
+   *
    * @param sszValues the bytes to break into chunks
    * @return the chunks
    */
