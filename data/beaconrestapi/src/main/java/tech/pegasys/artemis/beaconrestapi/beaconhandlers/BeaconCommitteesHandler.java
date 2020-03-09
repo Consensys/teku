@@ -60,7 +60,7 @@ public class BeaconCommitteesHandler implements Handler {
       queryParams = {
         @OpenApiParam(name = EPOCH, description = "Epoch number to query.", required = true),
       },
-      description = "Returns committee assignments for a specified epoch.",
+      description = "Returns committee assignments for each slot in a specified epoch.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Committee.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter"),
