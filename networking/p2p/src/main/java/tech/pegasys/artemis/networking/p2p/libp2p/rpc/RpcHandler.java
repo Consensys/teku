@@ -132,7 +132,6 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
     }
     channel.pushHandler(controller);
-
     return controller.activeFuture;
   }
 
@@ -148,8 +147,6 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
       this.p2pChannel = p2pChannel;
-      SafeFuture.of(this.p2pChannel.closeFuture())
-          .always(() -> activeFuture.completeExceptionally(new StreamClosedException()));
     }
 
     @Override
