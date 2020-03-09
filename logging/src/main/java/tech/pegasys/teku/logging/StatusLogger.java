@@ -71,10 +71,21 @@ public class StatusLogger {
         "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
   }
 
+  public void sendDepositException(final Throwable t) {
+    fatal("Failed to send deposit transaction: " + t.getClass() + " : " + t.getMessage());
+  }
+
   // TODO only add colour when it is enabled vai the config
   private void info(String message, Color color) {
     if (enabled) {
       logger.info(print(message, color));
+    }
+  }
+
+  // TODO only add colour when it is enabled vai the config
+  private void fatal(String message) {
+    if (enabled) {
+      logger.fatal(print(message, Color.RED));
     }
   }
 
