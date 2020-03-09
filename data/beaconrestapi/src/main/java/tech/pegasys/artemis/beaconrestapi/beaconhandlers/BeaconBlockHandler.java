@@ -54,15 +54,15 @@ public class BeaconBlockHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Request that the node return the specified beacon chain block.",
+      summary = "Get the beacon chain block that matches the criteria.",
       tags = {"Beacon"},
       queryParams = {
-        @OpenApiParam(name = EPOCH, description = "Query by epoch number (uint64)"),
-        @OpenApiParam(name = SLOT, description = "Query by slot number (uint64)"),
-        @OpenApiParam(name = ROOT, description = "Query by tree hash root (Bytes32)")
+        @OpenApiParam(name = EPOCH, description = "Epoch number to query."),
+        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain."),
+        @OpenApiParam(name = ROOT, description = "Tree hash root to query.")
       },
       description =
-          "Request that the node return the beacon chain block that matches the provided criteria.",
+          "Returns the beacon chain block that matches the specified epoch, slot, or tree hash root.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
