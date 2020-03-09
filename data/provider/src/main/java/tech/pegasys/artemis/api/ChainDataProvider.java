@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.BeaconHead;
+import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -100,6 +101,27 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getBlockByBlockRoot(blockParam)
         .thenApply(block -> block.map(SignedBeaconBlock::new));
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(Bytes32 blockRoot) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    return combinedChainDataClient
+        .getStateByBlockRoot(blockRoot)
+        .thenApply(state -> state.map(BeaconState::new))
+        .exceptionally(err -> Optional.empty());
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
+    return combinedChainDataClient
+        .getStateAtSlot(slot, headBlockRoot)
+        .thenApply(state -> state.map(BeaconState::new))
+        .exceptionally(err -> Optional.empty());
   }
 
   public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {

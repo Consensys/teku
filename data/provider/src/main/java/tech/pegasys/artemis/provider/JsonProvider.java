@@ -26,7 +26,6 @@ import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class JsonProvider {
   private void addTekuMappers() {
@@ -37,7 +36,6 @@ public class JsonProvider {
     module.addDeserializer(Bitvector.class, new BitvectorDeserializer());
     module.addSerializer(Bitvector.class, new BitvectorSerializer());
 
-    module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
     module.addSerializer(BLSPubKey.class, new BLSPubKeySerializer());
     module.addDeserializer(BLSSignature.class, new BLSSignatureDeserializer());
     module.addSerializer(BLSSignature.class, new BLSSignatureSerializer());
