@@ -229,7 +229,7 @@ public class StateTransition {
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }
     } catch (IllegalArgumentException e) {
-      LOG.warn(e.getMessage());
+      LOG.warn(e.getMessage(), e);
       throw new SlotProcessingException(e);
     }
   }
