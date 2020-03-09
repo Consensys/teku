@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;

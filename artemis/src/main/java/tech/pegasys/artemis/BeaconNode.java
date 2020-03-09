@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
@@ -43,8 +43,8 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
-import tech.pegasys.teku.logging.ALogger;
-import tech.pegasys.teku.logging.ALogger.Color;
+import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public class BeaconNode {
 
@@ -117,9 +117,10 @@ public class BeaconNode {
 @VisibleForTesting
 final class EventBusExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler {
-  private final ALogger logger;
 
-  EventBusExceptionHandler(final ALogger logger) {
+  private final StatusLogger logger;
+
+  EventBusExceptionHandler(final StatusLogger logger) {
     this.logger = logger;
   }
 

@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.teku.logging.ALogger;
+import tech.pegasys.teku.logging.StatusLogger;
 
 class EventBusExceptionHandlerTest {
 
@@ -55,7 +55,7 @@ class EventBusExceptionHandlerTest {
   void setupBus() {
 
     final var recordingLogger =
-        new ALogger("stdout") {
+        new StatusLogger("stdout") {
           @Override
           public void log(final Level level, final String message) {
             logLevelFuture.complete(level);
