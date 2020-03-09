@@ -75,6 +75,23 @@ public class StatusLogger {
     fatal("Failed to send deposit transaction: " + t.getClass() + " : " + t.getMessage());
   }
 
+  public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
+    info(
+        String.format(
+            "Generating mock genesis state for %d validators at genesis time %d",
+            validatorCount, genesisTime));
+  }
+
+  public void storingGenesis(final String outputFile, final boolean isComplete) {
+
+    if (isComplete) {
+      info(String.format("Genesis state file saved: %s", outputFile));
+
+    } else {
+      info(String.format("Saving genesis state to file: %s", outputFile));
+    }
+  }
+
   // TODO only add colour when it is enabled vai the config
   private void info(String message, Color color) {
     if (enabled) {
