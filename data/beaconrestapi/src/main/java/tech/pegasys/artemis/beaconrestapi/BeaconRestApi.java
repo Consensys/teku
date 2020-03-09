@@ -136,15 +136,13 @@ public class BeaconRestApi {
     app.get(BeaconCommitteesHandler.ROUTE, new BeaconCommitteesHandler(provider, jsonProvider));
     app.get(
         BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
-    app.get(
-        BeaconStateRootHandler.ROUTE,
-        new BeaconStateRootHandler(combinedChainDataClient, jsonProvider));
+    app.get(BeaconStateRootHandler.ROUTE, new BeaconStateRootHandler(provider, jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
     app.get(
         BeaconValidatorsHandler.ROUTE,
-        new BeaconValidatorsHandler(dataProvider.getCombinedChainDataClient(), jsonProvider));
+        new BeaconValidatorsHandler(dataProvider.getChainDataProvider(), jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {

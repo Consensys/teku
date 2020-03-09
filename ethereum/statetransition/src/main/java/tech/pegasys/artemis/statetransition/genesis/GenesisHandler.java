@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.genesis;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -68,10 +68,11 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void eth2Genesis(BeaconState genesisState) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
+    STATUS_LOG.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     chainStorageClient.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STDOUT.log(Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
-    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
+    STATUS_LOG.log(
+        Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
+    STATUS_LOG.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 }
