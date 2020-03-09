@@ -39,7 +39,6 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetAttestation;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -51,24 +50,12 @@ public class BeaconRestApi {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   private void initialise(DataProvider dataProvider, final int requestedPortNumber) {
-    initialise(
-        dataProvider.getChainStorageClient(),
-        dataProvider.getP2pNetwork(),
-        dataProvider.getCombinedChainDataClient(),
-        requestedPortNumber);
+    app.server().setServerPort(requestedPortNumber);
 
+    addBeaconHandlers(dataProvider);
+    addNetworkHandlers(new NetworkDataProvider(dataProvider.getP2pNetwork()));
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
-  }
-
-  private void initialise(
-      final ChainStorageClient chainStorageClient,
-      final P2PNetwork<?> p2pNetwork,
-      final CombinedChainDataClient combinedChainDataClient,
-      final int requestedPortNumber) {
-    app.server().setServerPort(requestedPortNumber);
-    addBeaconHandlers(chainStorageClient, combinedChainDataClient);
-    addNetworkHandlers(new NetworkDataProvider(p2pNetwork));
   }
 
   public BeaconRestApi(final DataProvider dataProvider, final ArtemisConfiguration configuration) {
@@ -125,12 +112,14 @@ public class BeaconRestApi {
     app.get(GetSyncing.ROUTE, new GetSyncing(provider.getSyncDataProvider(), jsonProvider));
   }
 
-  private void addBeaconHandlers(
-      ChainStorageClient chainStorageClient, CombinedChainDataClient combinedChainDataClient) {
-    ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
+  private void addBeaconHandlers(final DataProvider dataProvider) {
+    final ChainStorageClient chainStorageClient = dataProvider.getChainStorageClient();
+    final CombinedChainDataClient combinedChainDataClient =
+            dataProvider.getCombinedChainDataClient();
+    final ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
     app.get(GetBlock.ROUTE, new GetBlock(provider, jsonProvider));
     app.get(
-        BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
+        BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(dataProvider.getChainDataProvider(), jsonProvider));
     app.get(GetHead.ROUTE, new GetHead(provider, jsonProvider));
     app.get(GetCommittees.ROUTE, new GetCommittees(provider, jsonProvider));
     app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(provider, jsonProvider));

@@ -28,28 +28,25 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHeadResponse;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHead;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BeaconChainHeadHandler implements Handler {
 
-  private final ChainStorageClient client;
+  private final ChainDataProvider chainDataProvider;
   private final JsonProvider jsonProvider;
 
-  public BeaconChainHeadHandler(ChainStorageClient client, JsonProvider jsonProvider) {
-    this.client = client;
+  public BeaconChainHeadHandler(
+      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+    this.chainDataProvider = chainDataProvider;
     this.jsonProvider = jsonProvider;
   }
 
   public static final String ROUTE = "/beacon/chainhead";
 
-  // TODO: make sure finalized and justified root methods return null if
-  // we don't have them in store yet. So that we can handle them better instead of
-  // returning zero.
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
@@ -58,41 +55,50 @@ public class BeaconChainHeadHandler implements Handler {
       description =
           "Returns information about the head of the beacon chain from the node’s perspective.",
       responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = BeaconChainHeadResponse.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconChainHead.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(Context ctx) throws JsonProcessingException {
-    Bytes32 head_block_root = client.getBestBlockRoot();
-    if (head_block_root == null) {
-      ctx.status(SC_NO_CONTENT);
-      return;
-    }
+  public void handle(final Context ctx) throws JsonProcessingException {
+    chainDataProvider
+        .getBestBlockRoot()
+        .ifPresentOrElse(
+            block ->
+                ctx.result(
+                    chainDataProvider
+                        .getStateByBlockRoot(block)
+                        .thenApplyChecked(
+                            optionalBeaconState -> {
+                              if (optionalBeaconState.isPresent()) {
+                                final BeaconState beaconState = optionalBeaconState.get();
+                                final Checkpoint finalizedCheckpoint =
+                                    beaconState.getFinalized_checkpoint();
+                                final Checkpoint justifiedCheckpoint =
+                                    beaconState.getCurrent_justified_checkpoint();
+                                final Checkpoint previousJustifiedCheckpoint =
+                                    beaconState.getPrevious_justified_checkpoint();
 
-    // derive all other state from the head_block_root
-    BeaconState beaconState = client.getStore().getBlockState(head_block_root);
-    Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
-    Checkpoint justifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
-    Checkpoint previousJustifiedCheckpoint = beaconState.getPrevious_justified_checkpoint();
+                                final BeaconChainHead chainHeadResponse =
+                                    new BeaconChainHead(
+                                        beaconState.getSlot(),
+                                        compute_epoch_at_slot(beaconState.getSlot()),
+                                        block,
+                                        finalizedCheckpoint.getEpochSlot(),
+                                        finalizedCheckpoint.getEpoch(),
+                                        finalizedCheckpoint.getRoot(),
+                                        justifiedCheckpoint.getEpochSlot(),
+                                        justifiedCheckpoint.getEpoch(),
+                                        justifiedCheckpoint.getRoot(),
+                                        previousJustifiedCheckpoint.getEpochSlot(),
+                                        previousJustifiedCheckpoint.getEpoch(),
+                                        previousJustifiedCheckpoint.getRoot());
 
-    BeaconChainHeadResponse chainHeadResponse =
-        new BeaconChainHeadResponse(
-            beaconState.getSlot(),
-            compute_epoch_at_slot(beaconState.getSlot()),
-            head_block_root,
-            finalizedCheckpoint.getEpochSlot(),
-            finalizedCheckpoint.getEpoch(),
-            finalizedCheckpoint.getRoot(),
-            justifiedCheckpoint.getEpochSlot(),
-            justifiedCheckpoint.getEpoch(),
-            justifiedCheckpoint.getRoot(),
-            previousJustifiedCheckpoint.getEpochSlot(),
-            previousJustifiedCheckpoint.getEpoch(),
-            previousJustifiedCheckpoint.getRoot());
-
-    ctx.result(jsonProvider.objectToJSON(chainHeadResponse));
+                                return jsonProvider.objectToJSON(chainHeadResponse);
+                              }
+                              ctx.status(SC_NO_CONTENT);
+                              return null;
+                            })),
+            () -> ctx.status(SC_NO_CONTENT));
   }
 }
