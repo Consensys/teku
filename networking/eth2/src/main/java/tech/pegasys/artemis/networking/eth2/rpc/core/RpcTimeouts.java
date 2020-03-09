@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
 import java.time.Duration;
-import tech.pegasys.artemis.networking.p2p.rpc.StreamTimedOutException;
+import tech.pegasys.artemis.networking.p2p.rpc.StreamTimeoutException;
 
 /**
  * This class holds constants related to handling rpc request timeouts. See:
@@ -27,7 +27,7 @@ public abstract class RpcTimeouts {
   // The maximum time for complete response transfer.
   static final Duration RESP_TIMEOUT = Duration.ofSeconds(10);
 
-  public static class RpcTimeoutException extends StreamTimedOutException {
+  public static class RpcTimeoutException extends StreamTimeoutException {
 
     public RpcTimeoutException(final String message, final Duration timeout) {
       super(generateMessage(message, timeout));

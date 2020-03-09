@@ -26,7 +26,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -39,7 +38,7 @@ import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.networking.p2p.rpc.StreamClosedException;
-import tech.pegasys.artemis.networking.p2p.rpc.StreamTimedOutException;
+import tech.pegasys.artemis.networking.p2p.rpc.StreamTimeoutException;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -68,15 +67,12 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     SafeFuture.of(connection.closeFuture())
         .always(() -> streamFuture.completeExceptionally(new PeerDisconnectedException()));
     // Complete future if we fail to initialize
-    final AtomicBoolean timedOut = new AtomicBoolean(false);
     asyncRunner
         .getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
         .thenAccept(
-            __ -> {
-              timedOut.set(true);
-              streamFuture.completeExceptionally(
-                  new StreamTimedOutException("Timed out waiting to initialize stream"));
-            })
+            __ ->
+                streamFuture.completeExceptionally(
+                    new StreamTimeoutException("Timed out waiting to initialize stream")))
         .reportExceptions();
 
     // Try to initiate stream

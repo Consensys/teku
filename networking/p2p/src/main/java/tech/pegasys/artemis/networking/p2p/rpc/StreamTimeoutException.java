@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.networking.p2p.rpc;
 
-public class StreamTimedOutException extends RuntimeException {
+public class StreamTimeoutException extends RuntimeException {
 
-  public StreamTimedOutException(final String message) {
+  public StreamTimeoutException(final String message) {
     super(message);
   }
 }
