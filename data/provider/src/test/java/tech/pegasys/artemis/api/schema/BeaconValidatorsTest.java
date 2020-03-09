@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.api.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_SIZE_DEFAULT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.PAGE_TOKEN_DEFAULT;
+import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
+import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
@@ -29,28 +28,29 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
-class BeaconValidatorsResponseTest {
+class BeaconValidatorsTest {
 
   @Test
   public void validatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(99);
     SSZList<Validator> validatorList = beaconState.getValidators();
-    BeaconValidatorsResponse response = new BeaconValidatorsResponse(validatorList);
+    BeaconValidators response = new BeaconValidators(validatorList);
     assertThat(response.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(response.validatorList.size())
-        .isEqualTo(Math.min(validatorList.size(), RestApiConstants.PAGE_SIZE_DEFAULT));
+        .isEqualTo(Math.min(validatorList.size(), PAGE_SIZE_DEFAULT));
     int expectedNextPageToken =
         validatorList.size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
     assertThat(response.getNextPageToken()).isEqualTo(expectedNextPageToken);
-    assertThat(response.validatorList.get(0).validator).isEqualTo(validatorList.get(0));
+    assertThat(response.validatorList.get(0).validator.activation_eligibility_epoch)
+        .isEqualToComparingFieldByField(validatorList.get(0).getActivation_eligibility_epoch());
     assertThat(response.validatorList.get(0).index).isEqualTo(0);
   }
 
   @Test
   public void activeValidatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(98);
-    BeaconValidatorsResponse validators =
-        new BeaconValidatorsResponse(
+    BeaconValidators validators =
+        new BeaconValidators(
             beaconState.getValidators(),
             true,
             BeaconStateUtil.get_current_epoch(beaconState),
@@ -59,12 +59,12 @@ class BeaconValidatorsResponseTest {
     int expectedNextPageToken =
         beaconState.getValidators().size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
     long activeValidatorCount =
-        BeaconValidatorsResponse.getEffectiveListSize(
+        BeaconValidators.getEffectiveListSize(
             beaconState.getValidators().asList(),
             true,
             BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
     assertThat(validators.validatorList.size())
-        .isEqualTo(Math.min(RestApiConstants.PAGE_SIZE_DEFAULT, activeValidatorCount));
+        .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, activeValidatorCount));
     assertThat(validators.getTotalSize()).isEqualTo(activeValidatorCount);
     assertThat(validators.getNextPageToken()).isEqualTo(expectedNextPageToken);
   }
@@ -74,8 +74,8 @@ class BeaconValidatorsResponseTest {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
     final int suppliedPageSizeParam = 10;
 
-    BeaconValidatorsResponse beaconValidators =
-        new BeaconValidatorsResponse(
+    BeaconValidators beaconValidators =
+        new BeaconValidators(
             beaconState.getValidators(),
             false,
             Constants.FAR_FUTURE_EPOCH,
@@ -92,8 +92,8 @@ class BeaconValidatorsResponseTest {
     final int suppliedPageSizeParam = 9;
     final int suppliedPageTokenParam = 2;
 
-    BeaconValidatorsResponse beaconValidators =
-        new BeaconValidatorsResponse(
+    BeaconValidators beaconValidators =
+        new BeaconValidators(
             beaconState.getValidators(),
             false,
             Constants.FAR_FUTURE_EPOCH,
@@ -110,8 +110,8 @@ class BeaconValidatorsResponseTest {
     final int suppliedPageSizeParam = 1000;
     final int suppliedPageTokenParam = 1000;
 
-    BeaconValidatorsResponse beaconValidators =
-        new BeaconValidatorsResponse(
+    BeaconValidators beaconValidators =
+        new BeaconValidators(
             beaconState.getValidators(),
             false,
             Constants.FAR_FUTURE_EPOCH,
@@ -136,8 +136,8 @@ class BeaconValidatorsResponseTest {
     assertThat(expectedRemainderSize).isLessThan(PAGE_SIZE_DEFAULT);
     assertThat(expectedRemainderSize).isGreaterThan(0);
 
-    BeaconValidatorsResponse beaconValidators =
-        new BeaconValidatorsResponse(
+    BeaconValidators beaconValidators =
+        new BeaconValidators(
             validators,
             false,
             Constants.FAR_FUTURE_EPOCH,
@@ -155,7 +155,7 @@ class BeaconValidatorsResponseTest {
 
     SSZList<Validator> allValidators = beaconState.getValidators();
     long originalActiveValidatorCount =
-        BeaconValidatorsResponse.getEffectiveListSize(
+        BeaconValidators.getEffectiveListSize(
             allValidators.asList(),
             true,
             BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
@@ -173,7 +173,7 @@ class BeaconValidatorsResponseTest {
 
     int updatedValidatorCount = beaconStateW.getValidators().size();
     long updatedActiveValidatorCount =
-        BeaconValidatorsResponse.getEffectiveListSize(
+        BeaconValidators.getEffectiveListSize(
             beaconStateW.getValidators().asList(),
             true,
             BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
