@@ -43,12 +43,8 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
-<<<<<<< HEAD
-=======
 import tech.pegasys.teku.logging.ALogger;
 import tech.pegasys.teku.logging.ALogger.Color;
-import tech.pegasys.teku.logging.ConsoleLoggingConfiguration;
->>>>>>> 5d79d5d4... Moving ALogger into logging project
 
 public class BeaconNode {
 

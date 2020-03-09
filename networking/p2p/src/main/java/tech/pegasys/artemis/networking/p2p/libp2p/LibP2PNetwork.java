@@ -13,12 +13,7 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-<<<<<<< HEAD
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
-=======
-import static tech.pegasys.artemis.networking.p2p.libp2p.DiscoveryPeerToMultiaddrConverter.convertToMultiAddr;
->>>>>>> 5d79d5d4... Moving ALogger into logging project
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.teku.logging.ALogger.STDOUT;
 

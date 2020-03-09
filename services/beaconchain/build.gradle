@@ -1,16 +1,5 @@
 dependencies {
   implementation project(':events')
-<<<<<<< HEAD
-  implementation project(':data:provider')
-  implementation project(':networking:p2p')
-  implementation project(':networking:eth2')
-  implementation project(':validator:coordinator')
-  implementation project(':validator:client')
-  implementation project(':storage')
-  implementation project(':sync')
-  implementation project(':data:metrics')
-=======
->>>>>>> 5d79d5d4... Moving ALogger into logging project
   implementation project(':data:beaconrestapi')
   implementation project(':data:metrics')
   implementation project(':ethereum:statetransition')
