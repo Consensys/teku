@@ -16,7 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.schema;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class BeaconChainHeadResponse {
+public class BeaconChainHead {
   public final UnsignedLong head_slot;
   public final UnsignedLong head_epoch;
   public final Bytes32 head_block_root;
@@ -33,7 +33,7 @@ public class BeaconChainHeadResponse {
   public final UnsignedLong previous_justified_epoch;
   public final Bytes32 previous_justified_block_root;
 
-  public BeaconChainHeadResponse(
+  public BeaconChainHead(
       UnsignedLong head_slot,
       UnsignedLong head_epoch,
       Bytes32 head_block_root,
