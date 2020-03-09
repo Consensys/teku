@@ -253,8 +253,9 @@ jobs:
           at: ~/project
       - run:
           name: Publish
+          # binTray plugin doesn't publish pom artifacts if configure-on-demand is used
           command: |
-            ./gradlew --no-daemon --parallel bintrayUpload
+            ./gradlew --no-daemon --parallel -no-configure-on-demand bintrayUpload
 
   publishDocker:
     executor: medium_executor

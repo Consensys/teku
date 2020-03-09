@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.Committee;
+import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -71,8 +73,29 @@ public class ChainDataProvider {
         .exceptionally(err -> List.of());
   }
 
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(UnsignedLong slot) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    return combinedChainDataClient
+        .getBlockBySlot(slot)
+        .thenApply(block -> block.map(SignedBeaconBlock::new));
+  }
+
   public boolean isStoreAvailable() {
     return combinedChainDataClient != null && combinedChainDataClient.isStoreAvailable();
+  }
+
+  public Optional<Bytes32> getBestBlockRoot() {
+    return combinedChainDataClient.getBestBlockRoot();
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(Bytes32 root32) {
+    return combinedChainDataClient.getStateByBlockRoot(root32);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot, Bytes32 root32) {
+    return combinedChainDataClient.getStateAtSlot(slot, root32);
   }
 
   ChainStorageClient getChainStorageClient() {
@@ -81,5 +104,22 @@ public class ChainDataProvider {
 
   CombinedChainDataClient getCombinedChainDataClient() {
     return combinedChainDataClient;
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(Bytes32 blockParam) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    return combinedChainDataClient
+        .getBlockByBlockRoot(blockParam)
+        .thenApply(block -> block.map(SignedBeaconBlock::new));
+  }
+
+  public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {
+    return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
+  }
+
+  public boolean isFinalized(UnsignedLong slot) {
+    return combinedChainDataClient.isFinalized(slot);
   }
 }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -113,7 +113,7 @@ public class DepositCommand implements Runnable {
       }
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
@@ -156,7 +156,7 @@ public class DepositCommand implements Runnable {
               params.amount)
           .get();
     } catch (final Throwable t) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.FATAL,
           "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(

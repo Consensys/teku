@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
@@ -40,11 +40,11 @@ import tech.pegasys.artemis.service.serviceutils.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
-import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
+import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public class BeaconNode {
 
@@ -64,7 +64,7 @@ public class BeaconNode {
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final EventBusExceptionHandler subscriberExceptionHandler =
-        new EventBusExceptionHandler(STDOUT);
+        new EventBusExceptionHandler(STATUS_LOG);
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
@@ -101,9 +101,9 @@ public class BeaconNode {
       serviceController.startAll();
 
     } catch (final CompletionException e) {
-      STDOUT.log(Level.FATAL, e.toString());
+      STATUS_LOG.log(Level.FATAL, e.toString());
     } catch (final IllegalArgumentException e) {
-      STDOUT.log(Level.FATAL, e.getMessage());
+      STATUS_LOG.log(Level.FATAL, e.getMessage());
     }
   }
 
@@ -117,9 +117,10 @@ public class BeaconNode {
 @VisibleForTesting
 final class EventBusExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler {
-  private final ALogger logger;
 
-  EventBusExceptionHandler(final ALogger logger) {
+  private final StatusLogger logger;
+
+  EventBusExceptionHandler(final StatusLogger logger) {
     this.logger = logger;
   }
 

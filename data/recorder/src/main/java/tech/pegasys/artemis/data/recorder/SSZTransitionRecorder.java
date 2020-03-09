@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.data.recorder;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
@@ -32,6 +32,7 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SSZTransitionRecorder {
+
   private final Path outputDirectory;
 
   public SSZTransitionRecorder(final Path outputDirectory) {
@@ -68,13 +69,13 @@ public class SSZTransitionRecorder {
     try {
       Files.write(file, serialize(data).toArrayUnsafe());
     } catch (final IOException e) {
-      STDOUT.log(Level.ERROR, "Failed to record data to " + file + ": " + e.getMessage());
+      STATUS_LOG.log(Level.ERROR, "Failed to record data to " + file + ": " + e.getMessage());
     }
   }
 
   private Path mkdirs(final Path dir) {
     if (!dir.toFile().mkdirs() && !dir.toFile().isDirectory()) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.ERROR, "Failed to create transition record directory " + dir.toAbsolutePath());
     }
     return dir;

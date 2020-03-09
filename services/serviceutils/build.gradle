@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':events')
+  implementation project(':logging')
   implementation project(':storage')
   implementation project(':util')
 
