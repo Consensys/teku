@@ -138,4 +138,53 @@ final class ArtemisConfigurationTest {
         .isThrownBy(() -> config.validateConfig())
         .withMessage(errorMessage);
   }
+<<<<<<< HEAD
+=======
+
+  @Test
+  public void shouldDefaultStandardOutAsTrue() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isStandardOutEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldSetStandardOutCorrectly() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("output.enableStandardOut=true");
+    assertThat(config.isStandardOutEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldErrorWhenInvalidStandardOut() {
+    assertThatThrownBy(
+            () -> {
+              ArtemisConfiguration.fromString("output.enableStandardOut=I'm not a boolean");
+            })
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Unexpected 'I'");
+  }
+
+  @Test
+  public void shouldDefaultStatusUpdatesAsTrue() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isStatusUpdatesEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldSetStatusUpdatesCorrectly() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("output.enableStatusUpdates=true");
+    assertThat(config.isStatusUpdatesEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldErrorWhenInvalidStatusUpdates() {
+    assertThatThrownBy(
+            () -> {
+              ArtemisConfiguration.fromString("output.enableStatusUpdates=I'm not a boolean");
+            })
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Unexpected 'I'");
+  }
+>>>>>>> 5d79d5d4... Moving ALogger into logging project
 }

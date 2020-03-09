@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':events')
+<<<<<<< HEAD
   implementation project(':data:provider')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
@@ -8,13 +9,23 @@ dependencies {
   implementation project(':storage')
   implementation project(':sync')
   implementation project(':data:metrics')
+=======
+>>>>>>> 5d79d5d4... Moving ALogger into logging project
   implementation project(':data:beaconrestapi')
+  implementation project(':data:metrics')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
+  implementation project(':networking:p2p')
+  implementation project(':networking:eth2')
+  implementation project(':logging')
+  implementation project(':pow')
   implementation project(':services:serviceutils')
   implementation project(':services:powchain')
-  implementation project(':pow')
+  implementation project(':storage')
+  implementation project(':sync')
   implementation project(':util')
+  implementation project(':validator:coordinator')
+  implementation project(':validator:client')
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
