@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -48,6 +46,8 @@ import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public class BeaconNode {
 
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
+
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
       Executors.newCachedThreadPool(
@@ -64,7 +64,7 @@ public class BeaconNode {
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final EventBusExceptionHandler subscriberExceptionHandler =
-        new EventBusExceptionHandler(STDOUT);
+        new EventBusExceptionHandler(STATUS_LOG);
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
@@ -101,9 +101,9 @@ public class BeaconNode {
       serviceController.startAll();
 
     } catch (final CompletionException e) {
-      STDOUT.log(Level.FATAL, e.toString());
+      STATUS_LOG.log(Level.FATAL, e.toString());
     } catch (final IllegalArgumentException e) {
-      STDOUT.log(Level.FATAL, e.getMessage());
+      STATUS_LOG.log(Level.FATAL, e.getMessage());
     }
   }
 

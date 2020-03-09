@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
@@ -40,9 +38,12 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class PeerManager implements ConnectionHandler {
+
   private static final Logger LOG = LogManager.getLogger();
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
@@ -115,7 +116,7 @@ public class PeerManager implements ConnectionHandler {
   void onConnectedPeer(Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
-      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
+      STATUS_LOG.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
       connectSubscribers.forEach(c -> c.onConnected(peer));
       peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
@@ -128,7 +129,7 @@ public class PeerManager implements ConnectionHandler {
   @VisibleForTesting
   void onDisconnectedPeer(Peer peer) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
-      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getId());
+      STATUS_LOG.log(Level.DEBUG, "Peer disconnected: " + peer.getId());
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
   }

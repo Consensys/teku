@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.statetransition.genesis;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,8 +27,11 @@ import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class GenesisHandler implements Eth1EventsChannel {
+
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final ChainStorageClient chainStorageClient;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
@@ -68,10 +69,10 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void eth2Genesis(BeaconState genesisState) {
-    STDOUT.log(Level.INFO, "******* Eth2Genesis Event******* : ");
+    STATUS_LOG.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     chainStorageClient.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STDOUT.log(Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
-    STDOUT.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
+    STATUS_LOG.log(Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
+    STATUS_LOG.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 }

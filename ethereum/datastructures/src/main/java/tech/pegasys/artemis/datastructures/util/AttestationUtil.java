@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -44,8 +43,11 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.bls.BLSVerify;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class AttestationUtil {
+
+  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   public static Bitlist getAggregationBits(int committeeSize, int indexIntoCommittee) {
     // Create aggregation bitfield
@@ -139,7 +141,7 @@ public class AttestationUtil {
     SSZList<UnsignedLong> attesting_indices = indexed_attestation.getAttesting_indices();
 
     if (!(attesting_indices.size() <= MAX_VALIDATORS_PER_COMMITTEE)) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify max number of indices");
       return false;
     }
@@ -147,7 +149,7 @@ public class AttestationUtil {
     List<UnsignedLong> bit_0_indices_sorted =
         attesting_indices.stream().sorted().distinct().collect(Collectors.toList());
     if (!attesting_indices.equals(bit_0_indices_sorted)) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify indices are sorted");
       return false;
     }
@@ -165,7 +167,7 @@ public class AttestationUtil {
         get_domain(
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     if (!BLSVerify.bls_verify(pubkey, message_hash, signature, domain)) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.WARN, "AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }
