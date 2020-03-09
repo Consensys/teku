@@ -86,6 +86,10 @@ public class ChainDataProvider {
     return combinedChainDataClient != null && combinedChainDataClient.isStoreAvailable();
   }
 
+  public Optional<Bytes32> getBestBlockRoot() {
+    return combinedChainDataClient.getBestBlockRoot();
+  }
+
   ChainStorageClient getChainStorageClient() {
     return chainStorageClient;
   }
@@ -121,6 +125,17 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getStateAtSlot(slot, headBlockRoot)
         .thenApply(state -> state.map(BeaconState::new))
+        .exceptionally(err -> Optional.empty());
+  }
+
+  public SafeFuture<Optional<Bytes32>> getHashTreeRootAtSlot(UnsignedLong slot) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
+    return combinedChainDataClient
+        .getStateAtSlot(slot, headBlockRoot)
+        .thenApply(state -> Optional.of(state.get().hash_tree_root()))
         .exceptionally(err -> Optional.empty());
   }
 

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
@@ -40,6 +40,7 @@ import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
+
   private Database database;
   private final EventBus eventBus;
   private final ArtemisConfiguration configuration;
@@ -94,13 +95,13 @@ public class ChainStorageServer {
                       + "Aborting startup to prevent corruption of the database.\n",
                   ver, DATABASE_VERSION));
         }
-        STDOUT.log(
+        STATUS_LOG.log(
             Level.INFO,
             String.format(
                 "The existing database is version %s, from file: %s",
                 DATABASE_VERSION, databaseVersionFile.getAbsolutePath()));
       } else {
-        STDOUT.log(
+        STATUS_LOG.log(
             Level.INFO,
             String.format(
                 "Recording database version %s to file: %s",
@@ -109,7 +110,7 @@ public class ChainStorageServer {
             databaseVersionFile.toPath(), DATABASE_VERSION, StandardOpenOption.CREATE);
       }
     } catch (IOException e) {
-      STDOUT.log(Level.ERROR, "Failed to write database version to file", e);
+      STATUS_LOG.log(Level.ERROR, "Failed to write database version to file", e);
     }
   }
 

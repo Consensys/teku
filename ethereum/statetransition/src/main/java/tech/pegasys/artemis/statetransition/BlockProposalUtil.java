@@ -15,7 +15,7 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.Level;
@@ -45,6 +45,7 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BlockProposalUtil {
+
   private final StateTransition stateTransition;
 
   public BlockProposalUtil(final StateTransition stateTransition) {
@@ -136,7 +137,7 @@ public class BlockProposalUtil {
     try {
       stateTransition.process_slots(state, slot, false);
     } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
+      STATUS_LOG.log(Level.FATAL, "Coordinator checking proposer index exception");
     }
     return BeaconStateUtil.get_beacon_proposer_index(state);
   }

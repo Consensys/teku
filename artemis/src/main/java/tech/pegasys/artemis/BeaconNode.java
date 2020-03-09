@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -22,14 +20,9 @@ import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
-import java.lang.reflect.Method;
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.status.StatusLogger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.artemis.events.ChannelExceptionHandler;
@@ -43,8 +36,16 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
-import tech.pegasys.teku.logging.ALogger;
-import tech.pegasys.teku.logging.ALogger.Color;
+import tech.pegasys.teku.logging.StatusLogger.Color;
+
+import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 public class BeaconNode {
 
@@ -64,7 +65,7 @@ public class BeaconNode {
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final EventBusExceptionHandler subscriberExceptionHandler =
-        new EventBusExceptionHandler(STDOUT);
+        new EventBusExceptionHandler(STATUS_LOG);
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
@@ -101,9 +102,9 @@ public class BeaconNode {
       serviceController.startAll();
 
     } catch (final CompletionException e) {
-      STDOUT.log(Level.FATAL, e.toString());
+      STATUS_LOG.log(Level.FATAL, e.toString());
     } catch (final IllegalArgumentException e) {
-      STDOUT.log(Level.FATAL, e.getMessage());
+      STATUS_LOG.log(Level.FATAL, e.getMessage());
     }
   }
 
@@ -117,9 +118,10 @@ public class BeaconNode {
 @VisibleForTesting
 final class EventBusExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler {
-  private final ALogger logger;
 
-  EventBusExceptionHandler(final ALogger logger) {
+  private final StatusLogger logger;
+
+  EventBusExceptionHandler(final StatusLogger logger) {
     this.logger = logger;
   }
 

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -30,10 +30,9 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.teku.logging.ALogger.Color;
+import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
-
   private static final int KEY_LENGTH = 48;
 
   @SuppressWarnings("unchecked")
@@ -41,7 +40,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Path keyFile = Path.of(config.getValidatorsKeyFile());
-    STDOUT.log(
+    STATUS_LOG.log(
         Level.DEBUG,
         "Loading validator keys from " + keyFile.toAbsolutePath().toString(),
         Color.GREEN);

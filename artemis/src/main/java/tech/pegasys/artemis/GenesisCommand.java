@@ -14,13 +14,14 @@
 package tech.pegasys.artemis;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -43,6 +44,8 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
     footer = "Teku is licensed under the Apache License 2.0")
 public class GenesisCommand {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   @Command(
       name = "mock",
       description = "Generate a mock genesis state",
@@ -60,7 +63,7 @@ public class GenesisCommand {
     try (final OutputStream fileStream =
         outputToFile ? new FileOutputStream(params.outputFile) : System.out) {
       if (outputToFile) {
-        STDOUT.log(
+        LOG.log(
             Level.INFO,
             String.format(
                 "Generating mock genesis state for %d validators at genesis time %d",
@@ -74,12 +77,11 @@ public class GenesisCommand {
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
 
       if (outputToFile) {
-        STDOUT.log(
-            Level.INFO, String.format("Saving genesis state to file: %s", params.outputFile));
+        LOG.log(Level.INFO, String.format("Saving genesis state to file: %s", params.outputFile));
       }
       fileStream.write(serialize(genesisState).toArrayUnsafe());
       if (outputToFile) {
-        STDOUT.log(Level.INFO, String.format("Genesis state file saved: %s", params.outputFile));
+        LOG.log(Level.INFO, String.format("Genesis state file saved: %s", params.outputFile));
       }
     }
   }

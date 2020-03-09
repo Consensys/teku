@@ -17,9 +17,9 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ALogger {
+public class StatusLogger {
 
-  public static final ALogger STDOUT = new ALogger("stdout");
+  public static final StatusLogger STATUS_LOG = new StatusLogger("stdout");
 
   public enum Color {
     RED,
@@ -33,7 +33,7 @@ public class ALogger {
 
   private final Logger logger;
 
-  protected ALogger(String className) {
+  protected StatusLogger(String className) {
     this.logger = LogManager.getLogger(className);
   }
 
@@ -52,15 +52,15 @@ public class ALogger {
   }
 
   public void log(Level level, String message, Color color) {
-    this.logger.log(level, addColor(message, color));
+    logger.log(level, addColor(message, color));
   }
 
   public void log(Level level, String message, Throwable throwable) {
-    this.logger.log(level, message, throwable);
+    logger.log(level, message, throwable);
   }
 
   public void log(Level level, String message, Throwable throwable, Color color) {
-    this.logger.log(level, addColor(message, color), throwable);
+    logger.log(level, addColor(message, color), throwable);
   }
 
   public boolean isDebugEnabled() {
