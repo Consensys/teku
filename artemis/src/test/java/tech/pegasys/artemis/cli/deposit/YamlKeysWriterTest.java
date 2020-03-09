@@ -13,16 +13,16 @@
 
 package tech.pegasys.artemis.cli.deposit;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.contentOf;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
-import org.eclipse.jetty.io.WriterOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -62,19 +62,18 @@ class YamlKeysWriterTest {
 
   @Test
   void keysAreWrittenOnSystemOutput() {
-    final StringWriter stringWriter = new StringWriter();
-    final KeysWriter keysWriter =
-        new YamlKeysWriter(new PrintStream(new WriterOutputStream(stringWriter), true));
+    final ByteArrayOutputStream bytesStream = new ByteArrayOutputStream();
+    final KeysWriter keysWriter = new YamlKeysWriter(new PrintStream(bytesStream, true, UTF_8));
     keysWriter.writeKeys(
         new BLSKeyPair(new KeyPair(validator1SecretKey)),
         new BLSKeyPair(new KeyPair(withdrawal1SecretKey)));
-    assertThat(stringWriter.toString()).isEqualTo(yamlLine1);
+    assertThat(new String(bytesStream.toByteArray(), UTF_8)).isEqualTo(yamlLine1);
 
     keysWriter.writeKeys(
         new BLSKeyPair(new KeyPair(validator2SecretKey)),
         new BLSKeyPair(new KeyPair(withdrawal2SecretKey)));
 
-    assertThat(stringWriter.toString()).isEqualTo(expectedYaml);
+    assertThat(new String(bytesStream.toByteArray(), UTF_8)).isEqualTo(expectedYaml);
   }
 
   @Test
