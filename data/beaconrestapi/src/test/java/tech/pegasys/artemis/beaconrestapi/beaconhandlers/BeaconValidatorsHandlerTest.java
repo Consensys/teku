@@ -288,7 +288,7 @@ public class BeaconValidatorsHandlerTest {
   }
 
   @Test
-  public void shouldReturnEmptyListWhenFutureEpochSpecified() throws Exception {
+  public void shouldReturnEmptyListWhenQueryByActiveAndFarFutureEpoch() throws Exception {
     final BeaconValidatorsHandler handler = new BeaconValidatorsHandler(provider, jsonProvider);
     when(context.queryParamMap())
         .thenReturn(
