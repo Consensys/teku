@@ -25,6 +25,10 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.artemis.bls.keystore.KeyStore;
+import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
+import tech.pegasys.artemis.cli.deposit.ValidatorKeysPasswordGroup;
+import tech.pegasys.artemis.cli.deposit.WithdrawalKeysPasswordGroup;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 
 class DepositCommandTest {
@@ -44,8 +48,13 @@ class DepositCommandTest {
   }
 
   @Test
-  void encryptedKeystoresAreCreated(@TempDir final Path tempDir) {
-    depositCommand.generate(commonParams, VALIDATORS_COUNT, "", true, tempDir.toString());
+  void encryptedKeystoresAreCreatedWithPasswords(@TempDir final Path tempDir) {
+    final ValidatorKeysPasswordGroup validatorKeysPasswordGroup = new ValidatorKeysPasswordGroup();
+    validatorKeysPasswordGroup.setPassword("testpassword");
+    final WithdrawalKeysPasswordGroup withdrawalKeysPasswordGroup = new WithdrawalKeysPasswordGroup();
+    withdrawalKeysPasswordGroup.setPassword("testpassword");
+
+    depositCommand.generate(commonParams, VALIDATORS_COUNT, tempDir.toString(), true, validatorKeysPasswordGroup, withdrawalKeysPasswordGroup);
 
     // assert that sub directories exist
     final File[] subDirectories =
@@ -55,21 +64,20 @@ class DepositCommandTest {
     assertThat(tempDir.toFile().listFiles()).containsExactlyInAnyOrder(subDirectories);
 
     for (int i = 0; i < subDirectories.length; i++) {
-      assertKeyStoreAndPasswordExist(subDirectories[i].toPath(), i + 1);
+      assertKeyStoreFilesExist(subDirectories[i].toPath(), i + 1);
     }
   }
 
-  private void assertKeyStoreAndPasswordExist(final Path parentDir, final int suffix) {
-    final Path keystore1File = parentDir.resolve("validator_keystore_" + suffix + ".json");
-    final Path password1File = parentDir.resolve("validator_password_" + suffix + ".txt");
-    final Path keystore2File = parentDir.resolve("withdrawal_keystore_" + suffix + ".json");
-    final Path password2File = parentDir.resolve("withdrawal_password_" + suffix + ".txt");
+  private void assertKeyStoreFilesExist(final Path parentDir, final int suffix) {
+    final Path keystore1File = parentDir.resolve("validator_keystore.json");
+    final Path keystore2File = parentDir.resolve("withdrawal_keystore.json");
 
     assertThat(parentDir.toFile().listFiles())
         .containsExactlyInAnyOrder(
             keystore1File.toFile(),
-            password1File.toFile(),
-            keystore2File.toFile(),
-            password2File.toFile());
+            keystore2File.toFile());
+
+    assertThat(KeyStore.validatePassword("testpassword", KeyStoreLoader.loadFromFile(keystore1File))).isTrue();
+    assertThat(KeyStore.validatePassword("testpassword", KeyStoreLoader.loadFromFile(keystore2File))).isTrue();
   }
 }

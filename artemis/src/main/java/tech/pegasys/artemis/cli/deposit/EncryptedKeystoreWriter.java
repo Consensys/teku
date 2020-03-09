@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.deposit;
+package tech.pegasys.artemis.cli.deposit;
 
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.crypto.SecureRandomProvider.createSecureRandom;

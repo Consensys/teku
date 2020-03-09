@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -20,6 +21,7 @@ import com.google.common.io.Files;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,20 +34,24 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.artemis.deposit.EncryptedKeystoreWriter;
-import tech.pegasys.artemis.deposit.KeysWriter;
-import tech.pegasys.artemis.deposit.YamlKeysWriter;
+import picocli.CommandLine.ParameterException;
+import tech.pegasys.artemis.cli.deposit.EncryptedKeysPasswordGroup;
+import tech.pegasys.artemis.cli.deposit.EncryptedKeystoreWriter;
+import tech.pegasys.artemis.cli.deposit.KeysWriter;
+import tech.pegasys.artemis.cli.deposit.ValidatorKeysPasswordGroup;
+import tech.pegasys.artemis.cli.deposit.WithdrawalKeysPasswordGroup;
+import tech.pegasys.artemis.cli.deposit.YamlKeysWriter;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
@@ -67,6 +73,7 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
     footer = "Teku is licensed under the Apache License 2.0")
 public class DepositCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
+  @CommandLine.Spec CommandLine.Model.CommandSpec spec;
 
   public DepositCommand() {
     this.shutdownFunction =
@@ -111,18 +118,21 @@ public class DepositCommand implements Runnable {
               description = "Encrypt validator and withdrawal keys. (Default: true)",
               arity = "1")
           boolean encryptKeys,
-      @Option(
-              names = {"--validator-password-file", "-v"},
-              paramLabel = "<FILE>",
-              description =
-                  "Path to the file containing password to encrypt the validator keys. Must be specified if encrypt keys is set to true")
-          String validatorPasswordFile,
-      @Option(
-              names = {"--withdrawal-password-file", "-w"},
-              paramLabel = "<FILE>",
-              description =
-                  "Path to the file containing password to encrypt the withdrawal keys. Must be specified if encrypt keys is set to true")
-          String withdrawalPasswordFile) {
+      @ArgGroup ValidatorKeysPasswordGroup validatorKeysPasswordGroup,
+      @ArgGroup WithdrawalKeysPasswordGroup withdrawalKeysPasswordGroup) {
+
+    final String validatorPassword;
+    final String withdrawalPassword;
+
+    if (encryptKeys) {
+      validatorPassword =
+          readEncryptedKeystorePassword(validatorKeysPasswordGroup);
+      withdrawalPassword =
+          readEncryptedKeystorePassword(withdrawalKeysPasswordGroup);
+    } else {
+      validatorPassword = null;
+      withdrawalPassword = null;
+    }
 
     try (params) {
       final KeysWriter keysWriter;
@@ -131,10 +141,7 @@ public class DepositCommand implements Runnable {
         final Path keystoreDir =
             outputPath == null || outputPath.isBlank() ? Path.of(".") : Path.of(outputPath);
         keysWriter =
-            new EncryptedKeystoreWriter(
-                readPasswordFromFile(validatorPasswordFile),
-                readPasswordFromFile(withdrawalPasswordFile),
-                keystoreDir);
+            new EncryptedKeystoreWriter(validatorPassword, withdrawalPassword, keystoreDir);
       } else {
         STDOUT.log(Level.INFO, "Generating unencrypted keys ...");
         keysWriter =
@@ -164,6 +171,45 @@ public class DepositCommand implements Runnable {
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);
+  }
+
+  private String readEncryptedKeystorePassword(final EncryptedKeysPasswordGroup encryptedKeysPasswordGroup) {
+    if (encryptedKeysPasswordGroup == null) {
+      throw new ParameterException(
+              spec.commandLine(), "Password is required for encrypting keystore");
+    }
+
+    if (!isBlank(encryptedKeysPasswordGroup.getPassword())) {
+      return encryptedKeysPasswordGroup.getPassword();
+    }
+
+    if (encryptedKeysPasswordGroup.getPasswordEnv() != null) {
+      final String password = System.getenv(encryptedKeysPasswordGroup.getPasswordEnv());
+      if (isBlank(password)) {
+        throw new ParameterException(
+            spec.commandLine(),
+            "Error in reading password from environment variable [" + encryptedKeysPasswordGroup.getPasswordEnv() + "]");
+      }
+      return password;
+    }
+
+    if (encryptedKeysPasswordGroup.getPasswordFile() != null) {
+      try {
+        final String password = readPasswordFromFile(encryptedKeysPasswordGroup.getPasswordFile());
+        if (isBlank(password)) {
+          throw new ParameterException(
+              spec.commandLine(),
+              "Error in reading password from file [" + encryptedKeysPasswordGroup.getPasswordFile() + "] : Empty password");
+        }
+      } catch (IOException e) {
+        throw new ParameterException(
+            spec.commandLine(),
+            "Error in reading password from file [" + encryptedKeysPasswordGroup.getPasswordFile() + "] : " + e.getMessage());
+      }
+    }
+
+    throw new ParameterException(
+        spec.commandLine(), "Password is required for encrypting keystore");
   }
 
   @Command(
@@ -209,28 +255,23 @@ public class DepositCommand implements Runnable {
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
   }
 
-  String readPasswordFromFile(final String path) throws IOException {
-    final Path passwordFilePath = Path.of(path);
+  private String readPasswordFromFile(final File passwordFile) throws IOException {
     final String password;
     try {
-      password =
-          Files.asCharSource(passwordFilePath.toFile(), StandardCharsets.UTF_8).readFirstLine();
+      password = Files.asCharSource(passwordFile, StandardCharsets.UTF_8).readFirstLine();
     } catch (FileNotFoundException e) {
-      STDOUT.log(Level.FATAL, "Password file not found: " + passwordFilePath);
+      STDOUT.log(Level.FATAL, "Password file not found: " + passwordFile);
       throw e;
     } catch (IOException e) {
       STDOUT.log(
           Level.FATAL,
           "Unexpected IO error while reading password file ["
-              + passwordFilePath
+              + passwordFile
               + "] : "
               + e.getMessage());
       throw e;
     }
-    if (StringUtils.isBlank(password)) {
-      STDOUT.log(Level.FATAL, "Empty file: " + passwordFilePath);
-      throw new IOException("Empty file: " + passwordFilePath);
-    }
+
     return password;
   }
 
