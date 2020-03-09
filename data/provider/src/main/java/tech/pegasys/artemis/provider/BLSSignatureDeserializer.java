@@ -14,17 +14,14 @@
 package tech.pegasys.artemis.provider;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.api.schema.BLSSignature;
 
 public class BLSSignatureDeserializer extends JsonDeserializer<BLSSignature> {
   @Override
-  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt)
-      throws IOException, JsonProcessingException {
-    return BLSSignature.fromBytes(Bytes32.fromHexString(p.getValueAsString()));
+  public BLSSignature deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    return BLSSignature.fromHexString(p.getValueAsString());
   }
 }

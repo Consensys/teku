@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.sync;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;

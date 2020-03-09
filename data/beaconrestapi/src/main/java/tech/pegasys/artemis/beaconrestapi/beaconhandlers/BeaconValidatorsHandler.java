@@ -26,8 +26,8 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_E
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsInt;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.validateQueryParameter;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;

@@ -26,7 +26,11 @@ public class BLSPubKey {
 
   public BLSPubKey(Bytes bytes) {
     checkArgument(
-        bytes.size() == SIZE, "Bytes should be %s bytes, but was %s bytes.", SIZE, bytes.size());
+        bytes.size() == SIZE,
+        "Bytes%s should be %s bytes, but was %s bytes.",
+        SIZE,
+        SIZE,
+        bytes.size());
     this.bytes = bytes;
   }
 

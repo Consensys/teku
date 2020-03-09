@@ -16,7 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -24,7 +24,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_E
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
