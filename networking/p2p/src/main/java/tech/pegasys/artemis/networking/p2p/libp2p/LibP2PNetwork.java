@@ -15,7 +15,6 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -43,7 +42,8 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
@@ -64,6 +64,8 @@ import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final PrivKey privKey;
   private final NodeId nodeId;
@@ -149,11 +151,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
       return SafeFuture.failedFuture(new IllegalStateException("Network already started"));
     }
-    STATUS_LOG.log(Level.INFO, "Starting libp2p network...");
+    LOG.info("Starting libp2p network...");
     return SafeFuture.of(host.start())
         .thenApply(
             i -> {
-              STATUS_LOG.log(Level.INFO, "Listening for connections on: " + getNodeAddress());
+              LOG.info("Listening for connections on: {}", getNodeAddress());
               return null;
             });
   }
@@ -237,7 +239,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return;
     }
-    STATUS_LOG.log(Level.DEBUG, "JvmLibP2PNetwork.stop()");
+    LOG.debug("JvmLibP2PNetwork.stop()");
     reportExceptions(host.stop());
   }
 
