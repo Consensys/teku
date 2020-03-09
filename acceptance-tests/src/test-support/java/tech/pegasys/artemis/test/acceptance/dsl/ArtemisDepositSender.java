@@ -31,6 +31,8 @@ public class ArtemisDepositSender extends Node {
     container.setCommand(
         "validator",
         "generate",
+        "--encrypt-keys",
+        "false",
         "--contract-address",
         eth1Node.getDepositContractAddress(),
         "--number-of-validators",
