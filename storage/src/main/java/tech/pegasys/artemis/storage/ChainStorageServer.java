@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;

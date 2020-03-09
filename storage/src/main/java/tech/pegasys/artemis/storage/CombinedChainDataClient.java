@@ -127,7 +127,7 @@ public class CombinedChainDataClient {
     return getBlockByBlockRoot(get_block_root_at_slot(state, slot));
   }
 
-  private boolean isFinalized(final UnsignedLong slot) {
+  public boolean isFinalized(final UnsignedLong slot) {
     final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     return finalizedSlot.compareTo(slot) >= 0;

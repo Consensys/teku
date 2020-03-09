@@ -26,13 +26,13 @@ import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_registry_updates;
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_rewards_and_penalties;
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.artemis.util.config.Constants.ZERO_HASH;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -50,8 +50,8 @@ import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.bls.BLSVerify;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class StateTransition {
 
@@ -112,7 +112,8 @@ public class StateTransition {
         | BlockProcessingException
         | EpochProcessingException
         | IllegalArgumentException e) {
-      STDOUT.log(Level.WARN, "  State Transition error: " + e, printEnabled, ALogger.Color.RED);
+      STDOUT.log(
+          Level.WARN, "  State Transition error: " + e, printEnabled, StatusLogger.Color.RED);
       throw new StateTransitionException(e);
     }
   }
@@ -225,7 +226,8 @@ public class StateTransition {
             .plus(UnsignedLong.ONE)
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
-          STDOUT.log(Level.INFO, "******* Epoch Event *******", printEnabled, ALogger.Color.BLUE);
+          STDOUT.log(
+              Level.INFO, "******* Epoch Event *******", printEnabled, StatusLogger.Color.BLUE);
           process_epoch(state);
           reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(state)));
         }

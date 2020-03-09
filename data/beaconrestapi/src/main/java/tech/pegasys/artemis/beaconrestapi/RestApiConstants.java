@@ -35,8 +35,4 @@ public class RestApiConstants {
 
   public static final String NO_CONTENT_PRE_GENESIS =
       "No content may be returned if the genesis block has not been set, meaning that there is no head to query.";
-
-  public static final String CACHE_NONE = "max-age=0";
-  // Finalized max-age equates to 1 year
-  public static final String CACHE_FINALIZED = "max-age=31556952";
 }

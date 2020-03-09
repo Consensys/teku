@@ -18,7 +18,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.io.Files;
 import java.io.FileNotFoundException;

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Files;

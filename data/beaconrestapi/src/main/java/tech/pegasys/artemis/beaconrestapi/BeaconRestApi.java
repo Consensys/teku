@@ -129,8 +129,7 @@ public class BeaconRestApi {
   private void addBeaconHandlers(
       ChainStorageClient chainStorageClient, CombinedChainDataClient combinedChainDataClient) {
     ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
-    app.get(
-        BeaconBlockHandler.ROUTE, new BeaconBlockHandler(combinedChainDataClient, jsonProvider));
+    app.get(BeaconBlockHandler.ROUTE, new BeaconBlockHandler(provider, jsonProvider));
     app.get(
         BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(provider, jsonProvider));
@@ -145,7 +144,7 @@ public class BeaconRestApi {
   private void addValidatorHandlers(DataProvider dataProvider) {
     app.get(
         BeaconValidatorsHandler.ROUTE,
-        new BeaconValidatorsHandler(dataProvider.getCombinedChainDataClient(), jsonProvider));
+        new BeaconValidatorsHandler(dataProvider.getChainDataProvider(), jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {

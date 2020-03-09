@@ -13,14 +13,14 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.logging.StatusLogger.Color;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
 

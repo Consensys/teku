@@ -13,9 +13,9 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
@@ -36,9 +36,9 @@ import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public final class StartupUtil {
 
@@ -91,7 +91,8 @@ public final class StartupUtil {
     BeaconState initialState;
     if (startState != null) {
       try {
-        STDOUT.log(Level.INFO, "Loading initial state from " + startState, ALogger.Color.GREEN);
+        STDOUT.log(
+            Level.INFO, "Loading initial state from " + startState, StatusLogger.Color.GREEN);
         initialState = StartupUtil.loadBeaconStateFromFile(startState);
       } catch (final IOException e) {
         throw new IllegalStateException("Failed to load initial state", e);
