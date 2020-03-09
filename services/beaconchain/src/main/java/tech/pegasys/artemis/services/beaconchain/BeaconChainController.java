@@ -43,6 +43,7 @@ import tech.pegasys.artemis.metrics.SettableGauge;
 import tech.pegasys.artemis.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryMethod;
 import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -209,7 +210,7 @@ public class BeaconChainController {
               config.getPort(),
               config.getAdvertisedPort(),
               config.getStaticPeers(),
-              config.getDiscovery(),
+              DiscoveryMethod.fromConfig(config.getDiscovery()),
               config.getBootnodes(),
               new TargetPeerRange(
                   config.getTargetPeerCountRangeLowerBound(),

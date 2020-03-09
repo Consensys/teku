@@ -14,14 +14,18 @@
 package tech.pegasys.artemis.networking.p2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.artemis.network.p2p.DiscoveryNetworkFactory;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryMethod;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.util.Waiter;
 
 public class DiscoveryNetworkIntegrationTest {
+
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();
 
   @Test
@@ -64,25 +68,41 @@ public class DiscoveryNetworkIntegrationTest {
     assertConnected(network1, network2);
   }
 
-  @Test
-  public void shouldConnectToBootnodes() throws Exception {
-    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
+  @ParameterizedTest(name = "shouldConnectToBootnodes - {0}")
+  @EnumSource(DiscoveryMethod.class)
+  public void shouldConnectToBootnodes(final DiscoveryMethod discoveryMethod) throws Exception {
+    final DiscoveryNetwork<Peer> network1 =
+        discoveryNetworkFactory.builder().discoveryMethod(discoveryMethod).buildAndStart();
     final DiscoveryNetwork<Peer> network2 =
-        discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
+        discoveryNetworkFactory
+            .builder()
+            .bootnode(network1.getEnr().orElseThrow())
+            .discoveryMethod(discoveryMethod)
+            .buildAndStart();
     assertConnected(network1, network2);
   }
 
-  @Test
-  @Disabled("Discovery library still buggy")
-  public void shouldDiscoverPeers() throws Exception {
-    final DiscoveryNetwork<Peer> network1 = discoveryNetworkFactory.builder().buildAndStart();
+  @ParameterizedTest(name = "shouldDiscoverPeers - {0}")
+  @EnumSource(value = DiscoveryMethod.class)
+  public void shouldDiscoverPeers(final DiscoveryMethod discoveryMethod) throws Exception {
+    assumeThat(discoveryMethod).isNotEqualTo("discv5"); // Discv5 library still buggy
+    final DiscoveryNetwork<Peer> network1 =
+        discoveryNetworkFactory.builder().discoveryMethod(discoveryMethod).buildAndStart();
     final DiscoveryNetwork<Peer> network2 =
-        discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
+        discoveryNetworkFactory
+            .builder()
+            .bootnode(network1.getEnr().orElseThrow())
+            .discoveryMethod(discoveryMethod)
+            .buildAndStart();
     assertConnected(network1, network2);
 
     // Only knows about network1, but should discovery network2
     final DiscoveryNetwork<Peer> network3 =
-        discoveryNetworkFactory.builder().bootnode(network1.getEnr().orElseThrow()).buildAndStart();
+        discoveryNetworkFactory
+            .builder()
+            .bootnode(network1.getEnr().orElseThrow())
+            .discoveryMethod(discoveryMethod)
+            .buildAndStart();
     assertConnected(network1, network3);
     assertConnected(network2, network3);
   }

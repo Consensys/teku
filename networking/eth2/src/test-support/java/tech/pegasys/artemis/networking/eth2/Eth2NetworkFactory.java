@@ -34,6 +34,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryMethod;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -134,7 +135,7 @@ public class Eth2NetworkFactory {
           port,
           port,
           peerAddresses,
-          "static",
+          DiscoveryMethod.STATIC,
           emptyList(),
           new TargetPeerRange(20, 30),
           false,

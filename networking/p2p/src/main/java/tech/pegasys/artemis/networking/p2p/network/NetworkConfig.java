@@ -19,6 +19,7 @@ import io.libp2p.core.crypto.PrivKey;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryMethod;
 
 public class NetworkConfig {
 
@@ -28,7 +29,7 @@ public class NetworkConfig {
   private final int listenPort;
   private final int advertisedPort;
   private final List<String> staticPeers;
-  private final String discoveryMethod;
+  private final DiscoveryMethod discoveryMethod;
   private final List<String> bootnodes;
   private final TargetPeerRange targetPeerRange;
   private final boolean logWireCipher;
@@ -42,7 +43,7 @@ public class NetworkConfig {
       final int listenPort,
       final int advertisedPort,
       final List<String> staticPeers,
-      final String discoveryMethod,
+      final DiscoveryMethod discoveryMethod,
       final List<String> bootnodes,
       final TargetPeerRange targetPeerRange,
       final boolean logWireCipher,
@@ -94,7 +95,7 @@ public class NetworkConfig {
     return staticPeers;
   }
 
-  public String getDiscoveryMethod() {
+  public DiscoveryMethod getDiscoveryMethod() {
     return discoveryMethod;
   }
 

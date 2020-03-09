@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryMethod;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -117,7 +118,7 @@ class DiscoveryNetworkTest {
                 0,
                 0,
                 Collections.emptyList(),
-                "static",
+                DiscoveryMethod.STATIC,
                 Collections.emptyList(),
                 new TargetPeerRange(20, 30),
                 false,

@@ -24,6 +24,7 @@ import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.artemis.networking.p2p.discovery.noop.NoOpDiscoveryService;
+import tech.pegasys.artemis.networking.p2p.discovery.tuweniv5.TuweniDiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -65,24 +66,25 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   private static DiscoveryService createDiscoveryService(final NetworkConfig p2pConfig) {
-    final DiscoveryService discoveryService;
     switch (p2pConfig.getDiscoveryMethod()) {
-      case "discv5":
-        discoveryService =
-            DiscV5Service.create(
-                Bytes.wrap(p2pConfig.getPrivateKey().raw()),
-                p2pConfig.getNetworkInterface(),
-                p2pConfig.getListenPort(),
-                p2pConfig.getBootnodes());
-        break;
-      case "static":
-        discoveryService = new NoOpDiscoveryService();
-        break;
+      case DISCV5:
+        return DiscV5Service.create(
+            Bytes.wrap(p2pConfig.getPrivateKey().raw()),
+            p2pConfig.getNetworkInterface(),
+            p2pConfig.getListenPort(),
+            p2pConfig.getBootnodes());
+      case TUWENI:
+        return TuweniDiscoveryService.create(
+            Bytes.wrap(p2pConfig.getPrivateKey().raw()),
+            p2pConfig.getNetworkInterface(),
+            p2pConfig.getListenPort(),
+            p2pConfig.getBootnodes());
+      case STATIC:
+        return new NoOpDiscoveryService();
       default:
         throw new IllegalArgumentException(
             "Unknown discovery method: " + p2pConfig.getDiscoveryMethod());
     }
-    return discoveryService;
   }
 
   @Override

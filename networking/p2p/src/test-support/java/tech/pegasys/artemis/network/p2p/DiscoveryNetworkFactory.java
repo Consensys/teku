@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryMethod;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -51,6 +52,7 @@ public class DiscoveryNetworkFactory {
   public class DiscoveryNetworkBuilder {
     private final List<String> staticPeers = new ArrayList<>();
     private final List<String> bootnodes = new ArrayList<>();
+    private DiscoveryMethod discoveryMethod = DiscoveryMethod.DISCV5;
 
     private DiscoveryNetworkBuilder() {}
 
@@ -61,6 +63,11 @@ public class DiscoveryNetworkFactory {
 
     public DiscoveryNetworkBuilder bootnode(final String bootnode) {
       this.bootnodes.add(bootnode);
+      return this;
+    }
+
+    public DiscoveryNetworkBuilder discoveryMethod(final DiscoveryMethod discoveryMethod) {
+      this.discoveryMethod = discoveryMethod;
       return this;
     }
 
@@ -78,7 +85,7 @@ public class DiscoveryNetworkFactory {
                 port,
                 port,
                 staticPeers,
-                "discv5",
+                discoveryMethod,
                 bootnodes,
                 new TargetPeerRange(20, 30),
                 false,
