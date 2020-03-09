@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;

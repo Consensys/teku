@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.services.powchain;
 
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
-import static tech.pegasys.teku.logging.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import org.apache.logging.log4j.Level;
 import org.web3j.protocol.Web3j;
