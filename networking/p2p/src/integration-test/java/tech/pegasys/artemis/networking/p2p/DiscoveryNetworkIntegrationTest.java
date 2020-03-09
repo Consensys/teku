@@ -70,10 +70,7 @@ public class DiscoveryNetworkIntegrationTest {
   }
 
   @ParameterizedTest(name = "shouldConnectToBootnodes - {0}")
-  @EnumSource(
-      value = DiscoveryMethod.class,
-      mode = Mode.EXCLUDE,
-      names = "STATIC")
+  @EnumSource(value = DiscoveryMethod.class, mode = Mode.EXCLUDE, names = "STATIC")
   public void shouldConnectToBootnodes(final DiscoveryMethod discoveryMethod) throws Exception {
     final DiscoveryNetwork<Peer> network1 =
         discoveryNetworkFactory.builder().discoveryMethod(discoveryMethod).buildAndStart();
@@ -87,10 +84,7 @@ public class DiscoveryNetworkIntegrationTest {
   }
 
   @ParameterizedTest(name = "shouldDiscoverPeers - {0}")
-  @EnumSource(
-      value = DiscoveryMethod.class,
-      mode = Mode.EXCLUDE,
-      names = "STATIC")
+  @EnumSource(value = DiscoveryMethod.class, mode = Mode.EXCLUDE, names = "STATIC")
   @Disabled // Neither discovery library is currently discovering peers correctly.
   public void shouldDiscoverPeers(final DiscoveryMethod discoveryMethod) throws Exception {
     final DiscoveryNetwork<Peer> network1 =
