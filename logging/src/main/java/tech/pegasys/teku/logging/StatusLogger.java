@@ -28,6 +28,9 @@ public class StatusLogger {
   private final Logger logger;
   private boolean enabled;
 
+  // TODO implement these using a supplier pattern to avoid unnecessary String creation when
+  // disabled
+
   private StatusLogger(final String name) {
     this.logger = LogManager.getLogger(name);
   }
@@ -53,9 +56,9 @@ public class StatusLogger {
       final UnsignedLong finalizedEpoch) {
     info("******* Slot Event *******", Color.WHITE);
     info("Node slot:                             " + nodeSlot);
-    info("Head block slot:" + "                       " + bestSlot);
-    info("Justified epoch:" + "                       " + justifiedEpoch);
-    info("Finalized epoch:" + "                       " + finalizedEpoch);
+    info("Head block slot:                       " + bestSlot);
+    info("Justified epoch:                       " + justifiedEpoch);
+    info("Finalized epoch:                       " + finalizedEpoch);
   }
 
   public void unprocessedAttestation(final Bytes32 beconBlockRoot) {
@@ -71,10 +74,12 @@ public class StatusLogger {
         "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
   }
 
+  // TODO UI type event (not really a Status update)
   public void sendDepositException(final Throwable t) {
     fatal("Failed to send deposit transaction: " + t.getClass() + " : " + t.getMessage());
   }
 
+  // TODO UI type event (not really a Status update)
   public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
     info(
         String.format(
@@ -82,13 +87,31 @@ public class StatusLogger {
             validatorCount, genesisTime));
   }
 
+  // TODO UI type event (not really a Status update)
   public void storingGenesis(final String outputFile, final boolean isComplete) {
 
     if (isComplete) {
       info(String.format("Genesis state file saved: %s", outputFile));
-
     } else {
       info(String.format("Saving genesis state to file: %s", outputFile));
+    }
+  }
+
+  // TODO UI type event (not really a Status update)
+  public void specificationFailure(final String description, final Throwable exception) {
+    if (enabled) {
+      logger.warn("Spec failed for {}: {}", description, exception, exception);
+    }
+  }
+
+  // TODO UI type event (not really a Status update)
+  public void unexpectedException(final String description, final Throwable exception) {
+    if (enabled) {
+      logger.fatal(
+          "PLEASE FIX OR REPORT | Unexpected exception thrown for {}: {}",
+          exception,
+          description,
+          exception);
     }
   }
 

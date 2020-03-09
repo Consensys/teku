@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -43,6 +45,7 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
+import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconNode {
 
@@ -63,7 +66,8 @@ public class BeaconNode {
 
     this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
-    final EventBusExceptionHandler subscriberExceptionHandler = new EventBusExceptionHandler(LOG);
+    final EventBusExceptionHandler subscriberExceptionHandler =
+        new EventBusExceptionHandler(STATUS_LOG);
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
@@ -115,9 +119,9 @@ public class BeaconNode {
 final class EventBusExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler {
 
-  private final Logger log;
+  private final StatusLogger log;
 
-  EventBusExceptionHandler(final Logger log) {
+  EventBusExceptionHandler(final StatusLogger log) {
     this.log = log;
   }
 
@@ -155,26 +159,13 @@ final class EventBusExceptionHandler
 
   private void handleException(final Throwable exception, final String subscriberDescription) {
     if (isSpecFailure(exception)) {
-      log.warn(specFailedMessage(exception, subscriberDescription), exception);
+      log.specificationFailure(subscriberDescription, exception);
     } else {
-      log.fatal(unexpectedExceptionMessage(exception, subscriberDescription), exception);
+      log.unexpectedException(subscriberDescription, exception);
     }
   }
 
   private static boolean isSpecFailure(final Throwable exception) {
     return exception instanceof IllegalArgumentException;
-  }
-
-  private static String unexpectedExceptionMessage(
-      final Throwable exception, final String subscriberDescription) {
-    return "PLEASE FIX OR REPORT | Unexpected exception thrown for "
-        + subscriberDescription
-        + ": "
-        + exception;
-  }
-
-  private static String specFailedMessage(
-      final Throwable exception, final String subscriberDescription) {
-    return "Spec failed for " + subscriberDescription + ": " + exception;
   }
 }
