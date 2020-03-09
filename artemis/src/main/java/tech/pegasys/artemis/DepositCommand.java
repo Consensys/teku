@@ -40,7 +40,6 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import picocli.CommandLine;
-import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
@@ -118,17 +117,49 @@ public class DepositCommand implements Runnable {
               description = "Encrypt validator and withdrawal keys. (Default: true)",
               arity = "1")
           boolean encryptKeys,
-      @ArgGroup ValidatorKeysPasswordGroup validatorKeysPasswordGroup,
-      @ArgGroup WithdrawalKeysPasswordGroup withdrawalKeysPasswordGroup) {
-
-    final String validatorPassword;
-    final String withdrawalPassword;
+      @Option(
+              names = {"--validator-password:file"},
+              paramLabel = "<FILE>",
+              description = "Read password from the file to encrypt the validator keys")
+          File validatorPasswordFile,
+      @Option(
+              names = {"--validator-password:env"},
+              paramLabel = "<ENV_VAR>",
+              description =
+                  "Read password from environment variable to encrypt the validator keys")
+          String validatorPasswordEnv,
+      @Option(
+              names = {"--validator-password"},
+              paramLabel = "<PASSWORD>",
+              description = "Password to encrypt validator keys",
+              interactive = true)
+          String validatorPassword,
+      @Option(
+              names = {"--withdrawal-password:file"},
+              paramLabel = "<FILE>",
+              description = "Path to the file containing password to encrypt the withdrawal keys")
+          File withdrawalPasswordFile,
+      @Option(
+              names = {"--withdrawal-password:env"},
+              paramLabel = "<ENVIRONMENT_VAR>",
+              description =
+                  "Read password from environment variable to encrypt the withdrawal keys")
+          String withdrawalPasswordEnv,
+      @Option(
+              names = {"--withdrawal-password"},
+              description = "Password to encrypt withdrawal keys",
+              interactive = true)
+          String withdrawalPassword) {
 
     if (encryptKeys) {
       validatorPassword =
-          readEncryptedKeystorePassword(validatorKeysPasswordGroup);
+          readEncryptedKeystorePassword(
+              new ValidatorKeysPasswordGroup(
+                  validatorPasswordFile, validatorPasswordEnv, validatorPassword));
       withdrawalPassword =
-          readEncryptedKeystorePassword(withdrawalKeysPasswordGroup);
+          readEncryptedKeystorePassword(
+              new WithdrawalKeysPasswordGroup(
+                  withdrawalPasswordFile, withdrawalPasswordEnv, withdrawalPassword));
     } else {
       validatorPassword = null;
       withdrawalPassword = null;
@@ -173,43 +204,51 @@ public class DepositCommand implements Runnable {
     shutdownFunction.accept(0);
   }
 
-  private String readEncryptedKeystorePassword(final EncryptedKeysPasswordGroup encryptedKeysPasswordGroup) {
+  private String readEncryptedKeystorePassword(
+      final EncryptedKeysPasswordGroup encryptedKeysPasswordGroup) {
     if (encryptedKeysPasswordGroup == null) {
       throw new ParameterException(
-              spec.commandLine(), "Password is required for encrypting keystore");
+          spec.commandLine(), "Error: Password is required for encrypting keystore");
     }
 
-    if (!isBlank(encryptedKeysPasswordGroup.getPassword())) {
-      return encryptedKeysPasswordGroup.getPassword();
+    if (!isBlank(encryptedKeysPasswordGroup.readPasswordInteractively())) {
+      return encryptedKeysPasswordGroup.readPasswordInteractively();
     }
 
-    if (encryptedKeysPasswordGroup.getPasswordEnv() != null) {
-      final String password = System.getenv(encryptedKeysPasswordGroup.getPasswordEnv());
+    if (encryptedKeysPasswordGroup.readPasswordFromEnvironmentVariable() != null) {
+      final String password = System.getenv(encryptedKeysPasswordGroup.readPasswordFromEnvironmentVariable());
       if (isBlank(password)) {
         throw new ParameterException(
             spec.commandLine(),
-            "Error in reading password from environment variable [" + encryptedKeysPasswordGroup.getPasswordEnv() + "]");
+            "Error in reading password from environment variable ["
+                + encryptedKeysPasswordGroup.readPasswordFromEnvironmentVariable()
+                + "]");
       }
       return password;
     }
 
-    if (encryptedKeysPasswordGroup.getPasswordFile() != null) {
+    if (encryptedKeysPasswordGroup.readPasswordFromFile() != null) {
       try {
-        final String password = readPasswordFromFile(encryptedKeysPasswordGroup.getPasswordFile());
+        final String password = readPasswordFromFile(encryptedKeysPasswordGroup.readPasswordFromFile());
         if (isBlank(password)) {
           throw new ParameterException(
               spec.commandLine(),
-              "Error in reading password from file [" + encryptedKeysPasswordGroup.getPasswordFile() + "] : Empty password");
+              "Error in reading password from file ["
+                  + encryptedKeysPasswordGroup.readPasswordFromFile()
+                  + "] : Empty password");
         }
       } catch (IOException e) {
         throw new ParameterException(
             spec.commandLine(),
-            "Error in reading password from file [" + encryptedKeysPasswordGroup.getPasswordFile() + "] : " + e.getMessage());
+            "Error in reading password from file ["
+                + encryptedKeysPasswordGroup.readPasswordFromFile()
+                + "] : "
+                + e.getMessage());
       }
     }
 
     throw new ParameterException(
-        spec.commandLine(), "Password is required for encrypting keystore");
+        spec.commandLine(), "Error: Password is required for encrypting keystore");
   }
 
   @Command(

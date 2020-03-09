@@ -20,20 +20,23 @@ public class WithdrawalKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   @Option(
       names = {"--withdrawal-password:file"},
       paramLabel = "<FILE>",
+      required = true,
       description = "Path to the file containing password to encrypt the withdrawal keys.")
-  private File passwordFile;
+  File passwordFile;
 
   @Option(
       names = {"--withdrawal-password:env"},
       paramLabel = "<ENVIRONMENT_VAR>",
-      description = "Environment variable which specifies password to encrypt the withdrawal keys.")
-  private String passwordEnv;
+      required = true,
+      description = "Read password from environment variable to encrypt the withdrawal keys.")
+  String passwordEnv;
 
   @Option(
       names = {"--withdrawal-password"},
-      description = "Provide password (interactive mode) to encrypt withdrawal keys.",
+      description = "Read password in interactive mode to encrypt withdrawal keys.",
+      required = true,
       interactive = true)
-  private String password;
+  String password;
 
   public WithdrawalKeysPasswordGroup() {}
 
@@ -45,7 +48,7 @@ public class WithdrawalKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   }
 
   @Override
-  public File getPasswordFile() {
+  public File readPasswordFromFile() {
     return passwordFile;
   }
 
@@ -54,7 +57,7 @@ public class WithdrawalKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   }
 
   @Override
-  public String getPasswordEnv() {
+  public String readPasswordFromEnvironmentVariable() {
     return passwordEnv;
   }
 
@@ -63,7 +66,7 @@ public class WithdrawalKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   }
 
   @Override
-  public String getPassword() {
+  public String readPasswordInteractively() {
     return password;
   }
 

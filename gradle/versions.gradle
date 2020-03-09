@@ -22,7 +22,7 @@ dependencyManagement {
 
     dependency 'de.undercouch:bson4jackson:2.9.2'
 
-    dependency 'info.picocli:picocli:4.0.4'
+    dependency 'info.picocli:picocli:4.2.0'
 
     dependency 'io.javalin:javalin:3.7.0'
     dependency 'io.protostuff:protostuff-core:1.6.2'

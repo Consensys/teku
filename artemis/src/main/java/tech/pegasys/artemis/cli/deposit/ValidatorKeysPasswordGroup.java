@@ -20,21 +20,24 @@ public class ValidatorKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   @Option(
       names = {"--validator-password:file"},
       paramLabel = "<FILE>",
-      description = "Path to the file containing password to encrypt the validator keys.")
-  private File passwordFile;
+      required = true,
+      description = "Read password from the file to encrypt the validator keys.")
+  File passwordFile;
 
   @Option(
       names = {"--validator-password:env"},
-      paramLabel = "<ENVIRONMENT_VAR>",
-      description = "Environment variable which specifies password to encrypt the validator keys.")
-  private String passwordEnv;
+      paramLabel = "<ENV_VAR>",
+      required = true,
+      description = "Read password from environment variable to encrypt the validator keys.")
+  String passwordEnv;
 
   @Option(
       names = {"--validator-password"},
       paramLabel = "<PASSWORD>",
-      description = "Provide password (interactive mode) to encrypt validator keys.",
+      description = "Read password in interactive mode to encrypt validator keys.",
+      required = true,
       interactive = true)
-  private String password;
+  String password;
 
   public ValidatorKeysPasswordGroup() {}
 
@@ -46,7 +49,7 @@ public class ValidatorKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   }
 
   @Override
-  public File getPasswordFile() {
+  public File readPasswordFromFile() {
     return passwordFile;
   }
 
@@ -55,7 +58,7 @@ public class ValidatorKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   }
 
   @Override
-  public String getPasswordEnv() {
+  public String readPasswordFromEnvironmentVariable() {
     return passwordEnv;
   }
 
@@ -64,7 +67,7 @@ public class ValidatorKeysPasswordGroup implements EncryptedKeysPasswordGroup {
   }
 
   @Override
-  public String getPassword() {
+  public String readPasswordInteractively() {
     return password;
   }
 

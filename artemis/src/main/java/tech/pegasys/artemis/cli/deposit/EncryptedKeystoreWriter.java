@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.cli.deposit;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.crypto.SecureRandomProvider.createSecureRandom;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

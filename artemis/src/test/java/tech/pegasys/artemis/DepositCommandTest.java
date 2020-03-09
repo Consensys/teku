@@ -51,10 +51,21 @@ class DepositCommandTest {
   void encryptedKeystoresAreCreatedWithPasswords(@TempDir final Path tempDir) {
     final ValidatorKeysPasswordGroup validatorKeysPasswordGroup = new ValidatorKeysPasswordGroup();
     validatorKeysPasswordGroup.setPassword("testpassword");
-    final WithdrawalKeysPasswordGroup withdrawalKeysPasswordGroup = new WithdrawalKeysPasswordGroup();
+    final WithdrawalKeysPasswordGroup withdrawalKeysPasswordGroup =
+        new WithdrawalKeysPasswordGroup();
     withdrawalKeysPasswordGroup.setPassword("testpassword");
 
-    depositCommand.generate(commonParams, VALIDATORS_COUNT, tempDir.toString(), true, validatorKeysPasswordGroup, withdrawalKeysPasswordGroup);
+    depositCommand.generate(
+        commonParams,
+        VALIDATORS_COUNT,
+        tempDir.toString(),
+        true,
+        validatorKeysPasswordGroup.readPasswordFromFile(),
+        validatorKeysPasswordGroup.readPasswordFromEnvironmentVariable(),
+        validatorKeysPasswordGroup.readPasswordInteractively(),
+        withdrawalKeysPasswordGroup.readPasswordFromFile(),
+        withdrawalKeysPasswordGroup.readPasswordFromEnvironmentVariable(),
+        withdrawalKeysPasswordGroup.readPasswordInteractively());
 
     // assert that sub directories exist
     final File[] subDirectories =
@@ -73,11 +84,13 @@ class DepositCommandTest {
     final Path keystore2File = parentDir.resolve("withdrawal_keystore.json");
 
     assertThat(parentDir.toFile().listFiles())
-        .containsExactlyInAnyOrder(
-            keystore1File.toFile(),
-            keystore2File.toFile());
+        .containsExactlyInAnyOrder(keystore1File.toFile(), keystore2File.toFile());
 
-    assertThat(KeyStore.validatePassword("testpassword", KeyStoreLoader.loadFromFile(keystore1File))).isTrue();
-    assertThat(KeyStore.validatePassword("testpassword", KeyStoreLoader.loadFromFile(keystore2File))).isTrue();
+    assertThat(
+            KeyStore.validatePassword("testpassword", KeyStoreLoader.loadFromFile(keystore1File)))
+        .isTrue();
+    assertThat(
+            KeyStore.validatePassword("testpassword", KeyStoreLoader.loadFromFile(keystore2File)))
+        .isTrue();
   }
 }
