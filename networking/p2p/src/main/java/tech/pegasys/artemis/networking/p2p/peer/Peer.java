@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.peer;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
@@ -23,7 +24,11 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface Peer {
 
-  NodeId getId();
+  default NodeId getId() {
+    return getAddress().getId();
+  }
+
+  PeerAddress getAddress();
 
   boolean isConnected();
 

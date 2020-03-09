@@ -345,7 +345,7 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldDisconnectPeersWhenPeerCountExceedsLimit() {
+  public void shouldDisconnectDiscoveredPeersWhenPeerCountExceedsLimit() {
     final ConnectionManager manager = createManager(new TargetPeerRange(1, 1));
     manager.start().join();
 
@@ -359,6 +359,26 @@ class ConnectionManagerTest {
 
     // Should disconnect one peer to get back down to our target of max 1 peer.
     assertThat(peer2.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
+    assertThat(peer1.isConnected()).isTrue();
+  }
+
+  @Test
+  public void shouldNotDisconnectStaticPeersWhenPeerCountExceedsLimit() {
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
+    final ConnectionManager manager = createManager(new TargetPeerRange(1, 1), PEER1, PEER2);
+    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
+    when(network.connect(PEER2)).thenReturn(SafeFuture.completedFuture(peer2));
+    manager.start().join();
+
+    final PeerConnectedSubscriber<Peer> peerConnectedSubscriber = getPeerConnectedSubscriber();
+
+    when(network.streamPeers()).thenReturn(Stream.of(peer2, peer1));
+    when(network.getPeerCount()).thenReturn(2);
+    peerConnectedSubscriber.onConnected(peer1);
+
+    // Should disconnect one peer to get back down to our target of max 1 peer.
+    assertThat(peer2.isConnected()).isTrue();
     assertThat(peer1.isConnected()).isTrue();
   }
 

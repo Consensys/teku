@@ -24,7 +24,7 @@ public class MultiaddrPeerAddress extends PeerAddress {
 
   private final Multiaddr multiaddr;
 
-  private MultiaddrPeerAddress(final NodeId nodeId, final Multiaddr multiaddr) {
+  MultiaddrPeerAddress(final NodeId nodeId, final Multiaddr multiaddr) {
     super(nodeId);
     this.multiaddr = multiaddr;
   }
