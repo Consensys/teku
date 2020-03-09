@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.collect.Streams;
 import java.util.Collection;

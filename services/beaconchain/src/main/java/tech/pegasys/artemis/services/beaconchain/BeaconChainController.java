@@ -16,9 +16,9 @@ package tech.pegasys.artemis.services.beaconchain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -66,13 +66,13 @@ import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
+import tech.pegasys.teku.logging.ALogger;
 
 public class BeaconChainController {
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();

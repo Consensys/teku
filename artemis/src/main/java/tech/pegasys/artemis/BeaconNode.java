@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
@@ -40,11 +40,11 @@ import tech.pegasys.artemis.service.serviceutils.ServiceController;
 import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
 import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
 import tech.pegasys.artemis.services.powchain.PowchainService;
-import tech.pegasys.artemis.util.alogger.ALogger;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
+import tech.pegasys.teku.logging.ALogger;
+import tech.pegasys.teku.logging.ALogger.Color;
 
 public class BeaconNode {
 

@@ -16,13 +16,13 @@ package tech.pegasys.artemis.validator.coordinator;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGenericAttestationData;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
