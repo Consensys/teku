@@ -16,12 +16,13 @@ package tech.pegasys.teku.logging;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class StatusLogger {
 
   public static final StatusLogger STATUS_LOG = new StatusLogger("stdout");
 
-  public enum Color {
+  private enum Color {
     RED,
     BLUE,
     PURPLE,
@@ -41,30 +42,38 @@ public class StatusLogger {
     this.logger.log(level, message);
   }
 
-  public void log(Level level, String message, boolean printEnabled) {
-    if (printEnabled) {
-      this.logger.log(level, message);
-    }
+  public void epochEvent() {
+    log(Level.INFO, "******* Epoch Event *******", StatusLogger.Color.BLUE);
   }
 
-  public void log(Level level, String message, boolean printEnabled, Color color) {
-    log(level, addColor(message, color), printEnabled);
+  public void slotEvent() {
+    log(Level.INFO, "******* Slot Event *******", StatusLogger.Color.WHITE);
   }
 
-  public void log(Level level, String message, Color color) {
-    logger.log(level, addColor(message, color));
+  public void unprocessedAttestation(final Bytes32 beconBlockRoot) {
+    log(
+        Level.INFO,
+        "New Attestation with block root:  " + beconBlockRoot + " detected.",
+        StatusLogger.Color.GREEN);
   }
 
-  public void log(Level level, String message, Throwable throwable) {
-    logger.log(level, message, throwable);
+  public void aggregateAndProof(final Bytes32 beconBlockRoot) {
+    log(
+        Level.INFO,
+        "New AggregateAndProof with block root:  " + beconBlockRoot + " detected.",
+        StatusLogger.Color.BLUE);
   }
 
-  public void log(Level level, String message, Throwable throwable, Color color) {
-    logger.log(level, addColor(message, color), throwable);
+  public void unprocessedBlock(final Bytes32 stateRoot) {
+    log(
+        Level.INFO,
+        "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.",
+        StatusLogger.Color.GREEN);
   }
 
-  public boolean isDebugEnabled() {
-    return logger.isDebugEnabled();
+  // TODO only add colour when it is enabled vai the config
+  private void log(Level level, String message, Color color) {
+    this.logger.log(level, addColor(message, color));
   }
 
   private String findColor(Color color) {

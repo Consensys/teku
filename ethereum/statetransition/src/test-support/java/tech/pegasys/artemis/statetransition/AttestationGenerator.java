@@ -241,10 +241,10 @@ public class AttestationGenerator {
 
   private BeaconState processStateToSlot(BeaconState preState, UnsignedLong slot)
       throws EpochProcessingException, SlotProcessingException {
-    final StateTransition stateTransition = new StateTransition(false);
+    final StateTransition stateTransition = new StateTransition();
     final MutableBeaconState postState = preState.createWritableCopy();
 
-    stateTransition.process_slots(postState, slot, false);
+    stateTransition.process_slots(postState, slot);
     return postState;
   }
 

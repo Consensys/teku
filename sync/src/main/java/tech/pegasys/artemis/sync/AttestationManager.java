@@ -63,7 +63,7 @@ public class AttestationManager extends Service {
         new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
     return new AttestationManager(
         eventBus,
-        new ForkChoiceAttestationProcessor(storageClient, new StateTransition(false)),
+        new ForkChoiceAttestationProcessor(storageClient, new StateTransition()),
         pendingAttestations,
         futureAttestations);
   }

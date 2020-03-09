@@ -37,7 +37,8 @@ import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -55,16 +56,15 @@ import tech.pegasys.teku.logging.StatusLogger;
 
 public class StateTransition {
 
-  private boolean printEnabled;
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Optional<EpochMetrics> epochMetrics;
 
-  public StateTransition(boolean printEnabled) {
-    this.printEnabled = printEnabled;
+  public StateTransition() {
     this.epochMetrics = Optional.empty();
   }
 
-  public StateTransition(boolean printEnabled, EpochMetrics epochMetrics) {
-    this.printEnabled = printEnabled;
+  public StateTransition(EpochMetrics epochMetrics) {
     this.epochMetrics = Optional.of(epochMetrics);
   }
 
@@ -85,7 +85,7 @@ public class StateTransition {
     try {
       MutableBeaconState state = preState.createWritableCopy();
       // Process slots (including those with no blocks) since block
-      process_slots(state, signed_block.getMessage().getSlot(), printEnabled);
+      process_slots(state, signed_block.getMessage().getSlot());
 
       // Verify signature
       if (validateStateRootAndSignatures) {
@@ -112,8 +112,7 @@ public class StateTransition {
         | BlockProcessingException
         | EpochProcessingException
         | IllegalArgumentException e) {
-      STATUS_LOG.log(
-          Level.WARN, "  State Transition error: " + e, printEnabled, StatusLogger.Color.RED);
+      LOG.warn("State Transition error", e);
       throw new StateTransitionException(e);
     }
   }
@@ -213,7 +212,7 @@ public class StateTransition {
    * @throws EpochProcessingException
    * @throws SlotProcessingException
    */
-  public void process_slots(MutableBeaconState state, UnsignedLong slot, boolean printEnabled)
+  public void process_slots(MutableBeaconState state, UnsignedLong slot)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -226,15 +225,14 @@ public class StateTransition {
             .plus(UnsignedLong.ONE)
             .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
             .equals(UnsignedLong.ZERO)) {
-          STATUS_LOG.log(
-              Level.INFO, "******* Epoch Event *******", printEnabled, StatusLogger.Color.BLUE);
+          STATUS_LOG.epochEvent();
           process_epoch(state);
           reportExceptions(CompletableFuture.runAsync(() -> recordMetrics(state)));
         }
         state.setSlot(state.getSlot().plus(UnsignedLong.ONE));
       }
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new SlotProcessingException(e);
     }
   }

@@ -108,7 +108,7 @@ public class ValidatorCoordinator {
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
-    this.stateTransition = new StateTransition(false);
+    this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
     this.validators = initializeValidators(config);
     this.attestationAggregator = attestationAggregator;
@@ -251,7 +251,7 @@ public class ValidatorCoordinator {
 
       MutableBeaconState newState = previousState.createWritableCopy();
       // Process empty slots up to the new slot
-      stateTransition.process_slots(newState, newSlot, false);
+      stateTransition.process_slots(newState, newSlot);
 
       // Check if we should be proposing
       final BLSPublicKey proposer = blockCreator.getProposerForSlot(newState, newSlot);

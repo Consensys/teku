@@ -135,7 +135,7 @@ public class BlockProposalUtil {
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
     MutableBeaconState state = preState.createWritableCopy();
     try {
-      stateTransition.process_slots(state, slot, false);
+      stateTransition.process_slots(state, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
       STATUS_LOG.log(Level.FATAL, "Coordinator checking proposer index exception");
     }

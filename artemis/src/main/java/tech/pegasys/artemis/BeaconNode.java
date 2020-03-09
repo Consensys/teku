@@ -29,6 +29,8 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
@@ -43,10 +45,10 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
-import tech.pegasys.teku.logging.StatusLogger;
-import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public class BeaconNode {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
@@ -64,7 +66,7 @@ public class BeaconNode {
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final EventBusExceptionHandler subscriberExceptionHandler =
-        new EventBusExceptionHandler(STATUS_LOG);
+        new EventBusExceptionHandler(LOG);
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
@@ -118,9 +120,9 @@ public class BeaconNode {
 final class EventBusExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler {
 
-  private final StatusLogger logger;
+  private final Logger logger;
 
-  EventBusExceptionHandler(final StatusLogger logger) {
+  EventBusExceptionHandler(final Logger logger) {
     this.logger = logger;
   }
 
@@ -163,8 +165,7 @@ final class EventBusExceptionHandler
       logger.log(
           Level.FATAL,
           unexpectedExceptionMessage(exception, subscriberDescription),
-          exception,
-          Color.RED);
+          exception);
     }
   }
 

@@ -32,6 +32,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -72,9 +74,10 @@ import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconChainController {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
   private final EventChannels eventChannels;
@@ -323,8 +326,8 @@ public class BeaconChainController {
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
-      STATUS_LOG.log(
-          Level.INFO, timeUntilGenesis + " seconds until genesis.", StatusLogger.Color.GREEN);
+      LOG.log(
+          Level.INFO, timeUntilGenesis + " seconds until genesis.");
     }
     nodeSlot = currentSlot;
   }
@@ -353,7 +356,7 @@ public class BeaconChainController {
       this.eventBus.post(new SlotEvent(nodeSlot));
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
-      STATUS_LOG.log(Level.INFO, "******* Slot Event *******", StatusLogger.Color.WHITE);
+      STATUS_LOG.slotEvent();
       STATUS_LOG.log(Level.INFO, "Node slot:                             " + nodeSlot);
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
@@ -385,6 +388,6 @@ public class BeaconChainController {
   public void setNodeSlotAccordingToDBStore(Store store) {
     Bytes32 headBlockRoot = get_head(store);
     chainStorageClient.initializeFromStore(store, headBlockRoot);
-    STATUS_LOG.log(Level.INFO, "Node being started from database.", StatusLogger.Color.GREEN);
+    LOG.log(Level.INFO, "Node being started from database.");
   }
 }
