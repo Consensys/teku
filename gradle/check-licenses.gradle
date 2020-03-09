@@ -19,9 +19,8 @@ ext.acceptedLicenses = [
     'BSD 2-Clause',
     'BSD 3-Clause',
     'Eclipse Distribution License - v 1.0',
+    'Eclipse Distribution License v. 1.0',
     'Eclipse Public License - v 1.0',
-    'Eclipse Public License - Version 1.0',
-    'Eclipse Public License 1.0',
     'Eclipse Public License - v 2.0',
     'MIT License',
     'The MIT License (MIT)',
@@ -57,6 +56,7 @@ downloadLicenses {
   ext.mpl2_0 = license('Mozilla Public License, Version 2.0', 'http://www.mozilla.org/MPL/2.0/')
   ext.cddl = license('Common Development and Distribution License 1.0', 'http://opensource.org/licenses/CDDL-1.0')
   ext.cddl1_1 = license('Common Development and Distribution License 1.0', 'http://oss.oracle.com/licenses/CDDL-1.1')
+  ext.epl1_0 = license('Eclipse Public License - v 1.0', 'https://www.eclipse.org/org/documents/epl-v10.php')
   ext.epl2_0 = license('Eclipse Public License - v 2.0', 'https://www.eclipse.org/legal/epl-2.0/')
   aliases = [
       (apache)    : [
@@ -121,6 +121,13 @@ downloadLicenses {
               (cddl1_1): [
               'CDDL 1.1',
               'COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1',
+      ],
+      (epl1_0): [
+          'EPL 1.0',
+          'Eclipse Public License 1.0',
+          'Eclipse Public License v1.0',
+          'Eclipse Public License - Version 1.0',
+          license('Eclipse Public License - v 1.0', 'https://www.eclipse.org/org/documents/epl-v10.php'),
       ],
       (epl2_0): [
           'EPL 2.0',
