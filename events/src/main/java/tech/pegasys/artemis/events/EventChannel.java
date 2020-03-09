@@ -22,17 +22,24 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class EventChannel<T> {
 
   private final T publisher;
   private final EventDeliverer<T> invoker;
+  private final boolean allowMultipleSubscribers;
+  private final AtomicBoolean hasSubscriber = new AtomicBoolean(false);
 
-  private EventChannel(final T publisher, final EventDeliverer<T> invoker) {
+  private EventChannel(
+      final T publisher, final EventDeliverer<T> invoker, final boolean allowMultipleSubscribers) {
     this.publisher = publisher;
     this.invoker = invoker;
+    this.allowMultipleSubscribers = allowMultipleSubscribers;
   }
 
   public static <T> EventChannel<T> create(
@@ -86,19 +93,19 @@ public class EventChannel<T> {
   private static <T> EventChannel<T> create(
       final Class<T> channelInterface, final EventDeliverer<T> eventDeliverer) {
     checkArgument(channelInterface.isInterface(), "Must provide an interface for the channel");
-    final String nonVoidMethods =
+    final String illegalMethods =
         Stream.of(channelInterface.getMethods())
-            .filter(
-                method ->
-                    !method.getReturnType().equals(Void.TYPE)
-                        || method.getExceptionTypes().length > 0)
+            .filter(method -> !isReturnTypeAllowed(method) || method.getExceptionTypes().length > 0)
             .map(Method::getName)
             .collect(joining(", "));
     checkArgument(
-        nonVoidMethods.isEmpty(),
-        "All methods must have a void return type and no exceptions but "
-            + nonVoidMethods
+        illegalMethods.isEmpty(),
+        "All methods must have a return type that is void or compatible with SafeFuture and no exceptions but "
+            + illegalMethods
             + " did not");
+    final boolean hasReturnValues =
+        Stream.of(channelInterface.getMethods())
+            .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));
     @SuppressWarnings("unchecked")
     final T publisher =
         (T)
@@ -107,7 +114,20 @@ public class EventChannel<T> {
                 new Class<?>[] {channelInterface},
                 eventDeliverer);
 
-    return new EventChannel<>(publisher, eventDeliverer);
+    return new EventChannel<>(publisher, eventDeliverer, !hasReturnValues);
+  }
+
+  private static boolean isReturnTypeAllowed(final Method method) {
+    final Class<?> returnType = method.getReturnType();
+    // Allow void
+    return returnType.equals(Void.TYPE)
+        // Allow Future, CompletableStage or CompletableFuture
+        || hasAllowedAsyncReturnValue(returnType);
+  }
+
+  private static boolean hasAllowedAsyncReturnValue(final Class<?> returnType) {
+    return Future.class.isAssignableFrom(returnType)
+        && returnType.isAssignableFrom(SafeFuture.class);
   }
 
   public T getPublisher() {
@@ -115,6 +135,9 @@ public class EventChannel<T> {
   }
 
   public void subscribe(T listener) {
+    if (!hasSubscriber.compareAndSet(false, true) && !allowMultipleSubscribers) {
+      throw new IllegalStateException("Only one subscriber is supported by this event channel");
+    }
     invoker.subscribe(listener);
   }
 
