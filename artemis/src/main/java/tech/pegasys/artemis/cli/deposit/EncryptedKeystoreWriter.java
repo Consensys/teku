@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.cli.deposit;
 
 import static tech.pegasys.artemis.util.crypto.SecureRandomProvider.createSecureRandom;
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -68,7 +68,7 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     try {
       return Files.createDirectories(keystoreDirectory);
     } catch (IOException e) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.FATAL,
           "Unable to create directory [" + keystoreDirectory + "] : " + e.getMessage());
       throw new UncheckedIOException(e);
@@ -87,7 +87,7 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     try {
       KeyStoreLoader.saveToFile(outputPath, keyStoreData);
     } catch (final IOException e) {
-      STDOUT.log(
+      STATUS_LOG.log(
           Level.FATAL, "Unable to save keystore file [" + outputPath + "] : " + e.getMessage());
       throw new UncheckedIOException(e);
     }

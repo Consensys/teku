@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.cli.deposit;
 
-import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
@@ -50,7 +50,7 @@ public class YamlKeysWriter implements KeysWriter {
       try {
         Files.writeString(outputPath, yamlLine, StandardOpenOption.APPEND);
       } catch (IOException e) {
-        STDOUT.log(Level.FATAL, "Error writing keys to " + outputPath);
+        STATUS_LOG.log(Level.FATAL, "Error writing keys to " + outputPath);
         throw new UncheckedIOException(e);
       }
     }

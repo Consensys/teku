@@ -83,8 +83,8 @@ public class EncryptedKeystorePasswordProvider {
 
     final String errorMessage =
         String.format(
-            "Missing options: [--%s-password | --%s-password:env | --%s-password:file]",
-            errorPrefix, errorPrefix, errorPrefix);
+            "Missing options: [--%1$s-password | --%1$s-password:env | --%1$s-password:file]",
+            errorPrefix);
     throw new ParameterException(spec.commandLine(), errorMessage);
   }
 }
