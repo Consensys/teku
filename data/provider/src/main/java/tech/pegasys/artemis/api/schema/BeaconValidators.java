@@ -91,11 +91,11 @@ public class BeaconValidators {
   }
 
   public static class ValidatorWithIndex {
-    public Validator validator;
+    public tech.pegasys.artemis.api.schema.Validator validator;
     public int index;
 
     public ValidatorWithIndex(Validator validator, int index) {
-      this.validator = validator;
+      this.validator = new tech.pegasys.artemis.api.schema.Validator(validator);
       this.index = index;
     }
   }
