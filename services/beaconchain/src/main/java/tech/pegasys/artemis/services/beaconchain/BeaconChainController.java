@@ -131,7 +131,7 @@ public class BeaconChainController {
   }
 
   public void initTimer() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initTimer()");
+    LOG.debug("BeaconChainController.initTimer()");
     int timerPeriodInMilliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
       this.timer = new Timer(eventBus, 0, timerPeriodInMilliseconds);
@@ -145,7 +145,7 @@ public class BeaconChainController {
   }
 
   public void initMetrics() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initMetrics()");
+    LOG.debug("BeaconChainController.initMetrics()");
     currentSlotGauge =
         SettableGauge.create(
             metricsSystem,
@@ -161,7 +161,7 @@ public class BeaconChainController {
   }
 
   public void initDepositProvider() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initDepositProvider()");
+    LOG.debug("BeaconChainController.initDepositProvider()");
     depositProvider = new DepositProvider(chainStorageClient);
     eventChannels
         .subscribe(Eth1EventsChannel.class, depositProvider)
@@ -169,7 +169,7 @@ public class BeaconChainController {
   }
 
   public void initValidatorCoordinator() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initValidatorCoordinator()");
+    LOG.debug("BeaconChainController.initValidatorCoordinator()");
     new ValidatorCoordinator(
         timeProvider,
         eventBus,
@@ -181,12 +181,12 @@ public class BeaconChainController {
   }
 
   public void initStateProcessor() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initStateProcessor()");
+    LOG.debug("BeaconChainController.initStateProcessor()");
     this.stateProcessor = new StateProcessor(eventBus, chainStorageClient);
   }
 
   private void initPreGenesisDepositHandler() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initPreGenesisDepositHandler()");
+    LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(chainStorageClient));
   }
 
@@ -195,7 +195,7 @@ public class BeaconChainController {
   }
 
   public void initP2PNetwork() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initP2PNetwork()");
+    LOG.debug("BeaconChainController.initP2PNetwork()");
     if ("mock".equals(config.getNetworkMode())) {
       this.p2pNetwork = new MockP2PNetwork<>(eventBus);
     } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
@@ -233,17 +233,17 @@ public class BeaconChainController {
   }
 
   public void initBlockAttestationsPool() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initBlockAttestationsPool()");
+    LOG.debug("BeaconChainController.initBlockAttestationsPool()");
     blockAttestationsPool = new BlockAttestationsPool();
   }
 
   public void initAttestationAggregator() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initAttestationAggregator()");
+    LOG.debug("BeaconChainController.initAttestationAggregator()");
     attestationAggregator = new AttestationAggregator();
   }
 
   public void initRestAPI() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initRestAPI()");
+    LOG.debug("BeaconChainController.initRestAPI()");
     HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(chainStorageClient, historicalChainData);
@@ -253,7 +253,7 @@ public class BeaconChainController {
   }
 
   public void initSyncManager() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initSyncManager()");
+    LOG.debug("BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
       syncService = new NoopSyncService(null, null, null, null);
     } else {
@@ -267,16 +267,15 @@ public class BeaconChainController {
   }
 
   public void start() {
-    STATUS_LOG.log(
-        Level.DEBUG, "BeaconChainController.start(): starting AttestationPropagationManager");
+    LOG.debug("BeaconChainController.start(): starting AttestationPropagationManager");
     attestationManager.start().reportExceptions();
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.start(): starting p2pNetwork");
+    LOG.debug("BeaconChainController.start(): starting p2pNetwork");
     this.p2pNetwork.start().reportExceptions();
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.start(): emit NodeStartEvent");
+    LOG.debug("BeaconChainController.start(): emit NodeStartEvent");
     this.eventBus.post(new NodeStartEvent());
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.start(): starting timer");
+    LOG.debug("BeaconChainController.start(): starting timer");
     this.timer.start();
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.start(): starting BeaconRestAPI");
+    LOG.debug("BeaconChainController.start(): starting BeaconRestAPI");
     this.beaconRestAPI.start();
 
     if (testMode && !config.startFromDisk()) {
@@ -295,7 +294,7 @@ public class BeaconChainController {
   }
 
   public void stop() {
-    STATUS_LOG.log(Level.DEBUG, "BeaconChainController.stop()");
+    LOG.debug("BeaconChainController.stop()");
     syncService.stop().reportExceptions();
     attestationManager.stop().reportExceptions();
     if (!Objects.isNull(p2pNetwork)) {
@@ -325,7 +324,7 @@ public class BeaconChainController {
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
-      LOG.log(Level.INFO, timeUntilGenesis + " seconds until genesis.");
+      LOG.info(timeUntilGenesis + " seconds until genesis.");
     }
     nodeSlot = currentSlot;
   }
@@ -366,7 +365,7 @@ public class BeaconChainController {
       this.eventBus.post(new BroadcastAggregatesEvent());
       nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
     } catch (InterruptedException e) {
-      STATUS_LOG.log(Level.FATAL, "onTick: " + e.toString());
+      LOG.fatal("onTick: " + e.toString());
     }
   }
 
@@ -374,6 +373,6 @@ public class BeaconChainController {
   public void setNodeSlotAccordingToDBStore(Store store) {
     Bytes32 headBlockRoot = get_head(store);
     chainStorageClient.initializeFromStore(store, headBlockRoot);
-    LOG.log(Level.INFO, "Node being started from database.");
+    LOG.info("Node being started from database.");
   }
 }

@@ -137,10 +137,10 @@ public final class BlockProcessorUtil {
       checkArgument(
           !validateRandao
               || bls_verify(
-              proposer.getPubkey(),
-              messageHash,
-              body.getRandao_reveal(),
-              get_domain(state, DOMAIN_RANDAO)),
+                  proposer.getPubkey(),
+                  messageHash,
+                  body.getRandao_reveal(),
+                  get_domain(state, DOMAIN_RANDAO)),
           "process_randao: Verify that the provided randao value is valid");
       // Mix in RANDAO reveal
       Bytes32 mix =
@@ -188,13 +188,13 @@ public final class BlockProcessorUtil {
       checkArgument(
           body.getDeposits().size()
               == Math.min(
-              MAX_DEPOSITS,
-              toIntExact(
-                  state
-                      .getEth1_data()
-                      .getDeposit_count()
-                      .minus(state.getEth1_deposit_index())
-                      .longValue())),
+                  MAX_DEPOSITS,
+                  toIntExact(
+                      state
+                          .getEth1_data()
+                          .getDeposit_count()
+                          .minus(state.getEth1_deposit_index())
+                          .longValue())),
           "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
       process_proposer_slashings(state, body.getProposer_slashings());
@@ -226,7 +226,7 @@ public final class BlockProcessorUtil {
       for (ProposerSlashing proposer_slashing : proposerSlashings) {
         checkArgument(
             UnsignedLong.valueOf(state.getValidators().size())
-                .compareTo(proposer_slashing.getProposer_index())
+                    .compareTo(proposer_slashing.getProposer_index())
                 > 0,
             "process_proposer_slashings: Invalid proposer index");
         Validator proposer =
@@ -362,8 +362,8 @@ public final class BlockProcessorUtil {
             "process_attestations: Attestation slot not in specified epoch");
         checkArgument(
             data.getSlot()
-                .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
-                .compareTo(state.getSlot())
+                    .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+                    .compareTo(state.getSlot())
                 <= 0,
             "process_attestations: Attestation submitted too quickly");
 
@@ -471,10 +471,10 @@ public final class BlockProcessorUtil {
 
         checkArgument(
             get_current_epoch(state)
-                .compareTo(
-                    validator
-                        .getActivation_epoch()
-                        .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD)))
+                    .compareTo(
+                        validator
+                            .getActivation_epoch()
+                            .plus(UnsignedLong.valueOf(PERSISTENT_COMMITTEE_PERIOD)))
                 >= 0,
             "process_voluntary_exits: Verify the validator has been active long enough");
 
