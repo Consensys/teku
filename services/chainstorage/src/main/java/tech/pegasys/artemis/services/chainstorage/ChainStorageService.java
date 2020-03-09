@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.services.chainstorage;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;

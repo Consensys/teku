@@ -31,7 +31,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_val
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashable_validator;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_RANDAO;
@@ -42,6 +41,7 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.logging.StatusLogger.STDOUT;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
