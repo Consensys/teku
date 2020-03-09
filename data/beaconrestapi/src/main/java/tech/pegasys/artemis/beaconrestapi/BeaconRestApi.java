@@ -144,7 +144,7 @@ public class BeaconRestApi {
   private void addValidatorHandlers(DataProvider dataProvider) {
     app.get(
         BeaconValidatorsHandler.ROUTE,
-        new BeaconValidatorsHandler(dataProvider.getCombinedChainDataClient(), jsonProvider));
+        new BeaconValidatorsHandler(dataProvider.getChainDataProvider(), jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {

@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -83,6 +84,18 @@ public class ChainDataProvider {
 
   public boolean isStoreAvailable() {
     return combinedChainDataClient != null && combinedChainDataClient.isStoreAvailable();
+  }
+
+  public Optional<Bytes32> getBestBlockRoot() {
+    return combinedChainDataClient.getBestBlockRoot();
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(Bytes32 root32) {
+    return combinedChainDataClient.getStateByBlockRoot(root32);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot, Bytes32 root32) {
+    return combinedChainDataClient.getStateAtSlot(slot, root32);
   }
 
   ChainStorageClient getChainStorageClient() {
