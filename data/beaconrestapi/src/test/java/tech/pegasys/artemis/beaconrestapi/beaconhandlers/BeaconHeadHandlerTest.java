@@ -16,7 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
