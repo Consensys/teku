@@ -28,19 +28,20 @@ import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.junit.jupiter.MockitoExtension;
+import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @ExtendWith(MockitoExtension.class)
@@ -48,8 +49,7 @@ public class BeaconStateRootHandlerTest {
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
   private static UnsignedLong slot;
-  private static CombinedChainDataClient combinedChainDataClient;
-  private static HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
+  private ChainDataProvider provider = mock(ChainDataProvider.class);
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
@@ -62,15 +62,18 @@ public class BeaconStateRootHandlerTest {
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
     beaconState = DataStructureUtil.randomBeaconState(11233);
     storageClient.initializeFromGenesis(beaconState);
-    combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
     blockRoot = storageClient.getBestBlockRoot();
-    slot = storageClient.getBlockState(blockRoot).get().getSlot();
+    slot = DataStructureUtil.randomUnsignedLong(99);
+  }
+
+  @BeforeEach
+  public void setupProvider() {
+    when(provider.isStoreAvailable()).thenReturn(true);
   }
 
   @Test
   public void shouldReturnBadRequestWhenNoParameterSpecified() throws Exception {
-    final BeaconStateRootHandler handler =
-        new BeaconStateRootHandler(combinedChainDataClient, jsonProvider);
+    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of());
 
     handler.handle(context);
@@ -80,8 +83,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBadRequestWhenEmptySlotIsSpecified() throws Exception {
-    final BeaconStateRootHandler handler =
-        new BeaconStateRootHandler(combinedChainDataClient, jsonProvider);
+    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of()));
 
     handler.handle(context);
@@ -91,8 +93,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBadRequestWhenMultipleParametersSpecified() throws Exception {
-    final BeaconStateRootHandler handler =
-        new BeaconStateRootHandler(combinedChainDataClient, jsonProvider);
+    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(), ROOT, List.of()));
 
     handler.handle(context);
@@ -102,9 +103,11 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBeaconStateRootWhenQueryBySlot() throws Exception {
-    BeaconStateRootHandler handler =
-        new BeaconStateRootHandler(combinedChainDataClient, jsonProvider);
+    BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
+    when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(provider.getStateAtSlot(slot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
 
     handler.handle(context);
 
@@ -115,9 +118,12 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnNotFoundWhenQueryByMissingSlot() throws Exception {
-    BeaconStateRootHandler handler =
-        new BeaconStateRootHandler(combinedChainDataClient, jsonProvider);
+    BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    UnsignedLong nonExistentSlot = UnsignedLong.valueOf(11223344);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
+    when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(provider.getStateAtSlot(nonExistentSlot, blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);
 
@@ -126,11 +132,8 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    ChainStorageClient client = mock(ChainStorageClient.class);
-    CombinedChainDataClient combinedClient =
-        new CombinedChainDataClient(client, historicalChainData);
-    final BeaconStateRootHandler handler = new BeaconStateRootHandler(combinedClient, jsonProvider);
-    when(client.getStore()).thenReturn(null);
+    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    when(provider.isStoreAvailable()).thenReturn(false);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
 
     handler.handle(context);
