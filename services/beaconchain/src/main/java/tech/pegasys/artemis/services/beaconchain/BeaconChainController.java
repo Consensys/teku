@@ -326,8 +326,7 @@ public class BeaconChainController {
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
-      LOG.log(
-          Level.INFO, timeUntilGenesis + " seconds until genesis.");
+      LOG.log(Level.INFO, timeUntilGenesis + " seconds until genesis.");
     }
     nodeSlot = currentSlot;
   }

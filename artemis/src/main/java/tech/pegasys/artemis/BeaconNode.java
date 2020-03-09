@@ -65,8 +65,7 @@ public class BeaconNode {
 
     metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
-    final EventBusExceptionHandler subscriberExceptionHandler =
-        new EventBusExceptionHandler(LOG);
+    final EventBusExceptionHandler subscriberExceptionHandler = new EventBusExceptionHandler(LOG);
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     this.eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
@@ -163,9 +162,7 @@ final class EventBusExceptionHandler
       logger.log(Level.WARN, specFailedMessage(exception, subscriberDescription), exception);
     } else {
       logger.log(
-          Level.FATAL,
-          unexpectedExceptionMessage(exception, subscriberDescription),
-          exception);
+          Level.FATAL, unexpectedExceptionMessage(exception, subscriberDescription), exception);
     }
   }
 

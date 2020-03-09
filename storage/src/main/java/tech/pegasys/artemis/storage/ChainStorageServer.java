@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;

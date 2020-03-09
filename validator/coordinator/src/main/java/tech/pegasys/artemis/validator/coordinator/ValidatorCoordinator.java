@@ -22,7 +22,6 @@ import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -34,7 +33,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -80,6 +80,8 @@ import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
 public class ValidatorCoordinator {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
   private final Map<BLSPublicKey, ValidatorInfo> validators;
@@ -212,7 +214,7 @@ public class ValidatorCoordinator {
       // Save headState to check for slashings
       //      this.headState = headState;
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, "Can not produce attestations or create a block" + e.toString());
+      LOG.warn("Can not produce attestations or create a block" + e.toString());
     }
   }
 
@@ -283,9 +285,9 @@ public class ValidatorCoordinator {
               deposits);
 
       this.eventBus.post(new ProposedBlockEvent(newBlock));
-      STATUS_LOG.log(Level.DEBUG, "Local validator produced a new block");
+      LOG.debug("Local validator produced a new block");
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
-      STATUS_LOG.log(Level.ERROR, "Error during block creation " + e.toString());
+      LOG.error("Error during block creation " + e.toString());
     }
   }
 
@@ -337,9 +339,7 @@ public class ValidatorCoordinator {
         .forEach(
             i -> {
               if (validators.containsKey(validatorRegistry.get(i).getPubkey())) {
-                STATUS_LOG.log(
-                    Level.DEBUG,
-                    "owned index = " + i + ": " + validatorRegistry.get(i).getPubkey());
+                LOG.debug("owned index = {} : {}", i, validatorRegistry.get(i).getPubkey());
                 validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
               }
             });

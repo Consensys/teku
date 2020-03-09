@@ -92,8 +92,7 @@ public final class StartupUtil {
     BeaconState initialState;
     if (startState != null) {
       try {
-        LOG.log(
-            Level.INFO, "Loading initial state from " + startState);
+        LOG.log(Level.INFO, "Loading initial state from " + startState);
         initialState = StartupUtil.loadBeaconStateFromFile(startState);
       } catch (final IOException e) {
         throw new IllegalStateException("Failed to load initial state", e);

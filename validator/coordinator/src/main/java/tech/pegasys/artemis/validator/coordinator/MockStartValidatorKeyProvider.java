@@ -29,8 +29,7 @@ class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
-    LOG.log(
-        Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);
+    LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);
     return new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
   }
 }

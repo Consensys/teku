@@ -52,7 +52,6 @@ import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.bls.BLSVerify;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class StateTransition {
 

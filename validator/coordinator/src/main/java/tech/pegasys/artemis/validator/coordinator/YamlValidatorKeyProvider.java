@@ -42,9 +42,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Path keyFile = Path.of(config.getValidatorsKeyFile());
-    LOG.log(
-        Level.DEBUG,
-        "Loading validator keys from " + keyFile.toAbsolutePath().toString());
+    LOG.log(Level.DEBUG, "Loading validator keys from " + keyFile.toAbsolutePath().toString());
     try (InputStream in = Files.newInputStream(keyFile)) {
       final List<Object> values = mapper.readerFor(Map.class).readValues(in).readAll();
       return values.stream()

@@ -36,7 +36,6 @@ import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.teku.logging.StatusLogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
