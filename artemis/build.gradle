@@ -39,7 +39,6 @@ dependencies {
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
   testImplementation 'org.mockito:mockito-core'
-  testImplementation 'org.mockito:mockito-junit-jupiter'
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
   test {

@@ -31,13 +31,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-@ExtendWith(MockitoExtension.class)
 class EventBusExceptionHandlerTest {
 
   private static ExecutorService executor;
@@ -62,6 +60,7 @@ class EventBusExceptionHandlerTest {
 
   @BeforeEach
   void setupBus() {
+    MockitoAnnotations.initMocks(this);
 
     lenient()
         .doAnswer(
