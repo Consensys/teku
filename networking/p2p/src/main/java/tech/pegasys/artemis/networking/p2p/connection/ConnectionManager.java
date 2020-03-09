@@ -106,6 +106,7 @@ public class ConnectionManager extends Service {
     final int peersToDrop = targetPeerCountRange.getPeersToDrop(network.getPeerCount());
     network
         .streamPeers()
+        .filter(candidate -> !staticPeers.contains(candidate.getAddress()))
         .limit(peersToDrop)
         .forEach(peerToDrop -> peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
   }

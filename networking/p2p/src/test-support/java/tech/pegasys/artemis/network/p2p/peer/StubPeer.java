@@ -16,6 +16,7 @@ package tech.pegasys.artemis.network.p2p.peer;
 import java.util.Optional;
 import javax.naming.OperationNotSupportedException;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -28,19 +29,20 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class StubPeer implements Peer {
+
+  private final PeerAddress peerAddress;
   private Subscribers<PeerDisconnectedSubscriber> disconnectedSubscribers =
       Subscribers.create(false);
-  private final NodeId nodeId;
   private boolean connected = true;
   private Optional<DisconnectReason> disconnectReason = Optional.empty();
 
   public StubPeer(final NodeId nodeId) {
-    this.nodeId = nodeId;
+    peerAddress = new PeerAddress(nodeId);
   }
 
   @Override
-  public NodeId getId() {
-    return nodeId;
+  public PeerAddress getAddress() {
+    return peerAddress;
   }
 
   @Override
