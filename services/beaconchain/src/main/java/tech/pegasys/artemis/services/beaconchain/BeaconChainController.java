@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.eventbus.EventBus;
@@ -324,7 +325,7 @@ public class BeaconChainController {
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
     } else {
       UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
-      LOG.info(timeUntilGenesis + " seconds until genesis.");
+      LOG.info("{} seconds until genesis.", timeUntilGenesis);
     }
     nodeSlot = currentSlot;
   }
@@ -350,6 +351,10 @@ public class BeaconChainController {
 
   private void processSlot() {
     try {
+      if (isFirstSlotOfNewEpoch(nodeSlot)) {
+        STATUS_LOG.epochEvent();
+      }
+
       this.eventBus.post(new SlotEvent(nodeSlot));
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
@@ -365,7 +370,7 @@ public class BeaconChainController {
       this.eventBus.post(new BroadcastAggregatesEvent());
       nodeSlot = nodeSlot.plus(UnsignedLong.ONE);
     } catch (InterruptedException e) {
-      LOG.fatal("onTick: " + e.toString());
+      LOG.fatal("onTick: {}", e.toString(), e);
     }
   }
 
@@ -374,5 +379,11 @@ public class BeaconChainController {
     Bytes32 headBlockRoot = get_head(store);
     chainStorageClient.initializeFromStore(store, headBlockRoot);
     LOG.info("Node being started from database.");
+  }
+
+  private boolean isFirstSlotOfNewEpoch(final UnsignedLong slot) {
+    return slot.plus(UnsignedLong.ONE)
+        .mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+        .equals(UnsignedLong.ZERO);
   }
 }
