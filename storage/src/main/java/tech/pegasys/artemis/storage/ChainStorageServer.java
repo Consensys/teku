@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -36,11 +38,8 @@ import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class ChainStorageServer {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private Database database;
   private final EventBus eventBus;

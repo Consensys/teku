@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
@@ -43,7 +45,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.teku.logging.StatusLogger;
 
 @Command(
     name = "validator",
@@ -57,8 +58,6 @@ import tech.pegasys.teku.logging.StatusLogger;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class DepositCommand implements Runnable {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   @Command(
       name = "generate",

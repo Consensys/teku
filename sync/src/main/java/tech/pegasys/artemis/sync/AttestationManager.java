@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.sync;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import org.apache.logging.log4j.Level;
@@ -32,12 +34,10 @@ import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class AttestationManager extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final EventBus eventBus;
   private final ForkChoiceAttestationProcessor attestationProcessor;

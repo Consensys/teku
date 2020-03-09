@@ -18,6 +18,7 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.io.Files;
 import java.io.FileNotFoundException;
@@ -36,11 +37,8 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   static final int KEY_LENGTH = 48;
 

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -42,7 +43,6 @@ import tech.pegasys.teku.logging.StatusLogger;
 public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   protected final EventBus eventBus;
   private final TransactionPrecommit transactionPrecommit;

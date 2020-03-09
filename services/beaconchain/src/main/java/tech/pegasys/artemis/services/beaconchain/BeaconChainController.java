@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -74,8 +75,6 @@ import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconChainController {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
   private final EventChannels eventChannels;

@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.statetransition.genesis;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,11 +29,8 @@ import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class GenesisHandler implements Eth1EventsChannel {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final ChainStorageClient chainStorageClient;
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();

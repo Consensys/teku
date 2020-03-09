@@ -15,6 +15,7 @@ package tech.pegasys.artemis.statetransition.util;
 
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
@@ -40,8 +41,6 @@ import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public final class StartupUtil {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   public static Eth1Data get_eth1_data_stub(BeaconState state, UnsignedLong current_epoch) {
     UnsignedLong epochs_per_period =

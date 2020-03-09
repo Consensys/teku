@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -61,11 +62,8 @@ import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.network.NetworkUtility;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final PrivKey privKey;
   private final NodeId nodeId;

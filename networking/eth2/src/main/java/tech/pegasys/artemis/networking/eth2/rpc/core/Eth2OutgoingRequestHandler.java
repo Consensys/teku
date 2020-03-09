@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -27,13 +29,11 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcStream;
 import tech.pegasys.artemis.util.async.AsyncRunner;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     implements RpcRequestHandler {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final Eth2RpcMethod<TRequest, TResponse> method;
   private final int maximumResponseChunks;

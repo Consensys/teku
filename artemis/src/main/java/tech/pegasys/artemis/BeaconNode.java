@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -45,8 +47,6 @@ import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.logging.StatusLogger.Color;
 
 public class BeaconNode {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =

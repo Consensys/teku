@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
@@ -38,12 +40,10 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class PeerManager implements ConnectionHandler {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 

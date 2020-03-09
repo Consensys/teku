@@ -13,16 +13,15 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Level;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class ServiceController {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private ServiceInterface beaconChainService;
   private ServiceInterface powchainService;

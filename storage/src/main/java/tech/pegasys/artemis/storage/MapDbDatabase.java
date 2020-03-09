@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.storage;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
@@ -44,12 +46,10 @@ import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
 import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class MapDbDatabase implements Database {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private final DB db;
   private final Var<UnsignedLong> genesisTime;

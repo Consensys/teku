@@ -13,15 +13,14 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import java.util.Objects;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
-import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconChainService implements ServiceInterface {
-
-  private static final StatusLogger STATUS_LOG = StatusLogger.getLogger();
 
   private BeaconChainController controller;
 
