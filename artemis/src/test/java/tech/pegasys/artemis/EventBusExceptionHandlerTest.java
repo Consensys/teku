@@ -46,7 +46,7 @@ class EventBusExceptionHandlerTest {
   private final SafeFuture<Throwable> handledException = new SafeFuture<>();
   private final SafeFuture<Throwable> unhandledExceptionFuture = new SafeFuture<>();
 
-  @Mock private Logger log;
+  private Logger log = Mockito.mock(Logger.class);
 
   @BeforeAll
   static void setupExecutor() {
