@@ -377,7 +377,7 @@ class ConnectionManagerTest {
     when(network.getPeerCount()).thenReturn(2);
     peerConnectedSubscriber.onConnected(peer1);
 
-    // Should disconnect one peer to get back down to our target of max 1 peer.
+    // Should not disconnect static peers
     assertThat(peer2.isConnected()).isTrue();
     assertThat(peer1.isConnected()).isTrue();
   }
