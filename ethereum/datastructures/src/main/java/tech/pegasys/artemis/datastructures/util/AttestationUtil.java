@@ -18,10 +18,10 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
+import static tech.pegasys.teku.logging.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;

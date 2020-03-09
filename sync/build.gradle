@@ -1,12 +1,14 @@
 dependencies {
+    implementation project(':data')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':networking:p2p')
     implementation project(':networking:eth2')
+    implementation project(':logging')
     implementation project(':services:serviceutils')
     implementation project(':storage')
     implementation project(':util')
-    implementation project(':data')
+
     implementation 'org.apache.tuweni:tuweni-bytes'
 
     testImplementation 'org.mockito:mockito-core'
