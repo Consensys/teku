@@ -72,7 +72,8 @@ public class GenesisHandler implements Eth1EventsChannel {
     STATUS_LOG.log(Level.INFO, "******* Eth2Genesis Event******* : ");
     chainStorageClient.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STATUS_LOG.log(Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
+    STATUS_LOG.log(
+        Level.INFO, "Initial state root is " + genesisState.hash_tree_root().toHexString());
     STATUS_LOG.log(Level.INFO, "Genesis block root is " + genesisBlockRoot.toHexString());
   }
 }

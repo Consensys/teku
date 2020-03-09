@@ -19,8 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 public class StatusLogger {
 
-  private static final StatusLogger INSTANCE =
-      new StatusLogger("stdout");
+  private static final StatusLogger INSTANCE = new StatusLogger("stdout");
 
   public static StatusLogger getLogger() {
     return INSTANCE;
