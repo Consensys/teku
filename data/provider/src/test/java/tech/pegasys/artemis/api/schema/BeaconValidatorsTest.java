@@ -41,7 +41,8 @@ class BeaconValidatorsTest {
     int expectedNextPageToken =
         validatorList.size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
     assertThat(response.getNextPageToken()).isEqualTo(expectedNextPageToken);
-    assertThat(response.validatorList.get(0).validator).isEqualTo(validatorList.get(0));
+    assertThat(response.validatorList.get(0).validator.activation_eligibility_epoch)
+        .isEqualToComparingFieldByField(validatorList.get(0).getActivation_eligibility_epoch());
     assertThat(response.validatorList.get(0).index).isEqualTo(0);
   }
 
