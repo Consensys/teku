@@ -11,15 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.api;
+package tech.pegasys.artemis.events;
 
-import tech.pegasys.artemis.events.Channel;
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Channel
-public interface Eth1EventsChannel {
-  void onDepositsFromBlock(DepositsFromBlockEvent event);
-
-  void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Channel {
+  int threadsPerSubscriber() default 1;
 }

@@ -11,15 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.pow.api;
-
-import tech.pegasys.artemis.events.Channel;
-import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
-import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
+package tech.pegasys.artemis.events;
 
 @Channel
-public interface Eth1EventsChannel {
-  void onDepositsFromBlock(DepositsFromBlockEvent event);
-
-  void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);
+interface TestChannel {
+  void run();
 }

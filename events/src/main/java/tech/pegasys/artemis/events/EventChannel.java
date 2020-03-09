@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.events;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.joining;
 import static tech.pegasys.artemis.events.LoggingChannelExceptionHandler.LOGGING_EXCEPTION_HANDLER;
 
@@ -24,6 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -51,7 +53,9 @@ public class EventChannel<T> {
       final Class<T> channelInterface,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
-    return create(channelInterface, new DirectEventDeliverer<>(exceptionHandler, metricsSystem));
+    return create(
+        channelInterface,
+        annotation -> new DirectEventDeliverer<>(exceptionHandler, metricsSystem));
   }
 
   public static <T> EventChannel<T> createAsync(
@@ -87,12 +91,18 @@ public class EventChannel<T> {
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     return create(
-        channelInterface, new AsyncEventDeliverer<>(executor, exceptionHandler, metricsSystem));
+        channelInterface,
+        annotation ->
+            new AsyncEventDeliverer<>(annotation, executor, exceptionHandler, metricsSystem));
   }
 
   private static <T> EventChannel<T> create(
-      final Class<T> channelInterface, final EventDeliverer<T> eventDeliverer) {
+      final Class<T> channelInterface,
+      final Function<Channel, EventDeliverer<T>> eventDelivererFactory) {
     checkArgument(channelInterface.isInterface(), "Must provide an interface for the channel");
+    final Channel annotation = channelInterface.getAnnotation(Channel.class);
+    checkNotNull(
+        annotation, "Interface is not marked as a valid channel. Add the @Channel annotation");
     final String illegalMethods =
         Stream.of(channelInterface.getMethods())
             .filter(method -> !isReturnTypeAllowed(method) || method.getExceptionTypes().length > 0)
@@ -106,6 +116,7 @@ public class EventChannel<T> {
     final boolean hasReturnValues =
         Stream.of(channelInterface.getMethods())
             .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));
+    final EventDeliverer<T> eventDeliverer = eventDelivererFactory.apply(annotation);
     @SuppressWarnings("unchecked")
     final T publisher =
         (T)
