@@ -189,7 +189,7 @@ public class ValidatorCoordinator {
 
       if (!isGenesis(slot) && isEpochStart(slot)) {
         UnsignedLong epoch = compute_epoch_at_slot(slot);
-        // NOTE: we get commmittee assignments for NEXT epoch
+        // NOTE: we get committee assignments for NEXT epoch
         reportExceptions(
             CompletableFuture.runAsync(
                 () ->
@@ -234,9 +234,9 @@ public class ValidatorCoordinator {
       int indexIntoCommittee,
       Committee committee,
       AttestationData genericAttestationData) {
-    int commmitteSize = committee.getCommitteeSize();
+    int committeeSize = committee.getCommitteeSize();
     Bitlist aggregationBitfield =
-        AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
+        AttestationUtil.getAggregationBits(committeeSize, indexIntoCommittee);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain =
