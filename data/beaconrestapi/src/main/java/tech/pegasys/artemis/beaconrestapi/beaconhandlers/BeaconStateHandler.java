@@ -39,22 +39,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconStateHandler implements Handler {
   public static final String ROUTE = "/beacon/state";
 
-  private final CombinedChainDataClient combinedClient;
   private final JsonProvider jsonProvider;
+  private final ChainDataProvider chainDataProvider;
 
   public BeaconStateHandler(
-      final CombinedChainDataClient combinedClient, final JsonProvider jsonProvider) {
-    this.combinedClient = combinedClient;
+      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
+    this.chainDataProvider = chainDataProvider;
   }
 
   @OpenApi(
@@ -85,7 +85,7 @@ public class BeaconStateHandler implements Handler {
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
       }
-      if (!combinedClient.isStoreAvailable()) {
+      if (!chainDataProvider.isStoreAvailable()) {
         ctx.status(SC_NO_CONTENT);
         return;
       }
@@ -117,12 +117,12 @@ public class BeaconStateHandler implements Handler {
 
   private SafeFuture<Optional<BeaconState>> queryByRootHash(final String root) {
     final Bytes32 root32 = Bytes32.fromHexString(root);
-    return combinedClient.getStateByBlockRoot(root32);
+    return chainDataProvider.getStateByBlockRoot(root32);
   }
 
   private SafeFuture<Optional<BeaconState>> queryBySlot(final String slotString) {
     final UnsignedLong slot = UnsignedLong.valueOf(slotString);
-    final Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
-    return combinedClient.getStateAtSlot(slot, head);
+    final Bytes32 bestBlockRoot = chainDataProvider.getBestBlockRoot().orElse(null);
+    return chainDataProvider.getStateAtSlot(slot, bestBlockRoot);
   }
 }

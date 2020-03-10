@@ -15,6 +15,8 @@ package tech.pegasys.artemis.beaconrestapi.schema;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.Checkpoint;
 
 public class BeaconChainHead {
   public final UnsignedLong head_slot;
@@ -61,5 +63,27 @@ public class BeaconChainHead {
     this.previous_justified_slot = previous_justified_slot;
     this.previous_justified_epoch = previous_justified_epoch;
     this.previous_justified_block_root = previous_justified_block_root;
+  }
+
+  public BeaconChainHead(final BeaconState beaconState) {
+    final Checkpoint latestBlockHeader = beaconState.getCurrent_justified_checkpoint();
+    this.head_slot = latestBlockHeader.getEpochSlot();
+    this.head_epoch = latestBlockHeader.getEpoch();
+    this.head_block_root = latestBlockHeader.hash_tree_root();
+
+    final Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
+    this.finalized_slot = finalizedCheckpoint.getEpochSlot();
+    this.finalized_epoch = finalizedCheckpoint.getEpoch();
+    this.finalized_block_root = finalizedCheckpoint.hash_tree_root();
+
+    final Checkpoint currentJustifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
+    this.justified_slot = currentJustifiedCheckpoint.getEpochSlot();
+    this.justified_epoch = currentJustifiedCheckpoint.getEpoch();
+    this.justified_block_root = currentJustifiedCheckpoint.hash_tree_root();
+
+    final Checkpoint previousJustifiedCheckpoint = beaconState.getPrevious_justified_checkpoint();
+    this.previous_justified_slot = previousJustifiedCheckpoint.getEpochSlot();
+    this.previous_justified_epoch = previousJustifiedCheckpoint.getEpoch();
+    this.previous_justified_block_root = previousJustifiedCheckpoint.hash_tree_root();
   }
 }

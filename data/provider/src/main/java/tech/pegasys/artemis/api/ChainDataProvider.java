@@ -15,6 +15,7 @@ package tech.pegasys.artemis.api;
 
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
@@ -52,13 +53,13 @@ public class ChainDataProvider {
       return Optional.empty();
     }
 
-    Bytes32 headBlockRoot = chainStorageClient.getBestBlockRoot();
+    final Bytes32 headBlockRoot = chainStorageClient.getBestBlockRoot();
     if (headBlockRoot == null) {
       return Optional.empty();
     }
 
-    Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
-    BeaconHead result =
+    final Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
+    final BeaconHead result =
         new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot, headStateRoot);
     return Optional.of(result);
   }
@@ -98,7 +99,8 @@ public class ChainDataProvider {
     return combinedChainDataClient.getStateAtSlot(slot, root32);
   }
 
-  ChainStorageClient getChainStorageClient() {
+  @VisibleForTesting
+  public ChainStorageClient getChainStorageClient() {
     return chainStorageClient;
   }
 
@@ -121,5 +123,11 @@ public class ChainDataProvider {
 
   public boolean isFinalized(UnsignedLong slot) {
     return combinedChainDataClient.isFinalized(slot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getHeadState() {
+    return getBestBlockRoot()
+        .map(this::getStateByBlockRoot)
+        .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()));
   }
 }

@@ -38,8 +38,6 @@ import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
@@ -47,11 +45,11 @@ public class BeaconRestApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
 
-  private void initialise(DataProvider dataProvider, final int requestedPortNumber) {
+  private void initialise(final DataProvider dataProvider, final int requestedPortNumber) {
     app.server().setServerPort(requestedPortNumber);
 
     addBeaconHandlers(dataProvider);
-    addNetworkHandlers(new NetworkDataProvider(dataProvider.getP2pNetwork()));
+    addNetworkHandlers(dataProvider);
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
   }
@@ -80,11 +78,11 @@ public class BeaconRestApi {
   }
 
   private static OpenApiOptions getOpenApiOptions(
-      JsonProvider jsonProvider, ArtemisConfiguration config) {
-    JacksonModelConverterFactory factory =
+      final JsonProvider jsonProvider, final ArtemisConfiguration config) {
+    final JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
-    Info applicationInfo =
+    final Info applicationInfo =
         new Info()
             .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
             .version(VersionProvider.IMPLEMENTATION_VERSION)
@@ -103,7 +101,7 @@ public class BeaconRestApi {
     return options;
   }
 
-  private void addNodeHandlers(DataProvider provider) {
+  private void addNodeHandlers(final DataProvider provider) {
     app.get(
         GenesisTimeHandler.ROUTE,
         new GenesisTimeHandler(provider.getChainDataProvider(), jsonProvider));
@@ -114,21 +112,18 @@ public class BeaconRestApi {
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider) {
-    final ChainStorageClient chainStorageClient = dataProvider.getChainStorageClient();
-    final CombinedChainDataClient combinedChainDataClient =
-        dataProvider.getCombinedChainDataClient();
-    final ChainDataProvider provider =
-        new ChainDataProvider(chainStorageClient, combinedChainDataClient);
+    final ChainDataProvider chainDataProvider = dataProvider.getChainDataProvider();
 
-    app.get(BeaconBlockHandler.ROUTE, new BeaconBlockHandler(provider, jsonProvider));
+    app.get(BeaconBlockHandler.ROUTE, new BeaconBlockHandler(chainDataProvider, jsonProvider));
     app.get(
-        BeaconChainHeadHandler.ROUTE,
-        new BeaconChainHeadHandler(dataProvider.getChainDataProvider(), jsonProvider));
-    app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(provider, jsonProvider));
-    app.get(BeaconCommitteesHandler.ROUTE, new BeaconCommitteesHandler(provider, jsonProvider));
+        BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainDataProvider, jsonProvider));
+    app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainDataProvider, jsonProvider));
     app.get(
-        BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
-    app.get(BeaconStateRootHandler.ROUTE, new BeaconStateRootHandler(provider, jsonProvider));
+        BeaconCommitteesHandler.ROUTE,
+        new BeaconCommitteesHandler(chainDataProvider, jsonProvider));
+    app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(chainDataProvider, jsonProvider));
+    app.get(
+        BeaconStateRootHandler.ROUTE, new BeaconStateRootHandler(chainDataProvider, jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
@@ -137,7 +132,8 @@ public class BeaconRestApi {
         new BeaconValidatorsHandler(dataProvider.getChainDataProvider(), jsonProvider));
   }
 
-  private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
+  private void addNetworkHandlers(final DataProvider dataProvider) {
+    final NetworkDataProvider networkDataProvider = dataProvider.getNetworkDataProvider();
     app.get(ENRHandler.ROUTE, new ENRHandler(networkDataProvider, jsonProvider));
     app.get(PeerIdHandler.ROUTE, new PeerIdHandler(networkDataProvider, jsonProvider));
     app.get(PeersHandler.ROUTE, new PeersHandler(networkDataProvider, jsonProvider));

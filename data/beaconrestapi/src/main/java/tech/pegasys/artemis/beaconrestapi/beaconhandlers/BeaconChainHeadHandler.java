@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_E
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -30,8 +29,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHead;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class BeaconChainHeadHandler implements Handler {
@@ -61,44 +58,17 @@ public class BeaconChainHeadHandler implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws JsonProcessingException {
-    chainDataProvider
-        .getBestBlockRoot()
-        .ifPresentOrElse(
-            block ->
-                ctx.result(
-                    chainDataProvider
-                        .getStateByBlockRoot(block)
-                        .thenApplyChecked(
-                            optionalBeaconState -> {
-                              if (optionalBeaconState.isPresent()) {
-                                final BeaconState beaconState = optionalBeaconState.get();
-                                final Checkpoint finalizedCheckpoint =
-                                    beaconState.getFinalized_checkpoint();
-                                final Checkpoint justifiedCheckpoint =
-                                    beaconState.getCurrent_justified_checkpoint();
-                                final Checkpoint previousJustifiedCheckpoint =
-                                    beaconState.getPrevious_justified_checkpoint();
-
-                                final BeaconChainHead chainHeadResponse =
-                                    new BeaconChainHead(
-                                        beaconState.getSlot(),
-                                        compute_epoch_at_slot(beaconState.getSlot()),
-                                        block,
-                                        finalizedCheckpoint.getEpochSlot(),
-                                        finalizedCheckpoint.getEpoch(),
-                                        finalizedCheckpoint.getRoot(),
-                                        justifiedCheckpoint.getEpochSlot(),
-                                        justifiedCheckpoint.getEpoch(),
-                                        justifiedCheckpoint.getRoot(),
-                                        previousJustifiedCheckpoint.getEpochSlot(),
-                                        previousJustifiedCheckpoint.getEpoch(),
-                                        previousJustifiedCheckpoint.getRoot());
-
-                                return jsonProvider.objectToJSON(chainHeadResponse);
-                              }
-                              ctx.status(SC_NO_CONTENT);
-                              return null;
-                            })),
-            () -> ctx.status(SC_NO_CONTENT));
+    ctx.result(
+        chainDataProvider
+            .getHeadState()
+            .thenApplyChecked(
+                beaconState -> {
+                  if (beaconState.isPresent()) {
+                    return jsonProvider.objectToJSON(new BeaconChainHead(beaconState.get()));
+                  } else {
+                    ctx.status(SC_NO_CONTENT);
+                    return null;
+                  }
+                }));
   }
 }
