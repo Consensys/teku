@@ -26,7 +26,6 @@ import com.google.common.eventbus.SubscriberExceptionHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.logging.StatusLogger;
 
 class EventBusExceptionHandlerTest {
 
@@ -45,7 +45,7 @@ class EventBusExceptionHandlerTest {
   private final SafeFuture<Throwable> handledException = new SafeFuture<>();
   private final SafeFuture<Throwable> unhandledExceptionFuture = new SafeFuture<>();
 
-  private Logger log = Mockito.mock(Logger.class);
+  private StatusLogger log = Mockito.mock(StatusLogger.class);
 
   @BeforeAll
   static void setupExecutor() {
@@ -67,7 +67,7 @@ class EventBusExceptionHandlerTest {
               return null;
             })
         .when(log)
-        .warn(anyString(), any(Exception.class));
+        .specificationFailure(anyString(), any(Exception.class));
     lenient()
         .doAnswer(
             invocation -> {
@@ -76,7 +76,7 @@ class EventBusExceptionHandlerTest {
               return null;
             })
         .when(log)
-        .fatal(anyString(), any(Exception.class));
+        .unexpectedException(anyString(), any(Exception.class));
 
     final var exceptionHandlerRecordingWrapper =
         new SubscriberExceptionHandler() {
