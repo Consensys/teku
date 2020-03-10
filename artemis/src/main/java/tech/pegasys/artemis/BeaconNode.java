@@ -29,8 +29,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
@@ -48,8 +46,6 @@ import tech.pegasys.artemis.util.time.SystemTimeProvider;
 import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconNode {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
