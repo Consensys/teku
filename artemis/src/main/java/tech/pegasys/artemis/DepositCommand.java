@@ -14,15 +14,23 @@
 package tech.pegasys.artemis;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static tech.pegasys.artemis.DepositCommand.Generate;
+import static tech.pegasys.artemis.DepositCommand.Register;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.io.Files;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
+import java.io.Console;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,13 +44,14 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.ITypeConverter;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
-import tech.pegasys.artemis.cli.deposit.EncryptedKeystorePasswordProvider;
 import tech.pegasys.artemis.cli.deposit.EncryptedKeystoreWriter;
 import tech.pegasys.artemis.cli.deposit.KeysWriter;
 import tech.pegasys.artemis.cli.deposit.YamlKeysWriter;
@@ -59,6 +68,7 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
     description = "Register validators by sending deposit transactions to an Ethereum 1 node",
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
+    subcommands = {Generate.class, Register.class},
     versionProvider = VersionProvider.class,
     synopsisHeading = "%n",
     descriptionHeading = "%nDescription:%n%n",
@@ -66,17 +76,39 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
 public class DepositCommand implements Runnable {
-  private final Consumer<Integer> shutdownFunction;
-  private @Spec CommandSpec spec;
 
-  public DepositCommand() {
-    this.shutdownFunction =
-        System::exit; // required because web3j use non-daemon threads which halts the program
+  static class ValidatorPasswordOptions {
+    @SuppressWarnings("UnusedVariable")
+    @Option(
+        names = {"--validator-password-file"},
+        paramLabel = "<FILE>",
+        required = true,
+        description = "Read password from the file to encrypt the validator keys")
+    private File validatorPasswordFile;
+
+    @SuppressWarnings("UnusedVariable")
+    @Option(
+        names = {"--validator-password-env"},
+        paramLabel = "<ENV_VAR>",
+        required = true,
+        description = "Read password from environment variable to encrypt the validator keys")
+    private String validatorPasswordEnv;
   }
 
-  @VisibleForTesting
-  DepositCommand(final Consumer<Integer> shutdownFunction) {
-    this.shutdownFunction = shutdownFunction;
+  static class WithdrawalPasswordOptions {
+    @SuppressWarnings("UnusedVariable")
+    @Option(
+        names = {"--withdrawal-password-file"},
+        paramLabel = "<FILE>",
+        description = "Read password from the file to encrypt the withdrawal keys")
+    private File withdrawalPasswordFile;
+
+    @SuppressWarnings("UnusedVariable")
+    @Option(
+        names = {"--withdrawal-password-env"},
+        paramLabel = "<ENV_VAR>",
+        description = "Read password from environment variable to encrypt the withdrawal keys")
+    private String withdrawalPasswordEnv;
   }
 
   @Command(
@@ -91,105 +123,186 @@ public class DepositCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public void generate(
-      @Mixin CommonParams params,
-      @Option(
-              names = {"-n", "--number-of-validators"},
-              paramLabel = "<NUMBER>",
-              description = "The number of validators to create keys for and register",
-              defaultValue = "1")
-          int validatorCount,
-      @Option(
-              names = {"--output-path", "-o"},
-              paramLabel = "<FILE|DIR>",
-              description =
-                  "Path to output file for unencrypted keys or output directory for encrypted keystore files. If not set, unencrypted keys will be written on standard out and encrypted keystores will be created in current directory")
-          String outputPath,
-      @Option(
-              names = {"--encrypt-keys", "-e"},
-              defaultValue = "true",
-              paramLabel = "<true|false>",
-              description = "Encrypt validator and withdrawal keys. (Default: true)",
-              arity = "1")
-          boolean encryptKeys,
-      @Option(
-              names = {"--validator-password:file"},
-              paramLabel = "<FILE>",
-              description = "Read password from the file to encrypt the validator keys")
-          File validatorPasswordFile,
-      @Option(
-              names = {"--validator-password:env"},
-              paramLabel = "<ENV_VAR>",
-              description = "Read password from environment variable to encrypt the validator keys")
-          String validatorPasswordEnv,
-      @Option(
-              names = {"--validator-password"},
-              description = "Password to encrypt validator keys",
-              interactive = true)
-          String validatorPassword,
-      @Option(
-              names = {"--withdrawal-password:file"},
-              paramLabel = "<FILE>",
-              description = "Read password from the file to encrypt the withdrawal keys")
-          File withdrawalPasswordFile,
-      @Option(
-              names = {"--withdrawal-password:env"},
-              paramLabel = "<ENVIRONMENT_VAR>",
-              description =
-                  "Read password from environment variable to encrypt the withdrawal keys")
-          String withdrawalPasswordEnv,
-      @Option(
-              names = {"--withdrawal-password"},
-              description = "Password to encrypt withdrawal keys",
-              interactive = true)
-          String withdrawalPassword) {
+  static class Generate implements Runnable {
+    private final Consumer<Integer> shutdownFunction;
+    private @Spec CommandSpec spec;
+    @Mixin private final CommonParams params = null;
 
-    final KeysWriter keysWriter;
-    if (encryptKeys) {
-      final String validatorKeystorePassword =
-          new EncryptedKeystorePasswordProvider(
-                  spec, validatorPassword, validatorPasswordEnv, validatorPasswordFile, "validator")
-              .retrievePassword();
-      final String withdrawalKeystorePassword =
-          new EncryptedKeystorePasswordProvider(
-                  spec,
-                  withdrawalPassword,
-                  withdrawalPasswordEnv,
-                  withdrawalPasswordFile,
-                  "withdrawal")
-              .retrievePassword();
-      final Path keystoreDir =
-          outputPath == null || outputPath.isBlank() ? Path.of(".") : Path.of(outputPath);
-      keysWriter =
-          new EncryptedKeystoreWriter(
-              validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
-      STATUS_LOG.log(Level.INFO, "Generating Encrypted Keystores in " + keystoreDir);
-    } else {
-      keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
+    @Option(
+        names = {"-n", "--number-of-validators"},
+        paramLabel = "<NUMBER>",
+        description = "The number of validators to create keys for and register",
+        defaultValue = "1")
+    private int validatorCount = 1;
+
+    @Option(
+        names = {"--output-path", "-o"},
+        paramLabel = "<FILE|DIR>",
+        description =
+            "Path to output file for unencrypted keys or output directory for encrypted keystore files. If not set, unencrypted keys will be written on standard out and encrypted keystores will be created in current directory")
+    private String outputPath;
+
+    @Option(
+        names = {"--encrypted-keystore-enabled", "-e"},
+        defaultValue = "true",
+        paramLabel = "<true|false>",
+        description =
+            "Create encrypted keystores for validator and withdrawal keys. (Default: true)",
+        arity = "1")
+    private boolean encryptKeys = true;
+
+    @ArgGroup(heading = "Non-interactive password options for validator keystores:%n")
+    private ValidatorPasswordOptions validatorPasswordOptions;
+
+    @ArgGroup(heading = "Non-interactive password options for withdrawal keystores:%n")
+    private WithdrawalPasswordOptions withdrawalPasswordOptions;
+
+    public Generate() {
+      this.shutdownFunction =
+          System::exit; // required because web3j use non-daemon threads which halts the program
     }
 
-    try (params) {
-      final DepositTransactionSender sender = params.createTransactionSender();
-      final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
-      for (int i = 0; i < validatorCount; i++) {
-        final BLSKeyPair validatorKey = BLSKeyPair.random();
-        final BLSKeyPair withdrawalKey = BLSKeyPair.random();
+    @VisibleForTesting
+    Generate(final Consumer<Integer> shutdownFunction) {
+      this.shutdownFunction = shutdownFunction;
+    }
 
-        keysWriter.writeKeys(validatorKey, withdrawalKey);
+    @Override
+    public void run() {
+      final KeysWriter keysWriter = getKeysWriter();
 
-        final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
-            sendDeposit(sender, validatorKey, withdrawalKey.getPublicKey(), params.amount);
-        futures.add(transactionReceiptSafeFuture);
+      try (params) {
+        final DepositTransactionSender sender = params.createTransactionSender();
+        final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
+        for (int i = 0; i < validatorCount; i++) {
+          final BLSKeyPair validatorKey = BLSKeyPair.random();
+          final BLSKeyPair withdrawalKey = BLSKeyPair.random();
+
+          keysWriter.writeKeys(validatorKey, withdrawalKey);
+
+          final SafeFuture<TransactionReceipt> transactionReceiptSafeFuture =
+              sendDeposit(sender, validatorKey, withdrawalKey.getPublicKey(), params.amount);
+          futures.add(transactionReceiptSafeFuture);
+        }
+
+        SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
+      } catch (final Throwable t) {
+        STATUS_LOG.log(
+            Level.FATAL,
+            "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
+        shutdownFunction.accept(1);
+      }
+      shutdownFunction.accept(0);
+    }
+
+    private KeysWriter getKeysWriter() {
+      final KeysWriter keysWriter;
+      if (encryptKeys) {
+        final String validatorKeystorePassword = readValidatorKeystorePassword();
+        final String withdrawalKeystorePassword = readWithdrawalKeystorePassword();
+
+        final Path keystoreDir = getKeystoreOutputDir();
+        keysWriter =
+            new EncryptedKeystoreWriter(
+                validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
+        STATUS_LOG.log(Level.INFO, "Generating Encrypted Keystores in " + keystoreDir);
+      } else {
+        keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
+      }
+      return keysWriter;
+    }
+
+    private Path getKeystoreOutputDir() {
+      return isBlank(outputPath) ? Path.of(".") : Path.of(outputPath);
+    }
+
+    private String readWithdrawalKeystorePassword() {
+      final String withdrawalKeystorePassword;
+      if (withdrawalPasswordOptions == null) {
+        withdrawalKeystorePassword = askForPassword("Withdrawal Keystore");
+      } else if (withdrawalPasswordOptions.withdrawalPasswordFile != null) {
+        withdrawalKeystorePassword = readFromFile(withdrawalPasswordOptions.withdrawalPasswordFile);
+      } else {
+        withdrawalKeystorePassword =
+            readFromEnvironmentVariable(withdrawalPasswordOptions.withdrawalPasswordEnv);
+      }
+      return withdrawalKeystorePassword;
+    }
+
+    private String readValidatorKeystorePassword() {
+      final String validatorKeystorePassword;
+      if (validatorPasswordOptions == null) {
+        validatorKeystorePassword = askForPassword("Validator Keystore");
+      } else if (validatorPasswordOptions.validatorPasswordFile != null) {
+        validatorKeystorePassword = readFromFile(validatorPasswordOptions.validatorPasswordFile);
+      } else {
+        validatorKeystorePassword =
+            readFromEnvironmentVariable(validatorPasswordOptions.validatorPasswordEnv);
+      }
+      return validatorKeystorePassword;
+    }
+
+    private String askForPassword(final String option) {
+      Console console = System.console();
+      if (console == null) {
+        throw new ParameterException(
+            spec.commandLine(), "Cannot read password from console: Console not available");
       }
 
-      SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
-    } catch (final Throwable t) {
-      STATUS_LOG.log(
-          Level.FATAL,
-          "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
-      shutdownFunction.accept(1);
+      final char[] firstInput = console.readPassword("Enter password for %s:", option);
+      final char[] reconfirmedInput = console.readPassword("Re-Enter password for %s:", option);
+      if (firstInput == null || reconfirmedInput == null) {
+        throw new ParameterException(spec.commandLine(), "Error: Password is blank");
+      }
+
+      if (Arrays.equals(firstInput, reconfirmedInput)) {
+        final String password = new String(firstInput);
+        if (password.isBlank()) {
+          throw new ParameterException(spec.commandLine(), "Error: Password is blank");
+        }
+        return password;
+      }
+
+      throw new ParameterException(spec.commandLine(), "Error: Password mismatched.");
     }
-    shutdownFunction.accept(0);
+
+    public String readFromEnvironmentVariable(final String environmentVariable) {
+      final String password = System.getenv(environmentVariable);
+      if (password == null) {
+        throw new ParameterException(
+            spec.commandLine(),
+            "Error: Password cannot be read from environment variable: " + environmentVariable);
+      }
+      return password;
+    }
+
+    public String readFromFile(final File passwordFile) {
+      try {
+        return Files.asCharSource(passwordFile, StandardCharsets.UTF_8).readFirstLine();
+
+      } catch (final FileNotFoundException e) {
+        throw new ParameterException(spec.commandLine(), "Error: File not found: " + passwordFile);
+      } catch (final IOException e) {
+        throw new ParameterException(
+            spec.commandLine(),
+            "Error: Unexpected IO error reading file [" + passwordFile + "] : " + e.getMessage());
+      }
+    }
+
+    /*
+    private boolean isPasswordOptionsValid(final File validatorPasswordFile, final String validatorPasswordEnv, final File withdrawalPasswordFile, final String withdrawalPasswordEnv) {
+      boolean valid = true;
+      if (validatorPasswordFile != null && validatorPasswordEnv != null) {
+        System.err.println("Invalid Input. Expecting only one of [--validator-password-file | --validator-password-env] option.");
+        valid = false;
+      }
+
+      if (withdrawalPasswordFile != null && withdrawalPasswordEnv != null) {
+        System.err.println("Invalid Input. Expecting only one of [--withdrawal-password-file | --withdrawal-password-env] option.");
+        valid = false;
+      }
+      return valid;
+    } */
   }
 
   @Command(
@@ -204,35 +317,41 @@ public class DepositCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public void register(
-      @Mixin CommonParams params,
-      @Option(
-              names = {"-s", "--signing-key"},
-              paramLabel = "<PRIVATE_KEY>",
-              required = true,
-              description = "Private signing key for the validator")
-          String validatorKey,
-      @Option(
-              names = {"-w", "--withdrawal-key"},
-              paramLabel = "<PUBLIC_KEY>",
-              required = true,
-              description = "Public withdrawal key for the validator")
-          String withdrawalKey) {
-    try (params) {
-      final DepositTransactionSender sender = params.createTransactionSender();
-      sendDeposit(
-              sender,
-              privateKeyToKeyPair(validatorKey),
-              BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(withdrawalKey)),
-              params.amount)
-          .get();
-    } catch (final Throwable t) {
-      STATUS_LOG.log(
-          Level.FATAL,
-          "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
-      System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
+  static class Register implements Runnable {
+    @Mixin private final CommonParams params = null;
+
+    @Option(
+        names = {"-s", "--signing-key"},
+        paramLabel = "<PRIVATE_KEY>",
+        required = true,
+        description = "Private signing key for the validator")
+    private String validatorKey;
+
+    @Option(
+        names = {"-w", "--withdrawal-key"},
+        paramLabel = "<PUBLIC_KEY>",
+        required = true,
+        description = "Public withdrawal key for the validator")
+    private String withdrawalKey;
+
+    @Override
+    public void run() {
+      try (params) {
+        final DepositTransactionSender sender = params.createTransactionSender();
+        sendDeposit(
+                sender,
+                privateKeyToKeyPair(validatorKey),
+                BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(withdrawalKey)),
+                params.amount)
+            .get();
+      } catch (final Throwable t) {
+        STATUS_LOG.log(
+            Level.FATAL,
+            "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
+        System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
+      }
+      System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
     }
-    System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
   }
 
   @Override
@@ -240,7 +359,7 @@ public class DepositCommand implements Runnable {
     CommandLine.usage(this, System.out);
   }
 
-  private SafeFuture<TransactionReceipt> sendDeposit(
+  static SafeFuture<TransactionReceipt> sendDeposit(
       final DepositTransactionSender sender,
       final BLSKeyPair validatorKey,
       final BLSPublicKey withdrawalPublicKey,
@@ -248,7 +367,7 @@ public class DepositCommand implements Runnable {
     return sender.sendDepositTransaction(validatorKey, withdrawalPublicKey, amount);
   }
 
-  private BLSKeyPair privateKeyToKeyPair(final String validatorKey) {
+  static BLSKeyPair privateKeyToKeyPair(final String validatorKey) {
     return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(Bytes.fromHexString(validatorKey))));
   }
 
