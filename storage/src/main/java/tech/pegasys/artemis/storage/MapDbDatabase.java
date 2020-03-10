@@ -108,7 +108,7 @@ public class MapDbDatabase implements Database {
             .createOrOpen();
     finalizedStatesByRoot =
         db.hashMap(
-                "finalizedStatsByRoot",
+                "finalizedStatesByRoot",
                 new Bytes32Serializer(),
                 new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
