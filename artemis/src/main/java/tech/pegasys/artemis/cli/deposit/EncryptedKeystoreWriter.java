@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -38,7 +37,6 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   private final String validatorKeyPassword;
   private final String withdrawalKeyPassword;
   private final Path outputPath;
-  private final AtomicInteger counter = new AtomicInteger(0);
 
   public EncryptedKeystoreWriter(
       final String validatorKeyPassword,
@@ -52,19 +50,25 @@ public class EncryptedKeystoreWriter implements KeysWriter {
   @Override
   public void writeKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey)
       throws UncheckedIOException, KeyStoreValidationException {
-    final Path keystoreDirectory = createKeystoreDirectory();
+    final Path keystoreDirectory = createKeystoreDirectory(validatorKey);
 
     final KeyStoreData validatorKeyStoreData =
         generateKeystoreData(validatorKey, validatorKeyPassword);
     final KeyStoreData withdrawalKeyStoreData =
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
-    saveKeyStore(keystoreDirectory.resolve("validator_keystore.json"), validatorKeyStoreData);
-    saveKeyStore(keystoreDirectory.resolve("withdrawal_keystore.json"), withdrawalKeyStoreData);
+    saveKeyStore(
+        keystoreDirectory.resolve("validator_" + validatorKey.getPublicKey().toString() + ".json"),
+        validatorKeyStoreData);
+    saveKeyStore(
+        keystoreDirectory.resolve(
+            "withdrawal_" + withdrawalKey.getPublicKey().toString() + ".json"),
+        withdrawalKeyStoreData);
   }
 
-  private Path createKeystoreDirectory() {
-    final Path keystoreDirectory = outputPath.resolve("validator_" + counter.incrementAndGet());
+  private Path createKeystoreDirectory(final BLSKeyPair validatorKey) {
+    final Path keystoreDirectory =
+        outputPath.resolve("validator_" + validatorKey.getPublicKey().toString());
     try {
       return Files.createDirectories(keystoreDirectory);
     } catch (IOException e) {

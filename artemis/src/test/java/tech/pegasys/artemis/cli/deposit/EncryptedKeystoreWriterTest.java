@@ -24,6 +24,7 @@ import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
+import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 class EncryptedKeystoreWriterTest {
@@ -43,6 +44,10 @@ class EncryptedKeystoreWriterTest {
       SecretKey.fromBytes(
           Bytes.fromHexString(
               "0x000000000000000000000000000000000610B84CD68FB0FAB2F04A2A05EE01CD5F7374EB8EA93E26DB9C61DD2704B5BD"));
+  private static final String validator1PubKey = new PublicKey(validator1SecretKey).toString();
+  private static final String withdrawal1PubKey = new PublicKey(withdrawal1SecretKey).toString();
+  private static final String validator2PubKey = new PublicKey(validator2SecretKey).toString();
+  private static final String withdrawal2PubKey = new PublicKey(withdrawal2SecretKey).toString();
 
   private static final String PASSWORD = "test123";
 
@@ -54,18 +59,26 @@ class EncryptedKeystoreWriterTest {
         new BLSKeyPair(new KeyPair(withdrawal1SecretKey)));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_1/validator_keystore.json"), validator1SecretKey);
+        tempDir.resolve(
+            "validator_" + validator1PubKey + "/validator_" + validator1PubKey + ".json"),
+        validator1SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_1/withdrawal_keystore.json"), withdrawal1SecretKey);
+        tempDir.resolve(
+            "validator_" + validator1PubKey + "/withdrawal_" + withdrawal1PubKey + ".json"),
+        withdrawal1SecretKey);
 
     keysWriter.writeKeys(
         new BLSKeyPair(new KeyPair(validator2SecretKey)),
         new BLSKeyPair(new KeyPair(withdrawal2SecretKey)));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_2/validator_keystore.json"), validator2SecretKey);
+        tempDir.resolve(
+            "validator_" + validator2PubKey + "/validator_" + validator2PubKey + ".json"),
+        validator2SecretKey);
     assertKeyStoreCreatedAndCanBeDecrypted(
-        tempDir.resolve("validator_2/withdrawal_keystore.json"), withdrawal2SecretKey);
+        tempDir.resolve(
+            "validator_" + validator2PubKey + "/withdrawal_" + withdrawal2PubKey + ".json"),
+        withdrawal2SecretKey);
   }
 
   private void assertKeyStoreCreatedAndCanBeDecrypted(
