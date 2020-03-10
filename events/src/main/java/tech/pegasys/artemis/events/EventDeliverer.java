@@ -36,7 +36,7 @@ abstract class EventDeliverer<T> implements InvocationHandler {
             "channel");
   }
 
-  void subscribe(T subscriber) {
+  void subscribe(final T subscriber, final int numberOfThreads) {
     subscribers.subscribe(subscriber);
   }
 
