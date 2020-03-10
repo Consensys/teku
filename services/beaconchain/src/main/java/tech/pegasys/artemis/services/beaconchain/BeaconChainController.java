@@ -93,7 +93,7 @@ public class BeaconChainController {
   private BlockAttestationsPool blockAttestationsPool;
   private DepositProvider depositProvider;
   private SyncService syncService;
-  private boolean testMode;
+  private boolean generateMockGenesis;
   private AttestationManager attestationManager;
 
   public BeaconChainController(
@@ -107,7 +107,8 @@ public class BeaconChainController {
     this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
-    this.testMode = config.getDepositMode().equals(DEPOSIT_TEST);
+    this.generateMockGenesis =
+        config.getDepositMode().equals(DEPOSIT_TEST) && !config.startFromDisk();
     this.eventBus.register(this);
   }
 
@@ -183,6 +184,9 @@ public class BeaconChainController {
   }
 
   private void initPreGenesisDepositHandler() {
+    if (generateMockGenesis) {
+      return;
+    }
     STATUS_LOG.log(Level.DEBUG, "BeaconChainController.initPreGenesisDepositHandler()");
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(chainStorageClient));
   }
@@ -276,8 +280,8 @@ public class BeaconChainController {
     STATUS_LOG.log(Level.DEBUG, "BeaconChainController.start(): starting BeaconRestAPI");
     this.beaconRestAPI.start();
 
-    if (testMode && !config.startFromDisk()) {
-      generateTestModeGenesis();
+    if (generateMockGenesis) {
+      chainStorageClient.subscribeInitialized(this::generateTestModeGenesis);
     }
 
     syncService.start().reportExceptions();

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -22,6 +23,9 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -31,10 +35,16 @@ import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
+import tech.pegasys.artemis.storage.events.GetStoreRequest;
+import tech.pegasys.artemis.storage.events.GetStoreResponse;
+import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
+import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.config.Constants;
 
 class ChainStorageClientTest {
 
+  private static final BeaconState INITIAL_STATE =
+      DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, 1);
   private static final Bytes32 BEST_BLOCK_ROOT = Bytes32.fromHexString("0x8462485245");
   private static final BeaconBlock GENESIS_BLOCK = DataStructureUtil.randomBeaconBlock(0, 1);
   private static final Bytes32 GENESIS_BLOCK_ROOT = GENESIS_BLOCK.hash_tree_root();
@@ -47,13 +57,111 @@ class ChainStorageClientTest {
   private int seed = 428942;
 
   @Test
+  public void storageBackedClient_storeInitializeViaGetStoreRequest() {
+    final EventBus eventBus = new EventBus();
+    final List<GetStoreRequest> getStoreRequests =
+        EventSink.capture(eventBus, GetStoreRequest.class);
+    final ChainStorageClient client = ChainStorageClient.storageBackedClient(eventBus);
+
+    // We should have posted a request to get the store from storage
+    assertThat(getStoreRequests.size()).isEqualTo(1);
+    // Client shouldn't be initialized yet
+    assertClientNotInitialized(client);
+
+    // Post unrelated event
+    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    eventBus.post(
+        new GetStoreResponse(getStoreRequests.get(0).getId() + 1, Optional.of(genesisStore)));
+    assertClientNotInitialized(client);
+
+    // Post a store response to complete initialization
+    eventBus.post(new GetStoreResponse(getStoreRequests.get(0).getId(), Optional.of(genesisStore)));
+    assertClientInitialized(client);
+    assertStoreIsSet(client);
+    assertThat(client.getStore()).isEqualTo(genesisStore);
+
+    // Post store initialization event which should be ignored because we're already initialized
+    final BeaconState otherState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    assertThat(otherState).isNotEqualTo(INITIAL_STATE);
+    final Store otherStore = Store.get_genesis_store(otherState);
+    eventBus.post(new StoreInitializedFromStorageEvent(otherStore));
+    assertClientInitialized(client);
+    assertStoreIsSet(client);
+    assertThat(client.getStore()).isEqualTo(genesisStore);
+  }
+
+  @Test
+  public void storageBackedClient_storeInitializeViaNewGenesisState() {
+    final EventBus eventBus = new EventBus();
+    final List<GetStoreRequest> getStoreRequests =
+        EventSink.capture(eventBus, GetStoreRequest.class);
+    final ChainStorageClient client = ChainStorageClient.storageBackedClient(eventBus);
+
+    // We should have posted a request to get the store from storage
+    assertThat(getStoreRequests.size()).isEqualTo(1);
+    // Client shouldn't be initialized yet
+    assertClientNotInitialized(client);
+
+    // Post a store event to complete initialization
+    eventBus.post(new GetStoreResponse(getStoreRequests.get(0).getId(), Optional.empty()));
+    assertClientInitialized(client);
+    assertThat(client.getStore()).isNull();
+
+    // Now set the genesis state
+    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    client.setGenesisState(INITIAL_STATE);
+    assertStoreIsSet(client);
+    assertThat(client.getStore()).isEqualTo(genesisStore);
+  }
+
+  @Test
+  public void storageBackedClient_storeInitializeViaStoreInitializedEvent() {
+    final EventBus eventBus = new EventBus();
+    final List<GetStoreRequest> getStoreRequests =
+        EventSink.capture(eventBus, GetStoreRequest.class);
+    final ChainStorageClient client = ChainStorageClient.storageBackedClient(eventBus);
+
+    // We should have posted a request to get the store from storage
+    assertThat(getStoreRequests.size()).isEqualTo(1);
+    // Client shouldn't be initialized yet
+    assertClientNotInitialized(client);
+
+    // Post initialization event
+    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    eventBus.post(new StoreInitializedFromStorageEvent(genesisStore));
+    assertClientInitialized(client);
+    assertStoreIsSet(client);
+    assertThat(client.getStore()).isEqualTo(genesisStore);
+
+    // Post getStore response - which shouldn't change the store
+    final BeaconState otherState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    assertThat(otherState).isNotEqualTo(INITIAL_STATE);
+    final Store otherStore = Store.get_genesis_store(otherState);
+    eventBus.post(new GetStoreResponse(getStoreRequests.get(0).getId(), Optional.of(otherStore)));
+    assertClientInitialized(client);
+    assertStoreIsSet(client);
+    assertThat(client.getStore()).isEqualTo(genesisStore);
+  }
+
+  @Test
+  public void memoryOnlyClient_isAutoInitialized() {
+    final ChainStorageClient client = ChainStorageClient.memoryOnlyClient(eventBus);
+    assertClientInitialized(client);
+  }
+
+  @Test
+  public void memoryOnlyClientWithStore_isAutoInitialized() {
+    final ChainStorageClient client = ChainStorageClient.memoryOnlyClientWithStore(eventBus, store);
+    assertClientInitialized(client);
+  }
+
+  @Test
   public void initialize_setupInitialState() {
-    final BeaconState initialState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
-    preGenesisStorageClient.setGenesisState(initialState);
-    assertThat(preGenesisStorageClient.getGenesisTime()).isEqualTo(initialState.getGenesis_time());
+    preGenesisStorageClient.setGenesisState(INITIAL_STATE);
+    assertThat(preGenesisStorageClient.getGenesisTime()).isEqualTo(INITIAL_STATE.getGenesis_time());
     assertThat(preGenesisStorageClient.getBestSlot())
         .isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
-    assertThat(preGenesisStorageClient.getBestBlockRootState()).hasValue(initialState);
+    assertThat(preGenesisStorageClient.getBestBlockRootState()).hasValue(INITIAL_STATE);
     assertThat(preGenesisStorageClient.getStore()).isNotNull();
   }
 
@@ -277,6 +385,33 @@ class ChainStorageClientTest {
     final Checkpoint currentCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
+  }
+
+  private void assertClientNotInitialized(final ChainStorageClient client) {
+    // Client shouldn't be initialized yet
+    final AtomicBoolean initialized = new AtomicBoolean(false);
+    client.subscribeInitialized(() -> initialized.set(true));
+    assertThat(initialized).isFalse();
+
+    // We shouldn't be allowed to set genesis while the client is not initialized
+    assertThatThrownBy(() -> client.setGenesisState(INITIAL_STATE))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Attempt to set genesis state on an uninitialized store");
+  }
+
+  private void assertClientInitialized(final ChainStorageClient client) {
+    final AtomicBoolean initialized = new AtomicBoolean(false);
+    client.subscribeInitialized(() -> initialized.set(true));
+    assertThat(initialized).isTrue();
+  }
+
+  private void assertStoreIsSet(final ChainStorageClient client) {
+    assertThat(client.getStore()).isNotNull();
+
+    // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
+    assertThatThrownBy(() -> client.setGenesisState(INITIAL_STATE))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Failed to set genesis state: store has already been initialized");
   }
 
   private boolean isFinalizedCheckpointEvent(final Object obj) {

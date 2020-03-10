@@ -41,6 +41,7 @@ import tech.pegasys.artemis.storage.events.GetStoreRequest;
 import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
+import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -54,8 +55,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   protected final EventBus eventBus;
   private final TransactionPrecommit transactionPrecommit;
 
-  private final AtomicBoolean initialized = new AtomicBoolean(false);
-  private final SafeFuture<?> initializationFuture = new SafeFuture<>();
+  private final AtomicBoolean initializationStarted = new AtomicBoolean(false);
+  private final SafeFuture<?> initializationCompleted = new SafeFuture<>();
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final AtomicBoolean bestBlockInitialized = new AtomicBoolean(false);
   private volatile OptionalLong getStoreRequestId = OptionalLong.empty();
@@ -100,11 +101,11 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   // TODO - Use this utility to prevent any attempt to set genesis state on uninitialized
   // chainStorageClient
   public void subscribeInitialized(final Runnable runnable) {
-    initializationFuture.always(runnable);
+    initializationCompleted.always(runnable);
   }
 
   private void initializeFromStorage() {
-    if (initialized.compareAndSet(false, true)) {
+    if (initializationStarted.compareAndSet(false, true)) {
       final GetStoreRequest storeRequest = new GetStoreRequest();
       this.getStoreRequestId = OptionalLong.of(storeRequest.getId());
       eventBus.post(storeRequest);
@@ -112,8 +113,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   private void initialize() {
-    initialized.set(true);
-    initializationFuture.complete(null);
+    initializationStarted.set(true);
+    initializationCompleted.complete(null);
   }
 
   @Subscribe
@@ -124,16 +125,29 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
       return;
     }
     response.getStore().ifPresent(this::setStore);
-    initialize();
+    initializationCompleted.complete(null);
+  }
+
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onStoreInitializedFromStorage(
+      final StoreInitializedFromStorageEvent storeInitializedEvent) {
+    setStore(storeInitializedEvent.getStore());
+    initializationCompleted.complete(null);
   }
 
   public void setGenesisState(final BeaconState genesisState) {
-    if (!initialized.get()) {
+    if (!initializationCompleted.isDone()) {
       throw new IllegalStateException("Attempt to set genesis state on an uninitialized store");
     }
 
     final Store store = Store.get_genesis_store(genesisState);
-    setStore(store);
+    final boolean result = setStore(store);
+    if (!result) {
+      throw new IllegalStateException(
+          "Failed to set genesis state: store has already been initialized");
+    }
+
     eventBus.post(new StoreGenesisDiskUpdateEvent(store));
 
     // The genesis state is by definition finalised so just get the root from there.
@@ -150,13 +164,14 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     return this.store == null;
   }
 
-  private void setStore(Store store) {
+  private boolean setStore(Store store) {
     if (!storeInitialized.compareAndSet(false, true)) {
-      throw new IllegalStateException("Attempt to set an already initialized store");
+      return false;
     }
     this.store = store;
     this.genesisTime = this.store.getGenesisTime();
     eventBus.post(new StoreInitializedEvent());
+    return true;
   }
 
   public Store getStore() {

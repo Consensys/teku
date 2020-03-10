@@ -40,6 +40,7 @@ import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
@@ -63,10 +64,14 @@ public class ChainStorageServer {
     File databaseVersionPath = new File(dataStoragePath, "/db.version");
     File databaseStoragePath = new File(configuration.getDataPath() + "/db");
 
+    STATUS_LOG.log(Level.INFO, "Data directory set to: " + dataStoragePath);
     preflightCheck(databaseStoragePath, databaseVersionPath);
 
     this.database = MapDbDatabase.createOnDisk(databaseStoragePath, configuration.startFromDisk());
     eventBus.register(this);
+
+    final Optional<Store> store = getStore();
+    store.map(StoreInitializedFromStorageEvent::new).ifPresent(eventBus::post);
   }
 
   private synchronized Optional<Store> getStore() {
