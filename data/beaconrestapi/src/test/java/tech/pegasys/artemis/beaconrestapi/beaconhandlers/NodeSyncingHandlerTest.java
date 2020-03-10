@@ -16,8 +16,10 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.SyncDataProvider;
@@ -47,6 +49,7 @@ public class NodeSyncingHandlerTest {
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(expectedResponse));
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 
   @Test
@@ -59,5 +62,6 @@ public class NodeSyncingHandlerTest {
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(expectedResponse));
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 }
