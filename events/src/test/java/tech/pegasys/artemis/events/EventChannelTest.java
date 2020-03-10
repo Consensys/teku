@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.artemis.events.AsyncEventDeliverer.QueueReader;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 class EventChannelTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
@@ -92,6 +93,28 @@ class EventChannelTest {
     channel.getPublisher().method1();
     verify(subscriber).method1();
     verifyNoMoreInteractions(subscriber);
+  }
+
+  @Test
+  public void shouldReturnFutureResults() {
+    final EventChannel<WithFuture> channel = EventChannel.create(WithFuture.class, metricsSystem);
+    final SafeFuture<String> expected = new SafeFuture<>();
+    final WithFuture subscriber = () -> expected;
+    channel.subscribe(subscriber);
+
+    final SafeFuture<String> result = channel.getPublisher().getFutureString();
+    assertThat(result).isNotDone();
+
+    expected.complete("Yay");
+    assertThat(result).isCompletedWithValue("Yay");
+  }
+
+  @Test
+  public void shouldDisallowMultipleSubscribersWhenMethodsHaveReturnValues() {
+    final EventChannel<WithFuture> channel = EventChannel.create(WithFuture.class, metricsSystem);
+    channel.subscribe(SafeFuture::new);
+    assertThatThrownBy(() -> channel.subscribe(SafeFuture::new))
+        .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
@@ -160,6 +183,27 @@ class EventChannelTest {
     inOrder.verifyNoMoreInteractions();
   }
 
+  @Test
+  @SuppressWarnings("rawtypes")
+  public void shouldReturnFutureResultsAsync() throws Exception {
+    final ExecutorService executor = mock(ExecutorService.class);
+    final EventChannel<WithFuture> channel =
+        EventChannel.createAsync(WithFuture.class, executor, metricsSystem);
+    final SafeFuture<String> expected = SafeFuture.completedFuture("Yay");
+    final WithFuture subscriber = () -> expected;
+    channel.subscribe(subscriber);
+
+    final SafeFuture<String> result = channel.getPublisher().getFutureString();
+    assertThat(result).isNotDone(); // Hasn't been delivered to the subscriber yet
+
+    // Now actually run the consuming thread
+    final ArgumentCaptor<QueueReader> consumerCaptor = ArgumentCaptor.forClass(QueueReader.class);
+    verify(executor).execute(consumerCaptor.capture());
+    consumerCaptor.getValue().deliverNextEvent();
+
+    assertThat(result).isCompletedWithValue("Yay");
+  }
+
   private interface WithException {
     void someMethod() throws Exception;
   }
@@ -176,5 +220,9 @@ class EventChannelTest {
     void method1(String value);
 
     void method2(String value);
+  }
+
+  private interface WithFuture {
+    SafeFuture<String> getFutureString();
   }
 }

@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi;
 
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 
 public class CacheControlUtils {
@@ -29,5 +30,10 @@ public class CacheControlUtils {
 
   public static String getMaxAgeForSlot(ChainDataProvider provider, UnsignedLong slot) {
     return provider.isFinalized(slot) ? CACHE_FINALIZED : CACHE_NONE;
+  }
+
+  public static String getMaxAgeForBeaconState(
+      ChainDataProvider provider, BeaconState beaconState) {
+    return beaconState == null ? CACHE_NONE : getMaxAgeForSlot(provider, beaconState.slot);
   }
 }
