@@ -42,7 +42,7 @@ class BlockAttestationsPoolTest {
   void unprocessedAggregate_NewData() {
     Attestation attestation = AttestationGenerator.aggregateAttestation(10);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
-    assertTrue(pool.aggregateAttesationsQueue.contains(attestation));
+    assertTrue(pool.aggregateAttestationsQueue.contains(attestation));
     assertTrue(
         pool.unprocessedAttestationsBitlist.containsValue(attestation.getAggregation_bits()));
   }
@@ -62,7 +62,7 @@ class BlockAttestationsPoolTest {
               | newAttestation.getAggregation_bits().getBit(i);
       assertEquals(bitlist.getBit(i), expected);
     }
-    assert (pool.aggregateAttesationsQueue.size() == 2);
+    assert (pool.aggregateAttestationsQueue.size() == 2);
   }
 
   @Test
@@ -71,7 +71,7 @@ class BlockAttestationsPoolTest {
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
     Attestation newAttestation = new Attestation(attestation);
     pool.addUnprocessedAggregateAttestationToQueue(newAttestation);
-    assert (pool.aggregateAttesationsQueue.size() == 1);
+    assert (pool.aggregateAttestationsQueue.size() == 1);
   }
 
   @Test
