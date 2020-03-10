@@ -15,6 +15,7 @@ package tech.pegasys.teku.logging;
 
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
@@ -25,9 +26,6 @@ public class StatusLogger {
 
   private final Logger log;
 
-  // TODO implement these using a supplier pattern to avoid unnecessary String creation when
-  // disabled
-
   private StatusLogger(final String name) {
     this.log = LogManager.getLogger(name);
   }
@@ -37,7 +35,11 @@ public class StatusLogger {
   }
 
   public void sendDepositFailure(final Throwable cause) {
-    fatal("Failed to send deposit transaction: " + cause.getClass() + " : " + cause.getMessage());
+    fatal(
+        () ->
+            String.format(
+                "Failed to send deposit transaction: %s : %s",
+                cause.getClass(), cause.getMessage()));
   }
 
   public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
@@ -77,7 +79,7 @@ public class StatusLogger {
   }
 
   // TODO only add colour when it is enabled vai the config
-  private void fatal(String message) {
-    log.fatal(print(message, Color.RED));
+  private void fatal(Supplier<String> message) {
+    log.fatal(print(message.get(), Color.RED));
   }
 }
