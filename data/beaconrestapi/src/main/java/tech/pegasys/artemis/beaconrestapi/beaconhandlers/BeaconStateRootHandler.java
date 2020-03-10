@@ -16,7 +16,6 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSignedBlock;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -94,16 +93,16 @@ public class BeaconStateRootHandler implements Handler {
       if (parameters.containsKey(SLOT)) {
         UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
         future = queryBySlot(slot);
-      ctx.result(
-          future.thenApplyChecked(
-              hashTreeRoot -> {
-                if (hashTreeRoot.isEmpty()) {
-                  ctx.status(SC_NOT_FOUND);
-                  return null;
-                }
-                ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
-                return jsonProvider.objectToJSON(hashTreeRoot.get());
-              }));
+        ctx.result(
+            future.thenApplyChecked(
+                hashTreeRoot -> {
+                  if (hashTreeRoot.isEmpty()) {
+                    ctx.status(SC_NOT_FOUND);
+                    return null;
+                  }
+                  ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
+                  return jsonProvider.objectToJSON(hashTreeRoot.get());
+                }));
       } else {
         throw new IllegalArgumentException(SLOT + " parameter was not specified.");
       }
