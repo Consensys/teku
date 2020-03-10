@@ -49,7 +49,7 @@ public class BeaconRestApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
 
-  private void initialise(DataProvider dataProvider, final int requestedPortNumber) {
+  private void initialise(final DataProvider dataProvider, final int requestedPortNumber) {
     app.server().setServerPort(requestedPortNumber);
 
     addBeaconHandlers(dataProvider);
@@ -82,11 +82,11 @@ public class BeaconRestApi {
   }
 
   private static OpenApiOptions getOpenApiOptions(
-      JsonProvider jsonProvider, ArtemisConfiguration config) {
-    JacksonModelConverterFactory factory =
+      final JsonProvider jsonProvider, final ArtemisConfiguration config) {
+    final JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
-    Info applicationInfo =
+    final Info applicationInfo =
         new Info()
             .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
             .version(VersionProvider.IMPLEMENTATION_VERSION)
@@ -105,7 +105,7 @@ public class BeaconRestApi {
     return options;
   }
 
-  private void addNodeHandlers(DataProvider provider) {
+  private void addNodeHandlers(final DataProvider provider) {
     app.get(
         GetGenesisTime.ROUTE, new GetGenesisTime(provider.getChainDataProvider(), jsonProvider));
     app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
