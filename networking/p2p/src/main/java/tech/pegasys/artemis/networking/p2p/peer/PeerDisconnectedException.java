@@ -11,18 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.provider;
+package tech.pegasys.artemis.networking.p2p.peer;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-
-public class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
-  @Override
-  public void serialize(BLSPublicKey value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.toBytes().toHexString().toLowerCase());
-  }
-}
+public class PeerDisconnectedException extends RuntimeException {}

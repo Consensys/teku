@@ -13,13 +13,14 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
-import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
+import java.util.stream.Collectors;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconValidators {
   public static final int PAGE_SIZE_DEFAULT = 250;
@@ -28,21 +29,29 @@ public class BeaconValidators {
   private long totalSize;
   private int nextPageToken;
 
-  public BeaconValidators(SSZList<Validator> sszList) {
-    this(sszList.asList());
+  @VisibleForTesting
+  public BeaconValidators(SSZList<tech.pegasys.artemis.datastructures.state.Validator> sszList) {
+    this(sszList, false, FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
   }
 
+  @VisibleForTesting
   public BeaconValidators(List<Validator> list) {
-    this(list, false, Constants.FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
+    this(list, false, FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
   }
 
+  @VisibleForTesting
   public BeaconValidators(
-      SSZList<Validator> list,
+      SSZList<tech.pegasys.artemis.datastructures.state.Validator> list,
       final boolean activeOnly,
       final UnsignedLong epoch,
       final int pageSize,
       final int pageToken) {
-    this(list.asList(), activeOnly, epoch, pageSize, pageToken);
+    this(
+        list.stream().map(Validator::new).collect(Collectors.toList()),
+        activeOnly,
+        epoch,
+        pageSize,
+        pageToken);
   }
 
   public BeaconValidators(
@@ -64,7 +73,7 @@ public class BeaconValidators {
       int i = offset;
       int numberAdded = 0;
       while (i < list.size() && numberAdded < pageSize) {
-        if (!activeOnly || ValidatorsUtil.is_active_validator(list.get(i), epoch)) {
+        if (!activeOnly || is_active_validator(list.get(i), epoch)) {
           validatorList.add(new ValidatorWithIndex(list.get(i), i));
           numberAdded++;
         }
@@ -91,11 +100,11 @@ public class BeaconValidators {
   }
 
   public static class ValidatorWithIndex {
-    public tech.pegasys.artemis.api.schema.Validator validator;
+    public Validator validator;
     public int index;
 
-    public ValidatorWithIndex(Validator validator, int index) {
-      this.validator = new tech.pegasys.artemis.api.schema.Validator(validator);
+    public ValidatorWithIndex(final Validator validator, int index) {
+      this.validator = validator;
       this.index = index;
     }
   }
@@ -105,7 +114,12 @@ public class BeaconValidators {
     if (!activeOnly) {
       return list.size();
     } else {
-      return list.stream().filter(v -> ValidatorsUtil.is_active_validator(v, epoch)).count();
+      return list.stream().filter(v -> is_active_validator(v, epoch)).count();
     }
+  }
+
+  private static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
+    return validator.activation_epoch.compareTo(epoch) <= 0
+        && epoch.compareTo(validator.exit_epoch) < 0;
   }
 }

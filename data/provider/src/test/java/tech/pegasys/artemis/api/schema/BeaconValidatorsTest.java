@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT
 import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
@@ -60,7 +61,7 @@ class BeaconValidatorsTest {
         beaconState.getValidators().size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
     long activeValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            beaconState.getValidators().asList(),
+            getValidators(beaconState),
             true,
             BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
     assertThat(validators.validatorList.size())
@@ -156,7 +157,7 @@ class BeaconValidatorsTest {
     SSZList<Validator> allValidators = beaconState.getValidators();
     long originalActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            allValidators.asList(),
+            getValidators(beaconState),
             true,
             BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
     int originalValidatorCount = allValidators.size();
@@ -174,7 +175,7 @@ class BeaconValidatorsTest {
     int updatedValidatorCount = beaconStateW.getValidators().size();
     long updatedActiveValidatorCount =
         BeaconValidators.getEffectiveListSize(
-            beaconStateW.getValidators().asList(),
+            getValidators(beaconStateW),
             true,
             BeaconStateUtil.compute_epoch_at_slot(beaconStateW.getSlot()));
 
@@ -187,5 +188,11 @@ class BeaconValidatorsTest {
     // same number of non-active validators before and after
     assertThat(updatedValidatorCount - updatedActiveValidatorCount)
         .isEqualTo(originalValidatorCount - originalActiveValidatorCount);
+  }
+
+  private List<tech.pegasys.artemis.api.schema.Validator> getValidators(BeaconState beaconState) {
+    tech.pegasys.artemis.api.schema.BeaconState state =
+        new tech.pegasys.artemis.api.schema.BeaconState(beaconState);
+    return state.validators;
   }
 }
