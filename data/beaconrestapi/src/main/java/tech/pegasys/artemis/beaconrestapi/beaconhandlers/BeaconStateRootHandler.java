@@ -69,7 +69,7 @@ public class BeaconStateRootHandler implements Handler {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = Bytes32.class),
-            description = "The beacon chain's `state_root`(`Bytes32`) for the specified slot."),
+            description = "The beacon chain `state_root`(`Bytes32`) for the specified slot."),
         @OpenApiResponse(
             status = RES_NOT_FOUND,
             description = "The beacon state root matching the supplied parameter was not found."),
