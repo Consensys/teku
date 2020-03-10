@@ -76,7 +76,7 @@ class EventBusExceptionHandlerTest {
               return null;
             })
         .when(log)
-        .unexpectedException(anyString(), any(Exception.class));
+        .unexpectedFailure(anyString(), any(Exception.class));
 
     final var exceptionHandlerRecordingWrapper =
         new SubscriberExceptionHandler() {

@@ -112,7 +112,7 @@ public class DepositCommand implements Runnable {
       }
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
-      STATUS_LOG.sendDepositException(t);
+      STATUS_LOG.sendDepositFailure(t);
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(
@@ -153,7 +153,7 @@ public class DepositCommand implements Runnable {
               params.amount)
           .get();
     } catch (final Throwable t) {
-      STATUS_LOG.sendDepositException(t);
+      STATUS_LOG.sendDepositFailure(t);
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(

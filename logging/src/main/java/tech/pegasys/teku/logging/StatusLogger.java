@@ -75,8 +75,8 @@ public class StatusLogger {
   }
 
   // TODO UI type event (not really a Status update)
-  public void sendDepositException(final Throwable t) {
-    fatal("Failed to send deposit transaction: " + t.getClass() + " : " + t.getMessage());
+  public void sendDepositFailure(final Throwable cause) {
+    fatal("Failed to send deposit transaction: " + cause.getClass() + " : " + cause.getMessage());
   }
 
   // TODO UI type event (not really a Status update)
@@ -97,17 +97,14 @@ public class StatusLogger {
   }
 
   // TODO UI type event (not really a Status update)
-  public void specificationFailure(final String description, final Throwable exception) {
-    log.warn("Spec failed for {}: {}", description, exception, exception);
+  public void specificationFailure(final String description, final Throwable cause) {
+    log.warn("Spec failed for {}: {}", description, cause, cause);
   }
 
   // TODO UI type event (not really a Status update)
-  public void unexpectedException(final String description, final Throwable exception) {
+  public void unexpectedFailure(final String description, final Throwable cause) {
     log.fatal(
-        "PLEASE FIX OR REPORT | Unexpected exception thrown for {}: {}",
-        exception,
-        description,
-        exception);
+        "PLEASE FIX OR REPORT | Unexpected exception thrown for {}: {}", cause, description, cause);
   }
 
   // TODO UI type event (not really a Status update)

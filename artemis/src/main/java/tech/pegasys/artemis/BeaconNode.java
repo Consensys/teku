@@ -161,7 +161,7 @@ final class EventBusExceptionHandler
     if (isSpecFailure(exception)) {
       log.specificationFailure(subscriberDescription, exception);
     } else {
-      log.unexpectedException(subscriberDescription, exception);
+      log.unexpectedFailure(subscriberDescription, exception);
     }
   }
 
