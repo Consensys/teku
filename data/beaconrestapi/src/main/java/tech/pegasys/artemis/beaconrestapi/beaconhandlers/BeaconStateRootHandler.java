@@ -40,7 +40,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -80,7 +79,7 @@ public class BeaconStateRootHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       final Map<String, List<String>> parameters = ctx.queryParamMap();
-      SafeFuture<Optional<BeaconState>> future = null;
+      SafeFuture<Optional<Bytes32>> future = null;
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
       }
@@ -94,12 +93,12 @@ public class BeaconStateRootHandler implements Handler {
       }
       ctx.result(
           future.thenApplyChecked(
-              state -> {
-                if (state.isEmpty()) {
+              hashTreeRoot -> {
+                if (hashTreeRoot.isEmpty()) {
                   ctx.status(SC_NOT_FOUND);
                   return null;
                 }
-                return jsonProvider.objectToJSON(state.get().hash_tree_root());
+                return jsonProvider.objectToJSON(hashTreeRoot.get());
               }));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
@@ -107,8 +106,7 @@ public class BeaconStateRootHandler implements Handler {
     }
   }
 
-  private SafeFuture<Optional<BeaconState>> queryBySlot(final UnsignedLong slot) {
-    final Bytes32 head = provider.getBestBlockRoot().orElse(null);
-    return provider.getStateAtSlot(slot, head);
+  private SafeFuture<Optional<Bytes32>> queryBySlot(final UnsignedLong slot) {
+    return provider.getHashTreeRootAtSlot(slot);
   }
 }
