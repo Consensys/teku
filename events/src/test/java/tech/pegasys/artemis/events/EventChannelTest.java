@@ -22,10 +22,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -35,6 +40,14 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 class EventChannelTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final ChannelExceptionHandler exceptionHandler = mock(ChannelExceptionHandler.class);
+  private ExecutorService executor;
+
+  @AfterEach
+  public void tearDown() {
+    if (executor != null) {
+      executor.shutdownNow();
+    }
+  }
 
   @Test
   public void shouldRejectClassesThatAreNotInterfaces() {
@@ -184,6 +197,54 @@ class EventChannelTest {
   }
 
   @Test
+  public void shouldDeliverAsyncEventsOnMultipleThreads() throws Exception {
+    executor =
+        Executors.newCachedThreadPool(
+            new ThreadFactoryBuilder()
+                .setDaemon(true)
+                .setNameFormat("shoudlDeliverAsyncEventsOnMultipleThreads-%d")
+                .build());
+    final EventChannel<WaitOnLatch> channel =
+        EventChannel.createAsync(WaitOnLatch.class, executor, metricsSystem);
+    final WaitOnLatch subscriber =
+        (started, await, completed) -> {
+          started.countDown();
+          try {
+            await.await();
+            completed.countDown();
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        };
+    channel.subscribeMultithreaded(subscriber, 2); // Two subscribing threads
+
+    final CountDownLatch started1 = new CountDownLatch(1);
+    final CountDownLatch await1 = new CountDownLatch(1);
+    final CountDownLatch completed1 = new CountDownLatch(1);
+    final CountDownLatch started2 = new CountDownLatch(1);
+    final CountDownLatch await2 = new CountDownLatch(1);
+    final CountDownLatch completed2 = new CountDownLatch(1);
+
+    // Publish two events
+    channel.getPublisher().waitFor(started1, await1, completed1);
+    channel.getPublisher().waitFor(started2, await2, completed2);
+
+    // Both events should start being processed
+    waitForCountDownLatchComplete(started1);
+    waitForCountDownLatchComplete(started2);
+
+    // Then allow the second event to process
+    await2.countDown();
+    // And it should complete
+    waitForCountDownLatchComplete(completed2);
+
+    // And finally allow the first event to process
+    await1.countDown();
+    // And it should also complete
+    waitForCountDownLatchComplete(completed1);
+  }
+
+  @Test
   @SuppressWarnings("rawtypes")
   public void shouldReturnFutureResultsAsync() throws Exception {
     final ExecutorService executor = mock(ExecutorService.class);
@@ -202,6 +263,11 @@ class EventChannelTest {
     consumerCaptor.getValue().deliverNextEvent();
 
     assertThat(result).isCompletedWithValue("Yay");
+  }
+
+  private void waitForCountDownLatchComplete(final CountDownLatch started1)
+      throws InterruptedException {
+    assertThat(started1.await(5, TimeUnit.SECONDS)).isTrue();
   }
 
   private interface WithException {
@@ -224,5 +290,9 @@ class EventChannelTest {
 
   private interface WithFuture {
     SafeFuture<String> getFutureString();
+  }
+
+  private interface WaitOnLatch {
+    void waitFor(CountDownLatch started, CountDownLatch latch, CountDownLatch completed);
   }
 }

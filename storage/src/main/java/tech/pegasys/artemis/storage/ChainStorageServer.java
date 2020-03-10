@@ -32,6 +32,8 @@ import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
@@ -141,6 +143,13 @@ public class ChainStorageServer {
     final Optional<BeaconState> state =
         database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getState);
     eventBus.post(new GetFinalizedStateAtSlotResponse(request.getSlot(), state));
+  }
+
+  @Subscribe
+  @AllowConcurrentEvents
+  public void onGetStateByBlockRequest(final GetFinalizedStateByBlockRootRequest request) {
+    final Optional<BeaconState> state = database.getState(request.getBlockRoot());
+    eventBus.post(new GetFinalizedStateByBlockRootResponse(request.getBlockRoot(), state));
   }
 
   @Subscribe

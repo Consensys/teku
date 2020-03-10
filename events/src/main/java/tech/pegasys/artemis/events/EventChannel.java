@@ -134,11 +134,28 @@ public class EventChannel<T> {
     return publisher;
   }
 
-  public void subscribe(T listener) {
+  public void subscribe(final T listener) {
+    subscribeMultithreaded(listener, 1);
+  }
+
+  /**
+   * Adds a subscriber to this channel where events are handled by multiple threads concurrently.
+   *
+   * <p>Note that only async event channels can use multiple threads. Synchronous channels will
+   * always use the publisher thread to process events.
+   *
+   * <p>Events are still placed into an ordered queue and started in order, but as multiple threads
+   * pull from the queue, the execution order can no longer be guaranteed.
+   *
+   * @param listener the listener to notify of events
+   * @param requestedParallelism the number of threads to use to process events
+   */
+  public void subscribeMultithreaded(final T listener, final int requestedParallelism) {
+    checkArgument(requestedParallelism > 0, "Number of threads must be at least 1");
     if (!hasSubscriber.compareAndSet(false, true) && !allowMultipleSubscribers) {
       throw new IllegalStateException("Only one subscriber is supported by this event channel");
     }
-    invoker.subscribe(listener);
+    invoker.subscribe(listener, requestedParallelism);
   }
 
   public void stop() {

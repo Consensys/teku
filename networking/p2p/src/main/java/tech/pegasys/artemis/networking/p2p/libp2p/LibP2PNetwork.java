@@ -60,6 +60,8 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.artemis.util.async.AsyncRunner;
+import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.network.NetworkUtility;
@@ -79,6 +81,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
 
   public LibP2PNetwork(
       final NetworkConfig config,
@@ -96,7 +99,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
 
     // Setup rpc methods
-    rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(method)));
+    rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(asyncRunner, method)));
 
     // Setup peers
     peerManager = new PeerManager(metricsSystem, peerHandlers, rpcHandlers);
