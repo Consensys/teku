@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -94,7 +94,9 @@ class JsonProviderTest {
 
   @Test
   void beaconStateJsonTest() throws JsonProcessingException {
-    BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
+    tech.pegasys.artemis.datastructures.state.BeaconState stateInternal =
+        DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
+    BeaconState state = new BeaconState(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
   }
