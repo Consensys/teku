@@ -17,6 +17,8 @@ import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSignedBlock;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -26,6 +28,9 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -34,9 +39,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Optional;
+
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.Committee;
+import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -72,21 +81,24 @@ public class BeaconCommitteesHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    ctx.header(CACHE_CONTROL, CACHE_NONE);
     try {
       if (!provider.isStoreAvailable()) {
         ctx.status(SC_NO_CONTENT);
         return;
       }
+      UnsignedLong epoch = getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH);
+      ctx.result(provider.getCommitteesAtEpoch(epoch)
+          .thenApplyChecked(committees -> handleResponseContext(ctx, committees, epoch)));
 
-      SafeFuture<List<Committee>> future =
-          provider.getCommitteesAtEpoch(
-              getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH));
-
-      ctx.result(future.thenApplyChecked(jsonProvider::objectToJSON));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
+  }
+
+  private String handleResponseContext(Context ctx, List<Committee> committees, UnsignedLong epoch) throws JsonProcessingException {
+    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
+    return jsonProvider.objectToJSON(committees);
   }
 }
