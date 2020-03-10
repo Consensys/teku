@@ -16,6 +16,8 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSignedBlock;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -27,6 +29,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -89,8 +92,8 @@ public class BeaconStateRootHandler implements Handler {
       }
 
       if (parameters.containsKey(SLOT)) {
-        future = queryBySlot(getParameterValueAsUnsignedLong(parameters, SLOT));
-      }
+        UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
+        future = queryBySlot(slot);
       ctx.result(
           future.thenApplyChecked(
               hashTreeRoot -> {
@@ -98,8 +101,12 @@ public class BeaconStateRootHandler implements Handler {
                   ctx.status(SC_NOT_FOUND);
                   return null;
                 }
+                ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
                 return jsonProvider.objectToJSON(hashTreeRoot.get());
               }));
+      } else {
+        throw new IllegalArgumentException(SLOT + " parameter was not specified.");
+      }
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
