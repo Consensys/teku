@@ -306,17 +306,23 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public Store createMemoryStore() {
-    return new Store(
-        UnsignedLong.valueOf(Instant.now().getEpochSecond()),
-        genesisTime.get(),
-        justifiedCheckpoint.get(),
-        finalizedCheckpoint.get(),
-        bestJustifiedCheckpoint.get(),
-        hotBlocksByRoot,
-        hotStatesByRoot,
-        checkpointStates,
-        latestMessages);
+  public Optional<Store> createMemoryStore() {
+    if (genesisTime.get() == null) {
+      // If genesis time hasn't been set, genesis hasn't happened and we have no data
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        new Store(
+            UnsignedLong.valueOf(Instant.now().getEpochSecond()),
+            genesisTime.get(),
+            justifiedCheckpoint.get(),
+            finalizedCheckpoint.get(),
+            bestJustifiedCheckpoint.get(),
+            hotBlocksByRoot,
+            hotStatesByRoot,
+            checkpointStates,
+            latestMessages));
   }
 
   @Override

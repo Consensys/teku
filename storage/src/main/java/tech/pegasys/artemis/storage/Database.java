@@ -27,7 +27,7 @@ public interface Database extends Closeable {
 
   DatabaseUpdateResult update(StoreDiskUpdateEvent event);
 
-  Store createMemoryStore();
+  Optional<Store> createMemoryStore();
 
   /**
    * Return the root of the finalized block at this slot if such a block exists.

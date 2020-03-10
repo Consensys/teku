@@ -49,13 +49,13 @@ public class ChainStorageServer {
 
   public final String DATABASE_VERSION = "1.0";
 
-  private final AtomicBoolean storeIsInitialized;
+  private final AtomicBoolean storeIsPersisted;
   private volatile Optional<Store> cachedStore = Optional.empty();
 
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.configuration = config;
     this.eventBus = eventBus;
-    storeIsInitialized = new AtomicBoolean(configuration.startFromDisk());
+    storeIsPersisted = new AtomicBoolean(configuration.startFromDisk());
   }
 
   public void start() {
@@ -70,12 +70,11 @@ public class ChainStorageServer {
   }
 
   private synchronized Optional<Store> getStore() {
-    if (!storeIsInitialized.get()) {
+    if (!storeIsPersisted.get()) {
       return Optional.empty();
     } else if (cachedStore.isEmpty()) {
       // Create store from database
-      Store memoryStore = database.createMemoryStore();
-      cachedStore = Optional.of(memoryStore);
+      cachedStore = database.createMemoryStore();
     }
 
     return cachedStore;
@@ -88,7 +87,7 @@ public class ChainStorageServer {
   }
 
   private synchronized void handleStoreGenesis() {
-    storeIsInitialized.set(true);
+    storeIsPersisted.set(true);
   }
 
   private void preflightCheck(File databaseStoragePath, File databaseVersionPath) {
