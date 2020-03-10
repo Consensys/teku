@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.genesis;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -69,6 +69,6 @@ public class GenesisHandler implements Eth1EventsChannel {
   private void eth2Genesis(BeaconState genesisState) {
     chainStorageClient.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot();
-    STATUS_LOG.genesisEvent(genesisState.hash_tree_root(), genesisBlockRoot);
+    EVENT_LOG.genesisEvent(genesisState.hash_tree_root(), genesisBlockRoot);
   }
 }

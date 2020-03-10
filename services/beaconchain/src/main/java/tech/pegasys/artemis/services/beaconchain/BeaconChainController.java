@@ -19,7 +19,7 @@ import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -352,7 +352,7 @@ public class BeaconChainController {
   private void processSlot() {
     try {
       if (isFirstSlotOfNewEpoch(nodeSlot)) {
-        STATUS_LOG.epochEvent();
+        EVENT_LOG.epochEvent();
       }
 
       this.eventBus.post(new SlotEvent(nodeSlot));
@@ -360,7 +360,7 @@ public class BeaconChainController {
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
-      STATUS_LOG.slotEvent(
+      EVENT_LOG.slotEvent(
           nodeSlot,
           chainStorageClient.getBestSlot(),
           chainStorageClient.getStore().getJustifiedCheckpoint().getEpoch(),

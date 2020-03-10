@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -178,17 +178,17 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    STATUS_LOG.unprocessedBlock(block.getState_root());
+    EVENT_LOG.unprocessedBlock(block.getState_root());
   }
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    STATUS_LOG.unprocessedAttestation(attestation.getData().getBeacon_block_root());
+    EVENT_LOG.unprocessedAttestation(attestation.getData().getBeacon_block_root());
   }
 
   @Subscribe
   public void onNewAggregateAndProof(AggregateAndProof attestation) {
-    STATUS_LOG.aggregateAndProof(attestation.getAggregate().getData().getBeacon_block_root());
+    EVENT_LOG.aggregateAndProof(attestation.getAggregate().getData().getBeacon_block_root());
   }
 
   public boolean containsBlock(final Bytes32 root) {

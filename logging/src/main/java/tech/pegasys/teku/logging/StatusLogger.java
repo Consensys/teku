@@ -15,10 +15,8 @@ package tech.pegasys.teku.logging;
 
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class StatusLogger {
@@ -34,52 +32,14 @@ public class StatusLogger {
     this.log = LogManager.getLogger(name);
   }
 
-  public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
-    info("******* Eth2Genesis Event*******", Color.WHITE);
-    log.info("Initial state root is {}", hashTreeRoot.toHexString());
-    log.info("Genesis block root is {}", genesisBlockRoot.toHexString());
-  }
-
-  public void epochEvent() {
-    info("******* Epoch Event *******", Color.PURPLE);
-  }
-
-  public void slotEvent(
-      final UnsignedLong nodeSlot,
-      final UnsignedLong bestSlot,
-      final UnsignedLong justifiedEpoch,
-      final UnsignedLong finalizedEpoch) {
-    info("******* Slot Event *******", Color.WHITE);
-    log.info("Node slot:                             {}", nodeSlot);
-    log.info("Head block slot:                       {}", bestSlot);
-    log.info("Justified epoch:                       {}", justifiedEpoch);
-    log.info("Finalized epoch:                       {}", finalizedEpoch);
-  }
-
-  public void unprocessedAttestation(final Bytes32 beaconBlockRoot) {
-    info("New Attestation with block root:  " + beaconBlockRoot + " detected.", Color.GREEN);
-  }
-
-  public void aggregateAndProof(final Bytes32 beaconBlockRoot) {
-    info("New AggregateAndProof with block root:  " + beaconBlockRoot + " detected.", Color.BLUE);
-  }
-
-  public void unprocessedBlock(final Bytes32 stateRoot) {
-    info(
-        "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
-  }
-
-  // TODO UI type event (not really a Status update)
   public void startupFailure(final Throwable cause) {
     log.fatal("Startup failed", cause);
   }
 
-  // TODO UI type event (not really a Status update)
   public void sendDepositFailure(final Throwable cause) {
     fatal("Failed to send deposit transaction: " + cause.getClass() + " : " + cause.getMessage());
   }
 
-  // TODO UI type event (not really a Status update)
   public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
     log.info(
         "Generating mock genesis state for {} validators at genesis time {}",
@@ -87,7 +47,6 @@ public class StatusLogger {
         genesisTime);
   }
 
-  // TODO UI type event (not really a Status update)
   public void storingGenesis(final String outputFile, final boolean isComplete) {
     if (isComplete) {
       log.info("Genesis state file saved: {}", outputFile);
@@ -96,35 +55,25 @@ public class StatusLogger {
     }
   }
 
-  // TODO UI type event (not really a Status update)
   public void specificationFailure(final String description, final Throwable cause) {
     log.warn("Spec failed for {}: {}", description, cause, cause);
   }
 
-  // TODO UI type event (not really a Status update)
   public void unexpectedFailure(final String description, final Throwable cause) {
     log.fatal(
         "PLEASE FIX OR REPORT | Unexpected exception thrown for {}: {}", cause, description, cause);
   }
 
-  // TODO UI type event (not really a Status update)
   public void listeningForLibP2P(final String address) {
     log.info("Listening for connections on: {}", address);
   }
 
-  // TODO UI type event (not really a Status update)
   public void blockCreationFailure(final Exception cause) {
     log.error("Error during block creation {}", cause.toString());
   }
 
-  // TODO UI type event (not really a Status update)
   public void attestationFailure(final IllegalArgumentException cause) {
     log.warn("Cannot produce attestations or create a block {}", cause.toString());
-  }
-
-  // TODO only add colour when it is enabled vai the config
-  private void info(String message, Color color) {
-    log.info(print(message, color));
   }
 
   // TODO only add colour when it is enabled vai the config
