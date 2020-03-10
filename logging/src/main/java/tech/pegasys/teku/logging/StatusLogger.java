@@ -70,6 +70,11 @@ public class StatusLogger {
   }
 
   // TODO UI type event (not really a Status update)
+  public void startupFailure(final Throwable cause) {
+    log.fatal("Startup failed", cause);
+  }
+
+  // TODO UI type event (not really a Status update)
   public void sendDepositException(final Throwable t) {
     fatal("Failed to send deposit transaction: " + t.getClass() + " : " + t.getMessage());
   }
