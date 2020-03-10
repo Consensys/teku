@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ACTIVE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
@@ -27,9 +28,13 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
-import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.validateQueryParameter;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -42,9 +47,9 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -98,7 +103,6 @@ public class BeaconValidatorsHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     final Map<String, List<String>> parameters = ctx.queryParamMap();
-    SafeFuture<Optional<BeaconState>> future = null;
     try {
       final boolean activeOnly = parameters.containsKey(ACTIVE);
       int pageSize =
@@ -107,31 +111,34 @@ public class BeaconValidatorsHandler implements Handler {
           getPositiveIntegerValueWithDefaultIfNotSupplied(
               parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
 
-      Optional<Bytes32> optionalRoot = chainDataProvider.getBestBlockRoot();
-      if (optionalRoot.isPresent()) {
-        if (parameters.containsKey(EPOCH)) {
-          future = queryByEpoch(validateQueryParameter(parameters, EPOCH), optionalRoot.get());
-        } else {
-          future = queryByRootHash(optionalRoot.get());
-        }
-        ctx.result(
-            future.thenApplyChecked(
-                state -> {
-                  if (state.isEmpty()) {
-                    // empty list
-                    return jsonProvider.objectToJSON(produceEmptyListResponse());
-                  } else {
-                    return jsonProvider.objectToJSON(
-                        produceResponse(state.get(), activeOnly, pageSize, pageToken));
-                  }
-                }));
-      } else {
+      if (!chainDataProvider.isStoreAvailable()) {
         ctx.status(SC_NO_CONTENT);
+        return;
       }
+
+      final SafeFuture<Optional<BeaconState>> future = getStateFuture(parameters);
+
+      ctx.result(
+          future.thenApplyChecked(
+              state -> handleResponseContext(ctx, state, activeOnly, pageSize, pageToken)));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateFuture(Map<String, List<String>> parameters) {
+    if (parameters.containsKey(EPOCH)) {
+      UnsignedLong epoch = getParameterValueAsUnsignedLong(parameters, EPOCH);
+      UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+      return chainDataProvider.getStateAtSlot(slot);
+    }
+    Optional<Bytes32> blockRoot = chainDataProvider.getBestBlockRoot();
+    if (blockRoot.isPresent()) {
+      return chainDataProvider.getStateByBlockRoot(blockRoot.get());
+    }
+
+    return completedFuture(Optional.empty());
   }
 
   private int getPositiveIntegerValueWithDefaultIfNotSupplied(
@@ -150,28 +157,23 @@ public class BeaconValidatorsHandler implements Handler {
     return intValue;
   }
 
-  private SafeFuture<Optional<BeaconState>> queryByRootHash(final Bytes32 root32) {
-    return chainDataProvider.getStateByBlockRoot(root32);
-  }
+  private String handleResponseContext(
+      Context ctx,
+      Optional<BeaconState> optionalState,
+      final boolean activeOnly,
+      final int pageSize,
+      final int pageToken)
+      throws JsonProcessingException {
+    if (optionalState.isEmpty()) {
+      return jsonProvider.objectToJSON(List.of());
+    } else {
+      final BeaconState state = optionalState.get();
+      final BeaconValidators result =
+          new BeaconValidators(
+              state.validators, activeOnly, compute_epoch_at_slot(state.slot), pageSize, pageToken);
 
-  private SafeFuture<Optional<BeaconState>> queryByEpoch(
-      final String epochString, final Bytes32 blockRoot) {
-    final UnsignedLong epoch = UnsignedLong.valueOf(epochString);
-    return chainDataProvider.getStateAtSlot(
-        BeaconStateUtil.compute_start_slot_at_epoch(epoch), blockRoot);
-  }
-
-  private final BeaconValidators produceResponse(
-      final BeaconState state, final boolean activeOnly, final int pageSize, final int pageToken) {
-    return new BeaconValidators(
-        state.getValidators(),
-        activeOnly,
-        BeaconStateUtil.get_current_epoch(state),
-        pageSize,
-        pageToken);
-  }
-
-  private final BeaconValidators produceEmptyListResponse() {
-    return new BeaconValidators(List.of());
+      ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(chainDataProvider, state));
+      return jsonProvider.objectToJSON(result);
+    }
   }
 }
