@@ -76,36 +76,32 @@ public class RpcHandler implements ProtocolBinding<Controller> {
         .reportExceptions();
 
     // Try to initiate stream
-    connection
-        .muxerSession()
-        .createStream(Multistream.create(this.toInitiator(rpcMethod.getId())).toStreamHandler())
-        .getController()
-        .thenAccept(
+    SafeFuture.of(
+            connection
+                .muxerSession()
+                .createStream(
+                    Multistream.create(this.toInitiator(rpcMethod.getId())).toStreamHandler())
+                .getController())
+        .thenCompose(
             ctr -> {
               ctr.setRequestHandler(handler);
-              ctr.getRpcStream()
+              return ctr.getRpcStream()
                   .writeBytes(initialPayload)
                   .thenApply(f -> ctr.getRpcStream())
                   .thenAccept(
                       rpcStream -> {
                         if (!streamFuture.complete(rpcStream)) {
-                          // If future was already completed exceptionally, close down the
-                          // controller
+                          // If future was already completed exceptionally, close the controller
                           ctr.close();
                         }
-                      })
-                  .exceptionally(
-                      err -> {
-                        streamFuture.completeExceptionally(err);
-                        return null;
-                      })
-                  .reportExceptions();
+                      });
             })
         .exceptionally(
             err -> {
               streamFuture.completeExceptionally(err);
               return null;
-            });
+            })
+        .reportExceptions();
 
     return streamFuture;
   }
