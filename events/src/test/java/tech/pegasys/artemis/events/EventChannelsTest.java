@@ -75,21 +75,21 @@ class EventChannelsTest {
 
   @Test
   public void shouldKeepDifferentChannelsSeparate() {
-    final Runnable RunnableSubscriber = mock(Runnable.class);
+    final Runnable runnableSubscriber = mock(Runnable.class);
     final SimpleConsumer consumerSubscriber = mock(SimpleConsumer.class);
-    channels.subscribe(Runnable.class, RunnableSubscriber);
+    channels.subscribe(Runnable.class, runnableSubscriber);
     channels.subscribe(SimpleConsumer.class, consumerSubscriber);
 
-    final Runnable RunnablePublisher = channels.getPublisher(Runnable.class);
+    final Runnable runnablePublisher = channels.getPublisher(Runnable.class);
     final SimpleConsumer consumerPublisher = channels.getPublisher(SimpleConsumer.class);
 
-    RunnablePublisher.run();
-    verify(RunnableSubscriber).run();
+    runnablePublisher.run();
+    verify(runnableSubscriber).run();
     verifyNoInteractions(consumerSubscriber);
 
     consumerPublisher.accept(1);
     verify(consumerSubscriber).accept(1);
-    verifyNoMoreInteractions(RunnableSubscriber);
+    verifyNoMoreInteractions(runnableSubscriber);
   }
 
   private interface SimpleConsumer {

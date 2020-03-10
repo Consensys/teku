@@ -27,6 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.AfterEach;
@@ -56,7 +57,7 @@ class EventChannelTest {
 
   @Test
   public void shouldRejectInterfacesWithNonVoidMethods() {
-    assertThatThrownBy(() -> EventChannel.create(WithReturnType.class, metricsSystem))
+    assertThatThrownBy(() -> EventChannel.create(Supplier.class, metricsSystem))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -284,10 +285,6 @@ class EventChannelTest {
 
   private interface WithFuture {
     SafeFuture<String> getFutureString();
-  }
-
-  private interface WithReturnType {
-    boolean get();
   }
 
   private interface WaitOnLatch {
