@@ -50,19 +50,6 @@ public class AttestationHandlerTest {
     handler = new AttestationHandler(provider, jsonProvider);
   }
 
-  private void badRequestParamsTest(final Map<String, List<String>> params, String message)
-      throws Exception {
-    when(context.queryParamMap()).thenReturn(params);
-
-    handler.handle(context);
-    verify(context).status(SC_BAD_REQUEST);
-
-    if (StringUtils.isNotEmpty(message)) {
-      BadRequest badRequest = new BadRequest(message);
-      verify(context).result(jsonProvider.objectToJSON(badRequest));
-    }
-  }
-
   @Test
   void shouldRejectTooFewArguments() throws Exception {
     badRequestParamsTest(Map.of(), "Please specify both slot and committee_index");
@@ -124,5 +111,18 @@ public class AttestationHandlerTest {
 
     verify(provider).isStoreAvailable();
     verify(context).status(SC_NOT_FOUND);
+  }
+
+  private void badRequestParamsTest(final Map<String, List<String>> params, String message)
+      throws Exception {
+    when(context.queryParamMap()).thenReturn(params);
+
+    handler.handle(context);
+    verify(context).status(SC_BAD_REQUEST);
+
+    if (StringUtils.isNotEmpty(message)) {
+      BadRequest badRequest = new BadRequest(message);
+      verify(context).result(jsonProvider.objectToJSON(badRequest));
+    }
   }
 }
