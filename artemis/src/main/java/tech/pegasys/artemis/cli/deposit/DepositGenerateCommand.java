@@ -220,7 +220,7 @@ public class DepositGenerateCommand implements Runnable {
       return password;
     }
 
-    throw new ParameterException(spec.commandLine(), "Error: Password mismatched.");
+    throw new ParameterException(spec.commandLine(), "Error: Password mismatched");
   }
 
   private String readFromEnvironmentVariable(final String environmentVariable) {
