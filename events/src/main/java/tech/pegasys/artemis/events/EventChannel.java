@@ -141,6 +141,9 @@ public class EventChannel<T> {
   /**
    * Adds a subscriber to this channel where events are handled by multiple threads concurrently.
    *
+   * <p>Note that only async event channels can use multiple threads. Synchronous channels will
+   * always use the publisher thread to process events.
+   *
    * <p>Events are still placed into an ordered queue and started in order, but as multiple threads
    * pull from the queue, the execution order can no longer be guaranteed.
    *
