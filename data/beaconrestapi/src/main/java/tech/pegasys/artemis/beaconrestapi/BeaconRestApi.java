@@ -37,6 +37,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
+import tech.pegasys.artemis.beaconrestapi.validatorhandlers.AttestationHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -139,9 +140,9 @@ public class BeaconRestApi {
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
-    app.get(
-        BeaconValidatorsHandler.ROUTE,
-        new BeaconValidatorsHandler(dataProvider.getChainDataProvider(), jsonProvider));
+    ChainDataProvider provider = dataProvider.getChainDataProvider();
+    app.get(AttestationHandler.ROUTE, new AttestationHandler(provider, jsonProvider));
+    app.get(BeaconValidatorsHandler.ROUTE, new BeaconValidatorsHandler(provider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
