@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isEpochStart;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorCoordinatorUtil.isGenesis;
 import static tech.pegasys.artemis.validator.coordinator.ValidatorLoader.initializeValidators;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -287,7 +288,7 @@ public class ValidatorCoordinator {
       this.eventBus.post(new ProposedBlockEvent(newBlock));
       LOG.debug("Local validator produced a new block");
     } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
-      LOG.error("Error during block creation " + e.toString());
+      STATUS_LOG.blockCreationFailure(e);
     }
   }
 
