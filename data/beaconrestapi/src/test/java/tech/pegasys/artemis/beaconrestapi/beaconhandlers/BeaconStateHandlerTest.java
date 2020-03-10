@@ -122,7 +122,7 @@ public class BeaconStateHandlerTest {
 
     verify(context).result(args.capture());
     SafeFuture<String> data = args.getValue();
-    assertEquals(data.get(), jsonProvider.objectToJSON(new BeaconState(beaconStateInternal)));
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconState));
   }
 
   @Test
