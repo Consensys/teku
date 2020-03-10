@@ -215,7 +215,7 @@ public class ValidatorCoordinator {
       // Save headState to check for slashings
       //      this.headState = headState;
     } catch (IllegalArgumentException e) {
-      LOG.warn("Can not produce attestations or create a block" + e.toString());
+      STATUS_LOG.attestationFailure(e);
     }
   }
 

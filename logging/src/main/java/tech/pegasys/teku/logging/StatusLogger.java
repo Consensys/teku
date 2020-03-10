@@ -115,6 +115,11 @@ public class StatusLogger {
     log.error("Error during block creation {}", cause.toString());
   }
 
+  // TODO UI type event (not really a Status update)
+  public void attestationFailure(final IllegalArgumentException cause) {
+    log.warn("Cannot produce attestations or create a block {}", cause.toString());
+  }
+
   // TODO only add colour when it is enabled vai the config
   private void info(String message, Color color) {
     log.info(print(message, color));
