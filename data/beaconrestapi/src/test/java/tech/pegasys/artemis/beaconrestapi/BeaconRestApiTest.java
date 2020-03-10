@@ -36,6 +36,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
+import tech.pegasys.artemis.beaconrestapi.validatorhandlers.ValidatorDutiesHandler;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
@@ -120,5 +121,10 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveNetworkEnrEndpoint() {
     verify(app).get(eq(ENRHandler.ROUTE), any(ENRHandler.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveValidatorDutiesEndpoint() {
+    verify(app).get(eq(ValidatorDutiesHandler.ROUTE), any(ValidatorDutiesHandler.class));
   }
 }

@@ -24,6 +24,7 @@ public class RestApiConstants {
   public static final int PAGE_TOKEN_DEFAULT = 0;
 
   public static final String TAG_BEACON = "Beacon";
+  public static final String TAG_VALIDATOR = "Validator";
   public static final String TAG_NODE = "Node";
   public static final String TAG_NETWORK = "Network";
 
