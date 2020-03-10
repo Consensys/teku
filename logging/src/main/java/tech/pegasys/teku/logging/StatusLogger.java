@@ -25,24 +25,19 @@ public class StatusLogger {
 
   public static final StatusLogger STATUS_LOG = new StatusLogger("stdout");
 
-  private final Logger logger;
-  private boolean enabled;
+  private final Logger log;
 
   // TODO implement these using a supplier pattern to avoid unnecessary String creation when
   // disabled
 
   private StatusLogger(final String name) {
-    this.logger = LogManager.getLogger(name);
-  }
-
-  public void setEnabled(final boolean enabled) {
-    this.enabled = enabled;
+    this.log = LogManager.getLogger(name);
   }
 
   public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
     info("******* Eth2Genesis Event*******", Color.WHITE);
-    info("Initial state root is " + hashTreeRoot.toHexString());
-    info("Genesis block root is " + genesisBlockRoot.toHexString());
+    log.info("Initial state root is {}", hashTreeRoot.toHexString());
+    log.info("Genesis block root is {}", genesisBlockRoot.toHexString());
   }
 
   public void epochEvent() {
@@ -55,10 +50,10 @@ public class StatusLogger {
       final UnsignedLong justifiedEpoch,
       final UnsignedLong finalizedEpoch) {
     info("******* Slot Event *******", Color.WHITE);
-    info("Node slot:                             " + nodeSlot);
-    info("Head block slot:                       " + bestSlot);
-    info("Justified epoch:                       " + justifiedEpoch);
-    info("Finalized epoch:                       " + finalizedEpoch);
+    log.info("Node slot:                             {}", nodeSlot);
+    log.info("Head block slot:                       {}", bestSlot);
+    log.info("Justified epoch:                       {}", justifiedEpoch);
+    log.info("Finalized epoch:                       {}", finalizedEpoch);
   }
 
   public void unprocessedAttestation(final Bytes32 beconBlockRoot) {
@@ -81,57 +76,42 @@ public class StatusLogger {
 
   // TODO UI type event (not really a Status update)
   public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
-    info(
-        String.format(
-            "Generating mock genesis state for %d validators at genesis time %d",
-            validatorCount, genesisTime));
+    log.info(
+        "Generating mock genesis state for {} validators at genesis time {}",
+        validatorCount,
+        genesisTime);
   }
 
   // TODO UI type event (not really a Status update)
   public void storingGenesis(final String outputFile, final boolean isComplete) {
-
     if (isComplete) {
-      info(String.format("Genesis state file saved: %s", outputFile));
+      log.info("Genesis state file saved: {}", outputFile);
     } else {
-      info(String.format("Saving genesis state to file: %s", outputFile));
+      log.info("Saving genesis state to file: {}", outputFile);
     }
   }
 
   // TODO UI type event (not really a Status update)
   public void specificationFailure(final String description, final Throwable exception) {
-    if (enabled) {
-      logger.warn("Spec failed for {}: {}", description, exception, exception);
-    }
+    log.warn("Spec failed for {}: {}", description, exception, exception);
   }
 
   // TODO UI type event (not really a Status update)
   public void unexpectedException(final String description, final Throwable exception) {
-    if (enabled) {
-      logger.fatal(
-          "PLEASE FIX OR REPORT | Unexpected exception thrown for {}: {}",
-          exception,
-          description,
-          exception);
-    }
+    log.fatal(
+        "PLEASE FIX OR REPORT | Unexpected exception thrown for {}: {}",
+        exception,
+        description,
+        exception);
   }
 
   // TODO only add colour when it is enabled vai the config
   private void info(String message, Color color) {
-    if (enabled) {
-      logger.info(print(message, color));
-    }
+    log.info(print(message, color));
   }
 
   // TODO only add colour when it is enabled vai the config
   private void fatal(String message) {
-    if (enabled) {
-      logger.fatal(print(message, Color.RED));
-    }
-  }
-
-  private void info(String message) {
-    if (enabled) {
-      logger.info(message);
-    }
+    log.fatal(print(message, Color.RED));
   }
 }

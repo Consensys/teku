@@ -25,30 +25,24 @@ public class ColorConsolePrinter {
     GREEN
   }
 
-  private static String findColor(Color color) {
-    String colorCode = "";
-    switch (color) {
-      case RED:
-        colorCode = "\u001B[31m";
-        break;
-      case BLUE:
-        colorCode = "\u001b[34;1m";
-        break;
-      case PURPLE:
-        colorCode = "\u001B[35m";
-        break;
-      case WHITE:
-        colorCode = "\033[1;30m";
-        break;
-      case GREEN:
-        colorCode = "\u001B[32m";
-        break;
-    }
-    return colorCode;
+  public static String print(final String message, final Color color) {
+    return colorCode(color) + message + resetCode;
   }
 
-  public static String print(final String message, final Color color) {
-    String colorCode = findColor(color);
-    return colorCode + message + resetCode;
+  private static String colorCode(final Color color) {
+    switch (color) {
+      case RED:
+        return "\u001B[31m";
+      case BLUE:
+        return "\u001b[34;1m";
+      case PURPLE:
+        return "\u001B[35m";
+      case WHITE:
+        return "\033[1;30m";
+      case GREEN:
+        return "\u001B[32m";
+      default:
+        return "";
+    }
   }
 }
