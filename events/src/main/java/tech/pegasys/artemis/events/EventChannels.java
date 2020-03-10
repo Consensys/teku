@@ -42,9 +42,19 @@ public class EventChannels {
     return subscribeMultithreaded(channelInterface, subscriber, 1);
   }
 
+  /**
+   * Adds a subscriber to this channel where events are handled by multiple threads concurrently.
+   *
+   * <p>Events are still placed into an ordered queue and started in order, but as multiple threads
+   * pull from the queue, the execution order can no longer be guaranteed.
+   *
+   * @param channelInterface the channel to subscribe to
+   * @param subscriber the subscriber to notify of events
+   * @param requestedParallelism the number of threads to use to process events
+   */
   public <T> EventChannels subscribeMultithreaded(
-      final Class<T> channelInterface, final T subscriber, final int numberOfThreads) {
-    getChannel(channelInterface).subscribeMultithreaded(subscriber, numberOfThreads);
+      final Class<T> channelInterface, final T subscriber, final int requestedParallelism) {
+    getChannel(channelInterface).subscribeMultithreaded(subscriber, requestedParallelism);
     return this;
   }
 
