@@ -230,18 +230,18 @@ class EventChannelTest {
     channel.getPublisher().waitFor(started2, await2, completed2);
 
     // Both events should start being processed
-    assertThat(started1.await(5, TimeUnit.SECONDS)).isTrue();
-    assertThat(started2.await(5, TimeUnit.SECONDS)).isTrue();
+    waitForCountDownLatchComplete(started1);
+    waitForCountDownLatchComplete(started2);
 
     // Then allow the second event to process
     await2.countDown();
     // And it should complete
-    assertThat(completed2.await(5, TimeUnit.SECONDS)).isTrue();
+    waitForCountDownLatchComplete(completed2);
 
     // And finally allow the first event to process
     await1.countDown();
     // And it should also complete
-    assertThat(completed1.await(5, TimeUnit.SECONDS)).isTrue();
+    waitForCountDownLatchComplete(completed1);
   }
 
   @Test
@@ -263,6 +263,11 @@ class EventChannelTest {
     consumerCaptor.getValue().deliverNextEvent();
 
     assertThat(result).isCompletedWithValue("Yay");
+  }
+
+  private void waitForCountDownLatchComplete(final CountDownLatch started1)
+      throws InterruptedException {
+    assertThat(started1.await(5, TimeUnit.SECONDS)).isTrue();
   }
 
   private interface WithException {
