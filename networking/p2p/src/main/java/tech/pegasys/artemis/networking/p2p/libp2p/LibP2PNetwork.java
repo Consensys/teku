@@ -15,6 +15,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 
 import static tech.pegasys.artemis.util.async.SafeFuture.failedFuture;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -155,7 +156,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     return SafeFuture.of(host.start())
         .thenApply(
             i -> {
-              LOG.info("Listening for connections on: {}", getNodeAddress());
+              STATUS_LOG.listeningForLibP2P(getNodeAddress());
               return null;
             });
   }
