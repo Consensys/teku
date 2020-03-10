@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
@@ -35,8 +36,8 @@ public class LibP2PPeer implements Peer {
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
   private final Connection connection;
-  private final NodeId nodeId;
   private final AtomicBoolean connected = new AtomicBoolean(true);
+  private final MultiaddrPeerAddress peerAddress;
 
   private volatile DisconnectRequestHandler disconnectRequestHandler =
       reason -> {
@@ -49,13 +50,14 @@ public class LibP2PPeer implements Peer {
     this.rpcHandlers = rpcHandlers;
 
     final PeerId peerId = connection.secureSession().getRemoteId();
-    nodeId = new LibP2PNodeId(peerId);
+    final NodeId nodeId = new LibP2PNodeId(peerId);
+    peerAddress = new MultiaddrPeerAddress(nodeId, connection.remoteAddress());
     SafeFuture.of(connection.closeFuture()).finish(this::handleConnectionClosed);
   }
 
   @Override
-  public NodeId getId() {
-    return nodeId;
+  public PeerAddress getAddress() {
+    return peerAddress;
   }
 
   @Override
@@ -78,7 +80,7 @@ public class LibP2PPeer implements Peer {
         .finish(
             this::disconnectImmediately, // Request sent now close our side
             error -> {
-              LOG.debug("Failed to disconnect from " + nodeId + " cleanly.", error);
+              LOG.debug("Failed to disconnect from " + getId() + " cleanly.", error);
               disconnectImmediately();
             });
   }
@@ -114,7 +116,7 @@ public class LibP2PPeer implements Peer {
   }
 
   private void handleConnectionClosed() {
-    LOG.debug("Disconnected from peer {}", nodeId);
+    LOG.debug("Disconnected from peer {}", getId());
     connected.set(false);
   }
 }
