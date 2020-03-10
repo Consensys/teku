@@ -16,6 +16,7 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -27,6 +28,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -40,7 +42,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -58,21 +59,21 @@ public class BeaconStateRootHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain state root that matches the specified slot.",
+      summary = "Get the beacon chain state root for the specified slot.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(
-            name = SLOT,
-            description = "Slot to query in the canonical chain (head or ancestor of the head).")
+        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain.")
       },
-      description = "Returns beacon chain state root that matches the specified slot.",
+      description = "Returns the beacon chain state root for the specified slot.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Bytes32.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = Bytes32.class),
+            description = "The beacon chain `state_root`(`Bytes32`) for the specified slot."),
         @OpenApiResponse(
             status = RES_NOT_FOUND,
-            description =
-                "The beacon state root matching the supplied query parameter was not found."),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter"),
+            description = "The beacon state root matching the supplied parameter was not found."),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
@@ -80,7 +81,7 @@ public class BeaconStateRootHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       final Map<String, List<String>> parameters = ctx.queryParamMap();
-      SafeFuture<Optional<BeaconState>> future = null;
+      SafeFuture<Optional<Bytes32>> future = null;
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
       }
@@ -90,25 +91,28 @@ public class BeaconStateRootHandler implements Handler {
       }
 
       if (parameters.containsKey(SLOT)) {
-        future = queryBySlot(getParameterValueAsUnsignedLong(parameters, SLOT));
+        UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
+        future = queryBySlot(slot);
+        ctx.result(
+            future.thenApplyChecked(
+                hashTreeRoot -> {
+                  if (hashTreeRoot.isEmpty()) {
+                    ctx.status(SC_NOT_FOUND);
+                    return null;
+                  }
+                  ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
+                  return jsonProvider.objectToJSON(hashTreeRoot.get());
+                }));
+      } else {
+        throw new IllegalArgumentException(SLOT + " parameter was not specified.");
       }
-      ctx.result(
-          future.thenApplyChecked(
-              state -> {
-                if (state.isEmpty()) {
-                  ctx.status(SC_NOT_FOUND);
-                  return null;
-                }
-                return jsonProvider.objectToJSON(state.get().hash_tree_root());
-              }));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
 
-  private SafeFuture<Optional<BeaconState>> queryBySlot(final UnsignedLong slot) {
-    final Bytes32 head = provider.getBestBlockRoot().orElse(null);
-    return provider.getStateAtSlot(slot, head);
+  private SafeFuture<Optional<Bytes32>> queryBySlot(final UnsignedLong slot) {
+    return provider.getHashTreeRootAtSlot(slot);
   }
 }
