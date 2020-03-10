@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis;
 
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -20,6 +22,12 @@ import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
+import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.status.StatusLogger;
@@ -37,15 +45,6 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
 import tech.pegasys.teku.logging.StatusLogger.Color;
-
-import java.lang.reflect.Method;
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 public class BeaconNode {
 
