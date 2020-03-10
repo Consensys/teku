@@ -163,10 +163,9 @@ public class DepositCommand implements Runnable {
       keysWriter =
           new EncryptedKeystoreWriter(
               validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
-      STATUS_LOG.log(Level.INFO, "Generating Encrypted Keystores ...");
+      STATUS_LOG.log(Level.INFO, "Generating Encrypted Keystores in " + keystoreDir);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
-      STATUS_LOG.log(Level.INFO, "Generating unencrypted keys ...");
     }
 
     try (params) {
@@ -184,7 +183,6 @@ public class DepositCommand implements Runnable {
       }
 
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
-      STATUS_LOG.log(Level.INFO, "Deposit transaction(s) successful.");
     } catch (final Throwable t) {
       STATUS_LOG.log(
           Level.FATAL,

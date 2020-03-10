@@ -15,7 +15,6 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -47,11 +46,6 @@ public class ArtemisDepositSender extends Node {
     container.start();
     Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse());
     container.stop();
-    // because we have introduced some logging, only pick lines which start with a - {
-    return validatorKeys
-        .toString()
-        .lines()
-        .filter(s -> s.startsWith("- {"))
-        .collect(Collectors.joining(System.lineSeparator()));
+    return validatorKeys.toString();
   }
 }
