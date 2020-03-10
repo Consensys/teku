@@ -40,15 +40,15 @@ public class ENRHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Requests the listening ENR address of the beacon node.",
+      summary = "Get the listening Ethereum Node Record (ENR) address of the beacon node.",
       tags = {TAG_NETWORK},
-      description =
-          "Returns a base64 encoded string representing the beacon node listening address.",
+      description = "Returns the beacon node's listening ENR address.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = String.class),
-            description = "Base64 encoded ENR or an empty string if discovery v5 is not in use.")
+            description =
+                "Base64-encoded ENR or an empty string if Node Discovery Protocol v5 is not used.")
       })
   @Override
   public void handle(Context ctx) throws Exception {
