@@ -101,7 +101,6 @@ public class BeaconCommitteesHandlerTest {
     final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
 
     handler.handle(context);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).status(SC_BAD_REQUEST);
   }
 
@@ -160,6 +159,5 @@ public class BeaconCommitteesHandlerTest {
     handler.handle(context);
 
     verify(context).status(SC_NO_CONTENT);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 }

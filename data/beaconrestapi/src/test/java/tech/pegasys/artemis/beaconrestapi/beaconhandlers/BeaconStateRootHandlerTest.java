@@ -20,11 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +84,16 @@ public class BeaconStateRootHandlerTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenSingleNonSlotParameterSpecified() throws Exception {
+    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of("foo", List.of()));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnBadRequestWhenEmptySlotIsSpecified() throws Exception {
     final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of()));
@@ -112,6 +124,7 @@ public class BeaconStateRootHandlerTest {
     handler.handle(context);
 
     verify(context).result(args.capture());
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconStateInternal.hash_tree_root()));
   }
