@@ -56,12 +56,12 @@ public class StatusLogger {
     log.info("Finalized epoch:                       {}", finalizedEpoch);
   }
 
-  public void unprocessedAttestation(final Bytes32 beconBlockRoot) {
-    info("New Attestation with block root:  " + beconBlockRoot + " detected.", Color.GREEN);
+  public void unprocessedAttestation(final Bytes32 beaconBlockRoot) {
+    info("New Attestation with block root:  " + beaconBlockRoot + " detected.", Color.GREEN);
   }
 
-  public void aggregateAndProof(final Bytes32 beconBlockRoot) {
-    info("New AggregateAndProof with block root:  " + beconBlockRoot + " detected.", Color.BLUE);
+  public void aggregateAndProof(final Bytes32 beaconBlockRoot) {
+    info("New AggregateAndProof with block root:  " + beaconBlockRoot + " detected.", Color.BLUE);
   }
 
   public void unprocessedBlock(final Bytes32 stateRoot) {
