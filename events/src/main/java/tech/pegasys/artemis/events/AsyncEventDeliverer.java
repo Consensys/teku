@@ -46,11 +46,13 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   }
 
   @Override
-  void subscribe(final T subscriber) {
+  void subscribe(final T subscriber, final int numberOfThreads) {
     final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     eventQueuesBySubscriber.put(subscriber, queue);
-    super.subscribe(subscriber);
-    executor.execute(new QueueReader(queue));
+    super.subscribe(subscriber, numberOfThreads);
+    for (int i = 0; i < numberOfThreads; i++) {
+      executor.execute(new QueueReader(queue));
+    }
   }
 
   @Override
