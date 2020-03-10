@@ -134,8 +134,7 @@ public class BeaconRestApi {
         BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(provider, jsonProvider));
     app.get(BeaconCommitteesHandler.ROUTE, new BeaconCommitteesHandler(provider, jsonProvider));
-    app.get(
-        BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
+    app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(provider, jsonProvider));
     app.get(BeaconStateRootHandler.ROUTE, new BeaconStateRootHandler(provider, jsonProvider));
   }
 

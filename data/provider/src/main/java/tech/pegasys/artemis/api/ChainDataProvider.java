@@ -21,9 +21,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.BeaconHead;
+import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -90,14 +90,6 @@ public class ChainDataProvider {
     return combinedChainDataClient.getBestBlockRoot();
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(Bytes32 root32) {
-    return combinedChainDataClient.getStateByBlockRoot(root32);
-  }
-
-  public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot, Bytes32 root32) {
-    return combinedChainDataClient.getStateAtSlot(slot, root32);
-  }
-
   ChainStorageClient getChainStorageClient() {
     return chainStorageClient;
   }
@@ -113,6 +105,38 @@ public class ChainDataProvider {
     return combinedChainDataClient
         .getBlockByBlockRoot(blockParam)
         .thenApply(block -> block.map(SignedBeaconBlock::new));
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(Bytes32 blockRoot) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    return combinedChainDataClient
+        .getStateByBlockRoot(blockRoot)
+        .thenApply(state -> state.map(BeaconState::new))
+        .exceptionally(err -> Optional.empty());
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
+    return combinedChainDataClient
+        .getStateAtSlot(slot, headBlockRoot)
+        .thenApply(state -> state.map(BeaconState::new))
+        .exceptionally(err -> Optional.empty());
+  }
+
+  public SafeFuture<Optional<Bytes32>> getHashTreeRootAtSlot(UnsignedLong slot) {
+    if (!isStoreAvailable()) {
+      return completedFuture(Optional.empty());
+    }
+    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
+    return combinedChainDataClient
+        .getStateAtSlot(slot, headBlockRoot)
+        .thenApply(state -> Optional.of(state.get().hash_tree_root()))
+        .exceptionally(err -> Optional.empty());
   }
 
   public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {

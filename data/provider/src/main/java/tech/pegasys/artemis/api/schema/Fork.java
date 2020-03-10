@@ -11,18 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.provider;
+package tech.pegasys.artemis.api.schema;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import java.io.IOException;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 
-public class BLSPublicKeySerializer extends JsonSerializer<BLSPublicKey> {
-  @Override
-  public void serialize(BLSPublicKey value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.toBytes().toHexString().toLowerCase());
+public class Fork {
+  public Bytes4 previous_version;
+  public Bytes4 current_version;
+  public UnsignedLong epoch;
+
+  public Fork(final tech.pegasys.artemis.datastructures.state.Fork fork) {
+    this.previous_version = fork.getPrevious_version();
+    this.current_version = fork.getCurrent_version();
+    this.epoch = fork.getEpoch();
   }
 }
