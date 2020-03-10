@@ -31,6 +31,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.IntStream;
@@ -51,6 +52,7 @@ import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
@@ -76,6 +78,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
@@ -343,5 +346,26 @@ public class ValidatorCoordinator {
                 validators.get(validatorRegistry.get(i).getPubkey()).setValidatorIndex(i);
               }
             });
+  }
+
+  public Optional<UnsignedLong> getProposingSlot(BeaconState previousState, UnsignedLong epoch, BLSPublicKey publicKey) {
+    // TODO need to work out how to test this
+    try {
+      UnsignedLong newSlot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+      MutableBeaconState newState = previousState.createWritableCopy();
+      for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i ++) {
+        // Process empty slots up to the new slot
+        stateTransition.process_slots(newState, newSlot, false);
+
+        // Check if we should be proposing
+        final BLSPublicKey proposer = blockCreator.getProposerForSlot(newState, newSlot);
+        if (!proposer.equals(publicKey)) {
+          return Optional.of(newSlot);
+        }
+      }
+      return Optional.empty();
+    } catch (Exception e) {
+      return Optional.empty();
+    }
   }
 }
