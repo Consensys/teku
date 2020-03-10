@@ -342,13 +342,25 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfCommitteeOutOfRange() {
+  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfCommitteeBelowRange() {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.isFinalized(ZERO)).thenReturn(false);
     assertThrows(
         IllegalArgumentException.class, () -> provider.getUnsignedAttestationAtSlot(ZERO, -1));
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    verify(mockCombinedChainDataClient).isFinalized(ZERO);
+  }
+
+  @Test
+  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfCommitteeAboveRange() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.isFinalized(ZERO)).thenReturn(false);
+    assertThrows(
+        IllegalArgumentException.class, () -> provider.getUnsignedAttestationAtSlot(ZERO, 1));
     verify(mockCombinedChainDataClient).isStoreAvailable();
     verify(mockCombinedChainDataClient).isFinalized(ZERO);
   }

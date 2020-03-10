@@ -60,7 +60,7 @@ public class AttestationHandler implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "The slot to create the attestation for (uint64)",
+            description = "The non-finalized slot to create the attestation for (uint64)",
             required = true),
         @OpenApiParam(
             name = COMMITTEE_INDEX,
@@ -68,14 +68,16 @@ public class AttestationHandler implements Handler {
             required = true)
       },
       description =
-          "Request that the node return the beacon chain block that matches the provided criteria.",
+          "Request that the node return an unsigned attestation for the block at a given non-finalized slot.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = Attestation.class),
             description = "Returns an attestation with a default signature."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
-        @OpenApiResponse(status = RES_NOT_FOUND, description = "Specified block not found")
+        @OpenApiResponse(
+            status = RES_NOT_FOUND,
+            description = "An attestation could not be created for the specified slot.")
       })
   @Override
   public void handle(Context ctx) throws Exception {

@@ -163,7 +163,7 @@ public class ChainDataProvider {
     tech.pegasys.artemis.datastructures.state.BeaconState state =
         chainStorageClient.getBestBlockRootState();
     int committeeCount = get_committee_count_at_slot(state, slot).intValue();
-    if (committeeIndex < 0 || committeeIndex > committeeCount) {
+    if (committeeIndex < 0 || committeeIndex >= committeeCount) {
       throw new IllegalArgumentException(
           "Invalid committee index provided - expected between 0 and " + (committeeCount - 1));
     }
