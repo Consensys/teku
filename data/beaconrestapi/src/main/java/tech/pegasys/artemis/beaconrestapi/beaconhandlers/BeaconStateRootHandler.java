@@ -59,21 +59,21 @@ public class BeaconStateRootHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain state root that matches the specified slot.",
+      summary = "Get the beacon chain state root for the specified slot.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(
-            name = SLOT,
-            description = "Slot to query in the canonical chain (head or ancestor of the head).")
+        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain.")
       },
-      description = "Returns beacon chain state root that matches the specified slot.",
+      description = "Returns the beacon chain state root for the specified slot.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Bytes32.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = Bytes32.class),
+            description = "The beacon chain's `state_root`(`Bytes32`) for the specified slot."),
         @OpenApiResponse(
             status = RES_NOT_FOUND,
-            description =
-                "The beacon state root matching the supplied query parameter was not found."),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter"),
+            description = "The beacon state root matching the supplied parameter was not found."),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Missing a query parameter."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
