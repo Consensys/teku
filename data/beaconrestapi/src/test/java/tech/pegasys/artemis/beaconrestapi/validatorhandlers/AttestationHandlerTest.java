@@ -114,7 +114,7 @@ public class AttestationHandlerTest {
   }
 
   @Test
-  void shouldHaveNoAttestationReturnedIfNotFound() throws Exception {
+  void shouldReturnNoAttestationIfNotFound() throws Exception {
     Map<String, List<String>> params = Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("1"));
 
     when(context.queryParamMap()).thenReturn(params);
