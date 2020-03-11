@@ -221,8 +221,8 @@ public class BeaconChainUtil {
 
   private MessageSignerService getSigner(final int proposerIndex) {
     BLSKeyPair proposerKey = validatorKeys.get(proposerIndex);
-    return (message, domain) ->
+    return (message) ->
         SafeFuture.completedFuture(
-            BLS.sign(proposerKey.getSecretKey(), compute_signing_root(message, domain)));
+            BLS.sign(proposerKey.getSecretKey(), message));
   }
 }
