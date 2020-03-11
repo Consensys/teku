@@ -75,13 +75,13 @@ public class BeaconChainHeadHandlerTest {
             headBlockSlot,
             headBlockEpoch,
             headBlockRoot,
-            finalizedCheckpoint.getEpochSlot(),
+            finalizedCheckpoint.getEpochStartSlot(),
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
-            justifiedCheckpoint.getEpochSlot(),
+            justifiedCheckpoint.getEpochStartSlot(),
             justifiedCheckpoint.getEpoch(),
             justifiedCheckpoint.getRoot(),
-            previousJustifiedCheckpoint.getEpochSlot(),
+            previousJustifiedCheckpoint.getEpochStartSlot(),
             previousJustifiedCheckpoint.getEpoch(),
             previousJustifiedCheckpoint.getRoot());
     return response;

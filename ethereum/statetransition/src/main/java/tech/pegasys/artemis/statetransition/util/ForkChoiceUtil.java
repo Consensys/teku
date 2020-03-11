@@ -79,7 +79,7 @@ public class ForkChoiceUtil {
    * @param slot
    * @return
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#get_ancestor</a>
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
   public static Bytes32 get_ancestor(ReadOnlyStore store, Bytes32 root, UnsignedLong slot) {
     BeaconBlock block = store.getBlock(root);
@@ -88,7 +88,8 @@ public class ForkChoiceUtil {
     } else if (block.getSlot().equals(slot)) {
       return root;
     } else {
-      return Bytes32.ZERO;
+      // root is older than the queried slot, thus a skip slot. Return earliest root prior to slot.
+      return root;
     }
   }
 
@@ -181,7 +182,7 @@ public class ForkChoiceUtil {
 
     // Execute the LMD-GHOST fork choice
     Bytes32 head = store.getJustifiedCheckpoint().getRoot();
-    UnsignedLong justified_slot = store.getJustifiedCheckpoint().getEpochSlot();
+    UnsignedLong justified_slot = store.getJustifiedCheckpoint().getEpochStartSlot();
 
     while (true) {
       final Bytes32 head_in_filter = head;
@@ -232,16 +233,9 @@ public class ForkChoiceUtil {
       return true;
     }
 
-    BeaconBlock new_justified_block = store.getBlock(new_justified_checkpoint.getRoot());
-    if (new_justified_block.getSlot().compareTo(store.getJustifiedCheckpoint().getEpochSlot())
-        <= 0) {
-      return false;
-    }
-    return get_ancestor(
-            store,
-            new_justified_checkpoint.getRoot(),
-            store.getBlock(store.getJustifiedCheckpoint().getRoot()).getSlot())
-        .equals(store.getJustifiedCheckpoint().getRoot());
+    UnsignedLong justified_slot = compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch());
+    return get_ancestor(store, new_justified_checkpoint.getRoot(), justified_slot)
+            .equals(store.getJustifiedCheckpoint().getRoot());
   }
 
   // Fork Choice Event Handlers
@@ -318,11 +312,13 @@ public class ForkChoiceUtil {
       try {
         if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
             > 0) {
+          // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state
           storeCheckpointState(
               store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
           store.setBestJustifiedCheckpoint(justifiedCheckpoint);
         }
         if (should_update_justified_checkpoint(store, justifiedCheckpoint)) {
+          // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state
           storeCheckpointState(
               store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
           store.setJustifiedCheckpoint(justifiedCheckpoint);
@@ -335,6 +331,8 @@ public class ForkChoiceUtil {
     // Update finalized checkpoint
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
+      // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state, so if we do error here
+      // and exit, we will possibly have acted differently than other nodes.
       try {
         storeCheckpointState(
             store, st, finalizedCheckpoint, store.getBlockState(finalizedCheckpoint.getRoot()));
@@ -342,6 +340,14 @@ public class ForkChoiceUtil {
         return BlockImportResult.failedStateTransition(e);
       }
       store.setFinalizedCheckpoint(finalizedCheckpoint);
+      UnsignedLong finalized_slot = store.getFinalizedCheckpoint().getEpochStartSlot();
+      // Update justified if new justified is later than store justified
+      // or if store justified is not in chain with finalized checkpoint
+      if (state.getCurrent_justified_checkpoint().getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0
+              || !get_ancestor(store, store.getJustifiedCheckpoint().getRoot(), finalized_slot)
+              .equals(store.getFinalizedCheckpoint().getRoot())) {
+        store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+      }
     }
 
     final BlockProcessingRecord record = new BlockProcessingRecord(preState, signed_block, state);
@@ -371,15 +377,14 @@ public class ForkChoiceUtil {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
 
     // Make sure this block's slot is after the latest finalized slot
-    final UnsignedLong finalizedEpochStartSlot = finalizedCheckpoint.getEpochSlot();
+    final UnsignedLong finalizedEpochStartSlot = finalizedCheckpoint.getEpochStartSlot();
     if (block.getSlot().compareTo(finalizedEpochStartSlot) <= 0) {
       return false;
     }
 
     // Make sure this block descends from the finalized block
-    final UnsignedLong finalizedSlot = store.getBlock(finalizedCheckpoint.getRoot()).getSlot();
     final Bytes32 ancestorAtFinalizedSlot =
-        get_ancestor(store, block.getParent_root(), finalizedSlot);
+        get_ancestor(store, block.hash_tree_root(), finalizedEpochStartSlot);
     return ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot());
   }
 
@@ -434,7 +439,7 @@ public class ForkChoiceUtil {
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
-    if (get_current_slot(store).compareTo(target.getEpochSlot()) < 0) {
+    if (get_current_slot(store).compareTo(target.getEpochStartSlot()) < 0) {
       return AttestationProcessingResult.FAILED_FUTURE_EPOCH;
     }
 
@@ -489,11 +494,11 @@ public class ForkChoiceUtil {
       throws SlotProcessingException, EpochProcessingException {
     if (!store.containsCheckpointState(target)) {
       final BeaconState targetState;
-      if (target.getEpochSlot().equals(targetRootState.getSlot())) {
+      if (target.getEpochStartSlot().equals(targetRootState.getSlot())) {
         targetState = targetRootState;
       } else {
         final MutableBeaconState base_state = targetRootState.createWritableCopy();
-        stateTransition.process_slots(base_state, target.getEpochSlot());
+        stateTransition.process_slots(base_state, target.getEpochStartSlot());
         targetState = base_state.commitChanges();
       }
       store.putCheckpointState(target, targetState);

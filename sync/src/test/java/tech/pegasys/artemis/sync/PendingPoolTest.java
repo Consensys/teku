@@ -137,7 +137,7 @@ public class PendingPoolTest {
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     eventBus.post(new FinalizedCheckpointEvent(checkpoint));
 
-    final UnsignedLong slot = checkpoint.getEpochSlot().plus(UnsignedLong.ONE);
+    final UnsignedLong slot = checkpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
     setSlot(slot);
     final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
 
@@ -155,10 +155,10 @@ public class PendingPoolTest {
     final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     eventBus.post(new FinalizedCheckpointEvent(checkpoint));
-    final long slot = checkpoint.getEpochSlot().longValue() + 10;
+    final long slot = checkpoint.getEpochStartSlot().longValue() + 10;
     setSlot(slot);
 
-    final long blockSlot = checkpoint.getEpochSlot().longValue();
+    final long blockSlot = checkpoint.getEpochStartSlot().longValue();
     final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(blockSlot, 1);
 
     pendingPool.add(block);
@@ -326,7 +326,7 @@ public class PendingPoolTest {
   public void prune_finalizedBlocks() {
     final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    final long finalizedSlot = checkpoint.getEpochSlot().longValue();
+    final long finalizedSlot = checkpoint.getEpochStartSlot().longValue();
     setSlot(finalizedSlot);
 
     // Add a bunch of blocks

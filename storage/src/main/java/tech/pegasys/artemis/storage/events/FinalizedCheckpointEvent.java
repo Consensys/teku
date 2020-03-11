@@ -29,7 +29,7 @@ public class FinalizedCheckpointEvent {
   }
 
   public UnsignedLong getFinalizedSlot() {
-    return finalizedCheckpoint.getEpochSlot();
+    return finalizedCheckpoint.getEpochStartSlot();
   }
 
   @Override

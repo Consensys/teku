@@ -83,13 +83,13 @@ public class BeaconChainHeadHandler implements Handler {
             beaconState.getSlot(),
             compute_epoch_at_slot(beaconState.getSlot()),
             head_block_root,
-            finalizedCheckpoint.getEpochSlot(),
+            finalizedCheckpoint.getEpochStartSlot(),
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
-            justifiedCheckpoint.getEpochSlot(),
+            justifiedCheckpoint.getEpochStartSlot(),
             justifiedCheckpoint.getEpoch(),
             justifiedCheckpoint.getRoot(),
-            previousJustifiedCheckpoint.getEpochSlot(),
+            previousJustifiedCheckpoint.getEpochStartSlot(),
             previousJustifiedCheckpoint.getEpoch(),
             previousJustifiedCheckpoint.getRoot());
 

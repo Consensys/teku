@@ -65,7 +65,7 @@ class AttestationTest {
                 target),
             BLSSignature.empty());
 
-    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochSlot());
+    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochStartSlot());
   }
 
   @Test
