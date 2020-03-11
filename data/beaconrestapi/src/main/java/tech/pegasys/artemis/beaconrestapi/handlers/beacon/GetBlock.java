@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -45,7 +45,7 @@ import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class BeaconBlockHandler implements Handler {
+public class GetBlock implements Handler {
 
   public static final String ROUTE = "/beacon/block";
   static final String TOO_MANY_PARAMETERS =
@@ -57,7 +57,7 @@ public class BeaconBlockHandler implements Handler {
   private final JsonProvider jsonProvider;
   private final ChainDataProvider provider;
 
-  public BeaconBlockHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public GetBlock(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.provider = provider;
   }

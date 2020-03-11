@@ -11,43 +11,50 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.networkhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.network;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.libp2p.core.PeerId;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class PeerIdHandlerTest {
-  private Context context = mock(Context.class);
+public class GetEthereumNameRecordTest {
+  @Mock Context context;
   @Mock P2PNetwork<Peer> p2pNetwork;
-  @Mock private JsonProvider jsonProvider;
+  private final JsonProvider jsonProvider = new JsonProvider();
+  private String ENR = "enr:-";
 
   @Test
-  public void shouldReturnPeerId() throws Exception {
+  public void shouldReturnEmptyStringWhenDiscoveryNotInUse() throws Exception {
     NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
-    final NodeId nodeId1 = new LibP2PNodeId(peerId1);
-    final PeerIdHandler peerIdHandler = new PeerIdHandler(network, jsonProvider);
+    GetEthereumNameRecord handler = new GetEthereumNameRecord(network, jsonProvider);
+    when(p2pNetwork.getEnr()).thenReturn(Optional.empty());
+    handler.handle(context);
 
-    when(p2pNetwork.getNodeId()).thenReturn(nodeId1);
-    peerIdHandler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(context).result(jsonProvider.objectToJSON(nodeId1.toBase58()));
+    verify(context).result(jsonProvider.objectToJSON(""));
+  }
+
+  @Test
+  public void shouldReturnPopulatedStringWhenDiscoveryIsInUse() throws Exception {
+    NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    GetEthereumNameRecord handler = new GetEthereumNameRecord(network, jsonProvider);
+    when(p2pNetwork.getEnr()).thenReturn(Optional.of(ENR));
+    handler.handle(context);
+
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
+    verify(context).result(jsonProvider.objectToJSON(ENR));
   }
 }

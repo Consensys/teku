@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.networkhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.network;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,7 +34,7 @@ import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class PeersHandlerTest {
+public class GetPeersTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   @Mock Context context;
   @Mock P2PNetwork<Peer> p2pNetwork;
@@ -42,7 +42,7 @@ public class PeersHandlerTest {
   @Test
   public void shouldReturnArrayOfPeersIfPresent() throws Exception {
     final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final PeersHandler peersHandler = new PeersHandler(network, jsonProvider);
+    final GetPeers handler = new GetPeers(network, jsonProvider);
     final Peer peer1 = mock(Peer.class);
     final Peer peer2 = mock(Peer.class);
     final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
@@ -57,7 +57,7 @@ public class PeersHandlerTest {
     final String response =
         jsonProvider.objectToJSON(new String[] {peerId1.toBase58(), peerId2.toBase58()});
 
-    peersHandler.handle(context);
+    handler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(response);
   }
@@ -65,12 +65,12 @@ public class PeersHandlerTest {
   @Test
   public void shouldReturnEmptyPeersArrayIfNoneConnected() throws Exception {
     final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final PeersHandler peersHandler = new PeersHandler(network, jsonProvider);
+    final GetPeers handler = new GetPeers(network, jsonProvider);
     final String response = jsonProvider.objectToJSON(new String[] {});
 
     when(p2pNetwork.streamPeers()).thenReturn(Stream.empty());
 
-    peersHandler.handle(context);
+    handler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(response);
   }

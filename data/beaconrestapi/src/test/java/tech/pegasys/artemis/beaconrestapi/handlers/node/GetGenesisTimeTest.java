@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.node;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class GenesisTimeHandlerTest {
+public class GetGenesisTimeTest {
   private Context context = mock(Context.class);
   private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -36,7 +36,7 @@ public class GenesisTimeHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenGenesisTimeIsNotSet() throws Exception {
-    GenesisTimeHandler handler = new GenesisTimeHandler(provider, jsonProvider);
+    GetGenesisTime handler = new GetGenesisTime(provider, jsonProvider);
     when(provider.getGenesisTime()).thenReturn(Optional.empty());
     handler.handle(context);
     verify(context).status(SC_NO_CONTENT);
@@ -45,7 +45,7 @@ public class GenesisTimeHandlerTest {
 
   @Test
   public void shouldReturnGenesisTimeWhenSet() throws Exception {
-    GenesisTimeHandler handler = new GenesisTimeHandler(provider, jsonProvider);
+    GetGenesisTime handler = new GetGenesisTime(provider, jsonProvider);
     when(provider.getGenesisTime()).thenReturn(Optional.of(genesisTime));
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(genesisTime));

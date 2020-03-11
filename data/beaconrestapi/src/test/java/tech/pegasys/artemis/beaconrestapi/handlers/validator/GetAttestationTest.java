@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.validatorhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -38,16 +38,16 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class AttestationHandlerTest {
+public class GetAttestationTest {
   @Mock private Context context;
   @Mock private ChainDataProvider provider;
   private final JsonProvider jsonProvider = new JsonProvider();
-  private AttestationHandler handler;
+  private GetAttestation handler;
   private Attestation attestation = new Attestation(DataStructureUtil.randomAttestation(1111));
 
   @BeforeEach
   public void setup() {
-    handler = new AttestationHandler(provider, jsonProvider);
+    handler = new GetAttestation(provider, jsonProvider);
   }
 
   @Test

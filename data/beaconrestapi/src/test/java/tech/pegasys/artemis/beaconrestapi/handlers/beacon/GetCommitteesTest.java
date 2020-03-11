@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -52,7 +52,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @ExtendWith(MockitoExtension.class)
-public class BeaconCommitteesHandlerTest {
+public class GetCommitteesTest {
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
   private static UnsignedLong slot;
@@ -81,7 +81,7 @@ public class BeaconCommitteesHandlerTest {
 
   @Test
   public void shouldReturnEmptyListWhenStateAtSlotIsNotFound() throws Exception {
-    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
 
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of("0")));
     when(provider.isStoreAvailable()).thenReturn(true);
@@ -98,7 +98,7 @@ public class BeaconCommitteesHandlerTest {
   @Test
   public void shouldReturnBadRequestWhenNoEpochIsSupplied() throws Exception {
     ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
-    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
 
     handler.handle(context);
     verify(context).status(SC_BAD_REQUEST);
@@ -106,7 +106,7 @@ public class BeaconCommitteesHandlerTest {
 
   @Test
   public void shouldReturnEmptyListWhenAFutureEpochIsRequested() throws Exception {
-    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
     final UnsignedLong futureEpoch = slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
 
     when(provider.isStoreAvailable()).thenReturn(true);
@@ -128,7 +128,7 @@ public class BeaconCommitteesHandlerTest {
     CombinedChainDataClient combinedClient =
         new CombinedChainDataClient(client, historicalChainData);
     ChainDataProvider provider = new ChainDataProvider(client, combinedClient);
-    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
     when(client.getFinalizedEpoch()).thenReturn(ZERO);
     when(store.getBlockState(blockRoot)).thenReturn(beaconState);
@@ -153,7 +153,7 @@ public class BeaconCommitteesHandlerTest {
     CombinedChainDataClient combinedClient =
         new CombinedChainDataClient(client, historicalChainData);
     ChainDataProvider provider = new ChainDataProvider(client, combinedClient);
-    final BeaconCommitteesHandler handler = new BeaconCommitteesHandler(provider, jsonProvider);
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
     when(client.getStore()).thenReturn(null);
 
     handler.handle(context);

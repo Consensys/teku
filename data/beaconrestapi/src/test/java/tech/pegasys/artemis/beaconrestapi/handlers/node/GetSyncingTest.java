@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.node;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -29,7 +29,7 @@ import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.SyncStatus;
 import tech.pegasys.artemis.sync.SyncingStatus;
 
-public class NodeSyncingHandlerTest {
+public class GetSyncingTest {
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final SyncService syncService = mock(SyncService.class);
@@ -43,7 +43,7 @@ public class NodeSyncingHandlerTest {
     final UnsignedLong highestSlot = UnsignedLong.valueOf(10);
     final SyncingStatus syncingStatus =
         new SyncingStatus(isSyncing, new SyncStatus(startSlot, currentSlot, highestSlot));
-    final NodeSyncingHandler handler = new NodeSyncingHandler(syncDataProvider, jsonProvider);
+    final GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
     final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
@@ -57,7 +57,7 @@ public class NodeSyncingHandlerTest {
     final boolean isSyncing = false;
     final SyncingStatus syncingStatus = new SyncingStatus(isSyncing, null);
     final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
-    final NodeSyncingHandler handler = new NodeSyncingHandler(syncDataProvider, jsonProvider);
+    final GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     handler.handle(context);

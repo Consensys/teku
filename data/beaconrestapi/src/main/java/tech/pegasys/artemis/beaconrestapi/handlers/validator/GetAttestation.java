@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.validatorhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -41,13 +41,13 @@ import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class AttestationHandler implements Handler {
+public class GetAttestation implements Handler {
   public static final String ROUTE = "/validator/attestation";
 
   private final ChainDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public AttestationHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public GetAttestation(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.provider = provider;
   }
