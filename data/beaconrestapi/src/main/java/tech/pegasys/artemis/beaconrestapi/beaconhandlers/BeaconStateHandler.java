@@ -82,7 +82,7 @@ public class BeaconStateHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       final Map<String, List<String>> parameters = ctx.queryParamMap();
-      SafeFuture<Optional<BeaconState>> future;
+      final SafeFuture<Optional<BeaconState>> future;
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
       }
@@ -108,13 +108,13 @@ public class BeaconStateHandler implements Handler {
     }
   }
 
-  private String handleResponseContext(Context ctx, final Optional<BeaconState> stateOptional)
+  private String handleResponseContext(final Context ctx, final Optional<BeaconState> stateOptional)
       throws JsonProcessingException {
     if (stateOptional.isEmpty()) {
       ctx.status(SC_NOT_FOUND);
       return null;
     }
-    BeaconState beaconState = stateOptional.get();
+    final BeaconState beaconState = stateOptional.get();
     ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(provider, beaconState));
     return jsonProvider.objectToJSON(beaconState);
   }

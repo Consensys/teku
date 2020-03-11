@@ -60,11 +60,6 @@ public class DataProvider {
   }
 
   @Deprecated
-  public ChainStorageClient getChainStorageClient() {
-    return chainDataProvider.getChainStorageClient();
-  }
-
-  @Deprecated
   public CombinedChainDataClient getCombinedChainDataClient() {
     return chainDataProvider.getCombinedChainDataClient();
   }
