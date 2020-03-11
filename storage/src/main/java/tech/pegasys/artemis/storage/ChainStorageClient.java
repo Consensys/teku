@@ -184,7 +184,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    * @return
    */
   public Optional<BeaconState> getBestBlockRootState() {
-    return bestBlockRoot.map(this.store::getBlockState);
+    return bestBlockRoot.map(root -> this.store.getBlockState(root));
   }
 
   /**
