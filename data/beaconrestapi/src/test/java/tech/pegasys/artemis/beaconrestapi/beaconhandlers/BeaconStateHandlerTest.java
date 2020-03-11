@@ -18,7 +18,6 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,6 +28,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +90,7 @@ public class BeaconStateHandlerTest {
   public void shouldReturnBadRequestWhenNoParameterSpecified() throws Exception {
     final BeaconStateHandler handler = new BeaconStateHandler(dataProvider, jsonProvider);
 
-    doReturn(Map.of()).when(context).queryParamMap();
+    when(context.queryParamMap()).thenReturn(Collections.emptyMap());
 
     handler.handle(context);
 
@@ -207,8 +207,8 @@ public class BeaconStateHandlerTest {
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
     final BeaconStateHandler handler = new BeaconStateHandler(dataProvider, jsonProvider);
 
-    doReturn(false).when(dataProvider).isStoreAvailable();
-    doReturn(Map.of(SLOT, List.of("11223344"))).when(context).queryParamMap();
+    when(dataProvider.isStoreAvailable()).thenReturn(false);
+    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
 
     handler.handle(context);
 
