@@ -167,6 +167,12 @@ public class AttestationGenerator {
     return createAttestation(block, state, false);
   }
 
+  public Attestation attestationWithInvalidSignature(
+      final BeaconBlock block, final BeaconState state)
+      throws EpochProcessingException, SlotProcessingException {
+    return createAttestation(block, state, false);
+  }
+
   private Attestation createAttestation(
       final BeaconBlock block, final BeaconState state, final boolean withValidSignature)
       throws EpochProcessingException, SlotProcessingException {
