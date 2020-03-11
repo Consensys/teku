@@ -98,7 +98,6 @@ public class BeaconBlockHandler implements Handler {
             provider
                 .getBlockByBlockRoot(blockRoot)
                 .thenApplyChecked(block -> handleResponseContext(ctx, block)));
-        ;
         return;
       }
 

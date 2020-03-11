@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -21,24 +22,25 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHead;
+import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class BeaconChainHeadHandler implements Handler {
 
-  private final ChainDataProvider chainDataProvider;
+  private final ChainDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public BeaconChainHeadHandler(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    this.chainDataProvider = chainDataProvider;
+  public BeaconChainHeadHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+    this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
 
@@ -58,17 +60,12 @@ public class BeaconChainHeadHandler implements Handler {
       })
   @Override
   public void handle(final Context ctx) throws JsonProcessingException {
-    ctx.result(
-        chainDataProvider
-            .getHeadState()
-            .thenApplyChecked(
-                beaconState -> {
-                  if (beaconState.isPresent()) {
-                    return jsonProvider.objectToJSON(new BeaconChainHead(beaconState.get()));
-                  } else {
-                    ctx.status(SC_NO_CONTENT);
-                    return null;
-                  }
-                }));
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+    final Optional<BeaconChainHead> beaconChainHead = provider.getHeadState();
+    if (beaconChainHead.isPresent()) {
+      ctx.result(jsonProvider.objectToJSON(beaconChainHead.get()));
+    } else {
+      ctx.status(SC_NO_CONTENT);
+    }
   }
 }
