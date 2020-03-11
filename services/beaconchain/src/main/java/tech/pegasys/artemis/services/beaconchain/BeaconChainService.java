@@ -13,14 +13,16 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import java.util.Objects;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 
 public class BeaconChainService implements ServiceInterface {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private BeaconChainController controller;
 
   public BeaconChainService() {}
@@ -44,7 +46,7 @@ public class BeaconChainService implements ServiceInterface {
 
   @Override
   public void stop() {
-    STDOUT.log(Level.DEBUG, "BeaconChainService.stop()");
+    LOG.debug("BeaconChainService.stop()");
     if (!Objects.isNull(controller)) {
       this.controller.stop();
     }

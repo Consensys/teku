@@ -37,11 +37,10 @@ public class slotsMinimal extends TestSuite {
   @ParameterizedTest(name = "{index}.{3} Sanity slots (Minimal)")
   @MethodSource({"sanityGenericSlotSetup"})
   void sanityProcessSlot(BeaconState pre, BeaconState post, UnsignedLong slot, String testName) {
-    boolean printEnabled = false;
-    StateTransition stateTransition = new StateTransition(printEnabled);
+    StateTransition stateTransition = new StateTransition();
 
     MutableBeaconState state = pre.createWritableCopy();
-    assertDoesNotThrow(() -> stateTransition.process_slots(state, pre.getSlot().plus(slot), false));
+    assertDoesNotThrow(() -> stateTransition.process_slots(state, pre.getSlot().plus(slot)));
     assertEquals(post, state);
   }
 

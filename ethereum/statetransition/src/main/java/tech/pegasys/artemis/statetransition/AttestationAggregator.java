@@ -124,10 +124,10 @@ public class AttestationAggregator {
 
   public synchronized List<AggregateAndProof> getAggregateAndProofs() {
     List<AggregateAndProof> aggregateAndProofs = new ArrayList<>();
-    for (UnsignedLong commiteeIndex : committeeIndexToAggregatorInformation.keySet()) {
+    for (UnsignedLong committeeIndex : committeeIndexToAggregatorInformation.keySet()) {
       AggregatorInformation aggregatorInformation =
-          committeeIndexToAggregatorInformation.get(commiteeIndex);
-      Attestation aggregate = committeeIndexToAggregate.get(commiteeIndex);
+          committeeIndexToAggregatorInformation.get(committeeIndex);
+      Attestation aggregate = committeeIndexToAggregate.get(committeeIndex);
       aggregateAndProofs.add(
           new AggregateAndProof(
               UnsignedLong.valueOf(aggregatorInformation.getValidatorIndex()),

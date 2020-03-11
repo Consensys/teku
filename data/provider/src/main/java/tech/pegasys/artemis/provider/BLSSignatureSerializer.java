@@ -17,12 +17,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import tech.pegasys.artemis.util.bls.BLSSignature;
+import tech.pegasys.artemis.api.schema.BLSSignature;
 
 public class BLSSignatureSerializer extends JsonSerializer<BLSSignature> {
   @Override
   public void serialize(BLSSignature value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(value.toBytes().toHexString().toLowerCase());
+    gen.writeString(value.toHexString().toLowerCase());
   }
 }

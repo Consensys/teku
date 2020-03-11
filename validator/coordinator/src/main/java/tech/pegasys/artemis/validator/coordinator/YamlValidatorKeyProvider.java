@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -25,14 +24,16 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
+  private static final Logger LOG = LogManager.getLogger();
   private static final int KEY_LENGTH = 48;
 
   @SuppressWarnings("unchecked")
@@ -40,10 +41,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Path keyFile = Path.of(config.getValidatorsKeyFile());
-    STDOUT.log(
-        Level.DEBUG,
-        "Loading validator keys from " + keyFile.toAbsolutePath().toString(),
-        Color.GREEN);
+    LOG.log(Level.DEBUG, "Loading validator keys from " + keyFile.toAbsolutePath().toString());
     try (InputStream in = Files.newInputStream(keyFile)) {
       final List<Object> values = mapper.readerFor(Map.class).readValues(in).readAll();
       return values.stream()

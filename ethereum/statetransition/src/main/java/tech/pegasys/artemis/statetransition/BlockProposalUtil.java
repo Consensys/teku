@@ -15,10 +15,10 @@ package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -45,6 +45,9 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BlockProposalUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final StateTransition stateTransition;
 
   public BlockProposalUtil(final StateTransition stateTransition) {
@@ -134,9 +137,9 @@ public class BlockProposalUtil {
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
     MutableBeaconState state = preState.createWritableCopy();
     try {
-      stateTransition.process_slots(state, slot, false);
+      stateTransition.process_slots(state, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
+      LOG.fatal("Coordinator checking proposer index exception", e);
     }
     return BeaconStateUtil.get_beacon_proposer_index(state);
   }

@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':events')
+  implementation project(':logging')
   implementation project(':networking:p2p')
   implementation project(':services:powchain')
   implementation project(':services:beaconchain')
@@ -37,6 +38,7 @@ dependencies {
 
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
+  testImplementation 'org.mockito:mockito-core'
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
   test {

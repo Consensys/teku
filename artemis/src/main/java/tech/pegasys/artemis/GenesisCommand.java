@@ -14,13 +14,12 @@
 package tech.pegasys.artemis;
 
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
-import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -60,11 +59,7 @@ public class GenesisCommand {
     try (final OutputStream fileStream =
         outputToFile ? new FileOutputStream(params.outputFile) : System.out) {
       if (outputToFile) {
-        STDOUT.log(
-            Level.INFO,
-            String.format(
-                "Generating mock genesis state for %d validators at genesis time %d",
-                params.validatorCount, params.genesisTime));
+        STATUS_LOG.generatingMockGenesis(params.validatorCount, params.genesisTime);
       }
 
       final long genesisTime = params.genesisTime;
@@ -74,12 +69,11 @@ public class GenesisCommand {
           StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
 
       if (outputToFile) {
-        STDOUT.log(
-            Level.INFO, String.format("Saving genesis state to file: %s", params.outputFile));
+        STATUS_LOG.storingGenesis(params.outputFile, false);
       }
       fileStream.write(serialize(genesisState).toArrayUnsafe());
       if (outputToFile) {
-        STDOUT.log(Level.INFO, String.format("Genesis state file saved: %s", params.outputFile));
+        STATUS_LOG.storingGenesis(params.outputFile, true);
       }
     }
   }

@@ -13,15 +13,17 @@
 
 package tech.pegasys.artemis.service.serviceutils;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class ServiceController {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private ServiceInterface beaconChainService;
   private ServiceInterface powchainService;
   private ServiceInterface chainStorageService;
@@ -65,7 +67,7 @@ public class ServiceController {
 
   public void stopAll() {
     // stop all services
-    STDOUT.log(Level.DEBUG, "ServiceController.stopAll()");
+    LOG.debug("ServiceController.stopAll()");
     if (!Objects.isNull(beaconChainService)) {
       beaconChainService.stop();
     }

@@ -20,12 +20,12 @@ public class RestApiConstants {
   public static final String ACTIVE = "active";
   public static final String PAGE_SIZE = "pageSize";
   public static final String PAGE_TOKEN = "pageToken";
-  public static final int PAGE_SIZE_DEFAULT = 250;
-  public static final int PAGE_TOKEN_DEFAULT = 0;
+  public static final String COMMITTEE_INDEX = "committee_index";
 
   public static final String TAG_BEACON = "Beacon";
   public static final String TAG_NODE = "Node";
   public static final String TAG_NETWORK = "Network";
+  public static final String TAG_VALIDATOR = "Validator";
 
   public static final String RES_OK = "200"; // SC_OK
   public static final String RES_NO_CONTENT = "204"; // SC_NO_CONTENT
@@ -35,8 +35,4 @@ public class RestApiConstants {
 
   public static final String NO_CONTENT_PRE_GENESIS =
       "No content may be returned if the genesis block has not been set, meaning that there is no head to query.";
-
-  public static final String CACHE_NONE = "max-age=0";
-  // Finalized max-age equates to 1 year
-  public static final String CACHE_FINALIZED = "max-age=31556952";
 }
