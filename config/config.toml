@@ -39,6 +39,11 @@ nodeUrl = "http://localhost:8545"
 [output]
 #transitionRecordDir = "/tmp/teku"
 
+[logging]
+#colorEnabled = false
+#includeEventsEnabled = false
+#destination =  fileOnly
+
 [metrics]
 enabled = false
 port = 8008

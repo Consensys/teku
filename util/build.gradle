@@ -5,6 +5,8 @@ plugins {
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
 
+  implementation project(':logging')
+
   implementation 'info.picocli:picocli'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

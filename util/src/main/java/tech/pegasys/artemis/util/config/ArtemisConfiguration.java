@@ -29,6 +29,7 @@ import org.apache.tuweni.config.Configuration;
 import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
 import org.apache.tuweni.config.SchemaBuilder;
+import tech.pegasys.teku.logging.LoggingDestination;
 
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
@@ -123,6 +124,24 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
+
+    // Logging
+    builder.addBoolean(
+        "logging.colorEnabled",
+        true,
+        "Whether Status and Event log messages include a console color display code",
+        PropertyValidator.isPresent());
+    builder.addBoolean(
+        "logging.includeEventsEnabled",
+        true,
+        "Whether the frequent update events are logged (e.g. every slot event, with validators and attestations))",
+        PropertyValidator.isPresent());
+    builder.addString(
+        "logging.destination",
+        "both",
+        "Whether all logs go only to the console, only to the log file, or both",
+        PropertyValidator.anyOf("consoleOnly", "fileOnly", "both"));
+
     // Outputs
     builder.addString(
         "output.transitionRecordDir",
@@ -398,5 +417,25 @@ public class ArtemisConfiguration {
 
   public boolean getBeaconRestAPIEnableSwagger() {
     return config.getBoolean("beaconrestapi.enableSwagger");
+  }
+
+  public LoggingDestination getLoggingDestination() {
+    switch (config.getString("logging.destination")) {
+      case "consoleOnly":
+        return LoggingDestination.CONSOLE_ONLY;
+      case "fileOnly":
+        return LoggingDestination.FILE_ONLY;
+      case "both":
+      default:
+        return LoggingDestination.BOTH;
+    }
+  }
+
+  public boolean isLoggingIncludeEventsEnabled() {
+    return config.getBoolean("logging.includeEventsEnabled");
+  }
+
+  public boolean isLoggingColorEnabled() {
+    return config.getBoolean("logging.colorEnabled");
   }
 }

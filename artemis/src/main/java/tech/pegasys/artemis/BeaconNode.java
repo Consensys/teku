@@ -43,7 +43,6 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
-import tech.pegasys.teku.logging.ConsoleLoggingConfiguration;
 import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.logging.StatusLogger.Color;
 
@@ -85,8 +84,8 @@ public class BeaconNode {
           Configurator.setAllLevels("", level);
         });
 
-    //TODO invoke the new static function/class to update the log with config preferences
-    //TODO move the CLI set log level in there
+    // TODO invoke the new static function/class to update the log with config preferences
+    // TODO move the CLI set log level in there
   }
 
   public void start() {

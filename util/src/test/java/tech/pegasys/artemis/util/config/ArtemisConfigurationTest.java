@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.logging.LoggingDestination;
 
 final class ArtemisConfigurationTest {
 
@@ -137,5 +138,93 @@ final class ArtemisConfigurationTest {
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> config.validateConfig())
         .withMessage(errorMessage);
+  }
+
+  @Test
+  void loggingColorEnabledShouldExceptionWhenIsNotBoolean() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.colorEnabled = \"2345\""));
+
+    assertThat(exception.getMessage()).contains("logging.colorEnabled' requires a boolean");
+  }
+
+  @Test
+  void loggingColorEnableShouldDefaultToTrue() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isLoggingColorEnabled()).isTrue();
+  }
+
+  @Test
+  void loggingColorEnableShouldSet() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("logging.colorEnabled = false");
+    assertThat(config.isLoggingColorEnabled()).isFalse();
+  }
+
+  @Test
+  void loggingIncludeEventsEnabledShouldExceptionWhenIsNotBoolean() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.includeEventsEnabled = \"2345\""));
+
+    assertThat(exception.getMessage()).contains("logging.includeEventsEnabled' requires a boolean");
+  }
+
+  @Test
+  void loggingIncludeEventsEnableShouldDefaultToTrue() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isLoggingIncludeEventsEnabled()).isTrue();
+  }
+
+  @Test
+  void loggingIncludeEventsEnableShouldSet() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("logging.includeEventsEnabled = false");
+    assertThat(config.isLoggingIncludeEventsEnabled()).isFalse();
+  }
+
+  @Test
+  void loggingDestinationShouldExceptionWhenIsNotString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.destination = false"));
+
+    assertThat(exception.getMessage()).contains("logging.destination' requires a string");
+  }
+
+  @Test
+  void loggingDestinationShouldExceptionWhenIsNotAcceptableString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.destination = \"Not acceptable\""));
+
+    assertThat(exception.getMessage())
+        .contains("logging.destination' should be \"consoleOnly\", \"fileOnly\", or \"both\"");
+  }
+
+  @Test
+  void lloggingDestinationShouldDefaultToBoth() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.getLoggingDestination()).isEqualTo(LoggingDestination.BOTH);
+  }
+
+  @Test
+  void loggingDestinationShouldSet() {
+    final ArtemisConfiguration configBoth =
+        ArtemisConfiguration.fromString("logging.destination = \"both\"");
+    assertThat(configBoth.getLoggingDestination()).isEqualTo(LoggingDestination.BOTH);
+
+    final ArtemisConfiguration configCondole =
+        ArtemisConfiguration.fromString("logging.destination = \"consoleOnly\"");
+    assertThat(configCondole.getLoggingDestination()).isEqualTo(LoggingDestination.CONSOLE_ONLY);
+
+    final ArtemisConfiguration configFile =
+        ArtemisConfiguration.fromString("logging.destination = \"fileOnly\"");
+    assertThat(configFile.getLoggingDestination()).isEqualTo(LoggingDestination.FILE_ONLY);
   }
 }
