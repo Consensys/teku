@@ -16,6 +16,7 @@ package tech.pegasys.artemis.beaconrestapi;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes48;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsLong;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
@@ -25,6 +26,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 
 public class SingleQueryParameterUtilsTest {
@@ -115,5 +117,19 @@ public class SingleQueryParameterUtilsTest {
     Map<String, List<String>> data = Map.of(KEY, List.of(bytes32.toHexString()));
     Bytes32 result = getParameterValueAsBytes32(data, KEY);
     assertEquals(bytes32, result);
+  }
+
+  @Test
+  public void getParameterAsBytes48_shouldThrowIfCannotParse() {
+    assertThrows(
+        IllegalArgumentException.class, () -> getParameterValueAsBytes48(INVALID_DATA, KEY));
+  }
+
+  @Test
+  public void getParameterAsBytes48_shouldParseHex48String() {
+    Bytes48 bytes = Bytes48.random();
+    Map<String, List<String>> data = Map.of(KEY, List.of(bytes.toHexString()));
+    Bytes48 result = getParameterValueAsBytes48(data, KEY);
+    assertEquals(bytes, result);
   }
 }
