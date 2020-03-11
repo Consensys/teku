@@ -25,4 +25,11 @@ public class Attestation {
     this.data = new AttestationData(attestation.getData());
     this.signature = new BLSSignature(attestation.getAggregate_signature());
   }
+
+  public Attestation(
+      final Bitlist aggregation_bits, final AttestationData data, final BLSSignature signature) {
+    this.aggregation_bits = aggregation_bits;
+    this.data = data;
+    this.signature = signature;
+  }
 }
