@@ -16,6 +16,7 @@ package tech.pegasys.artemis.api;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -228,7 +229,9 @@ public class ChainDataProvider {
         getCommitteeIndex(committees, validatorIndex), pubKey, validatorIndex);
   }
 
-  private static int getValidatorIndex(List<Validator> validators, BLSPubKey publicKey) {
+  @VisibleForTesting
+  protected static int getValidatorIndex(
+      final List<Validator> validators, final BLSPubKey publicKey) {
     Optional<Validator> optionalValidator =
         validators.stream().filter(v -> publicKey.equals(v.pubkey)).findFirst();
     if (optionalValidator.isPresent()) {

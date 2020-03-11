@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.schema.Attestation;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
@@ -370,6 +371,25 @@ public class ChainDataProviderTest {
     assertEquals(BLSSignature.empty(), attestation.signature);
     assertEquals(beaconState.slot, attestation.data.slot);
     assertEquals(blockRoot, attestation.data.beacon_block_root);
+  }
+
+  @Test
+  void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
+    BLSPubKey pubKey = new BLSPubKey(DataStructureUtil.randomPublicKey(88).toBytes());
+    int validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
+    assertThat(validatorIndex).isEqualTo(-1);
+  }
+
+  @Test
+  void getValidatorIndex_shouldReturnIndexIfFound() {
+    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
+        DataStructureUtil.randomBeaconState(99);
+    BeaconState state = new BeaconState(beaconStateInternal);
+    // all the validators are the same so the first one will match
+    int expectedValidatorIndex = 0;
+    BLSPubKey pubKey = state.validators.get(expectedValidatorIndex).pubkey;
+    int actualValidatorIndex = ChainDataProvider.getValidatorIndex(state.validators, pubKey);
+    assertThat(actualValidatorIndex).isEqualTo(expectedValidatorIndex);
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(

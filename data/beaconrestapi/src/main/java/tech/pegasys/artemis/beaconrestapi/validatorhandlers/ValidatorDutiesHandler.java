@@ -16,7 +16,6 @@ package tech.pegasys.artemis.beaconrestapi.validatorhandlers;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -29,7 +28,6 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
@@ -56,11 +54,6 @@ public class ValidatorDutiesHandler implements Handler {
       summary = "Returns validator duties that match the specified query.",
       tags = {TAG_VALIDATOR},
       description = "Returns validator duties for the given epoch.",
-      queryParams = {
-        @OpenApiParam(
-            name = EPOCH,
-            description = "Epoch to query. If not specified, current epoch is used.")
-      },
       requestBody = @OpenApiRequestBody(content = @OpenApiContent(from = ValidatorsRequest.class)),
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = ValidatorDuties.class)),
