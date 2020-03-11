@@ -55,6 +55,7 @@ import tech.pegasys.artemis.statetransition.StateProcessor;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
+import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.statetransition.genesis.GenesisHandler;
 import tech.pegasys.artemis.statetransition.util.StartupUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -379,6 +380,14 @@ public class BeaconChainController {
     Bytes32 headBlockRoot = get_head(store);
     chainStorageClient.initializeFromStore(store, headBlockRoot);
     LOG.info("Node being started from database.");
+  }
+
+  @Subscribe
+  public void onImportedBlock(ImportedBlockEvent event) {
+    if (event.getBlock().getSlot().equals(nodeSlot)) {
+      Bytes32 headBlockRoot = this.stateProcessor.processHead();
+      this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot));
+    }
   }
 
   private boolean isFirstSlotOfNewEpoch(final UnsignedLong slot) {

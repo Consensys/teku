@@ -95,6 +95,7 @@ public class ValidatorCoordinator {
   private final DepositProvider depositProvider;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
+  private UnsignedLong latestBroadcastAttestationEventSlot;
 
   //  maps slots to Lists of attestation informations
   //  (which contain information for our validators to produce attestations)
@@ -119,6 +120,7 @@ public class ValidatorCoordinator {
     this.blockAttestationsPool = blockAttestationsPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
+    this.latestBroadcastAttestationEventSlot = UnsignedLong.ZERO;
     this.eventBus.register(this);
   }
 
@@ -183,10 +185,15 @@ public class ValidatorCoordinator {
   @Subscribe
   public void onAttestationEvent(BroadcastAttestationEvent event) throws IllegalArgumentException {
     try {
+
+      UnsignedLong slot = event.getNodeSlot();
+      if (slot.compareTo(latestBroadcastAttestationEventSlot) <= 0) {
+        return;
+      }
+
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
-      UnsignedLong slot = event.getNodeSlot();
 
       if (!isGenesis(slot) && isEpochStart(slot)) {
         UnsignedLong epoch = compute_epoch_at_slot(slot);
@@ -213,6 +220,7 @@ public class ValidatorCoordinator {
       asyncProduceAttestations(
           attesterInformations, headState, getGenericAttestationData(headState, headBlock));
 
+      latestBroadcastAttestationEventSlot = slot;
       // Save headState to check for slashings
       //      this.headState = headState;
     } catch (IllegalArgumentException e) {
