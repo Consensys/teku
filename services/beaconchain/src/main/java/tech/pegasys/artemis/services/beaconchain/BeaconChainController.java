@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -99,6 +100,8 @@ public class BeaconChainController {
   private boolean generateMockGenesis;
   private AttestationManager attestationManager;
 
+  private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
+
   public BeaconChainController(
       TimeProvider timeProvider,
       EventBus eventBus,
@@ -143,6 +146,9 @@ public class BeaconChainController {
 
   public void initStorage() {
     this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus).join();
+    if (chainStorageClient.getStore() != null) {
+      initializeStore();
+    }
   }
 
   public void initMetrics() {
@@ -320,6 +326,14 @@ public class BeaconChainController {
   @Subscribe
   @SuppressWarnings("unused")
   private void onStoreInitializedEvent(final StoreInitializedEvent event) {
+    initializeStore();
+  }
+
+  private void initializeStore() {
+    if (!storeInitialized.compareAndSet(false, true)) {
+      return;
+    }
+
     UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = UnsignedLong.ZERO;
