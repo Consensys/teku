@@ -56,10 +56,6 @@ public class AttestationUtil {
     return aggregationBits;
   }
 
-  public static Bytes32 getAttestationMessageToSign(AttestationData attestationData) {
-    return attestationData.hash_tree_root();
-  }
-
   /**
    * Check if ``data_1`` and ``data_2`` are slashable according to Casper FFG rules.
    *
