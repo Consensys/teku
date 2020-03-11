@@ -295,7 +295,7 @@ public class ForkChoiceUtil {
     store.putBlock(block.hash_tree_root(), signed_block);
 
     final Optional<BlockImportResult> maybeFailureOnPostStorageConditions =
-            checkOnBlockPostStorageConditions(block, store);
+        checkOnBlockPostStorageConditions(block, store);
     if (maybeFailureOnPostStorageConditions.isPresent()) {
       return maybeFailureOnPostStorageConditions.get();
     }
@@ -377,7 +377,7 @@ public class ForkChoiceUtil {
   }
 
   private static Optional<BlockImportResult> checkOnBlockPostStorageConditions(
-          final BeaconBlock block, final ReadOnlyStore store) {
+      final BeaconBlock block, final ReadOnlyStore store) {
     if (!blockDescendsFromLatestFinalizedBlock(block, store)) {
       return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
     }
