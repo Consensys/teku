@@ -95,11 +95,11 @@ public class BlockTopicHandler extends Eth2TopicHandler<SignedBeaconBlock> {
   }
 
   private boolean isBlockSignatureValid(final SignedBeaconBlock block, final BeaconState preState) {
-    final StateTransition stateTransition = new StateTransition(false);
+    final StateTransition stateTransition = new StateTransition();
     final MutableBeaconState postState = preState.createWritableCopy();
 
     try {
-      stateTransition.process_slots(postState, block.getMessage().getSlot(), false);
+      stateTransition.process_slots(postState, block.getMessage().getSlot());
     } catch (EpochProcessingException | SlotProcessingException e) {
       LOG.error("Unable to process block state.", e);
       return false;

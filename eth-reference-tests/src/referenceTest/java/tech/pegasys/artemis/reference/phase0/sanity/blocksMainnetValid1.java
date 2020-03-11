@@ -45,7 +45,7 @@ public class blocksMainnetValid1 extends TestSuite {
   })
   void sanityProcessBlock(
       BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
-    StateTransition stateTransition = new StateTransition(false);
+    StateTransition stateTransition = new StateTransition();
     BeaconState result =
         blocks.stream()
             .reduce(

@@ -53,7 +53,7 @@ public class blocksMinimal extends TestSuite {
   })
   void sanityProcessBlock(
       BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
-    StateTransition stateTransition = new StateTransition(false);
+    StateTransition stateTransition = new StateTransition();
     BeaconState result =
         blocks.stream()
             .reduce(
@@ -156,7 +156,7 @@ public class blocksMinimal extends TestSuite {
     "sanityPrevSlotBlockTransitionSetup"
   })
   void sanityProcessBlockInvalid(BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
-    StateTransition stateTransition = new StateTransition(false);
+    StateTransition stateTransition = new StateTransition();
     blocks.forEach(
         block -> {
           assertThrows(
