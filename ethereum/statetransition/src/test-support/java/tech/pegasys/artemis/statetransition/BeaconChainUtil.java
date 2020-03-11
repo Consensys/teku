@@ -15,7 +15,6 @@ package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import com.google.common.primitives.UnsignedLong;
@@ -221,8 +220,6 @@ public class BeaconChainUtil {
 
   private MessageSignerService getSigner(final int proposerIndex) {
     BLSKeyPair proposerKey = validatorKeys.get(proposerIndex);
-    return (message) ->
-        SafeFuture.completedFuture(
-            BLS.sign(proposerKey.getSecretKey(), message));
+    return (message) -> SafeFuture.completedFuture(BLS.sign(proposerKey.getSecretKey(), message));
   }
 }
