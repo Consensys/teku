@@ -39,7 +39,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetAttestation;
-import tech.pegasys.artemis.beaconrestapi.handlers.validator.ValidatorDutiesHandler;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetValidatorDuties;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -140,7 +140,7 @@ public class BeaconRestApi {
 
   private void addValidatorHandlers(DataProvider dataProvider) {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
-    app.get(ValidatorDutiesHandler.ROUTE, new ValidatorDutiesHandler(provider, jsonProvider));
+    app.get(GetValidatorDuties.ROUTE, new GetValidatorDuties(provider, jsonProvider));
     app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
   }

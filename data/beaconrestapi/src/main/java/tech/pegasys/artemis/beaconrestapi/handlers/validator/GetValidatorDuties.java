@@ -37,10 +37,10 @@ import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class ValidatorDutiesHandler implements Handler {
+public class GetValidatorDuties implements Handler {
   private final ChainDataProvider provider;
 
-  public ValidatorDutiesHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public GetValidatorDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }

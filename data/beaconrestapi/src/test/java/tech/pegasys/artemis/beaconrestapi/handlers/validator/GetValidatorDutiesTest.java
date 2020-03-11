@@ -27,7 +27,7 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class ValidatorDutiesHandlerTest {
+public class GetValidatorDutiesTest {
   private Context context = mock(Context.class);
   //  private final UnsignedLong epoch = DataStructureUtil.randomUnsignedLong(99);
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -38,7 +38,7 @@ public class ValidatorDutiesHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenNoBlockRoot() throws Exception {
-    ValidatorDutiesHandler handler = new ValidatorDutiesHandler(provider, jsonProvider);
+    GetValidatorDuties handler = new GetValidatorDuties(provider, jsonProvider);
     when(provider.getBestBlockRoot()).thenReturn(Optional.empty());
     handler.handle(context);
     verify(context).status(SC_NO_CONTENT);
