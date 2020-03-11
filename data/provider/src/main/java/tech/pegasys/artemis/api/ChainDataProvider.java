@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
 import tech.pegasys.artemis.api.schema.BLSSignature;
+import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
@@ -59,13 +60,13 @@ public class ChainDataProvider {
       return Optional.empty();
     }
 
-    Bytes32 headBlockRoot = chainStorageClient.getBestBlockRoot();
+    final Bytes32 headBlockRoot = chainStorageClient.getBestBlockRoot();
     if (headBlockRoot == null) {
       return Optional.empty();
     }
 
-    Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
-    BeaconHead result =
+    final Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
+    final BeaconHead result =
         new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot, headStateRoot);
     return Optional.of(result);
   }
@@ -182,5 +183,9 @@ public class ChainDataProvider {
 
   public boolean isFinalized(UnsignedLong slot) {
     return combinedChainDataClient.isFinalized(slot);
+  }
+
+  public Optional<BeaconChainHead> getHeadState() {
+    return combinedChainDataClient.getHeadStateFromStore().map(BeaconChainHead::new);
   }
 }

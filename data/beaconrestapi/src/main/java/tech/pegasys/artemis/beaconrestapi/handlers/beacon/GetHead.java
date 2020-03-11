@@ -11,8 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
+import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
@@ -21,8 +22,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -31,41 +30,40 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.BeaconChainHead;
+import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class BeaconChainHeadHandler implements Handler {
-
-  private final ChainDataProvider provider;
+public class GetHead implements Handler {
+  public static final String ROUTE = "/beacon/head";
   private final JsonProvider jsonProvider;
+  private final ChainDataProvider provider;
 
-  public BeaconChainHeadHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public GetHead(ChainDataProvider provider, JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
 
-  public static final String ROUTE = "/beacon/chainhead";
-
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get information about the canonical head from the beacon node.",
+      summary = "Get the head of the beacon chain from the node's perspective.",
       tags = {TAG_BEACON},
       description =
-          "Returns information about the head of the beacon chain from the node’s perspective.",
+          "Returns information about the head of the beacon chain from the node’s perspective.\n\nTo retrieve finalized and justified information use /beacon/chainhead instead.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconChainHead.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconHead.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(final Context ctx) throws JsonProcessingException {
-    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    final Optional<BeaconChainHead> beaconChainHead = provider.getHeadState();
-    if (beaconChainHead.isPresent()) {
-      ctx.result(jsonProvider.objectToJSON(beaconChainHead.get()));
-    } else {
+  public void handle(Context ctx) throws Exception {
+    ctx.header(CACHE_CONTROL, CACHE_NONE);
+    Optional<BeaconHead> optionalResult = provider.getBeaconHead();
+
+    if (optionalResult.isEmpty()) {
       ctx.status(SC_NO_CONTENT);
+      return;
     }
+    ctx.result(jsonProvider.objectToJSON(optionalResult.get()));
   }
 }
