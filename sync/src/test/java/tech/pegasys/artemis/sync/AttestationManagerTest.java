@@ -146,7 +146,6 @@ class AttestationManagerTest {
     verify(attestationProcessor).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isEqualTo(1);
-    assertThat(pendingAttestations.size()).isEqualTo(1);
     assertNoProcessedEvents();
 
     // Slots progressing shouldn't cause the attestation to be processed
@@ -156,7 +155,6 @@ class AttestationManagerTest {
 
     // Importing a different block shouldn't cause the attestation to be processed
     eventBus.post(new ImportedBlockEvent(DataStructureUtil.randomSignedBeaconBlock(2, seed++)));
-    verifyNoMoreInteractions(attestationProcessor);
     assertNoProcessedEvents();
 
     eventBus.post(new ImportedBlockEvent(block));
