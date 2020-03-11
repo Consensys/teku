@@ -493,7 +493,7 @@ public class ForkChoiceUtil {
         targetState = targetRootState;
       } else {
         final MutableBeaconState base_state = targetRootState.createWritableCopy();
-        stateTransition.process_slots(base_state, target.getEpochSlot(), false);
+        stateTransition.process_slots(base_state, target.getEpochSlot());
         targetState = base_state.commitChanges();
       }
       store.putCheckpointState(target, targetState);

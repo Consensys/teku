@@ -35,8 +35,10 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
+import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerCountHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
 import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
+import tech.pegasys.artemis.beaconrestapi.validatorhandlers.AttestationHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -134,19 +136,19 @@ public class BeaconRestApi {
         BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
     app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(provider, jsonProvider));
     app.get(BeaconCommitteesHandler.ROUTE, new BeaconCommitteesHandler(provider, jsonProvider));
-    app.get(
-        BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
+    app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(provider, jsonProvider));
     app.get(BeaconStateRootHandler.ROUTE, new BeaconStateRootHandler(provider, jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
-    app.get(
-        BeaconValidatorsHandler.ROUTE,
-        new BeaconValidatorsHandler(dataProvider.getChainDataProvider(), jsonProvider));
+    ChainDataProvider provider = dataProvider.getChainDataProvider();
+    app.get(AttestationHandler.ROUTE, new AttestationHandler(provider, jsonProvider));
+    app.get(BeaconValidatorsHandler.ROUTE, new BeaconValidatorsHandler(provider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
     app.get(ENRHandler.ROUTE, new ENRHandler(networkDataProvider, jsonProvider));
+    app.get(PeerCountHandler.ROUTE, new PeerCountHandler(networkDataProvider, jsonProvider));
     app.get(PeerIdHandler.ROUTE, new PeerIdHandler(networkDataProvider, jsonProvider));
     app.get(PeersHandler.ROUTE, new PeersHandler(networkDataProvider, jsonProvider));
   }

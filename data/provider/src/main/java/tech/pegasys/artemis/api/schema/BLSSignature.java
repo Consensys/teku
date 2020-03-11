@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class BLSSignature {
   /** The number of bytes in this value - i.e. 96 */
-  private final int SIZE = 96;
+  private static final int SIZE = 96;
 
   private final Bytes bytes;
 
@@ -66,5 +66,9 @@ public class BLSSignature {
 
   public String toHexString() {
     return bytes.toHexString();
+  }
+
+  public static BLSSignature empty() {
+    return new BLSSignature(Bytes.wrap(new byte[SIZE]));
   }
 }

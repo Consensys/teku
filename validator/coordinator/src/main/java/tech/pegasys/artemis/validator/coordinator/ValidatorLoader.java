@@ -13,21 +13,22 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.collect.Streams;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
 
 class ValidatorLoader {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   static Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
     // Get validator connection info and create a new ValidatorInfo object and put it into the
@@ -39,11 +40,11 @@ class ValidatorLoader {
                     BLSKeyPair::getPublicKey,
                     blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
 
-    if (STATUS_LOG.isDebugEnabled()) {
+    if (LOG.isDebugEnabled()) {
       Streams.mapWithIndex(
               validators.keySet().stream(),
               (publicKey, index) -> "Validator " + index + ": " + publicKey.toString())
-          .forEach(debugStatement -> STATUS_LOG.log(Level.DEBUG, debugStatement));
+          .forEach(LOG::debug);
     }
     return validators;
   }

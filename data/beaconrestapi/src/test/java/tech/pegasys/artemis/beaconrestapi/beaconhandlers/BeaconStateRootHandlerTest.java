@@ -20,11 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +48,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 @ExtendWith(MockitoExtension.class)
 public class BeaconStateRootHandlerTest {
-  private static BeaconState beaconState;
+  public static BeaconState beaconStateInternal;
   private static Bytes32 blockRoot;
   private static UnsignedLong slot;
   private ChainDataProvider provider = mock(ChainDataProvider.class);
@@ -60,8 +62,8 @@ public class BeaconStateRootHandlerTest {
   public static void setup() {
     final EventBus localEventBus = new EventBus();
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
-    beaconState = DataStructureUtil.randomBeaconState(11233);
-    storageClient.initializeFromGenesis(beaconState);
+    beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
+    storageClient.initializeFromGenesis(beaconStateInternal);
     blockRoot = storageClient.getBestBlockRoot();
     slot = DataStructureUtil.randomUnsignedLong(99);
   }
@@ -75,6 +77,16 @@ public class BeaconStateRootHandlerTest {
   public void shouldReturnBadRequestWhenNoParameterSpecified() throws Exception {
     final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of());
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenSingleNonSlotParameterSpecified() throws Exception {
+    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    when(context.queryParamMap()).thenReturn(Map.of("foo", List.of()));
 
     handler.handle(context);
 
@@ -105,15 +117,16 @@ public class BeaconStateRootHandlerTest {
   public void shouldReturnBeaconStateRootWhenQueryBySlot() throws Exception {
     BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
-    when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(provider.getStateAtSlot(slot, blockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.getHashTreeRootAtSlot(slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateInternal.hash_tree_root())));
 
     handler.handle(context);
 
     verify(context).result(args.capture());
+    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     SafeFuture<String> data = args.getValue();
-    assertEquals(data.get(), jsonProvider.objectToJSON(beaconState.hash_tree_root()));
+    assertEquals(data.get(), jsonProvider.objectToJSON(beaconStateInternal.hash_tree_root()));
   }
 
   @Test
@@ -122,7 +135,7 @@ public class BeaconStateRootHandlerTest {
     UnsignedLong nonExistentSlot = UnsignedLong.valueOf(11223344);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(provider.getStateAtSlot(nonExistentSlot, blockRoot))
+    when(provider.getHashTreeRootAtSlot(nonExistentSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);

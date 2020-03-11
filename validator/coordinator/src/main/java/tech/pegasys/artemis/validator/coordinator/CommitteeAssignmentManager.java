@@ -56,9 +56,9 @@ public class CommitteeAssignmentManager {
 
   CommitteeAssignmentManager(
       Map<BLSPublicKey, ValidatorInfo> validators,
-      Map<UnsignedLong, List<AttesterInformation>> commiteeAssignments) {
+      Map<UnsignedLong, List<AttesterInformation>> committeeAssignments) {
     this.validators = validators;
-    this.committeeAssignments = commiteeAssignments;
+    this.committeeAssignments = committeeAssignments;
   }
 
   void updateCommitteeAssignments(

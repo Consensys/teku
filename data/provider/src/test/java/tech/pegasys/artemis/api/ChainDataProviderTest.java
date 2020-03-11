@@ -17,6 +17,7 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -34,10 +35,12 @@ import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.schema.Attestation;
+import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
+import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -48,13 +51,14 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 public class ChainDataProviderTest {
   private static CombinedChainDataClient combinedChainDataClient;
   private static HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
+  private static tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal;
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
   private static UnsignedLong slot;
   private static EventBus localEventBus;
   private static ChainStorageClient chainStorageClient;
   private final tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
-      DataStructureUtil.randomSignedBeaconBlock(1, 1);
+      DataStructureUtil.randomSignedBeaconBlock(999, 999);
   private CombinedChainDataClient mockCombinedChainDataClient = mock(CombinedChainDataClient.class);
   private ChainStorageClient mockChainStorageClient = mock(ChainStorageClient.class);
 
@@ -62,11 +66,12 @@ public class ChainDataProviderTest {
   public static void setup() {
     localEventBus = new EventBus();
     chainStorageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
-    beaconState = DataStructureUtil.randomBeaconState(11233);
-    chainStorageClient.initializeFromGenesis(beaconState);
+    beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
+    beaconState = new BeaconState(beaconStateInternal);
+    chainStorageClient.initializeFromGenesis(beaconStateInternal);
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
     blockRoot = chainStorageClient.getBestBlockRoot();
-    slot = chainStorageClient.getBlockState(blockRoot).get().getSlot();
+    slot = chainStorageClient.getBestSlot();
   }
 
   @Test
@@ -101,12 +106,14 @@ public class ChainDataProviderTest {
         new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getCommitteeAssignmentAtEpoch(beaconState.getSlot()))
+    when(mockCombinedChainDataClient.getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot()))
         .thenReturn(completedFuture(committeeAssignments));
-    SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(beaconState.getSlot());
+    SafeFuture<List<Committee>> future =
+        provider.getCommitteesAtEpoch(beaconStateInternal.getSlot());
 
     verify(mockCombinedChainDataClient).isStoreAvailable();
-    verify(mockCombinedChainDataClient).getCommitteeAssignmentAtEpoch(beaconState.getSlot());
+    verify(mockCombinedChainDataClient)
+        .getCommitteeAssignmentAtEpoch(beaconStateInternal.getSlot());
     Committee result = future.get().get(0);
     assertEquals(ONE, result.slot);
     assertEquals(ZERO, result.index);
@@ -140,7 +147,7 @@ public class ChainDataProviderTest {
     assertTrue(optionalBeaconHead.isPresent());
     BeaconHead head = optionalBeaconHead.get();
     assertEquals(blockRoot, head.block_root);
-    assertEquals(beaconState.hash_tree_root(), head.state_root);
+    assertEquals(beaconStateInternal.hash_tree_root(), head.state_root);
     assertEquals(chainStorageClient.getBestSlot(), head.slot);
   }
 
@@ -166,7 +173,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void getGenesisTime_shouldReturnValueIfStoreAvailable() {
-    UnsignedLong genesis = beaconState.getGenesis_time();
+    UnsignedLong genesis = beaconStateInternal.getGenesis_time();
     ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
 
     Optional<UnsignedLong> optionalData = provider.getGenesisTime();
@@ -253,5 +260,128 @@ public class ChainDataProviderTest {
     assertThat(result)
         .usingRecursiveComparison()
         .isEqualTo(new SignedBeaconBlock(signedBeaconBlock));
+  }
+
+  @Test
+  public void getStateAtSlot_shouldReturnEmptyWhenStoreNotFound()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+
+    SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
+    assertTrue(future.get().isEmpty());
+  }
+
+  @Test
+  void getStateBySlot_shouldReturnBeaconStateWhenFound()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    Bytes32 blockRoot = Bytes32.random();
+
+    SafeFuture<Optional<tech.pegasys.artemis.datastructures.state.BeaconState>> futureBeaconState =
+        completedFuture(Optional.of(beaconStateInternal));
+
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(mockCombinedChainDataClient.getStateAtSlot(ZERO, blockRoot)).thenReturn(futureBeaconState);
+    SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
+    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO, blockRoot);
+
+    BeaconState result = future.get().get();
+    assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
+  }
+
+  @Test
+  public void getStateByBlockRoot_shouldReturnEmptyWhenStoreNotFound()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+
+    SafeFuture<Optional<BeaconState>> future = provider.getStateByBlockRoot(blockRoot);
+    assertTrue(future.get().isEmpty());
+  }
+
+  @Test
+  void getStateByBlockRoot_shouldReturnBeaconStateWhenFound()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    Bytes32 blockRoot = Bytes32.random();
+
+    SafeFuture<Optional<tech.pegasys.artemis.datastructures.state.BeaconState>> futureBeaconState =
+        completedFuture(Optional.of(beaconStateInternal));
+
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getStateByBlockRoot(blockRoot)).thenReturn(futureBeaconState);
+    SafeFuture<Optional<BeaconState>> future = provider.getStateByBlockRoot(blockRoot);
+    verify(mockCombinedChainDataClient).getStateByBlockRoot(blockRoot);
+
+    BeaconState result = future.get().get();
+    assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
+  }
+
+  @Test
+  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfStoreNotFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
+    Optional<Attestation> optional = provider.getUnsignedAttestationAtSlot(ZERO, 0);
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    assertTrue(optional.isEmpty());
+  }
+
+  @Test
+  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfSlotIsFinalized() {
+    getUnsignedAttestationAtSlot_throwsIllegalArgumentException(0, true);
+  }
+
+  @Test
+  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfCommitteeBelowRange() {
+    getUnsignedAttestationAtSlot_throwsIllegalArgumentException(-1, false);
+  }
+
+  @Test
+  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfCommitteeAboveRange() {
+    getUnsignedAttestationAtSlot_throwsIllegalArgumentException(1, false);
+  }
+
+  @Test
+  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfBlockNotFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.isFinalized(ZERO)).thenReturn(false);
+    when(mockChainStorageClient.getBlockBySlot(ZERO)).thenReturn(Optional.empty());
+    Optional<Attestation> optional = provider.getUnsignedAttestationAtSlot(ZERO, 0);
+    verify(mockChainStorageClient).getBlockBySlot(ZERO);
+    assertTrue(optional.isEmpty());
+  }
+
+  @Test
+  void getUnsignedAttestationAtSlot_shouldReturnAttestation() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.isFinalized(slot)).thenReturn(false);
+    Optional<Attestation> optional = provider.getUnsignedAttestationAtSlot(slot, 0);
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    assertTrue(optional.isPresent());
+    Attestation attestation = optional.get();
+    assertEquals(ZERO, attestation.data.index);
+    assertEquals(BLSSignature.empty(), attestation.signature);
+    assertEquals(beaconState.slot, attestation.data.slot);
+    assertEquals(blockRoot, attestation.data.beacon_block_root);
+  }
+
+  private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(
+      int failingBlock, boolean isFinalized) {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.isFinalized(ZERO)).thenReturn(isFinalized);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> provider.getUnsignedAttestationAtSlot(ZERO, failingBlock));
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    verify(mockCombinedChainDataClient).isFinalized(ZERO);
   }
 }
