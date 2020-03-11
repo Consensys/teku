@@ -40,6 +40,7 @@ import tech.pegasys.artemis.services.powchain.PowchainService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
+import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconNode {
@@ -73,8 +74,12 @@ public class BeaconNode {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
 
-    // TODO invoke the new static function/class to update the log with config preferences
-    // TODO move the CLI set log level in there
+    LoggingConfigurator.setColor(config.isLoggingColorEnabled());
+    LoggingConfigurator.setIncludeEvents(config.isLoggingIncludeEventsEnabled());
+    LoggingConfigurator.setDestination(config.getLoggingDestination());
+
+    // TODO update the loggers via LoggingConfigurator
+    // TODO switch the plugin over to use loggingConfigurator
   }
 
   public void start() {

@@ -23,4 +23,20 @@ public class LoggingConfigurator {
     System.out.println("Setting logging level to " + level.name());
     Configurator.setAllLevels("", level);
   }
+
+  private static LoggingDestination DESTINATION;
+  private static boolean COLOR;
+  private static boolean INCLUDE_EVENTS;
+
+  public static void setDestination(final LoggingDestination destination) {
+    LoggingConfigurator.DESTINATION = destination;
+  }
+
+  public static void setColor(final boolean enabled) {
+    LoggingConfigurator.COLOR = enabled;
+  }
+
+  public static void setIncludeEvents(final boolean enabled) {
+    LoggingConfigurator.INCLUDE_EVENTS = enabled;
+  }
 }
