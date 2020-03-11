@@ -100,6 +100,11 @@ public class AttestationManager extends Service {
               pendingAttestations.remove(attestation);
               processAttestation(attestation);
             });
+    block
+        .getMessage()
+        .getBody()
+        .getAttestations()
+        .forEach(attestationProcessor::processAttestation);
   }
 
   private void processAttestation(final DelayableAttestation delayableAttestation) {
