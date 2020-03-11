@@ -179,7 +179,7 @@ public class BeaconStateHandlerTest {
 
     when(dataProvider.isStoreAvailable()).thenReturn(true);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
-    when(dataProvider.getStateAtSlot(any(), any()))
+    when(dataProvider.getStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
 
     handler.handle(context);
@@ -195,7 +195,7 @@ public class BeaconStateHandlerTest {
 
     when(dataProvider.isStoreAvailable()).thenReturn(true);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
-    when(dataProvider.getStateAtSlot(any(), any()))
+    when(dataProvider.getStateAtSlot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);
