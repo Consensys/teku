@@ -71,7 +71,7 @@ public class SSZTransitionRecorder {
     try {
       Files.write(file, serialize(data).toArrayUnsafe());
     } catch (final IOException e) {
-      LOG.error("Failed to record data to {} : {}", file, e.getMessage());
+      LOG.error("Failed to record data to " + file, e);
     }
   }
 
