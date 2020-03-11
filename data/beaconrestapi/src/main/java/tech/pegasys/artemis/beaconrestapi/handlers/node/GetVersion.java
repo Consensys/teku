@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.node;
 
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -28,9 +28,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
-public class VersionHandler implements Handler {
+public class GetVersion implements Handler {
 
-  public VersionHandler(JsonProvider jsonProvider) {
+  public GetVersion(JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
   }
 

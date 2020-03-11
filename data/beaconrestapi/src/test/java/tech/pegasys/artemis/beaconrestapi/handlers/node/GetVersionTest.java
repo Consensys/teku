@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.node;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,13 +23,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 
-public class VersionHandlerTest {
+public class GetVersionTest {
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
   public void shouldReturnVersionString() throws Exception {
-    VersionHandler handler = new VersionHandler(jsonProvider);
+    GetVersion handler = new GetVersion(jsonProvider);
     handler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(jsonProvider.objectToJSON(VersionProvider.VERSION));

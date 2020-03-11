@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.networkhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.network;
 
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
 
@@ -27,12 +28,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class ENRHandler implements Handler {
-  public static final String ROUTE = "/network/enr";
-  private final JsonProvider jsonProvider;
-  private final NetworkDataProvider network;
+public class GetPeerId implements Handler {
 
-  public ENRHandler(NetworkDataProvider network, JsonProvider jsonProvider) {
+  public static final String ROUTE = "/network/peer_id";
+
+  private final NetworkDataProvider network;
+  private final JsonProvider jsonProvider;
+
+  public GetPeerId(NetworkDataProvider network, JsonProvider jsonProvider) {
     this.network = network;
     this.jsonProvider = jsonProvider;
   }
@@ -40,19 +43,16 @@ public class ENRHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the listening Ethereum Node Record (ENR) address of the beacon node.",
+      summary = "Get this beacon node's PeerId.",
       tags = {TAG_NETWORK},
-      description = "Returns the beacon node's listening ENR address.",
+      description = "Returns the beacon node's base58-encoded PeerId.",
       responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = String.class),
-            description =
-                "Base64-encoded ENR or an empty string if Node Discovery Protocol v5 is not used.")
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
     ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    ctx.result(jsonProvider.objectToJSON(network.getEnr().orElse("")));
+    ctx.result(jsonProvider.objectToJSON(network.getNodeIdAsBase58()));
   }
 }

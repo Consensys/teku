@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
@@ -23,9 +23,9 @@ import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler.NO_PARAMETERS;
-import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler.NO_VALID_PARAMETER;
-import static tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler.TOO_MANY_PARAMETERS;
+import static tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock.NO_PARAMETERS;
+import static tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock.NO_VALID_PARAMETER;
+import static tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock.TOO_MANY_PARAMETERS;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
@@ -51,20 +51,20 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @ExtendWith(MockitoExtension.class)
-public class BeaconBlockHandlerTest {
+public class GetBlockTest {
   @Captor private ArgumentCaptor<SafeFuture<String>> args;
   @Mock private Context context;
   @Mock private ChainDataProvider provider;
 
   private final JsonProvider jsonProvider = new JsonProvider();
-  private BeaconBlockHandler handler;
+  private GetBlock handler;
   private Bytes32 blockRoot = Bytes32.random();
   private tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
       DataStructureUtil.randomSignedBeaconBlock(1, 1);
 
   @BeforeEach
   public void setup() {
-    handler = new BeaconBlockHandler(provider, jsonProvider);
+    handler = new GetBlock(provider, jsonProvider);
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)

@@ -58,6 +58,15 @@ public class NetworkDataProvider {
         .collect(Collectors.toList());
   }
 
+  /**
+   * Get the number of Peers
+   *
+   * @return the the number of peers currently connected to the client
+   */
+  public long getPeerCount() {
+    return p2pNetwork.streamPeers().count();
+  }
+
   P2PNetwork<?> getP2pNetwork() {
     return p2pNetwork;
   }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -47,7 +47,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 @ExtendWith(MockitoExtension.class)
-public class BeaconStateRootHandlerTest {
+public class GetStateRootTest {
   public static BeaconState beaconStateInternal;
   private static Bytes32 blockRoot;
   private static UnsignedLong slot;
@@ -75,7 +75,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBadRequestWhenNoParameterSpecified() throws Exception {
-    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    final GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of());
 
     handler.handle(context);
@@ -85,7 +85,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBadRequestWhenSingleNonSlotParameterSpecified() throws Exception {
-    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    final GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of("foo", List.of()));
 
     handler.handle(context);
@@ -95,7 +95,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBadRequestWhenEmptySlotIsSpecified() throws Exception {
-    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    final GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of()));
 
     handler.handle(context);
@@ -105,7 +105,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBadRequestWhenMultipleParametersSpecified() throws Exception {
-    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    final GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(), ROOT, List.of()));
 
     handler.handle(context);
@@ -115,7 +115,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnBeaconStateRootWhenQueryBySlot() throws Exception {
-    BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.getHashTreeRootAtSlot(slot))
@@ -131,7 +131,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnNotFoundWhenQueryByMissingSlot() throws Exception {
-    BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     UnsignedLong nonExistentSlot = UnsignedLong.valueOf(11223344);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
@@ -145,7 +145,7 @@ public class BeaconStateRootHandlerTest {
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    final BeaconStateRootHandler handler = new BeaconStateRootHandler(provider, jsonProvider);
+    final GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
     when(provider.isStoreAvailable()).thenReturn(false);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
 

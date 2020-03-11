@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.verify;
@@ -34,7 +34,7 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 @ExtendWith(MockitoExtension.class)
-public class BeaconHeadHandlerTest {
+public class GetHeadTest {
   @Mock private ChainDataProvider provider;
   @Mock private Context context;
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -43,7 +43,7 @@ public class BeaconHeadHandlerTest {
 
   @Test
   public void shouldReturnBeaconHead() throws Exception {
-    BeaconHeadHandler handler = new BeaconHeadHandler(provider, jsonProvider);
+    GetHead handler = new GetHead(provider, jsonProvider);
     Bytes32 blockRoot = Bytes32.random();
     BeaconHead head = new BeaconHead(bestSlot, blockRoot, rootState.hash_tree_root());
     when(provider.getBeaconHead()).thenReturn(Optional.of(head));
@@ -56,7 +56,7 @@ public class BeaconHeadHandlerTest {
 
   @Test
   public void shouldReturnNoContentIfBlockRootNotSet() throws Exception {
-    BeaconHeadHandler handler = new BeaconHeadHandler(provider, jsonProvider);
+    GetHead handler = new GetHead(provider, jsonProvider);
     when(provider.getBeaconHead()).thenReturn(Optional.empty());
     handler.handle(context);
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -45,13 +45,13 @@ import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class BeaconStateRootHandler implements Handler {
+public class GetStateRoot implements Handler {
   public static final String ROUTE = "/beacon/state_root";
 
   private final ChainDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public BeaconStateRootHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public GetStateRoot(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }

@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.storage;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
@@ -22,7 +22,6 @@ import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -41,7 +40,6 @@ import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.teku.logging.StatusLogger;
 
 /** This class is the ChainStorage client-side logic */
 public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
@@ -200,30 +198,17 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   @Subscribe
   public void onNewUnprocessedBlock(BeaconBlock block) {
-    STATUS_LOG.log(
-        Level.INFO,
-        "New BeaconBlock with state root:  " + block.getState_root().toHexString() + " detected.",
-        StatusLogger.Color.GREEN);
+    EVENT_LOG.unprocessedBlock(block.getState_root());
   }
 
   @Subscribe
   public void onNewUnprocessedAttestation(Attestation attestation) {
-    STATUS_LOG.log(
-        Level.INFO,
-        "New Attestation with block root:  "
-            + attestation.getData().getBeacon_block_root()
-            + " detected.",
-        StatusLogger.Color.GREEN);
+    EVENT_LOG.unprocessedAttestation(attestation.getData().getBeacon_block_root());
   }
 
   @Subscribe
   public void onNewAggregateAndProof(AggregateAndProof attestation) {
-    STATUS_LOG.log(
-        Level.INFO,
-        "New AggregateAndProof with block root:  "
-            + attestation.getAggregate().getData().getBeacon_block_root()
-            + " detected.",
-        StatusLogger.Color.BLUE);
+    EVENT_LOG.aggregateAndProof(attestation.getAggregate().getData().getBeacon_block_root());
   }
 
   public boolean containsBlock(final Bytes32 root) {
