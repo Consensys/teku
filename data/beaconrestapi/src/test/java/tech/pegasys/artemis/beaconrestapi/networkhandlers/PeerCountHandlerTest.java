@@ -31,7 +31,7 @@ public class PeerCountHandlerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
-  void shouldBeAbleToGetPeerCount() throws Exception {
+  void shouldGetPeerCount() throws Exception {
     final long peerCount = 2;
     final NetworkDataProvider network = mock(NetworkDataProvider.class);
     PeerCountHandler handler = new PeerCountHandler(network, jsonProvider);
