@@ -21,7 +21,6 @@ import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -37,11 +36,8 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
 import tech.pegasys.artemis.storage.events.BestBlockInitializedEvent;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
-import tech.pegasys.artemis.storage.events.GetStoreRequest;
-import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
-import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -55,11 +51,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   protected final EventBus eventBus;
   private final TransactionPrecommit transactionPrecommit;
 
-  private final AtomicBoolean initializationStarted = new AtomicBoolean(false);
-  private final SafeFuture<?> initializationCompleted = new SafeFuture<>();
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final AtomicBoolean bestBlockInitialized = new AtomicBoolean(false);
-  private volatile OptionalLong getStoreRequestId = OptionalLong.empty();
 
   private volatile Store store;
   private volatile Optional<Bytes32> bestBlockRoot =
@@ -72,75 +65,32 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   public static ChainStorageClient memoryOnlyClient(final EventBus eventBus) {
     final ChainStorageClient client =
         new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
-    client.initialize();
+    eventBus.register(client);
     return client;
   }
 
-  public static ChainStorageClient storageBackedClient(final EventBus eventBus) {
-    final ChainStorageClient client =
-        new ChainStorageClient(eventBus, TransactionPrecommit.storageEnabled(eventBus));
-    client.initializeFromStorage();
-    return client;
+  public static SafeFuture<ChainStorageClient> storageBackedClient(final EventBus eventBus) {
+    final StorageBackedChainStorageClientFactory factory =
+        new StorageBackedChainStorageClientFactory(eventBus);
+    eventBus.register(factory);
+    return factory.get();
   }
 
   @VisibleForTesting
   static ChainStorageClient memoryOnlyClientWithStore(final EventBus eventBus, final Store store) {
     final ChainStorageClient client =
         new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+    eventBus.register(client);
     client.setStore(store);
-    client.initialize();
     return client;
   }
 
-  private ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
+  ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
     this.eventBus = eventBus;
     this.transactionPrecommit = transactionPrecommit;
-    this.eventBus.register(this);
-  }
-
-  // TODO - Use this utility to prevent any attempt to set genesis state on uninitialized
-  // chainStorageClient
-  public void subscribeInitialized(final Runnable runnable) {
-    initializationCompleted.always(runnable);
-  }
-
-  private void initializeFromStorage() {
-    if (initializationStarted.compareAndSet(false, true)) {
-      final GetStoreRequest storeRequest = new GetStoreRequest();
-      this.getStoreRequestId = OptionalLong.of(storeRequest.getId());
-      eventBus.post(storeRequest);
-    }
-  }
-
-  private void initialize() {
-    initializationStarted.set(true);
-    initializationCompleted.complete(null);
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onStoreResponse(GetStoreResponse response) {
-    if (getStoreRequestId.isEmpty() || getStoreRequestId.getAsLong() != response.getRequestId()) {
-      // This isn't a response to our query
-      return;
-    }
-    response.getStore().ifPresent(this::setStore);
-    initializationCompleted.complete(null);
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onStoreInitializedFromStorage(
-      final StoreInitializedFromStorageEvent storeInitializedEvent) {
-    setStore(storeInitializedEvent.getStore());
-    initializationCompleted.complete(null);
   }
 
   public void setGenesisState(final BeaconState genesisState) {
-    if (!initializationCompleted.isDone()) {
-      throw new IllegalStateException("Attempt to set genesis state on an uninitialized store");
-    }
-
     final Store store = Store.get_genesis_store(genesisState);
     final boolean result = setStore(store);
     if (!result) {
@@ -164,7 +114,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     return this.store == null;
   }
 
-  private boolean setStore(Store store) {
+  boolean setStore(Store store) {
     if (!storeInitialized.compareAndSet(false, true)) {
       return false;
     }

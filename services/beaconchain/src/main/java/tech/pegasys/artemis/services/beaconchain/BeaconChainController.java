@@ -113,8 +113,8 @@ public class BeaconChainController {
   }
 
   public void initAll() {
-    initTimer();
     initStorage();
+    initTimer();
     initMetrics();
     initAttestationAggregator();
     initBlockAttestationsPool();
@@ -139,7 +139,7 @@ public class BeaconChainController {
   }
 
   public void initStorage() {
-    this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus);
+    this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus).join();
   }
 
   public void initMetrics() {
@@ -281,7 +281,7 @@ public class BeaconChainController {
     this.beaconRestAPI.start();
 
     if (generateMockGenesis) {
-      chainStorageClient.subscribeInitialized(this::generateTestModeGenesis);
+      generateTestModeGenesis();
     }
 
     syncService.start().reportExceptions();
