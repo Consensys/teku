@@ -233,9 +233,10 @@ public class ForkChoiceUtil {
       return true;
     }
 
-    UnsignedLong justified_slot = compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch());
+    UnsignedLong justified_slot =
+        compute_start_slot_at_epoch(store.getJustifiedCheckpoint().getEpoch());
     return get_ancestor(store, new_justified_checkpoint.getRoot(), justified_slot)
-            .equals(store.getJustifiedCheckpoint().getRoot());
+        .equals(store.getJustifiedCheckpoint().getRoot());
   }
 
   // Fork Choice Event Handlers
@@ -331,8 +332,8 @@ public class ForkChoiceUtil {
     // Update finalized checkpoint
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
-      // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state, so if we do error here
-      // and exit, we will possibly have acted differently than other nodes.
+      // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state, so if we
+      // do error here and exit, we will possibly have acted differently than other nodes.
       try {
         storeCheckpointState(
             store, st, finalizedCheckpoint, store.getBlockState(finalizedCheckpoint.getRoot()));
@@ -343,8 +344,12 @@ public class ForkChoiceUtil {
       UnsignedLong finalized_slot = store.getFinalizedCheckpoint().getEpochStartSlot();
       // Update justified if new justified is later than store justified
       // or if store justified is not in chain with finalized checkpoint
-      if (state.getCurrent_justified_checkpoint().getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0
-              || !get_ancestor(store, store.getJustifiedCheckpoint().getRoot(), finalized_slot)
+      if (state
+                  .getCurrent_justified_checkpoint()
+                  .getEpoch()
+                  .compareTo(store.getJustifiedCheckpoint().getEpoch())
+              > 0
+          || !get_ancestor(store, store.getJustifiedCheckpoint().getRoot(), finalized_slot)
               .equals(store.getFinalizedCheckpoint().getRoot())) {
         store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
       }
