@@ -18,6 +18,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_E
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_NETWORK;
 
+import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -30,7 +31,7 @@ import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PeerCountHandler implements Handler {
 
-  public static final String ROUTE = "/network/peers";
+  public static final String ROUTE = "/network/peer_count";
   private final JsonProvider jsonProvider;
   private final NetworkDataProvider network;
 
@@ -46,7 +47,7 @@ public class PeerCountHandler implements Handler {
       tags = {TAG_NETWORK},
       description = "Returns the number of peers connected to the beacon node.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Long.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = long.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
