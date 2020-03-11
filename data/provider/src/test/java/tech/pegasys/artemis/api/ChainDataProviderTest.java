@@ -392,6 +392,29 @@ public class ChainDataProviderTest {
     assertThat(actualValidatorIndex).isEqualTo(expectedValidatorIndex);
   }
 
+  @Test
+  void getCommitteeIndex_shouldReturnNotFoundIfNotFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    int committeeIndex = provider.getCommitteeIndex(List.of(), 99);
+    assertThat(committeeIndex).isEqualTo(-1);
+  }
+
+  @Test
+  void getCommitteeIndex_shouldReturnIndexIfFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    UnsignedLong committeeIndex = DataStructureUtil.randomUnsignedLong(888);
+    CommitteeAssignment committeeAssignment1 =
+        new CommitteeAssignment(List.of(3, 2, 1), committeeIndex, slot);
+    CommitteeAssignment committeeAssignment2 =
+        new CommitteeAssignment(List.of(4, 5, 6), committeeIndex, slot);
+    Committee committee1 = new Committee(committeeAssignment1);
+    Committee committee2 = new Committee(committeeAssignment2);
+    int validatorCommitteeIndex = provider.getCommitteeIndex(List.of(committee2, committee1), 1);
+    assertThat(validatorCommitteeIndex).isEqualTo(1);
+  }
+
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(
       int failingBlock, boolean isFinalized) {
     ChainDataProvider provider =

@@ -241,13 +241,14 @@ public class ChainDataProvider {
     }
   }
 
-  private int getCommitteeIndex(List<Committee> committees, int validatorIndex) {
+  @VisibleForTesting
+  protected int getCommitteeIndex(List<Committee> committees, int validatorIndex) {
     Optional<Committee> matchingCommittee =
         committees.stream()
             .filter(committee -> committee.committee.contains(validatorIndex))
             .findFirst();
     if (matchingCommittee.isPresent()) {
-      return matchingCommittee.get().committee.indexOf(validatorIndex);
+      return committees.indexOf(matchingCommittee.get());
     } else {
       return -1;
     }
