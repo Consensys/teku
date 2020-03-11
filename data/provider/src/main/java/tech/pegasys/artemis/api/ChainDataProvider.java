@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
 import tech.pegasys.artemis.api.schema.BLSSignature;
@@ -184,9 +185,7 @@ public class ChainDataProvider {
     return combinedChainDataClient.isFinalized(slot);
   }
 
-  public SafeFuture<Optional<BeaconState>> getHeadState() {
-    return getBestBlockRoot()
-        .map(this::getStateByBlockRoot)
-        .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()));
+  public Optional<BeaconChainHead> getHeadState() {
+    return combinedChainDataClient.getHeadStateFromStore().map(BeaconChainHead::new);
   }
 }

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,46 +21,36 @@ import static org.mockito.Mockito.when;
 import io.javalin.http.Context;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.beaconrestapi.schema.BeaconChainHead;
+import tech.pegasys.artemis.api.schema.BeaconChainHead;
+import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
-@ExtendWith(MockitoExtension.class)
 public class BeaconChainHeadHandlerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private Context context = mock(Context.class);
-  private ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
-
-  @Captor private ArgumentCaptor<SafeFuture<String>> args;
+  private ChainDataProvider provider = mock(ChainDataProvider.class);
 
   @Test
   public void shouldReturnBeaconChainHeadResponse() throws Exception {
-    final BeaconChainHeadHandler handler =
-        new BeaconChainHeadHandler(chainDataProvider, jsonProvider);
-    final BeaconStateImpl beaconState = new BeaconStateImpl();
+    final BeaconChainHeadHandler handler = new BeaconChainHeadHandler(provider, jsonProvider);
+    final BeaconState beaconState = new BeaconStateImpl();
     final BeaconChainHead beaconChainHead = new BeaconChainHead(beaconState);
+    final String expected = jsonProvider.objectToJSON(beaconChainHead);
 
-    when(chainDataProvider.getHeadState())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconState)));
+    when(provider.getHeadState()).thenReturn(Optional.of(beaconChainHead));
 
     handler.handle(context);
 
-    verify(context).result(args.capture());
-    assertThat(args.getValue().get()).isEqualTo(jsonProvider.objectToJSON(beaconChainHead));
+    verify(context).result(expected);
   }
 
   @Test
   public void shouldReturnNoContentWhenStateIsNull() throws Exception {
-    final BeaconChainHeadHandler handler =
-        new BeaconChainHeadHandler(chainDataProvider, jsonProvider);
+    final BeaconChainHeadHandler handler = new BeaconChainHeadHandler(provider, jsonProvider);
 
-    when(chainDataProvider.getHeadState()).thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(provider.getHeadState()).thenReturn(Optional.empty());
 
     handler.handle(context);
 
