@@ -13,18 +13,18 @@
 
 package tech.pegasys.artemis.api.schema;
 
-import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-
 public class ValidatorDuties {
-  public final UnsignedLong committeeIndex;
+  public final int committeeIndex;
   public final BLSPubKey publicKey;
-  public final UnsignedLong validatorIndex;
+  public final int validatorIndex;
 
-  public ValidatorDuties(
-      UnsignedLong committeeIndex, BLSPublicKey publicKey, UnsignedLong validatorIndex) {
+  public ValidatorDuties(int committeeIndex, BLSPubKey publicKey, int validatorIndex) {
     this.committeeIndex = committeeIndex;
-    this.publicKey = new BLSPubKey(publicKey.toBytes());
+    this.publicKey = publicKey;
     this.validatorIndex = validatorIndex;
+  }
+
+  public static ValidatorDuties empty() {
+    return new ValidatorDuties(0, null, 0);
   }
 }

@@ -15,17 +15,14 @@ package tech.pegasys.artemis.beaconrestapi.validatorhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -33,16 +30,14 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.Map;
 import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ValidatorDutiesHandler implements Handler {
   private final ChainDataProvider provider;
@@ -57,7 +52,7 @@ public class ValidatorDutiesHandler implements Handler {
 
   @OpenApi(
       path = ROUTE,
-      method = HttpMethod.GET,
+      method = HttpMethod.POST,
       summary = "Returns validator duties that match the specified query.",
       tags = {TAG_VALIDATOR},
       description = "Returns validator duties for the given epoch.",
@@ -66,6 +61,7 @@ public class ValidatorDutiesHandler implements Handler {
             name = EPOCH,
             description = "Epoch to query. If not specified, current epoch is used.")
       },
+      requestBody = @OpenApiRequestBody(content = @OpenApiContent(from = ValidatorsRequest.class)),
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = ValidatorDuties.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
@@ -73,27 +69,22 @@ public class ValidatorDutiesHandler implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    final Map<String, List<String>> parameters = ctx.queryParamMap();
     try {
       if (!provider.isStoreAvailable()) {
         ctx.status(SC_NO_CONTENT);
         return;
       }
-      UnsignedLong epoch = getParameterValueAsUnsignedLong(parameters, EPOCH);
-      final SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(epoch);
+      // TODO is this right??
+      ValidatorsRequest validatorsRequest =
+          jsonProvider.jsonToObject(ctx.req.toString(), ValidatorsRequest.class);
 
-      ctx.result(future.thenApplyChecked(state -> handleResponseContext(ctx, state, epoch)));
+      List<ValidatorDuties> validatorDuties = provider.getValidatorDuties(validatorsRequest);
+      ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+      ctx.result(jsonProvider.objectToJSON(validatorDuties));
 
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
-  }
-
-  private String handleResponseContext(Context ctx, List<Committee> committees, UnsignedLong epoch)
-      throws JsonProcessingException {
-    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
-    return jsonProvider.objectToJSON(committees);
   }
 }

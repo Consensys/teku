@@ -16,10 +16,8 @@ package tech.pegasys.artemis.provider;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import tech.pegasys.artemis.api.schema.BLSPubKey;
-import tech.pegasys.artemis.api.schema.BLSSignature;
-
 import java.io.IOException;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 
 public class BLSPubKeyDeserializer extends JsonDeserializer<BLSPubKey> {
   @Override

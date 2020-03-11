@@ -22,7 +22,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BeaconState;
@@ -107,13 +106,17 @@ class JsonProviderTest {
 
   @Test
   void validatorsRequestTest() throws JsonProcessingException {
-    final String PUBKEY = "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
-    final String data = "{\n" +
-        "  \"epoch\": 0, \n" +
-        "  \"pubkeys\": [\n" +
-        "\"" + PUBKEY + "\"\n" +
-        "  ]\n" +
-        "}";
+    final String PUBKEY =
+        "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
+    final String data =
+        "{\n"
+            + "  \"epoch\": 0, \n"
+            + "  \"pubkeys\": [\n"
+            + "\""
+            + PUBKEY
+            + "\"\n"
+            + "  ]\n"
+            + "}";
 
     ValidatorsRequest result = jsonProvider.jsonToObject(data, ValidatorsRequest.class);
 

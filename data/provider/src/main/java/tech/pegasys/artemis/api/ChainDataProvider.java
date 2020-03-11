@@ -17,25 +17,28 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_commi
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.api.schema.Validator;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -148,16 +151,6 @@ public class ChainDataProvider {
         .exceptionally(err -> Optional.empty());
   }
 
-  public ValidatorDuties getValidatorDuties(UnsignedLong epoch, BLSPublicKey publicKey) {
-    UnsignedLong committeeIndex = UnsignedLong.ZERO;
-    UnsignedLong validatorIndex = UnsignedLong.ZERO;
-    // TODO get validator index from state
-    //    BeaconState state = getStateAtSlot(BeaconStateUtil.compute_start_slot_at_epoch(epoch));
-    // TODO how do we get the validator from the public Key
-    // state.getValidators.indexOf(publicKey);
-    return new ValidatorDuties(committeeIndex, publicKey, validatorIndex);
-  }
-
   public Optional<Attestation> getUnsignedAttestationAtSlot(
       UnsignedLong slot, Integer committeeIndex) {
     if (!isStoreAvailable()) {
@@ -194,5 +187,66 @@ public class ChainDataProvider {
 
   public boolean isFinalized(UnsignedLong slot) {
     return combinedChainDataClient.isFinalized(slot);
+  }
+
+  public List<ValidatorDuties> getValidatorDuties(final ValidatorsRequest validatorsRequest) {
+
+    UnsignedLong epoch = validatorsRequest.epoch;
+    Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
+    if (optionalBlockRoot.isEmpty()) {
+      return List.of();
+    }
+    //    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    // TODO deal with future
+    //    BeaconState state = combinedChainDataClient.getStateAtSlot(slot, optionalBlockRoot.get());
+    //    List<Validator> validators = state.validators;
+    List<Validator> validators = List.of();
+
+    List<ValidatorDuties> dutiesList = new ArrayList<>();
+    for (BLSPubKey pubKey : validatorsRequest.pubkeys) {
+      dutiesList.add(getValidatorDuties(validators, epoch, pubKey));
+    }
+    return dutiesList;
+  }
+
+  private ValidatorDuties getValidatorDuties(
+      final List<Validator> validators, final UnsignedLong epoch, final BLSPubKey pubKey) {
+    int validatorIndex = getValidatorIndex(validators, pubKey);
+
+    // TODO deal with future
+    if (epoch.compareTo(UnsignedLong.ZERO) < 0) {
+      return ValidatorDuties.empty();
+    }
+    ; // TODO delete this
+    //    List<Committee> committees = combinedChainDataClient
+    //        .getCommitteeAssignmentAtEpoch(epoch)
+    //        .thenApply(result -> result.stream().map(Committee::new).collect(Collectors.toList()))
+    //        .exceptionally(err -> List.of());
+    List<Committee> committees = List.of();
+
+    return new ValidatorDuties(
+        getCommitteeIndex(committees, validatorIndex), pubKey, validatorIndex);
+  }
+
+  private static int getValidatorIndex(List<Validator> validators, BLSPubKey publicKey) {
+    Optional<Validator> optionalValidator =
+        validators.stream().filter(v -> publicKey.equals(v.pubkey)).findFirst();
+    if (optionalValidator.isPresent()) {
+      return validators.indexOf(optionalValidator.get());
+    } else {
+      return -1;
+    }
+  }
+
+  private int getCommitteeIndex(List<Committee> committees, int validatorIndex) {
+    Optional<Committee> matchingCommittee =
+        committees.stream()
+            .filter(committee -> committee.committee.contains(validatorIndex))
+            .findFirst();
+    if (matchingCommittee.isPresent()) {
+      return matchingCommittee.get().committee.indexOf(validatorIndex);
+    } else {
+      return -1;
+    }
   }
 }
