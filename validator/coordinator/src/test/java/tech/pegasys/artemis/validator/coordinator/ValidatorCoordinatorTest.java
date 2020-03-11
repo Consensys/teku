@@ -134,7 +134,7 @@ public class ValidatorCoordinatorTest {
             config);
 
     chainUtil.initializeStorage();
-    vc.start();
+    vc.start().reportExceptions();
     return vc;
   }
 }
