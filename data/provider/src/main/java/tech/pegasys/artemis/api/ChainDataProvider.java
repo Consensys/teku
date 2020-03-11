@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.api;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
@@ -20,13 +21,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.schema.Attestation;
+import tech.pegasys.artemis.api.schema.AttestationData;
+import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
@@ -149,6 +156,36 @@ public class ChainDataProvider {
     // TODO how do we get the validator from the public Key
     // state.getValidators.indexOf(publicKey);
     return new ValidatorDuties(committeeIndex, publicKey, validatorIndex);
+  }
+
+  public Optional<Attestation> getUnsignedAttestationAtSlot(
+      UnsignedLong slot, Integer committeeIndex) {
+    if (!isStoreAvailable()) {
+      return Optional.empty();
+    }
+    if (isFinalized(slot)) {
+      throw new IllegalArgumentException(
+          String.format("Slot %s is finalized, no attestation will be created.", slot.toString()));
+    }
+    Optional<BeaconBlock> block = chainStorageClient.getBlockBySlot(slot);
+    if (block.isEmpty()) {
+      return Optional.empty();
+    }
+
+    tech.pegasys.artemis.datastructures.state.BeaconState state =
+        chainStorageClient.getBestBlockRootState();
+    int committeeCount = get_committee_count_at_slot(state, slot).intValue();
+    if (committeeIndex < 0 || committeeIndex >= committeeCount) {
+      throw new IllegalArgumentException(
+          "Invalid committee index provided - expected between 0 and " + (committeeCount - 1));
+    }
+
+    tech.pegasys.artemis.datastructures.operations.AttestationData internalAttestation =
+        AttestationUtil.getGenericAttestationData(state, block.get());
+    AttestationData data = new AttestationData(internalAttestation);
+    Bitlist aggregationBits = AttestationUtil.getAggregationBits(committeeCount, committeeIndex);
+    Attestation attestation = new Attestation(aggregationBits, data, BLSSignature.empty());
+    return Optional.of(attestation);
   }
 
   public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {
