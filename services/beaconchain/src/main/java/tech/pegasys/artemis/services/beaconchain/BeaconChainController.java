@@ -95,7 +95,7 @@ public class BeaconChainController {
   private BlockAttestationsPool blockAttestationsPool;
   private DepositProvider depositProvider;
   private SyncService syncService;
-  private boolean generateMockGenesis;
+  private final boolean setupInitialState;
   private AttestationManager attestationManager;
   private ValidatorCoordinator validatorCoordinator;
 
@@ -110,8 +110,7 @@ public class BeaconChainController {
     this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
-    this.generateMockGenesis =
-        config.getDepositMode().equals(DEPOSIT_TEST) && !config.startFromDisk();
+    this.setupInitialState = config.getDepositMode().equals(DEPOSIT_TEST);
     this.eventBus.register(this);
   }
 
@@ -188,7 +187,7 @@ public class BeaconChainController {
   }
 
   private void initPreGenesisDepositHandler() {
-    if (generateMockGenesis) {
+    if (setupInitialState) {
       return;
     }
     LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
@@ -287,14 +286,14 @@ public class BeaconChainController {
     LOG.debug("BeaconChainController.start(): starting BeaconRestAPI");
     this.beaconRestAPI.start();
 
-    if (generateMockGenesis) {
-      generateTestModeGenesis();
+    if (setupInitialState && chainStorageClient.getStore() == null) {
+      setupInitialState();
     }
 
     syncService.start().reportExceptions();
   }
 
-  private void generateTestModeGenesis() {
+  private void setupInitialState() {
     StartupUtil.setupInitialState(
         chainStorageClient,
         config.getGenesisTime(),
