@@ -372,13 +372,15 @@ public class ChainDataProviderTest {
     assertEquals(blockRoot, attestation.data.beacon_block_root);
   }
 
-  private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(int failingBlock, boolean isFinalized) {
+  private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(
+      int failingBlock, boolean isFinalized) {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.isFinalized(ZERO)).thenReturn(isFinalized);
     assertThrows(
-        IllegalArgumentException.class, () -> provider.getUnsignedAttestationAtSlot(ZERO, failingBlock));
+        IllegalArgumentException.class,
+        () -> provider.getUnsignedAttestationAtSlot(ZERO, failingBlock));
     verify(mockCombinedChainDataClient).isStoreAvailable();
     verify(mockCombinedChainDataClient).isFinalized(ZERO);
   }
