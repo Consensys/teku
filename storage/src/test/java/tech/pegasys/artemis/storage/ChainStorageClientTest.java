@@ -26,6 +26,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
@@ -79,6 +80,7 @@ class ChainStorageClientTest {
     // Post a store response to complete initialization
     eventBus.post(new GetStoreResponse(getStoreRequests.get(0).getId(), Optional.of(genesisStore)));
     assertThat(client).isCompleted();
+    assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
 
@@ -107,11 +109,13 @@ class ChainStorageClientTest {
     // Post a store event to complete initialization
     eventBus.post(new GetStoreResponse(getStoreRequests.get(0).getId(), Optional.empty()));
     assertThat(client).isCompleted();
+    assertStoreNotInitialized(client.get());
     assertThat(client.get().getStore()).isNull();
 
     // Now set the genesis state
     final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
     client.get().setGenesisState(INITIAL_STATE);
+    assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
   }
@@ -133,6 +137,7 @@ class ChainStorageClientTest {
     final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
     eventBus.post(new StoreInitializedFromStorageEvent(genesisStore));
     assertThat(client).isCompleted();
+    assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
 
@@ -375,6 +380,18 @@ class ChainStorageClientTest {
     final Checkpoint currentCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
+  }
+
+  private void assertStoreInitialized(final ChainStorageClient client) {
+    final AtomicBoolean initialized = new AtomicBoolean(false);
+    client.subscribeStoreInitialized(() -> initialized.set(true));
+    assertThat(initialized).isTrue();
+  }
+
+  private void assertStoreNotInitialized(final ChainStorageClient client) {
+    final AtomicBoolean initialized = new AtomicBoolean(false);
+    client.subscribeStoreInitialized(() -> initialized.set(true));
+    assertThat(initialized).isFalse();
   }
 
   private void assertStoreIsSet(final ChainStorageClient client) {
