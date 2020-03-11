@@ -33,10 +33,8 @@ import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
-import tech.pegasys.artemis.storage.events.BestBlockInitializedEvent;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
-import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
@@ -50,7 +48,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   private final TransactionPrecommit transactionPrecommit;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
-  private final AtomicBoolean bestBlockInitialized = new AtomicBoolean(false);
+  private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
+  private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
 
   private volatile Store store;
   private volatile Optional<Bytes32> bestBlockRoot =
@@ -88,6 +87,14 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     this.transactionPrecommit = transactionPrecommit;
   }
 
+  public void subscribeStoreInitialized(Runnable runnable) {
+    storeInitializedFuture.always(runnable);
+  }
+
+  public void subscribeBestBlockInitialized(Runnable runnable) {
+    bestBlockInitialized.always(runnable);
+  }
+
   public void setGenesisState(final BeaconState genesisState) {
     final Store store = Store.get_genesis_store(genesisState);
     final boolean result = setStore(store);
@@ -118,7 +125,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     }
     this.store = store;
     this.genesisTime = this.store.getGenesisTime();
-    eventBus.post(new StoreInitializedEvent());
+    storeInitializedFuture.complete(null);
     return true;
   }
 
@@ -141,10 +148,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
     this.bestBlockRoot = Optional.of(root);
     this.bestSlot = slot;
-
-    if (bestBlockInitialized.compareAndSet(false, true)) {
-      eventBus.post(new BestBlockInitializedEvent());
-    }
+    bestBlockInitialized.complete(null);
   }
 
   public Bytes4 getForkAtHead() {

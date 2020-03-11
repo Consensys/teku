@@ -55,6 +55,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
@@ -70,18 +71,18 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.BestBlockInitializedEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
-public class ValidatorCoordinator {
+public class ValidatorCoordinator extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -122,8 +123,18 @@ public class ValidatorCoordinator {
     this.eventBus.register(this);
   }
 
-  @Subscribe
-  public void onBestBlockInitialized(final BestBlockInitializedEvent event) {
+  @Override
+  protected SafeFuture<?> doStart() {
+    chainStorageClient.subscribeBestBlockInitialized(this::onBestBlockInitialized);
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.COMPLETE;
+  }
+
+  private void onBestBlockInitialized() {
     final Store store = chainStorageClient.getStore();
     final Bytes32 head = chainStorageClient.getBestBlockRoot().orElseThrow();
     final BeaconState headState = store.getBlockState(head);

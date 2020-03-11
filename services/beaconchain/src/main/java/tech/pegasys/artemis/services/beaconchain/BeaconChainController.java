@@ -31,7 +31,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -64,7 +63,6 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
@@ -99,8 +97,7 @@ public class BeaconChainController {
   private SyncService syncService;
   private boolean generateMockGenesis;
   private AttestationManager attestationManager;
-
-  private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
+  private ValidatorCoordinator validatorCoordinator;
 
   public BeaconChainController(
       TimeProvider timeProvider,
@@ -146,9 +143,6 @@ public class BeaconChainController {
 
   public void initStorage() {
     this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus).join();
-    if (chainStorageClient.getStore() != null) {
-      initializeStore();
-    }
   }
 
   public void initMetrics() {
@@ -177,14 +171,15 @@ public class BeaconChainController {
 
   public void initValidatorCoordinator() {
     LOG.debug("BeaconChainController.initValidatorCoordinator()");
-    new ValidatorCoordinator(
-        timeProvider,
-        eventBus,
-        chainStorageClient,
-        attestationAggregator,
-        blockAttestationsPool,
-        depositProvider,
-        config);
+    this.validatorCoordinator =
+        new ValidatorCoordinator(
+            timeProvider,
+            eventBus,
+            chainStorageClient,
+            attestationAggregator,
+            blockAttestationsPool,
+            depositProvider,
+            config);
   }
 
   public void initStateProcessor() {
@@ -277,6 +272,10 @@ public class BeaconChainController {
   }
 
   public void start() {
+    chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
+
+    LOG.debug("BeaconChainController.start(): starting ValidatorCoordinator");
+    validatorCoordinator.start().reportExceptions();
     LOG.debug("BeaconChainController.start(): starting AttestationPropagationManager");
     attestationManager.start().reportExceptions();
     LOG.debug("BeaconChainController.start(): starting p2pNetwork");
@@ -323,17 +322,7 @@ public class BeaconChainController {
     this.eventBus.unregister(this);
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onStoreInitializedEvent(final StoreInitializedEvent event) {
-    initializeStore();
-  }
-
-  private void initializeStore() {
-    if (!storeInitialized.compareAndSet(false, true)) {
-      return;
-    }
-
+  private void onStoreInitialized() {
     UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = UnsignedLong.ZERO;
