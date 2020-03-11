@@ -13,14 +13,11 @@
 
 package tech.pegasys.artemis.networking.eth2.rpc.core;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -75,7 +72,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
         // Setup initial chunk timeout
         ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
       }
-      STATUS_LOG.log(Level.TRACE, "Requester received " + bytes.capacity() + " bytes.");
+      LOG.trace("Requester received {} bytes.", bytes.capacity());
       responseHandler.onDataReceived(bytes);
 
       final int previousResponseCount = currentChunkCount.get();

@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
@@ -27,7 +25,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -116,7 +113,7 @@ public class PeerManager implements ConnectionHandler {
   void onConnectedPeer(Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
-      STATUS_LOG.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
+      LOG.debug("onConnectedPeer() {}", peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
       connectSubscribers.forEach(c -> c.onConnected(peer));
       peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
@@ -129,7 +126,7 @@ public class PeerManager implements ConnectionHandler {
   @VisibleForTesting
   void onDisconnectedPeer(Peer peer) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
-      STATUS_LOG.log(Level.DEBUG, "Peer disconnected: " + peer.getId());
+      LOG.debug("Peer disconnected: {}", peer.getId());
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
   }

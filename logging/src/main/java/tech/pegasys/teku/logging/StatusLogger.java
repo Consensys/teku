@@ -13,84 +13,73 @@
 
 package tech.pegasys.teku.logging;
 
-import org.apache.logging.log4j.Level;
+import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
+
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class StatusLogger {
 
   public static final StatusLogger STATUS_LOG = new StatusLogger("stdout");
 
-  public enum Color {
-    RED,
-    BLUE,
-    PURPLE,
-    WHITE,
-    GREEN
+  private final Logger log;
+
+  private StatusLogger(final String name) {
+    this.log = LogManager.getLogger(name);
   }
 
-  private static final String resetCode = "\u001B[0m";
-
-  private final Logger logger;
-
-  protected StatusLogger(String className) {
-    this.logger = LogManager.getLogger(className);
+  public void startupFailure(final Throwable cause) {
+    log.fatal("Startup failed", cause);
   }
 
-  public void log(Level level, String message) {
-    this.logger.log(level, message);
+  public void sendDepositFailure(final Throwable cause) {
+    fatal(
+        () ->
+            String.format(
+                "Failed to send deposit transaction: %s : %s",
+                cause.getClass(), cause.getMessage()));
   }
 
-  public void log(Level level, String message, boolean printEnabled) {
-    if (printEnabled) {
-      this.logger.log(level, message);
+  public void generatingMockGenesis(final int validatorCount, final long genesisTime) {
+    log.info(
+        "Generating mock genesis state for {} validators at genesis time {}",
+        validatorCount,
+        genesisTime);
+  }
+
+  public void storingGenesis(final String outputFile, final boolean isComplete) {
+    if (isComplete) {
+      log.info("Genesis state file saved: {}", outputFile);
+    } else {
+      log.info("Saving genesis state to file: {}", outputFile);
     }
   }
 
-  public void log(Level level, String message, boolean printEnabled, Color color) {
-    log(level, addColor(message, color), printEnabled);
+  public void specificationFailure(final String description, final Throwable cause) {
+    log.warn("Spec failed for {}: {}", description, cause, cause);
   }
 
-  public void log(Level level, String message, Color color) {
-    logger.log(level, addColor(message, color));
+  public void unexpectedFailure(final String description, final Throwable cause) {
+    log.fatal(
+        "PLEASE FIX OR REPORT | Unexpected exception thrown for {}: {}", cause, description, cause);
   }
 
-  public void log(Level level, String message, Throwable throwable) {
-    logger.log(level, message, throwable);
+  public void listeningForLibP2P(final String address) {
+    log.info("Listening for connections on: {}", address);
   }
 
-  public void log(Level level, String message, Throwable throwable, Color color) {
-    logger.log(level, addColor(message, color), throwable);
+  public void blockCreationFailure(final Exception cause) {
+    log.error("Error during block creation {}", cause.toString());
   }
 
-  public boolean isDebugEnabled() {
-    return logger.isDebugEnabled();
+  public void attestationFailure(final IllegalArgumentException cause) {
+    log.warn("Cannot produce attestations or create a block {}", cause.toString());
   }
 
-  private String findColor(Color color) {
-    String colorCode = "";
-    switch (color) {
-      case RED:
-        colorCode = "\u001B[31m";
-        break;
-      case BLUE:
-        colorCode = "\u001b[34;1m";
-        break;
-      case PURPLE:
-        colorCode = "\u001B[35m";
-        break;
-      case WHITE:
-        colorCode = "\033[1;30m";
-        break;
-      case GREEN:
-        colorCode = "\u001B[32m";
-        break;
-    }
-    return colorCode;
-  }
-
-  private String addColor(String message, Color color) {
-    String colorCode = findColor(color);
-    return colorCode + message + resetCode;
+  // TODO only add colour when it is enabled vai the config
+  private void fatal(Supplier<String> message) {
+    log.fatal(print(message.get(), Color.RED));
   }
 }
