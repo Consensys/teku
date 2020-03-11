@@ -24,9 +24,11 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -137,6 +139,16 @@ public class ChainDataProvider {
         .getStateAtSlot(slot, headBlockRoot)
         .thenApply(state -> Optional.of(state.get().hash_tree_root()))
         .exceptionally(err -> Optional.empty());
+  }
+
+  public ValidatorDuties getValidatorDuties(UnsignedLong epoch, BLSPublicKey publicKey) {
+    UnsignedLong committeeIndex = UnsignedLong.ZERO;
+    UnsignedLong validatorIndex = UnsignedLong.ZERO;
+    // TODO get validator index from state
+    //    BeaconState state = getStateAtSlot(BeaconStateUtil.compute_start_slot_at_epoch(epoch));
+    // TODO how do we get the validator from the public Key
+    // state.getValidators.indexOf(publicKey);
+    return new ValidatorDuties(committeeIndex, publicKey, validatorIndex);
   }
 
   public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {
