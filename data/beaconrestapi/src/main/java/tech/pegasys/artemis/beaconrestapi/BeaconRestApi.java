@@ -24,22 +24,22 @@ import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconCommitteesHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
 import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateRootHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerCountHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
-import tech.pegasys.artemis.beaconrestapi.validatorhandlers.AttestationHandler;
-import tech.pegasys.artemis.beaconrestapi.validatorhandlers.ValidatorDutiesHandler;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetAttestation;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.ValidatorDutiesHandler;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -121,38 +121,36 @@ public class BeaconRestApi {
 
   private void addNodeHandlers(DataProvider provider) {
     app.get(
-        GenesisTimeHandler.ROUTE,
-        new GenesisTimeHandler(provider.getChainDataProvider(), jsonProvider));
-    app.get(VersionHandler.ROUTE, new VersionHandler(jsonProvider));
-    app.get(
-        NodeSyncingHandler.ROUTE,
-        new NodeSyncingHandler(provider.getSyncDataProvider(), jsonProvider));
+        GetGenesisTime.ROUTE, new GetGenesisTime(provider.getChainDataProvider(), jsonProvider));
+    app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
+    app.get(GetSyncing.ROUTE, new GetSyncing(provider.getSyncDataProvider(), jsonProvider));
   }
 
   private void addBeaconHandlers(
       ChainStorageClient chainStorageClient, CombinedChainDataClient combinedChainDataClient) {
     ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
-    app.get(BeaconBlockHandler.ROUTE, new BeaconBlockHandler(provider, jsonProvider));
+    app.get(GetBlock.ROUTE, new GetBlock(provider, jsonProvider));
     app.get(
         BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
-    app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(provider, jsonProvider));
-    app.get(BeaconCommitteesHandler.ROUTE, new BeaconCommitteesHandler(provider, jsonProvider));
+    app.get(GetHead.ROUTE, new GetHead(provider, jsonProvider));
+    app.get(GetCommittees.ROUTE, new GetCommittees(provider, jsonProvider));
     app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(provider, jsonProvider));
-    app.get(BeaconStateRootHandler.ROUTE, new BeaconStateRootHandler(provider, jsonProvider));
+    app.get(GetStateRoot.ROUTE, new GetStateRoot(provider, jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
-    app.get(AttestationHandler.ROUTE, new AttestationHandler(provider, jsonProvider));
-    app.get(BeaconValidatorsHandler.ROUTE, new BeaconValidatorsHandler(provider, jsonProvider));
     app.get(ValidatorDutiesHandler.ROUTE, new ValidatorDutiesHandler(provider, jsonProvider));
+    app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
+    app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
-    app.get(ENRHandler.ROUTE, new ENRHandler(networkDataProvider, jsonProvider));
-    app.get(PeerCountHandler.ROUTE, new PeerCountHandler(networkDataProvider, jsonProvider));
-    app.get(PeerIdHandler.ROUTE, new PeerIdHandler(networkDataProvider, jsonProvider));
-    app.get(PeersHandler.ROUTE, new PeersHandler(networkDataProvider, jsonProvider));
+    app.get(
+        GetEthereumNameRecord.ROUTE, new GetEthereumNameRecord(networkDataProvider, jsonProvider));
+    app.get(GetPeerId.ROUTE, new GetPeerId(networkDataProvider, jsonProvider));
+    app.get(GetPeers.ROUTE, new GetPeers(networkDataProvider, jsonProvider));
+    app.get(GetPeerCount.ROUTE, new GetPeerCount(networkDataProvider, jsonProvider));
   }
 
   public void stop() {
