@@ -67,7 +67,7 @@ public class GenesisHandler implements Eth1EventsChannel {
   }
 
   private void eth2Genesis(BeaconState genesisState) {
-    chainStorageClient.setGenesisState(genesisState);
+    chainStorageClient.initializeFromGenesis(genesisState);
     Bytes32 genesisBlockRoot = chainStorageClient.getBestBlockRoot().orElseThrow();
     EVENT_LOG.genesisEvent(genesisState.hash_tree_root(), genesisBlockRoot);
   }

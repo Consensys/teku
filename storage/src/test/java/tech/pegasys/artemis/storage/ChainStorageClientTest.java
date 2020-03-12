@@ -114,7 +114,7 @@ class ChainStorageClientTest {
 
     // Now set the genesis state
     final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
-    client.get().setGenesisState(INITIAL_STATE);
+    client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
@@ -152,7 +152,7 @@ class ChainStorageClientTest {
 
   @Test
   public void initialize_setupInitialState() {
-    preGenesisStorageClient.setGenesisState(INITIAL_STATE);
+    preGenesisStorageClient.initializeFromGenesis(INITIAL_STATE);
     assertThat(preGenesisStorageClient.getGenesisTime()).isEqualTo(INITIAL_STATE.getGenesis_time());
     assertThat(preGenesisStorageClient.getBestSlot())
         .isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
@@ -346,7 +346,7 @@ class ChainStorageClientTest {
 
   @Test
   public void startStoreTransaction_mutateFinalizedCheckpoint() {
-    preGenesisStorageClient.setGenesisState(DataStructureUtil.randomBeaconState(1));
+    preGenesisStorageClient.initializeFromGenesis(DataStructureUtil.randomBeaconState(1));
 
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
@@ -368,7 +368,7 @@ class ChainStorageClientTest {
 
   @Test
   public void startStoreTransaction_doNotMutateFinalizedCheckpoint() {
-    preGenesisStorageClient.setGenesisState(DataStructureUtil.randomBeaconState(1));
+    preGenesisStorageClient.initializeFromGenesis(DataStructureUtil.randomBeaconState(1));
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
 
@@ -398,7 +398,7 @@ class ChainStorageClientTest {
     assertThat(client.getStore()).isNotNull();
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
-    assertThatThrownBy(() -> client.setGenesisState(INITIAL_STATE))
+    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Failed to set genesis state: store has already been initialized");
   }

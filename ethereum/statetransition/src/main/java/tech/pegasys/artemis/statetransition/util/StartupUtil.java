@@ -110,6 +110,6 @@ public final class StartupUtil {
               genesisTime, validatorKeyPairs, signDeposits);
     }
 
-    chainStorageClient.setGenesisState(initialState);
+    chainStorageClient.initializeFromGenesis(initialState);
   }
 }

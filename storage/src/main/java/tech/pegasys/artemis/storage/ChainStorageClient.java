@@ -95,7 +95,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     bestBlockInitialized.always(runnable);
   }
 
-  public void setGenesisState(final BeaconState genesisState) {
+  public void initializeFromGenesis(final BeaconState genesisState) {
     final Store store = Store.get_genesis_store(genesisState);
     final boolean result = setStore(store);
     if (!result) {

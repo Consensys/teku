@@ -83,7 +83,7 @@ public class AttestationTopicHandlerTest {
 
     // Set up state to be missing
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
-    storageClient.setGenesisState(DataStructureUtil.randomBeaconState(1));
+    storageClient.initializeFromGenesis(DataStructureUtil.randomBeaconState(1));
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(eventBus, storageClient, 1);
 

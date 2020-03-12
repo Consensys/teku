@@ -72,7 +72,7 @@ public class GetCommitteesTest {
     final EventBus localEventBus = new EventBus();
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
     beaconState = DataStructureUtil.randomBeaconState(11233);
-    storageClient.setGenesisState(beaconState);
+    storageClient.initializeFromGenesis(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
     blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = storageClient.getBlockState(blockRoot).get().getSlot();
