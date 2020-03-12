@@ -37,7 +37,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
-import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetValidatorDuties;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostValidatorDuties;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
@@ -131,6 +131,6 @@ class BeaconRestApiTest {
 
   @Test
   public void RestApiShouldHaveValidatorDutiesEndpoint() {
-    verify(app).post(eq(GetValidatorDuties.ROUTE), any(GetValidatorDuties.class));
+    verify(app).post(eq(PostValidatorDuties.ROUTE), any(PostValidatorDuties.class));
   }
 }

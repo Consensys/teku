@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
@@ -39,10 +40,10 @@ import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class GetValidatorDuties implements Handler {
+public class PostValidatorDuties implements Handler {
   private final ChainDataProvider provider;
 
-  public GetValidatorDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public PostValidatorDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
@@ -56,10 +57,15 @@ public class GetValidatorDuties implements Handler {
       summary = "Returns validator duties that match the specified query.",
       tags = {TAG_VALIDATOR},
       description = "Returns validator duties for the given epoch.",
-      requestBody = @OpenApiRequestBody(content = @OpenApiContent(from = ValidatorsRequest.class)),
+      requestBody =
+          @OpenApiRequestBody(
+              content = @OpenApiContent(from = ValidatorsRequest.class),
+              description =
+                  "```\n{\n  \"epoch\": (uint64),\n  \"pubkeys\": [(Bytes48 as Hex String)]\n}\n```"),
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = ValidatorDuties.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid body supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
