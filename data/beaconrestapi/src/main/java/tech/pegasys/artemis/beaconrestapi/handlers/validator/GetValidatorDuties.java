@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -76,6 +77,9 @@ public class GetValidatorDuties implements Handler {
 
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.status(SC_BAD_REQUEST);
+    } catch (final JsonMappingException ex) {
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
