@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,24 +37,30 @@ import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetStoreRequest;
+import tech.pegasys.artemis.storage.events.GetStoreResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
+import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
+  private static final Logger LOG = LogManager.getLogger();
 
-  private final Logger LOG = LogManager.getLogger();
-
-  private Database database;
+  private volatile Database database;
   private final EventBus eventBus;
   private final ArtemisConfiguration configuration;
 
   public final String DATABASE_VERSION = "1.0";
 
+  private final AtomicBoolean storeIsPersisted;
+  private volatile Optional<Store> cachedStore = Optional.empty();
+
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.configuration = config;
     this.eventBus = eventBus;
+    storeIsPersisted = new AtomicBoolean(configuration.startFromDisk());
   }
 
   public void start() {
@@ -61,14 +68,35 @@ public class ChainStorageServer {
     File databaseVersionPath = new File(dataStoragePath, "/db.version");
     File databaseStoragePath = new File(configuration.getDataPath() + "/db");
 
+    LOG.info("Data directory set to: {}", dataStoragePath);
     preflightCheck(databaseStoragePath, databaseVersionPath);
 
     this.database = MapDbDatabase.createOnDisk(databaseStoragePath, configuration.startFromDisk());
     eventBus.register(this);
-    if (configuration.startFromDisk()) {
-      Store memoryStore = database.createMemoryStore();
-      eventBus.post(memoryStore);
+
+    final Optional<Store> store = getStore();
+    eventBus.post(new StoreInitializedFromStorageEvent(store));
+  }
+
+  private synchronized Optional<Store> getStore() {
+    if (!storeIsPersisted.get()) {
+      return Optional.empty();
+    } else if (cachedStore.isEmpty()) {
+      // Create store from database
+      cachedStore = database.createMemoryStore();
     }
+
+    return cachedStore;
+  }
+
+  private synchronized void handleStoreUpdate(final DatabaseUpdateResult result) {
+    if (result.isSuccessful()) {
+      cachedStore = Optional.empty();
+    }
+  }
+
+  private synchronized void handleStoreGenesis() {
+    storeIsPersisted.set(true);
   }
 
   private void preflightCheck(File databaseStoragePath, File databaseVersionPath) {
@@ -119,14 +147,21 @@ public class ChainStorageServer {
   }
 
   @Subscribe
+  public void onStoreRequest(final GetStoreRequest request) {
+    eventBus.post(new GetStoreResponse(request.getId(), getStore()));
+  }
+
+  @Subscribe
   public void onStoreDiskUpdate(final StoreDiskUpdateEvent event) {
     final DatabaseUpdateResult result = database.update(event);
+    handleStoreUpdate(result);
     eventBus.post(new StoreDiskUpdateCompleteEvent(event.getTransactionId(), result));
   }
 
   @Subscribe
   public void onStoreGenesis(final StoreGenesisDiskUpdateEvent event) {
     database.storeGenesis(event.getStore());
+    handleStoreGenesis();
   }
 
   @Subscribe

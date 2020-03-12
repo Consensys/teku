@@ -32,6 +32,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.IntStream;
@@ -55,6 +56,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.BlockProposalUtil;
@@ -71,17 +73,17 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
-public class ValidatorCoordinator {
+public class ValidatorCoordinator extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -124,40 +126,47 @@ public class ValidatorCoordinator {
     this.eventBus.register(this);
   }
 
-  @Subscribe
-  public void onStoreInitializedEvent(final StoreInitializedEvent event) {
+  @Override
+  protected SafeFuture<?> doStart() {
+    chainStorageClient.subscribeBestBlockInitialized(this::onBestBlockInitialized);
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.COMPLETE;
+  }
+
+  private void onBestBlockInitialized() {
     final Store store = chainStorageClient.getStore();
-    final Bytes32 head = chainStorageClient.getBestBlockRoot();
-    final BeaconState genesisState = store.getBlockState(head);
+    final Bytes32 head = chainStorageClient.getBestBlockRoot().orElseThrow();
+    final BeaconState headState = store.getBlockState(head);
 
     // Get validator indices of our own validators
-    getIndicesOfOurValidators(genesisState, validators);
+    getIndicesOfOurValidators(headState, validators);
 
     this.committeeAssignmentManager =
         new CommitteeAssignmentManager(validators, committeeAssignments);
-    eth1DataCache.startBeaconChainMode(genesisState);
+    eth1DataCache.startBeaconChainMode(headState);
 
     // Update committee assignments and subscribe to required committee indices for the next 2
     // epochs
     UnsignedLong genesisEpoch = UnsignedLong.valueOf(GENESIS_EPOCH);
-    committeeAssignmentManager.updateCommitteeAssignments(genesisState, genesisEpoch, eventBus);
+    committeeAssignmentManager.updateCommitteeAssignments(headState, genesisEpoch, eventBus);
     committeeAssignmentManager.updateCommitteeAssignments(
-        genesisState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
+        headState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
   }
 
   @Subscribe
   // TODO: make sure blocks that are produced right even after new slot to be pushed.
   public void onNewSlot(SlotEvent slotEvent) {
     UnsignedLong slot = slotEvent.getSlot();
-    BeaconState headState =
-        chainStorageClient.getStore().getBlockState(chainStorageClient.getBestBlockRoot());
-    BeaconBlock headBlock =
-        chainStorageClient.getStore().getBlock(chainStorageClient.getBestBlockRoot());
     eth1DataCache.onSlot(slotEvent);
 
-    // Copy state so that state transition during block creation
-    // does not manipulate headState in storage
-    if (!isGenesis(slot)) {
+    final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
+    if (!isGenesis(slot) && headRoot.isPresent()) {
+      BeaconState headState = chainStorageClient.getStore().getBlockState(headRoot.get());
+      BeaconBlock headBlock = chainStorageClient.getStore().getBlock(headRoot.get());
       createBlockIfNecessary(headState, headBlock, slot);
     }
   }

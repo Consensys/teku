@@ -154,7 +154,7 @@ public class AttestationGenerator {
 
   public Attestation validAttestation(final ChainStorageClient storageClient)
       throws EpochProcessingException, SlotProcessingException {
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
+    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
     BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
     return createAttestation(block, state, true);
@@ -162,7 +162,7 @@ public class AttestationGenerator {
 
   public Attestation attestationWithInvalidSignature(final ChainStorageClient storageClient)
       throws EpochProcessingException, SlotProcessingException {
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
+    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
     BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
     return createAttestation(block, state, false);

@@ -16,10 +16,12 @@ package tech.pegasys.artemis.storage;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,8 +35,8 @@ import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.Store.StoreUpdateHandler;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
-import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
@@ -45,54 +47,68 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   protected final EventBus eventBus;
   private final TransactionPrecommit transactionPrecommit;
 
+  private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
+  private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
+  private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
+
   private volatile Store store;
-  private volatile Bytes32 bestBlockRoot =
-      Bytes32.ZERO; // block chosen by lmd ghost to build and attest on
+  private volatile Optional<Bytes32> bestBlockRoot =
+      Optional.empty(); // block chosen by lmd ghost to build and attest on
   private volatile UnsignedLong bestSlot =
       UnsignedLong.ZERO; // slot of the block chosen by lmd ghost to build and attest on
   // Time
   private volatile UnsignedLong genesisTime;
 
   public static ChainStorageClient memoryOnlyClient(final EventBus eventBus) {
-    return new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+    final ChainStorageClient client =
+        new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+    eventBus.register(client);
+    return client;
   }
 
-  public static ChainStorageClient storageBackedClient(final EventBus eventBus) {
-    return new ChainStorageClient(eventBus, TransactionPrecommit.storageEnabled(eventBus));
+  public static SafeFuture<ChainStorageClient> storageBackedClient(final EventBus eventBus) {
+    final StorageBackedChainStorageClientFactory factory =
+        new StorageBackedChainStorageClientFactory(eventBus);
+    eventBus.register(factory);
+    return factory.get();
   }
 
-  private ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
+  @VisibleForTesting
+  static ChainStorageClient memoryOnlyClientWithStore(final EventBus eventBus, final Store store) {
+    final ChainStorageClient client =
+        new ChainStorageClient(eventBus, TransactionPrecommit.memoryOnly());
+    eventBus.register(client);
+    client.setStore(store);
+    return client;
+  }
+
+  ChainStorageClient(EventBus eventBus, final TransactionPrecommit transactionPrecommit) {
     this.eventBus = eventBus;
     this.transactionPrecommit = transactionPrecommit;
-    this.eventBus.register(this);
   }
 
-  public void initializeFromGenesis(final BeaconState initialState) {
-    setGenesisTime(initialState.getGenesis_time());
-    final Store store = Store.get_genesis_store(initialState);
-    setStore(store);
+  public void subscribeStoreInitialized(Runnable runnable) {
+    storeInitializedFuture.always(runnable);
+  }
+
+  public void subscribeBestBlockInitialized(Runnable runnable) {
+    bestBlockInitialized.always(runnable);
+  }
+
+  public void initializeFromGenesis(final BeaconState genesisState) {
+    final Store store = Store.get_genesis_store(genesisState);
+    final boolean result = setStore(store);
+    if (!result) {
+      throw new IllegalStateException(
+          "Failed to set genesis state: store has already been initialized");
+    }
+
     eventBus.post(new StoreGenesisDiskUpdateEvent(store));
 
     // The genesis state is by definition finalised so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
     BeaconBlock headBlock = store.getBlock(headBlockRoot);
     updateBestBlock(headBlockRoot, headBlock.getSlot());
-    eventBus.post(new StoreInitializedEvent());
-  }
-
-  public void initializeFromStore(final Store store, final Bytes32 headBlockRoot) {
-    BeaconState state = store.getBlockState(headBlockRoot);
-    setGenesisTime(state.getGenesis_time());
-    setStore(store);
-
-    // The genesis state is by definition finalised so just get the root from there.
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    updateBestBlock(headBlockRoot, headBlock.getSlot());
-    eventBus.post(new StoreInitializedEvent());
-  }
-
-  public void setGenesisTime(UnsignedLong genesisTime) {
-    this.genesisTime = genesisTime;
   }
 
   public UnsignedLong getGenesisTime() {
@@ -103,8 +119,14 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
     return this.store == null;
   }
 
-  public void setStore(Store store) {
+  boolean setStore(Store store) {
+    if (!storeInitialized.compareAndSet(false, true)) {
+      return false;
+    }
     this.store = store;
+    this.genesisTime = this.store.getGenesisTime();
+    storeInitializedFuture.complete(null);
+    return true;
   }
 
   public Store getStore() {
@@ -124,8 +146,9 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    * @param slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
-    this.bestBlockRoot = root;
+    this.bestBlockRoot = Optional.of(root);
     this.bestSlot = slot;
+    bestBlockInitialized.complete(null);
   }
 
   public Bytes4 getForkAtHead() {
@@ -138,12 +161,13 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
 
   public Bytes4 getForkAtEpoch(UnsignedLong epoch) {
     // TODO - add better fork configuration management
-    if (isPreGenesis()) {
+    final Optional<BeaconState> bestStateRoot = getBestBlockRootState();
+    if (isPreGenesis() || bestStateRoot.isEmpty()) {
       // We don't have anywhere to look for fork data, so just return the initial fork
       return Constants.GENESIS_FORK_VERSION;
     }
     // For now, we don't have any forks, so just use the latest
-    Fork latestFork = getBestBlockRootState().getFork();
+    Fork latestFork = bestStateRoot.get().getFork();
     return epoch.compareTo(latestFork.getEpoch()) < 0
         ? latestFork.getPrevious_version()
         : latestFork.getCurrent_version();
@@ -154,7 +178,7 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    *
    * @return
    */
-  public Bytes32 getBestBlockRoot() {
+  public Optional<Bytes32> getBestBlockRoot() {
     return this.bestBlockRoot;
   }
 
@@ -163,8 +187,8 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
    *
    * @return
    */
-  public BeaconState getBestBlockRootState() {
-    return this.store.getBlockState(this.bestBlockRoot);
+  public Optional<BeaconState> getBestBlockRootState() {
+    return bestBlockRoot.map(root -> this.store.getBlockState(root));
   }
 
   /**
@@ -235,16 +259,16 @@ public class ChainStorageClient implements ChainStorage, StoreUpdateHandler {
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
-    if (store == null || Bytes32.ZERO.equals(bestBlockRoot)) {
+    if (store == null || bestBlockRoot.isEmpty()) {
       LOG.trace("No block root at slot {} because store or best block root is not set", slot);
       return Optional.empty();
     }
     if (bestSlot.equals(slot)) {
       LOG.trace("Block root at slot {} is the current best slot root", slot);
-      return Optional.of(bestBlockRoot);
+      return bestBlockRoot;
     }
 
-    final BeaconState bestState = store.getBlockState(bestBlockRoot);
+    final BeaconState bestState = store.getBlockState(bestBlockRoot.get());
     if (bestState == null) {
       LOG.trace("No block root at slot {} because best state is not available", slot);
       return Optional.empty();
