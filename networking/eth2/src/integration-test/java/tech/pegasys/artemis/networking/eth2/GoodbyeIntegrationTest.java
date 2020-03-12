@@ -14,26 +14,23 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.util.Waiter;
 
 public class GoodbyeIntegrationTest {
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Peer peer1;
   private Eth2Peer peer2;
-  private Eth2Network network1;
-  private Eth2Network network2;
 
   @BeforeEach
   public void setUp() throws Exception {
-    network1 = networkFactory.builder().startNetwork();
-    network2 = networkFactory.builder().peer(network1).startNetwork();
+    final Eth2Network network1 = networkFactory.builder().startNetwork();
+    final Eth2Network network2 = networkFactory.builder().peer(network1).startNetwork();
     peer1 = network2.getPeer(network1.getNodeId()).orElseThrow();
     peer2 = network1.getPeer(network2.getNodeId()).orElseThrow();
   }
@@ -44,11 +41,9 @@ public class GoodbyeIntegrationTest {
   }
 
   @Test
-  public void shouldCloseConnectionAfterGoodbyeReceived() throws Exception {
-    waitFor(peer1.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN));
+  public void shouldCloseConnectionAfterGoodbyeReceived() {
+    peer1.disconnectCleanly(DisconnectReason.SHUTTING_DOWN);
     Waiter.waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     Waiter.waitFor(() -> assertThat(peer2.isConnected()).isFalse());
-    assertThat(network1.getPeerCount()).isZero();
-    assertThat(network2.getPeerCount()).isZero();
   }
 }

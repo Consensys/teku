@@ -21,11 +21,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
+import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class JsonProvider {
   private void addTekuMappers() {
@@ -36,8 +36,8 @@ public class JsonProvider {
     module.addDeserializer(Bitvector.class, new BitvectorDeserializer());
     module.addSerializer(Bitvector.class, new BitvectorSerializer());
 
-    module.addDeserializer(BLSPublicKey.class, new BLSPublicKeyDeserializer());
-    module.addSerializer(BLSPublicKey.class, new BLSPublicKeySerializer());
+    module.addSerializer(BLSPubKey.class, new BLSPubKeySerializer());
+    module.addDeserializer(BLSPubKey.class, new BLSPubKeyDeserializer());
     module.addDeserializer(BLSSignature.class, new BLSSignatureDeserializer());
     module.addSerializer(BLSSignature.class, new BLSSignatureSerializer());
 

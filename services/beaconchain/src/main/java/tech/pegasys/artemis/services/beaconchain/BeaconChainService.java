@@ -13,14 +13,15 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconChainService extends Service {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final BeaconChainController controller;
 
   public BeaconChainService(final ServiceConfig config) {
@@ -42,7 +43,7 @@ public class BeaconChainService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    STDOUT.log(Level.DEBUG, "BeaconChainService.stop()");
+    LOG.debug("BeaconChainService.stop()");
     this.controller.stop();
     return SafeFuture.COMPLETE;
   }

@@ -19,7 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.compute_pro
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
@@ -53,23 +52,30 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconStateUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
@@ -77,10 +83,10 @@ public class BeaconStateUtil {
    */
   public static boolean BLS_VERIFY_DEPOSIT = true;
 
-  public static BeaconStateWithCache initialize_beacon_state_from_eth1(
+  public static BeaconState initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     final GenesisGenerator genesisGenerator = new GenesisGenerator();
-    genesisGenerator.addDepositsFromBlock(eth1_block_hash, eth1_timestamp, deposits);
+    genesisGenerator.updateCandidateState(eth1_block_hash, eth1_timestamp, deposits);
     return genesisGenerator.getGenesisState();
   }
 
@@ -92,7 +98,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#deposits</a>
    */
-  public static void process_deposit(BeaconState state, Deposit deposit) {
+  public static void process_deposit(MutableBeaconState state, Deposit deposit) {
     checkArgument(
         is_valid_merkle_branch(
             deposit.getData().hash_tree_root(),
@@ -106,7 +112,7 @@ public class BeaconStateUtil {
   }
 
   static void process_deposit_without_checking_merkle_proof(
-      final BeaconState state,
+      final MutableBeaconState state,
       final Deposit deposit,
       final Map<BLSPublicKey, Integer> pubKeyToIndexMap) {
     state.setEth1_deposit_index(state.getEth1_deposit_index().plus(UnsignedLong.ONE));
@@ -142,7 +148,14 @@ public class BeaconStateUtil {
                     deposit.getData().getSignature(),
                     compute_domain(DOMAIN_DEPOSIT));
         if (!proof_is_valid) {
-          STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
+          if (deposit instanceof DepositWithIndex) {
+            LOG.warn(
+                "Skipping invalid deposit with index {} of pubkey {}",
+                ((DepositWithIndex) deposit).getIndex(),
+                pubkey);
+          } else {
+            LOG.warn("Skipping invalid deposit with of pubkey {}", pubkey);
+          }
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);
@@ -152,12 +165,12 @@ public class BeaconStateUtil {
       }
 
       if (pubKeyToIndexMap == null) {
-        STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+        LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
       state
           .getValidators()
           .add(
-              new Validator(
+              Validator.create(
                   pubkey,
                   deposit.getData().getWithdrawal_credentials(),
                   min(
@@ -176,14 +189,16 @@ public class BeaconStateUtil {
   }
 
   public static boolean is_valid_genesis_state(BeaconState state) {
-    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) < 0)
-        && !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-            < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+    return isItMinGenesisTimeYet(state) && isThereEnoughNumberOfValidators(state);
   }
 
-  public static boolean is_valid_genesis_stateSim(BeaconState state) {
-    return !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-        < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  public static boolean isThereEnoughNumberOfValidators(BeaconState state) {
+    return get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
+        >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+  }
+
+  public static boolean isItMinGenesisTimeYet(BeaconState state) {
+    return state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0;
   }
 
   /**
@@ -200,7 +215,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_merkle_branch</a>
    */
   public static boolean is_valid_merkle_branch(
-      Bytes32 leaf, List<Bytes32> branch, int depth, int index, Bytes32 root) {
+      Bytes32 leaf, SSZVector<Bytes32> branch, int depth, int index, Bytes32 root) {
     Bytes32 value = leaf;
     for (int i = 0; i < depth; i++) {
       if (Math.floor(index / Math.pow(2, i)) % 2 == 1) {
@@ -243,7 +258,7 @@ public class BeaconStateUtil {
    */
   public static UnsignedLong get_total_balance(BeaconState state, Collection<Integer> indices) {
     UnsignedLong sum = UnsignedLong.ZERO;
-    List<Validator> validator_registry = state.getValidators();
+    SSZList<Validator> validator_registry = state.getValidators();
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
@@ -259,7 +274,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
    */
   public static UnsignedLong get_total_active_balance(BeaconState state) {
-    return BeaconStateWithCache.getTransitionCaches(state)
+    return BeaconStateCache.getTransitionCaches(state)
         .getTotalActiveBalance()
         .get(
             get_current_epoch(state),
@@ -367,8 +382,8 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#initiate_validator_exit</a>
    */
-  public static void initiate_validator_exit(BeaconState state, int index) {
-    Validator validator = state.getValidators().get(index);
+  public static void initiate_validator_exit(MutableBeaconState state, int index) {
+    MutableValidator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
     if (!validator.getExit_epoch().equals(FAR_FUTURE_EPOCH)) {
       return;
@@ -411,10 +426,10 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slash_validator/a>
    */
   public static void slash_validator(
-      BeaconState state, int slashed_index, int whistleblower_index) {
+      MutableBeaconState state, int slashed_index, int whistleblower_index) {
     UnsignedLong epoch = get_current_epoch(state);
     initiate_validator_exit(state, slashed_index);
-    Validator validator = state.getValidators().get(slashed_index);
+    MutableValidator validator = state.getValidators().get(slashed_index);
     validator.setSlashed(true);
     validator.setWithdrawable_epoch(
         max(
@@ -447,7 +462,7 @@ public class BeaconStateUtil {
     increase_balance(state, whistleblower_index, whistleblower_reward.minus(proposer_reward));
   }
 
-  public static void slash_validator(BeaconState state, int slashed_index) {
+  public static void slash_validator(MutableBeaconState state, int slashed_index) {
     slash_validator(state, slashed_index, -1);
   }
 
@@ -585,7 +600,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_beacon_proposer_index</a>
    */
   public static int get_beacon_proposer_index(BeaconState state) {
-    return BeaconStateWithCache.getTransitionCaches(state)
+    return BeaconStateCache.getTransitionCaches(state)
         .getBeaconProposerIndex()
         .get(
             state.getSlot(),
@@ -714,7 +729,7 @@ public class BeaconStateUtil {
   public static UnsignedLong integer_squareroot(UnsignedLong n) {
     checkArgument(
         n.compareTo(UnsignedLong.ZERO) >= 0,
-        "checkArgument threw and exception in integer_squareroot()");
+        "checkArgument threw an exception in integer_squareroot()");
     UnsignedLong TWO = UnsignedLong.valueOf(2L);
     UnsignedLong x = n;
     UnsignedLong y = x.plus(UnsignedLong.ONE).dividedBy(TWO);

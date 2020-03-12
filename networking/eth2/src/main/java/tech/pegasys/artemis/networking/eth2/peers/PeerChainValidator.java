@@ -24,8 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -76,7 +76,7 @@ public class PeerChainValidator {
               if (!isValid) {
                 // We are not on the same chain
                 LOG.trace("Disconnecting peer on different chain: {}", peer);
-                peer.sendGoodbye(GoodbyeMessage.REASON_IRRELEVANT_NETWORK).reportExceptions();
+                peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
               } else {
                 LOG.trace("Validated peer's chain: {}", peer);
                 peer.markChainValidated();
@@ -86,7 +86,7 @@ public class PeerChainValidator {
         .exceptionally(
             err -> {
               LOG.debug("Unable to validate peer's chain, disconnecting: " + peer, err);
-              peer.sendGoodbye(GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK).reportExceptions();
+              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
               return false;
             });
   }

@@ -14,6 +14,9 @@
 package tech.pegasys.artemis;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -27,9 +30,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import tech.pegasys.artemis.util.Waiter;
-import tech.pegasys.artemis.util.alogger.ALogger;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.teku.logging.StatusLogger;
 
 class EventBusExceptionHandlerTest {
 
@@ -40,6 +44,8 @@ class EventBusExceptionHandlerTest {
   private final SafeFuture<Level> logLevelFuture = new SafeFuture<>();
   private final SafeFuture<Throwable> handledException = new SafeFuture<>();
   private final SafeFuture<Throwable> unhandledExceptionFuture = new SafeFuture<>();
+
+  private StatusLogger log = Mockito.mock(StatusLogger.class);
 
   @BeforeAll
   static void setupExecutor() {
@@ -53,31 +59,28 @@ class EventBusExceptionHandlerTest {
 
   @BeforeEach
   void setupBus() {
-
-    final var recordingLogger =
-        new ALogger("stdout") {
-          @Override
-          public void log(final Level level, final String message) {
-            logLevelFuture.complete(level);
-          }
-
-          @Override
-          public void log(Level level, String message, Throwable throwable, Color color) {
-            handledException.complete(throwable);
-            logLevelFuture.complete(level);
-          }
-
-          @Override
-          public void log(Level level, String message, Throwable throwable) {
-            handledException.complete(throwable);
-            logLevelFuture.complete(level);
-          }
-        };
+    lenient()
+        .doAnswer(
+            invocation -> {
+              handledException.complete(invocation.getArgument(1));
+              logLevelFuture.complete(Level.WARN);
+              return null;
+            })
+        .when(log)
+        .specificationFailure(anyString(), any(Exception.class));
+    lenient()
+        .doAnswer(
+            invocation -> {
+              handledException.complete(invocation.getArgument(1));
+              logLevelFuture.complete(Level.FATAL);
+              return null;
+            })
+        .when(log)
+        .unexpectedFailure(anyString(), any(Exception.class));
 
     final var exceptionHandlerRecordingWrapper =
         new SubscriberExceptionHandler() {
-          private final SubscriberExceptionHandler delegate =
-              new EventBusExceptionHandler(recordingLogger);
+          private final SubscriberExceptionHandler delegate = new EventBusExceptionHandler(log);
 
           @Override
           public void handleException(

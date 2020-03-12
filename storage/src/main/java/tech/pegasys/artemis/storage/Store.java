@@ -20,6 +20,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +36,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -89,8 +89,8 @@ public class Store implements ReadOnlyStore {
     Map<UnsignedLong, Checkpoint> latest_messages = new HashMap<>();
 
     blocks.put(root, new SignedBeaconBlock(genesisBlock, BLSSignature.empty()));
-    block_states.put(root, BeaconStateWithCache.deepCopy(genesisState));
-    checkpoint_states.put(justified_checkpoint, BeaconStateWithCache.deepCopy(genesisState));
+    block_states.put(root, genesisState);
+    checkpoint_states.put(justified_checkpoint, genesisState);
 
     return new Store(
         genesisState.getGenesis_time(),
@@ -461,6 +461,40 @@ public class Store implements ReadOnlyStore {
       return latest_messages.containsKey(validatorIndex)
           || Store.this.containsLatestMessage(validatorIndex);
     }
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof Store)) {
+      return false;
+    }
+    final Store store = (Store) o;
+    return Objects.equals(time, store.time)
+        && Objects.equals(genesis_time, store.genesis_time)
+        && Objects.equals(justified_checkpoint, store.justified_checkpoint)
+        && Objects.equals(finalized_checkpoint, store.finalized_checkpoint)
+        && Objects.equals(best_justified_checkpoint, store.best_justified_checkpoint)
+        && Objects.equals(blocks, store.blocks)
+        && Objects.equals(block_states, store.block_states)
+        && Objects.equals(checkpoint_states, store.checkpoint_states)
+        && Objects.equals(latest_messages, store.latest_messages);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        time,
+        genesis_time,
+        justified_checkpoint,
+        finalized_checkpoint,
+        best_justified_checkpoint,
+        blocks,
+        block_states,
+        checkpoint_states,
+        latest_messages);
   }
 
   interface StoreUpdateHandler {

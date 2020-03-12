@@ -38,8 +38,8 @@ import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
-import tech.pegasys.artemis.statetransition.CommitteeAssignment;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeAssignmentEvent;
 import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalEvent;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
@@ -56,9 +56,9 @@ public class CommitteeAssignmentManager {
 
   CommitteeAssignmentManager(
       Map<BLSPublicKey, ValidatorInfo> validators,
-      Map<UnsignedLong, List<AttesterInformation>> commiteeAssignments) {
+      Map<UnsignedLong, List<AttesterInformation>> committeeAssignments) {
     this.validators = validators;
-    this.committeeAssignments = commiteeAssignments;
+    this.committeeAssignments = committeeAssignments;
   }
 
   void updateCommitteeAssignments(

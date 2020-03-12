@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   private static final Logger LOG = LogManager.getLogger();
@@ -45,19 +46,36 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   }
 
   @Override
-  void subscribe(final T subscriber) {
+  void subscribe(final T subscriber, final int numberOfThreads) {
     final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     eventQueuesBySubscriber.put(subscriber, queue);
-    super.subscribe(subscriber);
-    executor.execute(new QueueReader(queue));
+    super.subscribe(subscriber, numberOfThreads);
+    for (int i = 0; i < numberOfThreads; i++) {
+      executor.execute(new QueueReader(queue));
+    }
   }
 
   @Override
   protected void deliverTo(final T subscriber, final Method method, final Object[] args) {
+    enqueueDelivery(subscriber, method, () -> super.deliverTo(subscriber, method, args));
+  }
+
+  @Override
+  protected <X> SafeFuture<X> deliverToWithResponse(
+      final T subscriber, final Method method, final Object[] args) {
+    final SafeFuture<X> result = new SafeFuture<>();
+    enqueueDelivery(
+        subscriber,
+        method,
+        () -> super.<X>deliverToWithResponse(subscriber, method, args).propagateTo(result));
+    return result;
+  }
+
+  private void enqueueDelivery(final T subscriber, final Method method, final Runnable action) {
     final BlockingQueue<Runnable> queue = checkNotNull(eventQueuesBySubscriber.get(subscriber));
     while (!stopped.get()) {
       try {
-        queue.put(() -> super.deliverTo(subscriber, method, args));
+        queue.put(action);
         return;
       } catch (final InterruptedException e) {
         LOG.debug("Interrupted while trying to publish event {}", method::getName);

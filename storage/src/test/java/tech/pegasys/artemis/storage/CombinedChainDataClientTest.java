@@ -20,8 +20,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,6 +31,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -149,7 +153,7 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final BeaconState bestState = beaconState(headSlot);
+    final MutableBeaconState bestState = beaconState(headSlot).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(historicalIndex, blockRoot);
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
@@ -175,13 +179,14 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final BeaconState headState = beaconState(headSlot);
+    final MutableBeaconState headState = beaconState(headSlot).createWritableCopy();
     final Bytes32 olderBlockRoot = Bytes32.fromHexString("0x8976");
     headState.getBlock_roots().set(historicalIndex + 1, olderBlockRoot);
     assertThat(BeaconStateUtil.get_block_root_at_slot(headState, lastSlotInHistoricalWindow))
         .isEqualTo(olderBlockRoot);
 
-    final BeaconState olderState = beaconState(lastSlotInHistoricalWindow);
+    final MutableBeaconState olderState =
+        beaconState(lastSlotInHistoricalWindow).createWritableCopy();
     olderState.getBlock_roots().set(historicalIndex, blockRoot);
 
     when(store.getBlockState(headBlockRoot)).thenReturn(headState);
@@ -204,7 +209,7 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final BeaconState bestState = beaconState(headSlot);
+    final MutableBeaconState bestState = beaconState(headSlot).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(historicalIndex, blockRoot);
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
@@ -226,7 +231,7 @@ class CombinedChainDataClientTest {
     final SignedBeaconBlock block = block(requestedSlot.minus(UnsignedLong.ONE));
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Bytes32 headBlockRoot = Bytes32.fromHexString("0x1234");
-    final BeaconState bestState = beaconState(headSlot);
+    final MutableBeaconState bestState = beaconState(headSlot).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(historicalIndex, blockRoot);
     when(store.getBlockState(headBlockRoot)).thenReturn(bestState);
@@ -234,6 +239,13 @@ class CombinedChainDataClientTest {
 
     assertThat(client.getBlockInEffectAtSlot(requestedSlot, headBlockRoot))
         .isCompletedWithValue(Optional.of(block));
+  }
+
+  @Test
+  public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
+    BeaconState state = DataStructureUtil.randomBeaconState(11233);
+    List<CommitteeAssignment> data = client.getCommitteesFromState(state, state.getSlot());
+    assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
   }
 
   @Test
@@ -246,8 +258,9 @@ class CombinedChainDataClientTest {
         .when(client)
         .getBlockRootBySlot(any());
     doReturn(Optional.empty()).when(client).getBestBlockRoot();
-    doReturn(store).when(client).getStore();
-    doReturn(signedBeaconBlock).when(store).getSignedBlock(any());
+    doReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
+        .when(client)
+        .getBlockByBlockRoot(any());
 
     assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
     assertThat(client.getBlockBySlot(slotParam).get())

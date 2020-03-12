@@ -42,8 +42,8 @@ import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.IndexedAttestation;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
@@ -103,19 +103,17 @@ public class ForkChoiceUtil {
   public static UnsignedLong get_latest_attesting_balance(Store store, Bytes32 root) {
     BeaconState state = store.getCheckpointState(store.getJustifiedCheckpoint());
     List<Integer> active_indices = get_active_validator_indices(state, get_current_epoch(state));
-    return UnsignedLong.valueOf(
-        active_indices.stream()
-            .filter(
-                i ->
-                    store.containsLatestMessage(UnsignedLong.valueOf(i))
-                        && get_ancestor(
-                                store,
-                                store.getLatestMessage(UnsignedLong.valueOf(i)).getRoot(),
-                                store.getBlock(root).getSlot())
-                            .equals(root))
-            .map(i -> state.getValidators().get(i).getEffective_balance())
-            .mapToLong(UnsignedLong::longValue)
-            .sum());
+    return active_indices.stream()
+        .filter(
+            i ->
+                store.containsLatestMessage(UnsignedLong.valueOf(i))
+                    && get_ancestor(
+                            store,
+                            store.getLatestMessage(UnsignedLong.valueOf(i)).getRoot(),
+                            store.getBlock(root).getSlot())
+                        .equals(root))
+        .map(i -> state.getValidators().get(i).getEffective_balance())
+        .reduce(UnsignedLong.ZERO, UnsignedLong::plus);
   }
 
   public static boolean filter_block_tree(
@@ -302,12 +300,11 @@ public class ForkChoiceUtil {
     store.putBlock(block.hash_tree_root(), signed_block);
 
     // Make a copy of the state to avoid mutability issues
-    BeaconStateWithCache state =
-        BeaconStateWithCache.deepCopy(BeaconStateWithCache.fromBeaconState(preState));
+    BeaconState state;
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(state, signed_block, true);
+      state = st.initiate(preState, signed_block, true);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
@@ -495,9 +492,9 @@ public class ForkChoiceUtil {
       if (target.getEpochSlot().equals(targetRootState.getSlot())) {
         targetState = targetRootState;
       } else {
-        final BeaconStateWithCache base_state = BeaconStateWithCache.deepCopy(targetRootState);
-        stateTransition.process_slots(base_state, target.getEpochSlot(), false);
-        targetState = base_state;
+        final MutableBeaconState base_state = targetRootState.createWritableCopy();
+        stateTransition.process_slots(base_state, target.getEpochSlot());
+        targetState = base_state.commitChanges();
       }
       store.putCheckpointState(target, targetState);
     }

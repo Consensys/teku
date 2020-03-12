@@ -31,8 +31,9 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
@@ -152,7 +153,7 @@ public class AttestationGenerator {
 
   public Attestation validAttestation(final ChainStorageClient storageClient)
       throws EpochProcessingException, SlotProcessingException {
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
+    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
     BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
     return createAttestation(block, state, true);
@@ -160,9 +161,15 @@ public class AttestationGenerator {
 
   public Attestation attestationWithInvalidSignature(final ChainStorageClient storageClient)
       throws EpochProcessingException, SlotProcessingException {
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
+    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     BeaconBlock block = storageClient.getStore().getBlock(bestBlockRoot);
     BeaconState state = storageClient.getStore().getBlockState(bestBlockRoot);
+    return createAttestation(block, state, false);
+  }
+
+  public Attestation attestationWithInvalidSignature(
+      final BeaconBlock block, final BeaconState state)
+      throws EpochProcessingException, SlotProcessingException {
     return createAttestation(block, state, false);
   }
 
@@ -238,12 +245,12 @@ public class AttestationGenerator {
     return attestations;
   }
 
-  private BeaconStateWithCache processStateToSlot(BeaconState preState, UnsignedLong slot)
+  private BeaconState processStateToSlot(BeaconState preState, UnsignedLong slot)
       throws EpochProcessingException, SlotProcessingException {
-    final StateTransition stateTransition = new StateTransition(false);
-    final BeaconStateWithCache postState = BeaconStateWithCache.fromBeaconState(preState);
+    final StateTransition stateTransition = new StateTransition();
+    final MutableBeaconState postState = preState.createWritableCopy();
 
-    stateTransition.process_slots(postState, slot, false);
+    stateTransition.process_slots(postState, slot);
     return postState;
   }
 
@@ -253,9 +260,9 @@ public class AttestationGenerator {
       int indexIntoCommittee,
       Committee committee,
       AttestationData genericAttestationData) {
-    int commmitteSize = committee.getCommitteeSize();
+    int committeSize = committee.getCommitteeSize();
     Bitlist aggregationBitfield =
-        AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
+        AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
     Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain =

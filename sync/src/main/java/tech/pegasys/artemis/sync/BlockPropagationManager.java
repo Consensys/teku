@@ -22,8 +22,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
+import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.FailureReason;
@@ -64,7 +65,7 @@ public class BlockPropagationManager extends Service {
 
   public static BlockPropagationManager create(
       final EventBus eventBus,
-      final Eth2Network eth2Network,
+      final P2PNetwork<Eth2Peer> eth2Network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);

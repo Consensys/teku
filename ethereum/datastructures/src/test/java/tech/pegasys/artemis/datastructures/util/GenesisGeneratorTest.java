@@ -31,7 +31,8 @@ import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
@@ -65,17 +66,17 @@ class GenesisGeneratorTest {
 
     final UnsignedLong genesisTime = UnsignedLong.valueOf(982928293223232L);
 
-    final BeaconStateWithCache expectedState =
+    final BeaconState expectedState =
         BeaconStateUtil.initialize_beacon_state_from_eth1(
             eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
 
-    genesisGenerator.addDepositsFromBlock(
+    genesisGenerator.updateCandidateState(
         eth1BlockHash1, genesisTime.minus(UnsignedLong.ONE), INITIAL_DEPOSITS.subList(0, 8));
 
-    genesisGenerator.addDepositsFromBlock(
+    genesisGenerator.updateCandidateState(
         eth1BlockHash2, genesisTime, INITIAL_DEPOSITS.subList(8, INITIAL_DEPOSITS.size()));
 
-    final BeaconStateWithCache actualState = genesisGenerator.getGenesisState();
+    final BeaconState actualState = genesisGenerator.getGenesisState();
     assertThat(actualState).isEqualTo(expectedState);
     assertThat(get_active_validator_indices(expectedState, GENESIS_EPOCH))
         .hasSize(VALIDATOR_KEYS.size());
@@ -84,10 +85,10 @@ class GenesisGeneratorTest {
   @Test
   public void shouldIncrementallyAddValidators() {
     for (int i = 0; i < INITIAL_DEPOSITS.size(); i++) {
-      genesisGenerator.addDepositsFromBlock(
+      genesisGenerator.updateCandidateState(
           Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
 
-      final BeaconStateWithCache state = genesisGenerator.getGenesisState();
+      final BeaconState state = genesisGenerator.getGenesisState();
       assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
     }
   }
@@ -99,19 +100,19 @@ class GenesisGeneratorTest {
     final Predicate<BeaconState> validityCriteria =
         candidate -> get_active_validator_indices(candidate, GENESIS_EPOCH).size() == 2;
 
-    genesisGenerator.addDepositsFromBlock(
+    genesisGenerator.updateCandidateState(
         Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(0)));
     assertThat(genesisGenerator.getGenesisStateIfValid(validityCriteria)).isEmpty();
 
     // Now we should have two validators, not the 1 that would have been cached before.
-    genesisGenerator.addDepositsFromBlock(
+    genesisGenerator.updateCandidateState(
         Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(1)));
-    final Optional<BeaconStateWithCache> state =
+    final Optional<MutableBeaconState> state =
         genesisGenerator.getGenesisStateIfValid(validityCriteria);
     assertThat(state).isNotEmpty();
 
     // And caching should be enabled on the final generated state.
-    assertThat(BeaconStateWithCache.getTransitionCaches(state.get()))
+    assertThat(BeaconStateCache.getTransitionCaches(state.get()))
         .isNotSameAs(TransitionCaches.getNoOp());
   }
 
@@ -129,8 +130,8 @@ class GenesisGeneratorTest {
             BLSSignature.empty());
     deposits.add(0, new Deposit(invalidData));
 
-    genesisGenerator.addDepositsFromBlock(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
-    final BeaconStateWithCache state = genesisGenerator.getGenesisState();
+    genesisGenerator.updateCandidateState(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
+    final BeaconState state = genesisGenerator.getGenesisState();
     // All deposits were processed
     assertThat(state.getEth1_deposit_index()).isEqualTo(UnsignedLong.valueOf(deposits.size()));
     // But one didn't result in a new validator

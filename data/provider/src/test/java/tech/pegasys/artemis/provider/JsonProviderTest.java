@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.provider;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,7 +23,9 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
+import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
@@ -51,7 +54,7 @@ class JsonProviderTest {
 
   @Test
   public void vectorShouldSerializeToJson() throws JsonProcessingException {
-    SSZVector<String> data = new SSZVector<String>(List.of("One", "Two"), String.class);
+    SSZVector<String> data = SSZVector.createMutable(List.of("One", "Two"), String.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[" + Q + "One" + Q + "," + Q + "Two" + Q + "]");
   }
@@ -59,7 +62,8 @@ class JsonProviderTest {
   @Test
   public void sszVectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZVector<UnsignedLong> data =
-        new SSZVector<>(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
+        SSZVector.createMutable(
+            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[1,18446744073709551615]");
   }
@@ -79,7 +83,8 @@ class JsonProviderTest {
   @Test
   public void sszListOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
     SSZList<UnsignedLong> data =
-        new SSZList<>(List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
+        SSZList.createMutable(
+            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, "[1,18446744073709551615]");
   }
@@ -92,8 +97,30 @@ class JsonProviderTest {
 
   @Test
   void beaconStateJsonTest() throws JsonProcessingException {
-    BeaconState state = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
+    tech.pegasys.artemis.datastructures.state.BeaconState stateInternal =
+        DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
+    BeaconState state = new BeaconState(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
+  }
+
+  @Test
+  void validatorsRequestTest() throws JsonProcessingException {
+    final String PUBKEY =
+        "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
+    final String data =
+        "{\n"
+            + "  \"epoch\": 0, \n"
+            + "  \"pubkeys\": [\n"
+            + "\""
+            + PUBKEY
+            + "\"\n"
+            + "  ]\n"
+            + "}";
+
+    ValidatorsRequest result = jsonProvider.jsonToObject(data, ValidatorsRequest.class);
+
+    assertThat(result.epoch).isEqualTo(UnsignedLong.ZERO);
+    assertThat(result.pubkeys).isEqualTo(List.of(BLSPubKey.fromHexString(PUBKEY)));
   }
 }

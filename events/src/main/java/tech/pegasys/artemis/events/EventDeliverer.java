@@ -20,6 +20,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.artemis.metrics.ArtemisMetricCategory;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 abstract class EventDeliverer<T> implements InvocationHandler {
@@ -35,7 +36,7 @@ abstract class EventDeliverer<T> implements InvocationHandler {
             "channel");
   }
 
-  void subscribe(T subscriber) {
+  void subscribe(final T subscriber, final int numberOfThreads) {
     subscribers.subscribe(subscriber);
   }
 
@@ -49,11 +50,24 @@ abstract class EventDeliverer<T> implements InvocationHandler {
       }
     }
     publishedEventCounter.labels(method.getDeclaringClass().getSimpleName()).inc();
-    subscribers.forEach(subscriber -> deliverTo(subscriber, method, args));
-    return null;
+    if (method.getReturnType().equals(Void.TYPE)) {
+      subscribers.forEach(subscriber -> deliverTo(subscriber, method, args));
+      return null;
+    } else {
+      final SafeFuture<T> result = new SafeFuture<>();
+      subscribers.forEach(
+          subscriber -> {
+            final SafeFuture<T> response = deliverToWithResponse(subscriber, method, args);
+            response.propagateTo(result);
+          });
+      return result;
+    }
   }
 
   protected abstract void deliverTo(T subscriber, Method method, Object[] args);
+
+  protected abstract <X> SafeFuture<X> deliverToWithResponse(
+      T subscriber, Method method, Object[] args);
 
   public void stop() {}
 }

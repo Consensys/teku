@@ -44,6 +44,28 @@ gradle.startParameter.taskNames.each {
 gradle.startParameter.taskNames = expandedTaskList.flatten() as Iterable<String>
 
 def userHome = System.getProperty("user.home")
+
+apply plugin: 'com.jfrog.bintray'
+
+def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
+
+def bintrayPackage = bintray.pkg {
+  repo = 'pegasys-repo'
+  name = 'teku'
+  userOrg = 'consensys'
+  desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
+  licenses = ['Apache-2.0']
+  websiteUrl = 'https://github.com/PegaSysEng/teku'
+  issueTrackerUrl = 'https://github.com/PegaSysEng/teku/issues'
+  vcsUrl = 'https://github.com/PegaSysEng/teku.git'
+
+  version {
+    name = project.version
+    released = new Date()
+  }
+}
+
 allprojects {
   apply plugin: 'java-library'
   apply plugin: 'io.spring.dependency-management'
@@ -55,6 +77,11 @@ allprojects {
   version = rootProject.version
 
   jacoco { toolVersion = '0.8.5' }
+
+  task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+  }
 
   sourceCompatibility = '11'
   targetCompatibility = '11'
@@ -265,17 +292,20 @@ application {
 // simple for use in docker
 tasks.register("dockerDistUntar") {
   dependsOn distTar
-  def dockerBuildDir = "build/docker-teku/"
+  def dockerBuildPath = "build/docker-teku/"
   def distTarFile = distTar.outputs.files.singleFile
   def distTarFileName = distTar.outputs.files.singleFile.name.replace(".tar.gz", "")
 
   doFirst {
-    new File(dockerBuildDir).mkdir()
+    def dockerBuildDir = new File(dockerBuildPath)
+    dockerBuildDir.deleteDir()
+    dockerBuildDir.mkdir()
     copy {
       from tarTree(distTarFile)
-      into(dockerBuildDir)
+      into(dockerBuildPath)
     }
-    file("${dockerBuildDir}/${distTarFileName}").renameTo("${dockerBuildDir}/teku")
+    def dockerDist = file("${dockerBuildPath}/${distTarFileName}")
+    dockerDist.renameTo("${dockerBuildPath}/teku")
   }
 }
 
@@ -344,7 +374,6 @@ subprojects {
     options.fork = true
     options.incremental = true
   }
-  apply plugin: 'maven-publish'
 
   sourceSets {
     // test-support can be consumed as a library by other projects in their tests
@@ -388,6 +417,71 @@ subprojects {
     }
   }
 
+  task testSupportJar(type: Jar) {
+    archiveBaseName = "${project.name}-support-test"
+    classifier = 'test-support'
+    from sourceSets.testSupport.output
+  }
+
+  def sourceSetIsPopulated = { sourceSetName ->
+    def result = project.sourceSets.names.contains(sourceSetName) && !project.sourceSets.getAt(sourceSetName).allSource.empty
+    logger.info("Project = " + project.name + " Has Source Set (" + sourceSetName + ") = " + result + "(" + project.sourceSets.names + ")")
+    return result
+  }
+
+  if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testSupport")) {
+    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'maven-publish'
+
+    publishing {
+      publications {
+        mavenJava(MavenPublication) {
+          groupId "tech.pegasys.teku.internal"
+          version "${project.version}"
+          if (sourceSetIsPopulated("main")) {
+            from components.java
+            artifact sourcesJar
+          }
+
+          if (sourceSetIsPopulated("testSupport")) {
+            artifact testSupportJar
+          }
+          versionMapping {
+            usage('java-api') { fromResolutionOf('runtimeClasspath') }
+            usage('java-runtime') { fromResolutionResult() }
+          }
+          pom {
+            name = "Teku - ${project.name}"
+            url = 'https://github.com/PegaSysEng/teku'
+            licenses {
+              license {
+                name = 'The Apache License, Version 2.0'
+                url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+              }
+            }
+            scm {
+              connection = 'scm:git:git://github.com/PegaSysEng/teku.git'
+              developerConnection = 'https://github.com/PegaSysEng/teku.git'
+              url = 'https://github.com/PegaSysEng/teku'
+            }
+          }
+        }
+      }
+    }
+
+    bintray {
+      user = bintrayUser
+      key = bintrayKey
+
+      publications = ['mavenJava']
+      override = version.endsWith('SNAPSHOT')
+
+      publish = true
+
+      pkg = bintrayPackage
+    }
+  }
+
   configurations {
     testSupportImplementation.extendsFrom implementation
     integrationTestImplementation.extendsFrom implementation
@@ -395,11 +489,6 @@ subprojects {
     compatibilityTestImplementation.extendsFrom implementation
     referenceTestImplementation.extendsFrom implementation
     testSupportArtifacts.extendsFrom testSupportImplementation
-  }
-
-  task testSupportJar (type: Jar) {
-    baseName = "${project.name}-support-test"
-    from sourceSets.testSupport.output
   }
 
   artifacts { testSupportArtifacts testSupportJar }
@@ -606,27 +695,6 @@ configure(subprojects.findAll {it.name != 'errorprone-checks'}) {
 
   tasks.withType(JavaCompile) {
     options.annotationProcessorPath = configurations.annotationProcessor
-  }
-}
-
-apply plugin: 'com.jfrog.bintray'
-
-def bintrayUser = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
-def bintrayKey = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_KEY')
-
-def bintrayPackage = bintray.pkg {
-  repo = 'pegasys-repo'
-  name = 'teku'
-  userOrg = 'consensys'
-  desc = 'Java Implementation of the Ethereum 2.0 Beacon Chain'
-  licenses = ['Apache-2.0']
-  websiteUrl = 'https://github.com/PegaSysEng/artemis'
-  issueTrackerUrl = 'https://github.com/PegaSysEng/artemis/issues'
-  vcsUrl = 'https://github.com/PegaSysEng/artemis.git'
-
-  version {
-    name = project.version
-    released = new Date()
   }
 }
 

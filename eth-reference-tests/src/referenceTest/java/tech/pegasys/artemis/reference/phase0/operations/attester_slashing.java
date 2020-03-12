@@ -21,8 +21,6 @@ import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.proce
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,8 +29,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
+import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
 @ExtendWith(BouncyCastleExtension.class)
 public class attester_slashing extends TestSuite {
@@ -41,20 +41,20 @@ public class attester_slashing extends TestSuite {
   @MethodSource({"mainnetAttesterSlashingSuccessSetup", "minimalAttesterSlashingSuccessSetup"})
   void processAttesterSlashingSuccess(
       AttesterSlashing attester_slashing, BeaconState pre, BeaconState post, String testName) {
-    List<AttesterSlashing> attester_slashings = new ArrayList<>();
-    attester_slashings.add(attester_slashing);
-    assertDoesNotThrow(() -> process_attester_slashings(pre, attester_slashings));
-    assertEquals(pre, post);
+    MutableBeaconState wState = pre.createWritableCopy();
+    assertDoesNotThrow(
+        () -> process_attester_slashings(wState, SSZList.singleton(attester_slashing)));
+    assertEquals(post, wState);
   }
 
   @ParameterizedTest(name = "{index}.{2} process attester slashing rejection")
   @MethodSource({"mainnetAttesterSlashingSetup", "minimalAttesterSlashingSetup"})
   void processAttesterSlashing(
       AttesterSlashing attester_slashing, BeaconState pre, String testName) {
-    List<AttesterSlashing> attester_slashings = new ArrayList<>();
-    attester_slashings.add(attester_slashing);
+    MutableBeaconState wState = pre.createWritableCopy();
     assertThrows(
-        BlockProcessingException.class, () -> process_attester_slashings(pre, attester_slashings));
+        BlockProcessingException.class,
+        () -> process_attester_slashings(wState, SSZList.singleton(attester_slashing)));
   }
 
   @MustBeClosed

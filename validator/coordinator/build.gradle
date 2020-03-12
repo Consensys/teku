@@ -5,6 +5,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
   implementation project(':util')
+  implementation project(':logging')
   implementation project(':pow')
   implementation project(':data:keystore')
 

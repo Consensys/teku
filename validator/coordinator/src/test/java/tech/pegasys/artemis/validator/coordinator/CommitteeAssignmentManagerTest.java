@@ -35,7 +35,7 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartDepositGenerator;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
@@ -53,8 +53,10 @@ class CommitteeAssignmentManagerTest {
       new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 50);
   private final List<DepositData> depositDatas =
       new MockStartDepositGenerator().createDeposits(validatorKeys);
-  private final BeaconState state =
-      new MockStartBeaconStateGenerator().createInitialBeaconState(UnsignedLong.ONE, depositDatas);
+  private final MutableBeaconState state =
+      new MockStartBeaconStateGenerator()
+          .createInitialBeaconState(UnsignedLong.ONE, depositDatas)
+          .createWritableCopy();
 
   private CommitteeAssignmentManager committeeAssignmentManager;
   private Map<BLSPublicKey, ValidatorInfo> validators = new HashMap<>();
@@ -103,8 +105,8 @@ class CommitteeAssignmentManagerTest {
   void someAlreadyRegistered_someToRegister_someToDeregister() throws Exception {
     // Set TARGET_COMMITTEE_SIZE to 1 in order to make sure there are more than 1 committees per
     // slot
-    // and our Validotor will be assigned to a different committee at epoch 3
-    int oldTargetCommiteeSize = TARGET_COMMITTEE_SIZE;
+    // and our Validator will be assigned to a different committee at epoch 3
+    int oldTargetCommitteeSize = TARGET_COMMITTEE_SIZE;
     TARGET_COMMITTEE_SIZE = 1;
 
     EventBus eventBus = mock(EventBus.class);
@@ -124,7 +126,7 @@ class CommitteeAssignmentManagerTest {
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(any(CommitteeAssignmentEvent.class)));
     Waiter.waitFor(() -> verify(eventBus, times(1)).post(any(CommitteeDismissalEvent.class)));
 
-    TARGET_COMMITTEE_SIZE = oldTargetCommiteeSize;
+    TARGET_COMMITTEE_SIZE = oldTargetCommitteeSize;
   }
 
   @Test

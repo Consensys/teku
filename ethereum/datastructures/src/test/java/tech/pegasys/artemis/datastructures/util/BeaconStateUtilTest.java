@@ -40,10 +40,11 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Fork;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -102,7 +103,7 @@ class BeaconStateUtilTest {
   }
 
   @Test
-  void validateProofOfPosessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
+  void validateProofOfPossessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = deposit.getData().getPubkey();
     DepositData depositData = deposit.getData();
@@ -123,7 +124,7 @@ class BeaconStateUtilTest {
   }
 
   @Test
-  void validateProofOfPosessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
+  void validateProofOfPossessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
     Deposit deposit = newDeposits(1).get(0);
     BLSPublicKey pubkey = BLSPublicKey.random();
     DepositData depositData = deposit.getData();
@@ -161,7 +162,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot1() {
-    BeaconState beaconState = createBeaconState();
+    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
@@ -170,7 +171,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlot2() {
-    BeaconState beaconState = createBeaconState();
+    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT + Constants.SLOTS_PER_EPOCH));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH),
@@ -179,7 +180,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetPreviousSlotReturnsGenesisSlotPlusOne() {
-    BeaconState beaconState = createBeaconState();
+    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(
         UnsignedLong.valueOf(Constants.GENESIS_SLOT + 2 * Constants.SLOTS_PER_EPOCH));
     assertEquals(
@@ -189,7 +190,7 @@ class BeaconStateUtilTest {
 
   @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
-    BeaconState beaconState = createBeaconState();
+    MutableBeaconState beaconState = createBeaconState().createWritableCopy();
     beaconState.setSlot(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
     assertEquals(
         UnsignedLong.valueOf(Constants.GENESIS_EPOCH + 1),
@@ -276,7 +277,7 @@ class BeaconStateUtilTest {
 
   private BeaconState createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
-    BeaconState beaconState = new BeaconStateWithCache();
+    MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
     beaconState.setSlot(randomUnsignedLong(100));
     beaconState.setFork(
         new Fork(
@@ -296,11 +297,17 @@ class BeaconStateUtilTest {
       balanceList.add(amount);
     }
 
-    beaconState.setValidators(
-        new SSZList<>(validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
-    beaconState.setBalances(
-        new SSZList<>(balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
-    return beaconState;
+    beaconState
+        .getValidators()
+        .addAll(
+            SSZList.createMutable(
+                validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
+    beaconState
+        .getBalances()
+        .addAll(
+            SSZList.createMutable(
+                balanceList, Constants.VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class));
+    return beaconState.commitChanges();
   }
 
   // *************** START Shuffling Tests ***************
@@ -339,7 +346,7 @@ class BeaconStateUtilTest {
   void processDepositsShouldIgnoreInvalidSignedDeposits() {
     ArrayList<DepositWithIndex> deposits = randomDeposits(3, 100);
     deposits.get(1).getData().setSignature(BLSSignature.empty());
-    BeaconStateWithCache state =
+    BeaconState state =
         initialize_beacon_state_from_eth1(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
     assertEquals(2, state.getValidators().size());
     assertEquals(deposits.get(0).getData().getPubkey(), state.getValidators().get(0).getPubkey());

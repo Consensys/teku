@@ -42,7 +42,7 @@ public class StatusMessageFactory {
         chainStorageClient.getForkAtHead(),
         finalizedRoot,
         finalizedEpoch,
-        chainStorageClient.getBestBlockRoot(),
+        chainStorageClient.getBestBlockRoot().orElse(Bytes32.ZERO),
         chainStorageClient.getBestSlot());
   }
 }

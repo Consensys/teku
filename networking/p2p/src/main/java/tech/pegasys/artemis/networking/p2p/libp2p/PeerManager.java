@@ -13,21 +13,18 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
 import io.libp2p.core.multiformats.Multiaddr;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -38,15 +35,13 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
+
   private static final Logger LOG = LogManager.getLogger();
 
-  private final AsyncRunner asyncRunner;
-  private static final Duration RECONNECT_TIMEOUT = Duration.ofSeconds(20);
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
@@ -56,11 +51,9 @@ public class PeerManager implements ConnectionHandler {
       Subscribers.create(true);
 
   public PeerManager(
-      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final List<PeerHandler> peerHandlers,
       final Map<RpcMethod, RpcHandler> rpcHandlers) {
-    this.asyncRunner = asyncRunner;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
@@ -70,7 +63,6 @@ public class PeerManager implements ConnectionHandler {
   public void handleConnection(@NotNull final Connection connection) {
     Peer peer = new LibP2PPeer(connection, rpcHandlers);
     onConnectedPeer(peer);
-    SafeFuture.of(connection.closeFuture()).finish(() -> onDisconnectedPeer(peer));
   }
 
   public long subscribeConnect(final PeerConnectedSubscriber<Peer> subscriber) {
@@ -81,36 +73,36 @@ public class PeerManager implements ConnectionHandler {
     connectSubscribers.unsubscribe(subscriptionId);
   }
 
-  public SafeFuture<?> connect(final Multiaddr peer, final Network network) {
+  public SafeFuture<Peer> connect(final Multiaddr peer, final Network network) {
     LOG.debug("Connecting to {}", peer);
-    final SafeFuture<Connection> initialConnectionFuture = SafeFuture.of(network.connect(peer));
+    return SafeFuture.of(network.connect(peer))
+        .thenApply(
+            connection -> {
+              final LibP2PNodeId nodeId =
+                  new LibP2PNodeId(connection.secureSession().getRemoteId());
+              final Peer connectedPeer = connectedPeerMap.get(nodeId);
+              if (connectedPeer == null) {
+                if (connection.closeFuture().isDone()) {
+                  // Connection has been immediately closed and the peer already removed
+                  // Since the connection is closed anyway, we can create a new peer to wrap it.
+                  return new LibP2PPeer(connection, rpcHandlers);
+                } else {
+                  // Theoretically this should never happen because removing from the map is done
+                  // by the close future completing, but make a loud noise just in case.
+                  throw new IllegalStateException(
+                      "No peer registered for established connection to " + nodeId);
+                }
+              }
+              return connectedPeer;
+            })
+        .exceptionallyCompose(this::handleConcurrentConnectionInitiation);
+  }
 
-    // Retry if peer disconnects or we fail to connect
-    initialConnectionFuture
-        .thenCompose(
-            conn -> {
-              LOG.debug("Connection to peer {} was successful", conn.secureSession().getRemoteId());
-              return SafeFuture.of(conn.closeFuture());
-            })
-        .exceptionally(
-            (err) -> {
-              LOG.debug("Connection to {} failed: {}", peer, err);
-              return null;
-            })
-        .thenCompose(
-            (res) -> {
-              LOG.debug(
-                  "Connection to {} was closed. Will retry in {} sec",
-                  peer,
-                  RECONNECT_TIMEOUT.toSeconds());
-              return asyncRunner.runAfterDelay(
-                  () -> connect(peer, network).exceptionally(err -> null),
-                  RECONNECT_TIMEOUT.toMillis(),
-                  TimeUnit.MILLISECONDS);
-            })
-        .reportExceptions();
-
-    return initialConnectionFuture;
+  private CompletionStage<Peer> handleConcurrentConnectionInitiation(final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    return rootCause instanceof PeerAlreadyConnectedException
+        ? SafeFuture.completedFuture(((PeerAlreadyConnectedException) rootCause).getPeer())
+        : SafeFuture.failedFuture(error);
   }
 
   public Optional<Peer> getPeer(NodeId id) {
@@ -121,15 +113,20 @@ public class PeerManager implements ConnectionHandler {
   void onConnectedPeer(Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
-      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
+      LOG.debug("onConnectedPeer() {}", peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
       connectSubscribers.forEach(c -> c.onConnected(peer));
+      peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
+    } else {
+      LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
+      throw new PeerAlreadyConnectedException(peer);
     }
   }
 
-  private void onDisconnectedPeer(Peer peer) {
+  @VisibleForTesting
+  void onDisconnectedPeer(Peer peer) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
-      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getId());
+      LOG.debug("Peer disconnected: {}", peer.getId());
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
   }
@@ -140,5 +137,26 @@ public class PeerManager implements ConnectionHandler {
 
   public int getPeerCount() {
     return connectedPeerMap.size();
+  }
+
+  /**
+   * Indicates that two connections to the same PeerID were incorrectly established.
+   *
+   * <p>LibP2P usually detects attempts to establish multiple connections at the same time, but if
+   * we have incoming and outgoing connections simultaneously to the same peer, sometimes it slips
+   * through. In that case this exception is thrown so that the new connection is terminated before
+   * handshakes complete and we are able to identify the situation and return the existing peer.
+   */
+  private static class PeerAlreadyConnectedException extends RuntimeException {
+    private final Peer peer;
+
+    public PeerAlreadyConnectedException(final Peer peer) {
+      super("Already connected to peer " + peer.getId().toBase58());
+      this.peer = peer;
+    }
+
+    public Peer getPeer() {
+      return peer;
+    }
   }
 }

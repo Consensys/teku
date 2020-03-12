@@ -93,8 +93,14 @@ class MapDbDatabaseTest {
   }
 
   @Test
+  public void createMemoryStoreFromEmptyDatabase() {
+    Database database = MapDbDatabase.createInMemory();
+    assertThat(database.createMemoryStore()).isEmpty();
+  }
+
+  @Test
   public void shouldRecreateOriginalGenesisStore() {
-    final Store memoryStore = database.createMemoryStore();
+    final Store memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
   }
 
@@ -146,7 +152,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
 
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(transaction.getFinalizedCheckpoint());
@@ -165,7 +171,7 @@ class MapDbDatabaseTest {
     transaction.setGenesis_time(newGenesisTime);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
   }
 
@@ -179,7 +185,7 @@ class MapDbDatabaseTest {
     transaction.setJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -193,7 +199,7 @@ class MapDbDatabaseTest {
     transaction.setFinalizedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -207,7 +213,7 @@ class MapDbDatabaseTest {
     transaction.setBestJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getBestJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -222,7 +228,7 @@ class MapDbDatabaseTest {
     transaction.putBlock(newBlockRoot, newBlock);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getBlock(newBlockRoot)).isEqualTo(newBlock.getMessage());
   }
 
@@ -237,7 +243,7 @@ class MapDbDatabaseTest {
     transaction.putBlockState(blockRoot, newState);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getBlockState(blockRoot)).isEqualTo(newState);
   }
 
@@ -252,7 +258,7 @@ class MapDbDatabaseTest {
     transaction.putCheckpointState(checkpoint, newState);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(checkpoint)).isEqualTo(newState);
   }
 
@@ -267,7 +273,7 @@ class MapDbDatabaseTest {
     transaction.putLatestMessage(validatorIndex, latestMessage);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getLatestMessage(validatorIndex)).isEqualTo(latestMessage);
   }
 
@@ -285,7 +291,7 @@ class MapDbDatabaseTest {
     transaction.putLatestMessage(validator3, checkpoint1);
     commit(transaction);
 
-    final Store result1 = database.createMemoryStore();
+    final Store result1 = database.createMemoryStore().orElseThrow();
     assertThat(result1.getLatestMessage(validator1)).isEqualTo(checkpoint1);
     assertThat(result1.getLatestMessage(validator2)).isEqualTo(checkpoint2);
     assertThat(result1.getLatestMessage(validator3)).isEqualTo(checkpoint1);
@@ -295,7 +301,7 @@ class MapDbDatabaseTest {
     transaction2.putLatestMessage(validator3, checkpoint2);
     commit(transaction2);
 
-    final Store result2 = database.createMemoryStore();
+    final Store result2 = database.createMemoryStore().orElseThrow();
     assertThat(result2.getLatestMessage(validator1)).isEqualTo(checkpoint1);
     assertThat(result2.getLatestMessage(validator2)).isEqualTo(checkpoint2);
     assertThat(result2.getLatestMessage(validator3)).isEqualTo(checkpoint2);
@@ -315,7 +321,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(checkpoint1))
         .isEqualTo(transaction.getCheckpointState(checkpoint1));
     assertThat(result.getCheckpointState(checkpoint2))
@@ -353,7 +359,7 @@ class MapDbDatabaseTest {
     // Check pruned data has been removed from store
     assertStoreWasPruned(store, prunedBlocks, prunedCheckpoints);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(earlyCheckpoint)).isNull();
     assertThat(result.getCheckpointState(middleCheckpoint))
         .isEqualTo(transaction1.getCheckpointState(middleCheckpoint));
@@ -379,7 +385,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getSignedBlock(genesisRoot)).isEqualTo(store.getSignedBlock(genesisRoot));
     assertThat(result.getSignedBlock(block1Root)).isEqualTo(block1);
     assertThat(result.getSignedBlock(block2Root)).isEqualTo(block2);
@@ -417,7 +423,7 @@ class MapDbDatabaseTest {
 
     finalizeEpoch(UnsignedLong.ONE, block2Root);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getSignedBlock(block1Root)).isNull();
     assertThat(result.getSignedBlock(block2Root)).isEqualTo(block2);
     assertThat(result.getSignedBlock(unfinalizedBlockRoot)).isEqualTo(unfinalizedBlock);
@@ -481,60 +487,66 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldPersistOnDisk(@TempDirectory final Path tempDir) throws Exception {
-    database = MapDbDatabase.createOnDisk(tempDir.toFile(), false);
-    database.storeGenesis(store);
+    try {
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), false);
+      database.storeGenesis(store);
 
-    final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
-    final SignedBeaconBlock block2 = blockAtSlot(2, block1);
-    final SignedBeaconBlock block3 = blockAtSlot(3, block2);
-    // Few skipped slots
-    final SignedBeaconBlock block7 = blockAtSlot(7, block3);
-    final SignedBeaconBlock block8 = blockAtSlot(8, block7);
-    final SignedBeaconBlock block9 = blockAtSlot(9, block8);
+      final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
+      final SignedBeaconBlock block2 = blockAtSlot(2, block1);
+      final SignedBeaconBlock block3 = blockAtSlot(3, block2);
+      // Few skipped slots
+      final SignedBeaconBlock block7 = blockAtSlot(7, block3);
+      final SignedBeaconBlock block8 = blockAtSlot(8, block7);
+      final SignedBeaconBlock block9 = blockAtSlot(9, block8);
 
-    // Create some blocks on a different fork
-    final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
-    final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
-    final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
-    final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
+      // Create some blocks on a different fork
+      final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
+      final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
+      final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
+      final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
 
-    addBlocks(
-        block1,
-        block2,
-        block3,
-        block7,
-        block8,
-        block9,
-        forkBlock6,
-        forkBlock7,
-        forkBlock8,
-        forkBlock9);
-    assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
-    assertLatestUpdateResultPrunedCollectionsAreEmpty();
+      addBlocks(
+          block1,
+          block2,
+          block3,
+          block7,
+          block8,
+          block9,
+          forkBlock6,
+          forkBlock7,
+          forkBlock8,
+          forkBlock9);
+      assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
+      assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
-    finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
+      finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
 
-    // Upon finalization, we should prune data
-    final Set<Bytes32> blocksToPrune =
-        Set.of(block1, block2, block3, forkBlock6).stream()
-            .map(b -> b.getMessage().hash_tree_root())
-            .collect(Collectors.toSet());
-    blocksToPrune.add(genesisBlock.hash_tree_root());
-    final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
-    assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
+      // Upon finalization, we should prune data
+      final Set<Bytes32> blocksToPrune =
+          Set.of(block1, block2, block3, forkBlock6).stream()
+              .map(b -> b.getMessage().hash_tree_root())
+              .collect(Collectors.toSet());
+      blocksToPrune.add(genesisBlock.hash_tree_root());
+      final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
+      assertLatestUpdateResultContains(blocksToPrune, checkpointsToPrune);
 
-    // Check data was pruned from store
-    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
+      // Check data was pruned from store
+      assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
 
-    // Close and re-read from disk store.
-    database.close();
-    database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
-    assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
-    assertBlocksFinalized(block1, block2, block3, block7);
-    assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
+      // Close and re-read from disk store.
+      database.close();
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
+      assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
+      assertBlocksFinalized(block1, block2, block3, block7);
+      assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
 
-    // Should still be able to retrieve finalized blocks by root
-    assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
+      // Should still be able to retrieve finalized blocks by root
+      assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
+    } finally {
+      // Close and re-read from disk store.
+      database.close();
+      database = MapDbDatabase.createInMemory();
+    }
   }
 
   private void assertBlocksFinalized(final SignedBeaconBlock... blocks) {
@@ -581,7 +593,7 @@ class MapDbDatabaseTest {
   }
 
   private void assertOnlyHotBlocks(final SignedBeaconBlock... blocks) {
-    final Store memoryStore = database.createMemoryStore();
+    final Store memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore.getBlockRoots())
         .hasSameElementsAs(
             Stream.of(blocks).map(block -> block.getMessage().hash_tree_root()).collect(toList()));

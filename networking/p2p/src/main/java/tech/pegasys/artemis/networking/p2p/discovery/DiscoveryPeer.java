@@ -16,19 +16,19 @@ package tech.pegasys.artemis.networking.p2p.discovery;
 import com.google.common.base.MoreObjects;
 import java.net.InetSocketAddress;
 import java.util.Objects;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
+import org.apache.tuweni.bytes.Bytes;
 
 public class DiscoveryPeer {
-  private final NodeId nodeId;
+  private final Bytes publicKey;
   private final InetSocketAddress nodeAddress;
 
-  public DiscoveryPeer(final NodeId nodeId, final InetSocketAddress nodeAddress) {
-    this.nodeId = nodeId;
+  public DiscoveryPeer(final Bytes publicKey, final InetSocketAddress nodeAddress) {
+    this.publicKey = publicKey;
     this.nodeAddress = nodeAddress;
   }
 
-  public NodeId getNodeId() {
-    return nodeId;
+  public Bytes getPublicKey() {
+    return publicKey;
   }
 
   public InetSocketAddress getNodeAddress() {
@@ -44,18 +44,19 @@ public class DiscoveryPeer {
       return false;
     }
     final DiscoveryPeer that = (DiscoveryPeer) o;
-    return Objects.equals(nodeId, that.nodeId) && Objects.equals(nodeAddress, that.nodeAddress);
+    return Objects.equals(publicKey, that.publicKey)
+        && Objects.equals(nodeAddress, that.nodeAddress);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(nodeId, nodeAddress);
+    return Objects.hash(publicKey, nodeAddress);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("nodeId", nodeId)
+        .add("publicKey", publicKey)
         .add("nodeAddress", nodeAddress)
         .toString();
   }

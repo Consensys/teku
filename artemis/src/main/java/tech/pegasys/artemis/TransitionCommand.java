@@ -30,7 +30,8 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
+import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -107,8 +108,9 @@ public class TransitionCommand implements Runnable {
           if (delta) {
             targetSlot = state.getSlot().plus(targetSlot);
           }
-          stateTransition.process_slots(state, targetSlot, false);
-          return state;
+          MutableBeaconState stateWrite = state.createWritableCopy();
+          stateTransition.process_slots(stateWrite, targetSlot);
+          return stateWrite.commitChanges();
         });
   }
 
@@ -118,11 +120,9 @@ public class TransitionCommand implements Runnable {
     try (final InputStream in = selectInputStream(params);
         final OutputStream out = selectOutputStream(params)) {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
-      BeaconStateWithCache state =
-          BeaconStateWithCache.fromBeaconState(
-              SimpleOffsetSerializer.deserialize(inData, BeaconState.class));
+      BeaconState state = SimpleOffsetSerializer.deserialize(inData, BeaconStateImpl.class);
 
-      final StateTransition stateTransition = new StateTransition(false);
+      final StateTransition stateTransition = new StateTransition();
       try {
         BeaconState result = transition.applyTransition(state, stateTransition);
         out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());
@@ -185,7 +185,7 @@ public class TransitionCommand implements Runnable {
   }
 
   private interface StateTransitionFunction {
-    BeaconState applyTransition(BeaconStateWithCache state, StateTransition stateTransition)
+    BeaconState applyTransition(BeaconState state, StateTransition stateTransition)
         throws StateTransitionException, EpochProcessingException, SlotProcessingException,
             IOException;
   }

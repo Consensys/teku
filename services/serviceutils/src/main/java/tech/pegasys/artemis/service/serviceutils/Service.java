@@ -45,4 +45,8 @@ public abstract class Service {
   }
 
   protected abstract SafeFuture<?> doStop();
+
+  protected boolean isRunning() {
+    return state.get() == State.RUNNING;
+  }
 }

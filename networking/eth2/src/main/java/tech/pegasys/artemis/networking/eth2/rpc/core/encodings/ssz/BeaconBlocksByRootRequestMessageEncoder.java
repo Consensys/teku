@@ -30,7 +30,7 @@ public class BeaconBlocksByRootRequestMessageEncoder
 
   @Override
   public Bytes encode(final BeaconBlocksByRootRequestMessage message) {
-    return SSZ.encode(writer -> writer.writeFixedBytesVector(message.getBlockRoots()));
+    return SSZ.encode(writer -> writer.writeFixedBytesVector(message.getBlockRoots().asList()));
   }
 
   @Override

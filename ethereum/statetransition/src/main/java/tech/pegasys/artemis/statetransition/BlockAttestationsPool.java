@@ -30,6 +30,7 @@ import tech.pegasys.artemis.datastructures.operations.Attestation;
 import tech.pegasys.artemis.storage.ChainStorage;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockAttestationsPool {
@@ -51,7 +52,7 @@ public class BlockAttestationsPool {
   private final int QUEUE_INITIAL_CAPACITY = 1024;
 
   @VisibleForTesting
-  final Queue<Attestation> aggregateAttesationsQueue =
+  final Queue<Attestation> aggregateAttestationsQueue =
       new PriorityBlockingQueue<>(
           QUEUE_INITIAL_CAPACITY, Comparator.comparing(a -> a.getData().getSlot()));
 
@@ -88,7 +89,7 @@ public class BlockAttestationsPool {
       }
     }
 
-    aggregateAttesationsQueue.add(newAttestation);
+    aggregateAttestationsQueue.add(newAttestation);
 
     //    ChainStorage.add(attestationDataHash, newAttestation.getData().getSlot(), dataRootToSlot);
   }
@@ -111,15 +112,15 @@ public class BlockAttestationsPool {
   }
 
   private SSZList<Attestation> getAggregatedAttestationsForBlockAtSlot(UnsignedLong slot) {
-    SSZList<Attestation> attestations =
-        new SSZList<>(Attestation.class, Constants.MAX_ATTESTATIONS);
+    SSZMutableList<Attestation> attestations =
+        SSZList.createMutable(Attestation.class, Constants.MAX_ATTESTATIONS);
     int numAttestations = 0;
 
-    while (aggregateAttesationsQueue.peek() != null
-        && aggregateAttesationsQueue.peek().getData().getSlot().compareTo(slot) <= 0
+    while (aggregateAttestationsQueue.peek() != null
+        && aggregateAttestationsQueue.peek().getData().getSlot().compareTo(slot) <= 0
         && numAttestations < Constants.MAX_ATTESTATIONS) {
 
-      Attestation aggregate = aggregateAttesationsQueue.remove();
+      Attestation aggregate = aggregateAttestationsQueue.remove();
       Bytes32 attestationHashTreeRoot = aggregate.getData().hash_tree_root();
 
       // Check if attestation has already been processed in successful block

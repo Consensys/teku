@@ -22,20 +22,25 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DepositUtil;
 import tech.pegasys.artemis.datastructures.util.MerkleTree;
 import tech.pegasys.artemis.datastructures.util.OptimizedMerkleTree;
-import tech.pegasys.artemis.pow.api.DepositEventChannel;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.artemis.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
-public class DepositProvider implements DepositEventChannel, FinalizedCheckpointEventChannel {
+public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointEventChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ChainStorageClient chainStorageClient;
   private final MerkleTree depositMerkleTree = new OptimizedMerkleTree(DEPOSIT_CONTRACT_TREE_DEPTH);
@@ -53,6 +58,10 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
         .forEach(
             deposit -> {
               synchronized (DepositProvider.this) {
+                if (!chainStorageClient.isPreGenesis()) {
+                  LOG.debug("About to process deposit: {}", deposit.getIndex());
+                }
+
                 depositNavigableMap.put(deposit.getIndex(), deposit);
                 depositMerkleTree.add(deposit.getData().hash_tree_root());
               }
@@ -70,6 +79,9 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
     depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
   }
 
+  @Override
+  public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
+
   public SSZList<Deposit> getDeposits(BeaconState state) {
     UnsignedLong eth1DepositCount = state.getEth1_data().getDeposit_count();
 
@@ -82,7 +94,7 @@ public class DepositProvider implements DepositEventChannel, FinalizedCheckpoint
             ? eth1DepositCount
             : latestDepositIndexWithMaxBlock;
 
-    return new SSZList<>(
+    return SSZList.createMutable(
         getDepositsWithProof(fromDepositIndex, toDepositIndex, eth1DepositCount),
         MAX_DEPOSITS,
         Deposit.class);

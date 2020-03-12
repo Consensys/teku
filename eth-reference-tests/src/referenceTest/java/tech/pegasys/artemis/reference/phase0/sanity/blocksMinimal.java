@@ -29,7 +29,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.datastructures.state.BeaconStateWithCache;
 import tech.pegasys.artemis.ethtests.TestSuite;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.StateTransitionException;
@@ -54,13 +53,15 @@ public class blocksMinimal extends TestSuite {
   })
   void sanityProcessBlock(
       BeaconState pre, BeaconState post, String testName, List<SignedBeaconBlock> blocks) {
-    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
-    StateTransition stateTransition = new StateTransition(false);
-    blocks.forEach(
-        block -> {
-          assertDoesNotThrow(() -> stateTransition.initiate(preWithCache, block, true));
-        });
-    assertEquals(preWithCache, post);
+    StateTransition stateTransition = new StateTransition();
+    BeaconState result =
+        blocks.stream()
+            .reduce(
+                pre,
+                (preState, block) ->
+                    assertDoesNotThrow(() -> stateTransition.initiate(preState, block, true)),
+                (preState, postState) -> postState);
+    assertEquals(post, result);
   }
 
   @MustBeClosed
@@ -155,13 +156,11 @@ public class blocksMinimal extends TestSuite {
     "sanityPrevSlotBlockTransitionSetup"
   })
   void sanityProcessBlockInvalid(BeaconState pre, String testName, List<SignedBeaconBlock> blocks) {
-    BeaconStateWithCache preWithCache = BeaconStateWithCache.fromBeaconState(pre);
-    StateTransition stateTransition = new StateTransition(false);
+    StateTransition stateTransition = new StateTransition();
     blocks.forEach(
         block -> {
           assertThrows(
-              StateTransitionException.class,
-              () -> stateTransition.initiate(preWithCache, block, true));
+              StateTransitionException.class, () -> stateTransition.initiate(pre, block, true));
         });
   }
 

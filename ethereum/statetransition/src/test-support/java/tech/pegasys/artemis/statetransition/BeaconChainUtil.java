@@ -40,7 +40,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconChainUtil {
 
-  private final StateTransition stateTransition = new StateTransition(false);
+  private final StateTransition stateTransition = new StateTransition();
   private final BlockProposalUtil blockCreator = new BlockProposalUtil(stateTransition);
   private final ChainStorageClient storageClient;
   private final List<BLSKeyPair> validatorKeys;
@@ -118,7 +118,7 @@ public class BeaconChainUtil {
         attestations.isEmpty()
             ? Optional.empty()
             : Optional.of(
-                new SSZList<>(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
+                SSZList.createMutable(attestations, Constants.MAX_ATTESTATIONS, Attestation.class));
 
     return createAndImportBlockAtSlot(slot, sszList);
   }
@@ -171,9 +171,9 @@ public class BeaconChainUtil {
     checkState(
         withValidProposer || validatorKeys.size() > 1,
         "Must have >1 validator in order to create a block from an invalid proposer.");
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
+    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     final BeaconBlock bestBlock = storageClient.getStore().getBlock(bestBlockRoot);
-    final BeaconState preState = storageClient.getBestBlockRootState();
+    final BeaconState preState = storageClient.getBestBlockRootState().orElseThrow();
     checkArgument(bestBlock.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
@@ -201,11 +201,12 @@ public class BeaconChainUtil {
     while (storageClient.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       BeaconState headState =
-          storageClient.getStore().getBlockState(storageClient.getBestBlockRoot());
-      BeaconBlock headBlock = storageClient.getStore().getBlock(storageClient.getBestBlockRoot());
+          storageClient.getStore().getBlockState(storageClient.getBestBlockRoot().orElseThrow());
+      BeaconBlock headBlock =
+          storageClient.getStore().getBlock(storageClient.getBestBlockRoot().orElseThrow());
       UnsignedLong slot = storageClient.getBestSlot();
       SSZList<Attestation> currentSlotAssignments =
-          new SSZList<>(
+          SSZList.createMutable(
               attestationGenerator.getAttestationsForSlot(headState, headBlock, slot),
               Constants.MAX_ATTESTATIONS,
               Attestation.class);

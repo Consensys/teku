@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +27,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -40,6 +37,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.DBMaker.Maker;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateEvent;
 import tech.pegasys.artemis.storage.utils.Bytes32Serializer;
@@ -47,7 +45,9 @@ import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 
 public class MapDbDatabase implements Database {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private final DB db;
   private final Var<UnsignedLong> genesisTime;
   private final Atomic.Var<Checkpoint> justifiedCheckpoint;
@@ -74,7 +74,7 @@ public class MapDbDatabase implements Database {
         Files.deleteIfExists(databaseFile.toPath());
       }
     } catch (IOException e) {
-      STDOUT.log(Level.ERROR, "Failed to clear old database");
+      LOG.error("Failed to clear old database");
     }
     return new MapDbDatabase(DBMaker.fileDB(databaseFile));
   }
@@ -107,7 +107,7 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "finalizedStatsByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
 
     hotBlocksByRoot =
@@ -120,14 +120,14 @@ public class MapDbDatabase implements Database {
         db.hashMap(
                 "hotStatesByRoot",
                 new Bytes32Serializer(),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
 
     checkpointStates =
         db.hashMap(
                 "checkpointStates",
                 new MapDBSerializer<>(Checkpoint.class),
-                new MapDBSerializer<>(BeaconState.class))
+                new MapDBSerializer<BeaconState>(BeaconStateImpl.class))
             .createOrOpen();
 
     latestMessages =
@@ -303,17 +303,23 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public Store createMemoryStore() {
-    return new Store(
-        UnsignedLong.valueOf(Instant.now().getEpochSecond()),
-        genesisTime.get(),
-        justifiedCheckpoint.get(),
-        finalizedCheckpoint.get(),
-        bestJustifiedCheckpoint.get(),
-        hotBlocksByRoot,
-        hotStatesByRoot,
-        checkpointStates,
-        latestMessages);
+  public Optional<Store> createMemoryStore() {
+    if (genesisTime.get() == null) {
+      // If genesis time hasn't been set, genesis hasn't happened and we have no data
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        new Store(
+            UnsignedLong.valueOf(Instant.now().getEpochSecond()),
+            genesisTime.get(),
+            justifiedCheckpoint.get(),
+            finalizedCheckpoint.get(),
+            bestJustifiedCheckpoint.get(),
+            hotBlocksByRoot,
+            hotStatesByRoot,
+            checkpointStates,
+            latestMessages));
   }
 
   @Override

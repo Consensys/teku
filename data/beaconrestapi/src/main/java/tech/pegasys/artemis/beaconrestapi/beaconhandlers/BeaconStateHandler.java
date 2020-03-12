@@ -15,6 +15,8 @@ package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -24,9 +26,11 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.artemis.beaconrestapi.RestApiUtils.validateQueryParameter;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
-import com.google.common.primitives.UnsignedLong;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -37,22 +41,20 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
-import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconStateHandler implements Handler {
   public static final String ROUTE = "/beacon/state";
 
-  private final CombinedChainDataClient combinedClient;
+  private final ChainDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public BeaconStateHandler(
-      final CombinedChainDataClient combinedClient, final JsonProvider jsonProvider) {
-    this.combinedClient = combinedClient;
+  public BeaconStateHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+    this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
 
@@ -62,13 +64,11 @@ public class BeaconStateHandler implements Handler {
       summary = "Get the beacon chain state that matches the specified tree hash root, or slot.",
       tags = {TAG_BEACON},
       queryParams = {
-        @OpenApiParam(name = ROOT, description = "Tree hash root to query (Bytes32)"),
-        @OpenApiParam(
-            name = SLOT,
-            description = "Slot to query in the canonical chain (head or ancestor of the head)")
+        @OpenApiParam(name = ROOT, description = "Tree hash root to query."),
+        @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain.")
       },
       description =
-          "Request that the node return a beacon chain state that matches the specified tree hash root.",
+          "Returns the beacon chain state that matches the specified slot or tree hash root.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
@@ -82,39 +82,40 @@ public class BeaconStateHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       final Map<String, List<String>> parameters = ctx.queryParamMap();
-      SafeFuture<Optional<BeaconState>> future = null;
+      final SafeFuture<Optional<BeaconState>> future;
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
       }
+      if (!provider.isStoreAvailable()) {
+        ctx.status(SC_NO_CONTENT);
+        return;
+      }
 
       if (parameters.containsKey(ROOT)) {
-        future = queryByRootHash(validateQueryParameter(parameters, ROOT));
+        future = provider.getStateByBlockRoot(getParameterValueAsBytes32(parameters, ROOT));
       } else if (parameters.containsKey(SLOT)) {
-        future = queryBySlot(validateQueryParameter(parameters, SLOT));
+        future = provider.getStateAtSlot(getParameterValueAsUnsignedLong(parameters, SLOT));
+      } else {
+        ctx.result(
+            jsonProvider.objectToJSON(new BadRequest("expected one of " + SLOT + " or " + ROOT)));
+        ctx.status(SC_BAD_REQUEST);
+        return;
       }
-      ctx.result(
-          future.thenApplyChecked(
-              state -> {
-                if (state.isEmpty()) {
-                  ctx.status(SC_NOT_FOUND);
-                  return null;
-                }
-                return jsonProvider.objectToJSON(state.get());
-              }));
+      ctx.result(future.thenApplyChecked(state -> handleResponseContext(ctx, state)));
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
 
-  private SafeFuture<Optional<BeaconState>> queryByRootHash(final String root) {
-    final Bytes32 root32 = Bytes32.fromHexString(root);
-    return combinedClient.getStateByBlockRoot(root32);
-  }
-
-  private SafeFuture<Optional<BeaconState>> queryBySlot(final String slotString) {
-    final UnsignedLong slot = UnsignedLong.valueOf(slotString);
-    final Bytes32 head = combinedClient.getBestBlockRoot().orElse(null);
-    return combinedClient.getStateAtSlot(slot, head);
+  private String handleResponseContext(Context ctx, final Optional<BeaconState> stateOptional)
+      throws JsonProcessingException {
+    if (stateOptional.isEmpty()) {
+      ctx.status(SC_NOT_FOUND);
+      return null;
+    }
+    BeaconState beaconState = stateOptional.get();
+    ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(provider, beaconState));
+    return jsonProvider.objectToJSON(beaconState);
   }
 }

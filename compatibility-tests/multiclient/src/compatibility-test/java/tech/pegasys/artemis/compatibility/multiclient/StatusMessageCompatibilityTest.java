@@ -50,7 +50,7 @@ class StatusMessageCompatibilityTest {
 
   @Test
   public void shouldExchangeStatusWhenArtemisConnectsToPrysm() throws Exception {
-    waitFor(artemis.connect(PRYSM_NODE.getMultiAddr()));
+    waitFor(artemis.connect(artemis.createPeerAddress(PRYSM_NODE.getMultiAddr())));
     waitFor(() -> assertThat(artemis.getPeerCount()).isEqualTo(1));
     final Eth2Peer prysm = artemis.getPeer(PRYSM_NODE.getId()).orElseThrow();
     final PeerStatus status = prysm.getStatus();
