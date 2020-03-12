@@ -13,22 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
-import com.google.common.primitives.UnsignedLong;
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.BLSPubKey;
-import tech.pegasys.artemis.api.schema.BeaconValidators;
-import tech.pegasys.artemis.api.schema.ValidatorsRequest;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
-
-import java.util.List;
-import java.util.Optional;
-
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,6 +22,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+
+import com.google.common.primitives.UnsignedLong;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
+import tech.pegasys.artemis.api.schema.BeaconValidators;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
+import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PostValidatorsTest {
   private static final String EMPTY_LIST = "[]";
