@@ -18,15 +18,24 @@ import org.apache.logging.log4j.core.config.Configurator;
 
 public class LoggingConfigurator {
 
+  public static final String EVENT_LOGGER_NAME = "teku-event-log";
+  public static final String STATUS_LOGGER_NAME = "teku-status-log";
+
+  private static final String CONSOLE_APPENDER_NAME = "teku-console";
+
+  private static LoggingDestination DESTINATION;
+  private static boolean COLOR;
+  private static boolean INCLUDE_EVENTS;
+
+  public static boolean isColorEnabled() {
+    return COLOR;
+  }
+
   public static void setAllLevels(final Level level) {
     // TODO try the Status logger instead of sop
     System.out.println("Setting logging level to " + level.name());
     Configurator.setAllLevels("", level);
   }
-
-  private static LoggingDestination DESTINATION;
-  private static boolean COLOR;
-  private static boolean INCLUDE_EVENTS;
 
   public static void setDestination(final LoggingDestination destination) {
     LoggingConfigurator.DESTINATION = destination;
@@ -38,5 +47,13 @@ public class LoggingConfigurator {
 
   public static void setIncludeEvents(final boolean enabled) {
     LoggingConfigurator.INCLUDE_EVENTS = enabled;
+  }
+
+  public static void update() {
+
+    // TODO console appender
+
+    // TODO file appender
+
   }
 }

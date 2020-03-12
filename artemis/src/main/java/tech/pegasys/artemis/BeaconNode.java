@@ -77,9 +77,9 @@ public class BeaconNode {
     LoggingConfigurator.setColor(config.isLoggingColorEnabled());
     LoggingConfigurator.setIncludeEvents(config.isLoggingIncludeEventsEnabled());
     LoggingConfigurator.setDestination(config.getLoggingDestination());
+    LoggingConfigurator.update();
 
-    // TODO update the loggers via LoggingConfigurator
-    // TODO switch the plugin over to use loggingConfigurator
+    // TODO switch the plugin over to use loggingConfigurator on reload
   }
 
   public void start() {
