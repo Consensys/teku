@@ -131,6 +131,6 @@ class BeaconRestApiTest {
 
   @Test
   public void RestApiShouldHaveValidatorDutiesEndpoint() {
-    verify(app).get(eq(GetValidatorDuties.ROUTE), any(GetValidatorDuties.class));
+    verify(app).post(eq(GetValidatorDuties.ROUTE), any(GetValidatorDuties.class));
   }
 }
