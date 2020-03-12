@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -475,7 +476,7 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getValidatorDuties() {
+  void getValidatorDutiesFromState() {
     tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
         DataStructureUtil.randomBeaconState(77);
     ChainDataProvider provider =
@@ -489,6 +490,28 @@ public class ChainDataProviderTest {
                 .map(k -> new BLSPubKey(k.toBytes()))
                 .collect(Collectors.toList()));
     assertThat(dutiesList.size()).isEqualTo(2);
+  }
+
+  @Test
+  void getValidatorsDutiesByValidatorsRequest_shouldIncludeMissingValidators()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    ValidatorsRequest smallRequest =
+        new ValidatorsRequest(compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+    when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
+        .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
+    when(mockCombinedChainDataClient.getCommitteesFromState(any(), eq(beaconState.slot)))
+        .thenReturn(List.of());
+
+    SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDuties(smallRequest);
+    List<ValidatorDuties> validatorDuties = future.get();
+
+    assertThat(validatorDuties.size()).isEqualTo(1);
+    ValidatorDuties expected = new ValidatorDuties(null, BLSPubKey.empty(), null);
+    assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(

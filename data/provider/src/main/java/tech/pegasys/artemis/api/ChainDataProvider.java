@@ -213,20 +213,17 @@ public class ChainDataProvider {
   public SafeFuture<List<ValidatorDuties>> getValidatorDuties(
       final ValidatorsRequest validatorsRequest) {
 
-    if (!isStoreAvailable()) {
+    if (validatorsRequest == null || !isStoreAvailable()) {
       return completedFuture(List.of());
     }
-    Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
+    final Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
     if (optionalBlockRoot.isEmpty()) {
-      return completedFuture(List.of());
-    }
-    if (validatorsRequest == null) {
       return completedFuture(List.of());
     }
 
     UnsignedLong epoch = validatorsRequest.epoch;
     UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
+    final Bytes32 headBlockRoot = optionalBlockRoot.get();
     return combinedChainDataClient
         .getStateAtSlot(slot, headBlockRoot)
         .thenApply(state -> getValidatorDutiesFromState(state.get(), validatorsRequest.pubkeys))
