@@ -386,7 +386,7 @@ public class ChainDataProviderTest {
     ValidatorsRequest smallRequest =
         new ValidatorsRequest(compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
+    when(mockCombinedChainDataClient.getStateAtSlot(any()))
         .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
 
     SafeFuture<Optional<BeaconValidators>> future =
@@ -412,7 +412,7 @@ public class ChainDataProviderTest {
                 beaconState.validators.get(11).pubkey,
                 beaconState.validators.get(99).pubkey));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
+    when(mockCombinedChainDataClient.getStateAtSlot(any()))
         .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
     SafeFuture<Optional<BeaconValidators>> future =
         provider.getValidatorsByValidatorsRequest(validatorsRequest);
