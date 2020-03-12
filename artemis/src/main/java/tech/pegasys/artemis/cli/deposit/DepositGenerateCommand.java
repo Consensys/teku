@@ -14,14 +14,12 @@
 package tech.pegasys.artemis.cli.deposit;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static tech.pegasys.artemis.cli.deposit.KeystorePasswordOptions.readFromEnvironmentVariable;
+import static tech.pegasys.artemis.cli.deposit.KeystorePasswordOptions.readFromFile;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.io.Files;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -151,8 +149,8 @@ public class DepositGenerateCommand implements Runnable {
   private KeysWriter getKeysWriter() {
     final KeysWriter keysWriter;
     if (encryptKeys) {
-      final String validatorKeystorePassword = readValidatorKeystorePassword();
-      final String withdrawalKeystorePassword = readWithdrawalKeystorePassword();
+      final String validatorKeystorePassword = readKeystorePassword(validatorPasswordOptions);
+      final String withdrawalKeystorePassword = readKeystorePassword(withdrawalPasswordOptions);
 
       final Path keystoreDir = getKeystoreOutputDir();
       keysWriter =
@@ -168,30 +166,20 @@ public class DepositGenerateCommand implements Runnable {
     return isBlank(outputPath) ? Path.of(".") : Path.of(outputPath);
   }
 
-  private String readWithdrawalKeystorePassword() {
-    final String withdrawalKeystorePassword;
-    if (withdrawalPasswordOptions == null) {
-      withdrawalKeystorePassword = askForPassword("Withdrawal Keystore");
-    } else if (withdrawalPasswordOptions.withdrawalPasswordFile != null) {
-      withdrawalKeystorePassword = readFromFile(withdrawalPasswordOptions.withdrawalPasswordFile);
+  private String readKeystorePassword(final KeystorePasswordOptions keystorePasswordOptions) {
+    final String password;
+    if (keystorePasswordOptions == null) {
+      password = askForPassword(keystorePasswordOptions.getPasswordPrompt());
+    } else if (keystorePasswordOptions.getPasswordFile() != null) {
+      password = readFromFile(spec.commandLine(), keystorePasswordOptions.getPasswordFile());
     } else {
-      withdrawalKeystorePassword =
-          readFromEnvironmentVariable(withdrawalPasswordOptions.withdrawalPasswordEnv);
+      password =
+          readFromEnvironmentVariable(
+              spec.commandLine(),
+              envSupplier,
+              keystorePasswordOptions.getPasswordEnvironmentVariable());
     }
-    return withdrawalKeystorePassword;
-  }
-
-  private String readValidatorKeystorePassword() {
-    final String validatorKeystorePassword;
-    if (validatorPasswordOptions == null) {
-      validatorKeystorePassword = askForPassword("Validator Keystore");
-    } else if (validatorPasswordOptions.validatorPasswordFile != null) {
-      validatorKeystorePassword = readFromFile(validatorPasswordOptions.validatorPasswordFile);
-    } else {
-      validatorKeystorePassword =
-          readFromEnvironmentVariable(validatorPasswordOptions.validatorPasswordEnv);
-    }
-    return validatorKeystorePassword;
+    return password;
   }
 
   private String askForPassword(final String option) {
@@ -219,35 +207,7 @@ public class DepositGenerateCommand implements Runnable {
     throw new ParameterException(spec.commandLine(), "Error: Password mismatched");
   }
 
-  private String readFromEnvironmentVariable(final String environmentVariable) {
-    final String password = envSupplier.apply(environmentVariable);
-    if (password == null) {
-      throw new ParameterException(
-          spec.commandLine(),
-          "Error: Password cannot be read from environment variable: " + environmentVariable);
-    }
-    return password;
-  }
-
-  private String readFromFile(final File passwordFile) {
-    try {
-      final String password =
-          Files.asCharSource(passwordFile, StandardCharsets.UTF_8).readFirstLine();
-      if (isBlank(password)) {
-        throw new ParameterException(
-            spec.commandLine(), "Error: Empty password from file: " + passwordFile);
-      }
-      return password;
-    } catch (final FileNotFoundException e) {
-      throw new ParameterException(spec.commandLine(), "Error: File not found: " + passwordFile);
-    } catch (final IOException e) {
-      throw new ParameterException(
-          spec.commandLine(),
-          "Error: Unexpected IO error reading file [" + passwordFile + "] : " + e.getMessage());
-    }
-  }
-
-  static class ValidatorPasswordOptions {
+  static class ValidatorPasswordOptions implements KeystorePasswordOptions {
     @Option(
         names = {"--validator-keystore-password-file"},
         paramLabel = "<FILE>",
@@ -261,9 +221,24 @@ public class DepositGenerateCommand implements Runnable {
         required = true,
         description = "Read password from environment variable to encrypt the validator keys")
     String validatorPasswordEnv;
+
+    @Override
+    public File getPasswordFile() {
+      return validatorPasswordFile;
+    }
+
+    @Override
+    public String getPasswordEnvironmentVariable() {
+      return validatorPasswordEnv;
+    }
+
+    @Override
+    public String getPasswordPrompt() {
+      return "Validator Keystore";
+    }
   }
 
-  static class WithdrawalPasswordOptions {
+  static class WithdrawalPasswordOptions implements KeystorePasswordOptions {
     @Option(
         names = {"--withdrawal-keystore-password-file"},
         paramLabel = "<FILE>",
@@ -275,5 +250,20 @@ public class DepositGenerateCommand implements Runnable {
         paramLabel = "<ENV_VAR>",
         description = "Read password from environment variable to encrypt the withdrawal keys")
     String withdrawalPasswordEnv;
+
+    @Override
+    public File getPasswordFile() {
+      return withdrawalPasswordFile;
+    }
+
+    @Override
+    public String getPasswordEnvironmentVariable() {
+      return withdrawalPasswordEnv;
+    }
+
+    @Override
+    public String getPasswordPrompt() {
+      return "Withdrawal Keystore";
+    }
   }
 }
