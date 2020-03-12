@@ -69,28 +69,31 @@ public class LoggingConfigurator {
     // TODO file appender
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    final Configuration config = ctx.getConfiguration();
+    setUpLoggersProgrammatically(ctx);
+    ctx.updateLoggers();
+  }
+
+  private static void setUpLoggersProgrammatically(final LoggerContext ctx) {
+    final Configuration configuration = ctx.getConfiguration();
     final Layout<?> layout =
         PatternLayout.newBuilder()
-            .withConfiguration(ctx.getConfiguration())
+            .withConfiguration(configuration)
             .withPattern(CONSOLE_FORMAT)
             .build();
     final Appender consoleAppender =
         ConsoleAppender.newBuilder().setName(CONSOLE_APPENDER_NAME).setLayout(layout).build();
 
     consoleAppender.start();
-    config.addAppender(consoleAppender);
+    configuration.addAppender(consoleAppender);
 
-    final LoggerConfig eventConsoleLogger =
-        new LoggerConfig(EVENT_LOGGER_NAME, LOG_LEVEL, ADDITIVITY);
-    eventConsoleLogger.addAppender(consoleAppender, LOG_LEVEL, null);
-    config.addLogger(EVENT_LOGGER_NAME, eventConsoleLogger);
+    setUpLogger(EVENT_LOGGER_NAME, consoleAppender, configuration);
+    setUpLogger(STATUS_LOGGER_NAME, consoleAppender, configuration);
+  }
 
-    final LoggerConfig statusConsoleLogger =
-        new LoggerConfig(STATUS_LOGGER_NAME, LOG_LEVEL, ADDITIVITY);
-    eventConsoleLogger.addAppender(consoleAppender, LOG_LEVEL, null);
-    config.addLogger(STATUS_LOGGER_NAME, statusConsoleLogger);
-
-    ctx.updateLoggers();
+  private static void setUpLogger(
+      final String name, final Appender appender, final Configuration configuration) {
+    final LoggerConfig logger = new LoggerConfig(name, LOG_LEVEL, ADDITIVITY);
+    logger.addAppender(appender, LOG_LEVEL, null);
+    configuration.addLogger(name, logger);
   }
 }
