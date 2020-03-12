@@ -36,9 +36,7 @@ public class BeaconChainService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    this.controller.initAll();
-    this.controller.start();
-    return SafeFuture.COMPLETE;
+    return this.controller.start();
   }
 
   @Override

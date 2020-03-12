@@ -62,6 +62,7 @@ import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
@@ -108,9 +109,36 @@ public class BeaconChainController {
         config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
   }
 
-  public void initAll() {
+  public SafeFuture<?> start() {
     this.eventBus.register(this);
-    initStorage();
+    return ChainStorageClient.storageBackedClient(eventBus).thenAccept(this::doStart);
+  }
+
+  private void doStart(final ChainStorageClient client) {
+    this.chainStorageClient = client;
+    this.initAll();
+
+    chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
+
+    LOG.debug("BeaconChainController.start(): starting ValidatorCoordinator");
+    validatorCoordinator.start().reportExceptions();
+    LOG.debug("BeaconChainController.start(): starting AttestationPropagationManager");
+    attestationManager.start().reportExceptions();
+    LOG.debug("BeaconChainController.start(): starting p2pNetwork");
+    p2pNetwork.start().reportExceptions();
+    LOG.debug("BeaconChainController.start(): starting timer");
+    this.timer.start();
+    LOG.debug("BeaconChainController.start(): starting BeaconRestAPI");
+    this.beaconRestAPI.start();
+
+    if (setupInitialState && chainStorageClient.getStore() == null) {
+      setupInitialState();
+    }
+
+    syncService.start().reportExceptions();
+  }
+
+  public void initAll() {
     initTimer();
     initMetrics();
     initAttestationAggregator();
@@ -133,10 +161,6 @@ public class BeaconChainController {
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
-  }
-
-  public void initStorage() {
-    this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus).join();
   }
 
   public void initMetrics() {
@@ -263,27 +287,6 @@ public class BeaconChainController {
               chainStorageClient,
               new BlockImporter(chainStorageClient, eventBus));
     }
-  }
-
-  public void start() {
-    chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
-
-    LOG.debug("BeaconChainController.start(): starting ValidatorCoordinator");
-    validatorCoordinator.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): starting AttestationPropagationManager");
-    attestationManager.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): starting p2pNetwork");
-    p2pNetwork.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): starting timer");
-    this.timer.start();
-    LOG.debug("BeaconChainController.start(): starting BeaconRestAPI");
-    this.beaconRestAPI.start();
-
-    if (setupInitialState && chainStorageClient.getStore() == null) {
-      setupInitialState();
-    }
-
-    syncService.start().reportExceptions();
   }
 
   private void setupInitialState() {
