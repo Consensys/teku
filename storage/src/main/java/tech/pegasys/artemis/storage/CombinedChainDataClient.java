@@ -190,6 +190,15 @@ public class CombinedChainDataClient {
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
   }
 
+  public Optional<BeaconState> getHeadStateFromStore() {
+    final Store store = getStore();
+    if (store == null) {
+      LOG.trace("No state at head because the store is not set");
+      return Optional.empty();
+    }
+    return getBestBlockRoot().map(store::getBlockState);
+  }
+
   public Optional<Bytes32> getBestBlockRoot() {
     return recentChainData.getBestBlockRoot();
   }
@@ -219,7 +228,8 @@ public class CombinedChainDataClient {
         .exceptionally(err -> List.of());
   }
 
-  List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UnsignedLong startingSlot) {
+  public List<CommitteeAssignment> getCommitteesFromState(
+      BeaconState state, UnsignedLong startingSlot) {
     List<CommitteeAssignment> result = new ArrayList<>();
     for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
       UnsignedLong slot = startingSlot.plus(UnsignedLong.valueOf(i));
