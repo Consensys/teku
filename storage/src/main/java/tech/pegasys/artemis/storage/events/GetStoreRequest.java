@@ -11,22 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.schema;
+package tech.pegasys.artemis.storage.events;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class ValidatorsRequest {
-  public final UnsignedLong epoch;
-  public final List<BLSPubKey> pubkeys;
+public class GetStoreRequest {
+  private static final AtomicLong nextRequestId = new AtomicLong(0);
 
-  @JsonCreator
-  public ValidatorsRequest(
-      @JsonProperty(value = "epoch") UnsignedLong epoch,
-      @JsonProperty(value = "pubkeys", required = true) final List<BLSPubKey> pubkeys) {
-    this.epoch = epoch;
-    this.pubkeys = pubkeys;
+  private final long id;
+
+  public GetStoreRequest() {
+    id = nextRequestId.incrementAndGet();
+  }
+
+  public long getId() {
+    return id;
   }
 }

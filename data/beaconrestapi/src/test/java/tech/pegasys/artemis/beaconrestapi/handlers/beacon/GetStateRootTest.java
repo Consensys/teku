@@ -35,10 +35,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -46,7 +43,6 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-@ExtendWith(MockitoExtension.class)
 public class GetStateRootTest {
   public static BeaconState beaconStateInternal;
   private static Bytes32 blockRoot;
@@ -56,7 +52,8 @@ public class GetStateRootTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
 
-  @Captor private ArgumentCaptor<SafeFuture<String>> args;
+  @SuppressWarnings("unchecked")
+  private ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @BeforeAll
   public static void setup() {
@@ -64,7 +61,7 @@ public class GetStateRootTest {
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
     beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
     storageClient.initializeFromGenesis(beaconStateInternal);
-    blockRoot = storageClient.getBestBlockRoot();
+    blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = DataStructureUtil.randomUnsignedLong(99);
   }
 

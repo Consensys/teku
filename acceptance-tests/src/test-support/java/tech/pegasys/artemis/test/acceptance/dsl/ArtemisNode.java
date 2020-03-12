@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -137,39 +138,80 @@ public class ArtemisNode extends Node {
     return fetchGenesisTime();
   }
 
-  public void waitForNewBlock() throws IOException {
-    final Bytes32 startingBlockRoot = getCurrentBeaconHead().getBlockRoot();
+  public void waitForNewBlock() {
+    final Bytes32 startingBlockRoot = waitForBeaconHead().getBlockRoot();
     waitFor(
-        () -> assertThat(getCurrentBeaconHead().getBlockRoot()).isNotEqualTo(startingBlockRoot));
+        () -> assertThat(fetchBeaconHead().get().getBlockRoot()).isNotEqualTo(startingBlockRoot));
   }
 
-  public void waitForNewFinalization() throws IOException {
-    UnsignedLong startingFinalizedEpoch = getChainHead().finalized_epoch;
+  public void waitForNewFinalization() {
+    UnsignedLong startingFinalizedEpoch = waitForChainHead().finalized_epoch;
     LOG.debug("Wait for finalized block");
     waitFor(
-        () -> assertThat(getChainHead().finalized_epoch).isNotEqualTo(startingFinalizedEpoch), 540);
+        () ->
+            assertThat(fetchChainHead().get().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
+        540);
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
     waitFor(
-        () -> assertThat(getCurrentBeaconHead()).isEqualTo(targetNode.getCurrentBeaconHead()), 300);
+        () -> {
+          final Optional<BeaconHead> beaconHead = fetchBeaconHead();
+          assertThat(beaconHead).isPresent();
+          final Optional<BeaconHead> targetBeaconHead = targetNode.fetchBeaconHead();
+          assertThat(targetBeaconHead).isPresent();
+          assertThat(beaconHead).isEqualTo(targetBeaconHead);
+        },
+        300);
   }
 
-  private BeaconHead getCurrentBeaconHead() throws IOException {
-    final BeaconHead beaconHead =
-        jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class);
-    LOG.debug("Retrieved beacon head: {}", beaconHead);
-    return beaconHead;
+  private BeaconHead waitForBeaconHead() {
+    LOG.debug("Waiting for beacon head");
+    final AtomicReference<BeaconHead> beaconHead = new AtomicReference<>(null);
+    waitFor(
+        () -> {
+          final Optional<BeaconHead> fetchedHead = fetchBeaconHead();
+          assertThat(fetchedHead).isPresent();
+          beaconHead.set(fetchedHead.get());
+        });
+    LOG.debug("Retrieved beacon head: {}", beaconHead.get());
+    return beaconHead.get();
   }
 
-  private BeaconChainHead getChainHead() throws IOException {
-    final BeaconChainHead beaconChainHead =
+  private Optional<BeaconHead> fetchBeaconHead() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/beacon/head");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
         jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class);
-    LOG.debug("Retrieved chain head: {}", beaconChainHead);
-    return beaconChainHead;
+            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconHead.class));
+  }
+
+  private BeaconChainHead waitForChainHead() {
+    LOG.debug("Waiting for chain head");
+    final AtomicReference<BeaconChainHead> chainHead = new AtomicReference<>(null);
+    waitFor(
+        () -> {
+          final Optional<BeaconChainHead> fetchedHead = fetchChainHead();
+          assertThat(fetchedHead).isPresent();
+          chainHead.set(fetchedHead.get());
+        });
+    LOG.debug("Retrieved chain head: {}", chainHead.get());
+    return chainHead.get();
+  }
+
+  private Optional<BeaconChainHead> fetchChainHead() throws IOException {
+    final String result = httpClient.get(getRestApiUrl(), "/beacon/chainhead");
+    if (result.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        jsonProvider.jsonToObject(
+            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconChainHead.class));
   }
 
   public File getDatabaseFileFromContainer() throws Exception {

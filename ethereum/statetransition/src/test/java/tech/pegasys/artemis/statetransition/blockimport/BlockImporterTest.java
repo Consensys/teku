@@ -161,7 +161,7 @@ public class BlockImporterTest {
 
     // Update finalized epoch
     final Transaction tx = localStorage.startStoreTransaction();
-    final Bytes32 bestRoot = localStorage.getBestBlockRoot();
+    final Bytes32 bestRoot = localStorage.getBestBlockRoot().orElseThrow();
     final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
     assertThat(bestEpoch.longValue()).isEqualTo(Constants.GENESIS_EPOCH + 1L);
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
@@ -187,7 +187,7 @@ public class BlockImporterTest {
 
     // Update finalized epoch
     final Transaction tx = localStorage.startStoreTransaction();
-    final Bytes32 bestRoot = localStorage.getBestBlockRoot();
+    final Bytes32 bestRoot = localStorage.getBestBlockRoot().orElseThrow();
     final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
     assertThat(bestEpoch.longValue()).isEqualTo(Constants.GENESIS_EPOCH + 1L);
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
@@ -235,7 +235,7 @@ public class BlockImporterTest {
     }
     // Update finalized epoch
     final Transaction tx = localStorage.startStoreTransaction();
-    final Bytes32 bestRoot = localStorage.getBestBlockRoot();
+    final Bytes32 bestRoot = localStorage.getBestBlockRoot().orElseThrow();
     final UnsignedLong bestEpoch = compute_epoch_at_slot(localStorage.getBestSlot());
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
     tx.setFinalizedCheckpoint(finalized);
