@@ -41,8 +41,6 @@ import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class PostValidators implements Handler {
-
-  @SuppressWarnings("unused")
   private final ChainDataProvider chainDataProvider;
 
   public PostValidators(
@@ -60,7 +58,9 @@ public class PostValidators implements Handler {
       summary = "Returns validators that match the information specified.",
       tags = {TAG_BEACON},
       description =
-          "Takes a list of validator public keys and optionally an epoch, and returns information about them.",
+          "Takes a list of validator public keys and optionally an epoch, and returns information about them.\n\n"
+              + "If no epoch is specified, the validators will be queried from the current state.\n\n"
+              + "Any pubkeys that were not found in the list of validators will be returned without an associated validator.",
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = ValidatorsRequest.class)},
