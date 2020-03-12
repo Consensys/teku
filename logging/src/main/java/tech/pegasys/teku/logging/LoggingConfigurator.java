@@ -67,12 +67,11 @@ public class LoggingConfigurator {
     // TODO one or the other
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    setUpLoggersProgrammatically(ctx);
+    setUpLoggersProgrammatically(ctx.getConfiguration());
     ctx.updateLoggers();
   }
 
-  private static void setUpLoggersProgrammatically(final LoggerContext ctx) {
-    final Configuration configuration = ctx.getConfiguration();
+  public static void setUpLoggersProgrammatically(final Configuration configuration) {
     final Layout<?> layout =
         PatternLayout.newBuilder()
             .withConfiguration(configuration)
