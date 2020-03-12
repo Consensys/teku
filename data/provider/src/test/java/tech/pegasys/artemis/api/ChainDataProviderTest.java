@@ -32,21 +32,25 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.schema.Attestation;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ChainDataProviderTest {
   private static CombinedChainDataClient combinedChainDataClient;
@@ -370,6 +374,65 @@ public class ChainDataProviderTest {
     assertEquals(BLSSignature.empty(), attestation.signature);
     assertEquals(beaconState.slot, attestation.data.slot);
     assertEquals(blockRoot, attestation.data.beacon_block_root);
+  }
+
+  @Test
+  void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
+    BLSPubKey pubKey = new BLSPubKey(DataStructureUtil.randomPublicKey(88).toBytes());
+    Integer validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
+    assertThat(validatorIndex).isEqualTo(null);
+  }
+
+  @Test
+  void getValidatorIndex_shouldReturnIndexIfFound() {
+    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
+        DataStructureUtil.randomBeaconState(99);
+    BeaconState state = new BeaconState(beaconStateInternal);
+    // all the validators are the same so the first one will match
+    int expectedValidatorIndex = 0;
+    BLSPubKey pubKey = state.validators.get(expectedValidatorIndex).pubkey;
+    int actualValidatorIndex =
+        ChainDataProvider.getValidatorIndex(beaconStateInternal.getValidators().asList(), pubKey);
+    assertThat(actualValidatorIndex).isEqualTo(expectedValidatorIndex);
+  }
+
+  @Test
+  void getCommitteeIndex_shouldReturnNotFoundIfNotFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    Integer committeeIndex = provider.getCommitteeIndex(List.of(), 99);
+    assertThat(committeeIndex).isEqualTo(null);
+  }
+
+  @Test
+  void getCommitteeIndex_shouldReturnIndexIfFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    UnsignedLong committeeIndex = DataStructureUtil.randomUnsignedLong(888);
+    CommitteeAssignment committeeAssignment1 =
+        new CommitteeAssignment(List.of(4, 5, 6), committeeIndex, slot);
+    CommitteeAssignment committeeAssignment2 =
+        new CommitteeAssignment(List.of(3, 2, 1), committeeIndex, slot);
+    int validatorCommitteeIndex =
+        provider.getCommitteeIndex(List.of(committeeAssignment1, committeeAssignment2), 1);
+    assertThat(validatorCommitteeIndex).isEqualTo(1);
+  }
+
+  @Test
+  void getValidatorDuties() {
+    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
+        DataStructureUtil.randomBeaconState(77);
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    BLSPublicKey pubKey1 = DataStructureUtil.randomPublicKey(99);
+    BLSPublicKey pubKey2 = DataStructureUtil.randomPublicKey(98);
+    List<ValidatorDuties> dutiesList =
+        provider.getValidatorDutiesFromState(
+            beaconStateInternal,
+            List.of(pubKey1, pubKey2).stream()
+                .map(k -> new BLSPubKey(k.toBytes()))
+                .collect(Collectors.toList()));
+    assertThat(dutiesList.size()).isEqualTo(2);
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(
