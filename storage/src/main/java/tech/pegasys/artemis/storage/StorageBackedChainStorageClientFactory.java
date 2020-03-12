@@ -70,7 +70,7 @@ class StorageBackedChainStorageClientFactory {
   @SuppressWarnings("unused")
   private void onStoreInitializedFromStorage(
       final StoreInitializedFromStorageEvent storeInitializedEvent) {
-    client.setStore(storeInitializedEvent.getStore());
+    storeInitializedEvent.getStore().ifPresent(client::setStore);
     if (initializationCompleted.complete(client)) {
       LOG.trace("Finish initializing {} from storage", client.getClass().getSimpleName());
     }

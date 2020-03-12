@@ -75,7 +75,7 @@ public class ChainStorageServer {
     eventBus.register(this);
 
     final Optional<Store> store = getStore();
-    store.map(StoreInitializedFromStorageEvent::new).ifPresent(eventBus::post);
+    eventBus.post(new StoreInitializedFromStorageEvent(store));
   }
 
   private synchronized Optional<Store> getStore() {

@@ -88,7 +88,7 @@ class ChainStorageClientTest {
     final BeaconState otherState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
     assertThat(otherState).isNotEqualTo(INITIAL_STATE);
     final Store otherStore = Store.get_genesis_store(otherState);
-    eventBus.post(new StoreInitializedFromStorageEvent(otherStore));
+    eventBus.post(new StoreInitializedFromStorageEvent(Optional.of(otherStore)));
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
   }
@@ -135,7 +135,7 @@ class ChainStorageClientTest {
 
     // Post initialization event
     final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
-    eventBus.post(new StoreInitializedFromStorageEvent(genesisStore));
+    eventBus.post(new StoreInitializedFromStorageEvent(Optional.of(genesisStore)));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -146,6 +146,33 @@ class ChainStorageClientTest {
     assertThat(otherState).isNotEqualTo(INITIAL_STATE);
     final Store otherStore = Store.get_genesis_store(otherState);
     eventBus.post(new GetStoreResponse(getStoreRequests.get(0).getId(), Optional.of(otherStore)));
+    assertStoreIsSet(client.get());
+    assertThat(client.get().getStore()).isEqualTo(genesisStore);
+  }
+
+  @Test
+  public void storageBackedClient_storeInitializeViaStoreInitializedEvent_emptyStore()
+      throws ExecutionException, InterruptedException {
+    final EventBus eventBus = new EventBus();
+    final List<GetStoreRequest> getStoreRequests =
+        EventSink.capture(eventBus, GetStoreRequest.class);
+    final SafeFuture<ChainStorageClient> client = ChainStorageClient.storageBackedClient(eventBus);
+
+    // We should have posted a request to get the store from storage
+    assertThat(getStoreRequests.size()).isEqualTo(1);
+    // Client shouldn't be initialized yet
+    assertThat(client).isNotDone();
+
+    // Post initialization event
+    eventBus.post(new StoreInitializedFromStorageEvent(Optional.empty()));
+    assertThat(client).isCompleted();
+    assertStoreNotInitialized(client.get());
+    assertThat(client.get().getStore()).isNull();
+
+    // Now set the genesis state
+    final Store genesisStore = Store.get_genesis_store(INITIAL_STATE);
+    client.get().initializeFromGenesis(INITIAL_STATE);
+    assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
   }

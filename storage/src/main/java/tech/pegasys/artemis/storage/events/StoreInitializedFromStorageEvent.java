@@ -13,16 +13,17 @@
 
 package tech.pegasys.artemis.storage.events;
 
+import java.util.Optional;
 import tech.pegasys.artemis.storage.Store;
 
 public class StoreInitializedFromStorageEvent {
-  private final Store store;
+  private final Optional<Store> store;
 
-  public StoreInitializedFromStorageEvent(final Store store) {
+  public StoreInitializedFromStorageEvent(final Optional<Store> store) {
     this.store = store;
   }
 
-  public Store getStore() {
+  public Optional<Store> getStore() {
     return store;
   }
 }
