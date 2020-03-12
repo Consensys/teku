@@ -212,11 +212,12 @@ public class ChainDataProvider {
     final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
     return combinedChainDataClient
         .getStateAtSlot(slot, headBlockRoot)
-        .thenApply(state -> getValidatorDuties(state.get(), validatorsRequest.pubkeys))
+        .thenApply(state -> getValidatorDutiesFromState(state.get(), validatorsRequest.pubkeys))
         .exceptionally(err -> List.of());
   }
 
-  public List<ValidatorDuties> getValidatorDuties(
+  @VisibleForTesting
+  protected List<ValidatorDuties> getValidatorDutiesFromState(
       final tech.pegasys.artemis.datastructures.state.BeaconState state,
       final List<BLSPubKey> pubKeys) {
     final List<ValidatorDuties> dutiesList = new ArrayList<>();

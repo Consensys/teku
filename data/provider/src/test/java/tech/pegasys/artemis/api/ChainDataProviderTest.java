@@ -427,7 +427,7 @@ public class ChainDataProviderTest {
     BLSPublicKey pubKey1 = DataStructureUtil.randomPublicKey(99);
     BLSPublicKey pubKey2 = DataStructureUtil.randomPublicKey(98);
     List<ValidatorDuties> dutiesList =
-        provider.getValidatorDuties(
+        provider.getValidatorDutiesFromState(
             beaconStateInternal,
             List.of(pubKey1, pubKey2).stream()
                 .map(k -> new BLSPubKey(k.toBytes()))
