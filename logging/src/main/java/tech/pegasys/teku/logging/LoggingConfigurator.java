@@ -64,9 +64,7 @@ public class LoggingConfigurator {
 
   public static void update() {
 
-    // TODO console appender
-
-    // TODO file appender
+    // TODO one or the other
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     setUpLoggersProgrammatically(ctx);
@@ -86,14 +84,18 @@ public class LoggingConfigurator {
     consoleAppender.start();
     configuration.addAppender(consoleAppender);
 
-    setUpLogger(EVENT_LOGGER_NAME, consoleAppender, configuration);
-    setUpLogger(STATUS_LOGGER_NAME, consoleAppender, configuration);
+    setUpLogger(STATUS_LOGGER_NAME, LOG_LEVEL, consoleAppender, configuration);
+    setUpLogger(
+        EVENT_LOGGER_NAME, INCLUDE_EVENTS ? LOG_LEVEL : Level.OFF, consoleAppender, configuration);
   }
 
   private static void setUpLogger(
-      final String name, final Appender appender, final Configuration configuration) {
-    final LoggerConfig logger = new LoggerConfig(name, LOG_LEVEL, ADDITIVITY);
-    logger.addAppender(appender, LOG_LEVEL, null);
+      final String name,
+      final Level level,
+      final Appender appender,
+      final Configuration configuration) {
+    final LoggerConfig logger = new LoggerConfig(name, level, ADDITIVITY);
+    logger.addAppender(appender, level, null);
     configuration.addLogger(name, logger);
   }
 }
