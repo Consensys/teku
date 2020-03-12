@@ -25,7 +25,6 @@ import io.vertx.core.Vertx;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.logging.log4j.Level;
@@ -85,13 +84,8 @@ public class BeaconNode {
   }
 
   public void start() {
-
-    try {
-      metricsEndpoint.start();
-      serviceController.start().reportExceptions();
-    } catch (final CompletionException | IllegalArgumentException e) {
-      STATUS_LOG.startupFailure(e);
-    }
+    metricsEndpoint.start();
+    serviceController.start().join();
   }
 
   public void stop() {
