@@ -140,20 +140,30 @@ public class ArtemisNode extends Node {
 
   public void waitForNewBlock() {
     final Bytes32 startingBlockRoot = waitForBeaconHead().getBlockRoot();
-    waitFor(() -> assertThat(waitForBeaconHead().getBlockRoot()).isNotEqualTo(startingBlockRoot));
+    waitFor(
+        () -> assertThat(fetchBeaconHead().get().getBlockRoot()).isNotEqualTo(startingBlockRoot));
   }
 
   public void waitForNewFinalization() {
     UnsignedLong startingFinalizedEpoch = waitForChainHead().finalized_epoch;
     LOG.debug("Wait for finalized block");
     waitFor(
-        () -> assertThat(waitForChainHead().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
+        () ->
+            assertThat(fetchChainHead().get().finalized_epoch).isNotEqualTo(startingFinalizedEpoch),
         540);
   }
 
   public void waitUntilInSyncWith(final ArtemisNode targetNode) {
     LOG.debug("Wait for {} to sync to {}", nodeAlias, targetNode.nodeAlias);
-    waitFor(() -> assertThat(waitForBeaconHead()).isEqualTo(targetNode.waitForBeaconHead()), 300);
+    waitFor(
+        () -> {
+          final Optional<BeaconHead> beaconHead = fetchBeaconHead();
+          assertThat(beaconHead).isPresent();
+          final Optional<BeaconHead> targetBeaconHead = targetNode.fetchBeaconHead();
+          assertThat(targetBeaconHead).isPresent();
+          assertThat(beaconHead).isEqualTo(targetBeaconHead);
+        },
+        300);
   }
 
   private BeaconHead waitForBeaconHead() {
