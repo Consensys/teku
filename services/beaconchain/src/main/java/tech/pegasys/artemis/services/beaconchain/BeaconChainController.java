@@ -110,7 +110,8 @@ public class BeaconChainController {
     this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
-    this.setupInitialState = config.getDepositMode().equals(DEPOSIT_TEST);
+    this.setupInitialState =
+        config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
     this.eventBus.register(this);
   }
 
