@@ -74,7 +74,7 @@ public class ChainDataProviderTest {
     beaconState = new BeaconState(beaconStateInternal);
     chainStorageClient.initializeFromGenesis(beaconStateInternal);
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
-    blockRoot = chainStorageClient.getBestBlockRoot();
+    blockRoot = chainStorageClient.getBestBlockRoot().orElseThrow();
     slot = chainStorageClient.getBestSlot();
   }
 
@@ -160,7 +160,7 @@ public class ChainDataProviderTest {
     ChainDataProvider provider =
         new ChainDataProvider(mockChainStorageClient, combinedChainDataClient);
 
-    when(mockChainStorageClient.getBestBlockRoot()).thenReturn(null);
+    when(mockChainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     Optional<BeaconHead> data = provider.getBeaconHead();
     assertTrue(data.isEmpty());
@@ -280,16 +280,14 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    Bytes32 blockRoot = Bytes32.random();
 
     SafeFuture<Optional<tech.pegasys.artemis.datastructures.state.BeaconState>> futureBeaconState =
         completedFuture(Optional.of(beaconStateInternal));
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(mockCombinedChainDataClient.getStateAtSlot(ZERO, blockRoot)).thenReturn(futureBeaconState);
+    when(mockCombinedChainDataClient.getStateAtSlot(ZERO)).thenReturn(futureBeaconState);
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO, blockRoot);
+    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO);
 
     BeaconState result = future.get().get();
     assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);

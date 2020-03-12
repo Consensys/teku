@@ -68,14 +68,15 @@ public class ChainDataProvider {
       return Optional.empty();
     }
 
-    final Bytes32 headBlockRoot = chainStorageClient.getBestBlockRoot();
-    if (headBlockRoot == null) {
+    Optional<Bytes32> headBlockRoot = chainStorageClient.getBestBlockRoot();
+    Optional<Bytes32> headStateRoot =
+        headBlockRoot.flatMap(chainStorageClient::getBlockByRoot).map(BeaconBlock::getState_root);
+    if (headBlockRoot.isEmpty() || headStateRoot.isEmpty()) {
       return Optional.empty();
     }
 
-    final Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
-    final BeaconHead result =
-        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot, headStateRoot);
+    BeaconHead result =
+        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot.get(), headStateRoot.get());
     return Optional.of(result);
   }
 
@@ -137,9 +138,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       return completedFuture(Optional.empty());
     }
-    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
     return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
+        .getStateAtSlot(slot)
         .thenApply(state -> state.map(BeaconState::new))
         .exceptionally(err -> Optional.empty());
   }
@@ -148,9 +148,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       return completedFuture(Optional.empty());
     }
-    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
     return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
+        .getStateAtSlot(slot)
         .thenApply(state -> Optional.of(state.get().hash_tree_root()))
         .exceptionally(err -> Optional.empty());
   }
@@ -165,20 +164,20 @@ public class ChainDataProvider {
           String.format("Slot %s is finalized, no attestation will be created.", slot.toString()));
     }
     Optional<BeaconBlock> block = chainStorageClient.getBlockBySlot(slot);
-    if (block.isEmpty()) {
+    Optional<tech.pegasys.artemis.datastructures.state.BeaconState> state =
+        chainStorageClient.getBestBlockRootState();
+    if (block.isEmpty() || state.isEmpty()) {
       return Optional.empty();
     }
 
-    tech.pegasys.artemis.datastructures.state.BeaconState state =
-        chainStorageClient.getBestBlockRootState();
-    int committeeCount = get_committee_count_at_slot(state, slot).intValue();
+    int committeeCount = get_committee_count_at_slot(state.get(), slot).intValue();
     if (committeeIndex < 0 || committeeIndex >= committeeCount) {
       throw new IllegalArgumentException(
           "Invalid committee index provided - expected between 0 and " + (committeeCount - 1));
     }
 
     tech.pegasys.artemis.datastructures.operations.AttestationData internalAttestation =
-        AttestationUtil.getGenericAttestationData(state, block.get());
+        AttestationUtil.getGenericAttestationData(state.get(), block.get());
     AttestationData data = new AttestationData(internalAttestation);
     Bitlist aggregationBits = AttestationUtil.getAggregationBits(committeeCount, committeeIndex);
     Attestation attestation = new Attestation(aggregationBits, data, BLSSignature.empty());
