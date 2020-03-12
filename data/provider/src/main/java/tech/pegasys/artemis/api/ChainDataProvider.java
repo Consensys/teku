@@ -38,6 +38,7 @@ import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -192,29 +193,27 @@ public class ChainDataProvider {
     return combinedChainDataClient.isFinalized(slot);
   }
 
-  public List<ValidatorDuties> getValidatorDuties(final ValidatorsRequest validatorsRequest) {
+  public SafeFuture<List<ValidatorDuties>> getValidatorDuties(
+      final ValidatorsRequest validatorsRequest) {
 
     if (!isStoreAvailable()) {
-      return List.of();
+      return completedFuture(List.of());
     }
     Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
     if (optionalBlockRoot.isEmpty()) {
-      return List.of();
+      return completedFuture(List.of());
     }
     if (validatorsRequest == null) {
-      return List.of();
+      return completedFuture(List.of());
     }
-    //
-    //    UnsignedLong epoch = validatorsRequest.epoch;
-    //    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    //    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
-    //    return combinedChainDataClient
-    //        .getStateAtSlot(slot, headBlockRoot)
-    //        .thenApply(state -> state.map(getValidatorDuties(state.get(),
-    // state.get().getValidators().asList(), epoch, validatorsRequest.pubkeys)))
-    //        .exceptionally(err -> Optional.empty());
 
-    return List.of();
+    UnsignedLong epoch = validatorsRequest.epoch;
+    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
+    return combinedChainDataClient
+        .getStateAtSlot(slot, headBlockRoot)
+        .thenApply(state -> getValidatorDuties(state.get(), validatorsRequest.pubkeys))
+        .exceptionally(err -> List.of());
   }
 
   public List<ValidatorDuties> getValidatorDuties(

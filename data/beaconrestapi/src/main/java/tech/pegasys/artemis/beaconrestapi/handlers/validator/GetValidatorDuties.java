@@ -37,6 +37,7 @@ import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetValidatorDuties implements Handler {
   private final ChainDataProvider provider;
@@ -71,9 +72,9 @@ public class GetValidatorDuties implements Handler {
       ValidatorsRequest validatorsRequest =
           jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
 
-      List<ValidatorDuties> validatorDuties = provider.getValidatorDuties(validatorsRequest);
+      SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDuties(validatorsRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(jsonProvider.objectToJSON(validatorDuties));
+      ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
 
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
