@@ -13,6 +13,16 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.util.async.SafeFuture;
+
+import java.util.List;
+
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,26 +32,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import java.util.List;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.junit.jupiter.MockitoExtension;
-import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
-
-@ExtendWith(MockitoExtension.class)
 public class PostValidatorDutiesTest {
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
   private String EMPTY_LIST = "[]";
 
-  @Captor private ArgumentCaptor<SafeFuture<String>> args;
+  @SuppressWarnings("unchecked")
+  final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @Test
   public void shouldReturnNoContentWhenNoBlockRoot() throws Exception {
