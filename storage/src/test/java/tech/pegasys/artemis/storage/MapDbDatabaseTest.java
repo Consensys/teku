@@ -93,8 +93,14 @@ class MapDbDatabaseTest {
   }
 
   @Test
+  public void createMemoryStoreFromEmptyDatabase() {
+    Database database = MapDbDatabase.createInMemory();
+    assertThat(database.createMemoryStore()).isEmpty();
+  }
+
+  @Test
   public void shouldRecreateOriginalGenesisStore() {
-    final Store memoryStore = database.createMemoryStore();
+    final Store memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore).isEqualToIgnoringGivenFields(store, "time", "lock", "readLock");
   }
 
@@ -146,7 +152,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
 
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(transaction.getFinalizedCheckpoint());
@@ -165,7 +171,7 @@ class MapDbDatabaseTest {
     transaction.setGenesis_time(newGenesisTime);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
   }
 
@@ -179,7 +185,7 @@ class MapDbDatabaseTest {
     transaction.setJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -193,7 +199,7 @@ class MapDbDatabaseTest {
     transaction.setFinalizedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -207,7 +213,7 @@ class MapDbDatabaseTest {
     transaction.setBestJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getBestJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
@@ -222,7 +228,7 @@ class MapDbDatabaseTest {
     transaction.putBlock(newBlockRoot, newBlock);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getBlock(newBlockRoot)).isEqualTo(newBlock.getMessage());
   }
 
@@ -237,7 +243,7 @@ class MapDbDatabaseTest {
     transaction.putBlockState(blockRoot, newState);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getBlockState(blockRoot)).isEqualTo(newState);
   }
 
@@ -252,7 +258,7 @@ class MapDbDatabaseTest {
     transaction.putCheckpointState(checkpoint, newState);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(checkpoint)).isEqualTo(newState);
   }
 
@@ -267,7 +273,7 @@ class MapDbDatabaseTest {
     transaction.putLatestMessage(validatorIndex, latestMessage);
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getLatestMessage(validatorIndex)).isEqualTo(latestMessage);
   }
 
@@ -285,7 +291,7 @@ class MapDbDatabaseTest {
     transaction.putLatestMessage(validator3, checkpoint1);
     commit(transaction);
 
-    final Store result1 = database.createMemoryStore();
+    final Store result1 = database.createMemoryStore().orElseThrow();
     assertThat(result1.getLatestMessage(validator1)).isEqualTo(checkpoint1);
     assertThat(result1.getLatestMessage(validator2)).isEqualTo(checkpoint2);
     assertThat(result1.getLatestMessage(validator3)).isEqualTo(checkpoint1);
@@ -295,7 +301,7 @@ class MapDbDatabaseTest {
     transaction2.putLatestMessage(validator3, checkpoint2);
     commit(transaction2);
 
-    final Store result2 = database.createMemoryStore();
+    final Store result2 = database.createMemoryStore().orElseThrow();
     assertThat(result2.getLatestMessage(validator1)).isEqualTo(checkpoint1);
     assertThat(result2.getLatestMessage(validator2)).isEqualTo(checkpoint2);
     assertThat(result2.getLatestMessage(validator3)).isEqualTo(checkpoint2);
@@ -315,7 +321,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(checkpoint1))
         .isEqualTo(transaction.getCheckpointState(checkpoint1));
     assertThat(result.getCheckpointState(checkpoint2))
@@ -353,7 +359,7 @@ class MapDbDatabaseTest {
     // Check pruned data has been removed from store
     assertStoreWasPruned(store, prunedBlocks, prunedCheckpoints);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getCheckpointState(earlyCheckpoint)).isNull();
     assertThat(result.getCheckpointState(middleCheckpoint))
         .isEqualTo(transaction1.getCheckpointState(middleCheckpoint));
@@ -379,7 +385,7 @@ class MapDbDatabaseTest {
 
     commit(transaction);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getSignedBlock(genesisRoot)).isEqualTo(store.getSignedBlock(genesisRoot));
     assertThat(result.getSignedBlock(block1Root)).isEqualTo(block1);
     assertThat(result.getSignedBlock(block2Root)).isEqualTo(block2);
@@ -417,7 +423,7 @@ class MapDbDatabaseTest {
 
     finalizeEpoch(UnsignedLong.ONE, block2Root);
 
-    final Store result = database.createMemoryStore();
+    final Store result = database.createMemoryStore().orElseThrow();
     assertThat(result.getSignedBlock(block1Root)).isNull();
     assertThat(result.getSignedBlock(block2Root)).isEqualTo(block2);
     assertThat(result.getSignedBlock(unfinalizedBlockRoot)).isEqualTo(unfinalizedBlock);
@@ -587,7 +593,7 @@ class MapDbDatabaseTest {
   }
 
   private void assertOnlyHotBlocks(final SignedBeaconBlock... blocks) {
-    final Store memoryStore = database.createMemoryStore();
+    final Store memoryStore = database.createMemoryStore().orElseThrow();
     assertThat(memoryStore.getBlockRoots())
         .hasSameElementsAs(
             Stream.of(blocks).map(block -> block.getMessage().hash_tree_root()).collect(toList()));
