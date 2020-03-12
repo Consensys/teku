@@ -20,6 +20,7 @@ import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.CachedBranchNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class VectorViewImpl<R extends ViewRead, W extends R>
     extends AbstractCompositeViewWrite<VectorViewImpl<R, W>, R>
@@ -32,8 +33,11 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   public VectorViewImpl(VectorViewType<R> type, TreeNode backingNode) {
     this.type = type;
     this.size = type.getMaxLength();
-//    cachedRoot = type.maxChunks() == Constants.VALIDATOR_REGISTRY_LIMIT;
+    cachedRoot = type.maxChunks() >= Constants.VALIDATOR_REGISTRY_LIMIT /*/ 8*/;
     setBackingNode(backingNode);
+    viewCache =
+        (R[]) new ViewRead[
+            type.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) type.getMaxLength()];
   }
 
   public boolean cachedRoot = false;
@@ -47,6 +51,7 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
             oldBytes ->
                 type.getElementType()
                     .updateBackingNode(oldBytes, index % type.getElementsPerChunk(), value)));
+    viewCache[index] = value;
     invalidate();
   }
 
@@ -60,28 +65,40 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
     this.backingNode = cachedRoot ? CachedBranchNode.cacheNode(getType(), backingNode) : backingNode;
   }
 
+  private final R[] viewCache;
+
   @Override
   public R get(int index) {
     checkIndex(index);
 
-    TreeNode node = getNode(index / type.getElementsPerChunk());
-    @SuppressWarnings("unchecked")
-    R ret =
-        (R) type.getElementType().createFromBackingNode(node, index % type.getElementsPerChunk());
+    R ret = viewCache[index];
+    if (ret == null) {
+      TreeNode node = getNode(index / type.getElementsPerChunk());
+      @SuppressWarnings("unchecked")
+      R t = (R) type.getElementType().createFromBackingNode(node, index % type.getElementsPerChunk());
+      ret = t;
+      viewCache[index] = ret;
+    }
     return ret;
+
   }
 
   @Override
   public W getByRef(int index) {
     checkIndex(index);
 
-    @SuppressWarnings("unchecked")
-    W writableCopy = (W) get(index).createWritableCopy();
+    W ret = (W) viewCache[index];
+    if (ret == null) {
+      @SuppressWarnings("unchecked")
+      W writableCopy = (W) get(index).createWritableCopy();
+      ret = writableCopy;
 
-    if (writableCopy instanceof CompositeViewWrite) {
-      ((CompositeViewWrite<?>) writableCopy).setInvalidator(viewWrite -> set(index, writableCopy));
+      if (writableCopy instanceof CompositeViewWrite) {
+        ((CompositeViewWrite<?>) writableCopy)
+            .setInvalidator(viewWrite -> set(index, writableCopy));
+      }
     }
-    return writableCopy;
+    return ret;
   }
 
   private TreeNode updateNode(int listIndex, Function<TreeNode, TreeNode> nodeUpdater) {

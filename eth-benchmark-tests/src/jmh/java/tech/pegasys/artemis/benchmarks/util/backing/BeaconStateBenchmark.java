@@ -2,6 +2,7 @@ package tech.pegasys.artemis.benchmarks.util.backing;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
@@ -31,6 +32,16 @@ public class BeaconStateBenchmark {
     for (Validator validator : beaconState.getValidators()) {
       bh.consume(validator);
     }
+  }
+
+  public static void main(String[] args) throws Exception {
+    BeaconStateBenchmark b = new BeaconStateBenchmark();
+    b.iterateValidators(new Blackhole(""));
+    b.iterateValidators(new Blackhole(""));
+  }
+
+  @Test
+  void aaa() {
   }
 
   static int i = 0;

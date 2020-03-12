@@ -17,7 +17,7 @@ public class CachedBranchNode extends BranchNodeImpl {
     }
   }
 
-  private final TreeNode[] cache = new TreeNode[64 * 1024];
+  private final TreeNode[] cache = new TreeNode[32 * 1024];
   private final long minCachedTarget;
 //  private final Map<Long, TreeNode> cache = new ConcurrentHashMap<>();
 //  private final AtomicLong getCount = new AtomicLong();

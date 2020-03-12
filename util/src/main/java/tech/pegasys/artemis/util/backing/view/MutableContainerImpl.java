@@ -63,20 +63,32 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
     return backingNode;
   }
 
+  private final ViewRead[] viewCache = new ViewRead[32];
+
   @Override
   public ViewRead get(int index) {
     checkIndex(index);
-    TreeNode node = backingNode.get(type.getGeneralizedIndex(index));
-    return type.getChildType(index).createFromBackingNode(node);
+    ViewRead ret = viewCache[index];
+    if (ret == null) {
+      TreeNode node = backingNode.get(type.getGeneralizedIndex(index));
+      ret = type.getChildType(index).createFromBackingNode(node);
+      viewCache[index] = ret;
+    }
+    return ret;
   }
 
   @Override
   public ViewWrite getByRef(int index) {
-    ViewWrite writableCopy = get(index).createWritableCopy();
-    if (writableCopy instanceof CompositeViewWrite) {
-      ((CompositeViewWrite<?>) writableCopy).setInvalidator(viewWrite -> set(index, viewWrite));
+    ViewRead viewRead = get(index);
+    if (viewRead instanceof ViewWrite) {
+      return (ViewWrite) viewRead;
+    } else {
+      ViewWrite writableCopy = viewRead.createWritableCopy();
+      if (writableCopy instanceof CompositeViewWrite) {
+        ((CompositeViewWrite<?>) writableCopy).setInvalidator(viewWrite -> set(index, viewWrite));
+      }
+      return writableCopy;
     }
-    return writableCopy;
   }
 
   @Override
@@ -89,6 +101,7 @@ public class MutableContainerImpl<C extends MutableContainerImpl<C>>
         type.getChildType(index),
         child.getType());
     backingNode = backingNode.updated(type.getGeneralizedIndex(index), child.getBackingNode());
+    viewCache[index] = child;
     invalidate();
   }
 

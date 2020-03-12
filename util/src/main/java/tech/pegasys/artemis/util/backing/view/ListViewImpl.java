@@ -43,6 +43,9 @@ public class ListViewImpl<R extends ViewRead, W extends R>
             List.of(vectorType, BasicViewTypes.UINT64_TYPE), MutableContainerImpl::new);
     container = containerViewType.getDefault();
     size = new AtomicInteger(0);
+    viewCache =
+        (R[]) new ViewRead[
+            vectorType.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) vectorType.getMaxLength()];
   }
 
   public ListViewImpl(ListViewType<R> type, TreeNode node) {
@@ -52,6 +55,10 @@ public class ListViewImpl<R extends ViewRead, W extends R>
             MutableContainerImpl::new);
     container = containerViewType.createFromBackingNode(node);
     size = new AtomicInteger(getSizeFromTree());
+    viewCache =
+        (R[]) new ViewRead[
+            type.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) type.getMaxLength()];
+
   }
 
   @Override
@@ -64,22 +71,34 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     return sizeView.get().intValue();
   }
 
+  private final R[] viewCache;
   @Override
   public R get(int index) {
     checkPositionIndex(index, size() - 1);
-    return getVector().get(index);
+    R ret = viewCache[index];
+    if (ret == null) {
+      ret = getVector().get(index);
+      viewCache[index] = ret;
+    }
+    return ret;
   }
 
   @Override
   public W getByRef(int index) {
     checkPositionIndex(index, size() - 1);
     @SuppressWarnings("unchecked")
-    W writableCopy = (W) get(index).createWritableCopy();
+    W ret = (W) viewCache[index];
+    if (ret == null) {
+      W writableCopy = (W) get(index).createWritableCopy();
 
-    if (writableCopy instanceof CompositeViewWrite) {
-      ((CompositeViewWrite<?>) writableCopy).setInvalidator(viewWrite -> set(index, writableCopy));
+      if (writableCopy instanceof CompositeViewWrite) {
+        ((CompositeViewWrite<?>) writableCopy)
+            .setInvalidator(viewWrite -> set(index, writableCopy));
+      }
+      viewCache[index] = writableCopy;
+      ret = writableCopy;
     }
-    return writableCopy;
+    return ret;
   }
 
   @Override
@@ -101,11 +120,13 @@ public class ListViewImpl<R extends ViewRead, W extends R>
           return vector;
         });
 
+    viewCache[index] = value;
     invalidate();
   }
 
   @Override
   public void clear() {
+
     container.clear();
     size.set(0);
     invalidate();

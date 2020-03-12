@@ -133,6 +133,11 @@ public interface TreeNode {
         }
       }
     }
+
+    @Override
+    default TreeNode updated(TreeNodes newNodes) {
+      return null;
+    }
   }
 
   /** Calculates (if necessary) and returns `hash_tree_root` of this tree node */
@@ -154,6 +159,14 @@ public interface TreeNode {
    * a new node
    */
   TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
+
+  default TreeNode updated(TreeNodes newNodes) {
+    TreeNode ret = this;
+    for (int i = 0; i < newNodes.size(); i++) {
+      ret = ret.updated(newNodes.getGIndex(i), newNodes.getNode(i));
+    }
+    return ret;
+  }
 
   /**
    * 'Sets' a new node on place of the node at generalized index. This node and all its descendants
