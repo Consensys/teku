@@ -31,6 +31,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
@@ -119,6 +120,8 @@ public class BeaconRestApi {
     app.get(GetCommittees.ROUTE, new GetCommittees(provider, jsonProvider));
     app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(provider, jsonProvider));
     app.get(GetStateRoot.ROUTE, new GetStateRoot(provider, jsonProvider));
+
+    app.post(PostValidators.ROUTE, new PostValidators(provider, jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {

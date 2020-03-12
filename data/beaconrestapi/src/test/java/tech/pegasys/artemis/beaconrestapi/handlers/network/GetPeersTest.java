@@ -23,9 +23,6 @@ import io.javalin.http.Context;
 import io.libp2p.core.PeerId;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -33,11 +30,12 @@ import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-@ExtendWith(MockitoExtension.class)
 public class GetPeersTest {
   private final JsonProvider jsonProvider = new JsonProvider();
-  @Mock Context context;
-  @Mock P2PNetwork<Peer> p2pNetwork;
+  private final Context context = mock(Context.class);
+
+  @SuppressWarnings("unchecked")
+  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
 
   @Test
   public void shouldReturnArrayOfPeersIfPresent() throws Exception {

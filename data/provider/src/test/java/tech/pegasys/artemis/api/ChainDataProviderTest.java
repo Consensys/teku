@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -41,9 +42,12 @@ import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorWithIndex;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -372,6 +376,60 @@ public class ChainDataProviderTest {
     assertEquals(BLSSignature.empty(), attestation.signature);
     assertEquals(beaconState.slot, attestation.data.slot);
     assertEquals(blockRoot, attestation.data.beacon_block_root);
+  }
+
+  @Test
+  void getValidatorsByValidatorsRequest_shouldIncludeMissingValidators()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    ValidatorsRequest smallRequest =
+        new ValidatorsRequest(compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getStateAtSlot(any()))
+        .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
+
+    SafeFuture<Optional<BeaconValidators>> future =
+        provider.getValidatorsByValidatorsRequest(smallRequest);
+    Optional<BeaconValidators> optionalValidators = future.get();
+    BeaconValidators validators = optionalValidators.get();
+
+    assertThat(validators.validators.size()).isEqualTo(1);
+    ValidatorWithIndex expected = new ValidatorWithIndex(BLSPubKey.empty());
+    assertThat(validators.validators.get(0)).isEqualToComparingFieldByField(expected);
+  }
+
+  @Test
+  void getValidatorsByValidatorsRequest_shouldIncludeValidators()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    ValidatorsRequest validatorsRequest =
+        new ValidatorsRequest(
+            compute_epoch_at_slot(beaconState.slot),
+            List.of(
+                beaconState.validators.get(0).pubkey,
+                beaconState.validators.get(11).pubkey,
+                beaconState.validators.get(99).pubkey));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getStateAtSlot(any()))
+        .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
+    SafeFuture<Optional<BeaconValidators>> future =
+        provider.getValidatorsByValidatorsRequest(validatorsRequest);
+
+    Optional<BeaconValidators> optionalValidators = future.get();
+    BeaconValidators validators = optionalValidators.get();
+
+    assertThat(validators.validators.size()).isEqualTo(3);
+    assertThat(validators.validators.get(0))
+        .usingRecursiveComparison()
+        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(0), beaconState));
+    assertThat(validators.validators.get(1))
+        .usingRecursiveComparison()
+        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(11), beaconState));
+    assertThat(validators.validators.get(2))
+        .usingRecursiveComparison()
+        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(99), beaconState));
   }
 
   @Test

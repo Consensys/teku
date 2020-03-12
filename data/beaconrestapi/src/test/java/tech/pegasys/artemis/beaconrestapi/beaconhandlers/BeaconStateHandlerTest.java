@@ -36,10 +36,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -47,7 +44,6 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-@ExtendWith(MockitoExtension.class)
 public class BeaconStateHandlerTest {
   private static tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal;
   private static BeaconState beaconState;
@@ -58,8 +54,6 @@ public class BeaconStateHandlerTest {
   private final Context context = mock(Context.class);
   private final String missingRoot = Bytes32.leftPad(Bytes.fromHexString("0xff")).toHexString();
   private final ChainDataProvider dataProvider = mock(ChainDataProvider.class);
-
-  @Captor private ArgumentCaptor<SafeFuture<String>> args;
 
   @BeforeAll
   public static void setup() {
@@ -132,6 +126,8 @@ public class BeaconStateHandlerTest {
 
     handler.handle(context);
 
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
     verify(context).result(args.capture());
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconState));
@@ -184,6 +180,8 @@ public class BeaconStateHandlerTest {
 
     handler.handle(context);
 
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
     verify(context).result(args.capture());
     SafeFuture<String> data = args.getValue();
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconState));

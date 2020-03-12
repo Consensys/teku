@@ -31,6 +31,7 @@ import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
@@ -190,6 +191,23 @@ public class ChainDataProvider {
 
   public boolean isFinalized(UnsignedLong slot) {
     return combinedChainDataClient.isFinalized(slot);
+  }
+
+  public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
+      final ValidatorsRequest request) {
+    UnsignedLong slot =
+        request.epoch == null
+            ? chainStorageClient.getBestSlot()
+            : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
+
+    return getStateAtSlot(slot)
+        .thenApply(
+            optionalBeaconState -> {
+              if (optionalBeaconState.isEmpty()) {
+                return Optional.empty();
+              }
+              return Optional.of(new BeaconValidators(optionalBeaconState.get(), request.pubkeys));
+            });
   }
 
   public SafeFuture<List<ValidatorDuties>> getValidatorDuties(

@@ -25,7 +25,6 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
 
     testCompile 'io.libp2p:jvm-libp2p-minimal'
-    testCompile 'org.mockito:mockito-junit-jupiter:3.2.4'
 }
 
 test {
