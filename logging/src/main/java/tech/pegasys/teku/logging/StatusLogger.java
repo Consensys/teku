@@ -15,6 +15,7 @@ package tech.pegasys.teku.logging;
 
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 
+import java.nio.file.Path;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -76,6 +77,15 @@ public class StatusLogger {
 
   public void attestationFailure(final IllegalArgumentException cause) {
     log.warn("Cannot produce attestations or create a block {}", cause.toString());
+  }
+
+  public void validatorDepositYamlKeyWriterFailure(final Path file) {
+    log.error("Error writing keys to {}", file.toString());
+  }
+
+  public void validatorDepositEncryptedKeystoreWriterFailure(
+      final String message, final Path file, final String cause) {
+    log.error(message, file.toString(), cause);
   }
 
   // TODO only add colour when it is enabled vai the config

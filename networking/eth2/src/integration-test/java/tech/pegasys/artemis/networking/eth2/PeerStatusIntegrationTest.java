@@ -109,10 +109,10 @@ public class PeerStatusIntegrationTest {
     final Store network2Store = storageClient.getStore();
     assertStatus(
         status,
-        storageClient.getBestBlockRootState().getFork().getCurrent_version(),
+        storageClient.getBestBlockRootState().orElseThrow().getFork().getCurrent_version(),
         network2Store.getFinalizedCheckpoint().getRoot(),
         network2Store.getFinalizedCheckpoint().getEpoch(),
-        storageClient.getBestBlockRoot(),
+        storageClient.getBestBlockRoot().orElseThrow(),
         storageClient.getBestSlot());
   }
 

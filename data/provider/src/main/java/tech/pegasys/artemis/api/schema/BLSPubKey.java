@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 
 public class BLSPubKey {
   /** The number of bytes in this value - i.e. 48 */
-  private final int SIZE = 48;
+  private static final int SIZE = 48;
 
   private final Bytes bytes;
 
@@ -66,5 +66,9 @@ public class BLSPubKey {
 
   public String toHexString() {
     return bytes.toHexString();
+  }
+
+  public static BLSPubKey empty() {
+    return new BLSPubKey(Bytes.wrap(new byte[SIZE]));
   }
 }

@@ -61,7 +61,7 @@ public class BeaconStateHandlerTest {
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
     beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
     storageClient.initializeFromGenesis(beaconStateInternal);
-    blockRoot = storageClient.getBestBlockRoot();
+    blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = beaconStateInternal.getSlot();
     beaconState = new BeaconState(beaconStateInternal);
   }

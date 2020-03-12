@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -32,21 +33,28 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.schema.Attestation;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorWithIndex;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ChainDataProviderTest {
   private static CombinedChainDataClient combinedChainDataClient;
@@ -70,7 +78,7 @@ public class ChainDataProviderTest {
     beaconState = new BeaconState(beaconStateInternal);
     chainStorageClient.initializeFromGenesis(beaconStateInternal);
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
-    blockRoot = chainStorageClient.getBestBlockRoot();
+    blockRoot = chainStorageClient.getBestBlockRoot().orElseThrow();
     slot = chainStorageClient.getBestSlot();
   }
 
@@ -156,7 +164,7 @@ public class ChainDataProviderTest {
     ChainDataProvider provider =
         new ChainDataProvider(mockChainStorageClient, combinedChainDataClient);
 
-    when(mockChainStorageClient.getBestBlockRoot()).thenReturn(null);
+    when(mockChainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     Optional<BeaconHead> data = provider.getBeaconHead();
     assertTrue(data.isEmpty());
@@ -276,16 +284,14 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    Bytes32 blockRoot = Bytes32.random();
 
     SafeFuture<Optional<tech.pegasys.artemis.datastructures.state.BeaconState>> futureBeaconState =
         completedFuture(Optional.of(beaconStateInternal));
 
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(mockCombinedChainDataClient.getStateAtSlot(ZERO, blockRoot)).thenReturn(futureBeaconState);
+    when(mockCombinedChainDataClient.getStateAtSlot(ZERO)).thenReturn(futureBeaconState);
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO, blockRoot);
+    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO);
 
     BeaconState result = future.get().get();
     assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
@@ -370,6 +376,119 @@ public class ChainDataProviderTest {
     assertEquals(BLSSignature.empty(), attestation.signature);
     assertEquals(beaconState.slot, attestation.data.slot);
     assertEquals(blockRoot, attestation.data.beacon_block_root);
+  }
+
+  @Test
+  void getValidatorsByValidatorsRequest_shouldIncludeMissingValidators()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    ValidatorsRequest smallRequest =
+        new ValidatorsRequest(compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getStateAtSlot(any()))
+        .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
+
+    SafeFuture<Optional<BeaconValidators>> future =
+        provider.getValidatorsByValidatorsRequest(smallRequest);
+    Optional<BeaconValidators> optionalValidators = future.get();
+    BeaconValidators validators = optionalValidators.get();
+
+    assertThat(validators.validators.size()).isEqualTo(1);
+    ValidatorWithIndex expected = new ValidatorWithIndex(BLSPubKey.empty());
+    assertThat(validators.validators.get(0)).isEqualToComparingFieldByField(expected);
+  }
+
+  @Test
+  void getValidatorsByValidatorsRequest_shouldIncludeValidators()
+      throws ExecutionException, InterruptedException {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    ValidatorsRequest validatorsRequest =
+        new ValidatorsRequest(
+            compute_epoch_at_slot(beaconState.slot),
+            List.of(
+                beaconState.validators.get(0).pubkey,
+                beaconState.validators.get(11).pubkey,
+                beaconState.validators.get(99).pubkey));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getStateAtSlot(any()))
+        .thenReturn(completedFuture(Optional.of(beaconStateInternal)));
+    SafeFuture<Optional<BeaconValidators>> future =
+        provider.getValidatorsByValidatorsRequest(validatorsRequest);
+
+    Optional<BeaconValidators> optionalValidators = future.get();
+    BeaconValidators validators = optionalValidators.get();
+
+    assertThat(validators.validators.size()).isEqualTo(3);
+    assertThat(validators.validators.get(0))
+        .usingRecursiveComparison()
+        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(0), beaconState));
+    assertThat(validators.validators.get(1))
+        .usingRecursiveComparison()
+        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(11), beaconState));
+    assertThat(validators.validators.get(2))
+        .usingRecursiveComparison()
+        .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(99), beaconState));
+  }
+
+  @Test
+  void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
+    BLSPubKey pubKey = new BLSPubKey(DataStructureUtil.randomPublicKey(88).toBytes());
+    Integer validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
+    assertThat(validatorIndex).isEqualTo(null);
+  }
+
+  @Test
+  void getValidatorIndex_shouldReturnIndexIfFound() {
+    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
+        DataStructureUtil.randomBeaconState(99);
+    BeaconState state = new BeaconState(beaconStateInternal);
+    // all the validators are the same so the first one will match
+    int expectedValidatorIndex = 0;
+    BLSPubKey pubKey = state.validators.get(expectedValidatorIndex).pubkey;
+    int actualValidatorIndex =
+        ChainDataProvider.getValidatorIndex(beaconStateInternal.getValidators().asList(), pubKey);
+    assertThat(actualValidatorIndex).isEqualTo(expectedValidatorIndex);
+  }
+
+  @Test
+  void getCommitteeIndex_shouldReturnNotFoundIfNotFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    Integer committeeIndex = provider.getCommitteeIndex(List.of(), 99);
+    assertThat(committeeIndex).isEqualTo(null);
+  }
+
+  @Test
+  void getCommitteeIndex_shouldReturnIndexIfFound() {
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    UnsignedLong committeeIndex = DataStructureUtil.randomUnsignedLong(888);
+    CommitteeAssignment committeeAssignment1 =
+        new CommitteeAssignment(List.of(4, 5, 6), committeeIndex, slot);
+    CommitteeAssignment committeeAssignment2 =
+        new CommitteeAssignment(List.of(3, 2, 1), committeeIndex, slot);
+    int validatorCommitteeIndex =
+        provider.getCommitteeIndex(List.of(committeeAssignment1, committeeAssignment2), 1);
+    assertThat(validatorCommitteeIndex).isEqualTo(1);
+  }
+
+  @Test
+  void getValidatorDuties() {
+    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
+        DataStructureUtil.randomBeaconState(77);
+    ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    BLSPublicKey pubKey1 = DataStructureUtil.randomPublicKey(99);
+    BLSPublicKey pubKey2 = DataStructureUtil.randomPublicKey(98);
+    List<ValidatorDuties> dutiesList =
+        provider.getValidatorDutiesFromState(
+            beaconStateInternal,
+            List.of(pubKey1, pubKey2).stream()
+                .map(k -> new BLSPubKey(k.toBytes()))
+                .collect(Collectors.toList()));
+    assertThat(dutiesList.size()).isEqualTo(2);
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(

@@ -30,6 +30,7 @@ import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
@@ -37,6 +38,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostValidatorDuties;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
@@ -126,5 +128,15 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveNetworkPeerCountEndpoint() {
     verify(app).get(eq(GetPeerCount.ROUTE), any(GetPeerCount.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveBeaconValidatorsPostEndpoint() {
+    verify(app).post(eq(PostValidators.ROUTE), any(PostValidators.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveValidatorDutiesEndpoint() {
+    verify(app).post(eq(PostValidatorDuties.ROUTE), any(PostValidatorDuties.class));
   }
 }

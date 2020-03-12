@@ -31,6 +31,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
@@ -39,6 +40,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetAttestation;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostValidatorDuties;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -118,12 +120,16 @@ public class BeaconRestApi {
     app.get(GetCommittees.ROUTE, new GetCommittees(provider, jsonProvider));
     app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(provider, jsonProvider));
     app.get(GetStateRoot.ROUTE, new GetStateRoot(provider, jsonProvider));
+
+    app.post(PostValidators.ROUTE, new PostValidators(provider, jsonProvider));
   }
 
   private void addValidatorHandlers(DataProvider dataProvider) {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
     app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
+
+    app.post(PostValidatorDuties.ROUTE, new PostValidatorDuties(provider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
