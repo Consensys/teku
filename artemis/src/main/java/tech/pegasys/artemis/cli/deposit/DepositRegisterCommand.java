@@ -151,7 +151,7 @@ public class DepositRegisterCommand implements Runnable {
         required = true,
         description =
             "Path to the keystore file containing encrypted signing key for the validator")
-    private File validatorKeystoreFile;
+    File validatorKeystoreFile;
 
     @Option(
         names = {"--signing-keystore-password-file"},
@@ -159,6 +159,6 @@ public class DepositRegisterCommand implements Runnable {
         required = true,
         description =
             "Path to the file containing password to decrypt the signing validator keystore")
-    private File validatorKeystorePasswordFile;
+    File validatorKeystorePasswordFile;
   }
 }
