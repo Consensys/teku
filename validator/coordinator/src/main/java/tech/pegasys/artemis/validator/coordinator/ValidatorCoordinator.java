@@ -336,7 +336,7 @@ public class ValidatorCoordinator {
                             produceAttestations(
                                 state,
                                 attesterInfo.getPublicKey(),
-                                attesterInfo.getIndexIntoCommitee(),
+                                attesterInfo.getIndexIntoCommittee(),
                                 attesterInfo.getCommittee(),
                                 genericAttestationData))));
   }

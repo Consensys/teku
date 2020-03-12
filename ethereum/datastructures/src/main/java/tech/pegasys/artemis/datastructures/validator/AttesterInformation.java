@@ -22,19 +22,19 @@ public class AttesterInformation {
 
   private final int validatorIndex;
   private final BLSPublicKey publicKey;
-  private final int indexIntoCommitee;
+  private final int indexIntoCommittee;
   private final Committee committee;
   private final Optional<BLSSignature> selection_proof;
 
   public AttesterInformation(
       int validatorIndex,
       BLSPublicKey publicKey,
-      int indexIntoCommitee,
+      int indexIntoCommittee,
       Committee committee,
       Optional<BLSSignature> selection_proof) {
     this.validatorIndex = validatorIndex;
     this.publicKey = publicKey;
-    this.indexIntoCommitee = indexIntoCommitee;
+    this.indexIntoCommittee = indexIntoCommittee;
     this.committee = committee;
     this.selection_proof = selection_proof;
   }
@@ -47,8 +47,8 @@ public class AttesterInformation {
     return publicKey;
   }
 
-  public int getIndexIntoCommitee() {
-    return indexIntoCommitee;
+  public int getIndexIntoCommittee() {
+    return indexIntoCommittee;
   }
 
   public Committee getCommittee() {

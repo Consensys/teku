@@ -261,9 +261,9 @@ public class AttestationGenerator {
       int indexIntoCommittee,
       Committee committee,
       AttestationData genericAttestationData) {
-    int commmitteSize = committee.getCommitteeSize();
+    int committeSize = committee.getCommitteeSize();
     Bitlist aggregationBitfield =
-        AttestationUtil.getAggregationBits(commmitteSize, indexIntoCommittee);
+        AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());

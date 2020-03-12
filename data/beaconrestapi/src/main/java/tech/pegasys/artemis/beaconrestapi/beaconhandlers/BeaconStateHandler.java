@@ -82,7 +82,7 @@ public class BeaconStateHandler implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       final Map<String, List<String>> parameters = ctx.queryParamMap();
-      SafeFuture<Optional<BeaconState>> future;
+      final SafeFuture<Optional<BeaconState>> future;
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
       }
