@@ -15,24 +15,21 @@ package tech.pegasys.artemis.beaconrestapi;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_FINALIZED;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
-@ExtendWith(MockitoExtension.class)
 public class CacheControlUtilsTest {
 
   SignedBeaconBlock signedBlock =
       new SignedBeaconBlock(DataStructureUtil.randomSignedBeaconBlock(1, 1));
-  @Mock private ChainDataProvider provider;
+  private final ChainDataProvider provider = mock(ChainDataProvider.class);
 
   @Test
   void getMaxAgeForSignedBlock_shouldSetCacheNoneIfNotFinalized() {

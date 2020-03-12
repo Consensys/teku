@@ -34,10 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
@@ -52,7 +49,6 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
-@ExtendWith(MockitoExtension.class)
 public class GetValidatorsTest {
   private Context context = mock(Context.class);
   private final UnsignedLong epoch = DataStructureUtil.randomUnsignedLong(99);
@@ -64,7 +60,8 @@ public class GetValidatorsTest {
 
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
 
-  @Captor private ArgumentCaptor<SafeFuture<String>> args;
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @Test
   public void shouldReturnNoContentWhenNoBlockRoot() throws Exception {
