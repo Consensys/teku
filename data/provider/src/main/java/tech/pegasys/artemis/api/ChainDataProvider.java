@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
@@ -32,10 +33,10 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
-import tech.pegasys.artemis.api.schema.Validator;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -193,48 +194,56 @@ public class ChainDataProvider {
 
   public List<ValidatorDuties> getValidatorDuties(final ValidatorsRequest validatorsRequest) {
 
-    UnsignedLong epoch = validatorsRequest.epoch;
+    if (!isStoreAvailable()) {
+      return List.of();
+    }
     Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
     if (optionalBlockRoot.isEmpty()) {
       return List.of();
     }
+    if (validatorsRequest == null) {
+      return List.of();
+    }
+    //
+    //    UnsignedLong epoch = validatorsRequest.epoch;
     //    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    // TODO deal with future
-    //    BeaconState state = combinedChainDataClient.getStateAtSlot(slot, optionalBlockRoot.get());
-    //    List<Validator> validators = state.validators;
-    List<Validator> validators = List.of();
+    //    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
+    //    return combinedChainDataClient
+    //        .getStateAtSlot(slot, headBlockRoot)
+    //        .thenApply(state -> state.map(getValidatorDuties(state.get(),
+    // state.get().getValidators().asList(), epoch, validatorsRequest.pubkeys)))
+    //        .exceptionally(err -> Optional.empty());
 
+    return List.of();
+  }
+
+  public List<ValidatorDuties> getValidatorDuties(
+      final tech.pegasys.artemis.datastructures.state.BeaconState state,
+      final List<BLSPubKey> pubKeys) {
     List<ValidatorDuties> dutiesList = new ArrayList<>();
-    for (BLSPubKey pubKey : validatorsRequest.pubkeys) {
-      dutiesList.add(getValidatorDuties(validators, epoch, pubKey));
+
+    for (BLSPubKey pubKey : pubKeys) {
+      int validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
+
+      List<CommitteeAssignment> committees =
+          combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
+
+      dutiesList.add(
+          new ValidatorDuties(
+              getCommitteeIndex(committees, validatorIndex), pubKey, validatorIndex));
     }
     return dutiesList;
   }
 
-  private ValidatorDuties getValidatorDuties(
-      final List<Validator> validators, final UnsignedLong epoch, final BLSPubKey pubKey) {
-    int validatorIndex = getValidatorIndex(validators, pubKey);
-
-    // TODO deal with future
-    if (epoch.compareTo(UnsignedLong.ZERO) < 0) {
-      return ValidatorDuties.empty();
-    }
-    ; // TODO delete this
-    //    List<Committee> committees = combinedChainDataClient
-    //        .getCommitteeAssignmentAtEpoch(epoch)
-    //        .thenApply(result -> result.stream().map(Committee::new).collect(Collectors.toList()))
-    //        .exceptionally(err -> List.of());
-    List<Committee> committees = List.of();
-
-    return new ValidatorDuties(
-        getCommitteeIndex(committees, validatorIndex), pubKey, validatorIndex);
-  }
-
   @VisibleForTesting
   protected static int getValidatorIndex(
-      final List<Validator> validators, final BLSPubKey publicKey) {
-    Optional<Validator> optionalValidator =
-        validators.stream().filter(v -> publicKey.equals(v.pubkey)).findFirst();
+      final List<tech.pegasys.artemis.datastructures.state.Validator> validators,
+      final BLSPubKey publicKey) {
+    Optional<tech.pegasys.artemis.datastructures.state.Validator> optionalValidator =
+        validators.stream()
+            .filter(
+                v -> Bytes48.fromHexString(publicKey.toHexString()).equals(v.getPubkey().toBytes()))
+            .findFirst();
     if (optionalValidator.isPresent()) {
       return validators.indexOf(optionalValidator.get());
     } else {
@@ -243,10 +252,10 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected int getCommitteeIndex(List<Committee> committees, int validatorIndex) {
-    Optional<Committee> matchingCommittee =
+  protected int getCommitteeIndex(List<CommitteeAssignment> committees, int validatorIndex) {
+    Optional<CommitteeAssignment> matchingCommittee =
         committees.stream()
-            .filter(committee -> committee.committee.contains(validatorIndex))
+            .filter(committee -> committee.getCommittee().contains(validatorIndex))
             .findFirst();
     if (matchingCommittee.isPresent()) {
       return committees.indexOf(matchingCommittee.get());
