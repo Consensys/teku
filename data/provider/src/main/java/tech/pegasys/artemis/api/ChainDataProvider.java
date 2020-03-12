@@ -219,23 +219,26 @@ public class ChainDataProvider {
   public List<ValidatorDuties> getValidatorDuties(
       final tech.pegasys.artemis.datastructures.state.BeaconState state,
       final List<BLSPubKey> pubKeys) {
-    List<ValidatorDuties> dutiesList = new ArrayList<>();
+    final List<ValidatorDuties> dutiesList = new ArrayList<>();
 
-    for (BLSPubKey pubKey : pubKeys) {
-      int validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
+    final List<CommitteeAssignment> committees =
+        combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
 
-      List<CommitteeAssignment> committees =
-          combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
-
-      dutiesList.add(
-          new ValidatorDuties(
-              getCommitteeIndex(committees, validatorIndex), pubKey, validatorIndex));
+    for (final BLSPubKey pubKey : pubKeys) {
+      final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
+      if (validatorIndex == null) {
+        dutiesList.add(new ValidatorDuties(null, pubKey, null));
+      } else {
+        dutiesList.add(
+            new ValidatorDuties(
+                getCommitteeIndex(committees, validatorIndex), pubKey, validatorIndex));
+      }
     }
     return dutiesList;
   }
 
   @VisibleForTesting
-  protected static int getValidatorIndex(
+  protected static Integer getValidatorIndex(
       final List<tech.pegasys.artemis.datastructures.state.Validator> validators,
       final BLSPubKey publicKey) {
     Optional<tech.pegasys.artemis.datastructures.state.Validator> optionalValidator =
@@ -246,12 +249,12 @@ public class ChainDataProvider {
     if (optionalValidator.isPresent()) {
       return validators.indexOf(optionalValidator.get());
     } else {
-      return -1;
+      return null;
     }
   }
 
   @VisibleForTesting
-  protected int getCommitteeIndex(List<CommitteeAssignment> committees, int validatorIndex) {
+  protected Integer getCommitteeIndex(List<CommitteeAssignment> committees, int validatorIndex) {
     Optional<CommitteeAssignment> matchingCommittee =
         committees.stream()
             .filter(committee -> committee.getCommittee().contains(validatorIndex))
@@ -259,7 +262,7 @@ public class ChainDataProvider {
     if (matchingCommittee.isPresent()) {
       return committees.indexOf(matchingCommittee.get());
     } else {
-      return -1;
+      return null;
     }
   }
 

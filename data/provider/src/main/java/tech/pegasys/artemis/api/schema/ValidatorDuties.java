@@ -14,17 +14,13 @@
 package tech.pegasys.artemis.api.schema;
 
 public class ValidatorDuties {
-  public final int committeeIndex;
+  public final Integer committeeIndex;
   public final BLSPubKey publicKey;
-  public final int validatorIndex;
+  public final Integer validatorIndex;
 
-  public ValidatorDuties(int committeeIndex, BLSPubKey publicKey, int validatorIndex) {
+  public ValidatorDuties(Integer committeeIndex, BLSPubKey publicKey, Integer validatorIndex) {
     this.committeeIndex = committeeIndex;
     this.publicKey = publicKey;
     this.validatorIndex = validatorIndex;
-  }
-
-  public static ValidatorDuties empty() {
-    return new ValidatorDuties(0, null, 0);
   }
 }

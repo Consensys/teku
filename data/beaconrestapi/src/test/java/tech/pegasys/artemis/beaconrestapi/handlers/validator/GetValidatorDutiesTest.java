@@ -13,13 +13,13 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,7 +29,6 @@ import tech.pegasys.artemis.provider.JsonProvider;
 @ExtendWith(MockitoExtension.class)
 public class GetValidatorDutiesTest {
   private Context context = mock(Context.class);
-  //  private final UnsignedLong epoch = DataStructureUtil.randomUnsignedLong(99);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
   //
@@ -39,8 +38,17 @@ public class GetValidatorDutiesTest {
   @Test
   public void shouldReturnNoContentWhenNoBlockRoot() throws Exception {
     GetValidatorDuties handler = new GetValidatorDuties(provider, jsonProvider);
-    when(provider.getBestBlockRoot()).thenReturn(Optional.empty());
     handler.handle(context);
     verify(context).status(SC_NO_CONTENT);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenNoEpochNumberInBody() throws Exception {
+    GetValidatorDuties handler = new GetValidatorDuties(provider, jsonProvider);
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(context.body()).thenReturn("{\"epoch\":\"bob\"}");
+    handler.handle(context);
+    verify(context).status(SC_BAD_REQUEST);
+    verify(provider).isStoreAvailable();
   }
 }

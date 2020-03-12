@@ -379,8 +379,8 @@ public class ChainDataProviderTest {
   @Test
   void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
     BLSPubKey pubKey = new BLSPubKey(DataStructureUtil.randomPublicKey(88).toBytes());
-    int validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
-    assertThat(validatorIndex).isEqualTo(-1);
+    Integer validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
+    assertThat(validatorIndex).isEqualTo(null);
   }
 
   @Test
@@ -400,8 +400,8 @@ public class ChainDataProviderTest {
   void getCommitteeIndex_shouldReturnNotFoundIfNotFound() {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    int committeeIndex = provider.getCommitteeIndex(List.of(), 99);
-    assertThat(committeeIndex).isEqualTo(-1);
+    Integer committeeIndex = provider.getCommitteeIndex(List.of(), 99);
+    assertThat(committeeIndex).isEqualTo(null);
   }
 
   @Test
