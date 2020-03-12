@@ -36,15 +36,15 @@ class BeaconValidatorsTest {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(99);
     SSZList<Validator> validatorList = beaconState.getValidators();
     BeaconValidators response = new BeaconValidators(beaconState);
-    assertThat(response.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(response.validatorList.size())
+    assertThat(response.total_size).isEqualTo(beaconState.getValidators().size());
+    assertThat(response.validators.size())
         .isEqualTo(Math.min(validatorList.size(), PAGE_SIZE_DEFAULT));
     int expectedNextPageToken =
         validatorList.size() < PAGE_SIZE_DEFAULT ? 0 : PAGE_TOKEN_DEFAULT + 1;
-    assertThat(response.getNextPageToken()).isEqualTo(expectedNextPageToken);
-    assertThat(response.validatorList.get(0).validator.activation_eligibility_epoch)
+    assertThat(response.next_page_token).isEqualTo(expectedNextPageToken);
+    assertThat(response.validators.get(0).validator.activation_eligibility_epoch)
         .isEqualToComparingFieldByField(validatorList.get(0).getActivation_eligibility_epoch());
-    assertThat(response.validatorList.get(0).index).isEqualTo(0);
+    assertThat(response.validators.get(0).validator_index).isEqualTo(0);
   }
 
   @Test
@@ -64,10 +64,10 @@ class BeaconValidatorsTest {
             getValidators(beaconState),
             true,
             BeaconStateUtil.compute_epoch_at_slot(beaconState.getSlot()));
-    assertThat(validators.validatorList.size())
+    assertThat(validators.validators.size())
         .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, activeValidatorCount));
-    assertThat(validators.getTotalSize()).isEqualTo(activeValidatorCount);
-    assertThat(validators.getNextPageToken()).isEqualTo(expectedNextPageToken);
+    assertThat(validators.total_size).isEqualTo(activeValidatorCount);
+    assertThat(validators.next_page_token).isEqualTo(expectedNextPageToken);
   }
 
   @Test
@@ -82,9 +82,9 @@ class BeaconValidatorsTest {
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,
             PAGE_TOKEN_DEFAULT);
-    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
-    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
+    assertThat(beaconValidators.total_size).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.validators.size()).isEqualTo(suppliedPageSizeParam);
+    assertThat(beaconValidators.next_page_token).isEqualTo(PAGE_TOKEN_DEFAULT + 1);
   }
 
   @Test
@@ -100,9 +100,9 @@ class BeaconValidatorsTest {
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,
             suppliedPageTokenParam);
-    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.getNextPageToken()).isEqualTo(suppliedPageTokenParam + 1);
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(suppliedPageSizeParam);
+    assertThat(beaconValidators.total_size).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.next_page_token).isEqualTo(suppliedPageTokenParam + 1);
+    assertThat(beaconValidators.validators.size()).isEqualTo(suppliedPageSizeParam);
   }
 
   @Test
@@ -118,11 +118,11 @@ class BeaconValidatorsTest {
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,
             suppliedPageTokenParam);
-    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.total_size).isEqualTo(beaconState.getValidators().size());
     assertThat(suppliedPageSizeParam * suppliedPageTokenParam)
-        .isGreaterThan(beaconValidators.validatorList.size());
-    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT);
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(0);
+        .isGreaterThan(beaconValidators.validators.size());
+    assertThat(beaconValidators.next_page_token).isEqualTo(PAGE_TOKEN_DEFAULT);
+    assertThat(beaconValidators.validators.size()).isEqualTo(0);
   }
 
   @Test
@@ -144,9 +144,9 @@ class BeaconValidatorsTest {
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,
             suppliedPageTokenParam);
-    assertThat(beaconValidators.getTotalSize()).isEqualTo(beaconState.getValidators().size());
-    assertThat(beaconValidators.getNextPageToken()).isEqualTo(PAGE_TOKEN_DEFAULT);
-    assertThat(beaconValidators.validatorList.size()).isEqualTo(expectedRemainderSize);
+    assertThat(beaconValidators.total_size).isEqualTo(beaconState.getValidators().size());
+    assertThat(beaconValidators.next_page_token).isEqualTo(PAGE_TOKEN_DEFAULT);
+    assertThat(beaconValidators.validators.size()).isEqualTo(expectedRemainderSize);
   }
 
   @Test

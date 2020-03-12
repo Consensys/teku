@@ -16,7 +16,6 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForEpoch;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -24,7 +23,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.primitives.UnsignedLong;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -36,6 +35,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
+import tech.pegasys.artemis.api.schema.ValidatorWithIndex;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -67,7 +67,9 @@ public class PostValidators implements Handler {
               description =
                   "```\n{\n  \"epoch\": (uint64),\n  \"pubkeys\": [(Bytes48 as Hex String)]\n}\n```"),
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconValidators.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = ValidatorWithIndex.class, isArray = true)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
@@ -75,32 +77,27 @@ public class PostValidators implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       ValidatorsRequest request = jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
-
       ctx.result(
           chainDataProvider
               .getValidatorsByValidatorsRequest(request)
-              .thenApplyChecked(
-                  validators -> handleResponseContext(ctx, request.epoch, validators)));
+              .thenApplyChecked(validators -> handleResponseContext(ctx, validators)));
 
+      ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.status(SC_BAD_REQUEST);
+    } catch (JsonMappingException ex) {
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
 
-  private String handleResponseContext(
-      Context ctx, UnsignedLong epoch, Optional<BeaconValidators> response)
+  private String handleResponseContext(Context ctx, Optional<BeaconValidators> response)
       throws JsonProcessingException {
     if (response.isEmpty()) {
       ctx.status(SC_NO_CONTENT);
       return null;
     }
-    if (epoch != null) {
-      ctx.header(Header.CACHE_CONTROL, getMaxAgeForEpoch(chainDataProvider, epoch));
-    } else {
-      ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-    }
-
-    return jsonProvider.objectToJSON(response.get());
+    return jsonProvider.objectToJSON(response.get().validators);
   }
 }

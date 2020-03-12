@@ -27,9 +27,9 @@ import java.util.stream.Collectors;
 public class BeaconValidators {
   public static final int PAGE_SIZE_DEFAULT = 250;
   public static final int PAGE_TOKEN_DEFAULT = 0;
-  public final List<ValidatorWithIndex> validatorList;
-  public final Long totalSize;
-  public final Integer nextPageToken;
+  public final List<ValidatorWithIndex> validators;
+  public final Long total_size;
+  public final Integer next_page_token;
 
   @VisibleForTesting
   public BeaconValidators(tech.pegasys.artemis.datastructures.state.BeaconState state) {
@@ -38,9 +38,9 @@ public class BeaconValidators {
 
   @VisibleForTesting
   public BeaconValidators() {
-    this.totalSize = 0L;
-    this.nextPageToken = 0;
-    this.validatorList = List.of();
+    this.total_size = 0L;
+    this.next_page_token = 0;
+    this.validators = List.of();
   }
 
   @VisibleForTesting
@@ -60,16 +60,18 @@ public class BeaconValidators {
   }
 
   public BeaconValidators(BeaconState state, List<BLSPubKey> filter) {
-    //    filter.stream().map(pubkey -> {
-    //
-    //    });
-    this.validatorList =
-        state.validators.stream()
-            .filter(validator -> filter.contains(validator.pubkey))
-            .map(validator -> new ValidatorWithIndex(validator, state))
+    this.validators =
+        filter.stream()
+            .map(
+                pubkey ->
+                    state.validators.stream()
+                        .filter(val -> val.pubkey.equals(pubkey))
+                        .map(validator -> new ValidatorWithIndex(validator, state))
+                        .findFirst()
+                        .orElse(new ValidatorWithIndex(pubkey)))
             .collect(Collectors.toList());
-    this.totalSize = null;
-    this.nextPageToken = null;
+    this.total_size = null;
+    this.next_page_token = null;
   }
 
   public BeaconValidators(
@@ -93,50 +95,31 @@ public class BeaconValidators {
 
     if (pageSize > 0 && pageToken >= 0) {
       int offset = pageToken * pageSize;
-      this.totalSize = getEffectiveListSize(list, activeOnly, epoch);
+      this.total_size = getEffectiveListSize(list, activeOnly, epoch);
       if (offset >= list.size()) {
-        this.validatorList = List.of();
-        this.nextPageToken = 0;
+        this.validators = List.of();
+        this.next_page_token = 0;
         return;
       }
-      validatorList = new ArrayList<>();
+      validators = new ArrayList<>();
       int i = offset;
       int numberAdded = 0;
       while (i < list.size() && numberAdded < pageSize) {
         if (!activeOnly || is_active_validator(list.get(i), epoch)) {
-          validatorList.add(new ValidatorWithIndex(list.get(i), i, balances.get(i)));
+          validators.add(new ValidatorWithIndex(list.get(i), i, balances.get(i)));
           numberAdded++;
         }
         i++;
       }
-      if (totalSize == 0 || offset + numberAdded >= list.size()) {
-        this.nextPageToken = 0;
+      if (total_size == 0 || offset + numberAdded >= list.size()) {
+        this.next_page_token = 0;
       } else {
-        this.nextPageToken = pageToken + 1;
+        this.next_page_token = pageToken + 1;
       }
     } else {
-      this.validatorList = List.of();
-      this.totalSize = (long) list.size();
-      this.nextPageToken = 0;
-    }
-  }
-
-  public static class ValidatorWithIndex {
-    public final Validator validator;
-    public final int index;
-    public final UnsignedLong balance;
-
-    public ValidatorWithIndex(
-        final Validator validator, final int index, final UnsignedLong balance) {
-      this.validator = validator;
-      this.index = index;
-      this.balance = balance;
-    }
-
-    public ValidatorWithIndex(final Validator validator, BeaconState state) {
-      this.index = state.validators.indexOf(validator);
-      this.validator = validator;
-      this.balance = state.balances.get(this.index);
+      this.validators = List.of();
+      this.total_size = (long) list.size();
+      this.next_page_token = 0;
     }
   }
 
