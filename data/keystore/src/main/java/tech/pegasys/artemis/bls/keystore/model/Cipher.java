@@ -34,6 +34,10 @@ public class Cipher {
     this.message = message;
   }
 
+  public Cipher(final CipherFunction cipherFunction, final Bytes ivParam) {
+    this(cipherFunction, new CipherParam(ivParam), Bytes.EMPTY);
+  }
+
   public Cipher(final Bytes ivParam) {
     this(CipherFunction.AES_128_CTR, new CipherParam(ivParam), Bytes.EMPTY);
   }
