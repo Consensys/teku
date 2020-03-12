@@ -26,10 +26,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
@@ -39,12 +36,14 @@ import tech.pegasys.artemis.sync.FetchRecentBlocksService.FetchBlockTaskFactory;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
-@ExtendWith(MockitoExtension.class)
 public class FetchRecentBlocksServiceTest {
 
-  @Mock private Eth2Network eth2Network;
-  @Mock private PendingPool<SignedBeaconBlock> pendingBlocksPool;
-  @Mock private FetchBlockTaskFactory fetchBlockTaskFactory;
+  private Eth2Network eth2Network = mock(Eth2Network.class);
+
+  @SuppressWarnings("unchecked")
+  private PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+
+  private FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
 
   private final int maxConcurrentRequests = 2;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
