@@ -43,12 +43,7 @@ class DepositRegisterCommandTest {
   private static final Consumer<Integer> shutdownFunction = status -> {};
   private static final String PASSWORD = "testpassword";
   private static final Bytes BLS_PRIVATE_KEY =
-      Bytes48.leftPad(
-          Bytes.fromHexString(
-              "0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"));
-  private static final Bytes BLS_PUB_KEY =
-      Bytes.fromHexString(
-          "9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07");
+      Bytes48.fromHexStringLenient("19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
   private static final Bytes32 SALT =
       Bytes32.fromHexString("d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3");
   private static final Bytes AES_IV_PARAM = Bytes.fromHexString("264daa3f303d7259501c93d997d84fe6");
