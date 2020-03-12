@@ -105,7 +105,7 @@ public class Generator {
         }
 
         Optional<BeaconState> bestState =
-            localStorage.getBlockState(localStorage.getBestBlockRoot());
+            localStorage.getBlockState(localStorage.getBestBlockRoot().orElse(null));
         System.out.println("Epoch done: " + bestState);
       }
     }

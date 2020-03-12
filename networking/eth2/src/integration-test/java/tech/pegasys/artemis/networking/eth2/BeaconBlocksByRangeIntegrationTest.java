@@ -70,7 +70,8 @@ public class BeaconBlocksByRangeIntegrationTest {
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
     beaconChainUtil.initializeStorage();
-    final List<SignedBeaconBlock> response = requestBlocks(storageClient1.getBestBlockRoot());
+    final List<SignedBeaconBlock> response =
+        requestBlocks(storageClient1.getBestBlockRoot().orElseThrow());
     assertThat(response).isEmpty();
   }
 
