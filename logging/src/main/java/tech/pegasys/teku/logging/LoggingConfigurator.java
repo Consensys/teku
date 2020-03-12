@@ -19,6 +19,7 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
@@ -63,15 +64,20 @@ public class LoggingConfigurator {
   }
 
   public static void update() {
+    // TODO StautsLogger warning when removing any appenders / loggers due to conflicting name
 
     // TODO one or the other
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    setUpLoggersProgrammatically(ctx.getConfiguration());
+    addLoggersProgrammatically((AbstractConfiguration) ctx.getConfiguration());
     ctx.updateLoggers();
   }
 
-  public static void setUpLoggersProgrammatically(final Configuration configuration) {
+  public static void addLoggersProgrammatically(final AbstractConfiguration configuration) {
+
+    // TODO status message?
+    configuration.removeAppender(CONSOLE_APPENDER_NAME);
+
     final Layout<?> layout =
         PatternLayout.newBuilder()
             .withConfiguration(configuration)
@@ -83,6 +89,20 @@ public class LoggingConfigurator {
     consoleAppender.start();
     configuration.addAppender(consoleAppender);
 
+    // TODO switch the appender depending on Destination?
+    // TODO needs to combine with additivity to avoid double logging
+    // This doubles the messages as they go to both the root & their own loggers
+
+    // ctx.getRootLogger().addAppender(console);
+
+    if (DESTINATION == LoggingDestination.CONSOLE_ONLY) {
+      // TODO status update? - need to remove to avoid duplicate logging
+      configuration.removeAppender(CONSOLE_APPENDER_NAME);
+      configuration.getRootLogger().addAppender(consoleAppender, null, null);
+
+      // TODO remove the logfile
+    }
+
     setUpLogger(STATUS_LOGGER_NAME, LOG_LEVEL, consoleAppender, configuration);
     setUpLogger(
         EVENT_LOGGER_NAME, INCLUDE_EVENTS ? LOG_LEVEL : Level.OFF, consoleAppender, configuration);
@@ -93,8 +113,13 @@ public class LoggingConfigurator {
       final Level level,
       final Appender appender,
       final Configuration configuration) {
-    final LoggerConfig logger = new LoggerConfig(name, level, ADDITIVITY);
+    final LoggerConfig logger =
+        new LoggerConfig(name, level, DESTINATION == LoggingDestination.BOTH);
     logger.addAppender(appender, level, null);
+
+    // TODO status message?
+    configuration.removeLogger(name);
+
     configuration.addLogger(name, logger);
   }
 }

@@ -42,7 +42,7 @@ nodeUrl = "http://localhost:8545"
 [logging]
 #colorEnabled = false
 #includeEventsEnabled = false
-#destination =  fileOnly
+#destination =  'fileOnly' or 'consoleOnly'
 
 [metrics]
 enabled = false

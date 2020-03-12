@@ -28,6 +28,6 @@ public class ConsoleLoggingConfiguration extends XmlConfiguration {
   protected void doConfigure() {
     super.doConfigure();
 
-    LoggingConfigurator.setUpLoggersProgrammatically(this);
+    LoggingConfigurator.addLoggersProgrammatically(this);
   }
 }
