@@ -24,8 +24,6 @@ public class SingleQueryParameterUtils {
 
   public static final String INVALID_BYTES32_DATA =
       "Unable to read Bytes32 data from query parameter.";
-  public static final String INVALID_BYTES48_DATA =
-      "Unable to read Bytes48 data from query parameter.";
   public static final String INVALID_NUMERIC_VALUE =
       "Unable to read a numeric value from query parameter.";
   public static final String NULL_OR_EMPTY_FORMAT = "'%s' cannot be null or empty.";
@@ -93,17 +91,6 @@ public class SingleQueryParameterUtils {
       return Bytes32.fromHexString(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_BYTES32_DATA);
-    }
-  }
-
-  public static Bytes48 getParameterValueAsBytes48(
-      final Map<String, List<String>> parameterMap, final String key)
-      throws IllegalArgumentException {
-    String stringValue = validateQueryParameter(parameterMap, key);
-    try {
-      return Bytes48.fromHexString(stringValue);
-    } catch (IllegalArgumentException ex) {
-      throw new IllegalArgumentException(INVALID_BYTES48_DATA);
     }
   }
 }
