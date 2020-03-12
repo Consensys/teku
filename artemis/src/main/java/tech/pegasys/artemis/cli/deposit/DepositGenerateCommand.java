@@ -249,14 +249,14 @@ public class DepositGenerateCommand implements Runnable {
 
   static class ValidatorPasswordOptions {
     @Option(
-        names = {"--validator-password-file"},
+        names = {"--validator-keystore-password-file"},
         paramLabel = "<FILE>",
         required = true,
         description = "Read password from the file to encrypt the validator keys")
     File validatorPasswordFile;
 
     @Option(
-        names = {"--validator-password-env"},
+        names = {"--validator-keystore-password-env"},
         paramLabel = "<ENV_VAR>",
         required = true,
         description = "Read password from environment variable to encrypt the validator keys")
@@ -265,13 +265,13 @@ public class DepositGenerateCommand implements Runnable {
 
   static class WithdrawalPasswordOptions {
     @Option(
-        names = {"--withdrawal-password-file"},
+        names = {"--withdrawal-keystore-password-file"},
         paramLabel = "<FILE>",
         description = "Read password from the file to encrypt the withdrawal keys")
     File withdrawalPasswordFile;
 
     @Option(
-        names = {"--withdrawal-password-env"},
+        names = {"--withdrawal-keystore-password-env"},
         paramLabel = "<ENV_VAR>",
         description = "Read password from environment variable to encrypt the withdrawal keys")
     String withdrawalPasswordEnv;
