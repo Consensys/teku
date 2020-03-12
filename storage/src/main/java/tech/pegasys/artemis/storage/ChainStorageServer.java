@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
@@ -24,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
@@ -32,6 +32,8 @@ import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotResponse;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootRequest;
+import tech.pegasys.artemis.storage.events.GetFinalizedStateByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.StoreDiskUpdateCompleteEvent;
@@ -40,6 +42,8 @@ import tech.pegasys.artemis.storage.events.StoreGenesisDiskUpdateEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
+
+  private final Logger LOG = LogManager.getLogger();
 
   private Database database;
   private final EventBus eventBus;
@@ -95,13 +99,13 @@ public class ChainStorageServer {
                       + "Aborting startup to prevent corruption of the database.\n",
                   ver, DATABASE_VERSION));
         }
-        STATUS_LOG.log(
+        LOG.log(
             Level.INFO,
             String.format(
                 "The existing database is version %s, from file: %s",
                 DATABASE_VERSION, databaseVersionFile.getAbsolutePath()));
       } else {
-        STATUS_LOG.log(
+        LOG.log(
             Level.INFO,
             String.format(
                 "Recording database version %s to file: %s",
@@ -110,7 +114,7 @@ public class ChainStorageServer {
             databaseVersionFile.toPath(), DATABASE_VERSION, StandardOpenOption.CREATE);
       }
     } catch (IOException e) {
-      STATUS_LOG.log(Level.ERROR, "Failed to write database version to file", e);
+      LOG.log(Level.ERROR, "Failed to write database version to file", e);
     }
   }
 
@@ -139,6 +143,13 @@ public class ChainStorageServer {
     final Optional<BeaconState> state =
         database.getFinalizedRootAtSlot(request.getSlot()).flatMap(database::getState);
     eventBus.post(new GetFinalizedStateAtSlotResponse(request.getSlot(), state));
+  }
+
+  @Subscribe
+  @AllowConcurrentEvents
+  public void onGetStateByBlockRequest(final GetFinalizedStateByBlockRootRequest request) {
+    final Optional<BeaconState> state = database.getState(request.getBlockRoot());
+    eventBus.post(new GetFinalizedStateByBlockRootResponse(request.getBlockRoot(), state));
   }
 
   @Subscribe

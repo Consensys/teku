@@ -79,7 +79,7 @@ public class AttestationAggregator {
     // If the attestation message hasn't been seen before:
     // - add it to the aggregate attestation map to aggregate further when
     // another attestation with the same message is received
-    // - add it to the list of aggregate attestations for that commiteeeIndex
+    // - add it to the list of aggregate attestations for that committeeIndex
     // to broadcast
     else if (isNewData.get()) {
       UnsignedLong committeeIndex = newAttestation.getData().getIndex();

@@ -22,7 +22,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import org.apache.logging.log4j.Level;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class YamlKeysWriter implements KeysWriter {
@@ -50,7 +49,7 @@ public class YamlKeysWriter implements KeysWriter {
       try {
         Files.writeString(outputPath, yamlLine, StandardOpenOption.APPEND);
       } catch (IOException e) {
-        STATUS_LOG.log(Level.FATAL, "Error writing keys to " + outputPath);
+        STATUS_LOG.validatorDepositYamlKeyWriterFailure(outputPath);
         throw new UncheckedIOException(e);
       }
     }

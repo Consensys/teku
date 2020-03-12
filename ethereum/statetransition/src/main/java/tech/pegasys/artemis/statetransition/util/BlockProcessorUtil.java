@@ -41,7 +41,6 @@ import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.artemis.util.config.Constants.PERSISTENT_COMMITTEE_PERIOD;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
@@ -50,7 +49,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -75,6 +75,8 @@ import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class BlockProcessorUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   /**
    * Processes block header
@@ -108,7 +110,7 @@ public final class BlockProcessorUtil {
       checkArgument(!proposer.isSlashed(), "process_block_header: Verify proposer is not slashed");
 
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -146,7 +148,7 @@ public final class BlockProcessorUtil {
       int index = epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
       state.getRandao_mixes().set(index, mix);
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -202,7 +204,7 @@ public final class BlockProcessorUtil {
       process_voluntary_exits(state, body.getVoluntary_exits());
       // @process_shard_receipt_proofs
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -275,7 +277,7 @@ public final class BlockProcessorUtil {
         slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -328,7 +330,7 @@ public final class BlockProcessorUtil {
         checkArgument(slashed_any, "process_attester_slashings: No one is slashed");
       }
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -405,7 +407,7 @@ public final class BlockProcessorUtil {
                     "Invalid attestation signature: " + invalidAttestation);
               });
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -426,7 +428,7 @@ public final class BlockProcessorUtil {
         process_deposit(state, deposit);
       }
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }
@@ -486,7 +488,7 @@ public final class BlockProcessorUtil {
         initiate_validator_exit(state, toIntExact(exit.getValidator_index().longValue()));
       }
     } catch (IllegalArgumentException e) {
-      STATUS_LOG.log(Level.WARN, e.getMessage());
+      LOG.warn(e.getMessage());
       throw new BlockProcessingException(e);
     }
   }

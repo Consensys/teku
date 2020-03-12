@@ -16,7 +16,6 @@ package tech.pegasys.artemis.cli.deposit;
 import static tech.pegasys.artemis.cli.deposit.CommonParams.sendDeposit;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
-import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine;
 import picocli.CommandLine.Mixin;
@@ -69,9 +68,7 @@ public class DepositRegisterCommand implements Runnable {
               params.getAmount())
           .get();
     } catch (final Throwable t) {
-      STATUS_LOG.log(
-          Level.FATAL,
-          "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
+      STATUS_LOG.sendDepositFailure(t);
       System.exit(1); // Web3J creates a non-daemon thread we can't shut down. :(
     }
     System.exit(0); // Web3J creates a non-daemon thread we can't shut down. :(

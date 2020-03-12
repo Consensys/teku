@@ -105,8 +105,8 @@ class CommitteeAssignmentManagerTest {
   void someAlreadyRegistered_someToRegister_someToDeregister() throws Exception {
     // Set TARGET_COMMITTEE_SIZE to 1 in order to make sure there are more than 1 committees per
     // slot
-    // and our Validotor will be assigned to a different committee at epoch 3
-    int oldTargetCommiteeSize = TARGET_COMMITTEE_SIZE;
+    // and our Validator will be assigned to a different committee at epoch 3
+    int oldTargetCommitteeSize = TARGET_COMMITTEE_SIZE;
     TARGET_COMMITTEE_SIZE = 1;
 
     EventBus eventBus = mock(EventBus.class);
@@ -126,7 +126,7 @@ class CommitteeAssignmentManagerTest {
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(any(CommitteeAssignmentEvent.class)));
     Waiter.waitFor(() -> verify(eventBus, times(1)).post(any(CommitteeDismissalEvent.class)));
 
-    TARGET_COMMITTEE_SIZE = oldTargetCommiteeSize;
+    TARGET_COMMITTEE_SIZE = oldTargetCommitteeSize;
   }
 
   @Test

@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.bls.keystore.KeyStore;
@@ -72,9 +71,8 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     try {
       return Files.createDirectories(keystoreDirectory);
     } catch (IOException e) {
-      STATUS_LOG.log(
-          Level.FATAL,
-          "Unable to create directory [" + keystoreDirectory + "] : " + e.getMessage());
+      STATUS_LOG.validatorDepositEncryptedKeystoreWriterFailure(
+          "Error: Unable to create directory [{}] : {}", keystoreDirectory, e.getMessage());
       throw new UncheckedIOException(e);
     }
   }
@@ -91,8 +89,8 @@ public class EncryptedKeystoreWriter implements KeysWriter {
     try {
       KeyStoreLoader.saveToFile(outputPath, keyStoreData);
     } catch (final IOException e) {
-      STATUS_LOG.log(
-          Level.FATAL, "Unable to save keystore file [" + outputPath + "] : " + e.getMessage());
+      STATUS_LOG.validatorDepositEncryptedKeystoreWriterFailure(
+          "Error: Unable to save keystore file [{}] : {}", outputPath, e.getMessage());
       throw new UncheckedIOException(e);
     }
   }

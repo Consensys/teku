@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.apache.logging.log4j.Level;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -143,9 +142,7 @@ public class DepositGenerateCommand implements Runnable {
 
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
-      STATUS_LOG.log(
-          Level.FATAL,
-          "Failed to send deposit transaction: " + t.getClass() + ": " + t.getMessage());
+      STATUS_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);
     }
     shutdownFunction.accept(0);
@@ -161,7 +158,6 @@ public class DepositGenerateCommand implements Runnable {
       keysWriter =
           new EncryptedKeystoreWriter(
               validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
-      STATUS_LOG.log(Level.INFO, "Generating Encrypted Keystores in " + keystoreDir);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
     }

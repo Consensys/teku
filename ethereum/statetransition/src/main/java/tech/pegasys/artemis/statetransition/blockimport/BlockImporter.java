@@ -31,7 +31,7 @@ public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
   private final ChainStorageClient storageClient;
   private final EventBus eventBus;
-  private final StateTransition stateTransition = new StateTransition(false);
+  private final StateTransition stateTransition = new StateTransition();
 
   public BlockImporter(ChainStorageClient storageClient, EventBus eventBus) {
     this.storageClient = storageClient;
