@@ -67,9 +67,8 @@ public class GetValidatorDuties implements Handler {
         ctx.status(SC_NO_CONTENT);
         return;
       }
-      // TODO is this right??
       ValidatorsRequest validatorsRequest =
-          jsonProvider.jsonToObject(ctx.req.toString(), ValidatorsRequest.class);
+          jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
 
       List<ValidatorDuties> validatorDuties = provider.getValidatorDuties(validatorsRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
