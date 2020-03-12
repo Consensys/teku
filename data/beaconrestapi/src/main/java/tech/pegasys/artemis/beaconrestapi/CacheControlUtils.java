@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 
 public class CacheControlUtils {
   public static final String CACHE_NONE = "max-age=0";
@@ -30,6 +31,11 @@ public class CacheControlUtils {
 
   public static String getMaxAgeForSlot(ChainDataProvider provider, UnsignedLong slot) {
     return provider.isFinalized(slot) ? CACHE_FINALIZED : CACHE_NONE;
+  }
+
+  public static String getMaxAgeForEpoch(ChainDataProvider provider, UnsignedLong epoch) {
+    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    return getMaxAgeForSlot(provider, slot);
   }
 
   public static String getMaxAgeForBeaconState(

@@ -35,7 +35,7 @@ class BeaconValidatorsTest {
   public void validatorsResponseShouldConformToDefaults() {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(99);
     SSZList<Validator> validatorList = beaconState.getValidators();
-    BeaconValidators response = new BeaconValidators(validatorList);
+    BeaconValidators response = new BeaconValidators(beaconState);
     assertThat(response.getTotalSize()).isEqualTo(beaconState.getValidators().size());
     assertThat(response.validatorList.size())
         .isEqualTo(Math.min(validatorList.size(), PAGE_SIZE_DEFAULT));
@@ -52,7 +52,7 @@ class BeaconValidatorsTest {
     BeaconState beaconState = DataStructureUtil.randomBeaconState(98);
     BeaconValidators validators =
         new BeaconValidators(
-            beaconState.getValidators(),
+            beaconState,
             true,
             BeaconStateUtil.get_current_epoch(beaconState),
             PAGE_SIZE_DEFAULT,
@@ -77,7 +77,7 @@ class BeaconValidatorsTest {
 
     BeaconValidators beaconValidators =
         new BeaconValidators(
-            beaconState.getValidators(),
+            beaconState,
             false,
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,
@@ -95,7 +95,7 @@ class BeaconValidatorsTest {
 
     BeaconValidators beaconValidators =
         new BeaconValidators(
-            beaconState.getValidators(),
+            beaconState,
             false,
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,
@@ -113,7 +113,7 @@ class BeaconValidatorsTest {
 
     BeaconValidators beaconValidators =
         new BeaconValidators(
-            beaconState.getValidators(),
+            beaconState,
             false,
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,
@@ -139,7 +139,7 @@ class BeaconValidatorsTest {
 
     BeaconValidators beaconValidators =
         new BeaconValidators(
-            validators,
+            beaconState,
             false,
             Constants.FAR_FUTURE_EPOCH,
             suppliedPageSizeParam,

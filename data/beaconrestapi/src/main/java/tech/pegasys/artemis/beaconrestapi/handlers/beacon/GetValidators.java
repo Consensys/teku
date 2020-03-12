@@ -29,7 +29,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -167,9 +166,7 @@ public class GetValidators implements Handler {
       return jsonProvider.objectToJSON(List.of());
     } else {
       final BeaconState state = optionalState.get();
-      final BeaconValidators result =
-          new BeaconValidators(
-              state.validators, activeOnly, compute_epoch_at_slot(state.slot), pageSize, pageToken);
+      final BeaconValidators result = new BeaconValidators(state, activeOnly, pageSize, pageToken);
 
       ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(chainDataProvider, state));
       return jsonProvider.objectToJSON(result);
