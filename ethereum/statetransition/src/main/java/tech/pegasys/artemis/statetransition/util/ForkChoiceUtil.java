@@ -319,13 +319,11 @@ public class ForkChoiceUtil {
       try {
         if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
             > 0) {
-          // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state
           storeCheckpointState(
               store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
           store.setBestJustifiedCheckpoint(justifiedCheckpoint);
         }
         if (should_update_justified_checkpoint(store, justifiedCheckpoint)) {
-          // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state
           storeCheckpointState(
               store, st, justifiedCheckpoint, store.getBlockState(justifiedCheckpoint.getRoot()));
           store.setJustifiedCheckpoint(justifiedCheckpoint);
@@ -338,8 +336,6 @@ public class ForkChoiceUtil {
     // Update finalized checkpoint
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
-      // TODO: Fork Choice Spec does not necessarily ask us to store this checkpoint state, so if we
-      // do error here and exit, we will possibly have acted differently than other nodes.
       try {
         storeCheckpointState(
             store, st, finalizedCheckpoint, store.getBlockState(finalizedCheckpoint.getRoot()));
@@ -357,7 +353,13 @@ public class ForkChoiceUtil {
               > 0
           || !get_ancestor(store, store.getJustifiedCheckpoint().getRoot(), finalized_slot)
               .equals(store.getFinalizedCheckpoint().getRoot())) {
-        store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+        try {
+          storeCheckpointState(
+              store, st, finalizedCheckpoint, store.getBlockState(finalizedCheckpoint.getRoot()));
+          store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+        } catch (SlotProcessingException | EpochProcessingException e) {
+          return BlockImportResult.failedStateTransition(e);
+        }
       }
     }
 
