@@ -43,12 +43,10 @@ import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
-import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
@@ -77,7 +75,7 @@ public class GetValidatorsTest {
   @Test
   public void shouldReturnValidatorsWhenBlockRoot() throws Exception {
     GetValidators handler = new GetValidators(provider, jsonProvider);
-    BeaconValidators beaconValidators = new BeaconValidators(beaconStateInternal.getValidators());
+    BeaconValidators beaconValidators = new BeaconValidators(beaconStateInternal);
 
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
@@ -91,7 +89,7 @@ public class GetValidatorsTest {
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
-    assertThat(beaconValidators.validatorList.size())
+    assertThat(beaconValidators.validators.size())
         .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, beaconStateInternal.getValidators().size()));
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
   }
@@ -115,10 +113,7 @@ public class GetValidatorsTest {
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
-    assertEquals(
-        data.get(),
-        jsonProvider.objectToJSON(
-            new BeaconValidators(SSZList.createMutable(Validator.class, 0L))));
+    assertEquals(data.get(), jsonProvider.objectToJSON(new BeaconValidators()));
   }
 
   @Test
@@ -127,7 +122,7 @@ public class GetValidatorsTest {
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
-    BeaconValidators beaconValidators = new BeaconValidators(beaconStateInternal.getValidators());
+    BeaconValidators beaconValidators = new BeaconValidators(beaconStateInternal);
 
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.getStateAtSlot(slot))
@@ -139,7 +134,7 @@ public class GetValidatorsTest {
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
-    assertThat(beaconValidators.validatorList.size())
+    assertThat(beaconValidators.validators.size())
         .isEqualTo(Math.min(PAGE_SIZE_DEFAULT, beaconStateInternal.getValidators().size()));
     assertEquals(data.get(), jsonProvider.objectToJSON(beaconValidators));
   }
@@ -157,7 +152,7 @@ public class GetValidatorsTest {
 
     BeaconValidators beaconActiveValidators =
         new BeaconValidators(
-            beaconStateWithAddedActiveValidator.getValidators(),
+            beaconStateWithAddedActiveValidator,
             true,
             epoch,
             PAGE_SIZE_DEFAULT,
@@ -189,7 +184,7 @@ public class GetValidatorsTest {
         addActiveValidator(beaconStateInternal);
     BeaconValidators beaconActiveValidators =
         new BeaconValidators(
-            beaconStateWithAddedValidator.getValidators(),
+            beaconStateWithAddedValidator,
             true,
             BeaconStateUtil.get_current_epoch(beaconStateInternal),
             PAGE_SIZE_DEFAULT,
@@ -228,11 +223,7 @@ public class GetValidatorsTest {
 
     BeaconValidators beaconValidators =
         new BeaconValidators(
-            beaconStateInternal.getValidators(),
-            false,
-            epoch,
-            suppliedPageSizeParam,
-            PAGE_TOKEN_DEFAULT);
+            beaconStateInternal, false, epoch, suppliedPageSizeParam, PAGE_TOKEN_DEFAULT);
 
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.getStateAtSlot(slot))
@@ -268,11 +259,7 @@ public class GetValidatorsTest {
 
     BeaconValidators beaconValidators =
         new BeaconValidators(
-            beaconStateInternal.getValidators(),
-            false,
-            epoch,
-            suppliedPageSizeParam,
-            suppliedPageTokenParam);
+            beaconStateInternal, false, epoch, suppliedPageSizeParam, suppliedPageTokenParam);
 
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.getStateAtSlot(slot))
@@ -322,10 +309,7 @@ public class GetValidatorsTest {
     verify(context).result(args.capture());
 
     SafeFuture<String> data = args.getValue();
-    assertEquals(
-        data.get(),
-        jsonProvider.objectToJSON(
-            new BeaconValidators(SSZList.createMutable(Validator.class, 0L))));
+    assertEquals(data.get(), jsonProvider.objectToJSON(new BeaconValidators()));
   }
 
   private tech.pegasys.artemis.datastructures.state.BeaconState addActiveValidator(

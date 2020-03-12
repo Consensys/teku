@@ -13,49 +13,81 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BeaconValidators {
   public static final int PAGE_SIZE_DEFAULT = 250;
   public static final int PAGE_TOKEN_DEFAULT = 0;
-  public final List<ValidatorWithIndex> validatorList;
-  private long totalSize;
-  private int nextPageToken;
+  public final List<ValidatorWithIndex> validators;
+  public final Long total_size;
+  public final Integer next_page_token;
 
   @VisibleForTesting
-  public BeaconValidators(SSZList<tech.pegasys.artemis.datastructures.state.Validator> sszList) {
-    this(sszList, false, FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
+  public BeaconValidators(tech.pegasys.artemis.datastructures.state.BeaconState state) {
+    this(state, false, FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
   }
 
   @VisibleForTesting
-  public BeaconValidators(List<Validator> list) {
-    this(list, false, FAR_FUTURE_EPOCH, PAGE_SIZE_DEFAULT, PAGE_TOKEN_DEFAULT);
+  public BeaconValidators() {
+    this.total_size = 0L;
+    this.next_page_token = 0;
+    this.validators = List.of();
   }
 
   @VisibleForTesting
   public BeaconValidators(
-      SSZList<tech.pegasys.artemis.datastructures.state.Validator> list,
+      tech.pegasys.artemis.datastructures.state.BeaconState state,
       final boolean activeOnly,
       final UnsignedLong epoch,
       final int pageSize,
       final int pageToken) {
     this(
-        list.stream().map(Validator::new).collect(Collectors.toList()),
+        state.getValidators().stream().map(Validator::new).collect(Collectors.toList()),
+        state.getBalances().stream().collect(Collectors.toList()),
         activeOnly,
         epoch,
         pageSize,
         pageToken);
   }
 
+  public BeaconValidators(BeaconState state, List<BLSPubKey> filter) {
+    this.validators =
+        filter.stream()
+            .map(
+                pubkey ->
+                    state.validators.stream()
+                        .filter(val -> val.pubkey.equals(pubkey))
+                        .map(validator -> new ValidatorWithIndex(validator, state))
+                        .findFirst()
+                        .orElse(new ValidatorWithIndex(pubkey)))
+            .collect(Collectors.toList());
+    this.total_size = null;
+    this.next_page_token = null;
+  }
+
   public BeaconValidators(
+      final BeaconState state, final boolean activeOnly, final int pageSize, final int pageToken) {
+    this(
+        state.validators,
+        state.balances,
+        activeOnly,
+        compute_epoch_at_slot(state.slot),
+        pageSize,
+        pageToken);
+  }
+
+  BeaconValidators(
       final List<Validator> list,
+      final List<UnsignedLong> balances,
       final boolean activeOnly,
       final UnsignedLong epoch,
       final int pageSize,
@@ -63,49 +95,31 @@ public class BeaconValidators {
 
     if (pageSize > 0 && pageToken >= 0) {
       int offset = pageToken * pageSize;
-      this.totalSize = getEffectiveListSize(list, activeOnly, epoch);
+      this.total_size = getEffectiveListSize(list, activeOnly, epoch);
       if (offset >= list.size()) {
-        this.validatorList = List.of();
-        this.nextPageToken = 0;
+        this.validators = List.of();
+        this.next_page_token = 0;
         return;
       }
-      validatorList = new ArrayList<>();
+      validators = new ArrayList<>();
       int i = offset;
       int numberAdded = 0;
       while (i < list.size() && numberAdded < pageSize) {
         if (!activeOnly || is_active_validator(list.get(i), epoch)) {
-          validatorList.add(new ValidatorWithIndex(list.get(i), i));
+          validators.add(new ValidatorWithIndex(list.get(i), i, balances.get(i)));
           numberAdded++;
         }
         i++;
       }
-      if (totalSize == 0 || offset + numberAdded >= list.size()) {
-        this.nextPageToken = 0;
+      if (total_size == 0 || offset + numberAdded >= list.size()) {
+        this.next_page_token = 0;
       } else {
-        this.nextPageToken = pageToken + 1;
+        this.next_page_token = pageToken + 1;
       }
     } else {
-      this.validatorList = List.of();
-      this.totalSize = list.size();
-      this.nextPageToken = 0;
-    }
-  }
-
-  public long getTotalSize() {
-    return totalSize;
-  }
-
-  public int getNextPageToken() {
-    return nextPageToken;
-  }
-
-  public static class ValidatorWithIndex {
-    public Validator validator;
-    public int index;
-
-    public ValidatorWithIndex(final Validator validator, int index) {
-      this.validator = validator;
-      this.index = index;
+      this.validators = List.of();
+      this.total_size = (long) list.size();
+      this.next_page_token = 0;
     }
   }
 
