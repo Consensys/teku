@@ -16,9 +16,10 @@ dependencies {
   implementation project(':pow')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
-
+  implementation project(':data:keystore')
   
   api 'com.google.guava:guava'
+  implementation 'org.apache.commons:commons-lang3'
   implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-plumtree'
@@ -40,6 +41,7 @@ dependencies {
   testImplementation 'org.awaitility:awaitility'
   testImplementation 'org.mockito:mockito-core'
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation 'org.mockito:mockito-core'
 
   test {
     testLogging.showStandardStreams = true
