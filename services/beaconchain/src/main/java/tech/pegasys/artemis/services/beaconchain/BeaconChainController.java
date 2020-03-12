@@ -382,13 +382,6 @@ public class BeaconChainController {
   }
 
   @Subscribe
-  public void setNodeSlotAccordingToDBStore(Store store) {
-    Bytes32 headBlockRoot = get_head(store);
-    chainStorageClient.initializeFromStore(store, headBlockRoot);
-    LOG.info("Node being started from database.");
-  }
-
-  @Subscribe
   public void onImportedBlock(ImportedBlockEvent event) {
     if (event.getBlock().getSlot().equals(nodeSlot)) {
       Bytes32 headBlockRoot = this.stateProcessor.processHead();
