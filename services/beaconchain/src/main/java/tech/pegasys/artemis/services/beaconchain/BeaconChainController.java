@@ -74,25 +74,26 @@ public class BeaconChainController {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
+  private final MetricsSystem metricsSystem;
   private final ArtemisConfiguration config;
   private final TimeProvider timeProvider;
-  private EventBus eventBus;
-  private Timer timer;
-  private ChainStorageClient chainStorageClient;
-  private P2PNetwork<Eth2Peer> p2pNetwork;
-  private final MetricsSystem metricsSystem;
-  private SettableGauge currentSlotGauge;
-  private SettableGauge currentEpochGauge;
-  private StateProcessor stateProcessor;
-  private UnsignedLong nodeSlot = UnsignedLong.ZERO;
-  private BeaconRestApi beaconRestAPI;
-  private AttestationAggregator attestationAggregator;
-  private BlockAttestationsPool blockAttestationsPool;
-  private DepositProvider depositProvider;
-  private SyncService syncService;
+  private final EventBus eventBus;
   private final boolean setupInitialState;
-  private AttestationManager attestationManager;
-  private ValidatorCoordinator validatorCoordinator;
+
+  private volatile Timer timer;
+  private volatile ChainStorageClient chainStorageClient;
+  private volatile P2PNetwork<Eth2Peer> p2pNetwork;
+  private volatile SettableGauge currentSlotGauge;
+  private volatile SettableGauge currentEpochGauge;
+  private volatile StateProcessor stateProcessor;
+  private volatile UnsignedLong nodeSlot = UnsignedLong.ZERO;
+  private volatile BeaconRestApi beaconRestAPI;
+  private volatile AttestationAggregator attestationAggregator;
+  private volatile BlockAttestationsPool blockAttestationsPool;
+  private volatile DepositProvider depositProvider;
+  private volatile SyncService syncService;
+  private volatile AttestationManager attestationManager;
+  private volatile ValidatorCoordinator validatorCoordinator;
 
   public BeaconChainController(
       TimeProvider timeProvider,
