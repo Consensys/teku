@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlers.network;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
@@ -21,20 +22,19 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-@ExtendWith(MockitoExtension.class)
 public class GetEthereumNameRecordTest {
-  @Mock Context context;
-  @Mock P2PNetwork<Peer> p2pNetwork;
+  private static final String ENR = "enr:-";
+  private final Context context = mock(Context.class);
+
+  @SuppressWarnings("unchecked")
+  private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+
   private final JsonProvider jsonProvider = new JsonProvider();
-  private String ENR = "enr:-";
 
   @Test
   public void shouldReturnEmptyStringWhenDiscoveryNotInUse() throws Exception {
