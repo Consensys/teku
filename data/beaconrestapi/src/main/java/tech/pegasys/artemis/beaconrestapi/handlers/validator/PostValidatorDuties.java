@@ -78,7 +78,7 @@ public class PostValidatorDuties implements Handler {
       ValidatorsRequest validatorsRequest =
           jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
 
-      SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDuties(validatorsRequest);
+      SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(validatorsRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
       ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
 

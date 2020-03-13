@@ -35,6 +35,7 @@ import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
@@ -210,10 +211,10 @@ public class ChainDataProvider {
             });
   }
 
-  public SafeFuture<List<ValidatorDuties>> getValidatorDuties(
-      final ValidatorsRequest validatorsRequest) {
+  public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
+      final ValidatorDutiesRequest validatorDutiesRequest) {
 
-    if (validatorsRequest == null || !isStoreAvailable()) {
+    if (validatorDutiesRequest == null || !isStoreAvailable()) {
       return completedFuture(List.of());
     }
     final Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
@@ -221,12 +222,12 @@ public class ChainDataProvider {
       return completedFuture(List.of());
     }
 
-    UnsignedLong epoch = validatorsRequest.epoch;
+    UnsignedLong epoch = validatorDutiesRequest.epoch;
     UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
     final Bytes32 headBlockRoot = optionalBlockRoot.get();
     return combinedChainDataClient
         .getStateAtSlot(slot, headBlockRoot)
-        .thenApply(state -> getValidatorDutiesFromState(state.get(), validatorsRequest.pubkeys))
+        .thenApply(state -> getValidatorDutiesFromState(state.get(), validatorDutiesRequest.pubkeys))
         .exceptionally(err -> List.of());
   }
 
