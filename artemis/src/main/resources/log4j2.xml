@@ -1,20 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
-    <Appenders>
-        <RollingFile name="rollingFile" fileName="teku.log" filePattern="teku_%d{yyyy-MM-dd}.log">
-            <PatternLayout
-                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n" />
-            <Policies>
-                <!-- Causes a rollover if the log file is older than the current JVM's start time -->
-                <OnStartupTriggeringPolicy />
-                <!-- Causes a rollover once the date/time pattern no longer applies to the active file -->
-                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
-            </Policies>
-        </RollingFile>
-    </Appenders>
     <Loggers>
         <Root level="info" additivity="true">
-            <AppenderRef ref="rollingFile" />
         </Root>
     </Loggers>
 </Configuration>

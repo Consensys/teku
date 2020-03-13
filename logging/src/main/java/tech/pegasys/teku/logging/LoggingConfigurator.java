@@ -19,24 +19,33 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.appender.RollingFileAppender;
+import org.apache.logging.log4j.core.appender.rolling.CompositeTriggeringPolicy;
+import org.apache.logging.log4j.core.appender.rolling.OnStartupTriggeringPolicy;
+import org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.apache.logging.log4j.status.StatusLogger;
 
 public class LoggingConfigurator {
 
   public static final String EVENT_LOGGER_NAME = "teku-event-log";
   public static final String STATUS_LOGGER_NAME = "teku-status-log";
 
-  private static final String CONSOLE_APPENDER_NAME = "teku-console";
+  private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} [%-5level] - %msg%n";
-  private static final boolean ADDITIVITY = true;
+  private static final String FILE_APPENDER_NAME = "teku-log-appender";
+  private static final String FILE_FORMAT =
+      "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
 
   private static LoggingDestination DESTINATION;
   private static boolean COLOR;
   private static boolean INCLUDE_EVENTS;
+
+  // TODO get the log level from the root looger i.e the config file?
   private static Level LOG_LEVEL = Level.INFO;
 
   public static boolean isColorEnabled() {
@@ -75,7 +84,73 @@ public class LoggingConfigurator {
 
   public static void addLoggersProgrammatically(final AbstractConfiguration configuration) {
 
-    // TODO status message?
+    // TODO warning about color & file?
+
+    // TODO Log4j2 properties are parsed BEFORE Teku configuration - setup nothing
+    if (DESTINATION == null) {
+      return;
+    }
+
+    // TODO message about what we're setting the logging to/as
+    // TODO any appenders / loggers that will be removed (via remove())
+    StatusLogger.getLogger().info("Programmatic logging setup: {}", DESTINATION);
+
+    Appender consoleAppender;
+    Appender fileAppender;
+
+    switch (DESTINATION) {
+      case CONSOLE_ONLY:
+        consoleAppender = consoleAppender(configuration);
+
+        setUpStatusLogger(consoleAppender, configuration);
+        setUpEventsLogger(consoleAppender, configuration);
+
+        configuration.getRootLogger().addAppender(consoleAppender, null, null);
+        break;
+      case FILE_ONLY:
+        fileAppender = fileAppender(configuration);
+
+        setUpStatusLogger(fileAppender, configuration);
+        setUpEventsLogger(fileAppender, configuration);
+
+        configuration.getRootLogger().addAppender(fileAppender, null, null);
+        break;
+      default:
+      case BOTH:
+        consoleAppender = consoleAppender(configuration);
+        fileAppender = fileAppender(configuration);
+
+        setUpStatusLogger(consoleAppender, configuration);
+        setUpEventsLogger(consoleAppender, configuration);
+
+        configuration.addAppender(consoleAppender);
+        configuration.getRootLogger().addAppender(fileAppender, null, null);
+        break;
+    }
+  }
+
+  private static void setUpEventsLogger(
+      final Appender appender, final Configuration configuration) {
+    final Level eventsLogLevel = INCLUDE_EVENTS ? LOG_LEVEL : Level.OFF;
+    final LoggerConfig logger =
+        new LoggerConfig(EVENT_LOGGER_NAME, eventsLogLevel, DESTINATION == LoggingDestination.BOTH);
+    logger.addAppender(appender, eventsLogLevel, null);
+
+    configuration.removeLogger(EVENT_LOGGER_NAME);
+    configuration.addLogger(EVENT_LOGGER_NAME, logger);
+  }
+
+  private static void setUpStatusLogger(
+      final Appender appender, final Configuration configuration) {
+    final LoggerConfig logger =
+        new LoggerConfig(STATUS_LOGGER_NAME, LOG_LEVEL, DESTINATION == LoggingDestination.BOTH);
+    logger.addAppender(appender, LOG_LEVEL, null);
+
+    configuration.removeLogger(STATUS_LOGGER_NAME);
+    configuration.addLogger(STATUS_LOGGER_NAME, logger);
+  }
+
+  private static Appender consoleAppender(final AbstractConfiguration configuration) {
     configuration.removeAppender(CONSOLE_APPENDER_NAME);
 
     final Layout<?> layout =
@@ -85,41 +160,39 @@ public class LoggingConfigurator {
             .build();
     final Appender consoleAppender =
         ConsoleAppender.newBuilder().setName(CONSOLE_APPENDER_NAME).setLayout(layout).build();
-
     consoleAppender.start();
-    configuration.addAppender(consoleAppender);
 
-    // TODO switch the appender depending on Destination?
-    // TODO needs to combine with additivity to avoid double logging
-    // This doubles the messages as they go to both the root & their own loggers
-
-    // ctx.getRootLogger().addAppender(console);
-
-    if (DESTINATION == LoggingDestination.CONSOLE_ONLY) {
-      // TODO status update? - need to remove to avoid duplicate logging
-      configuration.removeAppender(CONSOLE_APPENDER_NAME);
-      configuration.getRootLogger().addAppender(consoleAppender, null, null);
-
-      // TODO remove the logfile
-    }
-
-    setUpLogger(STATUS_LOGGER_NAME, LOG_LEVEL, consoleAppender, configuration);
-    setUpLogger(
-        EVENT_LOGGER_NAME, INCLUDE_EVENTS ? LOG_LEVEL : Level.OFF, consoleAppender, configuration);
+    return consoleAppender;
   }
 
-  private static void setUpLogger(
-      final String name,
-      final Level level,
-      final Appender appender,
-      final Configuration configuration) {
-    final LoggerConfig logger =
-        new LoggerConfig(name, level, DESTINATION == LoggingDestination.BOTH);
-    logger.addAppender(appender, level, null);
+  private static Appender fileAppender(final AbstractConfiguration configuration) {
+    configuration.removeAppender(FILE_APPENDER_NAME);
 
-    // TODO status message?
-    configuration.removeLogger(name);
+    final Layout<?> layout =
+        PatternLayout.newBuilder()
+            .withConfiguration(configuration)
+            .withPattern(FILE_FORMAT)
+            .build();
 
-    configuration.addLogger(name, logger);
+    final String fileName = "teku.log";
+    final String filePattern = "teku_%d{yyyy-MM-dd}.log";
+
+    final Appender fileAppender =
+        RollingFileAppender.newBuilder()
+            .setName(FILE_APPENDER_NAME)
+            .setLayout(layout)
+            .withFileName(fileName)
+            .withFilePattern(filePattern)
+            .withPolicy(
+                CompositeTriggeringPolicy.createPolicy(
+                    OnStartupTriggeringPolicy.createPolicy(1),
+                    TimeBasedTriggeringPolicy.newBuilder()
+                        .withInterval(1)
+                        .withModulate(true)
+                        .build()))
+            .build();
+    fileAppender.start();
+
+    return fileAppender;
   }
 }
