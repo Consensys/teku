@@ -67,6 +67,15 @@ public class NetworkDataProvider {
     return p2pNetwork.streamPeers().count();
   }
 
+  /**
+   * Get the listen port
+   *
+   * @return the port this client is listening on
+   */
+  public int getListenPort() {
+    return p2pNetwork.getListenPort();
+  }
+
   P2PNetwork<?> getP2pNetwork() {
     return p2pNetwork;
   }

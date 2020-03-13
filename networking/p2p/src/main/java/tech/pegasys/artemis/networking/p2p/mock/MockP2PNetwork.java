@@ -94,6 +94,11 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
     return Optional.empty();
   }
 
+  @Override
+  public int getListenPort() {
+    return 0;
+  };
+
   /** Stops the P2P network layer. */
   @Override
   public void stop() {}
