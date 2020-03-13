@@ -19,6 +19,7 @@ import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
@@ -52,6 +53,7 @@ import tech.pegasys.artemis.util.mikuli.SecretKey;
     footer = "Teku is licensed under the Apache License 2.0")
 public class DepositRegisterCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
+  private final Function<String, String> envSupplier;
   @Spec private CommandSpec spec;
   @Mixin private CommonParams params;
 
@@ -68,16 +70,19 @@ public class DepositRegisterCommand implements Runnable {
   DepositRegisterCommand() {
     // required because web3j use non-daemon threads which halts the program
     this.shutdownFunction = System::exit;
+    this.envSupplier = System::getenv;
   }
 
   @VisibleForTesting
   DepositRegisterCommand(
       final Consumer<Integer> shutdownFunction,
+      final Function<String, String> envSupplier,
       final CommandSpec spec,
       final CommonParams params,
       final ValidatorKeyOptions validatorKeyOptions,
       final String withdrawalKey) {
     this.shutdownFunction = shutdownFunction;
+    this.envSupplier = envSupplier;
     this.spec = spec;
     this.params = params;
     this.validatorKeyOptions = validatorKeyOptions;
@@ -110,10 +115,8 @@ public class DepositRegisterCommand implements Runnable {
     }
 
     try {
-      final String keystorePassword =
-          KeystorePasswordOptions.readFromFile(
-              spec.commandLine(),
-              validatorKeyOptions.validatorKeyStoreOptions.validatorKeystorePasswordFile);
+      final String keystorePassword = readPassword();
+
       final KeyStoreData keyStoreData =
           KeyStoreLoader.loadFromFile(
               validatorKeyOptions.validatorKeyStoreOptions.validatorKeystoreFile.toPath());
@@ -122,6 +125,26 @@ public class DepositRegisterCommand implements Runnable {
     } catch (final KeyStoreValidationException e) {
       throw new ParameterException(spec.commandLine(), e.getMessage());
     }
+  }
+
+  private String readPassword() {
+    final String keystorePassword;
+    if (validatorKeyOptions.validatorKeyStoreOptions.validatorPasswordOptions.getPasswordFile()
+        != null) {
+      keystorePassword =
+          KeystorePasswordOptions.readFromFile(
+              spec.commandLine(),
+              validatorKeyOptions.validatorKeyStoreOptions.validatorPasswordOptions
+                  .getPasswordFile());
+    } else {
+      keystorePassword =
+          KeystorePasswordOptions.readFromEnvironmentVariable(
+              spec.commandLine(),
+              envSupplier,
+              validatorKeyOptions.validatorKeyStoreOptions.validatorPasswordOptions
+                  .getPasswordEnvironmentVariable());
+    }
+    return keystorePassword;
   }
 
   private BLSKeyPair privateKeyToKeyPair(final String validatorKey) {
@@ -153,12 +176,33 @@ public class DepositRegisterCommand implements Runnable {
             "Path to the keystore file containing encrypted signing key for the validator")
     File validatorKeystoreFile;
 
+    @ArgGroup(multiplicity = "1")
+    ValidatorPasswordOptions validatorPasswordOptions;
+  }
+
+  static class ValidatorPasswordOptions implements KeystorePasswordOptions {
     @Option(
         names = {"--signing-keystore-password-file"},
         paramLabel = "<FILE>",
         required = true,
-        description =
-            "Path to the file containing password to decrypt the signing validator keystore")
+        description = "Read password from the file to decrypt the validator keystore")
     File validatorKeystorePasswordFile;
+
+    @Option(
+        names = {"--signing-keystore-password-env"},
+        paramLabel = "<ENV_VAR>",
+        required = true,
+        description = "Read password from environment variable to decrypt the validator keystore")
+    String validatorKeystorePasswordEnv;
+
+    @Override
+    public File getPasswordFile() {
+      return validatorKeystorePasswordFile;
+    }
+
+    @Override
+    public String getPasswordEnvironmentVariable() {
+      return validatorKeystorePasswordEnv;
+    }
   }
 }

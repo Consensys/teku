@@ -13,8 +13,10 @@
 
 package tech.pegasys.artemis.cli.deposit;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -37,11 +40,15 @@ import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.bls.keystore.model.SCryptParam;
 import tech.pegasys.artemis.cli.deposit.DepositRegisterCommand.ValidatorKeyOptions;
 import tech.pegasys.artemis.cli.deposit.DepositRegisterCommand.ValidatorKeyStoreOptions;
+import tech.pegasys.artemis.cli.deposit.DepositRegisterCommand.ValidatorPasswordOptions;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 
 class DepositRegisterCommandTest {
   private static final Consumer<Integer> shutdownFunction = status -> {};
   private static final String PASSWORD = "testpassword";
+  private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
+  private static final Function<String, String> envSupplier =
+      s -> EXPECTED_ENV_VARIABLE.equals(s) ? PASSWORD : null;
   private static final Bytes BLS_PRIVATE_KEY =
       Bytes48.fromHexStringLenient("19d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
   private static final Bytes32 SALT =
@@ -53,13 +60,14 @@ class DepositRegisterCommandTest {
       KeyStore.encrypt(BLS_PRIVATE_KEY, PASSWORD, "", KDF_PARAM, CIPHER);
   private CommonParams commonParams;
   private CommandLine.Model.CommandSpec commandSpec;
+  private DepositTransactionSender depositTransactionSender;
 
   @BeforeEach
   void setUp() {
     commonParams = mock(CommonParams.class);
     commandSpec = mock(CommandLine.Model.CommandSpec.class);
     final CommandLine commandLine = mock(CommandLine.class);
-    final DepositTransactionSender depositTransactionSender = mock(DepositTransactionSender.class);
+    depositTransactionSender = mock(DepositTransactionSender.class);
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
     when(commonParams.createTransactionSender()).thenReturn(depositTransactionSender);
@@ -69,30 +77,69 @@ class DepositRegisterCommandTest {
 
   @Test
   void registerWithEncryptedValidatorKeystore(@TempDir final Path tempDir) throws IOException {
-    final Path keyStoreFile = Files.createTempFile(tempDir, "keystore", ".json");
+    final Path keyStoreFile = tempDir.resolve("keystore.json");
     KeyStoreLoader.saveToFile(keyStoreFile, VALIDATOR_KEYSTORE);
 
-    final Path keystorePassword = Files.createTempFile(tempDir, "password", ".txt");
+    final Path keystorePassword = tempDir.resolve("password.txt");
     Files.writeString(keystorePassword, PASSWORD);
 
     ValidatorKeyOptions validatorKeyOptions =
-        buildValidatorKeyOptions(keyStoreFile, keystorePassword);
+        buildValidatorKeyOptionsWithPasswordFile(keyStoreFile, keystorePassword);
 
     final DepositRegisterCommand depositRegisterCommand =
         new DepositRegisterCommand(
-            shutdownFunction, commandSpec, commonParams, validatorKeyOptions, "");
+            shutdownFunction, envSupplier, commandSpec, commonParams, validatorKeyOptions, "");
 
-    depositRegisterCommand.run();
+    assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
+
+    verify(depositTransactionSender).sendDepositTransaction(any(), any(), any());
   }
 
-  private ValidatorKeyOptions buildValidatorKeyOptions(
+  @Test
+  void registerWithEncryptedValidatorKeystoreWithEnv(@TempDir final Path tempDir)
+      throws IOException {
+    final Path keyStoreFile = tempDir.resolve("keystore.json");
+    KeyStoreLoader.saveToFile(keyStoreFile, VALIDATOR_KEYSTORE);
+
+    ValidatorKeyOptions validatorKeyOptions = buildValidatorKeyOptionsWithEnv(keyStoreFile);
+
+    final DepositRegisterCommand depositRegisterCommand =
+        new DepositRegisterCommand(
+            shutdownFunction, envSupplier, commandSpec, commonParams, validatorKeyOptions, "");
+
+    assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
+
+    verify(depositTransactionSender).sendDepositTransaction(any(), any(), any());
+  }
+
+  private ValidatorKeyOptions buildValidatorKeyOptionsWithPasswordFile(
       final Path keyStoreFile, final Path keystorePassword) {
     ValidatorKeyOptions validatorKeyOptions = new ValidatorKeyOptions();
     validatorKeyOptions.validatorKeyStoreOptions = new ValidatorKeyStoreOptions();
 
     validatorKeyOptions.validatorKeyStoreOptions.validatorKeystoreFile = keyStoreFile.toFile();
-    validatorKeyOptions.validatorKeyStoreOptions.validatorKeystorePasswordFile =
+    validatorKeyOptions.validatorKeyStoreOptions.validatorPasswordOptions =
+        new ValidatorPasswordOptions();
+    validatorKeyOptions
+            .validatorKeyStoreOptions
+            .validatorPasswordOptions
+            .validatorKeystorePasswordFile =
         keystorePassword.toFile();
+    return validatorKeyOptions;
+  }
+
+  private ValidatorKeyOptions buildValidatorKeyOptionsWithEnv(final Path keyStoreFile) {
+    ValidatorKeyOptions validatorKeyOptions = new ValidatorKeyOptions();
+    validatorKeyOptions.validatorKeyStoreOptions = new ValidatorKeyStoreOptions();
+
+    validatorKeyOptions.validatorKeyStoreOptions.validatorKeystoreFile = keyStoreFile.toFile();
+    validatorKeyOptions.validatorKeyStoreOptions.validatorPasswordOptions =
+        new ValidatorPasswordOptions();
+    validatorKeyOptions
+            .validatorKeyStoreOptions
+            .validatorPasswordOptions
+            .validatorKeystorePasswordEnv =
+        EXPECTED_ENV_VARIABLE;
     return validatorKeyOptions;
   }
 }
