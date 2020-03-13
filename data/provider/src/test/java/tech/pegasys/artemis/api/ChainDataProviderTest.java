@@ -510,7 +510,7 @@ public class ChainDataProviderTest {
     List<ValidatorDuties> validatorDuties = future.get();
 
     assertThat(validatorDuties.size()).isEqualTo(1);
-    ValidatorDuties expected = new ValidatorDuties(null, BLSPubKey.empty(), null);
+    ValidatorDuties expected = new ValidatorDuties(BLSPubKey.empty(), null, null);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 

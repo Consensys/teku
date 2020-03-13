@@ -14,14 +14,14 @@
 package tech.pegasys.artemis.api.schema;
 
 public class ValidatorDuties {
-  public final Integer attestation_committee_index;
   public final BLSPubKey validator_pubkey;
   public final Integer validator_index;
+  public final Integer attestation_committee_index;
 
   public ValidatorDuties(
-      Integer attestation_committee_index, BLSPubKey validator_pubkey, Integer validator_index) {
-    this.attestation_committee_index = attestation_committee_index;
+      BLSPubKey validator_pubkey, Integer validator_index, Integer attestation_committee_index) {
     this.validator_pubkey = validator_pubkey;
     this.validator_index = validator_index;
+    this.attestation_committee_index = attestation_committee_index;
   }
 }

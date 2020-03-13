@@ -242,11 +242,11 @@ public class ChainDataProvider {
     for (final BLSPubKey pubKey : pubKeys) {
       final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
       if (validatorIndex == null) {
-        dutiesList.add(new ValidatorDuties(null, pubKey, null));
+        dutiesList.add(new ValidatorDuties(pubKey, null, null));
       } else {
         dutiesList.add(
             new ValidatorDuties(
-                getCommitteeIndex(committees, validatorIndex), pubKey, validatorIndex));
+                pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)));
       }
     }
     return dutiesList;
