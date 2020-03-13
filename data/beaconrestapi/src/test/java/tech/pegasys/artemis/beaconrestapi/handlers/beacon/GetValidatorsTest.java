@@ -317,13 +317,12 @@ public class GetValidatorsTest {
     MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
     v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
     v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
-
     assertThat(
             ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(beaconState)))
         .isTrue();
-
-    v.setActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch());
     beaconStateW.getValidators().add(v);
+    // also add balance
+    beaconStateW.getBalances().add(UnsignedLong.ZERO);
     return beaconStateW.commitChanges();
   }
 }

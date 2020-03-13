@@ -35,6 +35,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -56,7 +57,9 @@ public class PostValidatorDuties implements Handler {
       method = HttpMethod.POST,
       summary = "Returns validator duties that match the specified query.",
       tags = {TAG_VALIDATOR},
-      description = "Returns validator duties for the given epoch.",
+      description =
+          "Takes a list of validator public keys and an epoch, and returns validator duties for them.\n\n"
+              + "Any pubkeys that were not found in the list of validators will be returned without any associated duties.",
       requestBody =
           @OpenApiRequestBody(
               content = @OpenApiContent(from = ValidatorsRequest.class),
@@ -75,10 +78,11 @@ public class PostValidatorDuties implements Handler {
         ctx.status(SC_NO_CONTENT);
         return;
       }
-      ValidatorsRequest validatorsRequest =
-          jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
+      ValidatorDutiesRequest validatorDutiesRequest =
+          jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
 
-      SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDuties(validatorsRequest);
+      SafeFuture<List<ValidatorDuties>> future =
+          provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
       ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
 

@@ -24,15 +24,16 @@ import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetState;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
@@ -115,10 +116,10 @@ public class BeaconRestApi {
   private void addBeaconHandlers(final DataProvider dataProvider) {
     final ChainDataProvider provider = dataProvider.getChainDataProvider();
     app.get(GetBlock.ROUTE, new GetBlock(provider, jsonProvider));
-    app.get(BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(provider, jsonProvider));
+    app.get(GetChainHead.ROUTE, new GetChainHead(provider, jsonProvider));
     app.get(GetHead.ROUTE, new GetHead(provider, jsonProvider));
     app.get(GetCommittees.ROUTE, new GetCommittees(provider, jsonProvider));
-    app.get(BeaconStateHandler.ROUTE, new BeaconStateHandler(provider, jsonProvider));
+    app.get(GetState.ROUTE, new GetState(provider, jsonProvider));
     app.get(GetStateRoot.ROUTE, new GetStateRoot(provider, jsonProvider));
 
     app.post(PostValidators.ROUTE, new PostValidators(provider, jsonProvider));
@@ -138,6 +139,7 @@ public class BeaconRestApi {
     app.get(GetPeerId.ROUTE, new GetPeerId(networkDataProvider, jsonProvider));
     app.get(GetPeers.ROUTE, new GetPeers(networkDataProvider, jsonProvider));
     app.get(GetPeerCount.ROUTE, new GetPeerCount(networkDataProvider, jsonProvider));
+    app.get(GetListenPort.ROUTE, new GetListenPort(networkDataProvider, jsonProvider));
   }
 
   public void stop() {

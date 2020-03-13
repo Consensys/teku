@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
@@ -27,14 +27,14 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class BeaconChainHeadHandlerTest {
+public class GetChainHeadTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private Context context = mock(Context.class);
   private ChainDataProvider provider = mock(ChainDataProvider.class);
 
   @Test
   public void shouldReturnBeaconChainHeadResponse() throws Exception {
-    final BeaconChainHeadHandler handler = new BeaconChainHeadHandler(provider, jsonProvider);
+    final GetChainHead handler = new GetChainHead(provider, jsonProvider);
     final BeaconState beaconState = new BeaconStateImpl();
     final BeaconChainHead beaconChainHead = new BeaconChainHead(beaconState);
     final String expected = jsonProvider.objectToJSON(beaconChainHead);
@@ -48,7 +48,7 @@ public class BeaconChainHeadHandlerTest {
 
   @Test
   public void shouldReturnNoContentWhenStateIsNull() throws Exception {
-    final BeaconChainHeadHandler handler = new BeaconChainHeadHandler(provider, jsonProvider);
+    final GetChainHead handler = new GetChainHead(provider, jsonProvider);
 
     when(provider.getHeadState()).thenReturn(Optional.empty());
 

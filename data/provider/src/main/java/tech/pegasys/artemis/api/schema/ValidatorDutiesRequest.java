@@ -13,15 +13,20 @@
 
 package tech.pegasys.artemis.api.schema;
 
-public class ValidatorDuties {
-  public final BLSPubKey validator_pubkey;
-  public final Integer validator_index;
-  public final Integer attestation_committee_index;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 
-  public ValidatorDuties(
-      BLSPubKey validator_pubkey, Integer validator_index, Integer attestation_committee_index) {
-    this.validator_pubkey = validator_pubkey;
-    this.validator_index = validator_index;
-    this.attestation_committee_index = attestation_committee_index;
+public class ValidatorDutiesRequest {
+  public final UnsignedLong epoch;
+  public final List<BLSPubKey> pubkeys;
+
+  @JsonCreator
+  public ValidatorDutiesRequest(
+      @JsonProperty(value = "epoch", required = true) UnsignedLong epoch,
+      @JsonProperty(value = "pubkeys", required = true) final List<BLSPubKey> pubkeys) {
+    this.epoch = epoch;
+    this.pubkeys = pubkeys;
   }
 }
