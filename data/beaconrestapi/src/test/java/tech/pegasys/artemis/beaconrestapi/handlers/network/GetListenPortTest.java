@@ -20,16 +20,13 @@ import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.libp2p.core.PeerId;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
-import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class GetPeerIdTest {
+public class GetListenPortTest {
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
 
@@ -37,15 +34,14 @@ public class GetPeerIdTest {
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
 
   @Test
-  public void shouldReturnPeerId() throws Exception {
+  public void shouldReturnListenPort() throws Exception {
     NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
-    final PeerId peerId1 = new PeerId(PeerId.random().getBytes());
-    final NodeId nodeId1 = new LibP2PNodeId(peerId1);
-    final GetPeerId handler = new GetPeerId(network, jsonProvider);
+    final int port = 9876;
+    final GetListenPort handler = new GetListenPort(network, jsonProvider);
 
-    when(p2pNetwork.getNodeId()).thenReturn(nodeId1);
+    when(p2pNetwork.getListenPort()).thenReturn(port);
     handler.handle(context);
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(context).result(jsonProvider.objectToJSON(nodeId1.toBase58()));
+    verify(context).result(jsonProvider.objectToJSON(port));
   }
 }

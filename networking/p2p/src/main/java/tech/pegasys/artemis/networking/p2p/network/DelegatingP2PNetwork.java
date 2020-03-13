@@ -69,6 +69,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
+  public int getListenPort() {
+    return network.getListenPort();
+  };
+
+  @Override
   public SafeFuture<?> start() {
     return network.start();
   }

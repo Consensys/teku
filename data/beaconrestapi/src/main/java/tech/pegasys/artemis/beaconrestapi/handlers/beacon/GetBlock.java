@@ -70,10 +70,10 @@ public class GetBlock implements Handler {
       queryParams = {
         @OpenApiParam(name = EPOCH, description = "Epoch number to query."),
         @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain."),
-        @OpenApiParam(name = ROOT, description = "Tree hash root to query.")
+        @OpenApiParam(name = ROOT, description = "Block root to query.")
       },
       description =
-          "Returns the beacon chain block that matches the specified epoch, slot, or tree hash root.",
+          "Returns the beacon chain block that matches the specified epoch, slot, or block root.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

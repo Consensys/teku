@@ -82,6 +82,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
   private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+  private int listenPort;
 
   public LibP2PNetwork(
       final NetworkConfig config,
@@ -92,6 +93,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
 
     advertisedAddr = getAdvertisedAddr(config);
+    this.listenPort = config.getListenPort();
 
     // Setup gossip
     gossip = new Gossip();
@@ -237,6 +239,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   public int getPeerCount() {
     return peerManager.getPeerCount();
   }
+
+  @Override
+  public int getListenPort() {
+    return listenPort;
+  };
 
   @Override
   public void stop() {

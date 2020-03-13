@@ -74,7 +74,8 @@ public class PostValidatorDutiesTest {
     PostValidatorDuties handler = new PostValidatorDuties(provider, jsonProvider);
     when(provider.isStoreAvailable()).thenReturn(true);
     when(context.body()).thenReturn(body);
-    when(provider.getValidatorDuties(any())).thenReturn(SafeFuture.completedFuture(List.of()));
+    when(provider.getValidatorDutiesByRequest(any()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
     handler.handle(context);
     verify(provider).isStoreAvailable();
 
