@@ -24,7 +24,6 @@ import org.apache.logging.log4j.core.appender.rolling.CompositeTriggeringPolicy;
 import org.apache.logging.log4j.core.appender.rolling.OnStartupTriggeringPolicy;
 import org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.config.AbstractConfiguration;
-import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
@@ -102,16 +101,16 @@ public class LoggingConfigurator {
       case CONSOLE_ONLY:
         consoleAppender = consoleAppender(configuration);
 
-        setUpStatusLogger(consoleAppender, configuration);
-        setUpEventsLogger(consoleAppender, configuration);
+        setUpStatusLogger(consoleAppender);
+        setUpEventsLogger(consoleAppender);
 
         configuration.getRootLogger().addAppender(consoleAppender, null, null);
         break;
       case FILE_ONLY:
         fileAppender = fileAppender(configuration);
 
-        setUpStatusLogger(fileAppender, configuration);
-        setUpEventsLogger(fileAppender, configuration);
+        setUpStatusLogger(fileAppender);
+        setUpEventsLogger(fileAppender);
 
         configuration.getRootLogger().addAppender(fileAppender, null, null);
         break;
@@ -120,8 +119,8 @@ public class LoggingConfigurator {
         consoleAppender = consoleAppender(configuration);
         fileAppender = fileAppender(configuration);
 
-        setUpStatusLogger(consoleAppender, configuration);
-        setUpEventsLogger(consoleAppender, configuration);
+        setUpStatusLogger(consoleAppender);
+        setUpEventsLogger(consoleAppender);
 
         configuration.getRootLogger().addAppender(consoleAppender, null, null);
         configuration.getRootLogger().addAppender(fileAppender, null, null);
@@ -129,15 +128,13 @@ public class LoggingConfigurator {
     }
   }
 
-  private static void setUpEventsLogger(
-      final Appender appender, final Configuration configuration) {
+  private static void setUpEventsLogger(final Appender appender) {
     final Level eventsLogLevel = INCLUDE_EVENTS ? LOG_LEVEL : Level.OFF;
     final LoggerConfig logger = new LoggerConfig(EVENT_LOGGER_NAME, eventsLogLevel, true);
     logger.addAppender(appender, eventsLogLevel, null);
   }
 
-  private static void setUpStatusLogger(
-      final Appender appender, final Configuration configuration) {
+  private static void setUpStatusLogger(final Appender appender) {
     final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, LOG_LEVEL, true);
     logger.addAppender(appender, LOG_LEVEL, null);
   }
