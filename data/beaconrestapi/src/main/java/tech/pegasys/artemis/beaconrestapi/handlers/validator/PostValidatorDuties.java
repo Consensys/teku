@@ -57,7 +57,9 @@ public class PostValidatorDuties implements Handler {
       method = HttpMethod.POST,
       summary = "Returns validator duties that match the specified query.",
       tags = {TAG_VALIDATOR},
-      description = "Returns validator duties for the given epoch.",
+      description =
+          "Takes a list of validator public keys and an epoch, and returns validator duties for them.\n\n"
+              + "Any pubkeys that were not found in the list of validators will be returned without any associated duties.",
       requestBody =
           @OpenApiRequestBody(
               content = @OpenApiContent(from = ValidatorsRequest.class),
