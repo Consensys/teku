@@ -123,7 +123,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(consoleAppender, configuration);
         setUpEventsLogger(consoleAppender, configuration);
 
-        configuration.addAppender(consoleAppender);
+        configuration.getRootLogger().addAppender(consoleAppender, null, null);
         configuration.getRootLogger().addAppender(fileAppender, null, null);
         break;
     }
@@ -132,22 +132,14 @@ public class LoggingConfigurator {
   private static void setUpEventsLogger(
       final Appender appender, final Configuration configuration) {
     final Level eventsLogLevel = INCLUDE_EVENTS ? LOG_LEVEL : Level.OFF;
-    final LoggerConfig logger =
-        new LoggerConfig(EVENT_LOGGER_NAME, eventsLogLevel, DESTINATION == LoggingDestination.BOTH);
+    final LoggerConfig logger = new LoggerConfig(EVENT_LOGGER_NAME, eventsLogLevel, true);
     logger.addAppender(appender, eventsLogLevel, null);
-
-    configuration.removeLogger(EVENT_LOGGER_NAME);
-    configuration.addLogger(EVENT_LOGGER_NAME, logger);
   }
 
   private static void setUpStatusLogger(
       final Appender appender, final Configuration configuration) {
-    final LoggerConfig logger =
-        new LoggerConfig(STATUS_LOGGER_NAME, LOG_LEVEL, DESTINATION == LoggingDestination.BOTH);
+    final LoggerConfig logger = new LoggerConfig(STATUS_LOGGER_NAME, LOG_LEVEL, true);
     logger.addAppender(appender, LOG_LEVEL, null);
-
-    configuration.removeLogger(STATUS_LOGGER_NAME);
-    configuration.addLogger(STATUS_LOGGER_NAME, logger);
   }
 
   private static Appender consoleAppender(final AbstractConfiguration configuration) {

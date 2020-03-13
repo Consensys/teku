@@ -43,7 +43,6 @@ nodeUrl = "http://localhost:8545"
 #colorEnabled = false
 #includeEventsEnabled = false
 #destination =  'fileOnly' or 'consoleOnly'
-destination =  'fileOnly'
 
 [metrics]
 enabled = false
