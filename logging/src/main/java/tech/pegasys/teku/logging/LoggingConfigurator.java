@@ -90,7 +90,6 @@ public class LoggingConfigurator {
     Appender fileAppender;
 
     switch (DESTINATION) {
-      default:
       case CONSOLE_ONLY:
         consoleAppender = consoleAppender(configuration);
 
@@ -107,6 +106,7 @@ public class LoggingConfigurator {
 
         addAppenderToRootLogger(configuration, fileAppender);
         break;
+      default:
       case BOTH:
         consoleAppender = consoleAppender(configuration);
         fileAppender = fileAppender(configuration);
