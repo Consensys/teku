@@ -587,17 +587,8 @@ public class ChainDataProviderTest {
   private tech.pegasys.artemis.datastructures.state.BeaconState addValidator(
       final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
-
     // create a validator and add it to the list
     MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
-    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
-
-    assertThat(
-            ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(beaconState)))
-        .isTrue();
-
-    v.setActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch());
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
   }
