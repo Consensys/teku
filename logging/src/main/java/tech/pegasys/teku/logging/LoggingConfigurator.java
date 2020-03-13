@@ -52,10 +52,8 @@ public class LoggingConfigurator {
   }
 
   public static void setAllLevels(final Level level) {
-    // TODO try the Status logger instead of sop
-    System.out.println("Setting logging level to " + level.name());
+    StatusLogger.getLogger().info("Setting logging level to {}", level.name());
     Configurator.setAllLevels("", level);
-
     LOG_LEVEL = level;
   }
 
@@ -79,6 +77,10 @@ public class LoggingConfigurator {
 
   public static void addLoggersProgrammatically(final AbstractConfiguration configuration) {
 
+    if (DESTINATION == null) {
+      return;
+    }
+
     // TODO warning about color & file?
     // TODO message about what we're setting the logging to/as
     // TODO any appenders / loggers that will be removed (via remove())
@@ -88,6 +90,7 @@ public class LoggingConfigurator {
     Appender fileAppender;
 
     switch (DESTINATION) {
+      default:
       case CONSOLE_ONLY:
         consoleAppender = consoleAppender(configuration);
 
@@ -104,7 +107,6 @@ public class LoggingConfigurator {
 
         addAppenderToRootLogger(configuration, fileAppender);
         break;
-      default:
       case BOTH:
         consoleAppender = consoleAppender(configuration);
         fileAppender = fileAppender(configuration);

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.logging;
 
+import java.io.IOException;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configuration;
@@ -28,15 +29,32 @@ public class AdditionalProgrammaticConfiguration extends XmlConfiguration {
   }
 
   @Override
-  public Configuration reconfigure() {
-    final Configuration refresh = super.reconfigure();
+  protected void doConfigure() {
+    super.doConfigure();
 
-    if (refresh != null && AbstractConfiguration.class.isAssignableFrom(refresh.getClass())) {
-      LoggingConfigurator.addLoggersProgrammatically((AbstractConfiguration) refresh);
-    } else {
-      StatusLogger.getLogger().warn("Cannot programmatically reconfigure loggers");
+    LoggingConfigurator.addLoggersProgrammatically(this);
+  }
+
+  @Override
+  public Configuration reconfigure() {
+    final Configuration refreshedParent = super.reconfigure();
+
+    if (refreshedParent != null
+        && AbstractConfiguration.class.isAssignableFrom(refreshedParent.getClass())) {
+
+      try {
+        final AdditionalProgrammaticConfiguration refreshed =
+            new AdditionalProgrammaticConfiguration(
+                refreshedParent.getLoggerContext(),
+                refreshedParent.getConfigurationSource().resetInputStream());
+        LoggingConfigurator.addLoggersProgrammatically(refreshed);
+        return refreshed;
+      } catch (final IOException e) {
+        StatusLogger.getLogger().error("Failed to reload the Log4j2 Xml configuration file", e);
+      }
     }
 
-    return refresh;
+    StatusLogger.getLogger().warn("Cannot programmatically reconfigure loggers");
+    return refreshedParent;
   }
 }
