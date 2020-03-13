@@ -78,8 +78,6 @@ public class BeaconNode {
     LoggingConfigurator.setIncludeEvents(config.isLoggingIncludeEventsEnabled());
     LoggingConfigurator.setDestination(config.getLoggingDestination());
     LoggingConfigurator.update();
-
-    // TODO switch the plugin over to use loggingConfigurator on reload
   }
 
   public void start() {
