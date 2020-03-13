@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.beaconhandlers;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
@@ -34,12 +34,12 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class BeaconChainHeadHandler implements Handler {
+public class GetChainHead implements Handler {
 
   private final ChainDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public BeaconChainHeadHandler(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public GetChainHead(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }

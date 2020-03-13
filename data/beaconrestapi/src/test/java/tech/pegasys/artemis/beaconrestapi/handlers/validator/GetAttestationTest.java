@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
@@ -28,19 +29,15 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-@ExtendWith(MockitoExtension.class)
 public class GetAttestationTest {
-  @Mock private Context context;
-  @Mock private ChainDataProvider provider;
+  private Context context = mock(Context.class);
+  private ChainDataProvider provider = mock(ChainDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetAttestation handler;
   private Attestation attestation = new Attestation(DataStructureUtil.randomAttestation(1111));

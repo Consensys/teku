@@ -24,7 +24,7 @@ public class ValidatorsRequest {
 
   @JsonCreator
   public ValidatorsRequest(
-      @JsonProperty(value = "epoch", required = true) UnsignedLong epoch,
+      @JsonProperty(value = "epoch") UnsignedLong epoch,
       @JsonProperty(value = "pubkeys", required = true) final List<BLSPubKey> pubkeys) {
     this.epoch = epoch;
     this.pubkeys = pubkeys;

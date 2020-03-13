@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.handlers.validator;
+package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
@@ -21,8 +21,9 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUES
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -32,41 +33,44 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
+import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.schema.ValidatorDuties;
-import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
+import tech.pegasys.artemis.api.schema.BeaconValidators;
+import tech.pegasys.artemis.api.schema.ValidatorWithIndex;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class PostValidatorDuties implements Handler {
-  private final ChainDataProvider provider;
+public class PostValidators implements Handler {
+  private final ChainDataProvider chainDataProvider;
 
-  public PostValidatorDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
-    this.provider = provider;
+  public PostValidators(
+      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+    this.chainDataProvider = chainDataProvider;
     this.jsonProvider = jsonProvider;
   }
 
-  public static final String ROUTE = "/validator/duties";
+  public static final String ROUTE = "/beacon/validators";
   private final JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Returns validator duties that match the specified query.",
-      tags = {TAG_VALIDATOR},
+      summary = "Returns validators that match the information specified.",
+      tags = {TAG_BEACON},
       description =
-          "Takes a list of validator public keys and an epoch, and returns validator duties for them.\n\n"
-              + "Any pubkeys that were not found in the list of validators will be returned without any associated duties.",
+          "Takes a list of validator public keys and optionally an epoch, and returns information about them.\n\n"
+              + "If no epoch is specified, the validators will be queried from the current state.\n\n"
+              + "Any pubkeys that were not found in the list of validators will be returned without an associated validator.",
       requestBody =
           @OpenApiRequestBody(
-              content = @OpenApiContent(from = ValidatorsRequest.class),
+              content = {@OpenApiContent(from = ValidatorsRequest.class)},
               description =
                   "```\n{\n  \"epoch\": (uint64),\n  \"pubkeys\": [(Bytes48 as Hex String)]\n}\n```"),
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = ValidatorDuties.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = ValidatorWithIndex.class, isArray = true)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid body supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
@@ -74,24 +78,28 @@ public class PostValidatorDuties implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      if (!provider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
-      }
-      ValidatorDutiesRequest validatorDutiesRequest =
-          jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
+      ValidatorsRequest request = jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
+      ctx.result(
+          chainDataProvider
+              .getValidatorsByValidatorsRequest(request)
+              .thenApplyChecked(validators -> handleResponseContext(ctx, validators)));
 
-      SafeFuture<List<ValidatorDuties>> future =
-          provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
-
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
-    } catch (final JsonMappingException ex) {
+    } catch (JsonMappingException ex) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
+  }
+
+  private String handleResponseContext(Context ctx, Optional<BeaconValidators> response)
+      throws JsonProcessingException {
+    if (response.isEmpty()) {
+      ctx.status(SC_NO_CONTENT);
+      return null;
+    }
+    return jsonProvider.objectToJSON(response.get().validators);
   }
 }

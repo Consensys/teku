@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
@@ -24,19 +25,15 @@ import io.javalin.http.Context;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-@ExtendWith(MockitoExtension.class)
 public class GetHeadTest {
-  @Mock private ChainDataProvider provider;
-  @Mock private Context context;
+  private final ChainDataProvider provider = mock(ChainDataProvider.class);
+  private final Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private BeaconState rootState = DataStructureUtil.randomBeaconState(1);
   private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);

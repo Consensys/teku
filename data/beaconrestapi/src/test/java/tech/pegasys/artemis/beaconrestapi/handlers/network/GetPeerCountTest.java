@@ -19,15 +19,11 @@ import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-@ExtendWith(MockitoExtension.class)
 public class GetPeerCountTest {
-  @Mock Context context;
+  private final Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
 
   @Test
