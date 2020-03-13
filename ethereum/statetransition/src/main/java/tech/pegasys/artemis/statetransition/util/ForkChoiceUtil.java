@@ -285,20 +285,13 @@ public class ForkChoiceUtil {
     final BeaconState preState = store.getBlockState(block.getParent_root());
 
     // Return early if precondition checks fail;
-    final Optional<BlockImportResult> maybeFailureOnPreStorageConditions =
-        checkOnBlockPreStorageConditions(block, preState, store);
-    if (maybeFailureOnPreStorageConditions.isPresent()) {
-      return maybeFailureOnPreStorageConditions.get();
+    final Optional<BlockImportResult> maybeFailure = checkOnBlockConditions(block, preState, store);
+    if (maybeFailure.isPresent()) {
+      return maybeFailure.get();
     }
 
     // Add new block to the store
     store.putBlock(block.hash_tree_root(), signed_block);
-
-    final Optional<BlockImportResult> maybeFailureOnPostStorageConditions =
-        checkOnBlockPostStorageConditions(block, store);
-    if (maybeFailureOnPostStorageConditions.isPresent()) {
-      return maybeFailureOnPostStorageConditions.get();
-    }
 
     // Make a copy of the state to avoid mutability issues
     BeaconState state;
@@ -367,7 +360,7 @@ public class ForkChoiceUtil {
     return BlockImportResult.successful(record);
   }
 
-  private static Optional<BlockImportResult> checkOnBlockPreStorageConditions(
+  private static Optional<BlockImportResult> checkOnBlockConditions(
       final BeaconBlock block, final BeaconState preState, final ReadOnlyStore store) {
     if (preState == null) {
       return Optional.of(BlockImportResult.FAILED_UNKNOWN_PARENT);
@@ -375,11 +368,6 @@ public class ForkChoiceUtil {
     if (blockIsFromFuture(block, store)) {
       return Optional.of(BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE);
     }
-    return Optional.empty();
-  }
-
-  private static Optional<BlockImportResult> checkOnBlockPostStorageConditions(
-      final BeaconBlock block, final ReadOnlyStore store) {
     if (!blockDescendsFromLatestFinalizedBlock(block, store)) {
       return Optional.of(BlockImportResult.FAILED_INVALID_ANCESTRY);
     }
@@ -401,8 +389,9 @@ public class ForkChoiceUtil {
     }
 
     // Make sure this block descends from the finalized block
+    final UnsignedLong finalizedSlot = store.getBlock(finalizedCheckpoint.getRoot()).getSlot();
     final Bytes32 ancestorAtFinalizedSlot =
-        get_ancestor(store, block.hash_tree_root(), finalizedEpochStartSlot);
+        get_ancestor(store, block.getParent_root(), finalizedSlot);
     return ancestorAtFinalizedSlot.equals(finalizedCheckpoint.getRoot());
   }
 
