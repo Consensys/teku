@@ -20,9 +20,11 @@ import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.Order;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 
-@Plugin(name = "ConsoleLoggingConfigurationFactory", category = ConfigurationFactory.CATEGORY)
+@Plugin(
+    name = "AdditionalProgrammaticConfigurationFactory",
+    category = ConfigurationFactory.CATEGORY)
 @Order(25)
-public class ConsoleLoggingConfigurationFactory extends ConfigurationFactory {
+public class AdditionalProgrammaticConfigurationFactory extends ConfigurationFactory {
 
   @Override
   protected String[] getSupportedTypes() {
@@ -32,6 +34,6 @@ public class ConsoleLoggingConfigurationFactory extends ConfigurationFactory {
   @Override
   public Configuration getConfiguration(
       final LoggerContext loggerContext, final ConfigurationSource source) {
-    return new ConsoleLoggingConfiguration(loggerContext, source);
+    return new AdditionalProgrammaticConfiguration(loggerContext, source);
   }
 }

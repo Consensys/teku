@@ -14,20 +14,29 @@
 package tech.pegasys.teku.logging;
 
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.AbstractConfiguration;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.xml.XmlConfiguration;
+import org.apache.logging.log4j.status.StatusLogger;
 
-public class ConsoleLoggingConfiguration extends XmlConfiguration {
+public class AdditionalProgrammaticConfiguration extends XmlConfiguration {
 
-  public ConsoleLoggingConfiguration(
+  public AdditionalProgrammaticConfiguration(
       final LoggerContext loggerContext, final ConfigurationSource configSource) {
     super(loggerContext, configSource);
   }
 
   @Override
-  protected void doConfigure() {
-    super.doConfigure();
+  public Configuration reconfigure() {
+    final Configuration refresh = super.reconfigure();
 
-    LoggingConfigurator.addLoggersProgrammatically(this);
+    if (refresh != null && AbstractConfiguration.class.isAssignableFrom(refresh.getClass())) {
+      LoggingConfigurator.addLoggersProgrammatically((AbstractConfiguration) refresh);
+    } else {
+      StatusLogger.getLogger().warn("Cannot programmatically reconfigure loggers");
+    }
+
+    return refresh;
   }
 }

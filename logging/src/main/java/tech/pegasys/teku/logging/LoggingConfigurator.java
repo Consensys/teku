@@ -72,10 +72,6 @@ public class LoggingConfigurator {
   }
 
   public static void update() {
-    // TODO StautsLogger warning when removing any appenders / loggers due to conflicting name
-
-    // TODO one or the other
-
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     addLoggersProgrammatically((AbstractConfiguration) ctx.getConfiguration());
     ctx.updateLoggers();
@@ -84,12 +80,6 @@ public class LoggingConfigurator {
   public static void addLoggersProgrammatically(final AbstractConfiguration configuration) {
 
     // TODO warning about color & file?
-
-    // TODO Log4j2 properties are parsed BEFORE Teku configuration - setup nothing
-    if (DESTINATION == null) {
-      return;
-    }
-
     // TODO message about what we're setting the logging to/as
     // TODO any appenders / loggers that will be removed (via remove())
     StatusLogger.getLogger().info("Programmatic logging setup: {}", DESTINATION);
@@ -104,7 +94,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
 
-        configuration.getRootLogger().addAppender(consoleAppender, null, null);
+        addAppenderToRootLogger(configuration, consoleAppender);
         break;
       case FILE_ONLY:
         fileAppender = fileAppender(configuration);
@@ -112,7 +102,7 @@ public class LoggingConfigurator {
         setUpStatusLogger(fileAppender);
         setUpEventsLogger(fileAppender);
 
-        configuration.getRootLogger().addAppender(fileAppender, null, null);
+        addAppenderToRootLogger(configuration, fileAppender);
         break;
       default:
       case BOTH:
@@ -122,10 +112,15 @@ public class LoggingConfigurator {
         setUpStatusLogger(consoleAppender);
         setUpEventsLogger(consoleAppender);
 
-        configuration.getRootLogger().addAppender(consoleAppender, null, null);
-        configuration.getRootLogger().addAppender(fileAppender, null, null);
+        addAppenderToRootLogger(configuration, consoleAppender);
+        addAppenderToRootLogger(configuration, fileAppender);
         break;
     }
+  }
+
+  private static void addAppenderToRootLogger(
+      final AbstractConfiguration configuration, final Appender appender) {
+    configuration.getRootLogger().addAppender(appender, null, null);
   }
 
   private static void setUpEventsLogger(final Appender appender) {
@@ -163,6 +158,7 @@ public class LoggingConfigurator {
             .withPattern(FILE_FORMAT)
             .build();
 
+    // TODO config variables?
     final String fileName = "teku.log";
     final String filePattern = "teku_%d{yyyy-MM-dd}.log";
 
