@@ -28,11 +28,10 @@ import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetListenPortTest {
   private Context context = mock(Context.class);
+  private final JsonProvider jsonProvider = new JsonProvider();
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
-
-  private final JsonProvider jsonProvider = mock(JsonProvider.class);
 
   @Test
   public void shouldReturnListenPort() throws Exception {
