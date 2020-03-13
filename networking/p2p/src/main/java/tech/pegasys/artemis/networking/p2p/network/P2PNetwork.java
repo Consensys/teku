@@ -79,6 +79,8 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   NodeId getNodeId();
 
+  int getListenPort();
+
   /**
    * Get the Ethereum Node Record (ENR) for the local node, if one exists.
    *
