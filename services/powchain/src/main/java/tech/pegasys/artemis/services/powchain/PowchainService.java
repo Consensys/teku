@@ -74,15 +74,15 @@ public class PowchainService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    eth1DepositManager.start();
-    eth1DataManager.start();
-    return SafeFuture.COMPLETE;
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(eth1DepositManager::start),
+        SafeFuture.fromRunnable(eth1DataManager::start));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    LOG.debug("PowChainService.stop()");
-    eth1DepositManager.stop();
-    return SafeFuture.COMPLETE;
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(eth1DepositManager::stop),
+        SafeFuture.fromRunnable(eth1DataManager::stop));
   }
 }
