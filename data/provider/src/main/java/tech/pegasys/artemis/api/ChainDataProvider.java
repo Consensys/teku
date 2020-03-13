@@ -227,7 +227,8 @@ public class ChainDataProvider {
     final Bytes32 headBlockRoot = optionalBlockRoot.get();
     return combinedChainDataClient
         .getStateAtSlot(slot, headBlockRoot)
-        .thenApply(state -> getValidatorDutiesFromState(state.get(), validatorDutiesRequest.pubkeys))
+        .thenApply(
+            state -> getValidatorDutiesFromState(state.get(), validatorDutiesRequest.pubkeys))
         .exceptionally(err -> List.of());
   }
 

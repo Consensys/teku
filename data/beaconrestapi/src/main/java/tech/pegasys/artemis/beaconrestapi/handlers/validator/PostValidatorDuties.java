@@ -35,6 +35,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -75,10 +76,11 @@ public class PostValidatorDuties implements Handler {
         ctx.status(SC_NO_CONTENT);
         return;
       }
-      ValidatorsRequest validatorsRequest =
-          jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
+      ValidatorDutiesRequest validatorDutiesRequest =
+          jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
 
-      SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(validatorsRequest);
+      SafeFuture<List<ValidatorDuties>> future =
+          provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
       ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
 
