@@ -29,8 +29,6 @@ public interface KeystorePasswordOptions {
 
   String getPasswordEnvironmentVariable();
 
-  String getPasswordPrompt();
-
   static String readFromFile(final CommandLine commandLine, final File passwordFile) {
     try {
       final String password =

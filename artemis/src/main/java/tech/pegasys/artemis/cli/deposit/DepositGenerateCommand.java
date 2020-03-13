@@ -56,6 +56,8 @@ public class DepositGenerateCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
   private final Function<String, String> envSupplier;
+  private static final String VALIDATOR_PASSWORD_PROMPT = "Validator Keystore";
+  private static final String WITHDRAWAL_PASSWORD_PROMPT = "Withdrawal Keystore";
 
   @Spec private CommandSpec spec;
   @Mixin private CommonParams params;
@@ -149,8 +151,10 @@ public class DepositGenerateCommand implements Runnable {
   private KeysWriter getKeysWriter() {
     final KeysWriter keysWriter;
     if (encryptKeys) {
-      final String validatorKeystorePassword = readKeystorePassword(validatorPasswordOptions);
-      final String withdrawalKeystorePassword = readKeystorePassword(withdrawalPasswordOptions);
+      final String validatorKeystorePassword =
+          readKeystorePassword(validatorPasswordOptions, VALIDATOR_PASSWORD_PROMPT);
+      final String withdrawalKeystorePassword =
+          readKeystorePassword(withdrawalPasswordOptions, WITHDRAWAL_PASSWORD_PROMPT);
 
       final Path keystoreDir = getKeystoreOutputDir();
       keysWriter =
@@ -166,10 +170,11 @@ public class DepositGenerateCommand implements Runnable {
     return isBlank(outputPath) ? Path.of(".") : Path.of(outputPath);
   }
 
-  private String readKeystorePassword(final KeystorePasswordOptions keystorePasswordOptions) {
+  private String readKeystorePassword(
+      final KeystorePasswordOptions keystorePasswordOptions, final String passwordPrompt) {
     final String password;
     if (keystorePasswordOptions == null) {
-      password = askForPassword(keystorePasswordOptions.getPasswordPrompt());
+      password = askForPassword(passwordPrompt);
     } else if (keystorePasswordOptions.getPasswordFile() != null) {
       password = readFromFile(spec.commandLine(), keystorePasswordOptions.getPasswordFile());
     } else {
@@ -231,11 +236,6 @@ public class DepositGenerateCommand implements Runnable {
     public String getPasswordEnvironmentVariable() {
       return validatorPasswordEnv;
     }
-
-    @Override
-    public String getPasswordPrompt() {
-      return "Validator Keystore";
-    }
   }
 
   static class WithdrawalPasswordOptions implements KeystorePasswordOptions {
@@ -259,11 +259,6 @@ public class DepositGenerateCommand implements Runnable {
     @Override
     public String getPasswordEnvironmentVariable() {
       return withdrawalPasswordEnv;
-    }
-
-    @Override
-    public String getPasswordPrompt() {
-      return "Withdrawal Keystore";
     }
   }
 }
