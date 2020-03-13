@@ -74,7 +74,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
-  static SafeFuture<Void> fromRunnable(final Runnable action) {
+  public static SafeFuture<Void> fromRunnable(final Runnable action) {
     try {
       action.run();
       return SafeFuture.COMPLETE;

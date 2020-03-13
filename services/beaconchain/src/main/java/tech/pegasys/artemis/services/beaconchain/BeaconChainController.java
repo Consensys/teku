@@ -27,7 +27,6 @@ import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.Date;
-import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -45,6 +44,7 @@ import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
@@ -70,7 +70,7 @@ import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
-public class BeaconChainController {
+public class BeaconChainController extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
@@ -110,33 +110,48 @@ public class BeaconChainController {
         config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
   }
 
-  public SafeFuture<?> start() {
+  @Override
+  protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
-    return ChainStorageClient.storageBackedClient(eventBus).thenAccept(this::doStart);
+    LOG.debug("Starting {}", this.getClass().getSimpleName());
+    return initialize()
+        .thenCompose(
+            __ ->
+                SafeFuture.allOf(
+                    validatorCoordinator.start(),
+                    attestationManager.start(),
+                    p2pNetwork.start(),
+                    syncService.start(),
+                    SafeFuture.fromRunnable(timer::start),
+                    SafeFuture.fromRunnable(beaconRestAPI::start)));
   }
 
-  private void doStart(final ChainStorageClient client) {
-    this.chainStorageClient = client;
-    this.initAll();
+  @Override
+  protected SafeFuture<?> doStop() {
+    LOG.debug("Stopping {}", this.getClass().getSimpleName());
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
+        SafeFuture.fromRunnable(beaconRestAPI::stop),
+        SafeFuture.fromRunnable(timer::stop),
+        validatorCoordinator.stop(),
+        syncService.stop(),
+        attestationManager.stop(),
+        SafeFuture.fromRunnable(p2pNetwork::stop));
+  }
 
-    chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
-
-    LOG.debug("BeaconChainController.start(): starting ValidatorCoordinator");
-    validatorCoordinator.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): starting AttestationPropagationManager");
-    attestationManager.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): starting p2pNetwork");
-    p2pNetwork.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): starting timer");
-    this.timer.start();
-    LOG.debug("BeaconChainController.start(): starting BeaconRestAPI");
-    this.beaconRestAPI.start();
-
-    if (setupInitialState && chainStorageClient.getStore() == null) {
-      setupInitialState();
-    }
-
-    syncService.start().reportExceptions();
+  private SafeFuture<?> initialize() {
+    return ChainStorageClient.storageBackedClient(eventBus)
+        .thenAccept(
+            client -> {
+              // Setup chain storage
+              this.chainStorageClient = client;
+              if (setupInitialState && chainStorageClient.getStore() == null) {
+                setupInitialState();
+              }
+              chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
+              // Init other services
+              this.initAll();
+            });
   }
 
   public void initAll() {
@@ -296,18 +311,6 @@ public class BeaconChainController {
         config.getGenesisTime(),
         config.getStartState(),
         config.getNumValidators());
-  }
-
-  public void stop() {
-    LOG.debug("BeaconChainController.stop()");
-    syncService.stop().reportExceptions();
-    attestationManager.stop().reportExceptions();
-    if (!Objects.isNull(p2pNetwork)) {
-      this.p2pNetwork.stop();
-    }
-    this.timer.stop();
-    this.beaconRestAPI.stop();
-    this.eventBus.unregister(this);
   }
 
   private void onStoreInitialized() {
