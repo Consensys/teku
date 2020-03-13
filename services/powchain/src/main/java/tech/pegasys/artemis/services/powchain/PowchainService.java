@@ -15,8 +15,6 @@ package tech.pegasys.artemis.services.powchain;
 
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.pow.DepositContractAccessor;
@@ -35,8 +33,6 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class PowchainService extends Service {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1DataManager eth1DataManager;
