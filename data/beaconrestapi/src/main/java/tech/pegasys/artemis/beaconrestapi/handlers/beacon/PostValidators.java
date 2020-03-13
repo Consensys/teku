@@ -17,6 +17,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
@@ -71,6 +72,7 @@ public class PostValidators implements Handler {
             status = RES_OK,
             content = @OpenApiContent(from = ValidatorWithIndex.class, isArray = true)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid body supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
