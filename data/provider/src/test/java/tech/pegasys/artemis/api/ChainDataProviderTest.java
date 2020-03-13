@@ -539,7 +539,7 @@ public class ChainDataProviderTest {
                 alteredState.validators.get(0).pubkey,
                 alteredState.validators.get(11).pubkey,
                 alteredState.validators.get(addedValidatorIndex).pubkey));
-    CommitteeAssignment ca1 = new CommitteeAssignment(List.of(0, 1, 2, 4), ZERO, alteredState.slot);
+    CommitteeAssignment ca1 = new CommitteeAssignment(List.of(3, 2, 1, 0), ZERO, alteredState.slot);
     CommitteeAssignment ca2 =
         new CommitteeAssignment(List.of(11, 22, 33, addedValidatorIndex), ZERO, alteredState.slot);
     List<CommitteeAssignment> committeeAssignments = List.of(ca1, ca2);
@@ -560,6 +560,7 @@ public class ChainDataProviderTest {
     assertThat(validatorDuties.get(0))
         .usingRecursiveComparison()
         .isEqualTo(new ValidatorDuties(alteredState.validators.get(0).pubkey, 0, 0));
+    // even though we used key 11 it will come out as 0 since the default keys are all equal
     assertThat(validatorDuties.get(1))
         .usingRecursiveComparison()
         .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 0, 0));
@@ -587,7 +588,7 @@ public class ChainDataProviderTest {
       final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
-    // create an ACTIVE validator and add it to the list
+    // create a validator and add it to the list
     MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
     v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
     v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
