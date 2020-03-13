@@ -25,9 +25,9 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.DataProvider;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetState;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
@@ -71,12 +71,12 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void RestApiShouldHaveGenesisTimeEndpoint() throws Exception {
+  public void RestApiShouldHaveGenesisTimeEndpoint() {
     verify(app).get(eq(GetGenesisTime.ROUTE), any(GetGenesisTime.class));
   }
 
   @Test
-  public void RestApiShouldHaveVersionEndpoint() throws Exception {
+  public void RestApiShouldHaveVersionEndpoint() {
     verify(app).get(eq(GetVersion.ROUTE), any(GetVersion.class));
   }
 
@@ -86,7 +86,7 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void restApiShouldHaveBeaconHeadEndpoint() throws Exception {
+  public void restApiShouldHaveBeaconHeadEndpoint() {
     verify(app).get(eq(GetHead.ROUTE), any(GetHead.class));
   }
 
@@ -97,12 +97,12 @@ class BeaconRestApiTest {
 
   @Test
   public void RestApiShouldHaveChainHeadEndpoint() {
-    verify(app).get(eq(BeaconChainHeadHandler.ROUTE), any(BeaconChainHeadHandler.class));
+    verify(app).get(eq(GetChainHead.ROUTE), any(GetChainHead.class));
   }
 
   @Test
   public void RestApiShouldHaveBeaconStateEndpoint() {
-    verify(app).get(eq(BeaconStateHandler.ROUTE), any(BeaconStateHandler.class));
+    verify(app).get(eq(GetState.ROUTE), any(GetState.class));
   }
 
   @Test
