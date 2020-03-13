@@ -43,9 +43,9 @@ public class GetListenPort implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get this beacon node's listening port.",
+      summary = "Returns the TCP port that the client's libp2p service is listening on.",
       tags = {TAG_NETWORK},
-      description = "Returns the beacon node's listening port.",
+      description = "Returns the TCP port that the client's libp2p service is listening on.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
