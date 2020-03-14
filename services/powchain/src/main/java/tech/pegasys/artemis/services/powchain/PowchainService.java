@@ -15,8 +15,6 @@ package tech.pegasys.artemis.services.powchain;
 
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.artemis.pow.DepositContractAccessor;
@@ -27,21 +25,19 @@ import tech.pegasys.artemis.pow.Eth1Provider;
 import tech.pegasys.artemis.pow.ThrottlingEth1Provider;
 import tech.pegasys.artemis.pow.Web3jEth1Provider;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
-public class PowchainService implements ServiceInterface {
+public class PowchainService extends Service {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private final Eth1DepositManager eth1DepositManager;
+  private final Eth1DataManager eth1DataManager;
 
-  private Eth1DepositManager eth1DepositManager;
-  private Eth1DataManager eth1DataManager;
-
-  @Override
-  public void init(ServiceConfig config) {
+  public PowchainService(final ServiceConfig config) {
     ArtemisConfiguration artemisConfig = config.getConfig();
 
     AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
@@ -73,14 +69,16 @@ public class PowchainService implements ServiceInterface {
   }
 
   @Override
-  public void run() {
-    eth1DepositManager.start();
-    eth1DataManager.start();
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(eth1DepositManager::start),
+        SafeFuture.fromRunnable(eth1DataManager::start));
   }
 
   @Override
-  public void stop() {
-    LOG.debug("PowChainService.stop()");
-    eth1DepositManager.stop();
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(eth1DepositManager::stop),
+        SafeFuture.fromRunnable(eth1DataManager::stop));
   }
 }

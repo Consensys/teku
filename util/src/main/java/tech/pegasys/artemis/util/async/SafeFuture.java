@@ -20,6 +20,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,6 +63,14 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return safeFuture;
   }
 
+  public static <U> SafeFuture<U> of(final Supplier<CompletionStage<U>> futureSupplier) {
+    try {
+      return SafeFuture.of(futureSupplier.get());
+    } catch (Exception e) {
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(
@@ -74,7 +83,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         });
   }
 
-  static SafeFuture<Void> fromRunnable(final Runnable action) {
+  public static SafeFuture<Void> fromRunnable(final Runnable action) {
     try {
       action.run();
       return SafeFuture.COMPLETE;
