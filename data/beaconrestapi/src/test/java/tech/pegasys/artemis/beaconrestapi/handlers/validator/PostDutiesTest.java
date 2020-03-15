@@ -31,7 +31,7 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class PostValidatorDutiesTest {
+public class PostDutiesTest {
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
@@ -42,14 +42,14 @@ public class PostValidatorDutiesTest {
 
   @Test
   public void shouldReturnNoContentWhenNoBlockRoot() throws Exception {
-    PostValidatorDuties handler = new PostValidatorDuties(provider, jsonProvider);
+    PostDuties handler = new PostDuties(provider, jsonProvider);
     handler.handle(context);
     verify(context).status(SC_NO_CONTENT);
   }
 
   @Test
   public void shouldReturnBadRequestWhenNoEpochNumberInBody() throws Exception {
-    PostValidatorDuties handler = new PostValidatorDuties(provider, jsonProvider);
+    PostDuties handler = new PostDuties(provider, jsonProvider);
     when(provider.isStoreAvailable()).thenReturn(true);
     when(context.body()).thenReturn("{\"epoch\":\"bob\"}");
     handler.handle(context);
@@ -59,7 +59,7 @@ public class PostValidatorDutiesTest {
 
   @Test
   public void shouldReturnBadRequestWhenNegativeEpochNumberInBody() throws Exception {
-    PostValidatorDuties handler = new PostValidatorDuties(provider, jsonProvider);
+    PostDuties handler = new PostDuties(provider, jsonProvider);
     when(provider.isStoreAvailable()).thenReturn(true);
     when(context.body()).thenReturn("{\"epoch\":\"-1\"}");
     handler.handle(context);
@@ -71,7 +71,7 @@ public class PostValidatorDutiesTest {
   public void shouldReturnEmptyListWhenNoValidatorDuties() throws Exception {
     final String body = "{\"epoch\":0,\"pubkeys\":[]}";
 
-    PostValidatorDuties handler = new PostValidatorDuties(provider, jsonProvider);
+    PostDuties handler = new PostDuties(provider, jsonProvider);
     when(provider.isStoreAvailable()).thenReturn(true);
     when(context.body()).thenReturn(body);
     when(provider.getValidatorDutiesByRequest(any()))
