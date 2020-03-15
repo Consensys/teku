@@ -52,7 +52,7 @@ public interface KeystorePasswordOptions {
       final Function<String, String> envSupplier,
       final String environmentVariable) {
     final String password = envSupplier.apply(environmentVariable);
-    if (password == null) {
+    if (isBlank(password)) {
       throw new ParameterException(
           commandLine,
           "Error: Password cannot be read from environment variable: " + environmentVariable);
