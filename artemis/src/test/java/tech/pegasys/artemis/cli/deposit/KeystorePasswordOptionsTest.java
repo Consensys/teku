@@ -31,8 +31,22 @@ import picocli.CommandLine;
 class KeystorePasswordOptionsTest {
   private static final String PASSWORD = "testpassword";
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
+  private static final String SPACE_ENV_VARIABLE = "SPACE_ENV";
   private static final Function<String, String> envSupplier =
-      s -> EXPECTED_ENV_VARIABLE.equals(s) ? PASSWORD : null;
+      envVariable -> {
+        switch (envVariable) {
+          case EXPECTED_ENV_VARIABLE:
+            return PASSWORD;
+          case SPACE_ENV_VARIABLE:
+            return "     ";
+          default:
+            return null;
+        }
+      };
+  private static final String EXPECTED_ENV_ERROR =
+      "Error: Password cannot be read from environment variable: %s";
+  private static final String EXPECTED_EMPTY_PASSWORD_FILE_ERROR =
+      "Error: Empty password from file: %s";
   private final CommandLine commandLine = mock(CommandLine.class);
 
   @Test
@@ -64,7 +78,7 @@ class KeystorePasswordOptionsTest {
 
     Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(() -> KeystorePasswordOptions.readFromFile(commandLine, passwordFile.toFile()))
-        .withMessage("Error: Empty password from file: " + passwordFile.toFile());
+        .withMessage(EXPECTED_EMPTY_PASSWORD_FILE_ERROR, passwordFile.toFile());
   }
 
   @Test
@@ -76,7 +90,7 @@ class KeystorePasswordOptionsTest {
 
     Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(() -> KeystorePasswordOptions.readFromFile(commandLine, passwordFile.toFile()))
-        .withMessage("Error: Empty password from file: " + passwordFile.toFile());
+        .withMessage(EXPECTED_EMPTY_PASSWORD_FILE_ERROR, passwordFile.toFile());
   }
 
   @Test
@@ -101,11 +115,23 @@ class KeystorePasswordOptionsTest {
   @Test
   void nonExistentEnvironmentVariableThrowsException() {
     final CommandLine commandLine = mock(CommandLine.class);
+    final String TEST_ENV = "NOT_VALID";
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(
             () ->
                 KeystorePasswordOptions.readFromEnvironmentVariable(
-                    commandLine, envSupplier, "NOT_VALID"))
-        .withMessage("Error: Password cannot be read from environment variable: NOT_VALID");
+                    commandLine, envSupplier, TEST_ENV))
+        .withMessage(EXPECTED_ENV_ERROR, TEST_ENV);
+  }
+
+  @Test
+  void emptyPasswordFromEnvironmentVariableThrowsException() {
+    final CommandLine commandLine = mock(CommandLine.class);
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
+        .isThrownBy(
+            () ->
+                KeystorePasswordOptions.readFromEnvironmentVariable(
+                    commandLine, envSupplier, SPACE_ENV_VARIABLE))
+        .withMessage(EXPECTED_ENV_ERROR, SPACE_ENV_VARIABLE);
   }
 }
