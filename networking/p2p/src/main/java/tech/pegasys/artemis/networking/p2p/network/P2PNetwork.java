@@ -97,4 +97,11 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   /** Stops the P2P network layer. */
   void stop();
+
+  /**
+   * Get the network configuration for this network.
+   *
+   * @return A NetworkConfig object with the configuration of this network.
+   */
+  NetworkConfig getConfig();
 }
