@@ -13,22 +13,15 @@
 
 package tech.pegasys.artemis.services.beaconchain;
 
-import java.util.Objects;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class BeaconChainService implements ServiceInterface {
+public class BeaconChainService extends Service {
 
-  private static final Logger LOG = LogManager.getLogger();
+  private final BeaconChainController controller;
 
-  private BeaconChainController controller;
-
-  public BeaconChainService() {}
-
-  @Override
-  public void init(ServiceConfig config) {
+  public BeaconChainService(final ServiceConfig config) {
     this.controller =
         new BeaconChainController(
             config.getTimeProvider(),
@@ -36,19 +29,15 @@ public class BeaconChainService implements ServiceInterface {
             config.getEventChannels(),
             config.getMetricsSystem(),
             config.getConfig());
-    this.controller.initAll();
   }
 
   @Override
-  public void run() {
-    this.controller.start();
+  protected SafeFuture<?> doStart() {
+    return this.controller.start();
   }
 
   @Override
-  public void stop() {
-    LOG.debug("BeaconChainService.stop()");
-    if (!Objects.isNull(controller)) {
-      this.controller.stop();
-    }
+  protected SafeFuture<?> doStop() {
+    return this.controller.stop();
   }
 }
