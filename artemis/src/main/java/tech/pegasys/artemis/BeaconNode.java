@@ -24,7 +24,6 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -33,10 +32,7 @@ import tech.pegasys.artemis.events.ChannelExceptionHandler;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.metrics.MetricsEndpoint;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.service.serviceutils.ServiceController;
-import tech.pegasys.artemis.services.beaconchain.BeaconChainService;
-import tech.pegasys.artemis.services.chainstorage.ChainStorageService;
-import tech.pegasys.artemis.services.powchain.PowchainService;
+import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
@@ -50,7 +46,7 @@ public class BeaconNode {
       Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
-  private final ServiceController serviceController = new ServiceController();
+  private final ServiceController serviceController;
   private final ServiceConfig serviceConfig;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
@@ -67,6 +63,7 @@ public class BeaconNode {
 
     this.serviceConfig =
         new ServiceConfig(new SystemTimeProvider(), eventBus, eventChannels, metricsSystem, config);
+    this.serviceConfig.getConfig().validateConfig();
     Constants.setConstants(config.getConstants());
 
     final String transitionRecordDir = config.getTransitionRecordDir();
@@ -81,29 +78,15 @@ public class BeaconNode {
   }
 
   public void start() {
-
-    try {
-      this.serviceConfig.getConfig().validateConfig();
-      metricsEndpoint.start();
-      // Initialize services
-      serviceController.initAll(
-          serviceConfig,
-          BeaconChainService.class,
-          PowchainService.class,
-          ChainStorageService.class);
-
-      // Start services
-      serviceController.startAll();
-
-    } catch (final CompletionException | IllegalArgumentException e) {
-      STATUS_LOG.startupFailure(e);
-    }
+    metricsEndpoint.start();
+    serviceController.start().join();
   }
 
   public void stop() {
-    serviceController.stopAll();
+    serviceController.stop().reportExceptions();
     eventChannels.stop();
     metricsEndpoint.stop();
+    vertx.close();
   }
 }
 

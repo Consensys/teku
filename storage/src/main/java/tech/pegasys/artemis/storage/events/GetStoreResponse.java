@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,4 +13,23 @@
 
 package tech.pegasys.artemis.storage.events;
 
-public class StoreInitializedEvent {}
+import java.util.Optional;
+import tech.pegasys.artemis.storage.Store;
+
+public class GetStoreResponse {
+  private final long requestId;
+  private final Optional<Store> store;
+
+  public GetStoreResponse(final long requestId, final Optional<Store> store) {
+    this.requestId = requestId;
+    this.store = store;
+  }
+
+  public Optional<Store> getStore() {
+    return store;
+  }
+
+  public long getRequestId() {
+    return requestId;
+  }
+}

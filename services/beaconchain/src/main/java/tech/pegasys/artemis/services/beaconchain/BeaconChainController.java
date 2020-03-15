@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.get_head;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
 import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
@@ -28,10 +27,6 @@ import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.Date;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -49,6 +44,7 @@ import tech.pegasys.artemis.networking.p2p.mock.MockP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.StateProcessor;
@@ -62,12 +58,11 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
-import tech.pegasys.artemis.storage.events.NodeStartEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
-import tech.pegasys.artemis.storage.events.StoreInitializedEvent;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
+import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
@@ -75,30 +70,30 @@ import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
-public class BeaconChainController {
-
+public class BeaconChainController extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ExecutorService networkExecutor = Executors.newSingleThreadExecutor();
   private final EventChannels eventChannels;
+  private final MetricsSystem metricsSystem;
   private final ArtemisConfiguration config;
   private final TimeProvider timeProvider;
-  private EventBus eventBus;
-  private Timer timer;
-  private ChainStorageClient chainStorageClient;
-  private P2PNetwork<Eth2Peer> p2pNetwork;
-  private final MetricsSystem metricsSystem;
-  private SettableGauge currentSlotGauge;
-  private SettableGauge currentEpochGauge;
-  private StateProcessor stateProcessor;
-  private UnsignedLong nodeSlot = UnsignedLong.ZERO;
-  private BeaconRestApi beaconRestAPI;
-  private AttestationAggregator attestationAggregator;
-  private BlockAttestationsPool blockAttestationsPool;
-  private DepositProvider depositProvider;
-  private SyncService syncService;
-  private boolean testMode;
-  private AttestationManager attestationManager;
+  private final EventBus eventBus;
+  private final boolean setupInitialState;
+
+  private volatile Timer timer;
+  private volatile ChainStorageClient chainStorageClient;
+  private volatile P2PNetwork<Eth2Peer> p2pNetwork;
+  private volatile SettableGauge currentSlotGauge;
+  private volatile SettableGauge currentEpochGauge;
+  private volatile StateProcessor stateProcessor;
+  private volatile UnsignedLong nodeSlot = UnsignedLong.ZERO;
+  private volatile BeaconRestApi beaconRestAPI;
+  private volatile AttestationAggregator attestationAggregator;
+  private volatile BlockAttestationsPool blockAttestationsPool;
+  private volatile DepositProvider depositProvider;
+  private volatile SyncService syncService;
+  private volatile AttestationManager attestationManager;
+  private volatile ValidatorCoordinator validatorCoordinator;
 
   public BeaconChainController(
       TimeProvider timeProvider,
@@ -111,13 +106,56 @@ public class BeaconChainController {
     this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
-    this.testMode = config.getDepositMode().equals(DEPOSIT_TEST);
+    this.setupInitialState =
+        config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
+  }
+
+  @Override
+  protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
+    LOG.debug("Starting {}", this.getClass().getSimpleName());
+    return initialize()
+        .thenCompose(
+            __ ->
+                SafeFuture.allOf(
+                    validatorCoordinator.start(),
+                    attestationManager.start(),
+                    p2pNetwork.start(),
+                    syncService.start(),
+                    SafeFuture.fromRunnable(timer::start),
+                    SafeFuture.fromRunnable(beaconRestAPI::start)));
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    LOG.debug("Stopping {}", this.getClass().getSimpleName());
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
+        SafeFuture.fromRunnable(beaconRestAPI::stop),
+        SafeFuture.fromRunnable(timer::stop),
+        validatorCoordinator.stop(),
+        syncService.stop(),
+        attestationManager.stop(),
+        SafeFuture.fromRunnable(p2pNetwork::stop));
+  }
+
+  private SafeFuture<?> initialize() {
+    return ChainStorageClient.storageBackedClient(eventBus)
+        .thenAccept(
+            client -> {
+              // Setup chain storage
+              this.chainStorageClient = client;
+              if (setupInitialState && chainStorageClient.getStore() == null) {
+                setupInitialState();
+              }
+              chainStorageClient.subscribeStoreInitialized(this::onStoreInitialized);
+              // Init other services
+              this.initAll();
+            });
   }
 
   public void initAll() {
     initTimer();
-    initStorage();
     initMetrics();
     initAttestationAggregator();
     initBlockAttestationsPool();
@@ -139,10 +177,6 @@ public class BeaconChainController {
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
-  }
-
-  public void initStorage() {
-    this.chainStorageClient = ChainStorageClient.storageBackedClient(eventBus);
   }
 
   public void initMetrics() {
@@ -171,14 +205,15 @@ public class BeaconChainController {
 
   public void initValidatorCoordinator() {
     LOG.debug("BeaconChainController.initValidatorCoordinator()");
-    new ValidatorCoordinator(
-        timeProvider,
-        eventBus,
-        chainStorageClient,
-        attestationAggregator,
-        blockAttestationsPool,
-        depositProvider,
-        config);
+    this.validatorCoordinator =
+        new ValidatorCoordinator(
+            timeProvider,
+            eventBus,
+            chainStorageClient,
+            attestationAggregator,
+            blockAttestationsPool,
+            depositProvider,
+            config);
   }
 
   public void initStateProcessor() {
@@ -187,6 +222,9 @@ public class BeaconChainController {
   }
 
   private void initPreGenesisDepositHandler() {
+    if (setupInitialState) {
+      return;
+    }
     LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(chainStorageClient));
   }
@@ -267,26 +305,7 @@ public class BeaconChainController {
     }
   }
 
-  public void start() {
-    LOG.debug("BeaconChainController.start(): starting AttestationPropagationManager");
-    attestationManager.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): starting p2pNetwork");
-    this.p2pNetwork.start().reportExceptions();
-    LOG.debug("BeaconChainController.start(): emit NodeStartEvent");
-    this.eventBus.post(new NodeStartEvent());
-    LOG.debug("BeaconChainController.start(): starting timer");
-    this.timer.start();
-    LOG.debug("BeaconChainController.start(): starting BeaconRestAPI");
-    this.beaconRestAPI.start();
-
-    if (testMode && !config.startFromDisk()) {
-      generateTestModeGenesis();
-    }
-
-    syncService.start().reportExceptions();
-  }
-
-  private void generateTestModeGenesis() {
+  private void setupInitialState() {
     StartupUtil.setupInitialState(
         chainStorageClient,
         config.getGenesisTime(),
@@ -294,29 +313,7 @@ public class BeaconChainController {
         config.getNumValidators());
   }
 
-  public void stop() {
-    LOG.debug("BeaconChainController.stop()");
-    syncService.stop().reportExceptions();
-    attestationManager.stop().reportExceptions();
-    if (!Objects.isNull(p2pNetwork)) {
-      this.p2pNetwork.stop();
-    }
-    networkExecutor.shutdown();
-    try {
-      if (!networkExecutor.awaitTermination(250, TimeUnit.MILLISECONDS)) {
-        networkExecutor.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      networkExecutor.shutdownNow();
-    }
-    this.timer.stop();
-    this.beaconRestAPI.stop();
-    this.eventBus.unregister(this);
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onStoreInitializedEvent(final StoreInitializedEvent event) {
+  private void onStoreInitialized() {
     UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = UnsignedLong.ZERO;
@@ -372,13 +369,6 @@ public class BeaconChainController {
     } catch (InterruptedException e) {
       LOG.fatal("onTick: {}", e.toString(), e);
     }
-  }
-
-  @Subscribe
-  public void setNodeSlotAccordingToDBStore(Store store) {
-    Bytes32 headBlockRoot = get_head(store);
-    chainStorageClient.initializeFromStore(store, headBlockRoot);
-    LOG.info("Node being started from database.");
   }
 
   private boolean isFirstSlotOfNewEpoch(final UnsignedLong slot) {

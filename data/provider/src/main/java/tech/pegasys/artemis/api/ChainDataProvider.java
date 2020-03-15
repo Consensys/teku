@@ -16,21 +16,31 @@ package tech.pegasys.artemis.api;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
+import tech.pegasys.artemis.api.schema.ValidatorDuties;
+import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
+import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
+import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
+import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
@@ -60,14 +70,15 @@ public class ChainDataProvider {
       return Optional.empty();
     }
 
-    final Bytes32 headBlockRoot = chainStorageClient.getBestBlockRoot();
-    if (headBlockRoot == null) {
+    Optional<Bytes32> headBlockRoot = chainStorageClient.getBestBlockRoot();
+    Optional<Bytes32> headStateRoot =
+        headBlockRoot.flatMap(chainStorageClient::getBlockByRoot).map(BeaconBlock::getState_root);
+    if (headBlockRoot.isEmpty() || headStateRoot.isEmpty()) {
       return Optional.empty();
     }
 
-    final Bytes32 headStateRoot = chainStorageClient.getBestBlockRootState().hash_tree_root();
-    final BeaconHead result =
-        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot, headStateRoot);
+    BeaconHead result =
+        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot.get(), headStateRoot.get());
     return Optional.of(result);
   }
 
@@ -129,9 +140,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       return completedFuture(Optional.empty());
     }
-    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
     return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
+        .getStateAtSlot(slot)
         .thenApply(state -> state.map(BeaconState::new))
         .exceptionally(err -> Optional.empty());
   }
@@ -140,9 +150,8 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       return completedFuture(Optional.empty());
     }
-    final Bytes32 headBlockRoot = combinedChainDataClient.getBestBlockRoot().orElse(null);
     return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
+        .getStateAtSlot(slot)
         .thenApply(state -> Optional.of(state.get().hash_tree_root()))
         .exceptionally(err -> Optional.empty());
   }
@@ -157,20 +166,20 @@ public class ChainDataProvider {
           String.format("Slot %s is finalized, no attestation will be created.", slot.toString()));
     }
     Optional<BeaconBlock> block = chainStorageClient.getBlockBySlot(slot);
-    if (block.isEmpty()) {
+    Optional<tech.pegasys.artemis.datastructures.state.BeaconState> state =
+        chainStorageClient.getBestBlockRootState();
+    if (block.isEmpty() || state.isEmpty()) {
       return Optional.empty();
     }
 
-    tech.pegasys.artemis.datastructures.state.BeaconState state =
-        chainStorageClient.getBestBlockRootState();
-    int committeeCount = get_committee_count_at_slot(state, slot).intValue();
+    int committeeCount = get_committee_count_at_slot(state.get(), slot).intValue();
     if (committeeIndex < 0 || committeeIndex >= committeeCount) {
       throw new IllegalArgumentException(
           "Invalid committee index provided - expected between 0 and " + (committeeCount - 1));
     }
 
     tech.pegasys.artemis.datastructures.operations.AttestationData internalAttestation =
-        AttestationUtil.getGenericAttestationData(state, block.get());
+        AttestationUtil.getGenericAttestationData(state.get(), block.get());
     AttestationData data = new AttestationData(internalAttestation);
     Bitlist aggregationBits = AttestationUtil.getAggregationBits(committeeCount, committeeIndex);
     Attestation attestation = new Attestation(aggregationBits, data, BLSSignature.empty());
@@ -183,6 +192,95 @@ public class ChainDataProvider {
 
   public boolean isFinalized(UnsignedLong slot) {
     return combinedChainDataClient.isFinalized(slot);
+  }
+
+  public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
+      final ValidatorsRequest request) {
+    UnsignedLong slot =
+        request.epoch == null
+            ? chainStorageClient.getBestSlot()
+            : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
+
+    return getStateAtSlot(slot)
+        .thenApply(
+            optionalBeaconState -> {
+              if (optionalBeaconState.isEmpty()) {
+                return Optional.empty();
+              }
+              return Optional.of(new BeaconValidators(optionalBeaconState.get(), request.pubkeys));
+            });
+  }
+
+  public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
+      final ValidatorDutiesRequest validatorDutiesRequest) {
+
+    if (validatorDutiesRequest == null || !isStoreAvailable()) {
+      return completedFuture(List.of());
+    }
+    final Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
+    if (optionalBlockRoot.isEmpty()) {
+      return completedFuture(List.of());
+    }
+
+    UnsignedLong epoch = validatorDutiesRequest.epoch;
+    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final Bytes32 headBlockRoot = optionalBlockRoot.get();
+    return combinedChainDataClient
+        .getStateAtSlot(slot, headBlockRoot)
+        .thenApply(
+            state -> getValidatorDutiesFromState(state.get(), validatorDutiesRequest.pubkeys))
+        .exceptionally(err -> List.of());
+  }
+
+  @VisibleForTesting
+  protected List<ValidatorDuties> getValidatorDutiesFromState(
+      final tech.pegasys.artemis.datastructures.state.BeaconState state,
+      final List<BLSPubKey> pubKeys) {
+    final List<ValidatorDuties> dutiesList = new ArrayList<>();
+
+    final List<CommitteeAssignment> committees =
+        combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
+
+    for (final BLSPubKey pubKey : pubKeys) {
+      final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
+      if (validatorIndex == null) {
+        dutiesList.add(new ValidatorDuties(pubKey, null, null));
+      } else {
+        dutiesList.add(
+            new ValidatorDuties(
+                pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)));
+      }
+    }
+    return dutiesList;
+  }
+
+  @VisibleForTesting
+  protected static Integer getValidatorIndex(
+      final List<tech.pegasys.artemis.datastructures.state.Validator> validators,
+      final BLSPubKey publicKey) {
+    Optional<tech.pegasys.artemis.datastructures.state.Validator> optionalValidator =
+        validators.stream()
+            .filter(
+                v -> Bytes48.fromHexString(publicKey.toHexString()).equals(v.getPubkey().toBytes()))
+            .findFirst();
+    if (optionalValidator.isPresent()) {
+      return validators.indexOf(optionalValidator.get());
+    } else {
+      return null;
+    }
+  }
+
+  @VisibleForTesting
+  protected Integer getCommitteeIndex(List<CommitteeAssignment> committees, int validatorIndex) {
+    Optional<CommitteeAssignment> matchingCommittee =
+        committees.stream()
+            .filter(committee -> committee.getCommittee().contains(validatorIndex))
+            .findFirst();
+    if (matchingCommittee.isPresent()) {
+      return committees.indexOf(matchingCommittee.get());
+    } else {
+      return null;
+    }
   }
 
   public Optional<BeaconChainHead> getHeadState() {

@@ -13,27 +13,25 @@
 
 package tech.pegasys.artemis.services.chainstorage;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.service.serviceutils.ServiceConfig;
-import tech.pegasys.artemis.service.serviceutils.ServiceInterface;
 import tech.pegasys.artemis.storage.ChainStorageServer;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class ChainStorageService implements ServiceInterface {
+public class ChainStorageService extends Service {
+  private final ChainStorageServer server;
 
-  private static final Logger LOG = LogManager.getLogger();
-
-  @Override
-  public void init(ServiceConfig config) {
-    ChainStorageServer server = new ChainStorageServer(config.getEventBus(), config.getConfig());
-    server.start();
+  public ChainStorageService(final ServiceConfig serviceConfig) {
+    this.server = new ChainStorageServer(serviceConfig.getEventBus(), serviceConfig.getConfig());
   }
 
   @Override
-  public void run() {}
+  protected SafeFuture<?> doStart() {
+    return SafeFuture.fromRunnable(server::start);
+  }
 
   @Override
-  public void stop() {
-    LOG.debug("ChainStorageService.stop()");
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.COMPLETE;
   }
 }

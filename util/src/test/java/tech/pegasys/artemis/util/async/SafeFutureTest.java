@@ -18,8 +18,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -61,6 +63,57 @@ public class SafeFutureTest {
     final RuntimeException exception = new RuntimeException("Oh no");
     completableFuture.completeExceptionally(exception);
     assertExceptionallyCompletedWith(safeFuture, exception);
+  }
+
+  @Test
+  public void ofWithSupplier_propagatesSuccessfulResult() {
+    final SafeFuture<Void> suppliedFuture = new SafeFuture<>();
+    final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
+    final SafeFuture<Void> future =
+        SafeFuture.of(
+            () -> {
+              supplierWasProcessed.set(true);
+              return suppliedFuture;
+            });
+
+    assertThat(supplierWasProcessed).isTrue();
+    assertThat(future).isNotDone();
+    suppliedFuture.complete(null);
+    assertThat(future).isCompleted();
+  }
+
+  @Test
+  public void ofWithSupplier_propagatesExceptionalResult() {
+    final SafeFuture<Void> suppliedFuture = new SafeFuture<>();
+    final AtomicBoolean supplierWasProcessed = new AtomicBoolean(false);
+    final SafeFuture<Void> future =
+        SafeFuture.of(
+            () -> {
+              supplierWasProcessed.set(true);
+              return suppliedFuture;
+            });
+
+    assertThat(supplierWasProcessed).isTrue();
+    assertThat(future).isNotDone();
+
+    final RuntimeException error = new RuntimeException("failed");
+    suppliedFuture.completeExceptionally(error);
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasRootCause(error);
+  }
+
+  @Test
+  public void ofWithSupplier_propagatesExceptionFromSupplier() {
+    final RuntimeException error = new RuntimeException("whoops");
+    final Supplier<CompletionStage<Void>> futureSupplier =
+        () -> {
+          throw error;
+        };
+
+    final SafeFuture<Void> future = SafeFuture.of(futureSupplier);
+
+    assertThat(future).isCompletedExceptionally();
+    assertExceptionallyCompletedWith(future, error);
   }
 
   @Test

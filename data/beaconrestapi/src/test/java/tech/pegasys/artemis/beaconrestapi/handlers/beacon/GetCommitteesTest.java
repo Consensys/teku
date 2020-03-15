@@ -36,11 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -51,7 +47,6 @@ import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-@ExtendWith(MockitoExtension.class)
 public class GetCommitteesTest {
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
@@ -63,9 +58,10 @@ public class GetCommitteesTest {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
-  @Mock private ChainDataProvider provider;
+  private final ChainDataProvider provider = mock(ChainDataProvider.class);
 
-  @Captor private ArgumentCaptor<SafeFuture<String>> args;
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @BeforeAll
   public static void setup() {
@@ -74,7 +70,7 @@ public class GetCommitteesTest {
     beaconState = DataStructureUtil.randomBeaconState(11233);
     storageClient.initializeFromGenesis(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
-    blockRoot = storageClient.getBestBlockRoot();
+    blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = storageClient.getBlockState(blockRoot).get().getSlot();
     epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
@@ -134,7 +130,7 @@ public class GetCommitteesTest {
     when(store.getBlockState(blockRoot)).thenReturn(beaconState);
     when(client.getStateBySlot(any())).thenReturn(Optional.of(beaconState));
     when(client.getStore()).thenReturn(store);
-    when(client.getBestBlockRoot()).thenReturn(blockRoot);
+    when(client.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
 
     handler.handle(context);
 

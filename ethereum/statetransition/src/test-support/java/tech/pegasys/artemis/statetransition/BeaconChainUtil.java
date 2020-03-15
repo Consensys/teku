@@ -171,9 +171,9 @@ public class BeaconChainUtil {
     checkState(
         withValidProposer || validatorKeys.size() > 1,
         "Must have >1 validator in order to create a block from an invalid proposer.");
-    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot();
+    final Bytes32 bestBlockRoot = storageClient.getBestBlockRoot().orElseThrow();
     final BeaconBlock bestBlock = storageClient.getStore().getBlock(bestBlockRoot);
-    final BeaconState preState = storageClient.getBestBlockRootState();
+    final BeaconState preState = storageClient.getBestBlockRootState().orElseThrow();
     checkArgument(bestBlock.getSlot().compareTo(slot) < 0, "Slot must be in the future.");
 
     final int correctProposerIndex = blockCreator.getProposerIndexForSlot(preState, slot);
@@ -201,8 +201,9 @@ public class BeaconChainUtil {
     while (storageClient.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       BeaconState headState =
-          storageClient.getStore().getBlockState(storageClient.getBestBlockRoot());
-      BeaconBlock headBlock = storageClient.getStore().getBlock(storageClient.getBestBlockRoot());
+          storageClient.getStore().getBlockState(storageClient.getBestBlockRoot().orElseThrow());
+      BeaconBlock headBlock =
+          storageClient.getStore().getBlock(storageClient.getBestBlockRoot().orElseThrow());
       UnsignedLong slot = storageClient.getBestSlot();
       SSZList<Attestation> currentSlotAssignments =
           SSZList.createMutable(

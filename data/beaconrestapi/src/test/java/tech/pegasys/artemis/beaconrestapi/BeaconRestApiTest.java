@@ -25,18 +25,21 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.DataProvider;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetState;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostValidatorDuties;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
@@ -69,12 +72,12 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void RestApiShouldHaveGenesisTimeEndpoint() throws Exception {
+  public void RestApiShouldHaveGenesisTimeEndpoint() {
     verify(app).get(eq(GetGenesisTime.ROUTE), any(GetGenesisTime.class));
   }
 
   @Test
-  public void RestApiShouldHaveVersionEndpoint() throws Exception {
+  public void RestApiShouldHaveVersionEndpoint() {
     verify(app).get(eq(GetVersion.ROUTE), any(GetVersion.class));
   }
 
@@ -84,7 +87,7 @@ class BeaconRestApiTest {
   }
 
   @Test
-  public void restApiShouldHaveBeaconHeadEndpoint() throws Exception {
+  public void restApiShouldHaveBeaconHeadEndpoint() {
     verify(app).get(eq(GetHead.ROUTE), any(GetHead.class));
   }
 
@@ -95,12 +98,12 @@ class BeaconRestApiTest {
 
   @Test
   public void RestApiShouldHaveChainHeadEndpoint() {
-    verify(app).get(eq(BeaconChainHeadHandler.ROUTE), any(BeaconChainHeadHandler.class));
+    verify(app).get(eq(GetChainHead.ROUTE), any(GetChainHead.class));
   }
 
   @Test
   public void RestApiShouldHaveBeaconStateEndpoint() {
-    verify(app).get(eq(BeaconStateHandler.ROUTE), any(BeaconStateHandler.class));
+    verify(app).get(eq(GetState.ROUTE), any(GetState.class));
   }
 
   @Test
@@ -126,5 +129,20 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveNetworkPeerCountEndpoint() {
     verify(app).get(eq(GetPeerCount.ROUTE), any(GetPeerCount.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveNetworkListenPortEndpoint() {
+    verify(app).get(eq(GetListenPort.ROUTE), any(GetListenPort.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveBeaconValidatorsPostEndpoint() {
+    verify(app).post(eq(PostValidators.ROUTE), any(PostValidators.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveValidatorDutiesEndpoint() {
+    verify(app).post(eq(PostValidatorDuties.ROUTE), any(PostValidatorDuties.class));
   }
 }

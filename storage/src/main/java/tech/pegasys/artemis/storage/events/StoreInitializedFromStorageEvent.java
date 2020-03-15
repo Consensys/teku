@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,13 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.service.serviceutils;
+package tech.pegasys.artemis.storage.events;
 
-public interface ServiceInterface extends Runnable {
-  void init(ServiceConfig config);
+import java.util.Optional;
+import tech.pegasys.artemis.storage.Store;
 
-  @Override
-  void run();
+public class StoreInitializedFromStorageEvent {
+  private final Optional<Store> store;
 
-  void stop();
+  public StoreInitializedFromStorageEvent(final Optional<Store> store) {
+    this.store = store;
+  }
+
+  public Optional<Store> getStore() {
+    return store;
+  }
 }

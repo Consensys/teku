@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.service.serviceutils;
+package tech.pegasys.artemis.storage.events;
 
-import tech.pegasys.artemis.util.async.SafeFuture;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class NoopService extends Service {
+public class GetStoreRequest {
+  private static final AtomicLong nextRequestId = new AtomicLong(0);
 
-  @Override
-  protected SafeFuture<?> doStart() {
-    return SafeFuture.COMPLETE;
+  private final long id;
+
+  public GetStoreRequest() {
+    id = nextRequestId.incrementAndGet();
   }
 
-  @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.COMPLETE;
+  public long getId() {
+    return id;
   }
 }

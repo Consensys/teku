@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,25 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.service.serviceutils;
+package tech.pegasys.artemis.provider;
 
-public class ServiceFactory<T> {
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import tech.pegasys.artemis.api.schema.BLSPubKey;
 
-  private final Class<T> type;
-
-  public ServiceFactory(Class<T> type) {
-    this.type = type;
-  }
-
-  public T getInstance() {
-    try {
-      return type.getDeclaredConstructor().newInstance();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static <S> ServiceFactory<S> getInstance(Class<S> type) {
-    return new ServiceFactory<>(type);
+public class BLSPubKeyDeserializer extends JsonDeserializer<BLSPubKey> {
+  @Override
+  public BLSPubKey deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    return BLSPubKey.fromHexString(p.getValueAsString());
   }
 }
