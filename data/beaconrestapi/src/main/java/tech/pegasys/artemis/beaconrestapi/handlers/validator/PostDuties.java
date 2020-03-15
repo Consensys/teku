@@ -41,10 +41,10 @@ import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class PostValidatorDuties implements Handler {
+public class PostDuties implements Handler {
   private final ChainDataProvider provider;
 
-  public PostValidatorDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public PostDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
@@ -66,7 +66,9 @@ public class PostValidatorDuties implements Handler {
               description =
                   "```\n{\n  \"epoch\": (uint64),\n  \"pubkeys\": [(Bytes48 as Hex String)]\n}\n```"),
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = ValidatorDuties.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = ValidatorDuties.class, isArray = true)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid body supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
