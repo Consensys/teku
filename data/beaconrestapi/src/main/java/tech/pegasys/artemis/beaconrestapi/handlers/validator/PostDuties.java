@@ -41,10 +41,10 @@ import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class PostValidatorDuties implements Handler {
+public class PostDuties implements Handler {
   private final ChainDataProvider provider;
 
-  public PostValidatorDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public PostDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
