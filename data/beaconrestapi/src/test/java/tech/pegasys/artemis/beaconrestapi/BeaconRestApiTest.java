@@ -36,6 +36,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
@@ -119,6 +120,11 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveBeaconStateRootEndpoint() {
     verify(app).get(eq(GetStateRoot.ROUTE), any(GetStateRoot.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveForkEndpoint() {
+    verify(app).get(eq(GetFork.ROUTE), any(GetFork.class));
   }
 
   @Test

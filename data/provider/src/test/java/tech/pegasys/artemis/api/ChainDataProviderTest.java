@@ -45,6 +45,7 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
+import tech.pegasys.artemis.api.schema.Fork;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
@@ -566,6 +567,30 @@ public class ChainDataProviderTest {
         .isEqualTo(
             new ValidatorDuties(
                 alteredState.validators.get(addedValidatorIndex).pubkey, addedValidatorIndex, 1));
+  }
+
+  @Test
+  public void getFork_shouldBeEmptyIfNoBlockRoot() {
+    ChainDataProvider provider =
+        new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockChainStorageClient.getBestBlockRootState()).thenReturn(Optional.empty());
+    Optional<Fork> optionalFork = provider.getFork();
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    assertThat(optionalFork.isEmpty()).isTrue();
+  }
+
+  @Test
+  public void getFork_shouldHaveForkIfBlockRootNotEmpty() {
+    ChainDataProvider provider =
+        new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockChainStorageClient.getBestBlockRootState())
+        .thenReturn(Optional.of(beaconStateInternal));
+    Optional<Fork> optionalFork = provider.getFork();
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    assertThat(optionalFork.isEmpty()).isFalse();
+    assertThat(optionalFork.get()).isEqualToComparingFieldByField(beaconState.fork);
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(
