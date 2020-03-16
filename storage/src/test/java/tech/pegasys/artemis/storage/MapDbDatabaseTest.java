@@ -23,7 +23,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,7 +60,7 @@ class MapDbDatabaseTest {
   private Checkpoint checkpoint2;
   private Checkpoint checkpoint3;
 
-  private Database database = MapDbDatabase.createInMemory();
+  private Database database = MapDbDatabase.createInMemory(StateStorageMode.ARCHIVE);
   private final List<DatabaseUpdateResult> updateResults = new ArrayList<>();
   private final TransactionPrecommit databaseTransactionPrecommit =
       updateEvent -> {
@@ -94,7 +97,7 @@ class MapDbDatabaseTest {
 
   @Test
   public void createMemoryStoreFromEmptyDatabase() {
-    Database database = MapDbDatabase.createInMemory();
+    Database database = MapDbDatabase.createInMemory(StateStorageMode.ARCHIVE);
     assertThat(database.createMemoryStore()).isEmpty();
   }
 
@@ -434,7 +437,20 @@ class MapDbDatabaseTest {
   }
 
   @Test
-  public void shouldRecordFinalizedBlocksAndStates() {
+  public void shouldRecordFinalizedBlocksAndStates_pruneMode() {
+    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE);
+  }
+
+  @Test
+  public void shouldRecordFinalizedBlocksAndStates_archiveMode() {
+    testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE);
+  }
+
+  public void testShouldRecordFinalizedBlocksAndStates(final StateStorageMode storageMode) {
+    database = MapDbDatabase.createInMemory(storageMode);
+    database.storeGenesis(store);
+
+    // Create blocks
     final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
     final SignedBeaconBlock block2 = blockAtSlot(2, block1);
     final SignedBeaconBlock block3 = blockAtSlot(3, block2);
@@ -442,14 +458,28 @@ class MapDbDatabaseTest {
     final SignedBeaconBlock block7 = blockAtSlot(7, block3);
     final SignedBeaconBlock block8 = blockAtSlot(8, block7);
     final SignedBeaconBlock block9 = blockAtSlot(9, block8);
-
     // Create some blocks on a different fork
     final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
     final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
     final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
     final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
 
-    addBlocks(
+    // Create States
+    final Map<Bytes32, BeaconState> states = new HashMap<>();
+    final BeaconState block3State = DataStructureUtil.randomBeaconState(block3.getSlot(), 3);
+    final BeaconState block7State = DataStructureUtil.randomBeaconState(block7.getSlot(), 7);
+    final BeaconState forkBlock6State =
+        DataStructureUtil.randomBeaconState(forkBlock6.getSlot(), 16);
+    final BeaconState forkBlock7State =
+        DataStructureUtil.randomBeaconState(forkBlock7.getSlot(), 17);
+    // Store states in map
+    states.put(block3.getMessage().hash_tree_root(), block3State);
+    states.put(block7.getMessage().hash_tree_root(), block7State);
+    states.put(forkBlock6.getMessage().hash_tree_root(), forkBlock6State);
+    states.put(forkBlock7.getMessage().hash_tree_root(), forkBlock7State);
+
+    add(
+        states,
         block1,
         block2,
         block3,
@@ -462,6 +492,7 @@ class MapDbDatabaseTest {
         forkBlock9);
     assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
     assertLatestUpdateResultPrunedCollectionsAreEmpty();
+    assertStatesAvailable(states);
 
     finalizeEpoch(UnsignedLong.ONE, block7.getMessage().hash_tree_root());
 
@@ -483,14 +514,44 @@ class MapDbDatabaseTest {
 
     // Should still be able to retrieve finalized blocks by root
     assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
+
+    assertHotStatesAvailable(List.of(block7State, forkBlock7State));
+    switch (storageMode) {
+      case ARCHIVE:
+        final Map<Bytes32, BeaconState> expectedStates = new HashMap<>(states);
+        // We should've pruned non-canonical states prior to latest finalized slot
+        expectedStates.remove(forkBlock6.getMessage().hash_tree_root());
+        assertStatesAvailable(expectedStates);
+        break;
+      case PRUNE:
+        assertStatesUnavailableForBlocks(block3, forkBlock6);
+        assertStatesAvailable(
+            Map.of(
+                block7.getMessage().hash_tree_root(),
+                block7State,
+                forkBlock7.getMessage().hash_tree_root(),
+                forkBlock7State));
+        break;
+    }
   }
 
   @Test
-  public void shouldPersistOnDisk(@TempDirectory final Path tempDir) throws Exception {
+  public void shouldPersistOnDisk_pruneMode(@TempDirectory final Path tempDir) throws Exception {
+    testShouldPersistOnDisk(tempDir, StateStorageMode.PRUNE);
+  }
+
+  @Test
+  public void shouldPersistOnDisk_archiveMode(@TempDirectory final Path tempDir) throws Exception {
+    testShouldPersistOnDisk(tempDir, StateStorageMode.ARCHIVE);
+  }
+
+  private void testShouldPersistOnDisk(
+      @TempDirectory final Path tempDir, final StateStorageMode storageMode) throws Exception {
     try {
-      database = MapDbDatabase.createOnDisk(tempDir.toFile(), false);
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), false, storageMode);
       database.storeGenesis(store);
 
+      // Create blocks
       final SignedBeaconBlock block1 = blockAtSlot(1, store.getFinalizedCheckpoint().getRoot());
       final SignedBeaconBlock block2 = blockAtSlot(2, block1);
       final SignedBeaconBlock block3 = blockAtSlot(3, block2);
@@ -498,14 +559,28 @@ class MapDbDatabaseTest {
       final SignedBeaconBlock block7 = blockAtSlot(7, block3);
       final SignedBeaconBlock block8 = blockAtSlot(8, block7);
       final SignedBeaconBlock block9 = blockAtSlot(9, block8);
-
       // Create some blocks on a different fork
       final SignedBeaconBlock forkBlock6 = blockAtSlot(6, block1);
       final SignedBeaconBlock forkBlock7 = blockAtSlot(7, forkBlock6);
       final SignedBeaconBlock forkBlock8 = blockAtSlot(8, forkBlock7);
       final SignedBeaconBlock forkBlock9 = blockAtSlot(9, forkBlock8);
 
-      addBlocks(
+      // Create States
+      final Map<Bytes32, BeaconState> states = new HashMap<>();
+      final BeaconState block3State = DataStructureUtil.randomBeaconState(block3.getSlot(), 3);
+      final BeaconState block7State = DataStructureUtil.randomBeaconState(block7.getSlot(), 7);
+      final BeaconState forkBlock6State =
+          DataStructureUtil.randomBeaconState(forkBlock6.getSlot(), 16);
+      final BeaconState forkBlock7State =
+          DataStructureUtil.randomBeaconState(forkBlock7.getSlot(), 17);
+      // Store states in map
+      states.put(block3.getMessage().hash_tree_root(), block3State);
+      states.put(block7.getMessage().hash_tree_root(), block7State);
+      states.put(forkBlock6.getMessage().hash_tree_root(), forkBlock6State);
+      states.put(forkBlock7.getMessage().hash_tree_root(), forkBlock7State);
+
+      add(
+          states,
           block1,
           block2,
           block3,
@@ -516,6 +591,9 @@ class MapDbDatabaseTest {
           forkBlock7,
           forkBlock8,
           forkBlock9);
+
+      assertStatesAvailable(states);
+
       assertThat(database.getSignedBlock(block7.getMessage().hash_tree_root())).contains(block7);
       assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
@@ -535,17 +613,36 @@ class MapDbDatabaseTest {
 
       // Close and re-read from disk store.
       database.close();
-      database = MapDbDatabase.createOnDisk(tempDir.toFile(), true);
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), true, storageMode);
       assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
       assertBlocksFinalized(block1, block2, block3, block7);
       assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
+
+      assertHotStatesAvailable(List.of(block7State, forkBlock7State));
+      switch (storageMode) {
+        case ARCHIVE:
+          final Map<Bytes32, BeaconState> expectedStates = new HashMap<>(states);
+          // We should've pruned non-canonical states prior to latest finalized slot
+          expectedStates.remove(forkBlock6.getMessage().hash_tree_root());
+          assertStatesAvailable(expectedStates);
+          break;
+        case PRUNE:
+          assertStatesUnavailableForBlocks(block3, forkBlock6);
+          assertStatesAvailable(
+              Map.of(
+                  block7.getMessage().hash_tree_root(),
+                  block7State,
+                  forkBlock7.getMessage().hash_tree_root(),
+                  forkBlock7State));
+          break;
+      }
 
       // Should still be able to retrieve finalized blocks by root
       assertThat(database.getSignedBlock(block1.getMessage().hash_tree_root())).contains(block1);
     } finally {
       // Close and re-read from disk store.
       database.close();
-      database = MapDbDatabase.createInMemory();
+      database = MapDbDatabase.createInMemory(storageMode);
     }
   }
 
@@ -599,6 +696,30 @@ class MapDbDatabaseTest {
             Stream.of(blocks).map(block -> block.getMessage().hash_tree_root()).collect(toList()));
   }
 
+  private void assertHotStatesAvailable(final List<BeaconState> states) {
+    final Store memoryStore = database.createMemoryStore().orElseThrow();
+    final List<BeaconState> hotStates =
+        memoryStore.getBlockRoots().stream()
+            .map(memoryStore::getBlockState)
+            .filter(Objects::nonNull)
+            .collect(toList());
+
+    assertThat(hotStates).hasSameElementsAs(states);
+  }
+
+  private void assertStatesAvailable(final Map<Bytes32, BeaconState> states) {
+    for (Bytes32 root : states.keySet()) {
+      assertThat(database.getState(root)).contains(states.get(root));
+    }
+  }
+
+  private void assertStatesUnavailableForBlocks(final SignedBeaconBlock... blocks) {
+    for (SignedBeaconBlock block : blocks) {
+      final Bytes32 root = block.getMessage().hash_tree_root();
+      assertThat(database.getState(root)).isEmpty();
+    }
+  }
+
   private void assertLatestUpdateResultContains(
       final Set<Bytes32> blockRoots, final Set<Checkpoint> checkpoints) {
     final DatabaseUpdateResult latestResult = getLatestUpdateResult();
@@ -618,6 +739,7 @@ class MapDbDatabaseTest {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
       assertThat(store.getBlock(prunedBlock)).isNull();
+      assertThat(store.getBlockState(prunedBlock)).isNull();
     }
     for (Checkpoint prunedCheckpoint : prunedCheckpoints) {
       assertThat(store.getCheckpointState(prunedCheckpoint)).isNull();
@@ -626,6 +748,19 @@ class MapDbDatabaseTest {
 
   private void addBlocks(final SignedBeaconBlock... blocks) {
     final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    for (SignedBeaconBlock block : blocks) {
+      transaction.putBlock(block.getMessage().hash_tree_root(), block);
+    }
+    commit(transaction);
+  }
+
+  private void add(final Map<Bytes32, BeaconState> states, final SignedBeaconBlock... blocks) {
+    final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
+    // Add states
+    for (Bytes32 blockRoot : states.keySet()) {
+      transaction.putBlockState(blockRoot, states.get(blockRoot));
+    }
+    // Add blocks
     for (SignedBeaconBlock block : blocks) {
       transaction.putBlock(block.getMessage().hash_tree_root(), block);
     }
