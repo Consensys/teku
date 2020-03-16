@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.discovery.noop;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
@@ -38,7 +37,7 @@ public class NoOpDiscoveryService implements DiscoveryService {
   }
 
   @Override
-  public CompletableFuture<Void> searchForPeers() {
+  public SafeFuture<Void> searchForPeers() {
     return SafeFuture.COMPLETE;
   }
 

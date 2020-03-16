@@ -13,11 +13,8 @@
 
 package tech.pegasys.artemis.networking.p2p.discovery.discv5;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.DiscoverySystem;
@@ -32,10 +29,6 @@ import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class DiscV5Service extends Service implements DiscoveryService {
-
-  @SuppressWarnings("ComparatorMethodParameterNotUsed")
-  public static final Comparator<NodeRecord> RANDOMLY =
-      (o1, o2) -> ThreadLocalRandom.current().nextInt(-1, 2);
 
   private final DiscoverySystem discoverySystem;
 
@@ -73,20 +66,13 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
-  public CompletableFuture<Void> searchForPeers() {
-    return randomActiveNode()
-        .map(nodeRecord -> discoverySystem.findNodes(nodeRecord, 256))
-        .orElseGet(
-            () -> SafeFuture.failedFuture(new IllegalStateException("No active nodes to search")));
+  public SafeFuture<Void> searchForPeers() {
+    return SafeFuture.of(discoverySystem.searchForNewPeers());
   }
 
   @Override
   public Optional<String> getEnr() {
     return Optional.of(discoverySystem.getLocalNodeRecord().asEnr());
-  }
-
-  private Optional<NodeRecord> randomActiveNode() {
-    return activeNodes().sorted(RANDOMLY).findAny();
   }
 
   private Stream<NodeRecord> activeNodes() {
