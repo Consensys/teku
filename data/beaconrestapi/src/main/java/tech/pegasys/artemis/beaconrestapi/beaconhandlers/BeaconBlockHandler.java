@@ -77,7 +77,8 @@ public class BeaconBlockHandler implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = SignedBeaconBlock.class)),
+            content = @OpenApiContent(from = SignedBeaconBlock.class),
+            description = "An object containing a signed beacon block."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(status = RES_NOT_FOUND, description = "Specified block not found")
       })
