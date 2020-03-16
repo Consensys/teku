@@ -31,13 +31,13 @@ import org.apache.logging.log4j.status.StatusLogger;
 
 public class LoggingConfigurator {
 
-  public static final String EVENT_LOGGER_NAME = "teku-event-log";
-  public static final String STATUS_LOGGER_NAME = "teku-status-log";
+  static final String EVENT_LOGGER_NAME = "teku-event-log";
+  static final String STATUS_LOGGER_NAME = "teku-status-log";
 
   private static final String CONSOLE_APPENDER_NAME = "teku-console-appender";
   private static final String CONSOLE_FORMAT = "%d{HH:mm:ss.SSS} [%-5level] - %msg%n";
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
-  private static final String FILE_FORMAT =
+  private static final String FILE_MESSAGE_FORMAT =
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
 
   private static LoggingDestination DESTINATION;
@@ -45,8 +45,6 @@ public class LoggingConfigurator {
   private static boolean INCLUDE_EVENTS;
   private static String FILE;
   private static String FILE_PATTERN;
-
-  // TODO get the log level from the root looger i.e the config file?
   private static Level LOG_LEVEL = Level.INFO;
 
   public static boolean isColorEnabled() {
@@ -91,9 +89,6 @@ public class LoggingConfigurator {
       return;
     }
 
-    // TODO warning about color & file?
-    // TODO message about what we're setting the logging to/as
-    // TODO any appenders / loggers that will be removed (via remove())
     StatusLogger.getLogger().info("Programmatic logging setup: {}", DESTINATION);
 
     Appender consoleAppender;
@@ -177,7 +172,7 @@ public class LoggingConfigurator {
     final Layout<?> layout =
         PatternLayout.newBuilder()
             .withConfiguration(configuration)
-            .withPattern(FILE_FORMAT)
+            .withPattern(FILE_MESSAGE_FORMAT)
             .build();
 
     final Appender fileAppender =
