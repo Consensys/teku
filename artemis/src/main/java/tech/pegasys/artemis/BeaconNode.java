@@ -71,9 +71,13 @@ public class BeaconNode {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
 
+    this.serviceController = new ServiceController(serviceConfig);
+
     LoggingConfigurator.setColor(config.isLoggingColorEnabled());
     LoggingConfigurator.setIncludeEvents(config.isLoggingIncludeEventsEnabled());
     LoggingConfigurator.setDestination(config.getLoggingDestination());
+    LoggingConfigurator.setFile(config.getLoggingFile());
+    LoggingConfigurator.setFilePattern(config.getLoggingFileNamePattern());
     LoggingConfigurator.update();
   }
 

@@ -141,6 +141,16 @@ public class ArtemisConfiguration {
         "both",
         "Whether all logs go only to the console, only to the log file, or both",
         PropertyValidator.anyOf("consoleOnly", "fileOnly", "both"));
+    builder.addString(
+        "logging.file",
+        "teku.log",
+        "Path containing the location (relative or absolute) and the log filename.",
+        PropertyValidator.isPresent());
+    builder.addString(
+        "logging.fileNamePattern",
+        "teku_%d{yyyy-MM-dd}.log",
+        "Pattern for the filename to apply to rolled over logs files.",
+        PropertyValidator.isPresent());
 
     // Outputs
     builder.addString(
@@ -437,5 +447,13 @@ public class ArtemisConfiguration {
 
   public boolean isLoggingColorEnabled() {
     return config.getBoolean("logging.colorEnabled");
+  }
+
+  public String getLoggingFile() {
+    return config.getString("logging.file");
+  }
+
+  public String getLoggingFileNamePattern() {
+    return config.getString("logging.fileNamePattern");
   }
 }

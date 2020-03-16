@@ -43,6 +43,8 @@ public class LoggingConfigurator {
   private static LoggingDestination DESTINATION;
   private static boolean COLOR;
   private static boolean INCLUDE_EVENTS;
+  private static String FILE;
+  private static String FILE_PATTERN;
 
   // TODO get the log level from the root looger i.e the config file?
   private static Level LOG_LEVEL = Level.INFO;
@@ -67,6 +69,14 @@ public class LoggingConfigurator {
 
   public static void setIncludeEvents(final boolean enabled) {
     LoggingConfigurator.INCLUDE_EVENTS = enabled;
+  }
+
+  public static void setFile(final String file) {
+    LoggingConfigurator.FILE = file;
+  }
+
+  public static void setFilePattern(final String pattern) {
+    FILE_PATTERN = pattern;
   }
 
   public static void update() {
@@ -160,16 +170,12 @@ public class LoggingConfigurator {
             .withPattern(FILE_FORMAT)
             .build();
 
-    // TODO config variables?
-    final String fileName = "teku.log";
-    final String filePattern = "teku_%d{yyyy-MM-dd}.log";
-
     final Appender fileAppender =
         RollingFileAppender.newBuilder()
             .setName(FILE_APPENDER_NAME)
             .setLayout(layout)
-            .withFileName(fileName)
-            .withFilePattern(filePattern)
+            .withFileName(FILE)
+            .withFilePattern(FILE_PATTERN)
             .withPolicy(
                 CompositeTriggeringPolicy.createPolicy(
                     OnStartupTriggeringPolicy.createPolicy(1),
