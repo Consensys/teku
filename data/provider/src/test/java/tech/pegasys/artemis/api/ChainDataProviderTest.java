@@ -54,6 +54,7 @@ import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
+import tech.pegasys.artemis.datastructures.state.ValidatorStatus;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -515,7 +516,8 @@ public class ChainDataProviderTest {
     List<ValidatorDuties> validatorDuties = future.get();
 
     assertThat(validatorDuties.size()).isEqualTo(1);
-    ValidatorDuties expected = new ValidatorDuties(BLSPubKey.empty(), null, null);
+    ValidatorDuties expected =
+        new ValidatorDuties(BLSPubKey.empty(), null, null, ValidatorStatus.UNKNOWN_STATUS);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
@@ -557,16 +559,23 @@ public class ChainDataProviderTest {
     assertThat(validatorDuties.size()).isEqualTo(3);
     assertThat(validatorDuties.get(0))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(0).pubkey, 0, 0));
+        .isEqualTo(
+            new ValidatorDuties(
+                alteredState.validators.get(0).pubkey, 0, 0, ValidatorStatus.UNKNOWN_STATUS));
     // even though we used key 11 it will come out as 0 since the default keys are all equal
     assertThat(validatorDuties.get(1))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 0, 0));
+        .isEqualTo(
+            new ValidatorDuties(
+                alteredState.validators.get(11).pubkey, 0, 0, ValidatorStatus.UNKNOWN_STATUS));
     assertThat(validatorDuties.get(2))
         .usingRecursiveComparison()
         .isEqualTo(
             new ValidatorDuties(
-                alteredState.validators.get(addedValidatorIndex).pubkey, addedValidatorIndex, 1));
+                alteredState.validators.get(addedValidatorIndex).pubkey,
+                addedValidatorIndex,
+                1,
+                ValidatorStatus.UNKNOWN_STATUS));
   }
 
   @Test

@@ -40,6 +40,7 @@ import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
+import tech.pegasys.artemis.datastructures.state.ValidatorStatus;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -259,11 +260,14 @@ public class ChainDataProvider {
     for (final BLSPubKey pubKey : pubKeys) {
       final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
       if (validatorIndex == null) {
-        dutiesList.add(new ValidatorDuties(pubKey, null, null));
+        dutiesList.add(new ValidatorDuties(pubKey, null, null, ValidatorStatus.UNKNOWN_STATUS));
       } else {
         dutiesList.add(
             new ValidatorDuties(
-                pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)));
+                pubKey,
+                validatorIndex,
+                getCommitteeIndex(committees, validatorIndex),
+                ValidatorStatus.UNKNOWN_STATUS));
       }
     }
     return dutiesList;
