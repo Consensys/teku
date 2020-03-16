@@ -33,6 +33,7 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
+import tech.pegasys.artemis.api.schema.Fork;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
@@ -80,6 +81,20 @@ public class ChainDataProvider {
     BeaconHead result =
         new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot.get(), headStateRoot.get());
     return Optional.of(result);
+  }
+
+  public Optional<Fork> getFork() {
+    if (!isStoreAvailable()) {
+      return Optional.empty();
+    }
+
+    Optional<tech.pegasys.artemis.datastructures.state.BeaconState> bestBlockRootState =
+        chainStorageClient.getBestBlockRootState();
+    if (bestBlockRootState.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(new Fork(bestBlockRootState.get().getFork()));
+    }
   }
 
   public SafeFuture<List<Committee>> getCommitteesAtEpoch(UnsignedLong epoch) {
