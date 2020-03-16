@@ -37,6 +37,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
@@ -107,10 +108,11 @@ public class BeaconRestApi {
   }
 
   private void addNodeHandlers(final DataProvider provider) {
+    app.get(GetFork.ROUTE, new GetFork(provider.getChainDataProvider(), jsonProvider));
     app.get(
         GetGenesisTime.ROUTE, new GetGenesisTime(provider.getChainDataProvider(), jsonProvider));
-    app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
     app.get(GetSyncing.ROUTE, new GetSyncing(provider.getSyncDataProvider(), jsonProvider));
+    app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider) {
