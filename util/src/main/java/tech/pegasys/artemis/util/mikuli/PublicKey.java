@@ -22,8 +22,8 @@ import org.apache.tuweni.bytes.Bytes;
 /** This class represents a BLS12-381 public key. */
 public final class PublicKey {
 
-  public static final int COMPRESSED_PK_SIZE = 48;
-  public static final int UNCOMPRESSED_PK_LENGTH = 49;
+  private static final int COMPRESSED_PK_SIZE = 48;
+  private static final int UNCOMPRESSED_PK_LENGTH = 49;
 
   /**
    * Generates a random, valid public key
@@ -50,11 +50,10 @@ public final class PublicKey {
    * @param keys The list of public keys to aggregate
    * @return PublicKey The public key
    */
-  public static PublicKey aggregate(List<PublicKey> keys) {
-    if (keys.isEmpty()) {
-      return new PublicKey(new G1Point());
-    }
-    return keys.stream().reduce((a, b) -> a.combine(b)).get();
+  static PublicKey aggregate(List<PublicKey> keys) {
+    return keys.isEmpty()
+        ? new PublicKey(new G1Point())
+        : keys.stream().reduce(PublicKey::combine).get();
   }
 
   /**
@@ -82,6 +81,15 @@ public final class PublicKey {
   private final Bytes rawData;
   private final Supplier<G1Point> point;
 
+  /**
+   * Construct from a SecretKey
+   *
+   * @param secretKey
+   */
+  public PublicKey(SecretKey secretKey) {
+    this(KeyPair.g1Generator.mul(secretKey.getScalarValue()));
+  }
+
   PublicKey(G1Point point) {
     this.rawData = point.toBytes();
     this.point = () -> point;
@@ -89,11 +97,6 @@ public final class PublicKey {
 
   PublicKey(Bytes rawData) {
     this.rawData = rawData;
-    this.point = Suppliers.memoize(() -> parsePublicKeyBytes(this.rawData));
-  }
-
-  public PublicKey(SecretKey secretKey) {
-    this.rawData = KeyPair.g1Generator.mul(secretKey.getScalarValue()).toBytes();
     this.point = Suppliers.memoize(() -> parsePublicKeyBytes(this.rawData));
   }
 

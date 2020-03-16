@@ -35,7 +35,7 @@ import tech.pegasys.artemis.ethtests.TestSuite;
 @ExtendWith(BouncyCastleExtension.class)
 public class initialization extends TestSuite {
 
-  @ParameterizedTest(name = "{index}.{3} root of Merkleizable")
+  @ParameterizedTest(name = "{index}.{3} genesis/initialization")
   @MethodSource({"genesisGenericInitializationSetup"})
   void genesisInitialization(
       BeaconState state,

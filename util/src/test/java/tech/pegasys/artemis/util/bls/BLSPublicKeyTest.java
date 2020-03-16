@@ -65,14 +65,14 @@ class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSamePublicKey() {
-    BLSPublicKey publicKey = BLSPublicKey.random();
+    BLSPublicKey publicKey = BLSPublicKey.random(42);
     assertEquals(publicKey, publicKey);
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalPublicKeys() {
-    BLSPublicKey publicKey = BLSPublicKey.random();
-    BLSPublicKey copyOfPublicKey = new BLSPublicKey(publicKey.getPublicKey());
+    BLSPublicKey publicKey = BLSPublicKey.random(42);
+    BLSPublicKey copyOfPublicKey = new BLSPublicKey(publicKey);
     assertEquals(publicKey, copyOfPublicKey);
   }
 
@@ -85,7 +85,7 @@ class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheSamePublicKey() {
-    BLSPublicKey publicKey1 = BLSPublicKey.random();
+    BLSPublicKey publicKey1 = BLSPublicKey.random(42);
     BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(publicKey1.toBytes());
     assertEquals(publicKey1, publicKey2);
   }

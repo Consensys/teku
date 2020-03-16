@@ -13,28 +13,63 @@
 
 package tech.pegasys.artemis.util.bls;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 
-public class BLSKeyPair {
+public final class BLSKeyPair {
 
-  private final BLSPublicKey publicKey;
-  private final BLSSecretKey secretKey;
-
+  /**
+   * Generate a key pair based on a randomly generated secret key.
+   *
+   * <p>This uses low-grade randomness and MUST NOT be used to generate production keys.
+   *
+   * @return a random key pair
+   */
   public static BLSKeyPair random() {
     return new BLSKeyPair(KeyPair.random());
   }
 
-  public static BLSKeyPair random(int entropy) {
-    return new BLSKeyPair(KeyPair.random(entropy));
+  /**
+   * Generate a key pair based on a secret key generated from a seed value.
+   *
+   * <p>This MUST NOT be used to generate production keys.
+   *
+   * @return a keypair generated from a seed
+   */
+  public static BLSKeyPair random(int seed) {
+    return new BLSKeyPair(KeyPair.random(seed));
   }
 
+  private final BLSPublicKey publicKey;
+  private final BLSSecretKey secretKey;
+
+  /**
+   * Construct from BLSPublicKey and BLSSecretKey
+   *
+   * @param publicKey a BLS public key
+   * @param secretKey a BLS secret key
+   */
   public BLSKeyPair(BLSPublicKey publicKey, BLSSecretKey secretKey) {
     this.publicKey = publicKey;
     this.secretKey = secretKey;
   }
 
-  public BLSKeyPair(KeyPair keyPair) {
+  /**
+   * Construct from a BLS secret key alone.
+   *
+   * @param secretKey a BLS secret key
+   */
+  public BLSKeyPair(BLSSecretKey secretKey) {
+    this(new BLSPublicKey(secretKey), secretKey);
+  }
+
+  /**
+   * Construct from a Mikuli key pair.
+   *
+   * @param keyPair a Mikuli key pair
+   */
+  BLSKeyPair(KeyPair keyPair) {
     this(new BLSPublicKey(keyPair.publicKey()), new BLSSecretKey(keyPair.secretKey()));
   }
 
@@ -44,6 +79,14 @@ public class BLSKeyPair {
 
   public BLSSecretKey getSecretKey() {
     return secretKey;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("publicKey", publicKey)
+        .add("secretKey", secretKey)
+        .toString();
   }
 
   @Override

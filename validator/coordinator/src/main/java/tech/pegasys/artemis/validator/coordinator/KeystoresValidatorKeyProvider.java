@@ -32,9 +32,8 @@ import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
 import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
@@ -50,7 +49,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     return keystorePasswordFilePairs.stream()
         .map(pair -> padLeft(loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()))))
         .distinct()
-        .map(privKey -> new BLSKeyPair(new KeyPair(SecretKey.fromBytes(privKey))))
+        .map(privKey -> new BLSKeyPair(BLSSecretKey.fromBytes(privKey)))
         .collect(toList());
   }
 

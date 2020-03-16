@@ -15,6 +15,7 @@ package tech.pegasys.artemis.util.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static tech.pegasys.artemis.util.mikuli.KeyPair.g1Generator;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
@@ -26,8 +27,9 @@ import org.apache.tuweni.bytes.Bytes;
 /** This class represents a Signature on G2 */
 public final class Signature {
 
-  public static final int COMPRESSED_SIG_SIZE = 96;
-  public static final int UNCOMPRESSED_SIG_SIZE = 192;
+  private static final int COMPRESSED_SIG_SIZE = 96;
+  private static final int UNCOMPRESSED_SIG_SIZE = 192;
+  private static final G1Point g1GeneratorNeg = g1Generator.neg();
 
   /**
    * Aggregates list of Signature pairs, returns the signature that corresponds to G2 point at
@@ -36,11 +38,10 @@ public final class Signature {
    * @param signatures The list of signatures to aggregate
    * @return Signature
    */
-  public static Signature aggregate(List<Signature> signatures) {
-    if (signatures.isEmpty()) {
-      return new Signature(new G2Point());
-    }
-    return signatures.stream().reduce(Signature::combine).get();
+  static Signature aggregate(List<Signature> signatures) {
+    return signatures.isEmpty()
+        ? new Signature(new G2Point())
+        : signatures.stream().reduce(Signature::combine).get();
   }
 
   /**
@@ -72,26 +73,13 @@ public final class Signature {
   /**
    * Create a random signature for testing
    *
-   * @return a random, valid signature
-   */
-  public static Signature random() {
-    KeyPair keyPair = KeyPair.random();
-    byte[] message = "Hello, world!".getBytes(UTF_8);
-    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, Bytes.ofUnsignedLong(48L));
-    return sigAndPubKey.signature();
-  }
-
-  /**
-   * Create a random signature for testing
-   *
    * @param entropy to seed the key pair generation
    * @return a random, valid signature
    */
   public static Signature random(int entropy) {
     KeyPair keyPair = KeyPair.random(entropy);
     byte[] message = "Hello, world!".getBytes(UTF_8);
-    SignatureAndPublicKey sigAndPubKey = BLS12381.sign(keyPair, message, Bytes.ofUnsignedLong(48L));
-    return sigAndPubKey.signature();
+    return BLS12381.sign(keyPair.secretKey(), Bytes.wrap(message));
   }
 
   // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
@@ -100,7 +88,7 @@ public final class Signature {
   private final Supplier<G2Point> point;
 
   /**
-   * Construct signature from a given G2 point
+   * Construct signature from a given G2 point.
    *
    * @param point the G2 point corresponding to the signature
    */
@@ -109,13 +97,18 @@ public final class Signature {
     this.point = () -> point;
   }
 
+  /**
+   * Construct signature from provided Bytes.
+   *
+   * @param rawData Bytes that may or may not correspond to a G2 point
+   */
   Signature(Bytes rawData) {
     this.rawData = rawData;
     this.point = Suppliers.memoize(() -> parseSignatureBytes(this.rawData));
   }
 
   /**
-   * Construct a copy of a signature
+   * Construct a copy of a signature.
    *
    * @param signature the signature to be copied
    */
@@ -140,12 +133,52 @@ public final class Signature {
   }
 
   /**
+   * Verify that this signature is correct for the given public key and G2Point.
+   *
+   * @param publicKey The public key, not null
+   * @param hashInG2 The G2 point corresponding to the message data to verify, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  boolean verify(PublicKey publicKey, G2Point hashInG2) {
+    try {
+      GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInG2, g1GeneratorNeg, point.get());
+      return e.isunity();
+    } catch (RuntimeException e) {
+      return false;
+    }
+  }
+
+  /**
+   * Verify that this signature is correct for the given lists of public keys and G2Points.
+   *
+   * @param publicKeys The list of public keys, not empty, not null
+   * @param hashesInG2 The list of G2 point corresponding to the messages to verify, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  boolean aggregateVerify(List<PublicKey> publicKeys, List<G2Point> hashesInG2) {
+    checkArgument(
+        publicKeys.size() == hashesInG2.size(),
+        "List of public keys and list of messages differ in length");
+    checkArgument(publicKeys.size() > 0, "List of public keys is empty");
+    try {
+      GTPoint gt1 = AtePairing.pair(publicKeys.get(0).g1Point(), hashesInG2.get(0));
+      for (int i = 1; i < publicKeys.size(); i++) {
+        gt1 = gt1.mul(AtePairing.pair(publicKeys.get(i).g1Point(), hashesInG2.get(i)));
+      }
+      GTPoint gt2 = AtePairing.pair(g1Generator, point.get());
+      return gt2.equals(gt1);
+    } catch (RuntimeException e) {
+      return false;
+    }
+  }
+
+  /**
    * Combines this signature with another signature, creating a new signature.
    *
    * @param signature the signature to combine with
    * @return a new signature as combination of both signatures
    */
-  public Signature combine(Signature signature) {
+  private Signature combine(Signature signature) {
     return new Signature(point.get().add(signature.point.get()));
   }
 

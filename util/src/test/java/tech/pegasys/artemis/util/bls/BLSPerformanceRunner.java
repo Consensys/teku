@@ -16,7 +16,6 @@ package tech.pegasys.artemis.util.bls;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,35 +53,25 @@ public class BLSPerformanceRunner {
   @ParameterizedTest()
   @MethodSource("singleAggregationCountOrder4")
   void benchmarkVerifyAggregate128(Integer i) {
-    Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
 
-    ArrayList<BLSKeyPair> membs = new ArrayList<>();
-    for (int j = 0; j < 128; j++) {
-      BLSKeyPair keyPair1 = BLSKeyPair.random();
-      membs.add(keyPair1);
-    }
+    final List<BLSKeyPair> keyPairs = BLSKeyGenerator.generateKeyPairs(128);
 
     Long time =
         executeRun(
             () -> {
               try {
                 List<BLSSignature> sigs =
-                    membs.stream()
-                        .map(
-                            pk -> {
-                              return BLSSignature.sign(pk, message1, Bytes.wrap(new byte[4]));
-                            })
+                    keyPairs.stream()
+                        .map(pk -> BLS.sign(pk.getSecretKey(), message))
                         .collect(Collectors.toList());
 
-                BLSPublicKey aggKey =
-                    BLSPublicKey.aggregate(
-                        membs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList()));
+                List<BLSPublicKey> publicKeys =
+                    keyPairs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList());
+                BLSSignature aggregateSignature = BLS.aggregate(sigs);
 
-                BLSSignature aggSig = BLSSignature.aggregate(sigs);
-
-                List<Bytes> bytes = Collections.nCopies(membs.size(), message1);
                 // Verify the aggregate signatures and keys
-                aggSig.checkSignature(Arrays.asList(aggKey), bytes, Bytes.wrap(new byte[4]));
+                BLS.fastAggregateVerify(publicKeys, message, aggregateSignature);
               } catch (RuntimeException e) {
                 LOG.error("Failed", e);
               }
@@ -108,7 +97,7 @@ public class BLSPerformanceRunner {
         executeRun(
             () -> {
               try {
-                BLSSignature.aggregate(sigs);
+                BLS.aggregate(sigs);
               } catch (RuntimeException e) {
                 LOG.error("Aggregation failed", e);
               }
@@ -121,57 +110,11 @@ public class BLSPerformanceRunner {
   @ParameterizedTest()
   @MethodSource("singleAggregationCountOrder4")
   void testSigning(Integer i) {
-    Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
 
-    // 1 & 2 sign message1; 3 & 4 sign message2
-    BLSKeyPair keyPair1 = BLSKeyPair.random();
+    BLSKeyPair keyPair1 = BLSKeyPair.random(1);
 
-    Long time = executeRun(() -> BLSSignature.sign(keyPair1, message1, Bytes.wrap(new byte[4])), i);
-    LOG.info("Time for i: {}, time: {}", i, time);
-  }
-
-  @ParameterizedTest()
-  @MethodSource("singleAggregationCountOrder4")
-  void testSigsAndMessagesCheckSignature(Integer i) {
-    Bytes message1 = Bytes.wrap("Message One".getBytes(UTF_8));
-    Bytes message2 = Bytes.wrap("Message Two".getBytes(UTF_8));
-
-    // 1 & 2 sign message1; 3 & 4 sign message2
-    BLSKeyPair keyPair1 = BLSKeyPair.random();
-    BLSKeyPair keyPair2 = BLSKeyPair.random();
-    BLSSignature signature1 = BLSSignature.sign(keyPair1, message1, Bytes.wrap(new byte[4]));
-    BLSSignature signature2 = BLSSignature.sign(keyPair2, message1, Bytes.wrap(new byte[4]));
-
-    BLSKeyPair keyPair3 = BLSKeyPair.random();
-    BLSKeyPair keyPair4 = BLSKeyPair.random();
-    BLSSignature signature3 = BLSSignature.sign(keyPair3, message2, Bytes.wrap(new byte[4]));
-    BLSSignature signature4 = BLSSignature.sign(keyPair4, message2, Bytes.wrap(new byte[4]));
-
-    // Aggregate keys 1 & 2, and keys 3 & 4
-    BLSPublicKey aggregatePublicKey12 =
-        BLSPublicKey.aggregate(Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey()));
-
-    BLSPublicKey aggregatePublicKey34 =
-        BLSPublicKey.aggregate(Arrays.asList(keyPair3.getPublicKey(), keyPair4.getPublicKey()));
-
-    // Aggregate the signatures
-    BLSSignature aggregateSignature =
-        BLSSignature.aggregate(Arrays.asList(signature1, signature2, signature3, signature4));
-
-    Long time =
-        executeRun(
-            () -> {
-              try {
-                // Verify the aggregate signatures and keys
-                aggregateSignature.checkSignature(
-                    Arrays.asList(aggregatePublicKey12, aggregatePublicKey34),
-                    Arrays.asList(message1, message2),
-                    Bytes.wrap(new byte[4]));
-              } catch (RuntimeException e) {
-                LOG.error("Check failed", e);
-              }
-            },
-            i);
+    Long time = executeRun(() -> BLS.sign(keyPair1.getSecretKey(), message), i);
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
@@ -184,7 +127,7 @@ public class BLSPerformanceRunner {
         executeRun(
             () -> {
               try {
-                BLSSignature.aggregate(Collections.singletonList(signature));
+                BLS.aggregate(Collections.singletonList(signature));
               } catch (RuntimeException e) {
                 LOG.error("Aggregation failed", e);
               }
@@ -194,7 +137,7 @@ public class BLSPerformanceRunner {
   }
 
   @ParameterizedTest()
-  @MethodSource("singleAggregationCount")
+  @MethodSource("singleAggregationCountOrder4")
   void testBLSPubKeyDeserialize(Integer i) {
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[48])));
 
@@ -203,7 +146,7 @@ public class BLSPerformanceRunner {
   }
 
   @ParameterizedTest()
-  @MethodSource("singleAggregationCount")
+  @MethodSource("singleAggregationCountOrder4")
   void testBLSPubKeySerialize(Integer i) {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
 
@@ -212,7 +155,7 @@ public class BLSPerformanceRunner {
   }
 
   @ParameterizedTest()
-  @MethodSource("singleAggregationCount")
+  @MethodSource("singleAggregationCountOrder4")
   void testSignatureSerialize(Integer i) {
     BLSSignature signature1 = BLSSignature.random();
 
@@ -221,7 +164,7 @@ public class BLSPerformanceRunner {
   }
 
   @ParameterizedTest()
-  @MethodSource("singleAggregationCount")
+  @MethodSource("singleAggregationCountOrder4")
   void testSignatureDeserialize(Integer i) {
     BLSSignature signature1 = BLSSignature.random();
     Bytes bytes = signature1.toBytes();

@@ -102,10 +102,7 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
-    BLSPublicKey differentPublicKey = BLSPublicKey.random();
-    while (pubkey.equals(differentPublicKey)) {
-      differentPublicKey = BLSPublicKey.random();
-    }
+    BLSPublicKey differentPublicKey = BLSPublicKey.random(99);
     Validator testValidator =
         Validator.create(
             differentPublicKey,
@@ -117,6 +114,7 @@ class ValidatorTest {
             exitEpoch,
             withdrawalEpoch);
 
+    assertNotEquals(pubkey, differentPublicKey);
     assertNotEquals(validator, testValidator);
   }
 

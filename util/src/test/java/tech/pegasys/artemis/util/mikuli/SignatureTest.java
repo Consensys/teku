@@ -24,31 +24,27 @@ class SignatureTest {
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
-    Signature signature = Signature.random();
+    Signature signature = Signature.random(42);
     assertEquals(signature, signature);
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalSignatures() {
-    Signature signature = Signature.random();
+    Signature signature = Signature.random(117);
     Signature copyOfSignature = new Signature(signature);
     assertEquals(signature, copyOfSignature);
   }
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
-    Signature signature1 = Signature.random();
-    Signature signature2 = Signature.random();
-    // Ensure that we have two different signatures, without assuming too much about .equals
-    while (signature1.g2Point().ecp2Point().equals(signature2.g2Point().ecp2Point())) {
-      signature2 = Signature.random();
-    }
+    Signature signature1 = Signature.random(1);
+    Signature signature2 = Signature.random(2);
     assertNotEquals(signature1, signature2);
   }
 
   @Test
   void succeedsWhenSerialisedSignaturesAre192BytesLong() {
-    Signature signature = Signature.random();
+    Signature signature = Signature.random(13);
     assertEquals(signature.toBytes().size(), 192);
   }
 
@@ -59,13 +55,13 @@ class SignatureTest {
 
   @Test
   void roundtripEncodeDecode() {
-    Signature signature = Signature.random();
+    Signature signature = Signature.random(257);
     assertEquals(signature, Signature.fromBytes(signature.toBytes()));
   }
 
   @Test
   void roundtripEncodeDecodeCompressed() {
-    Signature signature = Signature.random();
+    Signature signature = Signature.random(513);
     assertEquals(signature, Signature.fromBytesCompressed(signature.toBytesCompressed()));
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 
@@ -41,14 +42,14 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.bls.BLSAggregate;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class AttestationGenerator {
   private final List<BLSKeyPair> validatorKeys;
-  private final BLSKeyPair randomKeyPair = BLSKeyPair.random();
+  private final BLSKeyPair randomKeyPair = BLSKeyPair.random(12345);
 
   public AttestationGenerator(final List<BLSKeyPair> validatorKeys) {
     this.validatorKeys = validatorKeys;
@@ -143,7 +144,7 @@ public class AttestationGenerator {
     Bitlist targetBitlist = new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     srcAttestations.forEach(a -> targetBitlist.setAllBits(a.getAggregation_bits()));
     BLSSignature targetSig =
-        BLSAggregate.bls_aggregate_signatures(
+        BLS.aggregate(
             srcAttestations.stream()
                 .map(Attestation::getAggregate_signature)
                 .collect(Collectors.toList()));
@@ -264,11 +265,11 @@ public class AttestationGenerator {
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
-    Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
+    Bytes signing_root = compute_signing_root(attestationData, domain);
 
-    BLSSignature signature = BLSSignature.sign(attesterKeyPair, attestationMessage, domain);
+    BLSSignature signature = BLS.sign(attesterKeyPair.getSecretKey(), signing_root);
     return new Attestation(aggregationBitfield, attestationData, signature);
   }
 }

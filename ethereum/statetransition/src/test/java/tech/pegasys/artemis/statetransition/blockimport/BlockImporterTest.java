@@ -136,7 +136,7 @@ public class BlockImporterTest {
     // make one attestation signature invalid
     aggregatedAttestations
         .get(aggregatedAttestations.size() / 2)
-        .setAggregate_signature(BLSSignature.random());
+        .setAggregate_signature(BLSSignature.random(1));
 
     UnsignedLong currentSlotFinal = currentSlot.plus(UnsignedLong.ONE);
 
