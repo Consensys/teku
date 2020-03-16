@@ -75,7 +75,7 @@ public class PeerManager implements ConnectionHandler {
 
   public SafeFuture<Peer> connect(final Multiaddr peer, final Network network) {
     LOG.debug("Connecting to {}", peer);
-    return SafeFuture.of(network.connect(peer))
+    return SafeFuture.of(() -> network.connect(peer))
         .thenApply(
             connection -> {
               final LibP2PNodeId nodeId =
