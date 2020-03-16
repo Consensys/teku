@@ -57,27 +57,13 @@ public class LoggingConfigurator {
     LOG_LEVEL = level;
   }
 
-  public static void setDestination(final LoggingDestination destination) {
-    LoggingConfigurator.DESTINATION = destination;
-  }
+  public static void update(final LoggingConfiguration configuration) {
+    COLOR = configuration.isColorEnabled();
+    DESTINATION = configuration.getDestination();
+    INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
+    FILE = configuration.getFile();
+    FILE_PATTERN = configuration.getFileNamePattern();
 
-  public static void setColor(final boolean enabled) {
-    LoggingConfigurator.COLOR = enabled;
-  }
-
-  public static void setIncludeEvents(final boolean enabled) {
-    LoggingConfigurator.INCLUDE_EVENTS = enabled;
-  }
-
-  public static void setFile(final String file) {
-    LoggingConfigurator.FILE = file;
-  }
-
-  public static void setFilePattern(final String pattern) {
-    FILE_PATTERN = pattern;
-  }
-
-  public static void update() {
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     addLoggersProgrammatically((AbstractConfiguration) ctx.getConfiguration());
     ctx.updateLoggers();
