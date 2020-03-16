@@ -208,7 +208,7 @@ final class ArtemisConfigurationTest {
   }
 
   @Test
-  void lloggingDestinationShouldDefaultToBoth() {
+  void loggingDestinationShouldDefaultToBoth() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
     assertThat(config.getLoggingDestination()).isEqualTo(LoggingDestination.BOTH);
   }
@@ -226,5 +226,37 @@ final class ArtemisConfigurationTest {
     final ArtemisConfiguration configFile =
         ArtemisConfiguration.fromString("logging.destination = \"fileOnly\"");
     assertThat(configFile.getLoggingDestination()).isEqualTo(LoggingDestination.FILE_ONLY);
+  }
+
+  @Test
+  void loggingFileShouldExceptionWhenIsNotString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.file = false"));
+
+    assertThat(exception.getMessage()).contains("logging.file' requires a string");
+  }
+
+  @Test
+  void loggingFileShouldDefaultToTekuLog() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.getLoggingFile()).isEqualTo("teku.log");
+  }
+
+  @Test
+  void loggingFileNamePatternShouldExceptionWhenIsNotString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.fileNamePattern = false"));
+
+    assertThat(exception.getMessage()).contains("logging.fileNamePattern' requires a string");
+  }
+
+  @Test
+  void loggingFileNamePatternShouldDefault() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.getLoggingFileNamePattern()).isEqualTo("teku_%d{yyyy-MM-dd}.log");
   }
 }
