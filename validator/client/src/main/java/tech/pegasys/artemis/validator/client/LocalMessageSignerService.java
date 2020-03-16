@@ -16,6 +16,7 @@ package tech.pegasys.artemis.validator.client;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
@@ -27,7 +28,7 @@ public class LocalMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> sign(final Bytes message, final Bytes domain) {
-    return SafeFuture.completedFuture(BLSSignature.sign(keypair, message, domain));
+  public SafeFuture<BLSSignature> sign(final Bytes signing_root) {
+    return SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root));
   }
 }

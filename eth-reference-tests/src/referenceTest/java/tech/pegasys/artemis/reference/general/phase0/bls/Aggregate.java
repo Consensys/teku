@@ -20,29 +20,26 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Stream;
-import org.apache.tuweni.junit.BouncyCastleExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
+import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-@ExtendWith(BouncyCastleExtension.class)
-class aggregate_pubkeys extends TestSuite {
+class Aggregate extends TestSuite {
 
-  // The aggregate_pubkeys handler should aggregate the keys in the input, and the result should
-  // match the expected output.
-  @ParameterizedTest(name = "{index}. aggregate pub keys {0} -> {1}")
-  @MethodSource("readAggregatePublicKeys")
-  void aggregatePubkeys(List<PublicKey> pubkeys, PublicKey aggregatePubkeyExpected) {
-    PublicKey aggregatePubkeyActual = PublicKey.aggregate(pubkeys);
-    assertEquals(aggregatePubkeyExpected, aggregatePubkeyActual);
+  @ParameterizedTest(name = "{index}. aggregate {2}")
+  @MethodSource("aggregateData")
+  void aggregate(
+      List<BLSSignature> signatures, BLSSignature aggregateSignatureExpected, String testname) {
+    BLSSignature aggregateSignatureActual = BLS.aggregate(signatures);
+    assertEquals(aggregateSignatureExpected, aggregateSignatureActual);
   }
 
   @MustBeClosed
-  static Stream<Arguments> readAggregatePublicKeys() {
-    Path path = Paths.get("general", "phase0", "bls", "aggregate_pubkeys", "small", "agg_pub_keys");
-    return aggregatePublicKeysSetup(path);
+  static Stream<Arguments> aggregateData() {
+    Path path = Paths.get("general/phase0/bls/aggregate/small");
+    return aggregateSetup(path);
   }
 }

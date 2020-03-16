@@ -15,6 +15,7 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.getGenericAttestationData;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
@@ -191,10 +192,11 @@ public class ValidatorCoordinator extends Service {
   @Subscribe
   public void onAttestationEvent(BroadcastAttestationEvent event) throws IllegalArgumentException {
     try {
+
+      UnsignedLong slot = event.getNodeSlot();
       Store store = chainStorageClient.getStore();
       BeaconBlock headBlock = store.getBlock(event.getHeadBlockRoot());
       BeaconState headState = store.getBlockState(event.getHeadBlockRoot());
-      UnsignedLong slot = event.getNodeSlot();
 
       if (!isGenesis(slot) && isEpochStart(slot)) {
         UnsignedLong epoch = compute_epoch_at_slot(slot);
@@ -247,11 +249,11 @@ public class ValidatorCoordinator extends Service {
     Bitlist aggregationBitfield =
         AttestationUtil.getAggregationBits(committeeSize, indexIntoCommittee);
     AttestationData attestationData = genericAttestationData.withIndex(committee.getIndex());
-    Bytes32 attestationMessage = AttestationUtil.getAttestationMessageToSign(attestationData);
     Bytes domain =
         get_domain(state, DOMAIN_BEACON_ATTESTER, attestationData.getTarget().getEpoch());
+    Bytes signing_root = compute_signing_root(attestationData, domain);
 
-    BLSSignature signature = validators.get(attester).sign(attestationMessage, domain).join();
+    BLSSignature signature = validators.get(attester).sign(signing_root).join();
     Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
     attestationAggregator.addOwnValidatorAttestation(new Attestation(attestation));
     this.eventBus.post(attestation);

@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 
 import com.google.common.primitives.UnsignedLong;
@@ -21,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
@@ -41,8 +41,6 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BlockProposalUtil {
 
@@ -87,7 +85,7 @@ public class BlockProposalUtil {
     newBlock.setState_root(stateRoot);
 
     // Sign block and set block signature
-    BLSSignature blockSignature = getBlockSignature(state, newBlock, signer);
+    BLSSignature blockSignature = get_block_signature(state, newBlock, signer);
 
     return new SignedBeaconBlock(newBlock, blockSignature);
   }
@@ -154,17 +152,12 @@ public class BlockProposalUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
    */
-  private BLSSignature getBlockSignature(
+  private BLSSignature get_block_signature(
       final BeaconState state, final BeaconBlock block, final MessageSignerService signer) {
     final Bytes domain =
-        get_domain(
-            state,
-            Constants.DOMAIN_BEACON_PROPOSER,
-            BeaconStateUtil.compute_epoch_at_slot(block.getSlot()));
-
-    final Bytes32 blockRoot = block.hash_tree_root();
-
-    return signer.sign(blockRoot, domain).join();
+        get_domain(state, Constants.DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(block.getSlot()));
+    final Bytes signing_root = compute_signing_root(block, domain);
+    return signer.sign(signing_root).join();
   }
 
   /**
@@ -179,9 +172,8 @@ public class BlockProposalUtil {
    */
   public BLSSignature get_epoch_signature(
       final BeaconState state, final UnsignedLong epoch, final MessageSignerService signer) {
-    Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
     Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
-    return signer.sign(messageHash, domain).join();
+    Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
+    return signer.sign(signing_root).join();
   }
 }

@@ -18,28 +18,33 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class priv_to_pub extends TestSuite {
+class FastAggregateVerify extends TestSuite {
 
-  // The priv_to_pub handler should compute the public key for the given private key input, and the
-  // result should match the expected output.
-  @ParameterizedTest(name = "{index}. private to public key {0} -> {1}")
-  @MethodSource("readPrivateToPublicKey")
-  void privateToPublicKey(SecretKey secretKey, PublicKey pubkeyExpected) {
-    PublicKey pubkeyActual = new PublicKey(secretKey);
-    assertEquals(pubkeyExpected, pubkeyActual);
+  @ParameterizedTest(name = "{index}. fastAggregateVerify {4}")
+  @MethodSource("fastAggregateVerifyData")
+  void fastAggregateVerify(
+      List<BLSPublicKey> publicKeys,
+      Bytes message,
+      BLSSignature signature,
+      Boolean expected,
+      String testname) {
+    assertEquals(expected, BLS.fastAggregateVerify(publicKeys, message, signature));
   }
 
   @MustBeClosed
-  static Stream<Arguments> readPrivateToPublicKey() {
-    Path path = Paths.get("/general/phase0/bls/priv_to_pub/small");
-    return privateKeyPublicKeySetup(path);
+  static Stream<Arguments> fastAggregateVerifyData() {
+    Path path = Paths.get("general/phase0/bls/fast_aggregate_verify/small");
+    return fastAggregateVerifySetup(path);
   }
 }

@@ -60,7 +60,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
     this.attesting_indices = SSZList.createMutable(indexedAttestation.getAttesting_indices());
     this.data = indexedAttestation.getData();
-    this.signature = new BLSSignature(indexedAttestation.getSignature().getSignature());
+    this.signature = new BLSSignature(indexedAttestation.getSignature());
   }
 
   @Override
