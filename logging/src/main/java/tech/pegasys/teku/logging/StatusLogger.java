@@ -32,10 +32,6 @@ public class StatusLogger {
     this.log = LogManager.getLogger(name);
   }
 
-  public void startupFailure(final Throwable cause) {
-    log.fatal("Startup failed", cause);
-  }
-
   public void sendDepositFailure(final Throwable cause) {
     fatal(
         () ->
