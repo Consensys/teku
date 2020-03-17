@@ -81,6 +81,7 @@ public class BeaconNodeCommandTest {
     // most likely a dev option
     assertThat(artemisConfiguration.getStartState()).isEqualTo(null);
 
+    assertThat(artemisConfiguration.getStateStorageMode()).isEqualTo("prune");
     assertThat(artemisConfiguration.getTargetPeerCountRangeLowerBound()).isEqualTo(20);
     assertThat(artemisConfiguration.getTargetPeerCountRangeUpperBound()).isEqualTo(30);
 
