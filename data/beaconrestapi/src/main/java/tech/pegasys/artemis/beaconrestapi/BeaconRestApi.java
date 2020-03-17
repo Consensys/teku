@@ -129,6 +129,10 @@ public class BeaconRestApi {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
     app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
+    app.get(
+        tech.pegasys.artemis.beaconrestapi.handlers.validator.GetBlock.ROUTE,
+        new tech.pegasys.artemis.beaconrestapi.handlers.validator.GetBlock(
+            dataProvider, jsonProvider));
 
     app.post(PostValidatorDuties.ROUTE, new PostValidatorDuties(provider, jsonProvider));
   }

@@ -71,4 +71,8 @@ public class BLSSignature {
   public static BLSSignature empty() {
     return new BLSSignature(Bytes.wrap(new byte[SIZE]));
   }
+
+  public final Bytes getBytes() {
+    return bytes;
+  }
 }

@@ -18,9 +18,12 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.api.schema.BLSSignature;
 
 public class SingleQueryParameterUtils {
 
+  public static final String INVALID_BYTES96_DATA =
+      "Unable to read Bytes96 data from query parameter.";
   public static final String INVALID_BYTES32_DATA =
       "Unable to read Bytes32 data from query parameter.";
   public static final String INVALID_NUMERIC_VALUE =
@@ -88,6 +91,17 @@ public class SingleQueryParameterUtils {
     String stringValue = validateQueryParameter(parameterMap, key);
     try {
       return Bytes32.fromHexString(stringValue);
+    } catch (IllegalArgumentException ex) {
+      throw new IllegalArgumentException(INVALID_BYTES32_DATA);
+    }
+  }
+
+  public static BLSSignature getParameterValueAsBLSSignature(
+      final Map<String, List<String>> parameterMap, final String key)
+      throws IllegalArgumentException {
+    String stringValue = validateQueryParameter(parameterMap, key);
+    try {
+      return BLSSignature.fromHexString(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_BYTES32_DATA);
     }
