@@ -405,8 +405,8 @@ public class SafeFutureTest {
 
   @Test
   public void allOfFailFast_failImmediatelyWhenAnyFutureFails() {
-      final SafeFuture<Void> future1 = new SafeFuture<>();
-      final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
     final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2);
     assertThat(result).isNotDone();
 
@@ -417,9 +417,9 @@ public class SafeFutureTest {
 
   @Test
   public void allOfFailFast_failImmediatelyWhenSomeFuturesCompleteAndOneFails() {
-      final SafeFuture<Void> future1 = new SafeFuture<>();
-      final SafeFuture<Void> future2 = new SafeFuture<>();
-      final SafeFuture<Void> future3 = new SafeFuture<>();
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> future3 = new SafeFuture<>();
     final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2, future3);
     assertThat(result).isNotDone();
 
@@ -433,8 +433,8 @@ public class SafeFutureTest {
 
   @Test
   public void allOfFailFast_completesWhenAllFuturesComplete() {
-      final SafeFuture<Void> future1 = new SafeFuture<>();
-      final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
     final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2);
     assertThat(result).isNotDone();
 
