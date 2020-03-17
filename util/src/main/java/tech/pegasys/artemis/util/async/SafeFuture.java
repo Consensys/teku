@@ -21,6 +21,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -94,6 +95,27 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   public static <U> SafeFuture<Void> allOf(final SafeFuture<?>... futures) {
     return of(CompletableFuture.allOf(futures));
+  }
+
+  /**
+   * Returns a new SafeFuture that is completed when all of the given SafeFutures complete
+   * successfully or completes exceptionally immediately when any of the SafeFutures complete
+   * exceptionally. The results, if any, of the given SafeFutures are not reflected in the returned
+   * SafeFuture, but may be obtained by inspecting them individually. If no SafeFutures are
+   * provided, returns a SafeFuture completed with the value {@code null}.
+   *
+   * <p>Among the applications of this method is to await completion of a set of independent
+   * SafeFutures before continuing a program, as in: {@code SafeFuture.allOf(c1, c2, c3).join();}.
+   *
+   * @param futures the SafeFutures
+   * @return a new SafeFuture that is completed when all of the given SafeFutures complete
+   * @throws NullPointerException if the array or any of its elements are {@code null}
+   */
+  public static <U> SafeFuture<Void> allOfFailFast(final SafeFuture<?>... futures) {
+    final SafeFuture<Void> complete = new SafeFuture<>();
+    Stream.of(futures).forEach(future -> future.finish(() -> {}, complete::completeExceptionally));
+    allOf(futures).propagateTo(complete);
+    return complete;
   }
 
   public static SafeFuture<Object> anyOf(final SafeFuture<?>... futures) {
