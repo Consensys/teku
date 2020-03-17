@@ -26,24 +26,23 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 
 class YamlKeysWriterTest {
-  private static final SecretKey validator1SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey validator1SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x000000000000000000000000000000002CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460"));
-  private static final SecretKey withdrawal1SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey withdrawal1SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x000000000000000000000000000000006EA631AA885EC84AFA60BBD7887B5DBC91F594DEA29334E99576B51FAAD0E453"));
-  private static final SecretKey validator2SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey validator2SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x00000000000000000000000000000000147599AA450AADF69988F20FF1ADB3A3BF31BF9CDC77CF492FF95667708D8E79"));
-  private static final SecretKey withdrawal2SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey withdrawal2SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x000000000000000000000000000000000610B84CD68FB0FAB2F04A2A05EE01CD5F7374EB8EA93E26DB9C61DD2704B5BD"));
   private static final String yamlLine1 =
@@ -64,31 +63,33 @@ class YamlKeysWriterTest {
   void keysAreWrittenOnSystemOutput() {
     final ByteArrayOutputStream bytesStream = new ByteArrayOutputStream();
     final KeysWriter keysWriter = new YamlKeysWriter(new PrintStream(bytesStream, true, UTF_8));
-    keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator1SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal1SecretKey)));
+    keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
     assertThat(new String(bytesStream.toByteArray(), UTF_8)).isEqualTo(yamlLine1);
 
-    keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator2SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal2SecretKey)));
+    keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
 
     assertThat(new String(bytesStream.toByteArray(), UTF_8)).isEqualTo(expectedYaml);
   }
 
   @Test
-  void keysAreWrittenToFile(@TempDir final Path tempDir) throws IOException {
+  void keysAreWrittenToExistingFile(@TempDir final Path tempDir) throws IOException {
     final Path keysFile = Files.createTempFile(tempDir, "keys", ".yaml");
+    assertKeysAreWritten(keysFile);
+  }
+
+  @Test
+  void fileGetsCreatedAndKeysAreWritten(@TempDir final Path tempDir) throws IOException {
+    final Path keysFile = tempDir.resolve("keys.yaml");
+    assertKeysAreWritten(keysFile);
+  }
+
+  private void assertKeysAreWritten(final Path keysFile) {
     final KeysWriter keysWriter = new YamlKeysWriter(keysFile);
 
-    keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator1SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal1SecretKey)));
+    keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
     assertThat(contentOf(keysFile.toFile())).isEqualTo(yamlLine1);
 
-    keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator2SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal2SecretKey)));
+    keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
     assertThat(contentOf(keysFile.toFile())).isEqualTo(expectedYaml);
   }
 }

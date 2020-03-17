@@ -29,9 +29,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 class KeystoresValidatorKeyProviderTest {
   private static final String EXPECTED_PASSWORD = "testpassword";
@@ -42,7 +41,7 @@ class KeystoresValidatorKeyProviderTest {
       Bytes.fromHexString(
           "0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", KEY_LENGTH);
   private static final BLSKeyPair EXPECTED_BLS_KEY_PAIR =
-      new BLSKeyPair(new KeyPair(SecretKey.fromBytes(BLS_PRIVATE_KEY)));
+      new BLSKeyPair(BLSSecretKey.fromBytes(BLS_PRIVATE_KEY));
 
   @Test
   void shouldLoadKeysFromKeyStores(@TempDir final Path tempDir) throws IOException {

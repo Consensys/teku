@@ -11,20 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.beaconrestapi.schema;
+package tech.pegasys.artemis.api;
 
-import com.google.common.primitives.UnsignedLong;
-import java.util.List;
+public enum ValidatorStatus {
+  ACTIVE,
+  DEPOSITED,
+  PENDING,
+  SLASHING,
+  EXITING,
+  EXITED,
+  UNKNOWN_STATUS;
 
-public class CommitteeAssignment {
-  public final UnsignedLong slot;
-  public final UnsignedLong index;
-  public final List<Integer> committee;
-
-  public CommitteeAssignment(
-      tech.pegasys.artemis.datastructures.state.CommitteeAssignment committeeAssignment) {
-    this.slot = committeeAssignment.getSlot();
-    this.index = committeeAssignment.getCommitteeIndex();
-    this.committee = committeeAssignment.getCommittee();
+  @Override
+  public String toString() {
+    return name().toLowerCase();
   }
 }

@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.api.ChainDataProvider.getValidatorStatus;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -45,6 +46,7 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
+import tech.pegasys.artemis.api.schema.Fork;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
@@ -59,6 +61,7 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ChainDataProviderTest {
   private static CombinedChainDataClient combinedChainDataClient;
@@ -514,7 +517,8 @@ public class ChainDataProviderTest {
     List<ValidatorDuties> validatorDuties = future.get();
 
     assertThat(validatorDuties.size()).isEqualTo(1);
-    ValidatorDuties expected = new ValidatorDuties(BLSPubKey.empty(), null, null);
+    ValidatorDuties expected =
+        new ValidatorDuties(BLSPubKey.empty(), null, null, ValidatorStatus.UNKNOWN_STATUS);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
@@ -523,7 +527,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     // add a validator with a different pubkey since by default they are all the same
     tech.pegasys.artemis.datastructures.state.BeaconState alteredInternalState =
-        addValidator(beaconStateInternal);
+        addActiveValidator(beaconStateInternal);
     BeaconState alteredState = new BeaconState(alteredInternalState);
     int addedValidatorIndex = alteredState.validators.size() - 1;
 
@@ -556,16 +560,107 @@ public class ChainDataProviderTest {
     assertThat(validatorDuties.size()).isEqualTo(3);
     assertThat(validatorDuties.get(0))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(0).pubkey, 0, 0));
+        .isEqualTo(
+            new ValidatorDuties(
+                alteredState.validators.get(0).pubkey, 0, 0, ValidatorStatus.DEPOSITED));
     // even though we used key 11 it will come out as 0 since the default keys are all equal
     assertThat(validatorDuties.get(1))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 0, 0));
+        .isEqualTo(
+            new ValidatorDuties(
+                alteredState.validators.get(11).pubkey, 0, 0, ValidatorStatus.DEPOSITED));
     assertThat(validatorDuties.get(2))
         .usingRecursiveComparison()
         .isEqualTo(
             new ValidatorDuties(
-                alteredState.validators.get(addedValidatorIndex).pubkey, addedValidatorIndex, 1));
+                alteredState.validators.get(addedValidatorIndex).pubkey,
+                addedValidatorIndex,
+                1,
+                ValidatorStatus.ACTIVE));
+  }
+
+  @Test
+  public void getFork_shouldBeEmptyIfNoBlockRoot() {
+    ChainDataProvider provider =
+        new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockChainStorageClient.getBestBlockRootState()).thenReturn(Optional.empty());
+    Optional<Fork> optionalFork = provider.getFork();
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    assertThat(optionalFork.isEmpty()).isTrue();
+  }
+
+  @Test
+  public void getFork_shouldHaveForkIfBlockRootNotEmpty() {
+    ChainDataProvider provider =
+        new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockChainStorageClient.getBestBlockRootState())
+        .thenReturn(Optional.of(beaconStateInternal));
+    Optional<Fork> optionalFork = provider.getFork();
+    verify(mockCombinedChainDataClient).isStoreAvailable();
+    assertThat(optionalFork.isEmpty()).isFalse();
+    assertThat(optionalFork.get()).isEqualToComparingFieldByField(beaconState.fork);
+  }
+
+  @Test
+  public void getStatus_shouldBeActiveForFarFutureEpoch() {
+    tech.pegasys.artemis.datastructures.state.Validator v =
+        DataStructureUtil.randomValidator(12345);
+    assertThat(getValidatorStatus(v, Constants.FAR_FUTURE_EPOCH)).isEqualTo(ValidatorStatus.ACTIVE);
+  }
+
+  @Test
+  public void getStatus_shouldBeDeposited() {
+    final MutableValidator mutableValidator = getMutableValidator();
+    mutableValidator.setActivation_eligibility_epoch(ONE);
+    assertThat(getValidatorStatus(mutableValidator, ZERO)).isEqualTo(ValidatorStatus.DEPOSITED);
+  }
+
+  @Test
+  public void getStatus_shouldBePending() {
+    assertThat(getValidatorStatus(getMutableValidator(), UnsignedLong.ZERO))
+        .isEqualTo(ValidatorStatus.PENDING);
+  }
+
+  @Test
+  public void getStatus_shouldBeExiting() {
+    final MutableValidator mutableValidator =
+        getMutableValidatorWithExitEpoch(UnsignedLong.valueOf(5));
+    assertThat(getValidatorStatus(mutableValidator, UnsignedLong.valueOf(4)))
+        .isEqualTo(ValidatorStatus.EXITING);
+  }
+
+  @Test
+  public void getStatus_shouldBeSlashing() {
+    final MutableValidator mutableValidator =
+        getMutableValidatorWithExitEpoch(UnsignedLong.valueOf(5));
+    mutableValidator.setSlashed(true);
+    assertThat(getValidatorStatus(mutableValidator, UnsignedLong.valueOf(4)))
+        .isEqualTo(ValidatorStatus.SLASHING);
+  }
+
+  @Test
+  public void getStatus_shouldBeExited() {
+    final MutableValidator mutableValidator =
+        getMutableValidatorWithExitEpoch(UnsignedLong.valueOf(5));
+    assertThat(getValidatorStatus(mutableValidator, UnsignedLong.valueOf(6)))
+        .isEqualTo(ValidatorStatus.EXITED);
+  }
+
+  private MutableValidator getMutableValidator() {
+    // default exit epoch is Constants.FAR_FUTURE_EPOCH
+    final MutableValidator mutableValidator =
+        DataStructureUtil.randomValidator(12345).createWritableCopy();
+    mutableValidator.setActivation_eligibility_epoch(UnsignedLong.ZERO);
+    mutableValidator.setActivation_epoch(UnsignedLong.ONE);
+    return mutableValidator;
+  }
+
+  private MutableValidator getMutableValidatorWithExitEpoch(UnsignedLong exitEpoch) {
+    final MutableValidator mutableValidator = getMutableValidator();
+    mutableValidator.setExit_epoch(exitEpoch);
+    return mutableValidator;
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(
@@ -581,11 +676,14 @@ public class ChainDataProviderTest {
     verify(mockCombinedChainDataClient).isFinalized(ZERO);
   }
 
-  private tech.pegasys.artemis.datastructures.state.BeaconState addValidator(
+  private tech.pegasys.artemis.datastructures.state.BeaconState addActiveValidator(
       final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
     // create a validator and add it to the list
     MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
+    // set activation epochs so that it will be ACTIVE status
+    v.setActivation_eligibility_epoch(ZERO);
+    v.setActivation_epoch(ONE);
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
   }

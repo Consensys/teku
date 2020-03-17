@@ -28,9 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
@@ -51,7 +50,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
                 Map<String, String> keys = (Map<String, String>) value;
                 final String privKey = keys.get("privkey");
                 return new BLSKeyPair(
-                    new KeyPair(SecretKey.fromBytes(padLeft(Bytes.fromHexString(privKey)))));
+                    BLSSecretKey.fromBytes(padLeft(Bytes.fromHexString(privKey))));
               })
           .collect(toList());
     } catch (final IOException e) {

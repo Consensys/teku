@@ -16,16 +16,34 @@ package tech.pegasys.artemis.util.mikuli;
 import org.apache.milagro.amcl.BLS381.FP12;
 import org.apache.milagro.amcl.BLS381.PAIR;
 
-/** Function that maps 2 points on an elliptic curve to a number. */
 final class AtePairing {
 
   /**
-   * @param p1 the point in Group1, not null
-   * @param p2 the point in Group2, not null
+   * Calculate the Ate pairing of points p and q.
+   *
+   * @param p the point in Group1, not null
+   * @param q the point in Group2, not null
    * @return GTPoint
    */
-  static GTPoint pair(G1Point p1, G2Point p2) {
-    FP12 e = PAIR.ate(p2.ecp2Point(), p1.ecpPoint());
+  static GTPoint pair(G1Point p, G2Point q) {
+    FP12 e = PAIR.ate(q.ecp2Point(), p.ecpPoint());
+    return new GTPoint(PAIR.fexp(e));
+  }
+
+  /**
+   * Calculates the product of pairings while performing the final exponentiation only once. This
+   * ought to be more efficient.
+   *
+   * <p>If pair(-p, q) == pair(r, s) then the result of this is "one" in GT.
+   *
+   * @param p a point in Group1, not null
+   * @param q a point in Group2, not null
+   * @param r a point in Group1, not null
+   * @param s a point in Group2, not null
+   * @return The result of the double pairing
+   */
+  static GTPoint pair2(G1Point p, G2Point q, G1Point r, G2Point s) {
+    FP12 e = PAIR.ate2(q.ecp2Point(), p.ecpPoint(), s.ecp2Point(), r.ecpPoint());
     return new GTPoint(PAIR.fexp(e));
   }
 }

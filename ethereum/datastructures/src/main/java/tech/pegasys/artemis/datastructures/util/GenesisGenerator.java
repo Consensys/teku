@@ -19,7 +19,7 @@ import static tech.pegasys.artemis.util.config.Constants.EFFECTIVE_BALANCE_INCRE
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_DAY;
+import static tech.pegasys.artemis.util.config.Constants.MIN_GENESIS_DELAY;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
@@ -143,9 +143,10 @@ public class GenesisGenerator {
   }
 
   private void updateGenesisTime(final UnsignedLong eth1Timestamp) {
-    state.setGenesis_time(
+    UnsignedLong genesisTime =
         eth1Timestamp
-            .minus(eth1Timestamp.mod(UnsignedLong.valueOf(SECONDS_PER_DAY)))
-            .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(SECONDS_PER_DAY))));
+            .minus(eth1Timestamp.mod(UnsignedLong.valueOf(MIN_GENESIS_DELAY)))
+            .plus(UnsignedLong.valueOf(2).times(UnsignedLong.valueOf(MIN_GENESIS_DELAY)));
+    state.setGenesis_time(genesisTime);
   }
 }

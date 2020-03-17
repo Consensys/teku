@@ -13,12 +13,12 @@
 
 package tech.pegasys.artemis.datastructures.util;
 
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
-import static tech.pegasys.artemis.util.bls.BLSAggregate.bls_aggregate_pubkeys;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.artemis.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
@@ -41,9 +41,9 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.bls.BLSVerify;
 
 public class AttestationUtil {
 
@@ -54,10 +54,6 @@ public class AttestationUtil {
     Bitlist aggregationBits = new Bitlist(committeeSize, MAX_VALIDATORS_PER_COMMITTEE);
     aggregationBits.setBit(indexIntoCommittee);
     return aggregationBits;
-  }
-
-  public static Bytes32 getAttestationMessageToSign(AttestationData attestationData) {
-    return attestationData.hash_tree_root();
   }
 
   /**
@@ -152,19 +148,18 @@ public class AttestationUtil {
       return false;
     }
 
-    BLSPublicKey pubkey =
-        bls_aggregate_pubkeys(
-            attesting_indices.stream()
-                .map(i -> getValidatorPubKey(state, i))
-                .collect(Collectors.toList()));
-
-    Bytes32 message_hash = indexed_attestation.getData().hash_tree_root();
+    List<BLSPublicKey> pubkeys =
+        attesting_indices.stream()
+            .map(i -> getValidatorPubKey(state, i))
+            .collect(Collectors.toList());
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes domain =
         get_domain(
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
-    if (!BLSVerify.bls_verify(pubkey, message_hash, signature, domain)) {
+    Bytes signing_root = compute_signing_root(indexed_attestation.getData(), domain);
+
+    if (!BLS.fastAggregateVerify(pubkeys, signing_root, signature)) {
       LOG.warn("AttestationUtil.is_valid_indexed_attestation: Verify aggregate signature");
       return false;
     }

@@ -71,9 +71,9 @@ class CommitteeAssignmentManagerTest {
     committeeAssignments = new HashMap<>();
     committeeAssignmentManager =
         spy(new CommitteeAssignmentManager(validators, committeeAssignments));
-    doReturn(BLSSignature.random())
+    doReturn(BLSSignature.random(42))
         .when(committeeAssignmentManager)
-        .slot_signature(any(), any(), any());
+        .get_slot_signature(any(), any(), any());
   }
 
   @Test

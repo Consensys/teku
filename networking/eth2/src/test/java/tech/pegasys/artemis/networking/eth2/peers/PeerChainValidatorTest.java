@@ -286,7 +286,7 @@ public class PeerChainValidatorTest {
     final UnsignedLong currentTime =
         genesisTime.plus(
             remoteFinalizedCheckpoint
-                .getEpochSlot()
+                .getEpochStartSlot()
                 .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     when(store.getTime()).thenReturn(currentTime);
   }
@@ -298,7 +298,7 @@ public class PeerChainValidatorTest {
     final UnsignedLong currentTime =
         genesisTime.plus(
             remoteFinalizedCheckpoint
-                .getEpochSlot()
+                .getEpochStartSlot()
                 .minus(UnsignedLong.ONE)
                 .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     when(store.getTime()).thenReturn(currentTime);

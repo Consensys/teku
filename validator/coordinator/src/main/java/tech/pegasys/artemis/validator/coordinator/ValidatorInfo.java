@@ -31,8 +31,8 @@ public class ValidatorInfo {
     return signerService;
   }
 
-  public SafeFuture<BLSSignature> sign(final Bytes message, final Bytes domain) {
-    return signerService.sign(message, domain);
+  public SafeFuture<BLSSignature> sign(final Bytes message) {
+    return signerService.sign(message);
   }
 
   public int getValidatorIndex() {

@@ -19,12 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.milagro.amcl.BLS381.ECP2;
-import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -54,12 +50,9 @@ import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.mikuli.G2Point;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 public class MapObjectUtil {
 
@@ -72,6 +65,11 @@ public class MapObjectUtil {
     else if (classtype.equals(SignedBeaconBlock.class)) return getSignedBeaconBlock((Map) object);
     else if (classtype.equals(BeaconBlockBody.class)) return getBeaconBlockBody((Map) object);
     else if (classtype.equals(BeaconBlockHeader.class)) return getBeaconBlockHeader((Map) object);
+    else if (classtype.equals(BLSPublicKey.class)) return getPublicKey(object.toString());
+    else if (classtype.equals(BLSPublicKey[].class)) return getPublicKeyArray((List) object);
+    else if (classtype.equals(BLSSecretKey.class)) return getSecretKey(object.toString());
+    else if (classtype.equals(BLSSignature.class)) return getSignature(object.toString());
+    else if (classtype.equals(BLSSignature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(Bytes[].class)) return getBytesArray((List) object);
     else if (classtype.equals(Bytes32[].class)) return getBytes32Array((List) object);
     else if (classtype.equals(BeaconStateImpl.class)) return getBeaconState((Map) object);
@@ -80,16 +78,10 @@ public class MapObjectUtil {
     else if (classtype.equals(DepositData.class)) return getDepositData((Map) object);
     else if (classtype.equals(Eth1Data.class)) return getEth1Data((Map) object);
     else if (classtype.equals(Fork.class)) return getFork((Map) object);
-    else if (classtype.equals(G2Point.class)) return getG2Point(object);
     else if (classtype.equals(HistoricalBatch.class)) return getHistoricalBatch((Map) object);
     else if (classtype.equals(IndexedAttestation.class)) return getIndexedAttestation((Map) object);
     else if (classtype.equals(PendingAttestation.class)) return getPendingAttestation((Map) object);
     else if (classtype.equals(ProposerSlashing.class)) return getProposerSlashing((Map) object);
-    else if (classtype.equals(PublicKey.class)) return getPublicKey(object.toString());
-    else if (classtype.equals(PublicKey[].class)) return getPublicKeyArray((List) object);
-    else if (classtype.equals(SecretKey.class)) return getSecretKey(object.toString());
-    else if (classtype.equals(Signature.class)) return getSignature(object.toString());
-    else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
     else if (classtype.equals(ValidatorImpl.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
     else if (classtype.equals(SignedVoluntaryExit.class))
@@ -105,64 +97,6 @@ public class MapObjectUtil {
     return null;
   }
 
-  @SuppressWarnings({"rawtypes"})
-  private static G2Point getG2Point(Object object) {
-    if (object.getClass() == ArrayList.class) {
-      List list = (List) object;
-      // If we have only two elements then these are the compressed X_im and X_re coordinates
-      if (list.size() == 2) {
-        return G2Point.fromBytesCompressed(
-            Bytes.concatenate(
-                Bytes48.leftPad(Bytes.fromHexString(list.get(0).toString())),
-                Bytes48.leftPad(Bytes.fromHexString(list.get(1).toString()))));
-      }
-
-      // If we have three elements then these are the uncompressed complex X, Y and Z coords
-      BIG xRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(0).toString()))
-                  .toArray());
-      BIG xIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(0)).get(1).toString()))
-                  .toArray());
-      BIG yRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(0).toString()))
-                  .toArray());
-      BIG yIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(1)).get(1).toString()))
-                  .toArray());
-      BIG zRe =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(0).toString()))
-                  .toArray());
-      BIG zIm =
-          BIG.fromBytes(
-              Bytes48.leftPad(Bytes.fromHexString(((List) list.get(2)).get(1).toString()))
-                  .toArray());
-
-      FP2 x = new FP2(xRe, xIm);
-      FP2 y = new FP2(yRe, yIm);
-      FP2 z = new FP2(zRe, zIm);
-
-      // Normalise the point (affine transformation) so that Z = 1
-      z.inverse();
-      x.mul(z);
-      x.reduce();
-      y.mul(z);
-      y.reduce();
-
-      return new G2Point(new ECP2(x, y));
-    } else {
-      Map map = (Map) object;
-      return G2Point.hashToG2(
-          Bytes.fromHexString(map.get("message").toString()),
-          Bytes.fromHexString(map.get("domain").toString()));
-    }
-  }
-
   @SuppressWarnings({"unchecked", "rawtypes"})
   private static List<Bytes> getBytesArray(List list) {
     return (List<Bytes>)
@@ -172,27 +106,27 @@ public class MapObjectUtil {
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<PublicKey> getPublicKeyArray(List list) {
-    return (List<PublicKey>)
+  private static List<BLSPublicKey> getPublicKeyArray(List list) {
+    return (List<BLSPublicKey>)
         list.stream().map(object -> getPublicKey(object.toString())).collect(Collectors.toList());
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  private static List<Signature> getSignatureArray(List list) {
-    return (List<Signature>)
+  private static List<BLSSignature> getSignatureArray(List list) {
+    return (List<BLSSignature>)
         list.stream().map(object -> getSignature(object.toString())).collect(Collectors.toList());
   }
 
-  private static PublicKey getPublicKey(String s) {
-    return PublicKey.fromBytesCompressed(Bytes.fromHexString(s));
+  private static BLSPublicKey getPublicKey(String s) {
+    return BLSPublicKey.fromBytesCompressed(Bytes.fromHexStringLenient(s, 48));
   }
 
-  private static SecretKey getSecretKey(String s) {
-    return SecretKey.fromBytes(Bytes48.leftPad(Bytes.fromHexString(s)));
+  private static BLSSecretKey getSecretKey(String s) {
+    return BLSSecretKey.fromBytes(Bytes.fromHexStringLenient(s, 48));
   }
 
-  private static Signature getSignature(String s) {
-    return Signature.fromBytesCompressed(Bytes.fromHexString(s));
+  private static BLSSignature getSignature(String s) {
+    return BLSSignature.fromBytes(Bytes.fromHexStringLenient(s, 96));
   }
 
   @SuppressWarnings({"unchecked", "rawtypes"})

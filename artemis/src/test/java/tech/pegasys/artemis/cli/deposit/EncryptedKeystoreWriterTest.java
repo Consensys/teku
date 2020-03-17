@@ -23,40 +23,37 @@ import tech.pegasys.artemis.bls.keystore.KeyStore;
 import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 
 class EncryptedKeystoreWriterTest {
-  private static final SecretKey validator1SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey validator1SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x000000000000000000000000000000002CF622DE0FD92C7D4E59539CBDA63100E02CF59349595356CD97FFE6CB486460"));
-  private static final SecretKey withdrawal1SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey withdrawal1SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x000000000000000000000000000000006EA631AA885EC84AFA60BBD7887B5DBC91F594DEA29334E99576B51FAAD0E453"));
-  private static final SecretKey validator2SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey validator2SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x00000000000000000000000000000000147599AA450AADF69988F20FF1ADB3A3BF31BF9CDC77CF492FF95667708D8E79"));
-  private static final SecretKey withdrawal2SecretKey =
-      SecretKey.fromBytes(
+  private static final BLSSecretKey withdrawal2SecretKey =
+      BLSSecretKey.fromBytes(
           Bytes.fromHexString(
               "0x000000000000000000000000000000000610B84CD68FB0FAB2F04A2A05EE01CD5F7374EB8EA93E26DB9C61DD2704B5BD"));
-  private static final String validator1PubKey = new PublicKey(validator1SecretKey).toString();
-  private static final String withdrawal1PubKey = new PublicKey(withdrawal1SecretKey).toString();
-  private static final String validator2PubKey = new PublicKey(validator2SecretKey).toString();
-  private static final String withdrawal2PubKey = new PublicKey(withdrawal2SecretKey).toString();
+  private static final String validator1PubKey = new BLSPublicKey(validator1SecretKey).toString();
+  private static final String withdrawal1PubKey = new BLSPublicKey(withdrawal1SecretKey).toString();
+  private static final String validator2PubKey = new BLSPublicKey(validator2SecretKey).toString();
+  private static final String withdrawal2PubKey = new BLSPublicKey(withdrawal2SecretKey).toString();
 
   private static final String PASSWORD = "test123";
 
   @Test
   void keysAreWrittenToEncryptedKeystores(@TempDir final Path tempDir) {
     final KeysWriter keysWriter = new EncryptedKeystoreWriter(PASSWORD, PASSWORD, tempDir);
-    keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator1SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal1SecretKey)));
+    keysWriter.writeKeys(new BLSKeyPair(validator1SecretKey), new BLSKeyPair(withdrawal1SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(
@@ -67,9 +64,7 @@ class EncryptedKeystoreWriterTest {
             "validator_" + validator1PubKey + "/withdrawal_" + withdrawal1PubKey + ".json"),
         withdrawal1SecretKey);
 
-    keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator2SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal2SecretKey)));
+    keysWriter.writeKeys(new BLSKeyPair(validator2SecretKey), new BLSKeyPair(withdrawal2SecretKey));
 
     assertKeyStoreCreatedAndCanBeDecrypted(
         tempDir.resolve(
@@ -82,9 +77,10 @@ class EncryptedKeystoreWriterTest {
   }
 
   private void assertKeyStoreCreatedAndCanBeDecrypted(
-      final Path keystorePath, final SecretKey blsSecretKey) {
+      final Path keystorePath, final BLSSecretKey blsSecretKey) {
     final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath);
     assertThat(KeyStore.validatePassword(PASSWORD, keyStoreData)).isTrue();
-    assertThat(KeyStore.decrypt(PASSWORD, keyStoreData)).isEqualTo(blsSecretKey.toBytes());
+    assertThat(KeyStore.decrypt(PASSWORD, keyStoreData))
+        .isEqualTo(blsSecretKey.getSecretKey().toBytes());
   }
 }
