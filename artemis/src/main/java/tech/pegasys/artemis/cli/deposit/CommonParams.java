@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.cli.deposit;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
@@ -70,6 +71,15 @@ public class CommonParams implements Closeable {
   private ScheduledExecutorService executorService;
   private Web3j web3j;
 
+  CommonParams() {}
+
+  @VisibleForTesting
+  public CommonParams(
+      final CommandSpec commandSpec, final Eth1PrivateKeyOptions eth1PrivateKeyOptions) {
+    this.spec = commandSpec;
+    this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
+  }
+
   public DepositTransactionSender createTransactionSender() {
     httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
     executorService =
@@ -93,7 +103,7 @@ public class CommonParams implements Closeable {
     return amount;
   }
 
-  private Credentials getEth1Credentials() {
+  Credentials getEth1Credentials() {
     if (eth1PrivateKeyOptions.eth1PrivateKey != null) {
       return Credentials.create(eth1PrivateKeyOptions.eth1PrivateKey);
     }
