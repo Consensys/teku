@@ -2,14 +2,16 @@ package tech.pegasys.artemis.util.backing.view;
 
 import java.util.ArrayList;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
+import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 
 public class ContainerViewReadImpl extends AbstractCompositeViewRead<ContainerViewReadImpl, ViewRead>
     implements ContainerViewRead {
 
-  public ContainerViewReadImpl(CompositeViewType type, TreeNode backingNode) {
+  public ContainerViewReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
@@ -26,7 +28,7 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ContainerVi
   }
 
   @Override
-  public ContainerViewWriteImpl createWritableCopy() {
+  public ContainerViewWrite createWritableCopy() {
     return new ContainerViewWriteImpl(this);
   }
 

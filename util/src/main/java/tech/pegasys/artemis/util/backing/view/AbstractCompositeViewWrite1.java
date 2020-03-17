@@ -17,10 +17,12 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.CompositeViewWriteRef;
@@ -49,6 +51,10 @@ public abstract class AbstractCompositeViewWrite1<
   @Override
   public void set(int index, R value) {
     checkIndex(index, true);
+    if (childrenRefs.containsKey(index)){
+      throw new IllegalStateException(
+          "A child couldn't be simultaneously modified by value and accessed by ref");
+    }
     childrenChanges.put(index, value);
     sizeCache = index >= sizeCache ? index + 1 : sizeCache;
     invalidate();
@@ -60,6 +66,8 @@ public abstract class AbstractCompositeViewWrite1<
     R ret = childrenChanges.get(index);
     if (ret != null) {
       return ret;
+    } else if (childrenRefs.containsKey(index)){
+      return childrenRefs.get(index);
     } else {
       return backingImmutableView.get(index);
     }
@@ -70,6 +78,7 @@ public abstract class AbstractCompositeViewWrite1<
     W ret = childrenRefs.get(index);
     if (ret == null) {
       R readView = get(index);
+      childrenChanges.remove(index);
       ret = (W) readView.createWritableCopy();
       if (ret instanceof CompositeViewWrite) {
         ((CompositeViewWrite<?>) ret)
@@ -111,25 +120,39 @@ public abstract class AbstractCompositeViewWrite1<
     if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
       return backingImmutableView;
     } else {
-      TreeNodes changes = new TreeNodes();
       ArrayList<R> cache = backingImmutableView.transferCache();
-      Stream.concat(
-              childrenChanges.entrySet().stream(),
-              childrenRefsChanged.stream()
-                  .map(
-                      idx ->
-                          new SimpleImmutableEntry<>(
-                              idx, (R) ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
+      List<Entry<Integer, R>> changesList = Stream.concat(
+          childrenChanges.entrySet().stream(),
+          childrenRefsChanged.stream()
+              .map(
+                  idx ->
+                      new SimpleImmutableEntry<>(
+                          idx, (R) ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
           .sorted(Entry.comparingByKey())
-          .forEachOrdered(
-              e -> {
-                changes.add(
-                    getType().getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode());
-                cache.set(e.getKey(), e.getValue());
-              });
-      TreeNode newNode = backingImmutableView.getBackingNode().updated(changes);
-      return createViewRead(newNode, cache);
+          .collect(Collectors.toList());
+      changesList.forEach(e -> cache.set(e.getKey(), e.getValue()));
+      TreeNode originalBackingTree = backingImmutableView.getBackingNode();
+      TreeNodes changes = changesToNewNodes(changesList, originalBackingTree);
+      TreeNode newBackingTree = originalBackingTree.updated(changes);
+      return createViewRead(newBackingTree, cache);
     }
+  }
+
+  protected TreeNodes changesToNewNodes(List<Entry<Integer, R>> newChildValues, TreeNode original) {
+    CompositeViewType type = getType();
+    int elementsPerChunk = type.getElementsPerChunk();
+    if  (elementsPerChunk == 1) {
+      TreeNodes ret = new TreeNodes();
+      newChildValues.forEach(
+          e -> ret.add(type.getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()));
+      return ret;
+    } else {
+      return packChanges(newChildValues, original);
+    }
+  }
+
+  protected TreeNodes packChanges(List<Entry<Integer, R>> newChildValues, TreeNode original) {
+    throw new UnsupportedOperationException("Packed values are not supported");
   }
 
   protected abstract AbstractCompositeViewRead<?, R> createViewRead(
@@ -152,7 +175,7 @@ public abstract class AbstractCompositeViewWrite1<
   }
 
   @Override
-  public C createWritableCopy() {
+  public ViewWrite createWritableCopy() {
     throw new UnsupportedOperationException("createWritableCopy() is now implemented for immutable views only");
   }
 

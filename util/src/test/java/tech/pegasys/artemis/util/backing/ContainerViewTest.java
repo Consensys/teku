@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,13 +27,17 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
+import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractCompositeViewRead;
 import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
+import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
+import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
+import tech.pegasys.artemis.util.backing.view.MutableContainerImpl1;
 
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -51,7 +56,7 @@ public class ContainerViewTest {
     UnsignedLong getLong2();
   }
 
-  public interface SubContainerWrite extends SubContainerRead, ContainerViewWrite {
+  public interface SubContainerWrite extends SubContainerRead, ContainerViewWriteRef {
 
     void setLong1(UnsignedLong val);
 
@@ -59,6 +64,10 @@ public class ContainerViewTest {
   }
 
   public interface ContainerRead extends ContainerViewRead {
+
+    static ContainerRead createDefault() {
+      return ContainerReadImpl.TYPE.getDefault();
+    }
 
     UnsignedLong getLong1();
 
@@ -127,15 +136,26 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerImpl extends MutableContainerImpl<SubContainerImpl>
+  public static class SubContainerImpl extends MutableContainerImpl1<SubContainerImpl, SubContainerRead, SubContainerWrite>
       implements SubContainerWrite {
 
     public static final ContainerViewType<SubContainerImpl> TYPE =
         new ContainerViewType<>(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE), SubContainerImpl::new);
 
+    public SubContainerImpl(ContainerViewRead readDelegate,
+        ContainerViewWriteRef writeDelegate) {
+      super(readDelegate, writeDelegate);
+    }
+
     private SubContainerImpl(ContainerViewType<SubContainerImpl> type, TreeNode backingNode) {
       super(type, backingNode);
+    }
+
+    @Override
+    protected SubContainerImpl create(
+        ContainerViewRead readDelegate, ContainerViewWriteRef writeDelegate) {
+      return new SubContainerImpl(readDelegate, writeDelegate);
     }
 
     @Override
@@ -159,10 +179,10 @@ public class ContainerViewTest {
     }
   }
 
-  public static class ContainerImpl extends MutableContainerImpl<ContainerImpl>
-      implements ContainerWrite {
+  public static class ContainerReadImpl extends ContainerViewReadImpl
+      implements ContainerRead {
 
-    public static final ContainerViewType<ContainerImpl> TYPE =
+    public static final ContainerViewType<ContainerReadImpl> TYPE =
         new ContainerViewType<>(
             List.of(
                 BasicViewTypes.UINT64_TYPE,
@@ -171,14 +191,20 @@ public class ContainerViewTest {
                 new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
                 new ListViewType<>(SubContainerImpl.TYPE, 2),
                 new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
-            ContainerImpl::new);
+            ContainerReadImpl::new);
 
-    public ContainerImpl(ContainerViewType<ContainerImpl> type, TreeNode backingNode) {
+    public ContainerReadImpl(ContainerViewType<?> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
-    public static ContainerRead createDefault() {
-      return TYPE.getDefault();
+    public ContainerReadImpl(
+        CompositeViewType type, TreeNode backingNode, ArrayList<ViewRead> cache) {
+      super(type, backingNode, cache);
+    }
+
+    @Override
+    public ContainerWrite createWritableCopy() {
+      return new ContainerWriteImpl(this);
     }
 
     @Override
@@ -192,8 +218,70 @@ public class ContainerViewTest {
     }
 
     @Override
-    public SubContainerImpl getSub1() {
-      return (SubContainerImpl) getByRef(2);
+    public SubContainerRead getSub1() {
+      return (SubContainerRead) get(2);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public ListViewRead<UInt64View> getList1() {
+      return (ListViewRead<UInt64View>) get(3);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public ListViewRead<SubContainerRead> getList2() {
+      return (ListViewRead<SubContainerRead>) get(4);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public VectorViewRead<ImmutableSubContainer> getList3() {
+      return (VectorViewRead<ImmutableSubContainer>) get(5);
+    }
+  }
+
+  public static class ContainerWriteImpl extends ContainerViewWriteImpl
+      implements ContainerWrite {
+
+    public ContainerWriteImpl(ContainerReadImpl backingImmutableView) {
+      super(backingImmutableView);
+    }
+
+    @Override
+    protected AbstractCompositeViewRead<?, ViewRead> createViewRead(TreeNode backingNode,
+        ArrayList<ViewRead> viewCache) {
+      return new ContainerReadImpl(getType(), backingNode, viewCache);
+    }
+
+    @Override
+    public ContainerRead commitChanges() {
+      return (ContainerRead) super.commitChanges();
+    }
+
+    @Override
+    public ContainerWrite createWritableCopy() {
+      throw new UnsupportedOperationException();
+    }
+
+    //    @Override
+//    public ContainerViewWriteImpl createWritableCopy() {
+//      return super.createWritableCopy();
+//    }
+
+    @Override
+    public UnsignedLong getLong1() {
+      return ((UInt64View) get(0)).get();
+    }
+
+    @Override
+    public UnsignedLong getLong2() {
+      return ((UInt64View) get(1)).get();
+    }
+
+    @Override
+    public SubContainerWrite getSub1() {
+      return (SubContainerWrite) getByRef(2);
     }
 
     @Override
@@ -227,7 +315,7 @@ public class ContainerViewTest {
 
   @Test
   public void readWriteContainerTest1() {
-    ContainerRead c1 = ContainerImpl.createDefault();
+    ContainerRead c1 = ContainerRead.createDefault();
 
     {
       assertThat(c1.getSub1().getLong1()).isEqualTo(UnsignedLong.ZERO);

@@ -133,11 +133,6 @@ public interface TreeNode {
         }
       }
     }
-
-    @Override
-    default TreeNode updated(TreeNodes newNodes) {
-      return null;
-    }
   }
 
   /** Calculates (if necessary) and returns `hash_tree_root` of this tree node */

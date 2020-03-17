@@ -1,35 +1,55 @@
 package tech.pegasys.artemis.util.backing.view;
 
 import java.util.Arrays;
-import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
-import tech.pegasys.artemis.util.backing.VectorViewWrite;
+import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 
 public class ListViewReadImpl<C extends ViewRead> implements ListViewRead<C> {
 
-  private final ContainerViewWrite container;
+  private final ContainerViewRead container;
   private final int size;
   private final ListViewType<C> type;
-  private final VectorViewWrite<C> vector;
+  private final VectorViewRead<C> vector;
 
   @SuppressWarnings("unchecked")
   public ListViewReadImpl(ListViewType<C> type, TreeNode node) {
-    ContainerViewType<ContainerViewWrite> containerViewType =
+    ContainerViewType<ContainerViewRead> containerViewType =
         new ContainerViewType<>(
             Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
-            MutableContainerImpl::new);
+            ContainerViewReadImpl::new);
     this.type = type;
     this.container = containerViewType.createFromBackingNode(node);
     this.size = getSizeFromTree();
-    this.vector = (VectorViewWrite<C>) container.get(0);
+    this.vector = (VectorViewRead<C>) container.get(0);
+  }
 
+  @SuppressWarnings("unchecked")
+  public ListViewReadImpl(ListViewType<C> type) {
+    ContainerViewType<ContainerViewRead> containerViewType =
+        new ContainerViewType<>(
+            Arrays.asList(type.getCompatibleVectorType(), BasicViewTypes.UINT64_TYPE),
+            ContainerViewReadImpl::new);
+    this.type = type;
+    this.container = containerViewType.getDefault();
+    this.size = getSizeFromTree();
+    this.vector = (VectorViewRead<C>) container.get(0);
+  }
+
+  @SuppressWarnings("unchecked")
+  public ListViewReadImpl(ContainerViewRead container) {
+    this.container = container;
+    this.type = new ListViewType<>((VectorViewType<C>)container.getType().getChildType(0));
+    this.size = getSizeFromTree();
+    this.vector = (VectorViewRead<C>) container.get(0);
   }
 
   private int getSizeFromTree() {
@@ -45,7 +65,7 @@ public class ListViewReadImpl<C extends ViewRead> implements ListViewRead<C> {
 
   @Override
   public ListViewWrite<C> createWritableCopy() {
-    return null;
+    return new ListViewWriteImpl<>(container);
   }
 
   @Override
