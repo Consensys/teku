@@ -12,6 +12,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.mapdb:mapdb'
+  implementation 'org.rocksdb:rocksdbjni'
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
