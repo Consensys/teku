@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDeposits;
 import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
@@ -46,9 +47,9 @@ import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.bls.BLSVerify;
 import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -117,26 +118,29 @@ class BeaconStateUtilTest {
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
             UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH));
+    Bytes signing_root = compute_signing_root(depositMessage, domain);
 
-    assertTrue(
-        BLSVerify.bls_verify(
-            pubkey, depositMessage.hash_tree_root(), depositData.getSignature(), domain));
+    assertTrue(BLS.verify(pubkey, signing_root, depositData.getSignature()));
   }
 
   @Test
   void validateProofOfPossessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
     Deposit deposit = newDeposits(1).get(0);
-    BLSPublicKey pubkey = BLSPublicKey.random();
+    BLSPublicKey pubkey = BLSPublicKey.random(42);
     DepositData depositData = deposit.getData();
+    DepositMessage depositMessage =
+        new DepositMessage(
+            depositData.getPubkey(),
+            depositData.getWithdrawal_credentials(),
+            depositData.getAmount());
     Bytes domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
             UnsignedLong.fromLongBits(Constants.GENESIS_EPOCH));
+    Bytes signing_root = compute_signing_root(depositMessage, domain);
 
-    assertFalse(
-        BLSVerify.bls_verify(
-            pubkey, depositData.hash_tree_root(), depositData.getSignature(), domain));
+    assertFalse(BLS.verify(pubkey, signing_root, depositData.getSignature()));
   }
 
   @Test

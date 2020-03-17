@@ -13,22 +13,25 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
-import static tech.pegasys.artemis.util.mikuli.G2Point.hashToG2;
+import static tech.pegasys.artemis.util.hashToG2.HashToCurve.hashToG2;
 
+import java.util.HashSet;
 import java.util.List;
-import org.apache.milagro.amcl.BLS381.FP12;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 
 /*
- * Adapted from the ConsenSys/mikuli (Apache 2 License) implementation:
+ * (Heavily) adapted from the ConsenSys/mikuli (Apache 2 License) implementation:
  * https://github.com/ConsenSys/mikuli/blob/master/src/main/java/net/consensys/mikuli/crypto/*.java
  */
 
 /**
  * This Boneh-Lynn-Shacham (BLS) signature implementation is constructed from a pairing friendly
- * elliptic curve, the BLS12-381 curve. It uses parameters as defined in
- * https://z.cash/blog/new-snark-curve and the points in groups G1 and G2 are defined
- * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md
+ * BLS12-381 elliptic curve. It implements a subset of the functions from the proposed IETF
+ * standard.
+ *
+ * <p>Reference: https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00
  *
  * <p>This class depends upon the Apache Milagro library being available. See
  * https://milagro.apache.org.
@@ -38,121 +41,123 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public final class BLS12381 {
 
-  private BLS12381() {}
+  /*
+   * Methods used directly in the Ethereum 2.0 specifications.
+   */
 
   /**
-   * Generates a SignatureAndPublicKey.
+   * Generates a Signature from a private key and message.
    *
-   * @param keyPair The public and private key pair, not null
-   * @param message The message to sign, not null
-   * @param domain The domain value appended to the message. 8 bytes.
-   * @return The SignatureAndPublicKey, not null
-   */
-  public static SignatureAndPublicKey sign(KeyPair keyPair, Bytes message, Bytes domain) {
-    G2Point hashInGroup2 = hashFunction(message, domain);
-    G2Point sig = keyPair.secretKey().sign(hashInGroup2);
-    return new SignatureAndPublicKey(new Signature(sig), keyPair.publicKey());
-  }
-
-  /**
-   * Generates a SignatureAndPublicKey.
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.2.1
    *
-   * @param keyPair The public and private key pair, not null
+   * @param secretKey The secret key, not null
    * @param message The message to sign, not null
-   * @param domain The domain value appended to the message. 8 bytes.
-   * @return The SignatureAndPublicKey, not null
+   * @return The Signature, not null
    */
-  public static SignatureAndPublicKey sign(KeyPair keyPair, byte[] message, Bytes domain) {
-    return sign(keyPair, Bytes.wrap(message), domain);
+  public static Signature sign(SecretKey secretKey, Bytes message) {
+    G2Point hashInGroup2 = new G2Point(hashToG2(message));
+    return new Signature(secretKey.sign(hashInGroup2));
   }
 
   /**
    * Verifies the given BLS signature against the message bytes using the public key.
+   *
+   * <p>Implements the basic scheme of
+   * https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1 which is identical to
+   * CoreVerify().
    *
    * @param publicKey The public key, not null
-   * @param signature The signature, not null
    * @param message The message data to verify, not null
-   * @param domain The domain value appended to the message. 8 bytes.
-   * @return True if the verification is successful.
+   * @param signature The signature, not null
+   * @return True if the verification is successful, false otherwise.
    */
-  public static boolean verify(
-      PublicKey publicKey, Signature signature, Bytes message, Bytes domain) {
-    G1Point g1Generator = KeyPair.g1Generator;
-
-    G2Point hashInGroup2 = hashFunction(message, domain);
-    GTPoint e1 = AtePairing.pair(publicKey.g1Point(), hashInGroup2);
-    GTPoint e2 = AtePairing.pair(g1Generator, signature.g2Point());
-
-    return e1.equals(e2);
+  public static boolean verify(PublicKey publicKey, Bytes message, Signature signature) {
+    return coreVerify(publicKey, message, signature);
   }
 
   /**
-   * Verifies the given BLS signature against the message bytes using the public key.
+   * Aggregates a list of signatures into a single signature using BLS magic.
+   *
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.7
+   *
+   * @param signatures the list of signatures to be aggregated
+   * @return the aggregated signature
+   */
+  public static Signature aggregate(List<Signature> signatures) {
+    return new Signature(Signature.aggregate(signatures));
+  }
+
+  /**
+   * Verifies an aggregate signature against a list of distinct messages using the list of public
+   * keys.
+   *
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1.1
    *
    * @param publicKeys The list of public keys, not null
-   * @param signature The signature, not null
-   * @param messages The list of lmessage data to verify, not null
-   * @param domain The domain value appended to the message. 8 bytes.
-   * @return True if the verification is successful.
+   * @param messages The list of messages to verify, all distinct, not null
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
    */
-  public static boolean verifyMultiple(
-      List<PublicKey> publicKeys, Signature signature, List<Bytes> messages, Bytes domain) {
-    if (publicKeys.size() == 0 || publicKeys.size() != messages.size()) {
-      return false;
+  public static boolean aggregateVerify(
+      List<PublicKey> publicKeys, List<Bytes> messages, Signature signature) {
+    // Check that there are no duplicate messages
+    Set<Bytes> set = new HashSet<>();
+    for (Bytes message : messages) {
+      if (!set.add(message)) return false;
     }
-
-    G1Point g1Generator = KeyPair.g1Generator;
-
-    GTPoint eCombined = new GTPoint(new FP12(1));
-    for (int i = 0; i < publicKeys.size(); i++) {
-      G2Point hashInGroup2 = hashFunction(messages.get(i), domain);
-      eCombined = eCombined.mul(AtePairing.pair(publicKeys.get(i).g1Point(), hashInGroup2));
-    }
-
-    GTPoint e2 = AtePairing.pair(g1Generator, signature.g2Point());
-
-    return e2.equals(eCombined);
+    return coreAggregateVerify(publicKeys, messages, signature);
   }
 
   /**
-   * Verifies the given BLS signature against the message bytes using the public key.
+   * Verifies an aggregate signature against a message using the list of public keys.
+   *
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.3.4
+   *
+   * @param publicKeys The list of public keys, not null
+   * @param message The message data to verify, not null
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
+   */
+  public static boolean fastAggregateVerify(
+      List<PublicKey> publicKeys, Bytes message, Signature signature) {
+    return verify(PublicKey.aggregate(publicKeys), message, signature);
+  }
+
+  /*
+   * Other methods defined by the standard and used above.
+   */
+
+  /**
+   * The CoreVerify algorithm checks that a signature is valid for the octet string message under
+   * the public key publicKey.
+   *
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.6
    *
    * @param publicKey The public key, not null
-   * @param signature The signature, not null
    * @param message The message data to verify, not null
-   * @param domain The domain value added to the message. 8 bytes.
-   * @return True if the verification is successful.
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
    */
-  public static boolean verify(
-      PublicKey publicKey, Signature signature, byte[] message, Bytes domain) {
-    return verify(publicKey, signature, Bytes.wrap(message), domain);
+  private static boolean coreVerify(PublicKey publicKey, Bytes message, Signature signature) {
+    G2Point hashInGroup2 = new G2Point(hashToG2(message));
+    return signature.verify(publicKey, hashInGroup2);
   }
 
   /**
-   * Verifies the given BLS signature against the message bytes using the public key.
+   * Verifies an aggregate signature against a list of distinct messages using the list of public
+   * keys.
    *
-   * @param sigAndPubKey The signature and public key, not null
-   * @param message The message data to verify, not null
-   * @param domain The domain value added to the message. 8 bytes.
-   * @return True if the verification is successful, not null
-   */
-  public static boolean verify(SignatureAndPublicKey sigAndPubKey, byte[] message, Bytes domain) {
-    return verify(sigAndPubKey.publicKey(), sigAndPubKey.signature(), message, domain);
-  }
-
-  /**
-   * Verifies the given BLS signature against the message bytes using the public key.
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.8
    *
-   * @param sigAndPubKey The public key, not null
-   * @param message The message data to verify, not null
-   * @param domain The domain value added to the message. 8 bytes.
-   * @return True if the verification is successful.
+   * @param publicKeys The list of public keys, not null
+   * @param messages The list of messages to verify, all distinct, not null
+   * @param signature The aggregate signature, not null
+   * @return True if the verification is successful, false otherwise
    */
-  public static boolean verify(SignatureAndPublicKey sigAndPubKey, Bytes message, Bytes domain) {
-    return verify(sigAndPubKey.publicKey(), sigAndPubKey.signature(), message, domain);
-  }
-
-  private static G2Point hashFunction(Bytes message, Bytes domain) {
-    return hashToG2(message, domain);
+  public static boolean coreAggregateVerify(
+      List<PublicKey> publicKeys, List<Bytes> messages, Signature signature) {
+    List<G2Point> hashesInG2 =
+        messages.stream().map(m -> new G2Point(hashToG2(m))).collect(Collectors.toList());
+    return signature.aggregateVerify(publicKeys, hashesInG2);
   }
 }

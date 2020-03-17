@@ -49,9 +49,12 @@ public class GetFork implements Handler {
       summary = "Get the fork of the current head.",
       tags = {TAG_NODE},
       description =
-          "Returns information about the fork of the current head of the beacon chain from the node’s perspective.",
+          "Returns information about the fork of the beacon chain head from the node’s perspective.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Fork.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = Fork.class),
+            description = "An object containing the fork of the current head."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })

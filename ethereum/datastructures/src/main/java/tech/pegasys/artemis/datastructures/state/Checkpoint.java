@@ -129,7 +129,7 @@ public class Checkpoint extends AbstractImmutableContainer<Checkpoint>
   }
 
   @JsonIgnore
-  public UnsignedLong getEpochSlot() {
+  public UnsignedLong getEpochStartSlot() {
     return compute_start_slot_at_epoch(getEpoch());
   }
 

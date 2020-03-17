@@ -14,6 +14,9 @@
 package tech.pegasys.artemis.datastructures.util;
 
 import static java.lang.Math.toIntExact;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_ETH1_VOTING_PERIOD;
 
 import com.google.common.primitives.UnsignedLong;
@@ -21,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.LongStream;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
@@ -54,6 +58,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -165,13 +170,13 @@ public final class DataStructureUtil {
 
   public static SignedBeaconBlock randomSignedBeaconBlock(long slotNum, int seed) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, seed);
-    return new SignedBeaconBlock(beaconBlock, BLSSignature.random());
+    return new SignedBeaconBlock(beaconBlock, BLSSignature.random(seed++));
   }
 
   public static SignedBeaconBlock randomSignedBeaconBlock(
       long slotNum, Bytes32 parentRoot, int seed) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum, parentRoot, seed);
-    return new SignedBeaconBlock(beaconBlock, BLSSignature.random());
+    return new SignedBeaconBlock(beaconBlock, BLSSignature.random(seed++));
   }
 
   public static BeaconBlock randomBeaconBlock(long slotNum, int seed) {
@@ -193,7 +198,7 @@ public final class DataStructureUtil {
   }
 
   public static SignedBeaconBlockHeader randomSignedBeaconBlockHeader(int seed) {
-    return new SignedBeaconBlockHeader(randomBeaconBlockHeader(seed), BLSSignature.random());
+    return new SignedBeaconBlockHeader(randomBeaconBlockHeader(seed), BLSSignature.random(++seed));
   }
 
   public static BeaconBlockHeader randomBeaconBlockHeader(int seed) {
@@ -240,7 +245,7 @@ public final class DataStructureUtil {
     return new ProposerSlashing(
         randomUnsignedLong(seed++),
         randomSignedBeaconBlockHeader(seed++),
-        randomSignedBeaconBlockHeader(seed));
+        randomSignedBeaconBlockHeader(seed++));
   }
 
   public static IndexedAttestation randomIndexedAttestation(int seed) {
@@ -262,11 +267,10 @@ public final class DataStructureUtil {
         new DepositMessage(
             pubkey, withdrawal_credentials, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
 
-    BLSSignature proof_of_possession =
-        BLSSignature.sign(
-            keyPair,
-            proof_of_possession_data.hash_tree_root(),
-            BeaconStateUtil.compute_domain(Constants.DOMAIN_DEPOSIT));
+    final Bytes domain = compute_domain(DOMAIN_DEPOSIT);
+    final Bytes signing_root = compute_signing_root(proof_of_possession_data, domain);
+
+    BLSSignature proof_of_possession = BLS.sign(keyPair.getSecretKey(), signing_root);
 
     return new DepositData(proof_of_possession_data, proof_of_possession);
   }
@@ -312,7 +316,7 @@ public final class DataStructureUtil {
   }
 
   public static SignedVoluntaryExit randomSignedVoluntaryExit(int seed) {
-    return new SignedVoluntaryExit(randomVoluntaryExit(seed), BLSSignature.random());
+    return new SignedVoluntaryExit(randomVoluntaryExit(seed), BLSSignature.random(seed++));
   }
 
   public static VoluntaryExit randomVoluntaryExit(int seed) {
@@ -342,7 +346,7 @@ public final class DataStructureUtil {
 
   public static Validator randomValidator(int seed) {
     return Validator.create(
-        randomPublicKey(seed),
+        randomPublicKey(seed++),
         randomBytes32(seed++),
         UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,

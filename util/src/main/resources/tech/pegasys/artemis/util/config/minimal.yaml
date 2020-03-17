@@ -39,6 +39,8 @@ TARGET_AGGREGATORS_PER_COMMITTEE: 16
 RANDOM_SUBNETS_PER_VALIDATOR: 1
 # 2**8 (= 256)
 EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION: 256
+# 14 (estimate from Eth1 mainnet)
+SECONDS_PER_ETH1_BLOCK: 14
 
 
 # Deposit contract
@@ -61,13 +63,15 @@ EFFECTIVE_BALANCE_INCREMENT: 1000000000
 
 # Initial values
 # ---------------------------------------------------------------
-# 0, GENESIS_EPOCH is derived from this constant
-GENESIS_SLOT: 0
+# Highest byte set to 0x01 to avoid collisions with mainnet versioning
+GENESIS_FORK_VERSION: 0x00000001
 BLS_WITHDRAWAL_PREFIX: 0x00
 
 
 # Time parameters
 # ---------------------------------------------------------------
+# [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
+MIN_GENESIS_DELAY: 300
 # [customized] Faster for testing purposes
 SECONDS_PER_SLOT: 6
 # 2**0 (= 1) slots 6 seconds
@@ -148,3 +152,13 @@ DOMAIN_VOLUNTARY_EXIT: 0x04000000
 DOMAIN_CUSTODY_BIT_CHALLENGE: 0x06000000
 DOMAIN_SHARD_PROPOSER: 0x80000000
 DOMAIN_SHARD_ATTESTER: 0x81000000
+
+
+# Phase 1
+# ---------------------------------------------------------------
+SHARD_SLOTS_PER_BEACON_SLOT: 2
+EPOCHS_PER_SHARD_PERIOD: 4
+# PHASE_1_FORK_EPOCH >= EPOCHS_PER_SHARD_PERIOD * 2
+PHASE_1_FORK_EPOCH: 8
+# PHASE_1_FORK_SLOT = PHASE_1_FORK_EPOCH * SLOTS_PER_EPOCH
+PHASE_1_FORK_SLOT: 64

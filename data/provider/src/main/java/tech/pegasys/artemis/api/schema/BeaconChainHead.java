@@ -67,22 +67,22 @@ public class BeaconChainHead {
 
   public BeaconChainHead(final BeaconState beaconState) {
     final Checkpoint latestBlockHeader = beaconState.getCurrent_justified_checkpoint();
-    this.head_slot = latestBlockHeader.getEpochSlot();
+    this.head_slot = latestBlockHeader.getEpochStartSlot();
     this.head_epoch = latestBlockHeader.getEpoch();
     this.head_block_root = latestBlockHeader.hash_tree_root();
 
     final Checkpoint finalizedCheckpoint = beaconState.getFinalized_checkpoint();
-    this.finalized_slot = finalizedCheckpoint.getEpochSlot();
+    this.finalized_slot = finalizedCheckpoint.getEpochStartSlot();
     this.finalized_epoch = finalizedCheckpoint.getEpoch();
     this.finalized_block_root = finalizedCheckpoint.hash_tree_root();
 
     final Checkpoint currentJustifiedCheckpoint = beaconState.getCurrent_justified_checkpoint();
-    this.justified_slot = currentJustifiedCheckpoint.getEpochSlot();
+    this.justified_slot = currentJustifiedCheckpoint.getEpochStartSlot();
     this.justified_epoch = currentJustifiedCheckpoint.getEpoch();
     this.justified_block_root = currentJustifiedCheckpoint.hash_tree_root();
 
     final Checkpoint previousJustifiedCheckpoint = beaconState.getPrevious_justified_checkpoint();
-    this.previous_justified_slot = previousJustifiedCheckpoint.getEpochSlot();
+    this.previous_justified_slot = previousJustifiedCheckpoint.getEpochStartSlot();
     this.previous_justified_epoch = previousJustifiedCheckpoint.getEpoch();
     this.previous_justified_block_root = previousJustifiedCheckpoint.hash_tree_root();
   }
