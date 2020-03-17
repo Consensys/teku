@@ -109,6 +109,7 @@ public class LoggingConfigurator {
                 "Unknown logging destination: {}, applying default: {}",
                 DESTINATION,
                 LoggingDestination.BOTH);
+        // fall through
       case BOTH:
         onlyEventsLoggerToConsole(configuration);
 
