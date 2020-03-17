@@ -55,7 +55,6 @@ import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
-import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
@@ -528,7 +527,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     // add a validator with a different pubkey since by default they are all the same
     tech.pegasys.artemis.datastructures.state.BeaconState alteredInternalState =
-        addValidator(beaconStateInternal);
+        addActiveValidator(beaconStateInternal);
     BeaconState alteredState = new BeaconState(alteredInternalState);
     int addedValidatorIndex = alteredState.validators.size() - 1;
 
@@ -563,13 +562,13 @@ public class ChainDataProviderTest {
         .usingRecursiveComparison()
         .isEqualTo(
             new ValidatorDuties(
-                alteredState.validators.get(0).pubkey, 0, 0, ValidatorStatus.UNKNOWN_STATUS));
+                alteredState.validators.get(0).pubkey, 0, 0, ValidatorStatus.DEPOSITED));
     // even though we used key 11 it will come out as 0 since the default keys are all equal
     assertThat(validatorDuties.get(1))
         .usingRecursiveComparison()
         .isEqualTo(
             new ValidatorDuties(
-                alteredState.validators.get(11).pubkey, 0, 0, ValidatorStatus.UNKNOWN_STATUS));
+                alteredState.validators.get(11).pubkey, 0, 0, ValidatorStatus.DEPOSITED));
     assertThat(validatorDuties.get(2))
         .usingRecursiveComparison()
         .isEqualTo(
@@ -577,7 +576,7 @@ public class ChainDataProviderTest {
                 alteredState.validators.get(addedValidatorIndex).pubkey,
                 addedValidatorIndex,
                 1,
-                ValidatorStatus.UNKNOWN_STATUS));
+                ValidatorStatus.ACTIVE));
   }
 
   @Test
@@ -606,7 +605,8 @@ public class ChainDataProviderTest {
 
   @Test
   public void getStatus_shouldBeActiveForFarFutureEpoch() {
-    Validator v = DataStructureUtil.randomValidator(12345);
+    tech.pegasys.artemis.datastructures.state.Validator v =
+        DataStructureUtil.randomValidator(12345);
     assertThat(getValidatorStatus(v, Constants.FAR_FUTURE_EPOCH)).isEqualTo(ValidatorStatus.ACTIVE);
   }
 
@@ -676,11 +676,14 @@ public class ChainDataProviderTest {
     verify(mockCombinedChainDataClient).isFinalized(ZERO);
   }
 
-  private tech.pegasys.artemis.datastructures.state.BeaconState addValidator(
+  private tech.pegasys.artemis.datastructures.state.BeaconState addActiveValidator(
       final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
     // create a validator and add it to the list
     MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
+    // set activation epochs so that it will be ACTIVE status
+    v.setActivation_eligibility_epoch(ZERO);
+    v.setActivation_epoch(ONE);
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
   }

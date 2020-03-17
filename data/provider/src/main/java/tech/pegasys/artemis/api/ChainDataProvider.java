@@ -281,8 +281,11 @@ public class ChainDataProvider {
     final List<CommitteeAssignment> committees =
         combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
 
+    final List<Validator> validators = state.getValidators().asList();
+    final UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
+
     for (final BLSPubKey pubKey : pubKeys) {
-      final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
+      final Integer validatorIndex = getValidatorIndex(validators, pubKey);
       if (validatorIndex == null) {
         dutiesList.add(new ValidatorDuties(pubKey, null, null, ValidatorStatus.UNKNOWN_STATUS));
       } else {
@@ -291,7 +294,7 @@ public class ChainDataProvider {
                 pubKey,
                 validatorIndex,
                 getCommitteeIndex(committees, validatorIndex),
-                ValidatorStatus.UNKNOWN_STATUS));
+                getValidatorStatus(validators.get(validatorIndex), currentEpoch)));
       }
     }
     return dutiesList;
