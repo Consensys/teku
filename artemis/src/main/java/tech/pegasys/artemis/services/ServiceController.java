@@ -37,7 +37,7 @@ public class ServiceController extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOf(
+    return SafeFuture.allOfFailFast(
         chainStorageService.start(),
         beaconChainService.start(),
         powchainService.map(PowchainService::start).orElse(SafeFuture.completedFuture(null)));

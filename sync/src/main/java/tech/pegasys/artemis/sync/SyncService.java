@@ -38,7 +38,7 @@ public class SyncService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOf(syncManager.start(), blockPropagationManager.start());
+    return SafeFuture.allOfFailFast(syncManager.start(), blockPropagationManager.start());
   }
 
   @Override

@@ -403,6 +403,48 @@ public class SafeFutureTest {
     assertExceptionallyCompletedWith(future, error);
   }
 
+  @Test
+  public void allOfFailFast_failImmediatelyWhenAnyFutureFails() {
+      final SafeFuture<Void> future1 = new SafeFuture<>();
+      final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2);
+    assertThat(result).isNotDone();
+
+    final RuntimeException error = new RuntimeException("Nope");
+    future1.completeExceptionally(error);
+    assertExceptionallyCompletedWith(result, error);
+  }
+
+  @Test
+  public void allOfFailFast_failImmediatelyWhenSomeFuturesCompleteAndOneFails() {
+      final SafeFuture<Void> future1 = new SafeFuture<>();
+      final SafeFuture<Void> future2 = new SafeFuture<>();
+      final SafeFuture<Void> future3 = new SafeFuture<>();
+    final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2, future3);
+    assertThat(result).isNotDone();
+
+    future2.complete(null);
+    assertThat(result).isNotDone();
+
+    final RuntimeException error = new RuntimeException("Nope");
+    future3.completeExceptionally(error);
+    assertExceptionallyCompletedWith(result, error);
+  }
+
+  @Test
+  public void allOfFailFast_completesWhenAllFuturesComplete() {
+      final SafeFuture<Void> future1 = new SafeFuture<>();
+      final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2);
+    assertThat(result).isNotDone();
+
+    future1.complete(null);
+    assertThat(result).isNotDone();
+
+    future2.complete(null);
+    assertThat(result).isCompleted();
+  }
+
   private CountingNoOpAppender startCountingReportedUnhandledExceptions() {
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     final Configuration config = ctx.getConfiguration();
