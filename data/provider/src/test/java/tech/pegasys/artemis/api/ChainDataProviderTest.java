@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.artemis.api.ChainDataProvider.getValidatorStatus;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
@@ -54,13 +55,14 @@ import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableValidator;
-import tech.pegasys.artemis.datastructures.state.ValidatorStatus;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ChainDataProviderTest {
   private static CombinedChainDataClient combinedChainDataClient;
@@ -600,6 +602,65 @@ public class ChainDataProviderTest {
     verify(mockCombinedChainDataClient).isStoreAvailable();
     assertThat(optionalFork.isEmpty()).isFalse();
     assertThat(optionalFork.get()).isEqualToComparingFieldByField(beaconState.fork);
+  }
+
+  @Test
+  public void getStatus_shouldBeActiveForFarFutureEpoch() {
+    Validator v = DataStructureUtil.randomValidator(12345);
+    assertThat(getValidatorStatus(v, Constants.FAR_FUTURE_EPOCH)).isEqualTo(ValidatorStatus.ACTIVE);
+  }
+
+  @Test
+  public void getStatus_shouldBeDeposited() {
+    final MutableValidator mutableValidator = getMutableValidator();
+    mutableValidator.setActivation_eligibility_epoch(ONE);
+    assertThat(getValidatorStatus(mutableValidator, ZERO)).isEqualTo(ValidatorStatus.DEPOSITED);
+  }
+
+  @Test
+  public void getStatus_shouldBePending() {
+    assertThat(getValidatorStatus(getMutableValidator(), UnsignedLong.ZERO))
+        .isEqualTo(ValidatorStatus.PENDING);
+  }
+
+  @Test
+  public void getStatus_shouldBeExiting() {
+    final MutableValidator mutableValidator =
+        getMutableValidatorWithExitEpoch(UnsignedLong.valueOf(5));
+    assertThat(getValidatorStatus(mutableValidator, UnsignedLong.valueOf(4)))
+        .isEqualTo(ValidatorStatus.EXITING);
+  }
+
+  @Test
+  public void getStatus_shouldBeSlashing() {
+    final MutableValidator mutableValidator =
+        getMutableValidatorWithExitEpoch(UnsignedLong.valueOf(5));
+    mutableValidator.setSlashed(true);
+    assertThat(getValidatorStatus(mutableValidator, UnsignedLong.valueOf(4)))
+        .isEqualTo(ValidatorStatus.SLASHING);
+  }
+
+  @Test
+  public void getStatus_shouldBeExited() {
+    final MutableValidator mutableValidator =
+        getMutableValidatorWithExitEpoch(UnsignedLong.valueOf(5));
+    assertThat(getValidatorStatus(mutableValidator, UnsignedLong.valueOf(6)))
+        .isEqualTo(ValidatorStatus.EXITED);
+  }
+
+  private MutableValidator getMutableValidator() {
+    // default exit epoch is Constants.FAR_FUTURE_EPOCH
+    final MutableValidator mutableValidator =
+        DataStructureUtil.randomValidator(12345).createWritableCopy();
+    mutableValidator.setActivation_eligibility_epoch(UnsignedLong.ZERO);
+    mutableValidator.setActivation_epoch(UnsignedLong.ONE);
+    return mutableValidator;
+  }
+
+  private MutableValidator getMutableValidatorWithExitEpoch(UnsignedLong exitEpoch) {
+    final MutableValidator mutableValidator = getMutableValidator();
+    mutableValidator.setExit_epoch(exitEpoch);
+    return mutableValidator;
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.state;
+package tech.pegasys.artemis.api;
 
 public enum ValidatorStatus {
   ACTIVE,

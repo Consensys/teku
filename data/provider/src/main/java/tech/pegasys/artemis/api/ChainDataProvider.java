@@ -40,13 +40,14 @@ import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
-import tech.pegasys.artemis.datastructures.state.ValidatorStatus;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -58,6 +59,29 @@ public class ChainDataProvider {
       final CombinedChainDataClient combinedChainDataClient) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.chainStorageClient = chainStorageClient;
+  }
+
+  public static ValidatorStatus getValidatorStatus(Validator validator, UnsignedLong epoch) {
+    if (epoch.compareTo(validator.getActivation_eligibility_epoch()) < 0) {
+      return ValidatorStatus.DEPOSITED;
+    }
+    if (epoch.compareTo(validator.getActivation_epoch()) < 0) {
+      return ValidatorStatus.PENDING;
+    }
+    if (validator.getExit_epoch().equals(Constants.FAR_FUTURE_EPOCH)) {
+      return ValidatorStatus.ACTIVE;
+    }
+    if (epoch.compareTo(validator.getExit_epoch()) < 0) {
+      if (validator.isSlashed()) {
+        return ValidatorStatus.SLASHING;
+      } else {
+        return ValidatorStatus.EXITING;
+      }
+    }
+    if (epoch.compareTo(validator.getExit_epoch()) >= 0) {
+      return ValidatorStatus.EXITED;
+    }
+    return ValidatorStatus.UNKNOWN_STATUS;
   }
 
   public Optional<UnsignedLong> getGenesisTime() {

@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.api.schema;
 
-import tech.pegasys.artemis.datastructures.state.ValidatorStatus;
+import tech.pegasys.artemis.api.ValidatorStatus;
 
 public class ValidatorDuties {
   public final BLSPubKey validator_pubkey;
