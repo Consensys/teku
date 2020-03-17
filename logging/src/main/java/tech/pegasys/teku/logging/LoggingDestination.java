@@ -14,7 +14,23 @@
 package tech.pegasys.teku.logging;
 
 public enum LoggingDestination {
-  CONSOLE_ONLY,
-  FILE_ONLY,
-  BOTH
+  CONSOLE_ONLY("consoleOnly"),
+  FILE_ONLY("fileOnly"),
+  BOTH("both");
+
+  private final String key;
+
+  private LoggingDestination(final String key) {
+    this.key = key;
+  }
+
+  public static LoggingDestination get(final String destination) {
+    for (final LoggingDestination candidate : LoggingDestination.values()) {
+      if (candidate.key.equals(destination)) {
+        return candidate;
+      }
+    }
+
+    return LoggingDestination.BOTH;
+  }
 }

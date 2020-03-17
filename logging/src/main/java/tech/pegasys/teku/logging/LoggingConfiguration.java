@@ -60,20 +60,8 @@ public class LoggingConfiguration {
     return new LoggingConfiguration(
         config.isLoggingColorEnabled(),
         config.isLoggingIncludeEventsEnabled(),
-        getLoggingDestination(config.getLoggingDestination()),
+        LoggingDestination.get(config.getLoggingDestination()),
         config.getLoggingFile(),
         config.getLoggingFileNamePattern());
-  }
-
-  private static LoggingDestination getLoggingDestination(final String destination) {
-    switch (destination) {
-      case "consoleOnly":
-        return LoggingDestination.CONSOLE_ONLY;
-      case "fileOnly":
-        return LoggingDestination.FILE_ONLY;
-      case "both":
-      default:
-        return LoggingDestination.BOTH;
-    }
   }
 }
