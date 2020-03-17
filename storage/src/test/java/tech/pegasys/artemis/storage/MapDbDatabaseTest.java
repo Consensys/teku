@@ -16,11 +16,9 @@ package tech.pegasys.artemis.storage;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.artemis.storage.ChainStorage.LOG;
 
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -88,7 +86,7 @@ class MapDbDatabaseTest {
   public void recordGenesis(@TempDirectory final Path tempDir) {
     final File databaseFile = new File(tempDir.toString(), "teku.db");
     try {
-        Files.deleteIfExists(databaseFile.toPath());
+      Files.deleteIfExists(databaseFile.toPath());
     } catch (IOException e) {
       throw new RuntimeException("Failed to clean old database file for new test");
     }
