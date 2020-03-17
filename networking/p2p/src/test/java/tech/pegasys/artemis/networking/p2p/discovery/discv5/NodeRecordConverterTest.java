@@ -70,7 +70,7 @@ class NodeRecordConverterTest {
     assertThat(
             convertNodeRecordWithFields(
                 new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {127, 0, 0, 1})),
-                new EnrField(EnrField.UDP_V4, 30303)))
+                new EnrField(EnrField.UDP, 30303)))
         .isEmpty();
   }
 
@@ -78,7 +78,7 @@ class NodeRecordConverterTest {
   public void shouldUseV4PortIfV6PortSpecifiedWithNoV6Ip() {
     assertThat(
             convertNodeRecordWithFields(
-                new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP_V4, 30303)))
+                new EnrField(EnrField.IP_V6, IPV6_LOCALHOST), new EnrField(EnrField.TCP, 30303)))
         .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("::1", 30303)));
   }
 
@@ -92,7 +92,7 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldNotConvertRecordWithPortButNoIp() {
-    assertThat(convertNodeRecordWithFields(new EnrField(EnrField.TCP_V4, 30303))).isEmpty();
+    assertThat(convertNodeRecordWithFields(new EnrField(EnrField.TCP, 30303))).isEmpty();
   }
 
   @Test
@@ -101,7 +101,7 @@ class NodeRecordConverterTest {
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V4, Bytes.wrap(new byte[] {-127, 24, 31, 22})),
-            new EnrField(EnrField.TCP_V4, 1234));
+            new EnrField(EnrField.TCP, 1234));
     assertThat(result)
         .contains(new DiscoveryPeer(PUB_KEY, new InetSocketAddress("129.24.31.22", 1234)));
   }
