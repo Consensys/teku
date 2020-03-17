@@ -134,6 +134,11 @@ public class ArtemisConfiguration {
     builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
     builder.addString(
         "database.dataPath", ".", "Path to output data files", PropertyValidator.isPresent());
+    builder.addString(
+        "database.stateStorageMode",
+        "prune",
+        "Sets the strategy for handling historical chain state.  Supported values include: 'prune', and 'archive'",
+        null);
 
     // Beacon Rest API
     builder.addInteger("beaconrestapi.portNumber", 5051, "Port number of Beacon Rest API", null);
@@ -370,6 +375,10 @@ public class ArtemisConfiguration {
 
   public boolean startFromDisk() {
     return config.getBoolean("database.startFromDisk");
+  }
+
+  public String getStateStorageMode() {
+    return config.getString("database.stateStorageMode");
   }
 
   public void validateConfig() throws IllegalArgumentException {

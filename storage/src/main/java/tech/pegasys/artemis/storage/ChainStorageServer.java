@@ -71,7 +71,11 @@ public class ChainStorageServer {
     LOG.info("Data directory set to: {}", dataStoragePath);
     preflightCheck(databaseStoragePath, databaseVersionPath);
 
-    this.database = MapDbDatabase.createOnDisk(databaseStoragePath, configuration.startFromDisk());
+    final StateStorageMode stateStorageMode =
+        StateStorageMode.fromString(configuration.getStateStorageMode());
+    this.database =
+        MapDbDatabase.createOnDisk(
+            databaseStoragePath, configuration.startFromDisk(), stateStorageMode);
     eventBus.register(this);
 
     final Optional<Store> store = getStore();
