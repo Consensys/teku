@@ -13,10 +13,22 @@
 
 package tech.pegasys.artemis.util.mikuli;
 
-/** Group is an interface that defines the necessary mathematical operators */
-interface Group<G> {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-  G add(G g);
+import org.junit.jupiter.api.Test;
 
-  G mul(Scalar scalar);
+class AtePairingTest {
+
+  @Test
+  void pairAndPair2AreEquivalent() {
+    G1Point p1 = G1Point.random(1L);
+    G2Point q2 = G2Point.random(2L);
+    G1Point r1 = G1Point.random(3L);
+    G2Point s2 = G2Point.random(4L);
+
+    GTPoint expected = AtePairing.pair(p1, q2).mul(AtePairing.pair(r1, s2));
+    GTPoint actual = AtePairing.pair2(p1, q2, r1, s2);
+
+    assertEquals(expected, actual);
+  }
 }

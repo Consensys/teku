@@ -35,9 +35,8 @@ import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 @Command(
     name = "register",
@@ -152,7 +151,7 @@ public class DepositRegisterCommand implements Runnable {
   }
 
   private BLSKeyPair privateKeyToKeyPair(final Bytes validatorKey) {
-    return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(validatorKey)));
+    return new BLSKeyPair(BLSSecretKey.fromBytes(validatorKey));
   }
 
   static class ValidatorKeyOptions {

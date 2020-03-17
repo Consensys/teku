@@ -14,10 +14,10 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.util.hashToG2.HashToCurve.isInGroupG2;
 import static tech.pegasys.artemis.util.mikuli.Util.calculateYFlag;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.security.Security;
 import java.util.Objects;
 import java.util.Random;
 import org.apache.milagro.amcl.BLS381.BIG;
@@ -25,144 +25,36 @@ import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.crypto.Hash;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import tech.pegasys.artemis.util.hashToG2.HashToCurve;
 
 /**
- * G2 is the subgroup of elliptic curve similar to G1 and the points are identical except for where
- * they are elements of the extension field Fq12.
+ * G2 is a subgroup of an elliptic curve whose points are elements of the finite field Fp^2. The
+ * curve is defined by: y^2 = x^3 + 4(1 + i).
  */
 public final class G2Point implements Group<G2Point> {
 
   /**
-   * Generate a random point on the curve
-   *
-   * @return a random point on the curve.
-   */
-  public static G2Point random() {
-    return random(new Random());
-  }
-
-  /**
-   * Generate a random point on the curve from a seed value. The same seed value gives the same
-   * point.
+   * Generate a random point in G2 from a seed value. The same seed value gives the same point.
    *
    * @param seed a seed value
-   * @return a random point on the curve.
+   * @return a random point in G2
    */
   public static G2Point random(long seed) {
     return random(new Random(seed));
   }
 
+  /**
+   * Generate a random point in G2 given an RNG. Uses hashToG2 to hash random bytes.
+   *
+   * @param rng the RNG to use
+   * @return a random point in G2
+   */
   private static G2Point random(Random rng) {
-    ECP2 point;
-    byte[] xReBytes = new byte[48];
-    byte[] xImBytes = new byte[48];
-
-    // Repeatedly choose random X coords until one is on the curve. This generally takes only a
-    // couple of attempts.
-    do {
-      rng.nextBytes(xReBytes);
-      rng.nextBytes(xImBytes);
-      point = new ECP2(new FP2(BIG.fromBytes(xReBytes), BIG.fromBytes(xImBytes)));
-    } while (point.is_infinity());
-
-    // Multiply by the cofactor to ensure that we end up on G2 (see hashToG2)
-    return new G2Point(scaleWithCofactor(point));
+    return new G2Point(HashToCurve.hashToG2(Bytes.random(32, rng)));
   }
 
-  /**
-   * Hashes to the G2 curve as described in the Eth2 spec
-   *
-   * @param message the message to be hashed. This is usually the 32 byte message digest.
-   * @param domainBytes the signature domain as defined in the Eth2 spec. Should be 8 bytes.
-   * @return a point from the G2 group representing the message hash
-   */
-  @VisibleForTesting
-  public static G2Point hashToG2(Bytes message, Bytes domainBytes) {
-    Security.addProvider(new BouncyCastleProvider());
-    Bytes padding = Bytes.wrap(new byte[16]);
-
-    byte[] xReBytes =
-        Bytes.concatenate(
-                padding,
-                Hash.sha2_256(Bytes.concatenate(message, domainBytes, Bytes.fromHexString("0x01"))))
-            .toArray();
-    byte[] xImBytes =
-        Bytes.concatenate(
-                padding,
-                Hash.sha2_256(Bytes.concatenate(message, domainBytes, Bytes.fromHexString("0x02"))))
-            .toArray();
-
-    BIG xRe = BIG.fromBytes(xReBytes);
-    BIG xIm = BIG.fromBytes(xImBytes);
-    BIG one = new BIG(1);
-
-    ECP2 point = new ECP2(new FP2(xRe, xIm));
-    while (point.is_infinity()) {
-      xRe.add(one);
-      xRe.norm();
-      point = new ECP2(new FP2(xRe, xIm));
-    }
-
-    return new G2Point(scaleWithCofactor(normaliseY(point)));
-  }
-
-  /**
-   * Correct the Y coordinate of a point if necessary in accordance with the Eth2 spec
-   *
-   * <p>After creating a point from only its X value, there is a choice of two Y values. The Milagro
-   * library sometimes returns the wrong one, so we need to correct. The Eth2 spec specifies that we
-   * need to choose the Y value with greater imaginary part, or with greater real part iof the
-   * imaginaries are equal.
-   *
-   * @param point the point whose Y coordinate is to be normalised.
-   * @return a new point with the correct Y coordinate, which may the original.
-   */
-  static ECP2 normaliseY(ECP2 point) {
-    FP2 y = point.getY();
-    FP2 yNeg = new FP2(y);
-    yNeg.neg();
-    if (BIG.comp(y.getB(), yNeg.getB()) < 0
-        || ((BIG.comp(y.getB(), yNeg.getB()) == 0) && BIG.comp(y.getA(), yNeg.getA()) < 0)) {
-      return new ECP2(point.getX(), yNeg);
-    } else {
-      return point;
-    }
-  }
-
-  /**
-   * Multiply the point by the group cofactor.
-   *
-   * <p>Since the group cofactor is extremely large, we do a long multiplication.
-   *
-   * @param point the point to be scaled
-   * @return a scaled point
-   */
-  static ECP2 scaleWithCofactor(ECP2 point) {
-
-    // These are a representation of the G2 cofactor (a 512 bit number)
-    String upperHex =
-        "0x0000000000000000000000000000000005d543a95414e7f1091d50792876a202cd91de4547085abaa68a205b2e5a7ddf";
-    String lowerHex =
-        "0x00000000000000000000000000000000a628f1cb4d9e82ef21537e293a6691ae1616ec6e786f0c70cf1c38e31c7238e5";
-    String shiftHex =
-        "0x000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000";
-
-    BIG upper = BIG.fromBytes(Bytes.fromHexString(upperHex).toArray());
-    BIG lower = BIG.fromBytes(Bytes.fromHexString(lowerHex).toArray());
-    BIG shift = BIG.fromBytes(Bytes.fromHexString(shiftHex).toArray());
-
-    ECP2 sum = new ECP2(point);
-    sum = sum.mul(upper);
-    sum = sum.mul(shift);
-
-    ECP2 tmp = new ECP2(point);
-    tmp = tmp.mul(lower);
-
-    sum.add(tmp);
-
-    return sum;
+  public static G2Point hashToG2(Bytes message) {
+    return new G2Point(HashToCurve.hashToG2(message));
   }
 
   private final ECP2 point;
@@ -185,17 +77,14 @@ public final class G2Point implements Group<G2Point> {
 
   @Override
   public G2Point add(G2Point other) {
-    ECP2 sum = new ECP2();
-    sum.add(point);
-    sum.add(other.point);
-    sum.affine();
-    return new G2Point(sum);
+    ECP2 newPoint = new ECP2(point);
+    newPoint.add(other.point);
+    return new G2Point(newPoint);
   }
 
   @Override
   public G2Point mul(Scalar scalar) {
-    ECP2 newPoint = point.mul(scalar.value());
-    return new G2Point(newPoint);
+    return new G2Point(point.mul(scalar.value()));
   }
 
   Bytes toBytes() {
@@ -211,6 +100,9 @@ public final class G2Point implements Group<G2Point> {
    * order bits per the Eth2 BLS spec. We also take care about encoding the real and imaginary parts
    * in the correct order: [Im, Re]
    *
+   * <p>The standard follows the ZCash format for serialisation documented here:
+   * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
+   *
    * @return the serialised compressed form of the point
    */
   @VisibleForTesting
@@ -220,12 +112,12 @@ public final class G2Point implements Group<G2Point> {
     point.getX().getA().toBytes(xReBytes);
     point.getX().getB().toBytes(xImBytes);
 
-    // Serialisation flags as defined in the Eth2 specs
-    boolean c1 = true;
+    // Serialisation flags as defined in the documentation
     boolean b1 = point.is_infinity();
     boolean a1 = !b1 && calculateYFlag(point.getY().getB());
 
-    byte flags = (byte) ((a1 ? 1 << 5 : 0) | (b1 ? 1 << 6 : 0) | (c1 ? 1 << 7 : 0));
+    // c1 is always true for compressed points
+    byte flags = (byte) ((4 | (b1 ? 2 : 0) | (a1 ? 1 : 0)) << 5);
     byte mask = (byte) 31;
     xImBytes[0] &= mask;
     xImBytes[0] |= flags;
@@ -235,12 +127,16 @@ public final class G2Point implements Group<G2Point> {
   }
 
   static G2Point fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 192, "Expected 192 bytes, received %s.", bytes.size());
+    checkArgument(
+        bytes.size() == 4 * fpPointSize, "Expected 192 bytes, received %s.", bytes.size());
     return new G2Point(ECP2.fromBytes(bytes.toArrayUnsafe()));
   }
 
   /**
-   * Deserialise the point from compressed form as per the Eth2 spec
+   * Deserialise the point from compressed form.
+   *
+   * <p>The standard follows the ZCash format for serialisation documented here:
+   * https://github.com/zkcrypto/pairing/blob/master/src/bls12_381/README.md#serialization
    *
    * @param bytes the compressed serialised form of the point
    * @return the point
@@ -278,7 +174,7 @@ public final class G2Point implements Group<G2Point> {
       }
     }
 
-    // Per the spec, we must check that x < q (the curve modulus) for this serialisation to be valid
+    // We must check that x < q (the curve modulus) for this serialisation to be valid
     // We raise an exception (that should be caught) if this check fails: somebody might feed us
     // faulty input.
     BIG xImBig = BIG.fromBytes(xImBytes);
@@ -311,10 +207,14 @@ public final class G2Point implements Group<G2Point> {
     return new G2Point(point);
   }
 
-  // Verify that the given point is in the correct subgroup for G2 by multiplying by the group order
+  /**
+   * Verify that the given point is in the correct subgroup for G2.
+   *
+   * @param point The elliptic curve point
+   * @return True if the point is in G2; false otherwise
+   */
   static boolean isInGroup(ECP2 point) {
-    ECP2 orderCheck = point.mul(new BIG(ROM.CURVE_Order));
-    return orderCheck.is_infinity();
+    return isInGroupG2(point);
   }
 
   ECP2 ecp2Point() {

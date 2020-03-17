@@ -177,7 +177,7 @@ public class PeerChainValidator {
 
   private SafeFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical() {
     final Checkpoint remoteFinalizedCheckpoint = status.getFinalizedCheckpoint();
-    final UnsignedLong remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochSlot();
+    final UnsignedLong remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochStartSlot();
     return historicalChainData
         .getLatestFinalizedBlockAtSlot(remoteFinalizedSlot)
         .thenApply(maybeBlock -> toBlock(remoteFinalizedSlot, maybeBlock))
@@ -186,7 +186,7 @@ public class PeerChainValidator {
 
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint) {
-    final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochSlot();
+    final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
     return historicalChainData
         .getLatestFinalizedBlockAtSlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))

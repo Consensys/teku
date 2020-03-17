@@ -19,6 +19,7 @@ import static tech.pegasys.artemis.datastructures.util.AttestationUtil.get_index
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_slashable_attestation_data;
 import static tech.pegasys.artemis.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
@@ -31,7 +32,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.slash_val
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_active_validator;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.is_slashable_validator;
-import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_RANDAO;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
@@ -54,7 +54,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -70,9 +69,8 @@ import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public final class BlockProcessorUtil {
 
@@ -97,7 +95,7 @@ public final class BlockProcessorUtil {
           block.getParent_root().equals(state.getLatest_block_header().hash_tree_root()),
           "process_block_header: Verify that the parent matches");
 
-      // Save the current block as the new latest block
+      // Cache the current block as the new latest block
       state.setLatest_block_header(
           new BeaconBlockHeader(
               block.getSlot(),
@@ -132,15 +130,11 @@ public final class BlockProcessorUtil {
       // Verify RANDAO reveal
       int proposer_index = get_beacon_proposer_index(state);
       Validator proposer = state.getValidators().get(proposer_index);
-      Bytes32 messageHash =
-          HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
+      final Bytes signing_root =
+          compute_signing_root(epoch.longValue(), get_domain(state, DOMAIN_RANDAO));
       checkArgument(
           !validateRandao
-              || bls_verify(
-                  proposer.getPubkey(),
-                  messageHash,
-                  body.getRandao_reveal(),
-                  get_domain(state, DOMAIN_RANDAO)),
+              || BLS.verify(proposer.getPubkey(), signing_root, body.getRandao_reveal()),
           "process_randao: Verify that the provided randao value is valid");
       // Mix in RANDAO reveal
       Bytes32 mix =
@@ -229,10 +223,6 @@ public final class BlockProcessorUtil {
                     .compareTo(proposer_slashing.getProposer_index())
                 > 0,
             "process_proposer_slashings: Invalid proposer index");
-        Validator proposer =
-            state
-                .getValidators()
-                .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
 
         checkArgument(
             proposer_slashing
@@ -240,38 +230,44 @@ public final class BlockProcessorUtil {
                 .getMessage()
                 .getSlot()
                 .equals(proposer_slashing.getHeader_2().getMessage().getSlot()),
-            "process_proposer_slashings: Verify that the slots match");
+            "process_proposer_slashings: Verify header slots match");
 
         checkArgument(
-            !Objects.equals(
-                proposer_slashing.getHeader_1().hash_tree_root(),
-                proposer_slashing.getHeader_2().hash_tree_root()),
-            "process_proposer_slashings: Verify that the headers are different");
+            !Objects.equals(proposer_slashing.getHeader_1(), proposer_slashing.getHeader_2()),
+            "process_proposer_slashings: Verify the headers are different");
 
+        final Validator proposer =
+            state
+                .getValidators()
+                .get(toIntExact(proposer_slashing.getProposer_index().longValue()));
         checkArgument(
             is_slashable_validator(proposer, get_current_epoch(state)),
-            "process_proposer_slashings: Check proposer is slashable");
+            "process_proposer_slashings: Verify the proposer is slashable");
 
         checkArgument(
-            bls_verify(
+            BLS.verify(
                 proposer.getPubkey(),
-                proposer_slashing.getHeader_1().getMessage().hash_tree_root(),
-                proposer_slashing.getHeader_1().getSignature(),
-                get_domain(
-                    state,
-                    DOMAIN_BEACON_PROPOSER,
-                    compute_epoch_at_slot(proposer_slashing.getHeader_1().getMessage().getSlot()))),
+                compute_signing_root(
+                    proposer_slashing.getHeader_1().getMessage(),
+                    get_domain(
+                        state,
+                        DOMAIN_BEACON_PROPOSER,
+                        compute_epoch_at_slot(
+                            proposer_slashing.getHeader_1().getMessage().getSlot()))),
+                proposer_slashing.getHeader_1().getSignature()),
             "process_proposer_slashings: Verify signatures are valid 1");
 
         checkArgument(
-            bls_verify(
+            BLS.verify(
                 proposer.getPubkey(),
-                proposer_slashing.getHeader_2().getMessage().hash_tree_root(),
-                proposer_slashing.getHeader_2().getSignature(),
-                get_domain(
-                    state,
-                    DOMAIN_BEACON_PROPOSER,
-                    compute_epoch_at_slot(proposer_slashing.getHeader_2().getMessage().getSlot()))),
+                compute_signing_root(
+                    proposer_slashing.getHeader_2().getMessage(),
+                    get_domain(
+                        state,
+                        DOMAIN_BEACON_PROPOSER,
+                        compute_epoch_at_slot(
+                            proposer_slashing.getHeader_2().getMessage().getSlot()))),
+                proposer_slashing.getHeader_2().getSignature()),
             "process_proposer_slashings: Verify signatures are valid 2");
 
         slash_validator(state, toIntExact(proposer_slashing.getProposer_index().longValue()));
@@ -454,16 +450,16 @@ public final class BlockProcessorUtil {
             UnsignedLong.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
                 > 0,
             "process_voluntary_exits: Invalid validator index");
-        Validator validator =
-            state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
 
+        final Validator validator =
+            state.getValidators().get(toIntExact(exit.getValidator_index().longValue()));
         checkArgument(
             is_active_validator(validator, get_current_epoch(state)),
             "process_voluntary_exits: Verify the validator is active");
 
         checkArgument(
             validator.getExit_epoch().compareTo(FAR_FUTURE_EPOCH) == 0,
-            "process_voluntary_exits: Verify the validator has not yet exited");
+            "process_voluntary_exits: Verify exit has not been initiated");
 
         checkArgument(
             get_current_epoch(state).compareTo(exit.getEpoch()) >= 0,
@@ -478,10 +474,10 @@ public final class BlockProcessorUtil {
                 >= 0,
             "process_voluntary_exits: Verify the validator has been active long enough");
 
-        Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
+        final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
+        final Bytes signing_root = compute_signing_root(exit, domain);
         checkArgument(
-            bls_verify(
-                validator.getPubkey(), exit.hash_tree_root(), signedExit.getSignature(), domain),
+            BLS.verify(validator.getPubkey(), signing_root, signedExit.getSignature()),
             "process_voluntary_exits: Verify signature");
 
         // - Run initiate_validator_exit(state, exit.validator_index)

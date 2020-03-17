@@ -65,7 +65,7 @@ class AttestationTest {
                 target),
             BLSSignature.empty());
 
-    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochSlot());
+    assertThat(attestation.getEarliestSlotForProcessing()).isEqualTo(target.getEpochStartSlot());
   }
 
   @Test
@@ -144,14 +144,11 @@ class AttestationTest {
 
   @Test
   void equalsReturnsFalseWhenAggregrateSignaturesAreDifferent() {
-    BLSSignature differentAggregateSignature = BLSSignature.random();
-    while (differentAggregateSignature.equals(aggregateSignature)) {
-      differentAggregateSignature = BLSSignature.random();
-    }
-
+    BLSSignature differentAggregateSignature = BLSSignature.random(99);
     Attestation testAttestation =
         new Attestation(aggregationBitfield, data, differentAggregateSignature);
 
+    assertNotEquals(aggregateSignature, differentAggregateSignature);
     assertNotEquals(attestation, testAttestation);
   }
 }
