@@ -77,18 +77,28 @@ class YamlKeysWriterTest {
   }
 
   @Test
-  void keysAreWrittenToFile(@TempDir final Path tempDir) throws IOException {
+  void keysAreWrittenToExistingFile(@TempDir final Path tempDir) throws IOException {
     final Path keysFile = Files.createTempFile(tempDir, "keys", ".yaml");
+    assertKeysAreWritten(keysFile);
+  }
+
+  @Test
+  void keysAreWrittenAndFileGetsCreated(@TempDir final Path tempDir) throws IOException {
+    final Path keysFile = tempDir.resolve("keys.yaml");
+    assertKeysAreWritten(keysFile);
+  }
+
+  private void assertKeysAreWritten(final Path keysFile) {
     final KeysWriter keysWriter = new YamlKeysWriter(keysFile);
 
     keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator1SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal1SecretKey)));
+            new BLSKeyPair(new KeyPair(validator1SecretKey)),
+            new BLSKeyPair(new KeyPair(withdrawal1SecretKey)));
     assertThat(contentOf(keysFile.toFile())).isEqualTo(yamlLine1);
 
     keysWriter.writeKeys(
-        new BLSKeyPair(new KeyPair(validator2SecretKey)),
-        new BLSKeyPair(new KeyPair(withdrawal2SecretKey)));
+            new BLSKeyPair(new KeyPair(validator2SecretKey)),
+            new BLSKeyPair(new KeyPair(withdrawal2SecretKey)));
     assertThat(contentOf(keysFile.toFile())).isEqualTo(expectedYaml);
   }
 }
