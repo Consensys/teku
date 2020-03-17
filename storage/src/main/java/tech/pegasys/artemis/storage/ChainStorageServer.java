@@ -16,15 +16,8 @@ package tech.pegasys.artemis.storage;
 import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
@@ -46,37 +39,28 @@ import tech.pegasys.artemis.storage.events.StoreInitializedFromStorageEvent;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class ChainStorageServer {
-  private static final Logger LOG = LogManager.getLogger();
+  private final EventBus eventBus;
+  private final VersionedDatabaseFactory databaseFactory;
+  private final ArtemisConfiguration configuration;
+  private final AtomicBoolean storeIsPersisted;
 
   private volatile Database database;
-  private final EventBus eventBus;
-  private final ArtemisConfiguration configuration;
-
-  public final String DATABASE_VERSION = "1.0";
-
-  private final AtomicBoolean storeIsPersisted;
   private volatile Optional<Store> cachedStore = Optional.empty();
 
-  public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
+  private ChainStorageServer(
+      EventBus eventBus, ArtemisConfiguration config, final VersionedDatabaseFactory dbFactory) {
     this.configuration = config;
     this.eventBus = eventBus;
+    this.databaseFactory = dbFactory;
     storeIsPersisted = new AtomicBoolean(configuration.startFromDisk());
   }
 
+  public static ChainStorageServer create(EventBus eventBus, ArtemisConfiguration config) {
+    return new ChainStorageServer(eventBus, config, new VersionedDatabaseFactory(config));
+  }
+
   public void start() {
-    File dataStoragePath = new File(configuration.getDataPath());
-    File databaseVersionPath = new File(dataStoragePath, "/db.version");
-    File databaseStoragePath = new File(configuration.getDataPath() + "/db");
-
-    LOG.info("Data directory set to: {}", dataStoragePath);
-    preflightCheck(databaseStoragePath, databaseVersionPath);
-
-    final StateStorageMode stateStorageMode =
-        StateStorageMode.fromString(configuration.getStateStorageMode());
-    this.database =
-        MapDbDatabase.createOnDisk(
-            databaseStoragePath, configuration.startFromDisk(), stateStorageMode);
-    eventBus.register(this);
+    this.database = databaseFactory.createDatabase();
 
     final Optional<Store> store = getStore();
     eventBus.post(new StoreInitializedFromStorageEvent(store));
@@ -101,53 +85,6 @@ public class ChainStorageServer {
 
   private synchronized void handleStoreGenesis() {
     storeIsPersisted.set(true);
-  }
-
-  private void preflightCheck(File databaseStoragePath, File databaseVersionPath) {
-    if (databaseStoragePath.exists() && !databaseVersionPath.exists()) {
-      throw new DatabaseStorageException(
-          String.format(
-              "No database version file was found, and the database path %s exists.",
-              databaseStoragePath.getAbsolutePath()));
-    }
-    if (!databaseStoragePath.exists() && !databaseStoragePath.mkdirs()) {
-      throw new DatabaseStorageException(
-          String.format(
-              "Unable to create the path to store database files at %s",
-              databaseStoragePath.getAbsolutePath()));
-    }
-
-    validateDatabaseVersion(databaseVersionPath);
-  }
-
-  private void validateDatabaseVersion(File databaseVersionFile) {
-    try {
-      if (databaseVersionFile.exists()) {
-        String ver = Files.readString(databaseVersionFile.toPath()).trim();
-        if (!DATABASE_VERSION.equals(ver)) {
-          throw new DatabaseStorageException(
-              String.format(
-                  "The database version found (%s) does not match the expected version(%s).\n"
-                      + "Aborting startup to prevent corruption of the database.\n",
-                  ver, DATABASE_VERSION));
-        }
-        LOG.log(
-            Level.INFO,
-            String.format(
-                "The existing database is version %s, from file: %s",
-                DATABASE_VERSION, databaseVersionFile.getAbsolutePath()));
-      } else {
-        LOG.log(
-            Level.INFO,
-            String.format(
-                "Recording database version %s to file: %s",
-                DATABASE_VERSION, databaseVersionFile.getAbsolutePath()));
-        Files.writeString(
-            databaseVersionFile.toPath(), DATABASE_VERSION, StandardOpenOption.CREATE);
-      }
-    } catch (IOException e) {
-      LOG.log(Level.ERROR, "Failed to write database version to file", e);
-    }
   }
 
   @Subscribe

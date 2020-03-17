@@ -22,7 +22,7 @@ public class ChainStorageService extends Service {
   private final ChainStorageServer server;
 
   public ChainStorageService(final ServiceConfig serviceConfig) {
-    this.server = new ChainStorageServer(serviceConfig.getEventBus(), serviceConfig.getConfig());
+    this.server = ChainStorageServer.create(serviceConfig.getEventBus(), serviceConfig.getConfig());
   }
 
   @Override
