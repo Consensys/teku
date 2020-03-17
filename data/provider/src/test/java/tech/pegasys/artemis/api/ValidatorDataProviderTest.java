@@ -53,7 +53,7 @@ public class ValidatorDataProviderTest {
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock()
       throws SlotProcessingException, EpochProcessingException, StateTransitionException {
     tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
-        tech.pegasys.artemis.util.bls.BLSSignature.random();
+        tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
     BLSSignature signature = new BLSSignature(signatureInternal);
     when(validatorCoordinator.createUnsignedBlock(ONE, signatureInternal))
         .thenReturn(Optional.of(blockInternal));
