@@ -25,7 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,11 +41,10 @@ import tech.pegasys.artemis.datastructures.operations.VoluntaryExit;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateImpl;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.mikuli.G2Point;
-import tech.pegasys.artemis.util.mikuli.PublicKey;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
 
 public abstract class TestSuite {
   protected static Path configPath = null;
@@ -240,70 +239,73 @@ public abstract class TestSuite {
     return finalArguments;
   }
 
-  @SuppressWarnings({"rawtypes"})
+  @SuppressWarnings({"rawtypes", "unchecked"})
   private static Object parseObjectFromFile(Class className, Path path, Object object) {
-    if (path != null) {
-      Iterator<Path> itr = path.iterator();
-      while (itr.hasNext()) {
-        object = ((Map) object).get(itr.next().toString());
-      }
+    // We found what we're looking for; recursion is finished
+    if (path == null) return MapObjectUtil.convertMapToTypedObject(className, object);
+    if (object.getClass() == LinkedHashMap.class) {
+      // We just recurse down the path for HashMaps
+      Path head = path.getName(0);
+      Path tail = path.getNameCount() > 1 ? path.subpath(1, path.getNameCount()) : null;
+      return parseObjectFromFile(className, tail, ((Map) object).get(head.toString()));
+    } else if (object.getClass() == ArrayList.class) {
+      // If we've found an ArrayList, we need to construct a list of the objects we're looking for
+      return ((ArrayList) object)
+          .stream().map(x -> parseObjectFromFile(className, path, x)).collect(Collectors.toList());
+    } else {
+      throw new RuntimeException(
+          "Unknown class encountered in parseObjectFromFile: " + object.getClass());
     }
-    return MapObjectUtil.convertMapToTypedObject(className, object);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> aggregatePublicKeysSetup(Path path) {
-
+  public static Stream<Arguments> aggregateSetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", PublicKey[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSSignature[].class, Paths.get("input")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> messageHashCompressedSetup(Path path) {
-
+  public static Stream<Arguments> aggregateVerifySetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
+    // We are expecting an array of PublicKeys, but we must just specify just PublicKey type here
+    // due to the test file format.
+    testSet.add(
+        new TestObject("data.yaml", BLSPublicKey.class, Paths.get("input", "pairs", "pubkey")));
+    // As above
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "pairs", "message")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("input", "signature")));
+    testSet.add(new TestObject("data.yaml", Boolean.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> privateKeyPublicKeySetup(Path path) {
-
+  public static Stream<Arguments> fastAggregateVerifySetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", PublicKey.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSPublicKey[].class, Paths.get("input", "pubkeys")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("input", "signature")));
+    testSet.add(new TestObject("data.yaml", Boolean.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> messageHashUncompressedSetup(Path path) {
-
-    TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", G2Point.class, Paths.get("output")));
-    return findTestsByPath(testSet);
-  }
-
-  @MustBeClosed
-  public static Stream<Arguments> signMessagesSetup(Path path) {
-
+  public static Stream<Arguments> signSetup(Path path) {
     TestSet testSet = new TestSet(path);
     testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "domain")));
-    testSet.add(new TestObject("data.yaml", SecretKey.class, Paths.get("input", "privkey")));
-    testSet.add(new TestObject("data.yaml", Signature.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSSecretKey.class, Paths.get("input", "privkey")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 
   @MustBeClosed
-  public static Stream<Arguments> aggregateSignaturesSetup(Path path) {
-
+  public static Stream<Arguments> verifySetup(Path path) {
     TestSet testSet = new TestSet(path);
-    testSet.add(new TestObject("data.yaml", Signature[].class, Paths.get("input")));
-    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("output")));
+    testSet.add(new TestObject("data.yaml", BLSPublicKey.class, Paths.get("input", "pubkey")));
+    testSet.add(new TestObject("data.yaml", Bytes.class, Paths.get("input", "message")));
+    testSet.add(new TestObject("data.yaml", BLSSignature.class, Paths.get("input", "signature")));
+    testSet.add(new TestObject("data.yaml", Boolean.class, Paths.get("output")));
     return findTestsByPath(testSet);
   }
 

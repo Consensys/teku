@@ -19,25 +19,31 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.G2Point;
+import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class msg_hash_uncompressed extends TestSuite {
+class Verify extends TestSuite {
 
-  // The msg_hash_g2_uncompressed handler should hash the message, with the given domain, to G2,
-  // without compression, and the result should match the expected output.
-  @ParameterizedTest(name = "{index}. message hash to G2 uncompressed {0} -> {1}")
-  @MethodSource("readMessageHashG2Uncompressed")
-  void messageHashToG2Uncompressed(G2Point g2PointExpected, G2Point g2PointActual) {
-    assertEquals(g2PointExpected, g2PointActual);
+  @ParameterizedTest(name = "{index}. verify {4}")
+  @MethodSource("verifyData")
+  void verify(
+      BLSPublicKey publicKey,
+      Bytes message,
+      BLSSignature signature,
+      Boolean expected,
+      String testname) {
+    assertEquals(expected, BLS.verify(publicKey, message, signature));
   }
 
   @MustBeClosed
-  static Stream<Arguments> readMessageHashG2Uncompressed() {
-    Path path = Paths.get("/general/phase0/bls/msg_hash_uncompressed/small");
-    return messageHashUncompressedSetup(path);
+  static Stream<Arguments> verifyData() {
+    Path path = Paths.get("/general/phase0/bls/verify/small");
+    return verifySetup(path);
   }
 }

@@ -17,44 +17,33 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-public class BLSPublicKey implements SimpleOffsetSerializable {
+public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  public static final int BLS_PUBKEY_SIZE = 48;
+  private static final int BLS_PUBKEY_SIZE = 48;
 
   /**
-   * Generates a compressed, serialised, random, valid public key
+   * Generates a compressed, serialised, random, valid public key based on a seed.
    *
    * @return PublicKey The public key, not null
    */
-  public static BLSPublicKey random() {
-    return new BLSPublicKey(PublicKey.random());
-  }
-
   public static BLSPublicKey random(int seed) {
     return new BLSPublicKey(PublicKey.random(seed));
   }
 
   /**
-   * Creates an empty public key (all zero bytes)
+   * Creates an empty public key (all zero bytes).
    *
    * @return the empty public key as per the Eth2 spec
    */
   public static BLSPublicKey empty() {
     return BLSPublicKey.fromBytes(Bytes.wrap(new byte[BLS_PUBKEY_SIZE]));
-  }
-
-  public static BLSPublicKey aggregate(List<BLSPublicKey> publicKeys) {
-    List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(x -> x.publicKey).collect(Collectors.toList());
-    return new BLSPublicKey(PublicKey.aggregate(publicKeyObjects));
   }
 
   @Override
@@ -85,12 +74,35 @@ public class BLSPublicKey implements SimpleOffsetSerializable {
 
   private final PublicKey publicKey;
 
-  public BLSPublicKey(PublicKey publicKey) {
+  /**
+   * Copy constructor.
+   *
+   * @param publicKey A BLSPublicKey
+   */
+  public BLSPublicKey(BLSPublicKey publicKey) {
+    this.publicKey = publicKey.getPublicKey();
+  }
+
+  /**
+   * Construct from a BLSSecretKey object.
+   *
+   * @param secretKey A BLSSecretKey
+   */
+  public BLSPublicKey(BLSSecretKey secretKey) {
+    this.publicKey = new PublicKey(secretKey.getSecretKey());
+  }
+
+  /**
+   * Construct from a Mikuli PublicKey object.
+   *
+   * @param publicKey A Mikuli PublicKey
+   */
+  BLSPublicKey(PublicKey publicKey) {
     this.publicKey = publicKey;
   }
 
   /**
-   * Returns the SSZ serialisation of the <em>compressed</em> form of the signature
+   * Returns the SSZ serialisation of the <em>compressed</em> form of the signature.
    *
    * @return the serialisation of the compressed form of the signature.
    */

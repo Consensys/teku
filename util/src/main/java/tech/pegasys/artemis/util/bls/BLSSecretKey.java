@@ -17,14 +17,19 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.mikuli.SecretKey;
 
-public class BLSSecretKey {
+public final class BLSSecretKey {
 
-  public static BLSSecretKey fromBytes(Bytes bytes48) {
-    return new BLSSecretKey(SecretKey.fromBytes(bytes48));
+  public static BLSSecretKey fromBytes(Bytes bytes) {
+    return new BLSSecretKey(SecretKey.fromBytes(bytes));
   }
 
   private SecretKey secretKey;
 
+  /**
+   * Construct from a Mikuli SecretKey object.
+   *
+   * @param secretKey A Mikuli SecretKey
+   */
   BLSSecretKey(SecretKey secretKey) {
     this.secretKey = secretKey;
   }

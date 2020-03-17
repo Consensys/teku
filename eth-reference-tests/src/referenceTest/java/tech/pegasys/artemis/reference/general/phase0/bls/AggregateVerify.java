@@ -18,32 +18,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.BLS12381;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
-import tech.pegasys.artemis.util.mikuli.Signature;
+import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class sign_msg extends TestSuite {
+class AggregateVerify extends TestSuite {
 
-  // The sign_msg handler should sign the given message, with domain, using the given privkey, and
-  // the result should match the expected output.
-  @ParameterizedTest(name = "{index}. sign messages {0} -> {1}")
-  @MethodSource("readSignMessages")
-  void signMessages(Bytes message, Bytes domain, SecretKey secretKey, Signature signatureExpected) {
-    Signature signatureActual =
-        BLS12381.sign(new KeyPair(secretKey), message.toArray(), domain).signature();
-    assertEquals(signatureExpected, signatureActual);
+  @ParameterizedTest(name = "{index}. aggregateVerify {4}")
+  @MethodSource("aggregateVerifyData")
+  void aggregateVerify(
+      List<BLSPublicKey> publicKeys,
+      List<Bytes> messages,
+      BLSSignature signature,
+      Boolean expected,
+      String testname) {
+
+    assertEquals(expected, BLS.aggregateVerify(publicKeys, messages, signature));
   }
 
   @MustBeClosed
-  static Stream<Arguments> readSignMessages() {
-    Path path = Paths.get("/general/phase0/bls/sign_msg/small");
-    return signMessagesSetup(path);
+  static Stream<Arguments> aggregateVerifyData() {
+    Path path = Paths.get("general/phase0/bls/aggregate_verify/small");
+    return aggregateVerifySetup(path);
   }
 }

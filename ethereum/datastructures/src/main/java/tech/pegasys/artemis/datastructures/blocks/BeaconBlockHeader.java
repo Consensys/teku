@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -173,15 +174,11 @@ public class BeaconBlockHeader extends AbstractImmutableContainer<BeaconBlockHea
 
   @Override
   public String toString() {
-    return "BeaconBlockHeader{"
-        + "slot="
-        + getSlot()
-        + ", parent_root="
-        + getParent_root()
-        + ", state_root="
-        + getState_root()
-        + ", body_root="
-        + getBody_root()
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("parent_root", parent_root)
+        .add("state_root", state_root)
+        .add("body_root", body_root)
+        .toString();
   }
 }

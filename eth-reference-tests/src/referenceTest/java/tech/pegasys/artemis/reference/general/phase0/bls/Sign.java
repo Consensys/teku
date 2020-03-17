@@ -19,25 +19,28 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.artemis.ethtests.TestSuite;
-import tech.pegasys.artemis.util.mikuli.G2Point;
+import tech.pegasys.artemis.util.bls.BLS;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
-class msg_hash_compressed extends TestSuite {
+class Sign extends TestSuite {
 
-  // The msg_hash_g2_compressed handler should hash the message, with the given domain, to G2 with
-  // compression, and the result should match the expected output.
-  @ParameterizedTest(name = "{index}. message hash to G2 compressed {0} -> {1}")
-  @MethodSource("readMessageHashG2Compressed")
-  void messageHashToG2Compressed(G2Point g2PointActual, G2Point g2PointExpected) {
-    assertEquals(g2PointExpected, g2PointActual);
+  @ParameterizedTest(name = "{index}. sign {3}")
+  @MethodSource("signData")
+  void sign(
+      Bytes message, BLSSecretKey secretKey, BLSSignature signatureExpected, String testname) {
+    BLSSignature signatureActual = BLS.sign(secretKey, message);
+    assertEquals(signatureExpected, signatureActual);
   }
 
   @MustBeClosed
-  static Stream<Arguments> readMessageHashG2Compressed() {
-    Path path = Paths.get("/general/phase0/bls/msg_hash_compressed/small");
-    return messageHashCompressedSetup(path);
+  static Stream<Arguments> signData() {
+    Path path = Paths.get("/general/phase0/bls/sign/small");
+    return signSetup(path);
   }
 }
