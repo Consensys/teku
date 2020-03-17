@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.networking.p2p.discovery;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -26,7 +25,7 @@ public interface DiscoveryService {
 
   Stream<DiscoveryPeer> streamKnownPeers();
 
-  CompletableFuture<Void> searchForPeers();
+  SafeFuture<Void> searchForPeers();
 
   Optional<String> getEnr();
 }
