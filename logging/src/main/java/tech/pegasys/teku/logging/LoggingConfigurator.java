@@ -98,13 +98,17 @@ public class LoggingConfigurator {
         addAppenderToRootLogger(configuration, fileAppender);
         break;
       default:
+        StatusLogger.getLogger()
+            .warn(
+                "Unknown logging destination: {}, applying default: {}",
+                DESTINATION,
+                LoggingDestination.BOTH);
       case BOTH:
         onlyEventsLoggerToConsole(configuration);
 
         fileAppender = fileAppender(configuration);
 
         setUpStatusLogger(fileAppender);
-
         addAppenderToRootLogger(configuration, fileAppender);
         break;
     }
