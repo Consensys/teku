@@ -48,6 +48,7 @@ metricsNetworkInterface = "127.0.0.1"
 [database]
 dataPath="."
 startFromDisk = false
+stateStorageMode = "prune"
 
 [beaconrestapi]
 portNumber = 5051
