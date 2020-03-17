@@ -55,6 +55,7 @@ public class ChainStorageServer {
 
   public void start() {
     this.database = databaseFactory.createDatabase();
+    eventBus.register(this);
 
     final Optional<Store> store = getStore();
     eventBus.post(new StoreInitializedFromStorageEvent(store));
