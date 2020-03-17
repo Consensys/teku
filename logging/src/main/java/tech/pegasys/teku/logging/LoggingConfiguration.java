@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.logging;
 
-import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-
 public class LoggingConfiguration {
 
   private final boolean colorEnabled;
@@ -54,14 +52,5 @@ public class LoggingConfiguration {
 
   public String getFileNamePattern() {
     return fileNamePattern;
-  }
-
-  public static LoggingConfiguration fromConfig(final ArtemisConfiguration config) {
-    return new LoggingConfiguration(
-        config.isLoggingColorEnabled(),
-        config.isLoggingIncludeEventsEnabled(),
-        LoggingDestination.get(config.getLoggingDestination()),
-        config.getLoggingFile(),
-        config.getLoggingFileNamePattern());
   }
 }
