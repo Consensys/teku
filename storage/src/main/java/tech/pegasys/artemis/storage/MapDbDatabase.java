@@ -16,8 +16,6 @@ package tech.pegasys.artemis.storage;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map.Entry;
@@ -70,15 +68,8 @@ public class MapDbDatabase implements Database {
   private final StateStorageMode stateStorageMode;
 
   public static Database createOnDisk(
-      final File directory, final boolean startFromDisk, final StateStorageMode stateStorageMode) {
+      final File directory, final StateStorageMode stateStorageMode) {
     final File databaseFile = new File(directory, "teku.db");
-    try {
-      if (!startFromDisk) {
-        Files.deleteIfExists(databaseFile.toPath());
-      }
-    } catch (IOException e) {
-      LOG.error("Failed to clear old database");
-    }
     return new MapDbDatabase(DBMaker.fileDB(databaseFile), stateStorageMode);
   }
 
