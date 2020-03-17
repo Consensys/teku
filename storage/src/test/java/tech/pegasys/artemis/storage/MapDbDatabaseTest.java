@@ -19,6 +19,9 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_s
 
 import com.google.common.collect.Streams;
 import com.google.common.primitives.UnsignedLong;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,7 +83,14 @@ class MapDbDatabaseTest {
   private int seed = 498242;
 
   @BeforeEach
-  public void recordGenesis() {
+  public void recordGenesis(@TempDirectory final Path tempDir) {
+    final File databaseFile = new File(tempDir.toString(), "teku.db");
+    try {
+      Files.deleteIfExists(databaseFile.toPath());
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to clean old database file for new test");
+    }
+
     database.storeGenesis(store);
 
     checkpoint1Block = blockAtEpoch(6);
@@ -548,7 +558,7 @@ class MapDbDatabaseTest {
   private void testShouldPersistOnDisk(
       @TempDirectory final Path tempDir, final StateStorageMode storageMode) throws Exception {
     try {
-      database = MapDbDatabase.createOnDisk(tempDir.toFile(), false, storageMode);
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), storageMode);
       database.storeGenesis(store);
 
       // Create blocks
@@ -613,7 +623,7 @@ class MapDbDatabaseTest {
 
       // Close and re-read from disk store.
       database.close();
-      database = MapDbDatabase.createOnDisk(tempDir.toFile(), true, storageMode);
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), storageMode);
       assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
       assertBlocksFinalized(block1, block2, block3, block7);
       assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);
