@@ -78,7 +78,7 @@ class YamlKeysWriterTest {
   }
 
   @Test
-  void keysAreWrittenAndFileGetsCreated(@TempDir final Path tempDir) throws IOException {
+  void fileGetsCreatedAndKeysAreWritten(@TempDir final Path tempDir) throws IOException {
     final Path keysFile = tempDir.resolve("keys.yaml");
     assertKeysAreWritten(keysFile);
   }
