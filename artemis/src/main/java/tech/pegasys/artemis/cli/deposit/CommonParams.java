@@ -122,7 +122,7 @@ public class CommonParams implements Closeable {
     } catch (final IOException e) {
       throw new CommandLine.ParameterException(
           spec.commandLine(),
-          "Error: Unexpected IO Error while reading v3 keystore ["
+          "Error: Unexpected IO Error while reading Eth1 keystore ["
               + eth1PrivateKeystoreFile
               + "] : "
               + e.getMessage(),
@@ -130,7 +130,7 @@ public class CommonParams implements Closeable {
     } catch (CipherException e) {
       throw new CommandLine.ParameterException(
           spec.commandLine(),
-          "Error: Unable to decrypt v3 keystore ["
+          "Error: Unable to decrypt Eth1 keystore ["
               + eth1PrivateKeystoreFile
               + "] : "
               + e.getMessage(),

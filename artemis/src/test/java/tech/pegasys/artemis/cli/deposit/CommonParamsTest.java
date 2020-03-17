@@ -110,7 +110,7 @@ class CommonParamsTest {
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(() -> commonParams.getEth1Credentials())
         .withMessage(
-            "Error: Unable to decrypt v3 keystore [%s] : Wallet version is not supported",
+            "Error: Unable to decrypt Eth1 keystore [%s] : Wallet version is not supported",
             keystoreOptions.eth1PrivateKeystoreFile);
   }
 
@@ -132,7 +132,7 @@ class CommonParamsTest {
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(() -> commonParams.getEth1Credentials())
         .withMessageStartingWith(
-            "Error: Unexpected IO Error while reading v3 keystore [%s] : Unrecognized token ",
+            "Error: Unexpected IO Error while reading Eth1 keystore [%s] : Unrecognized token ",
             keystoreOptions.eth1PrivateKeystoreFile);
   }
 }
