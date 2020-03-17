@@ -30,7 +30,7 @@ class Eth1PrivateKeyOptions {
 
   static class Eth1EncryptedPrivateKeystoreOptions {
     @Option(
-        names = {"--eth1-private-keystore-file"},
+        names = {"--eth1-keystore-file"},
         required = true,
         paramLabel = "<FILE>",
         description =
@@ -38,7 +38,7 @@ class Eth1PrivateKeyOptions {
     File eth1PrivateKeystoreFile;
 
     @Option(
-        names = {"--eth1-private-keystore-password-file"},
+        names = {"--eth1-keystore-password-file"},
         required = true,
         paramLabel = "<FILE>",
         description = "Path to file containing password to decrypt Ethereum 1 keystore")
