@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.BeaconListingHandler;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
@@ -117,6 +118,7 @@ public class BeaconRestApi {
 
   private void addBeaconHandlers(final DataProvider dataProvider) {
     final ChainDataProvider provider = dataProvider.getChainDataProvider();
+    app.get(BeaconListingHandler.ROUTE, new BeaconListingHandler(jsonProvider));
     app.get(GetBlock.ROUTE, new GetBlock(provider, jsonProvider));
     app.get(GetChainHead.ROUTE, new GetChainHead(provider, jsonProvider));
     app.get(GetHead.ROUTE, new GetHead(provider, jsonProvider));

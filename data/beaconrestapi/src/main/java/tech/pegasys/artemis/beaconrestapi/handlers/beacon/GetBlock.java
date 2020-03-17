@@ -43,10 +43,13 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
+import tech.pegasys.artemis.beaconrestapi.schema.ListingResponse;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetBlock implements Handler {
 
+  public static final ListingResponse listing =
+      new ListingResponse(GetBlock.ROUTE, HttpMethod.GET.name(), List.of(EPOCH, SLOT, ROOT));
   public static final String ROUTE = "/beacon/block";
   static final String TOO_MANY_PARAMETERS =
       "Too many query parameters specified. Please supply only one.";
