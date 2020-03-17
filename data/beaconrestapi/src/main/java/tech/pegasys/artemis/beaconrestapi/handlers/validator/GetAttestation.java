@@ -60,7 +60,7 @@ public class GetAttestation implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "Slot to create the attestation for.",
+            description = "Slot for which to create the attestation.",
             required = true),
         @OpenApiParam(
             name = COMMITTEE_INDEX,
