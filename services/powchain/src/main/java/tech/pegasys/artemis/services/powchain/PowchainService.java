@@ -70,7 +70,7 @@ public class PowchainService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOf(
+    return SafeFuture.allOfFailFast(
         SafeFuture.fromRunnable(eth1DepositManager::start),
         SafeFuture.fromRunnable(eth1DataManager::start));
   }

@@ -81,7 +81,7 @@ public class BlockPropagationManager extends Service {
   public SafeFuture<?> doStart() {
     this.eventBus.register(this);
     recentBlockFetcher.subscribeBlockFetched(this::importBlock);
-    return SafeFuture.allOf(recentBlockFetcher.start(), pendingBlocks.start());
+    return SafeFuture.allOfFailFast(recentBlockFetcher.start(), pendingBlocks.start());
   }
 
   @Override
