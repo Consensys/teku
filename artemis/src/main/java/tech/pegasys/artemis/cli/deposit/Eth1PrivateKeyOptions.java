@@ -7,7 +7,7 @@ import java.io.File;
 
 class Eth1PrivateKeyOptions {
   @Option(
-      names = {"-p", "--eth1-private-key"},
+      names = {"--eth1-private-key"},
       required = true,
       paramLabel = "<KEY>",
       description = "Ethereum 1 private key to use to send transactions")
