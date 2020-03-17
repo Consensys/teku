@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -54,13 +53,11 @@ public class ChainStorageServer {
 
   public final String DATABASE_VERSION = "1.0";
 
-  private final AtomicBoolean storeIsPersisted;
   private volatile Optional<Store> cachedStore = Optional.empty();
 
   public ChainStorageServer(EventBus eventBus, ArtemisConfiguration config) {
     this.configuration = config;
     this.eventBus = eventBus;
-    storeIsPersisted = new AtomicBoolean(configuration.startFromDisk());
   }
 
   public void start() {
@@ -71,7 +68,9 @@ public class ChainStorageServer {
     LOG.info("Data directory set to: {}", dataStoragePath);
     preflightCheck(databaseStoragePath, databaseVersionPath);
 
-    this.database = MapDbDatabase.createOnDisk(databaseStoragePath, configuration.startFromDisk());
+    final StateStorageMode stateStorageMode =
+        StateStorageMode.fromString(configuration.getStateStorageMode());
+    this.database = MapDbDatabase.createOnDisk(databaseStoragePath, stateStorageMode);
     eventBus.register(this);
 
     final Optional<Store> store = getStore();
@@ -79,9 +78,7 @@ public class ChainStorageServer {
   }
 
   private synchronized Optional<Store> getStore() {
-    if (!storeIsPersisted.get()) {
-      return Optional.empty();
-    } else if (cachedStore.isEmpty()) {
+    if (cachedStore.isEmpty()) {
       // Create store from database
       cachedStore = database.createMemoryStore();
     }
@@ -93,10 +90,6 @@ public class ChainStorageServer {
     if (result.isSuccessful()) {
       cachedStore = Optional.empty();
     }
-  }
-
-  private synchronized void handleStoreGenesis() {
-    storeIsPersisted.set(true);
   }
 
   private void preflightCheck(File databaseStoragePath, File databaseVersionPath) {
@@ -161,7 +154,6 @@ public class ChainStorageServer {
   @Subscribe
   public void onStoreGenesis(final StoreGenesisDiskUpdateEvent event) {
     database.storeGenesis(event.getStore());
-    handleStoreGenesis();
   }
 
   @Subscribe

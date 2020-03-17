@@ -117,7 +117,7 @@ public class BeaconChainController extends Service {
     return initialize()
         .thenCompose(
             __ ->
-                SafeFuture.allOf(
+                SafeFuture.allOfFailFast(
                     validatorCoordinator.start(),
                     attestationManager.start(),
                     p2pNetwork.start(),

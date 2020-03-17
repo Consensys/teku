@@ -87,7 +87,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   @Override
   public SafeFuture<?> start() {
-    return SafeFuture.allOf(p2pNetwork.start(), discoveryService.start())
+    return SafeFuture.allOfFailFast(p2pNetwork.start(), discoveryService.start())
         .thenCompose(__ -> connectionManager.start());
   }
 
