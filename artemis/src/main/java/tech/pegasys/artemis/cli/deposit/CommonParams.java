@@ -33,7 +33,6 @@ import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
-import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -41,31 +40,30 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class CommonParams implements Closeable {
-  @Spec
-  private CommandSpec spec;
+  @Spec private CommandSpec spec;
 
   @Option(
-          names = {"-u", "--node-url"},
-          required = true,
-          paramLabel = "<URL>",
-          description = "JSON-RPC endpoint URL for the Ethereum 1 node to send transactions via")
+      names = {"-u", "--node-url"},
+      required = true,
+      paramLabel = "<URL>",
+      description = "JSON-RPC endpoint URL for the Ethereum 1 node to send transactions via")
   private String eth1NodeUrl;
 
   @Option(
-          names = {"-c", "--contract-address"},
-          required = true,
-          paramLabel = "<ADDRESS>",
-          description = "Address of the deposit contract")
+      names = {"-c", "--contract-address"},
+      required = true,
+      paramLabel = "<ADDRESS>",
+      description = "Address of the deposit contract")
   private String contractAddress;
 
   @ArgGroup(exclusive = true, multiplicity = "1")
   private Eth1PrivateKeyOptions eth1PrivateKeyOptions;
 
   @Option(
-          names = {"-a", "--amount"},
-          paramLabel = "<GWEI>",
-          converter = UnsignedLongConverter.class,
-          description = "Deposit amount in Gwei (default: ${DEFAULT-VALUE})")
+      names = {"-a", "--amount"},
+      paramLabel = "<GWEI>",
+      converter = UnsignedLongConverter.class,
+      description = "Deposit amount in Gwei (default: ${DEFAULT-VALUE})")
   private UnsignedLong amount = UnsignedLong.valueOf(32000000000L);
 
   private OkHttpClient httpClient;
@@ -75,12 +73,11 @@ public class CommonParams implements Closeable {
   public DepositTransactionSender createTransactionSender() {
     httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
     executorService =
-            Executors.newScheduledThreadPool(
-                    1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
+        Executors.newScheduledThreadPool(
+            1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
     web3j = Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
     return new DepositTransactionSender(web3j, contractAddress, getEth1Credentials());
   }
-
 
   @Override
   public void close() {
@@ -102,38 +99,40 @@ public class CommonParams implements Closeable {
     }
 
     final String keystorePassword =
-            KeystorePasswordOptions.readFromFile(
-                    spec.commandLine(),
-                    eth1PrivateKeyOptions.keystoreOptions.eth1PrivateKeystorePasswordFile);
-    final File eth1PrivateKeystoreFile = eth1PrivateKeyOptions.keystoreOptions.eth1PrivateKeystoreFile;
+        KeystorePasswordOptions.readFromFile(
+            spec.commandLine(),
+            eth1PrivateKeyOptions.keystoreOptions.eth1PrivateKeystorePasswordFile);
+    final File eth1PrivateKeystoreFile =
+        eth1PrivateKeyOptions.keystoreOptions.eth1PrivateKeystoreFile;
     try {
       return WalletUtils.loadCredentials(keystorePassword, eth1PrivateKeystoreFile);
     } catch (final FileNotFoundException e) {
-      throw new CommandLine.ParameterException(spec.commandLine(), "Error: File not found: " + eth1PrivateKeystoreFile, e);
+      throw new CommandLine.ParameterException(
+          spec.commandLine(), "Error: File not found: " + eth1PrivateKeystoreFile, e);
     } catch (final IOException e) {
       throw new CommandLine.ParameterException(
-              spec.commandLine(),
-              "Error: Unexpected IO Error while reading v3 keystore ["
-                      + eth1PrivateKeystoreFile
-                      + "] : "
-                      + e.getMessage(),
-              e);
+          spec.commandLine(),
+          "Error: Unexpected IO Error while reading v3 keystore ["
+              + eth1PrivateKeystoreFile
+              + "] : "
+              + e.getMessage(),
+          e);
     } catch (CipherException e) {
       throw new CommandLine.ParameterException(
-              spec.commandLine(),
-              "Error: Unable to decrypt v3 keystore ["
-                      + eth1PrivateKeystoreFile
-                      + "] : "
-                      + e.getMessage(),
-              e);
+          spec.commandLine(),
+          "Error: Unable to decrypt v3 keystore ["
+              + eth1PrivateKeystoreFile
+              + "] : "
+              + e.getMessage(),
+          e);
     }
   }
 
   static SafeFuture<TransactionReceipt> sendDeposit(
-          final DepositTransactionSender sender,
-          final BLSKeyPair validatorKey,
-          final BLSPublicKey withdrawalPublicKey,
-          final UnsignedLong amount) {
+      final DepositTransactionSender sender,
+      final BLSKeyPair validatorKey,
+      final BLSPublicKey withdrawalPublicKey,
+      final UnsignedLong amount) {
     return sender.sendDepositTransaction(validatorKey, withdrawalPublicKey, amount);
   }
 
