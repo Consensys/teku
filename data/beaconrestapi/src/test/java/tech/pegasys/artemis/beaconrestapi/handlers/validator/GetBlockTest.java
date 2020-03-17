@@ -37,7 +37,7 @@ import tech.pegasys.artemis.provider.JsonProvider;
 public class GetBlockTest {
 
   private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
-      tech.pegasys.artemis.util.bls.BLSSignature.random();
+      tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
   private Context context = mock(Context.class);
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
