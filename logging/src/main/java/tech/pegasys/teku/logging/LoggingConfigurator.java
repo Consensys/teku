@@ -75,7 +75,7 @@ public class LoggingConfigurator {
       return;
     }
 
-    StatusLogger.getLogger().info("Programmatic logging setup: {}", DESTINATION);
+    StatusLogger.getLogger().info("Configuring logging for destination: {}", DESTINATION);
 
     Appender consoleAppender;
     Appender fileAppender;
