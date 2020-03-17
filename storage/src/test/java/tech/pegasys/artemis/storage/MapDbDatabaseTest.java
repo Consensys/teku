@@ -548,7 +548,7 @@ class MapDbDatabaseTest {
   private void testShouldPersistOnDisk(
       @TempDirectory final Path tempDir, final StateStorageMode storageMode) throws Exception {
     try {
-      database = MapDbDatabase.createOnDisk(tempDir.toFile(), false, storageMode);
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), storageMode);
       database.storeGenesis(store);
 
       // Create blocks
@@ -613,7 +613,7 @@ class MapDbDatabaseTest {
 
       // Close and re-read from disk store.
       database.close();
-      database = MapDbDatabase.createOnDisk(tempDir.toFile(), true, storageMode);
+      database = MapDbDatabase.createOnDisk(tempDir.toFile(), storageMode);
       assertOnlyHotBlocks(block7, block8, block9, forkBlock7, forkBlock8, forkBlock9);
       assertBlocksFinalized(block1, block2, block3, block7);
       assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(block1, block2, block3, block7);

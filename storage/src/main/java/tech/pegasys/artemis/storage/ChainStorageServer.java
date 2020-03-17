@@ -73,9 +73,7 @@ public class ChainStorageServer {
 
     final StateStorageMode stateStorageMode =
         StateStorageMode.fromString(configuration.getStateStorageMode());
-    this.database =
-        MapDbDatabase.createOnDisk(
-            databaseStoragePath, configuration.startFromDisk(), stateStorageMode);
+    this.database = MapDbDatabase.createOnDisk(databaseStoragePath, stateStorageMode);
     eventBus.register(this);
 
     final Optional<Store> store = getStore();

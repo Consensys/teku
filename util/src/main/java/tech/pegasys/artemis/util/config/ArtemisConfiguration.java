@@ -131,7 +131,6 @@ public class ArtemisConfiguration {
         null);
 
     // Database
-    builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
     builder.addString(
         "database.dataPath", ".", "Path to output data files", PropertyValidator.isPresent());
     builder.addString(
@@ -371,10 +370,6 @@ public class ArtemisConfiguration {
 
   public String getDataPath() {
     return config.getString("database.dataPath");
-  }
-
-  public boolean startFromDisk() {
-    return config.getBoolean("database.startFromDisk");
   }
 
   public String getStateStorageMode() {
