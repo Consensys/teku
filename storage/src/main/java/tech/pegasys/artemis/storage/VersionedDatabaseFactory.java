@@ -62,7 +62,7 @@ public class VersionedDatabaseFactory {
   private Database createV1Database() {
     final StateStorageMode stateStorageMode =
         StateStorageMode.fromString(config.getStateStorageMode());
-    return MapDbDatabase.createOnDisk(dbDirectory, config.startFromDisk(), stateStorageMode);
+    return MapDbDatabase.createOnDisk(dbDirectory, stateStorageMode);
   }
 
   private void validateDataPaths() {

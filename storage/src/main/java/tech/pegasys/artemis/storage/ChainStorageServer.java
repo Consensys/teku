@@ -17,7 +17,6 @@ import com.google.common.eventbus.AllowConcurrentEvents;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
@@ -41,22 +40,17 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 public class ChainStorageServer {
   private final EventBus eventBus;
   private final VersionedDatabaseFactory databaseFactory;
-  private final ArtemisConfiguration configuration;
-  private final AtomicBoolean storeIsPersisted;
 
   private volatile Database database;
   private volatile Optional<Store> cachedStore = Optional.empty();
 
-  private ChainStorageServer(
-      EventBus eventBus, ArtemisConfiguration config, final VersionedDatabaseFactory dbFactory) {
-    this.configuration = config;
+  private ChainStorageServer(EventBus eventBus, final VersionedDatabaseFactory dbFactory) {
     this.eventBus = eventBus;
     this.databaseFactory = dbFactory;
-    storeIsPersisted = new AtomicBoolean(configuration.startFromDisk());
   }
 
   public static ChainStorageServer create(EventBus eventBus, ArtemisConfiguration config) {
-    return new ChainStorageServer(eventBus, config, new VersionedDatabaseFactory(config));
+    return new ChainStorageServer(eventBus, new VersionedDatabaseFactory(config));
   }
 
   public void start() {
@@ -67,9 +61,7 @@ public class ChainStorageServer {
   }
 
   private synchronized Optional<Store> getStore() {
-    if (!storeIsPersisted.get()) {
-      return Optional.empty();
-    } else if (cachedStore.isEmpty()) {
+    if (cachedStore.isEmpty()) {
       // Create store from database
       cachedStore = database.createMemoryStore();
     }
@@ -81,10 +73,6 @@ public class ChainStorageServer {
     if (result.isSuccessful()) {
       cachedStore = Optional.empty();
     }
-  }
-
-  private synchronized void handleStoreGenesis() {
-    storeIsPersisted.set(true);
   }
 
   @Subscribe
@@ -102,7 +90,6 @@ public class ChainStorageServer {
   @Subscribe
   public void onStoreGenesis(final StoreGenesisDiskUpdateEvent event) {
     database.storeGenesis(event.getStore());
-    handleStoreGenesis();
   }
 
   @Subscribe
