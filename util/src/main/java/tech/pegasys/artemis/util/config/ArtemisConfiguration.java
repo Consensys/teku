@@ -29,8 +29,6 @@ import org.apache.tuweni.config.Configuration;
 import org.apache.tuweni.config.PropertyValidator;
 import org.apache.tuweni.config.Schema;
 import org.apache.tuweni.config.SchemaBuilder;
-import tech.pegasys.teku.logging.LoggingConfiguration;
-import tech.pegasys.teku.logging.LoggingDestination;
 
 /** Configuration of an instance of Artemis. */
 public class ArtemisConfiguration {
@@ -432,24 +430,23 @@ public class ArtemisConfiguration {
     return config.getBoolean("beaconrestapi.enableSwagger");
   }
 
-  private LoggingDestination getLoggingDestination() {
-    switch (config.getString("logging.destination")) {
-      case "consoleOnly":
-        return LoggingDestination.CONSOLE_ONLY;
-      case "fileOnly":
-        return LoggingDestination.FILE_ONLY;
-      case "both":
-      default:
-        return LoggingDestination.BOTH;
-    }
+  public boolean isLoggingColorEnabled() {
+    return config.getBoolean("logging.colorEnabled");
   }
 
-  public LoggingConfiguration getLoggingConfiguration() {
-    return new LoggingConfiguration(
-        config.getBoolean("logging.colorEnabled"),
-        config.getBoolean("logging.includeEventsEnabled"),
-        getLoggingDestination(),
-        config.getString("logging.file"),
-        config.getString("logging.fileNamePattern"));
+  public boolean isLoggingIncludeEventsEnabled() {
+    return config.getBoolean("logging.includeEventsEnabled");
+  }
+
+  public String getLoggingFile() {
+    return config.getString("logging.file");
+  }
+
+  public String getLoggingFileNamePattern() {
+    return config.getString("logging.fileNamePattern");
+  }
+
+  public String getLoggingDestination() {
+    return config.getString("logging.destination");
   }
 }

@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.logging.LoggingDestination;
 
 final class ArtemisConfigurationTest {
 
@@ -153,14 +152,14 @@ final class ArtemisConfigurationTest {
   @Test
   void loggingColorEnableShouldDefaultToTrue() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
-    assertThat(config.getLoggingConfiguration().isColorEnabled()).isTrue();
+    assertThat(config.isLoggingColorEnabled()).isTrue();
   }
 
   @Test
   void loggingColorEnableShouldSet() {
     final ArtemisConfiguration config =
         ArtemisConfiguration.fromString("logging.colorEnabled = false");
-    assertThat(config.getLoggingConfiguration().isColorEnabled()).isFalse();
+    assertThat(config.isLoggingColorEnabled()).isFalse();
   }
 
   @Test
@@ -176,14 +175,14 @@ final class ArtemisConfigurationTest {
   @Test
   void loggingIncludeEventsEnableShouldDefaultToTrue() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
-    assertThat(config.getLoggingConfiguration().isIncludeEventsEnabled()).isTrue();
+    assertThat(config.isLoggingIncludeEventsEnabled()).isTrue();
   }
 
   @Test
   void loggingIncludeEventsEnableShouldSet() {
     final ArtemisConfiguration config =
         ArtemisConfiguration.fromString("logging.includeEventsEnabled = false");
-    assertThat(config.getLoggingConfiguration().isIncludeEventsEnabled()).isFalse();
+    assertThat(config.isLoggingIncludeEventsEnabled()).isFalse();
   }
 
   @Test
@@ -210,26 +209,22 @@ final class ArtemisConfigurationTest {
   @Test
   void loggingDestinationShouldDefaultToBoth() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
-    assertThat(config.getLoggingConfiguration().getDestination())
-        .isEqualTo(LoggingDestination.BOTH);
+    assertThat(config.getLoggingDestination()).isEqualTo("both");
   }
 
   @Test
   void loggingDestinationShouldSet() {
     final ArtemisConfiguration configBoth =
         ArtemisConfiguration.fromString("logging.destination = \"both\"");
-    assertThat(configBoth.getLoggingConfiguration().getDestination())
-        .isEqualTo(LoggingDestination.BOTH);
+    assertThat(configBoth.getLoggingDestination()).isEqualTo("both");
 
     final ArtemisConfiguration configCondole =
         ArtemisConfiguration.fromString("logging.destination = \"consoleOnly\"");
-    assertThat(configCondole.getLoggingConfiguration().getDestination())
-        .isEqualTo(LoggingDestination.CONSOLE_ONLY);
+    assertThat(configCondole.getLoggingDestination()).isEqualTo("consoleOnly");
 
     final ArtemisConfiguration configFile =
         ArtemisConfiguration.fromString("logging.destination = \"fileOnly\"");
-    assertThat(configFile.getLoggingConfiguration().getDestination())
-        .isEqualTo(LoggingDestination.FILE_ONLY);
+    assertThat(configFile.getLoggingDestination()).isEqualTo("fileOnly");
   }
 
   @Test
@@ -245,7 +240,7 @@ final class ArtemisConfigurationTest {
   @Test
   void loggingFileShouldDefaultToTekuLog() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
-    assertThat(config.getLoggingConfiguration().getFile()).isEqualTo("teku.log");
+    assertThat(config.getLoggingFile()).isEqualTo("teku.log");
   }
 
   @Test
@@ -261,7 +256,6 @@ final class ArtemisConfigurationTest {
   @Test
   void loggingFileNamePatternShouldDefault() {
     final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
-    assertThat(config.getLoggingConfiguration().getFileNamePattern())
-        .isEqualTo("teku_%d{yyyy-MM-dd}.log");
+    assertThat(config.getLoggingFileNamePattern()).isEqualTo("teku_%d{yyyy-MM-dd}.log");
   }
 }

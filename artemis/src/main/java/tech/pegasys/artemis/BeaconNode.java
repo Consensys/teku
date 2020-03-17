@@ -36,6 +36,7 @@ import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
+import tech.pegasys.teku.logging.LoggingConfiguration;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.logging.StatusLogger;
 
@@ -73,7 +74,7 @@ public class BeaconNode {
 
     this.serviceController = new ServiceController(serviceConfig);
 
-    LoggingConfigurator.update(config.getLoggingConfiguration());
+    LoggingConfigurator.update(LoggingConfiguration.fromConfig(config));
   }
 
   public void start() {
