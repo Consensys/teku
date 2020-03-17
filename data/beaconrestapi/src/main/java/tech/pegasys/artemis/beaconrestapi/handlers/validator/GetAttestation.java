@@ -55,25 +55,26 @@ public class GetAttestation implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get an unsigned attestation of a slot from the current state.",
+      summary = "Get an unsigned attestation for a slot from the current state.",
       tags = {TAG_VALIDATOR},
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "The non-finalized slot to create the attestation for (uint64)",
+            description = "Slot to create the attestation for.",
             required = true),
         @OpenApiParam(
             name = COMMITTEE_INDEX,
-            description = "The index of the committee making the attestation.",
+            description = "Index of the committee making the attestation.",
             required = true)
       },
       description =
-          "Request that the node return an unsigned attestation for the block at a given non-finalized slot.",
+          "Returns an unsigned attestation for the block at the specified non-finalized slot.\n\nThis endpoint is not protected against slashing. Signing the returned attestation can result in a slashable offence.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = Attestation.class),
-            description = "Returns an attestation with a default signature."),
+            description =
+                "Returns an attestation object with a blank signature. The `signature` field should be replaced by a valid signature."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
         @OpenApiResponse(
             status = RES_NOT_FOUND,
