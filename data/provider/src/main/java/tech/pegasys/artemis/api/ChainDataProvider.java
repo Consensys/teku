@@ -13,6 +13,13 @@
 
 package tech.pegasys.artemis.api;
 
+import static tech.pegasys.artemis.api.ValidatorStatus.ACTIVE;
+import static tech.pegasys.artemis.api.ValidatorStatus.DEPOSITED;
+import static tech.pegasys.artemis.api.ValidatorStatus.EXITED;
+import static tech.pegasys.artemis.api.ValidatorStatus.EXITING;
+import static tech.pegasys.artemis.api.ValidatorStatus.PENDING;
+import static tech.pegasys.artemis.api.ValidatorStatus.SLASHING;
+import static tech.pegasys.artemis.api.ValidatorStatus.UNKNOWN_STATUS;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
@@ -62,26 +69,25 @@ public class ChainDataProvider {
   }
 
   public static ValidatorStatus getValidatorStatus(Validator validator, UnsignedLong epoch) {
+    if (validator == null || epoch.compareTo(UnsignedLong.ZERO) < 0) {
+      return UNKNOWN_STATUS;
+    }
     if (epoch.compareTo(validator.getActivation_eligibility_epoch()) < 0) {
-      return ValidatorStatus.DEPOSITED;
+      return DEPOSITED;
     }
     if (epoch.compareTo(validator.getActivation_epoch()) < 0) {
-      return ValidatorStatus.PENDING;
+      return PENDING;
     }
     if (validator.getExit_epoch().equals(Constants.FAR_FUTURE_EPOCH)) {
-      return ValidatorStatus.ACTIVE;
+      return ACTIVE;
     }
     if (epoch.compareTo(validator.getExit_epoch()) < 0) {
-      if (validator.isSlashed()) {
-        return ValidatorStatus.SLASHING;
-      } else {
-        return ValidatorStatus.EXITING;
-      }
+      return validator.isSlashed() ? SLASHING : EXITING;
     }
     if (epoch.compareTo(validator.getExit_epoch()) >= 0) {
-      return ValidatorStatus.EXITED;
+      return EXITED;
     }
-    return ValidatorStatus.UNKNOWN_STATUS;
+    return UNKNOWN_STATUS;
   }
 
   public Optional<UnsignedLong> getGenesisTime() {
@@ -287,7 +293,7 @@ public class ChainDataProvider {
     for (final BLSPubKey pubKey : pubKeys) {
       final Integer validatorIndex = getValidatorIndex(validators, pubKey);
       if (validatorIndex == null) {
-        dutiesList.add(new ValidatorDuties(pubKey, null, null, ValidatorStatus.UNKNOWN_STATUS));
+        dutiesList.add(new ValidatorDuties(pubKey, null, null, UNKNOWN_STATUS));
       } else {
         dutiesList.add(
             new ValidatorDuties(
