@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.logging;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
@@ -39,37 +40,42 @@ public class LoggingConfigurator {
   private static final String FILE_APPENDER_NAME = "teku-log-appender";
   private static final String FILE_MESSAGE_FORMAT =
       "%d{yyyy-MM-dd HH:mm:ss.SSSZZZ} | %t | %-5level | %c{1} | %msg%n";
+  private static final AtomicBoolean COLOR = new AtomicBoolean();
 
   private static LoggingDestination DESTINATION;
-  private static boolean COLOR;
   private static boolean INCLUDE_EVENTS;
   private static String FILE;
   private static String FILE_PATTERN;
   private static Level LOG_LEVEL = Level.INFO;
 
   public static boolean isColorEnabled() {
-    return COLOR;
+    return COLOR.get();
   }
 
-  public static void setAllLevels(final Level level) {
+  public static synchronized void setAllLevels(final Level level) {
     StatusLogger.getLogger().info("Setting logging level to {}", level.name());
     Configurator.setAllLevels("", level);
     LOG_LEVEL = level;
   }
 
-  public static void update(final LoggingConfiguration configuration) {
-    COLOR = configuration.isColorEnabled();
+  public static synchronized void update(final LoggingConfiguration configuration) {
+    COLOR.set(configuration.isColorEnabled());
     DESTINATION = configuration.getDestination();
     INCLUDE_EVENTS = configuration.isIncludeEventsEnabled();
     FILE = configuration.getFile();
     FILE_PATTERN = configuration.getFileNamePattern();
 
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    addLoggersProgrammatically((AbstractConfiguration) ctx.getConfiguration());
+    addLoggers((AbstractConfiguration) ctx.getConfiguration());
     ctx.updateLoggers();
   }
 
-  public static void addLoggersProgrammatically(final AbstractConfiguration configuration) {
+  public static synchronized void addLoggersProgrammatically(
+      final AbstractConfiguration configuration) {
+    addLoggers(configuration);
+  }
+
+  private static void addLoggers(final AbstractConfiguration configuration) {
 
     if (DESTINATION == null) {
       return;
