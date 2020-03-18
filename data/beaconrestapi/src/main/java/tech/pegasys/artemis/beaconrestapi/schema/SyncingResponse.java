@@ -30,7 +30,7 @@ public class SyncingResponse {
   }
 
   public SyncingResponse(SyncingStatus syncStatus) {
-    this.is_syncing = syncStatus.is_syncing;
-    this.sync_status = syncStatus.sync_status;
+    this.is_syncing = syncStatus.isSyncing();
+    this.sync_status = syncStatus.getSyncStatus();
   }
 }
