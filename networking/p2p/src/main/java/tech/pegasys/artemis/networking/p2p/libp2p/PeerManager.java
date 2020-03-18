@@ -18,7 +18,6 @@ import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
-import io.libp2p.core.multiformats.Multiaddr;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -45,6 +45,7 @@ public class PeerManager implements ConnectionHandler {
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final ReputationManager reputationManager;
   private final List<PeerHandler> peerHandlers;
 
   private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
@@ -52,8 +53,10 @@ public class PeerManager implements ConnectionHandler {
 
   public PeerManager(
       final MetricsSystem metricsSystem,
+      final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
       final Map<RpcMethod, RpcHandler> rpcHandlers) {
+    this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
@@ -73,9 +76,10 @@ public class PeerManager implements ConnectionHandler {
     connectSubscribers.unsubscribe(subscriptionId);
   }
 
-  public SafeFuture<Peer> connect(final Multiaddr peer, final Network network) {
+  public SafeFuture<Peer> connect(final MultiaddrPeerAddress peer, final Network network) {
     LOG.debug("Connecting to {}", peer);
-    return SafeFuture.of(() -> network.connect(peer))
+
+    return SafeFuture.of(() -> network.connect(peer.getMultiaddr()))
         .thenApply(
             connection -> {
               final LibP2PNodeId nodeId =
@@ -93,9 +97,11 @@ public class PeerManager implements ConnectionHandler {
                       "No peer registered for established connection to " + nodeId);
                 }
               }
+              reputationManager.reportInitiatedConnectionSuccessful(peer);
               return connectedPeer;
             })
-        .exceptionallyCompose(this::handleConcurrentConnectionInitiation);
+        .exceptionallyCompose(this::handleConcurrentConnectionInitiation)
+        .catchAndRethrow(error -> reputationManager.reportInitiatedConnectionFailed(peer));
   }
 
   private CompletionStage<Peer> handleConcurrentConnectionInitiation(final Throwable error) {
