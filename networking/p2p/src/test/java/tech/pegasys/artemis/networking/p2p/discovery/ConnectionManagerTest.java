@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.network.p2p.peer.StubPeer;
 import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -59,11 +60,13 @@ class ConnectionManagerTest {
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
 
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
+  private final ReputationManager reputationManager = mock(ReputationManager.class);
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @BeforeEach
   public void setUp() {
+    when(reputationManager.isConnectionInitiationAllowed(any())).thenReturn(true);
     when(discoveryService.searchForPeers()).thenReturn(new SafeFuture<>());
     when(network.createPeerAddress(DISCOVERY_PEER1)).thenReturn(PEER1);
     when(network.createPeerAddress(DISCOVERY_PEER2)).thenReturn(PEER2);
@@ -299,6 +302,27 @@ class ConnectionManagerTest {
   }
 
   @Test
+  public void shouldNotConnectToKnownPeersWithBadReputation() {
+    final SafeFuture<Void> search1 = new SafeFuture<>();
+    when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
+    when(discoveryService.searchForPeers()).thenReturn(search1);
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.empty()) // No known peers at startup
+        .thenReturn(Stream.of(DISCOVERY_PEER1, DISCOVERY_PEER2)); // Search found some new peers
+    when(reputationManager.isConnectionInitiationAllowed(PEER1)).thenReturn(false);
+    when(reputationManager.isConnectionInitiationAllowed(PEER2)).thenReturn(true);
+    final ConnectionManager manager = createManager();
+
+    manager.start().join();
+    verify(discoveryService).searchForPeers();
+
+    search1.complete(null);
+
+    verify(network, never()).connect(PEER1);
+    verify(network).connect(PEER2);
+  }
+
+  @Test
   public void shouldLimitNumberOfNewConnectionsMadeToDiscoveryPeersOnStartup() {
     final ConnectionManager manager = createManager(new TargetPeerRange(1, 2));
     when(discoveryService.streamKnownPeers())
@@ -397,6 +421,11 @@ class ConnectionManagerTest {
   private ConnectionManager createManager(
       final TargetPeerRange targetPeerCount, final PeerAddress... peers) {
     return new ConnectionManager(
-        discoveryService, asyncRunner, network, Arrays.asList(peers), targetPeerCount);
+        discoveryService,
+        reputationManager,
+        asyncRunner,
+        network,
+        Arrays.asList(peers),
+        targetPeerCount);
   }
 }

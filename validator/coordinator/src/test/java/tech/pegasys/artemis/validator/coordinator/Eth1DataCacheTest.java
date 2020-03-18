@@ -289,6 +289,28 @@ public class Eth1DataCacheTest {
   }
 
   @Test
+  void pruneAllBlockData() {
+    eth1DataCache.startBeaconChainMode(genesisState);
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
+
+    // All Eth1Data timestamps inside the spec range for this voting period
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(359));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
+    CacheEth1BlockEvent cacheEth1BlockEvent3 =
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(361));
+
+    eventBus.post(cacheEth1BlockEvent1);
+    eventBus.post(cacheEth1BlockEvent2);
+    eventBus.post(cacheEth1BlockEvent3);
+
+    eth1DataCache.onSlot(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
+
+    assertThat(eth1DataCache.getMapForTesting().values()).isEmpty();
+  }
+
+  @Test
   void onSlotBeingCalled_withoutGenesisTimeBeingSet() {
     assertDoesNotThrow(() -> eth1DataCache.onSlot(new SlotEvent(START_SLOT)));
   }

@@ -26,10 +26,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
+import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class DiscoveryNetworkFactory {
 
@@ -84,10 +87,18 @@ public class DiscoveryNetworkFactory {
                 false,
                 false,
                 false);
+        final ReputationManager reputationManager =
+            new ReputationManager(
+                StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<Peer> network =
             DiscoveryNetwork.create(
                 new LibP2PNetwork(
-                    config, METRICS_SYSTEM, Collections.emptyList(), Collections.emptyList()),
+                    config,
+                    reputationManager,
+                    METRICS_SYSTEM,
+                    Collections.emptyList(),
+                    Collections.emptyList()),
+                reputationManager,
                 config);
         try {
           network.start().get(30, TimeUnit.SECONDS);
