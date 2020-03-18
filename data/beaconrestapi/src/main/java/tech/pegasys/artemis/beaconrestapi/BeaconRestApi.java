@@ -14,8 +14,10 @@
 package tech.pegasys.artemis.beaconrestapi;
 
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 
+import com.google.common.io.Resources;
 import io.javalin.Javalin;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -23,7 +25,12 @@ import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
@@ -54,15 +61,39 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 public class BeaconRestApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
+  private static final Logger LOG = LogManager.getLogger();
+  public static final String FILE_NOT_FOUND_HTML = "404.html";
 
-  private void initialise(final DataProvider dataProvider, final int requestedPortNumber) {
-    app.server().setServerPort(requestedPortNumber);
+  private void initialise(
+      final DataProvider dataProvider, final ArtemisConfiguration configuration) {
+    app.server().setServerPort(configuration.getBeaconRestAPIPortNumber());
 
     addExceptionHandlers();
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
+    addCustomErrorPages(configuration);
+  }
+
+  private void addCustomErrorPages(final ArtemisConfiguration configuration) {
+    if (configuration.getBeaconRestAPIEnableSwagger()) {
+      try {
+        String content = readResource(FILE_NOT_FOUND_HTML, Charsets.UTF_8);
+        app.error(
+            SC_NOT_FOUND,
+            ctx -> {
+              ctx.result(content);
+              ctx.contentType("text/html");
+            });
+      } catch (IOException ex) {
+        LOG.error("Could not read custom " + FILE_NOT_FOUND_HTML, ex.getMessage());
+      }
+    }
+  }
+
+  private String readResource(final String fileName, Charset charset) throws IOException {
+    return Resources.toString(Resources.getResource(fileName), charset);
   }
 
   private void addExceptionHandlers() {
@@ -87,7 +118,7 @@ public class BeaconRestApi {
                   new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
             });
-    initialise(dataProvider, configuration.getBeaconRestAPIPortNumber());
+    initialise(dataProvider, configuration);
   }
 
   BeaconRestApi(
@@ -95,7 +126,7 @@ public class BeaconRestApi {
       final ArtemisConfiguration configuration,
       final Javalin app) {
     this.app = app;
-    initialise(dataProvider, configuration.getBeaconRestAPIPortNumber());
+    initialise(dataProvider, configuration);
   }
 
   public void start() {

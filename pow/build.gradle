@@ -4,6 +4,8 @@
 //}
 
 dependencies {
+  implementation project(':bls')
+  implementation project(':ssz')
   implementation project(':util')
   //TODO org.web3j.abi and org.web3j.cyprto are used by org.web3j.core. Given that, is it necessary to export all 3 as API dependencies, or will just org.web3j.core suffice?
   api 'org.web3j:core'

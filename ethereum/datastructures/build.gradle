@@ -1,6 +1,8 @@
 dependencies {
+  implementation project(':bls')
   implementation project(':logging')
   implementation project(':pow')
+  implementation project(':ssz')
   implementation project(':util')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
@@ -14,6 +16,7 @@ dependencies {
 
   runtime 'org.apache.logging.log4j:log4j-core'
 
+  testImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
   testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'

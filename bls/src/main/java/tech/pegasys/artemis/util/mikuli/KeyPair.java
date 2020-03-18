@@ -19,7 +19,6 @@ import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.milagro.amcl.BLS381.ECP;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.milagro.amcl.RAND;
-import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 
 /** KeyPair represents a public and private key. */
 public final class KeyPair {
@@ -32,10 +31,9 @@ public final class KeyPair {
    *
    * @return a new random key pair
    */
-  public static KeyPair random() {
+  public static KeyPair random(final SecureRandom srng) {
     RAND rng = new RAND();
     byte[] b = new byte[128];
-    SecureRandom srng = SecureRandomProvider.createSecureRandom();
     srng.nextBytes(b);
     rng.seed(128, b);
     Scalar secret = new Scalar(BIG.randomnum(curveOrder, rng));

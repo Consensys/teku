@@ -64,7 +64,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.reflectionInformation.ReflectionInformation;
+import tech.pegasys.artemis.util.sos.ReflectionInformation;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @SuppressWarnings({"rawtypes", "unchecked"})

@@ -1,7 +1,9 @@
 dependencies {
+  implementation project(':bls')
   implementation project(':util')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':ssz')
   implementation project(':storage')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
