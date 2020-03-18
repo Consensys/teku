@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.bls;
 
 import com.google.common.base.MoreObjects;
+import java.security.SecureRandom;
 import java.util.Objects;
 import tech.pegasys.artemis.util.mikuli.KeyPair;
 
@@ -26,8 +27,8 @@ public final class BLSKeyPair {
    *
    * @return a random key pair
    */
-  public static BLSKeyPair random() {
-    return new BLSKeyPair(KeyPair.random());
+  public static BLSKeyPair random(final SecureRandom srng) {
+    return new BLSKeyPair(KeyPair.random(srng));
   }
 
   /**

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
@@ -56,6 +57,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
       description = "Path/filename of the config file")
   private String configFile = "./config/config.toml";
 
+  private ArtemisConfiguration artemisConfiguration;
+
   public Optional<Level> getLoggingLevel() {
     return Optional.ofNullable(this.logLevel);
   }
@@ -64,11 +67,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return configFile;
   }
 
+  @VisibleForTesting
+  public ArtemisConfiguration getArtemisConfiguration() {
+    return artemisConfiguration;
+  }
+
   @Override
   public Integer call() {
     try {
-      BeaconNode node =
-          new BeaconNode(getLoggingLevel(), ArtemisConfiguration.fromFile(getConfigFile()));
+      artemisConfiguration = ArtemisConfiguration.fromFile(getConfigFile());
+      BeaconNode node = new BeaconNode(getLoggingLevel(), artemisConfiguration);
       node.start();
       // Detect SIGTERM
       Runtime.getRuntime()
