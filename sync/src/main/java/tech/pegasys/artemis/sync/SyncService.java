@@ -25,12 +25,14 @@ public class SyncService extends Service {
 
   private final SyncManager syncManager;
   private final BlockPropagationManager blockPropagationManager;
+  private final ChainStorageClient storageClient;
 
   public SyncService(
       final EventBus eventBus,
       final P2PNetwork<Eth2Peer> network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
+    this.storageClient = storageClient;
     this.syncManager = SyncManager.create(network, storageClient, blockImporter);
     this.blockPropagationManager =
         BlockPropagationManager.create(eventBus, network, storageClient, blockImporter);
@@ -38,7 +40,15 @@ public class SyncService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.allOfFailFast(syncManager.start(), blockPropagationManager.start());
+    // We shouldn't start syncing until we have reached genesis.
+    // There are also no valid blocks until we've reached genesis so no point in gossipping and
+    // queuing them
+    storageClient.subscribeStoreInitialized(
+        () -> {
+          syncManager.start().reportExceptions();
+          blockPropagationManager.start().reportExceptions();
+        });
+    return SafeFuture.COMPLETE;
   }
 
   @Override
