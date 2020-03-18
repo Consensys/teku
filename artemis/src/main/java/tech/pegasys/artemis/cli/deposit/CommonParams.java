@@ -106,8 +106,15 @@ public class CommonParams implements Closeable {
   Credentials getEth1Credentials() {
     if (eth1PrivateKeyOptions.eth1PrivateKey != null) {
       return Credentials.create(eth1PrivateKeyOptions.eth1PrivateKey);
+    } else if (eth1PrivateKeyOptions.keystoreOptions != null) {
+      return eth1CredentialsFromKeystore();
+    } else {
+      // not meant to happen
+      throw new IllegalStateException("Private Key Options are not initialized");
     }
+  }
 
+  private Credentials eth1CredentialsFromKeystore() {
     final String keystorePassword =
         KeystorePasswordOptions.readFromFile(
             spec.commandLine(),

@@ -60,31 +60,30 @@ class CommonParamsTest {
     final File passwordFile =
         Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
 
-    Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
+    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
         new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
     keystoreOptions.eth1PrivateKeystoreFile = keystoreFile;
     keystoreOptions.eth1PrivateKeystorePasswordFile = passwordFile;
 
-    Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
+    final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
     final Credentials eth1Credentials = commonParams.getEth1Credentials();
     assertThat(eth1Credentials.getEcKeyPair()).isEqualTo(EXPECTED_EC_KEYPAIR);
   }
 
   @Test
-  void nonExistentEth1EncryptedKeystoreThrowsError(@TempDir final Path tempDir)
-      throws IOException, CipherException {
-    Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
+  void nonExistentEth1EncryptedKeystoreThrowsError(@TempDir final Path tempDir) {
+    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
         new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
     keystoreOptions.eth1PrivateKeystoreFile = tempDir.resolve("nonExistent").toFile();
     keystoreOptions.eth1PrivateKeystorePasswordFile = tempDir.resolve("nonExistent").toFile();
 
-    Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
+    final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
@@ -93,18 +92,19 @@ class CommonParamsTest {
   }
 
   @Test
-  void invalidEth1EncryptedKeystoreThrowsError(@TempDir final Path tempDir) throws IOException {
-    Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
+  void validJsonNotComplaintWithKeystoreFormatThrowsError(@TempDir final Path tempDir)
+      throws IOException {
+    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
         new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
     keystoreOptions.eth1PrivateKeystoreFile =
         Files.writeString(tempDir.resolve("v3.json"), "{test:123}").toFile();
     keystoreOptions.eth1PrivateKeystorePasswordFile =
         Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
 
-    Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
+    final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
@@ -116,17 +116,17 @@ class CommonParamsTest {
 
   @Test
   void invalidJsonEth1EncryptedKeystoreThrowsError(@TempDir final Path tempDir) throws IOException {
-    Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
+    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
         new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
     keystoreOptions.eth1PrivateKeystoreFile =
         Files.writeString(tempDir.resolve("v3.json"), "invalidfilecontents").toFile();
     keystoreOptions.eth1PrivateKeystorePasswordFile =
         Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
 
-    Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
+    final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
