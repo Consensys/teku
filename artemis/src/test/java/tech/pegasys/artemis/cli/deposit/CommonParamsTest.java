@@ -42,9 +42,9 @@ class CommonParamsTest {
 
   @Test
   void eth1PrivateKeyReturnsCredential() {
-    Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
+    final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.eth1PrivateKey = ETH1_PRIVATE_KEY;
-    CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
     final Credentials eth1Credentials = commonParams.getEth1Credentials();
     assertThat(eth1Credentials.getEcKeyPair()).isEqualTo(EXPECTED_EC_KEYPAIR);
   }
@@ -60,10 +60,10 @@ class CommonParamsTest {
     final File passwordFile =
         Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
 
-    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
-        new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
-    keystoreOptions.eth1PrivateKeystoreFile = keystoreFile;
-    keystoreOptions.eth1PrivateKeystorePasswordFile = passwordFile;
+    final Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions keystoreOptions =
+        new Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions();
+    keystoreOptions.eth1KeystoreFile = keystoreFile;
+    keystoreOptions.eth1KeystorePasswordFile = passwordFile;
 
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
@@ -75,10 +75,10 @@ class CommonParamsTest {
 
   @Test
   void nonExistentEth1EncryptedKeystoreThrowsError(@TempDir final Path tempDir) {
-    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
-        new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
-    keystoreOptions.eth1PrivateKeystoreFile = tempDir.resolve("nonExistent").toFile();
-    keystoreOptions.eth1PrivateKeystorePasswordFile = tempDir.resolve("nonExistent").toFile();
+    final Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions keystoreOptions =
+        new Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions();
+    keystoreOptions.eth1KeystoreFile = tempDir.resolve("nonExistent").toFile();
+    keystoreOptions.eth1KeystorePasswordFile = tempDir.resolve("nonExistent").toFile();
 
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
@@ -88,17 +88,17 @@ class CommonParamsTest {
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(() -> commonParams.getEth1Credentials())
-        .withMessage("Error: File not found: " + keystoreOptions.eth1PrivateKeystoreFile);
+        .withMessage("Error: File not found: " + keystoreOptions.eth1KeystoreFile);
   }
 
   @Test
   void validJsonNotComplaintWithKeystoreFormatThrowsError(@TempDir final Path tempDir)
       throws IOException {
-    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
-        new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
-    keystoreOptions.eth1PrivateKeystoreFile =
+    final Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions keystoreOptions =
+        new Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions();
+    keystoreOptions.eth1KeystoreFile =
         Files.writeString(tempDir.resolve("v3.json"), "{test:123}").toFile();
-    keystoreOptions.eth1PrivateKeystorePasswordFile =
+    keystoreOptions.eth1KeystorePasswordFile =
         Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
 
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
@@ -111,16 +111,16 @@ class CommonParamsTest {
         .isThrownBy(() -> commonParams.getEth1Credentials())
         .withMessage(
             "Error: Unable to decrypt Eth1 keystore [%s] : Wallet version is not supported",
-            keystoreOptions.eth1PrivateKeystoreFile);
+            keystoreOptions.eth1KeystoreFile);
   }
 
   @Test
   void invalidJsonEth1EncryptedKeystoreThrowsError(@TempDir final Path tempDir) throws IOException {
-    final Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions keystoreOptions =
-        new Eth1PrivateKeyOptions.Eth1EncryptedPrivateKeystoreOptions();
-    keystoreOptions.eth1PrivateKeystoreFile =
+    final Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions keystoreOptions =
+        new Eth1PrivateKeyOptions.Eth1EncryptedKeystoreOptions();
+    keystoreOptions.eth1KeystoreFile =
         Files.writeString(tempDir.resolve("v3.json"), "invalidfilecontents").toFile();
-    keystoreOptions.eth1PrivateKeystorePasswordFile =
+    keystoreOptions.eth1KeystorePasswordFile =
         Files.writeString(tempDir.resolve("password.txt"), "test123").toFile();
 
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
@@ -133,6 +133,6 @@ class CommonParamsTest {
         .isThrownBy(() -> commonParams.getEth1Credentials())
         .withMessageStartingWith(
             "Error: Unexpected IO Error while reading Eth1 keystore [%s] : Unrecognized token ",
-            keystoreOptions.eth1PrivateKeystoreFile);
+            keystoreOptions.eth1KeystoreFile);
   }
 }

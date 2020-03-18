@@ -117,30 +117,25 @@ public class CommonParams implements Closeable {
   private Credentials eth1CredentialsFromKeystore() {
     final String keystorePassword =
         KeystorePasswordOptions.readFromFile(
-            spec.commandLine(),
-            eth1PrivateKeyOptions.keystoreOptions.eth1PrivateKeystorePasswordFile);
-    final File eth1PrivateKeystoreFile =
-        eth1PrivateKeyOptions.keystoreOptions.eth1PrivateKeystoreFile;
+            spec.commandLine(), eth1PrivateKeyOptions.keystoreOptions.eth1KeystorePasswordFile);
+    final File eth1KeystoreFile = eth1PrivateKeyOptions.keystoreOptions.eth1KeystoreFile;
     try {
-      return WalletUtils.loadCredentials(keystorePassword, eth1PrivateKeystoreFile);
+      return WalletUtils.loadCredentials(keystorePassword, eth1KeystoreFile);
     } catch (final FileNotFoundException e) {
       throw new CommandLine.ParameterException(
-          spec.commandLine(), "Error: File not found: " + eth1PrivateKeystoreFile, e);
+          spec.commandLine(), "Error: File not found: " + eth1KeystoreFile, e);
     } catch (final IOException e) {
       throw new CommandLine.ParameterException(
           spec.commandLine(),
           "Error: Unexpected IO Error while reading Eth1 keystore ["
-              + eth1PrivateKeystoreFile
+              + eth1KeystoreFile
               + "] : "
               + e.getMessage(),
           e);
     } catch (CipherException e) {
       throw new CommandLine.ParameterException(
           spec.commandLine(),
-          "Error: Unable to decrypt Eth1 keystore ["
-              + eth1PrivateKeystoreFile
-              + "] : "
-              + e.getMessage(),
+          "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
           e);
     }
   }

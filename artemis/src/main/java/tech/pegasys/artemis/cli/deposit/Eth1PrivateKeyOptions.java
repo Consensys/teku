@@ -26,22 +26,22 @@ class Eth1PrivateKeyOptions {
   String eth1PrivateKey;
 
   @ArgGroup(exclusive = false, multiplicity = "1")
-  Eth1EncryptedPrivateKeystoreOptions keystoreOptions;
+  Eth1EncryptedKeystoreOptions keystoreOptions;
 
-  static class Eth1EncryptedPrivateKeystoreOptions {
+  static class Eth1EncryptedKeystoreOptions {
     @Option(
         names = {"--eth1-keystore-file"},
         required = true,
         paramLabel = "<FILE>",
         description =
             "Path to encrypted (V3) keystore containing Ethereum 1 private key to use to send transactions")
-    File eth1PrivateKeystoreFile;
+    File eth1KeystoreFile;
 
     @Option(
         names = {"--eth1-keystore-password-file"},
         required = true,
         paramLabel = "<FILE>",
         description = "Path to file containing password to decrypt Ethereum 1 keystore")
-    File eth1PrivateKeystorePasswordFile;
+    File eth1KeystorePasswordFile;
   }
 }
