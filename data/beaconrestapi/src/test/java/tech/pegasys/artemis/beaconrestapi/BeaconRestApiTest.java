@@ -13,9 +13,11 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static org.eclipse.jetty.http.HttpStatus.NOT_FOUND_404;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -150,5 +152,10 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveValidatorDutiesEndpoint() {
     verify(app).post(eq(PostDuties.ROUTE), any(PostDuties.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveCustomNotFoundError() {
+    verify(app, never()).error(eq(NOT_FOUND_404), any());
   }
 }
