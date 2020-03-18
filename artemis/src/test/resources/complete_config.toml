@@ -18,7 +18,7 @@ constants = "minimal"
 
 [interop]
 # when genesis time is set to 0, artemis takes genesis time as currentTime + 5 seconds.
-genesisTime = 0
+genesisTime = 1
 ownedValidatorStartIndex = 0
 ownedValidatorCount = 64
 startState = ""
@@ -49,7 +49,6 @@ metricsNetworkInterface = "127.0.0.1"
 
 [database]
 dataPath="."
-startFromDisk = false
 stateStorageMode = "prune"
 
 [beaconrestapi]

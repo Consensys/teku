@@ -53,13 +53,7 @@ public class BeaconNodeCommandTest {
     assertThat(artemisConfiguration.getDataPath()).isEqualTo(".");
     assertThat(artemisConfiguration.getDepositMode()).isEqualTo("test");
     assertThat(artemisConfiguration.getDiscovery()).isEqualTo("static");
-
-    // hard to test - depends on System.currentTime
-    // assertThat(artemisConfiguration.getGenesisTime()).isEqualTo();
-
-    // dev option used for simulation
-    // assertThat(artemisConfiguration.getInputFile()).isEqualTo(null);
-
+    assertThat(artemisConfiguration.getGenesisTime()).isEqualTo(1);
     assertThat(artemisConfiguration.getInteropOwnedValidatorCount()).isEqualTo(64);
     assertThat(artemisConfiguration.getInteropOwnedValidatorStartIndex()).isEqualTo(0);
     assertThat(artemisConfiguration.getInteropPrivateKey())
@@ -74,27 +68,24 @@ public class BeaconNodeCommandTest {
     assertThat(artemisConfiguration.getNodeUrl()).isEqualTo("http://localhost:8545");
     assertThat(artemisConfiguration.getNumValidators()).isEqualTo(64);
     assertThat(artemisConfiguration.getPort()).isEqualTo(9000);
-
-    // property does not exist
-    // assertThat(artemisConfiguration.getProviderType()).isEqualTo("");
-
-    // most likely a dev option
-    assertThat(artemisConfiguration.getStartState()).isEqualTo(null);
-
     assertThat(artemisConfiguration.getStateStorageMode()).isEqualTo("prune");
     assertThat(artemisConfiguration.getTargetPeerCountRangeLowerBound()).isEqualTo(20);
     assertThat(artemisConfiguration.getTargetPeerCountRangeUpperBound()).isEqualTo(30);
-
-    // property does not exist
-    // assertThat(artemisConfiguration.getTimer()).isEqualTo(null);
-
-    // most likely a dev option for debugging
-    assertThat(artemisConfiguration.getTransitionRecordDir()).isEqualTo(null);
-
     // application uses mock for testing if this is not set
     assertThat(artemisConfiguration.getValidatorsKeyFile()).isEqualTo(null);
 
-    assertThat(artemisConfiguration.startFromDisk()).isFalse();
+    // the following are likely to change or be removed
+
+    // dev option used for simulation
+    // assertThat(artemisConfiguration.getInputFile()).isEqualTo(null);
+    // property does not exist
+    // assertThat(artemisConfiguration.getProviderType()).isEqualTo("");
+    // most likely a dev option
+    assertThat(artemisConfiguration.getStartState()).isEqualTo(null);
+    // property does not exist
+    // assertThat(artemisConfiguration.getTimer()).isEqualTo(null);
+    // most likely a dev option for debugging
+    assertThat(artemisConfiguration.getTransitionRecordDir()).isEqualTo(null);
   }
 
   private Path createTempFile(final String filename, final byte[] contents) throws IOException {
