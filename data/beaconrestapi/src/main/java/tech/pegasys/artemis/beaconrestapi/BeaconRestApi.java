@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
-import static org.eclipse.jetty.http.HttpStatus.NOT_FOUND_404;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
@@ -59,6 +59,7 @@ public class BeaconRestApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
+  public static final String FILE_NOT_FOUND_HTML = "404.html";
 
   private void initialise(
       final DataProvider dataProvider, final ArtemisConfiguration configuration) {
@@ -74,15 +75,15 @@ public class BeaconRestApi {
   private void addCustomErrorPages(final ArtemisConfiguration configuration) {
     if (configuration.getBeaconRestAPIEnableSwagger()) {
       try {
-        String content = readResource("404.html", Charsets.UTF_8);
+        String content = readResource(FILE_NOT_FOUND_HTML, Charsets.UTF_8);
         app.error(
-            NOT_FOUND_404,
+            SC_NOT_FOUND,
             ctx -> {
               ctx.result(content);
               ctx.contentType("text/html");
             });
       } catch (IOException ex) {
-        LOG.error("Could not read custom 404.html", ex.getMessage());
+        LOG.error("Could not read custom " + FILE_NOT_FOUND_HTML, ex.getMessage());
       }
     }
   }

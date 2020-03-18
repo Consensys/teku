@@ -13,7 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
-import static org.eclipse.jetty.http.HttpStatus.NOT_FOUND_404;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -54,6 +54,6 @@ public class BeaconRestApiWithSwaggerTest {
 
   @Test
   public void RestApiShouldHaveCustomNotFoundError() {
-    verify(app).error(eq(NOT_FOUND_404), any());
+    verify(app).error(eq(SC_NOT_FOUND), any());
   }
 }
