@@ -151,9 +151,10 @@ public class Eth1DataCache {
   }
 
   private UnsignedLong computeTimeAtSlot(UnsignedLong slot) {
-    if (genesisTime.isEmpty())
-      throw new RuntimeException("computeTimeAtSlot called without genesisTime being set");
-    return genesisTime.get().plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+    return genesisTime
+        .orElseThrow(
+            () -> new RuntimeException("computeTimeAtSlot called without genesisTime being set"))
+        .plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
   }
 
   private boolean isBlockTooOld(UnsignedLong blockTimestamp) {
