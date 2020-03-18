@@ -15,15 +15,12 @@ package tech.pegasys.artemis.networking.p2p.connection;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.util.cache.Cache;
 import tech.pegasys.artemis.datastructures.util.cache.LRUCache;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class ReputationManager {
-  private static final Logger LOG = LogManager.getLogger();
   private final TimeProvider timeProvider;
   private final Cache<PeerAddress, Reputation> peerReputations;
 
@@ -33,23 +30,18 @@ public class ReputationManager {
   }
 
   public void reportInitiatedConnectionFailed(final PeerAddress peerAddress) {
-    LOG.trace("Connection to {} failed", peerAddress);
     getOrCreateReputation(peerAddress)
         .reportInitiatedConnectionFailed(timeProvider.getTimeInSeconds());
   }
 
   public boolean isConnectionInitiationAllowed(final PeerAddress peerAddress) {
-    final boolean result =
-        peerReputations
-            .getCached(peerAddress)
-            .map(reputation -> reputation.shouldInitiateConnection(timeProvider.getTimeInSeconds()))
-            .orElse(true);
-    LOG.trace("Connection to {} allowed: {}", peerAddress, result);
-    return result;
+    return peerReputations
+        .getCached(peerAddress)
+        .map(reputation -> reputation.shouldInitiateConnection(timeProvider.getTimeInSeconds()))
+        .orElse(true);
   }
 
   public void reportInitiatedConnectionSuccessful(final PeerAddress peerAddress) {
-    LOG.trace("Connection to {} successful", peerAddress);
     getOrCreateReputation(peerAddress).reportInitiatedConnectionSuccessful();
   }
 
