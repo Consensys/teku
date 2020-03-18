@@ -120,9 +120,7 @@ public class Eth1DataCache {
   }
 
   private void prune() {
-    if (eth1ChainCache.isEmpty()) return;
-
-    while (isBlockTooOld(eth1ChainCache.firstKey())) {
+    while (!eth1ChainCache.isEmpty() && isBlockTooOld(eth1ChainCache.firstKey())) {
       eth1ChainCache.remove(eth1ChainCache.firstKey());
     }
   }
