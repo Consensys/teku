@@ -515,7 +515,7 @@ public class ChainDataProviderTest {
     List<ValidatorDuties> validatorDuties = future.get();
 
     assertThat(validatorDuties.size()).isEqualTo(1);
-    ValidatorDuties expected = new ValidatorDuties(BLSPubKey.empty(), null, null);
+    ValidatorDuties expected = new ValidatorDuties(BLSPubKey.empty(), null, null, List.of());
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
@@ -557,16 +557,19 @@ public class ChainDataProviderTest {
     assertThat(validatorDuties.size()).isEqualTo(3);
     assertThat(validatorDuties.get(0))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(0).pubkey, 0, 0));
+        .isEqualTo(new ValidatorDuties(alteredState.validators.get(0).pubkey, 0, 0, List.of()));
     // even though we used key 11 it will come out as 0 since the default keys are all equal
     assertThat(validatorDuties.get(1))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 0, 0));
+        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 0, 0, List.of()));
     assertThat(validatorDuties.get(2))
         .usingRecursiveComparison()
         .isEqualTo(
             new ValidatorDuties(
-                alteredState.validators.get(addedValidatorIndex).pubkey, addedValidatorIndex, 1));
+                alteredState.validators.get(addedValidatorIndex).pubkey,
+                addedValidatorIndex,
+                1,
+                List.of()));
   }
 
   @Test
@@ -611,6 +614,8 @@ public class ChainDataProviderTest {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
     // create a validator and add it to the list
     MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
+    v.setActivation_eligibility_epoch(ZERO);
+    v.setActivation_epoch(ONE);
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
   }

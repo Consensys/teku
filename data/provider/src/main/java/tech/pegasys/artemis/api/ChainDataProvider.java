@@ -19,7 +19,9 @@ import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -42,15 +44,21 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.statetransition.BlockProposalUtil;
+import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.config.Constants;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final ChainStorageClient chainStorageClient;
+  private final StateTransition stateTransition = new StateTransition();
+  private final BlockProposalUtil blockCreator = new BlockProposalUtil(stateTransition);
 
   public ChainDataProvider(
       final ChainStorageClient chainStorageClient,
@@ -251,22 +259,46 @@ public class ChainDataProvider {
   protected List<ValidatorDuties> getValidatorDutiesFromState(
       final tech.pegasys.artemis.datastructures.state.BeaconState state,
       final List<BLSPubKey> pubKeys) {
+    try {
     final List<ValidatorDuties> dutiesList = new ArrayList<>();
 
     final List<CommitteeAssignment> committees =
         combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
+    final UnsignedLong firstSlot = state.getSlot();
+    Map<BLSPubKey, List<UnsignedLong>> proposers = new HashMap<>();
+
+    for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
+      final UnsignedLong thisSlot = firstSlot.plus(UnsignedLong.valueOf(i));
+      BLSPublicKey publicKey = blockCreator.getProposerForSlot(state, thisSlot);
+      BLSPubKey pubkey = new BLSPubKey(publicKey.toBytes());
+      if (proposers.containsKey(pubkey)) {
+        List<UnsignedLong> ps = proposers.get(pubkey);
+        ps.add(thisSlot);
+      } else {
+        proposers.put(pubkey, List.of(thisSlot).stream().collect(Collectors.toList()));
+      }
+    }
 
     for (final BLSPubKey pubKey : pubKeys) {
       final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
       if (validatorIndex == null) {
-        dutiesList.add(new ValidatorDuties(pubKey, null, null));
+        dutiesList.add(new ValidatorDuties(pubKey, null, null, List.of()));
       } else {
+        List<UnsignedLong> proposedSlots = proposers.getOrDefault(pubKey, List.of());
         dutiesList.add(
             new ValidatorDuties(
-                pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)));
+                pubKey,
+                validatorIndex,
+                getCommitteeIndex(committees, validatorIndex),
+                proposedSlots));
       }
     }
     return dutiesList;
+    } catch (Exception e) {
+      System.out.println("exception");
+      e.printStackTrace();
+      return List.of();
+    }
   }
 
   @VisibleForTesting
