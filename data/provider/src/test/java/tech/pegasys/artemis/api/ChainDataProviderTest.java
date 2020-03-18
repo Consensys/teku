@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.api.exceptions.ChainDataUnavailable;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
@@ -141,15 +141,14 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(ZERO);
     verify(historicalChainData, never()).getFinalizedStateAtSlot(any());
-    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
-  public void getBeaconHead_shouldReturnEmptyIfStoreNotReady() {
+  public void getBeaconHead_shouldThrowIfStoreNotReady() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    Optional<BeaconHead> data = provider.getBeaconHead();
-    assertTrue(data.isEmpty());
+    assertThatThrownBy(provider::getBeaconHead).isInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -166,23 +165,20 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getBeaconHead_shouldReturnEmptyIfHeadNotFound() {
+  public void getBeaconHead_shouldThrowIfHeadNotFound() {
     ChainDataProvider provider =
         new ChainDataProvider(mockChainStorageClient, combinedChainDataClient);
 
     when(mockChainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
-
-    Optional<BeaconHead> data = provider.getBeaconHead();
-    assertTrue(data.isEmpty());
+    assertThatThrownBy(provider::getBeaconHead).isInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
-  public void getGenesisTime_shouldReturnEmptyIfStoreNotAvailable() {
+  public void getGenesisTime_shouldThrowIfStoreNotAvailable() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
 
-    Optional<UnsignedLong> optionalData = provider.getGenesisTime();
-    assertTrue(optionalData.isEmpty());
+    assertThatThrownBy(provider::getGenesisTime).isInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -190,8 +186,8 @@ public class ChainDataProviderTest {
     UnsignedLong genesis = beaconStateInternal.getGenesis_time();
     ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
 
-    Optional<UnsignedLong> optionalData = provider.getGenesisTime();
-    assertEquals(genesis, optionalData.get());
+    UnsignedLong result = provider.getGenesisTime();
+    assertEquals(genesis, result);
   }
 
   @Test
@@ -199,7 +195,7 @@ public class ChainDataProviderTest {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
-    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -239,7 +235,7 @@ public class ChainDataProviderTest {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
-    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -279,7 +275,7 @@ public class ChainDataProviderTest {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -305,7 +301,7 @@ public class ChainDataProviderTest {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<BeaconState>> future = provider.getStateByBlockRoot(blockRoot);
-    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -333,7 +329,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     assertThatThrownBy(() -> provider.getUnsignedAttestationAtSlot(ZERO, 0))
-        .isInstanceOf(ChainDataUnavailable.class);
+        .isInstanceOf(ChainDataUnavailableException.class);
     verify(mockCombinedChainDataClient).isStoreAvailable();
   }
 
@@ -567,14 +563,12 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getFork_shouldBeEmptyIfNoBlockRoot() {
+  public void getFork_shouldThrowIfNoBlockRoot() {
     ChainDataProvider provider =
         new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockChainStorageClient.getBestBlockRootState()).thenReturn(Optional.empty());
-    Optional<Fork> optionalFork = provider.getFork();
-    verify(mockCombinedChainDataClient).isStoreAvailable();
-    assertThat(optionalFork.isEmpty()).isTrue();
+    assertThatThrownBy(provider::getFork).isInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
@@ -584,10 +578,9 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockChainStorageClient.getBestBlockRootState())
         .thenReturn(Optional.of(beaconStateInternal));
-    Optional<Fork> optionalFork = provider.getFork();
+    Fork result = provider.getFork();
     verify(mockCombinedChainDataClient).isStoreAvailable();
-    assertThat(optionalFork.isEmpty()).isFalse();
-    assertThat(optionalFork.get()).isEqualToComparingFieldByField(beaconState.fork);
+    assertThat(result).isEqualToComparingFieldByField(beaconState.fork);
   }
 
   private void getUnsignedAttestationAtSlot_throwsIllegalArgumentException(

@@ -27,7 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.api.exceptions.ChainDataUnavailable;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
@@ -67,7 +67,7 @@ public class BeaconRestApi {
 
   private void addExceptionHandlers() {
     app.exception(
-        ChainDataUnavailable.class,
+        ChainDataUnavailableException.class,
         (e, ctx) -> {
           ctx.status(SC_NO_CONTENT);
         });

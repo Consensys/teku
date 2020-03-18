@@ -13,4 +13,4 @@
 
 package tech.pegasys.artemis.api.exceptions;
 
-public class ChainDataUnavailable extends RuntimeException {}
+public class ChainDataUnavailableException extends RuntimeException {}

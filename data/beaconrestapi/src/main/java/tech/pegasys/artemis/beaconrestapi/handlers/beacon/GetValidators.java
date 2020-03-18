@@ -44,7 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
-import tech.pegasys.artemis.api.exceptions.ChainDataUnavailable;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
@@ -126,7 +126,7 @@ public class GetValidators implements Handler {
       return chainDataProvider.getStateAtSlot(slot);
     } else {
       Bytes32 blockRoot =
-          chainDataProvider.getBestBlockRoot().orElseThrow(ChainDataUnavailable::new);
+          chainDataProvider.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
       return chainDataProvider.getStateByBlockRoot(blockRoot);
     }
   }
