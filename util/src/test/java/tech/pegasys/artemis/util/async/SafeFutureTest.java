@@ -363,6 +363,32 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void catchAndRethrow_shouldNotExecuteHandlerWhenCompletedSuccessfully() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+
+    final SafeFuture<String> result = safeFuture.catchAndRethrow(receivedError::set);
+
+    safeFuture.complete("Yay");
+    assertThat(result).isCompletedWithValue("Yay");
+    assertThat(receivedError).hasValue(null);
+  }
+
+  @Test
+  public void
+      catchAndRethrow_shouldExecuteHandlerWhenCompletedSuccessfullyAndCompleteExceptionally() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+
+    final SafeFuture<String> result = safeFuture.catchAndRethrow(receivedError::set);
+
+    final RuntimeException exception = new RuntimeException("Nope");
+    safeFuture.completeExceptionally(exception);
+    assertExceptionallyCompletedWith(result, exception);
+    assertThat(receivedError).hasValue(exception);
+  }
+
+  @Test
   public void propagateTo_propagatesSuccessfulResult() {
     final SafeFuture<String> target = new SafeFuture<>();
     final SafeFuture<String> source = new SafeFuture<>();
