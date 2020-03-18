@@ -196,6 +196,26 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return result;
   }
 
+  /**
+   * Returns a new CompletionStage that, when the this stage completes exceptionally, executes the
+   * provided Consumer with the exception as the argument. The returned stage will be exceptionally
+   * completed with the same exception.
+   *
+   * <p>This is equivalent to a catch block that performs some action and then rethrows the original
+   * exception.
+   *
+   * @param onError the function to executor when this stage completes exceptionally.
+   * @return a new SafeFuture which completes with the same result (successful or exceptionally) as
+   *     this stage.
+   */
+  public SafeFuture<T> catchAndRethrow(final Consumer<Throwable> onError) {
+    return exceptionallyCompose(
+        error -> {
+          onError.accept(error);
+          return failedFuture(error);
+        });
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public <U> SafeFuture<U> thenApply(final Function<? super T, ? extends U> fn) {

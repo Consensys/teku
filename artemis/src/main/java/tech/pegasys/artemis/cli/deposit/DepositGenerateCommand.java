@@ -21,6 +21,7 @@ import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +40,7 @@ import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.artemis.util.crypto.SecureRandomProvider;
 
 @Command(
     name = "generate",
@@ -125,12 +127,13 @@ public class DepositGenerateCommand implements Runnable {
   public void run() {
     final KeysWriter keysWriter = getKeysWriter();
     final CommonParams _params = params; // making it effective final as it gets injected by PicoCLI
+    final SecureRandom srng = SecureRandomProvider.createSecureRandom();
     try (_params) {
       final DepositTransactionSender sender = params.createTransactionSender();
       final List<SafeFuture<TransactionReceipt>> futures = new ArrayList<>();
       for (int i = 0; i < validatorCount; i++) {
-        final BLSKeyPair validatorKey = BLSKeyPair.random();
-        final BLSKeyPair withdrawalKey = BLSKeyPair.random();
+        final BLSKeyPair validatorKey = BLSKeyPair.random(srng);
+        final BLSKeyPair withdrawalKey = BLSKeyPair.random(srng);
 
         keysWriter.writeKeys(validatorKey, withdrawalKey);
 

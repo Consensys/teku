@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import com.google.common.base.Suppliers;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -30,8 +31,8 @@ public final class PublicKey {
    *
    * @return PublicKey The public key, not null
    */
-  public static PublicKey random() {
-    return KeyPair.random().publicKey();
+  public static PublicKey random(final SecureRandom srng) {
+    return KeyPair.random(srng).publicKey();
   }
 
   /**

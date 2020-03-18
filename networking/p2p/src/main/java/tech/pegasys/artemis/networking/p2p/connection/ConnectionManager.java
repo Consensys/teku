@@ -38,15 +38,18 @@ public class ConnectionManager extends Service {
   private final Set<PeerAddress> staticPeers;
   private final DiscoveryService discoveryService;
   private final TargetPeerRange targetPeerCountRange;
+  private final ReputationManager reputationManager;
 
   private volatile long peerConnectedSubscriptionId;
 
   public ConnectionManager(
       final DiscoveryService discoveryService,
+      final ReputationManager reputationManager,
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
       final List<PeerAddress> peerAddresses,
       final TargetPeerRange targetPeerCountRange) {
+    this.reputationManager = reputationManager;
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.staticPeers = new HashSet<>(peerAddresses);
@@ -70,6 +73,7 @@ public class ConnectionManager extends Service {
     discoveryService
         .streamKnownPeers()
         .map(network::createPeerAddress)
+        .filter(reputationManager::isConnectionInitiationAllowed)
         .filter(peerAddress -> !network.isConnected(peerAddress))
         .limit(maxAttempts)
         .forEach(this::attemptConnection);

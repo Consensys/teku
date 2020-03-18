@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.reflectionInformation;
+package tech.pegasys.artemis.util.sos;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
