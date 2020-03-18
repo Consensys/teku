@@ -178,7 +178,7 @@ public class PendingAttestation extends AbstractImmutableContainer<PendingAttest
   @SuppressWarnings("unchecked")
   @JsonProperty
   public Bitlist getAggregation_bits() {
-    return ViewUtils.getBitvector((ListViewRead<BitView>) get(0));
+    return ViewUtils.getBitlist((ListViewRead<BitView>) get(0));
   }
 
   @JsonProperty
