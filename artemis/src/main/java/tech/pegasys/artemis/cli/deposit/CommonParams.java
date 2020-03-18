@@ -51,7 +51,7 @@ public class CommonParams implements Closeable {
   private String eth1NodeUrl;
 
   @Option(
-      names = {"-c", "--contract-address"},
+      names = {"--eth1-deposit-contract-address"},
       required = true,
       paramLabel = "<ADDRESS>",
       description = "Address of the deposit contract")

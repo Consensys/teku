@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.test.acceptance.dsl;
 
+import static java.lang.Boolean.FALSE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,6 +23,7 @@ import tech.pegasys.artemis.util.Waiter;
 
 public class ArtemisDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
+  private static final String ENCRYPTED_KEYSTORE_ENABLED = FALSE.toString();
 
   public ArtemisDepositSender(final Network network) {
     super(network, ArtemisNode.ARTEMIS_DOCKER_IMAGE, LOG);
@@ -32,8 +34,8 @@ public class ArtemisDepositSender extends Node {
         "validator",
         "generate",
         "--encrypted-keystore-enabled",
-        "false",
-        "--contract-address",
+        ENCRYPTED_KEYSTORE_ENABLED,
+        "--eth1-deposit-contract-address",
         eth1Node.getDepositContractAddress(),
         "--number-of-validators",
         Integer.toString(numberOfValidators),
