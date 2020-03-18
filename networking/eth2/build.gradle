@@ -1,10 +1,12 @@
 dependencies {
+  implementation project(':bls')
   implementation project(':data')
   implementation project(':data:metrics')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':networking:p2p')
   implementation project(':logging')
+  implementation project(':ssz')
   implementation project(':util')
   implementation project(':storage')
 

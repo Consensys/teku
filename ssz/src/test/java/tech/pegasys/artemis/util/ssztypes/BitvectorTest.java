@@ -22,8 +22,6 @@ import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.ViewUtils;
-import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 class BitvectorTest {
 
@@ -76,12 +74,12 @@ class BitvectorTest {
 
   @Test
   void bitlistHashTest() {
-    Bitlist bitlist =
-        new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    Bitlist bitlist = new Bitlist(2048, 2048);
     for (int i = 0; i < 44; i++) {
       bitlist.setBit(i);
     }
-    Bytes32 hashOld = HashTreeUtil.hash_tree_root_bitlist(bitlist);
+    Bytes32 hashOld =
+        Bytes32.fromHexString("0x447ac4def72d4aa09ded8e1130cbe013511d4881c3393903ada630f034e985d7");
 
     ListViewRead<BitView> bitlistView = ViewUtils.createBitlistView(bitlist);
     Bytes32 hashNew = bitlistView.hashTreeRoot();

@@ -11,6 +11,7 @@ dependencies {
   implementation project(':pow')
   implementation project(':services:serviceutils')
   implementation project(':services:powchain')
+  implementation project(':ssz')
   implementation project(':storage')
   implementation project(':sync')
   implementation project(':util')
