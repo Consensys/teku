@@ -117,7 +117,7 @@ public class BeaconChainController extends Service {
     return initialize()
         .thenCompose(
             __ ->
-                SafeFuture.allOf(
+                SafeFuture.allOfFailFast(
                     validatorCoordinator.start(),
                     attestationManager.start(),
                     p2pNetwork.start(),
@@ -265,6 +265,7 @@ public class BeaconChainController extends Service {
               .eventBus(eventBus)
               .chainStorageClient(chainStorageClient)
               .metricsSystem(metricsSystem)
+              .timeProvider(timeProvider)
               .build();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
