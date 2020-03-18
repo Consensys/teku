@@ -41,7 +41,7 @@ public class ArtemisDepositSender extends Node {
         Integer.toString(numberOfValidators),
         "--eth1-private-key",
         eth1Node.getRichBenefactorKey(),
-        "--node-url",
+        "--eth1-endpoint",
         eth1Node.getInternalJsonRpcUrl());
     final StringBuilder validatorKeys = new StringBuilder();
     container.withLogConsumer(outputFrame -> validatorKeys.append(outputFrame.getUtf8String()));

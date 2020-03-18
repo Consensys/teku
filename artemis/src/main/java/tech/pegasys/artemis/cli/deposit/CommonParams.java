@@ -44,7 +44,7 @@ public class CommonParams implements Closeable {
   @Spec private CommandSpec spec;
 
   @Option(
-      names = {"-u", "--node-url"},
+      names = {"--eth1-endpoint"},
       required = true,
       paramLabel = "<URL>",
       description = "JSON-RPC endpoint URL for the Ethereum 1 node to send transactions via")
