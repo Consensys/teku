@@ -52,6 +52,7 @@ create_config() {
     sed "s/genesisTime\ =.*/genesisTime\ =\ $GENESIS_TIME/"           |# Update the genesis time
     awk -v peers="$PEERS" '/port/{print;print "peers = "peers;next}1' |# Update the peer list
     sed "s/numNodes\ =.*/numNodes\ =\ $TOTAL/"                        |# Update the number of nodes to the total number of nodes
+    sed "s/stateStorageMode\ =.*/stateStorageMode\ =\ \"archive\"/"   |# Update state storage mode to archive
     sed "s/networkInterface\ =.*/networkInterface\ =\ \"127.0.0.1\"/" |# Update the network interface to localhost
     sed "s/networkMode\ =.*/networkMode\ =\ \"$MODE\"/"               |# Update the network mode
     sed "s/numValidators\ =.*/numValidators\ =\ $NUM_VALIDATORS/"     | # Update validator count
