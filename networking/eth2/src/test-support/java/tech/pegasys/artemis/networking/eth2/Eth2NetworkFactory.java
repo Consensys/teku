@@ -33,6 +33,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
@@ -42,6 +43,8 @@ import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.util.Waiter;
+import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class Eth2NetworkFactory {
 
@@ -112,9 +115,15 @@ public class Eth2NetworkFactory {
         // Configure eth2 handlers
         this.rpcMethods(eth2Protocols).peerHandler(eth2PeerManager);
 
+        final ReputationManager reputationManager =
+            new ReputationManager(
+                StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
         final P2PNetwork<?> network =
             DiscoveryNetwork.create(
-                new LibP2PNetwork(config, METRICS_SYSTEM, rpcMethods, peerHandlers), config);
+                new LibP2PNetwork(
+                    config, reputationManager, METRICS_SYSTEM, rpcMethods, peerHandlers),
+                reputationManager,
+                config);
 
         return new Eth2Network(network, eth2PeerManager, eventBus, chainStorageClient);
       }

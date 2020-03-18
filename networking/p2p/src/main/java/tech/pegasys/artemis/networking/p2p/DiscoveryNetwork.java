@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.artemis.networking.p2p.discovery.noop.NoOpDiscoveryService;
@@ -50,11 +51,14 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
-      final P2PNetwork<P> p2pNetwork, final NetworkConfig p2pConfig) {
+      final P2PNetwork<P> p2pNetwork,
+      final ReputationManager reputationManager,
+      final NetworkConfig p2pConfig) {
     final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
     final ConnectionManager connectionManager =
         new ConnectionManager(
             discoveryService,
+            reputationManager,
             DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
             p2pConfig.getStaticPeers().stream()

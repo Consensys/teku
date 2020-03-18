@@ -265,6 +265,7 @@ public class BeaconChainController extends Service {
               .eventBus(eventBus)
               .chainStorageClient(chainStorageClient)
               .metricsSystem(metricsSystem)
+              .timeProvider(timeProvider)
               .build();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
