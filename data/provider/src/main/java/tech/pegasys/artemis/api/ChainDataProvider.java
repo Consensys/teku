@@ -13,13 +13,6 @@
 
 package tech.pegasys.artemis.api;
 
-import static tech.pegasys.artemis.api.ValidatorStatus.ACTIVE;
-import static tech.pegasys.artemis.api.ValidatorStatus.DEPOSITED;
-import static tech.pegasys.artemis.api.ValidatorStatus.EXITED;
-import static tech.pegasys.artemis.api.ValidatorStatus.EXITING;
-import static tech.pegasys.artemis.api.ValidatorStatus.PENDING;
-import static tech.pegasys.artemis.api.ValidatorStatus.SLASHING;
-import static tech.pegasys.artemis.api.ValidatorStatus.UNKNOWN_STATUS;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
@@ -46,14 +39,12 @@ import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
-import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.config.Constants;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -65,28 +56,6 @@ public class ChainDataProvider {
       final CombinedChainDataClient combinedChainDataClient) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.chainStorageClient = chainStorageClient;
-  }
-
-  public static ValidatorStatus getValidatorStatus(Validator validator, UnsignedLong epoch) {
-    if (validator == null || epoch.compareTo(UnsignedLong.ZERO) < 0) {
-      return UNKNOWN_STATUS;
-    }
-    if (epoch.compareTo(validator.getActivation_eligibility_epoch()) < 0) {
-      return DEPOSITED;
-    }
-    if (epoch.compareTo(validator.getActivation_epoch()) < 0) {
-      return PENDING;
-    }
-    if (validator.getExit_epoch().equals(Constants.FAR_FUTURE_EPOCH)) {
-      return ACTIVE;
-    }
-    if (epoch.compareTo(validator.getExit_epoch()) < 0) {
-      return validator.isSlashed() ? SLASHING : EXITING;
-    }
-    if (epoch.compareTo(validator.getExit_epoch()) >= 0) {
-      return EXITED;
-    }
-    return UNKNOWN_STATUS;
   }
 
   public Optional<UnsignedLong> getGenesisTime() {
@@ -289,20 +258,14 @@ public class ChainDataProvider {
     final List<CommitteeAssignment> committees =
         combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
 
-    final List<Validator> validators = state.getValidators().asList();
-    final UnsignedLong currentEpoch = BeaconStateUtil.get_current_epoch(state);
-
     for (final BLSPubKey pubKey : pubKeys) {
-      final Integer validatorIndex = getValidatorIndex(validators, pubKey);
+      final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
       if (validatorIndex == null) {
-        dutiesList.add(new ValidatorDuties(pubKey, null, null, UNKNOWN_STATUS));
+        dutiesList.add(new ValidatorDuties(pubKey, null, null));
       } else {
         dutiesList.add(
             new ValidatorDuties(
-                pubKey,
-                validatorIndex,
-                getCommitteeIndex(committees, validatorIndex),
-                getValidatorStatus(validators.get(validatorIndex), currentEpoch)));
+                pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)));
       }
     }
     return dutiesList;

@@ -13,22 +13,15 @@
 
 package tech.pegasys.artemis.api.schema;
 
-import tech.pegasys.artemis.api.ValidatorStatus;
-
 public class ValidatorDuties {
   public final BLSPubKey validator_pubkey;
   public final Integer validator_index;
   public final Integer attestation_committee_index;
-  public final String status;
 
   public ValidatorDuties(
-      BLSPubKey validator_pubkey,
-      Integer validator_index,
-      Integer attestation_committee_index,
-      ValidatorStatus validatorStatus) {
+      BLSPubKey validator_pubkey, Integer validator_index, Integer attestation_committee_index) {
     this.validator_pubkey = validator_pubkey;
     this.validator_index = validator_index;
     this.attestation_committee_index = attestation_committee_index;
-    this.status = validatorStatus.toString();
   }
 }

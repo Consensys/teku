@@ -13,45 +13,54 @@
 
 package tech.pegasys.artemis.cli.deposit;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
+import org.web3j.crypto.CipherException;
+import org.web3j.crypto.Credentials;
+import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
+import picocli.CommandLine.Model.CommandSpec;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Spec;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class CommonParams implements Closeable {
-  @CommandLine.Option(
+  @Spec private CommandSpec spec;
+
+  @Option(
       names = {"-u", "--node-url"},
       required = true,
       paramLabel = "<URL>",
       description = "JSON-RPC endpoint URL for the Ethereum 1 node to send transactions via")
   private String eth1NodeUrl;
 
-  @CommandLine.Option(
+  @Option(
       names = {"-c", "--contract-address"},
       required = true,
       paramLabel = "<ADDRESS>",
       description = "Address of the deposit contract")
   private String contractAddress;
 
-  @CommandLine.Option(
-      names = {"-p", "--private-key"},
-      required = true,
-      paramLabel = "<KEY>",
-      description = "Ethereum 1 private key to use to send transactions")
-  private String eth1PrivateKey;
+  @ArgGroup(exclusive = true, multiplicity = "1")
+  private Eth1PrivateKeyOptions eth1PrivateKeyOptions;
 
-  @CommandLine.Option(
+  @Option(
       names = {"-a", "--amount"},
       paramLabel = "<GWEI>",
       converter = UnsignedLongConverter.class,
@@ -62,13 +71,22 @@ public class CommonParams implements Closeable {
   private ScheduledExecutorService executorService;
   private Web3j web3j;
 
+  CommonParams() {}
+
+  @VisibleForTesting
+  public CommonParams(
+      final CommandSpec commandSpec, final Eth1PrivateKeyOptions eth1PrivateKeyOptions) {
+    this.spec = commandSpec;
+    this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
+  }
+
   public DepositTransactionSender createTransactionSender() {
     httpClient = new OkHttpClient.Builder().connectionPool(new ConnectionPool()).build();
     executorService =
         Executors.newScheduledThreadPool(
             1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
     web3j = Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
-    return new DepositTransactionSender(web3j, contractAddress, eth1PrivateKey);
+    return new DepositTransactionSender(web3j, contractAddress, getEth1Credentials());
   }
 
   @Override
@@ -83,6 +101,43 @@ public class CommonParams implements Closeable {
 
   public UnsignedLong getAmount() {
     return amount;
+  }
+
+  Credentials getEth1Credentials() {
+    if (eth1PrivateKeyOptions.eth1PrivateKey != null) {
+      return Credentials.create(eth1PrivateKeyOptions.eth1PrivateKey);
+    } else if (eth1PrivateKeyOptions.keystoreOptions != null) {
+      return eth1CredentialsFromKeystore();
+    } else {
+      // not meant to happen
+      throw new IllegalStateException("Private Key Options are not initialized");
+    }
+  }
+
+  private Credentials eth1CredentialsFromKeystore() {
+    final String keystorePassword =
+        KeystorePasswordOptions.readFromFile(
+            spec.commandLine(), eth1PrivateKeyOptions.keystoreOptions.eth1KeystorePasswordFile);
+    final File eth1KeystoreFile = eth1PrivateKeyOptions.keystoreOptions.eth1KeystoreFile;
+    try {
+      return WalletUtils.loadCredentials(keystorePassword, eth1KeystoreFile);
+    } catch (final FileNotFoundException e) {
+      throw new CommandLine.ParameterException(
+          spec.commandLine(), "Error: File not found: " + eth1KeystoreFile, e);
+    } catch (final IOException e) {
+      throw new CommandLine.ParameterException(
+          spec.commandLine(),
+          "Error: Unexpected IO Error while reading Eth1 keystore ["
+              + eth1KeystoreFile
+              + "] : "
+              + e.getMessage(),
+          e);
+    } catch (CipherException e) {
+      throw new CommandLine.ParameterException(
+          spec.commandLine(),
+          "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
+          e);
+    }
   }
 
   static SafeFuture<TransactionReceipt> sendDeposit(

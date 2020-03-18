@@ -13,12 +13,29 @@
 
 package tech.pegasys.artemis.storage;
 
-public class DatabaseStorageException extends RuntimeException {
-  public DatabaseStorageException(final String s) {
-    super(s);
+import java.util.Optional;
+
+public enum DatabaseVersion {
+  V1("1.0");
+
+  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V1;
+  private String value;
+
+  DatabaseVersion(final String value) {
+    this.value = value;
   }
 
-  public DatabaseStorageException(final String s, final Throwable cause) {
-    super(s, cause);
+  public String getValue() {
+    return value;
+  }
+
+  public static Optional<DatabaseVersion> fromString(final String value) {
+    final String normalizedValue = value.trim();
+    for (DatabaseVersion version : DatabaseVersion.values()) {
+      if (version.getValue().equalsIgnoreCase(normalizedValue)) {
+        return Optional.of(version);
+      }
+    }
+    return Optional.empty();
   }
 }

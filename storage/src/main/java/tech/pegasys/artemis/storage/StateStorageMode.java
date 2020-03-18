@@ -13,12 +13,21 @@
 
 package tech.pegasys.artemis.storage;
 
-public class DatabaseStorageException extends RuntimeException {
-  public DatabaseStorageException(final String s) {
-    super(s);
-  }
+import java.util.Objects;
 
-  public DatabaseStorageException(final String s, final Throwable cause) {
-    super(s, cause);
+public enum StateStorageMode {
+  // All historical state is available to query in archive mode
+  ARCHIVE,
+  // No historical state is available to query in mode "prune"
+  PRUNE;
+
+  static StateStorageMode fromString(final String value) {
+    final String normalizedValue = value.trim().toUpperCase();
+    for (StateStorageMode mode : StateStorageMode.values()) {
+      if (Objects.equals(mode.name(), normalizedValue)) {
+        return mode;
+      }
+    }
+    throw new IllegalArgumentException("Unknown value supplied: " + value);
   }
 }
