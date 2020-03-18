@@ -331,7 +331,7 @@ public class BeaconChainController extends Service {
   @Subscribe
   @SuppressWarnings("unused")
   private void onTick(Date date) {
-    if (chainStorageClient.isPreGenesis() || syncService.getSyncStatus().is_syncing) {
+    if (chainStorageClient.isPreGenesis() || syncService.getSyncStatus().isSyncing()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
