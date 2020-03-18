@@ -16,6 +16,7 @@ package tech.pegasys.artemis.api;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailable;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
@@ -134,13 +136,12 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getCommitteeAssignmentAtEpoch_shouldReturnEmptyListIfStoreNotAvailable()
-      throws ExecutionException, InterruptedException {
+  public void getCommitteeAssignmentAtEpoch_shouldThrowIfStoreNotAvailable() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
     SafeFuture<List<Committee>> future = provider.getCommitteesAtEpoch(ZERO);
     verify(historicalChainData, never()).getFinalizedStateAtSlot(any());
-    assertEquals(future.get(), List.of());
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
   }
 
   @Test
@@ -194,12 +195,11 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getBlockBySlot_shouldReturnEmptyWhenStoreNotFound()
-      throws ExecutionException, InterruptedException {
+  public void getBlockBySlot_shouldThrowWhenStoreNotFound() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockBySlot(ZERO);
-    assertTrue(future.get().isEmpty());
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
   }
 
   @Test
@@ -235,12 +235,11 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getBlockByBlockRoot_shouldReturnEmptyWhenStoreNotFound()
-      throws ExecutionException, InterruptedException {
+  public void getBlockByBlockRoot_shouldThrowWhenStoreNotFound() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<SignedBeaconBlock>> future = provider.getBlockByBlockRoot(blockRoot);
-    assertTrue(future.get().isEmpty());
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
   }
 
   @Test
@@ -276,12 +275,11 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getStateAtSlot_shouldReturnEmptyWhenStoreNotFound()
-      throws ExecutionException, InterruptedException {
+  public void getStateAtSlot_shouldThrowWhenStoreNotFound() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    assertTrue(future.get().isEmpty());
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
   }
 
   @Test
@@ -303,12 +301,11 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getStateByBlockRoot_shouldReturnEmptyWhenStoreNotFound()
-      throws ExecutionException, InterruptedException {
+  public void getStateByBlockRoot_shouldThrowWhenStoreNotFound() {
     ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<BeaconState>> future = provider.getStateByBlockRoot(blockRoot);
-    assertTrue(future.get().isEmpty());
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailable.class);
   }
 
   @Test
@@ -331,13 +328,13 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getUnsignedAttestationAtSlot_shouldReturnEmptyIfStoreNotFound() {
+  void getUnsignedAttestationAtSlot_shouldThrowIfStoreNotFound() {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(false);
-    Optional<Attestation> optional = provider.getUnsignedAttestationAtSlot(ZERO, 0);
+    assertThatThrownBy(() -> provider.getUnsignedAttestationAtSlot(ZERO, 0))
+        .isInstanceOf(ChainDataUnavailable.class);
     verify(mockCombinedChainDataClient).isStoreAvailable();
-    assertTrue(optional.isEmpty());
   }
 
   @Test

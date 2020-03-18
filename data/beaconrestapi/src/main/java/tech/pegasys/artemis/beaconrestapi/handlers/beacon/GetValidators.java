@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
@@ -29,7 +28,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
@@ -46,6 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailable;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
@@ -109,11 +108,6 @@ public class GetValidators implements Handler {
           getPositiveIntegerValueWithDefaultIfNotSupplied(
               parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
 
-      if (!chainDataProvider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
-      }
-
       final SafeFuture<Optional<BeaconState>> future = getStateFuture(parameters);
 
       ctx.result(
@@ -130,13 +124,11 @@ public class GetValidators implements Handler {
       UnsignedLong epoch = getParameterValueAsUnsignedLong(parameters, EPOCH);
       UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
       return chainDataProvider.getStateAtSlot(slot);
+    } else {
+      Bytes32 blockRoot =
+          chainDataProvider.getBestBlockRoot().orElseThrow(ChainDataUnavailable::new);
+      return chainDataProvider.getStateByBlockRoot(blockRoot);
     }
-    Optional<Bytes32> blockRoot = chainDataProvider.getBestBlockRoot();
-    if (blockRoot.isPresent()) {
-      return chainDataProvider.getStateByBlockRoot(blockRoot.get());
-    }
-
-    return completedFuture(Optional.empty());
   }
 
   private int getPositiveIntegerValueWithDefaultIfNotSupplied(

@@ -13,6 +13,9 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+
 import io.javalin.Javalin;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -24,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailable;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
@@ -54,10 +58,25 @@ public class BeaconRestApi {
   private void initialise(final DataProvider dataProvider, final int requestedPortNumber) {
     app.server().setServerPort(requestedPortNumber);
 
+    addExceptionHandlers();
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
+  }
+
+  private void addExceptionHandlers() {
+    app.exception(
+        ChainDataUnavailable.class,
+        (e, ctx) -> {
+          ctx.status(SC_NO_CONTENT);
+        });
+    // Add catch-all handler
+    app.exception(
+        Exception.class,
+        (e, ctx) -> {
+          ctx.status(SC_INTERNAL_SERVER_ERROR);
+        });
   }
 
   public BeaconRestApi(final DataProvider dataProvider, final ArtemisConfiguration configuration) {
@@ -81,6 +100,10 @@ public class BeaconRestApi {
 
   public void start() {
     app.start();
+  }
+
+  public int getListenPort() {
+    return app.server().getServerPort();
   }
 
   private static OpenApiOptions getOpenApiOptions(

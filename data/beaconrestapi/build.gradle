@@ -23,8 +23,15 @@ dependencies {
     testImplementation 'org.mockito:mockito-core'
     testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
     testImplementation 'org.assertj:assertj-core'
-
     testCompile 'io.libp2p:jvm-libp2p-minimal'
+
+    integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+    integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+    integrationTestImplementation 'org.mockito:mockito-core'
+    integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+    integrationTestImplementation 'org.assertj:assertj-core'
+    integrationTestImplementation 'com.squareup.okhttp3:okhttp'
+
 }
 
 test {
