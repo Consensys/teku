@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(path: ':bls')
     implementation project(":util")
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'

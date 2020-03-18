@@ -6,6 +6,7 @@ dependencies {
     implementation project(':networking:eth2')
     implementation project(':logging')
     implementation project(':services:serviceutils')
+    implementation project(':ssz')
     implementation project(':storage')
     implementation project(':util')
 
