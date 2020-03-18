@@ -24,6 +24,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.p2p.DiscoveryNetwork;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -31,14 +32,18 @@ import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeProvider;
 
 public class Eth2NetworkBuilder {
-  protected NetworkConfig config;
-  protected EventBus eventBus;
-  protected ChainStorageClient chainStorageClient;
-  protected MetricsSystem metricsSystem;
-  protected List<RpcMethod> rpcMethods = new ArrayList<>();
-  protected List<PeerHandler> peerHandlers = new ArrayList<>();
+
+  private NetworkConfig config;
+  private EventBus eventBus;
+  private ChainStorageClient chainStorageClient;
+  private MetricsSystem metricsSystem;
+  private List<RpcMethod> rpcMethods = new ArrayList<>();
+  private List<PeerHandler> peerHandlers = new ArrayList<>();
+  private TimeProvider timeProvider;
 
   private Eth2NetworkBuilder() {}
 
@@ -64,8 +69,12 @@ public class Eth2NetworkBuilder {
   }
 
   protected P2PNetwork<?> buildNetwork() {
+    final ReputationManager reputationManager =
+        new ReputationManager(timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
     return DiscoveryNetwork.create(
-        new LibP2PNetwork(config, metricsSystem, rpcMethods, peerHandlers), config);
+        new LibP2PNetwork(config, reputationManager, metricsSystem, rpcMethods, peerHandlers),
+        reputationManager,
+        config);
   }
 
   private void validate() {
@@ -73,6 +82,7 @@ public class Eth2NetworkBuilder {
     assertNotNull("eventBus", eventBus);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", chainStorageClient);
+    assertNotNull("timeProvider", timeProvider);
   }
 
   private void assertNotNull(String fieldName, Object fieldValue) {
@@ -100,6 +110,11 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder metricsSystem(final MetricsSystem metricsSystem) {
     checkNotNull(metricsSystem);
     this.metricsSystem = metricsSystem;
+    return this;
+  }
+
+  public Eth2NetworkBuilder timeProvider(final TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
     return this;
   }
 
