@@ -293,13 +293,11 @@ public class Eth1DataCacheTest {
     eth1DataCache.startBeaconChainMode(genesisState);
     eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
-    // First two Eth1Data timestamps inside the spec range for this voting period
+    // All Eth1Data timestamps inside the spec range for this voting period
     CacheEth1BlockEvent cacheEth1BlockEvent1 =
         createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(359));
     CacheEth1BlockEvent cacheEth1BlockEvent2 =
         createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
-
-    // This Eth1Data timestamp inside the spec range for the next voting period
     CacheEth1BlockEvent cacheEth1BlockEvent3 =
         createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(361));
 
