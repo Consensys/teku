@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
-import org.bouncycastle.util.Iterable;
 import org.jetbrains.annotations.NotNull;
 
 @JsonSerialize(as = Iterable.class)

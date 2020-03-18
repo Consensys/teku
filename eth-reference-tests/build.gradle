@@ -1,10 +1,12 @@
 jar { enabled = false }
 
 dependencies {
+  referenceTestImplementation project(':bls')
   referenceTestImplementation project(':util')
   referenceTestImplementation project(':eth-tests')
   referenceTestImplementation project(':ethereum:datastructures')
   referenceTestImplementation project(':ethereum:statetransition')
+  referenceTestImplementation project(':ssz')
   referenceTestImplementation project(':storage')
 
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
