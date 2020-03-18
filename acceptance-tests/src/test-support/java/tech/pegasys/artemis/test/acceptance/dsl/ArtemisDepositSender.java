@@ -37,7 +37,7 @@ public class ArtemisDepositSender extends Node {
         eth1Node.getDepositContractAddress(),
         "--number-of-validators",
         Integer.toString(numberOfValidators),
-        "--private-key",
+        "--eth1-private-key",
         eth1Node.getRichBenefactorKey(),
         "--node-url",
         eth1Node.getInternalJsonRpcUrl());

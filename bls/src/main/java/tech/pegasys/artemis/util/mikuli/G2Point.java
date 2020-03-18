@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.artemis.util.hashToG2.HashToCurve.isInGroupG2;
 import static tech.pegasys.artemis.util.mikuli.Util.calculateYFlag;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -214,7 +213,7 @@ public final class G2Point implements Group<G2Point> {
    * @return True if the point is in G2; false otherwise
    */
   static boolean isInGroup(ECP2 point) {
-    return isInGroupG2(point);
+    return HashToCurve.isInGroupG2(point);
   }
 
   ECP2 ecp2Point() {
