@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':bls')
   implementation project(':data')
   implementation project(':events')
   implementation project(':ethereum:datastructures')

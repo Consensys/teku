@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':bls')
   implementation project(':validator:client')
   implementation project(':storage')
   implementation project(':services:serviceutils')
@@ -8,6 +9,7 @@ dependencies {
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':data:keystore')
+  implementation project(':ssz')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3'

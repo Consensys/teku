@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.reflectionInformation;
+package tech.pegasys.artemis.util.sos;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -25,7 +25,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
-public class ReflectionInformationUtil {
+class ReflectionInformationUtil {
   @SuppressWarnings("rawtypes")
   public static boolean isVariable(ReflectionInformation reflectionInformation)
       throws SecurityException {

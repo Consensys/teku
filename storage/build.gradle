@@ -1,6 +1,8 @@
 dependencies {
+  implementation project(':bls')
   implementation project(':ethereum:datastructures')
   implementation project(':logging')
+  implementation project(':ssz')
   implementation project(':util')
 
   implementation 'org.apache.tuweni:tuweni-kv'
