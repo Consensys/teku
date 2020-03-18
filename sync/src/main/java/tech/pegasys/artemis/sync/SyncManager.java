@@ -77,6 +77,7 @@ public class SyncManager extends Service {
   @Override
   protected SafeFuture<?> doStart() {
     LOG.trace("Start {}", this.getClass().getSimpleName());
+    syncActive = true;
     peerConnectSubscriptionId = network.subscribeConnect(this::onNewPeer);
     startOrScheduleSync();
     return completedFuture(null);
