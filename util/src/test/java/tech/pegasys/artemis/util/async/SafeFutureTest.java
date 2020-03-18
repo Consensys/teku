@@ -363,6 +363,32 @@ public class SafeFutureTest {
   }
 
   @Test
+  public void catchAndRethrow_shouldNotExecuteHandlerWhenCompletedSuccessfully() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+
+    final SafeFuture<String> result = safeFuture.catchAndRethrow(receivedError::set);
+
+    safeFuture.complete("Yay");
+    assertThat(result).isCompletedWithValue("Yay");
+    assertThat(receivedError).hasValue(null);
+  }
+
+  @Test
+  public void
+      catchAndRethrow_shouldExecuteHandlerWhenCompletedSuccessfullyAndCompleteExceptionally() {
+    final AtomicReference<Throwable> receivedError = new AtomicReference<>();
+    final SafeFuture<String> safeFuture = new SafeFuture<>();
+
+    final SafeFuture<String> result = safeFuture.catchAndRethrow(receivedError::set);
+
+    final RuntimeException exception = new RuntimeException("Nope");
+    safeFuture.completeExceptionally(exception);
+    assertExceptionallyCompletedWith(result, exception);
+    assertThat(receivedError).hasValue(exception);
+  }
+
+  @Test
   public void propagateTo_propagatesSuccessfulResult() {
     final SafeFuture<String> target = new SafeFuture<>();
     final SafeFuture<String> source = new SafeFuture<>();
@@ -401,6 +427,48 @@ public class SafeFutureTest {
 
     assertThat(future).isCompletedExceptionally();
     assertExceptionallyCompletedWith(future, error);
+  }
+
+  @Test
+  public void allOfFailFast_failImmediatelyWhenAnyFutureFails() {
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2);
+    assertThat(result).isNotDone();
+
+    final RuntimeException error = new RuntimeException("Nope");
+    future1.completeExceptionally(error);
+    assertExceptionallyCompletedWith(result, error);
+  }
+
+  @Test
+  public void allOfFailFast_failImmediatelyWhenSomeFuturesCompleteAndOneFails() {
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> future3 = new SafeFuture<>();
+    final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2, future3);
+    assertThat(result).isNotDone();
+
+    future2.complete(null);
+    assertThat(result).isNotDone();
+
+    final RuntimeException error = new RuntimeException("Nope");
+    future3.completeExceptionally(error);
+    assertExceptionallyCompletedWith(result, error);
+  }
+
+  @Test
+  public void allOfFailFast_completesWhenAllFuturesComplete() {
+    final SafeFuture<Void> future1 = new SafeFuture<>();
+    final SafeFuture<Void> future2 = new SafeFuture<>();
+    final SafeFuture<Void> result = SafeFuture.allOfFailFast(future1, future2);
+    assertThat(result).isNotDone();
+
+    future1.complete(null);
+    assertThat(result).isNotDone();
+
+    future2.complete(null);
+    assertThat(result).isCompleted();
   }
 
   private CountingNoOpAppender startCountingReportedUnhandledExceptions() {

@@ -1,26 +1,15 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
-  implementation project(':pow')
+  implementation project(':bls')
   implementation project(':ethereum:datastructures')
+  implementation project(':services:serviceutils')
   implementation project(':util')
-  implementation project(':data')
 
-  api 'org.web3j:core'
-  api 'org.web3j:abi'
-  api 'org.web3j:crypto'
-
-  implementation 'org.apache.tuweni:tuweni-crypto'
-  implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'
 
-  implementation 'com.google.code.gson:gson'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
-  runtime 'org.apache.logging.log4j:log4j-core'
 
-  testSupportImplementation project(':storage')
-  testSupportImplementation project(':ethereum:statetransition')
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':validator:client')
 }

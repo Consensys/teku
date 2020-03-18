@@ -1,10 +1,12 @@
 dependencies {
-  implementation project(':services:serviceutils')
+  implementation project(':bls')
   implementation project(':data')
   implementation project(':data:metrics')
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':util')
+  implementation project(':services:serviceutils')
+  implementation project(':ssz')
   implementation project(':storage')
   implementation project(':ethereum:datastructures')
 
@@ -22,9 +24,11 @@ dependencies {
 
   testImplementation 'org.mockito:mockito-core'
 
+  testImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 
+  testSupportImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testSupportImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 

@@ -36,14 +36,14 @@ public class DepositTransactionSender {
   private final DepositContract depositContract;
 
   public DepositTransactionSender(
-      final Web3j web3j, final String depositContractAddress, final String eth1PrivateKey) {
+      final Web3j web3j, final String depositContractAddress, final Credentials eth1Credentials) {
     this.depositContract =
         DepositContract.load(
             depositContractAddress,
             web3j,
             new FastRawTransactionManager(
                 web3j,
-                Credentials.create(eth1PrivateKey),
+                eth1Credentials,
                 new PollingTransactionReceiptProcessor(
                     web3j, POLL_INTERVAL_MILLIS, MAX_POLL_ATTEMPTS)),
             new DefaultGasProvider());
