@@ -28,7 +28,21 @@ public class LocalMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> sign(final Bytes signing_root) {
+  public SafeFuture<BLSSignature> signBlock(final Bytes signing_root) {
+    return sign(signing_root);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signAttestation(final Bytes signing_root) {
+    return sign(signing_root);
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signing_root) {
+    return sign(signing_root);
+  }
+
+  private SafeFuture<BLSSignature> sign(final Bytes signing_root) {
     return SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root));
   }
 }

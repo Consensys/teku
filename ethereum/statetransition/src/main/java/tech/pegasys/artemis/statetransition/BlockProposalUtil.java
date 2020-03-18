@@ -157,7 +157,7 @@ public class BlockProposalUtil {
     final Bytes domain =
         get_domain(state, Constants.DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(block.getSlot()));
     final Bytes signing_root = compute_signing_root(block, domain);
-    return signer.sign(signing_root).join();
+    return signer.signBlock(signing_root).join();
   }
 
   /**
@@ -174,6 +174,6 @@ public class BlockProposalUtil {
       final BeaconState state, final UnsignedLong epoch, final MessageSignerService signer) {
     Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
     Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
-    return signer.sign(signing_root).join();
+    return signer.signRandaoReveal(signing_root).join();
   }
 }
