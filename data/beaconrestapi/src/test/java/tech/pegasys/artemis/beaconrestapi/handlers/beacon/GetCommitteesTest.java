@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -140,20 +139,5 @@ public class GetCommitteesTest {
     String data = future.get();
 
     assertEquals(SLOTS_PER_EPOCH, StringUtils.countMatches(data, "\"committee\":"));
-  }
-
-  @Test
-  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
-    ChainStorageClient client = mock(ChainStorageClient.class);
-    CombinedChainDataClient combinedClient =
-        new CombinedChainDataClient(client, historicalChainData);
-    ChainDataProvider provider = new ChainDataProvider(client, combinedClient);
-    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
-    when(client.getStore()).thenReturn(null);
-
-    handler.handle(context);
-
-    verify(context).status(SC_NO_CONTENT);
   }
 }

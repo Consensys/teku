@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -199,17 +198,5 @@ public class GetStateTest {
     handler.handle(context);
 
     verify(context).status(SC_NOT_FOUND);
-  }
-
-  @Test
-  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    final GetState handler = new GetState(dataProvider, jsonProvider);
-
-    when(dataProvider.isStoreAvailable()).thenReturn(false);
-    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
-
-    handler.handle(context);
-
-    verify(context).status(SC_NO_CONTENT);
   }
 }

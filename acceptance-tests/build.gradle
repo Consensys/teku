@@ -1,7 +1,8 @@
 dependencies {
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':util')
   testSupportImplementation project(path: ':data:provider')
+  testSupportImplementation project(path: ':util')
+  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
   testSupportImplementation 'com.google.code.gson:gson'
   testSupportImplementation 'com.squareup.okhttp3:okhttp'
   testSupportImplementation 'io.libp2p:jvm-libp2p-minimal'

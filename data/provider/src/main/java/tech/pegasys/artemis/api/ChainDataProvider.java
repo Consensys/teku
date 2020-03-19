@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
@@ -58,49 +59,41 @@ public class ChainDataProvider {
     this.chainStorageClient = chainStorageClient;
   }
 
-  public Optional<UnsignedLong> getGenesisTime() {
+  public UnsignedLong getGenesisTime() {
     if (!isStoreAvailable()) {
-      return Optional.empty();
+      throw new ChainDataUnavailableException();
     }
-    return Optional.ofNullable(chainStorageClient.getGenesisTime());
+    return chainStorageClient.getGenesisTime();
   }
 
-  public Optional<BeaconHead> getBeaconHead() {
+  public BeaconHead getBeaconHead() {
     if (!isStoreAvailable()) {
-      return Optional.empty();
+      throw new ChainDataUnavailableException();
     }
 
-    Optional<Bytes32> headBlockRoot = chainStorageClient.getBestBlockRoot();
-    Optional<Bytes32> headStateRoot =
-        headBlockRoot
-            .flatMap(chainStorageClient::getBlockByRoot)
-            .map(tech.pegasys.artemis.datastructures.blocks.BeaconBlock::getState_root);
-    if (headBlockRoot.isEmpty() || headStateRoot.isEmpty()) {
-      return Optional.empty();
-    }
+    Bytes32 headBlockRoot =
+        chainStorageClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+    tech.pegasys.artemis.datastructures.blocks.BeaconBlock headBlock =
+        chainStorageClient
+            .getBlockByRoot(headBlockRoot)
+            .orElseThrow(ChainDataUnavailableException::new);
 
-    BeaconHead result =
-        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot.get(), headStateRoot.get());
-    return Optional.of(result);
+    return new BeaconHead(headBlock.getSlot(), headBlockRoot, headBlock.getState_root());
   }
 
-  public Optional<Fork> getFork() {
+  public Fork getFork() {
     if (!isStoreAvailable()) {
-      return Optional.empty();
+      throw new ChainDataUnavailableException();
     }
 
-    Optional<tech.pegasys.artemis.datastructures.state.BeaconState> bestBlockRootState =
-        chainStorageClient.getBestBlockRootState();
-    if (bestBlockRootState.isEmpty()) {
-      return Optional.empty();
-    } else {
-      return Optional.of(new Fork(bestBlockRootState.get().getFork()));
-    }
+    tech.pegasys.artemis.datastructures.state.BeaconState bestBlockRootState =
+        chainStorageClient.getBestBlockRootState().orElseThrow(ChainDataUnavailableException::new);
+    return new Fork(bestBlockRootState.getFork());
   }
 
   public SafeFuture<List<Committee>> getCommitteesAtEpoch(UnsignedLong epoch) {
     if (!isStoreAvailable()) {
-      return completedFuture(List.of());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getCommitteeAssignmentAtEpoch(epoch)
@@ -110,7 +103,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlot(UnsignedLong slot) {
     if (!isStoreAvailable()) {
-      return completedFuture(Optional.empty());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getBlockBySlot(slot)
@@ -135,7 +128,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(Bytes32 blockParam) {
     if (!isStoreAvailable()) {
-      return completedFuture(Optional.empty());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getBlockByBlockRoot(blockParam)
@@ -144,7 +137,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<BeaconState>> getStateByBlockRoot(Bytes32 blockRoot) {
     if (!isStoreAvailable()) {
-      return completedFuture(Optional.empty());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getStateByBlockRoot(blockRoot)
@@ -154,7 +147,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot) {
     if (!isStoreAvailable()) {
-      return completedFuture(Optional.empty());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getStateAtSlot(slot)
@@ -164,7 +157,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<Bytes32>> getHashTreeRootAtSlot(UnsignedLong slot) {
     if (!isStoreAvailable()) {
-      return completedFuture(Optional.empty());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return combinedChainDataClient
         .getStateAtSlot(slot)
@@ -175,7 +168,7 @@ public class ChainDataProvider {
   public Optional<Attestation> getUnsignedAttestationAtSlot(
       UnsignedLong slot, Integer committeeIndex) {
     if (!isStoreAvailable()) {
-      return Optional.empty();
+      throw new ChainDataUnavailableException();
     }
     if (isFinalized(slot)) {
       throw new IllegalArgumentException(
@@ -232,7 +225,7 @@ public class ChainDataProvider {
       final ValidatorDutiesRequest validatorDutiesRequest) {
 
     if (validatorDutiesRequest == null || !isStoreAvailable()) {
-      return completedFuture(List.of());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     final Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
     if (optionalBlockRoot.isEmpty()) {

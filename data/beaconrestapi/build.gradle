@@ -1,31 +1,41 @@
 dependencies {
     compile 'io.javalin:javalin'
-    implementation 'io.swagger.core.v3:swagger-core'
-    implementation 'org.webjars:swagger-ui'
-    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
-    implementation 'io.github.classgraph:classgraph'
-    implementation project(':util')
+
     implementation project(':data')
-    implementation project(':ethereum:datastructures')
-    implementation project(':storage')
-    implementation project(':networking:p2p')
     implementation project(':data:provider')
-    implementation project(':sync')
+    implementation project(':ethereum:datastructures')
+    implementation project(':networking:p2p')
     implementation project(':services:serviceutils')
+    implementation project(':storage')
+    implementation project(':sync')
+    implementation project(':util')
     implementation project(':validator:coordinator')
 
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'com.google.guava:guava'
+    implementation 'io.swagger.core.v3:swagger-core'
+    implementation 'io.github.classgraph:classgraph'
+    implementation 'org.apache.commons:commons-lang3'
+    implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.tuweni:tuweni-crypto'
     implementation 'org.apache.tuweni:tuweni-units'
-    implementation 'com.google.guava:guava'
-    implementation 'org.apache.logging.log4j:log4j-api'
-    implementation 'org.apache.commons:commons-lang3'
+    implementation 'org.webjars:swagger-ui'
+
     runtime 'org.apache.logging.log4j:log4j-core'
 
-    testImplementation 'org.mockito:mockito-core'
     testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-    testImplementation 'org.assertj:assertj-core'
 
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.assertj:assertj-core'
     testCompile 'io.libp2p:jvm-libp2p-minimal'
+
+    integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+    integrationTestImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
+    integrationTestImplementation 'org.mockito:mockito-core'
+    integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+    integrationTestImplementation 'org.assertj:assertj-core'
+    integrationTestImplementation 'com.squareup.okhttp3:okhttp'
+
 }
 
 test {

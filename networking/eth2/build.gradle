@@ -7,42 +7,44 @@ dependencies {
   implementation project(':networking:p2p')
   implementation project(':logging')
   implementation project(':ssz')
-  implementation project(':util')
   implementation project(':storage')
+  implementation project(':util')
 
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
+  implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
-
+  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-rlpx'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-units'
+  implementation 'org.hyperledger.besu:plugin-api'
+  implementation 'org.xerial.snappy:snappy-java'
 
-  implementation 'org.apache.logging.log4j:log4j-api'
   runtime 'org.apache.logging.log4j:log4j-core'
 
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
-  implementation 'de.undercouch:bson4jackson'
-  implementation 'org.xerial.snappy:snappy-java'
-  implementation 'org.hyperledger.besu:plugin-api'
-
-  testImplementation 'org.mockito:mockito-core'
+  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testImplementation 'org.hyperledger.besu.internal:metrics-core'
-  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 
-  integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
-  integrationTestImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.hyperledger.besu.internal:metrics-core'
+
   integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+  integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
+  integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
+  integrationTestImplementation 'org.mockito:mockito-core'
 
   testSupportImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
   testSupportImplementation project(path: ':networking:p2p', configuration: 'testSupportArtifacts')
+  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
   testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
+
   testSupportCompile 'org.assertj:assertj-core'
 }
