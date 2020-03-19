@@ -17,29 +17,24 @@ import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.sync.SyncService;
+import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class DataProvider {
   private final NetworkDataProvider networkDataProvider;
   private final ChainDataProvider chainDataProvider;
   private final SyncDataProvider syncDataProvider;
+  private final ValidatorDataProvider validatorDataProvider;
 
   public DataProvider(
       final ChainStorageClient chainStorageClient,
       final CombinedChainDataClient combinedChainDataClient,
       final P2PNetwork<?> p2pNetwork,
-      final SyncService syncService) {
+      final SyncService syncService,
+      final ValidatorCoordinator validatorCoordinator) {
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     chainDataProvider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
-  }
-
-  public DataProvider(
-      NetworkDataProvider networkDataProvider,
-      ChainDataProvider chainDataProvider,
-      SyncDataProvider syncDataProvider) {
-    this.networkDataProvider = networkDataProvider;
-    this.chainDataProvider = chainDataProvider;
-    this.syncDataProvider = syncDataProvider;
+    this.validatorDataProvider = new ValidatorDataProvider(validatorCoordinator);
   }
 
   public NetworkDataProvider getNetworkDataProvider() {
@@ -54,18 +49,7 @@ public class DataProvider {
     return syncDataProvider;
   }
 
-  @Deprecated
-  public P2PNetwork<?> getP2pNetwork() {
-    return networkDataProvider.getP2pNetwork();
-  }
-
-  @Deprecated
-  public CombinedChainDataClient getCombinedChainDataClient() {
-    return chainDataProvider.getCombinedChainDataClient();
-  }
-
-  @Deprecated
-  public SyncService getSyncService() {
-    return syncDataProvider.getSyncService();
+  public ValidatorDataProvider getValidatorDataProvider() {
+    return validatorDataProvider;
   }
 }

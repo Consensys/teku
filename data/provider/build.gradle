@@ -9,6 +9,7 @@ dependencies {
     implementation project(':storage')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
+    implementation project(':validator:coordinator')
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
     implementation 'org.apache.tuweni:tuweni-units'

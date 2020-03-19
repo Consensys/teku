@@ -12,6 +12,7 @@ dependencies {
     implementation project(':data:provider')
     implementation project(':sync')
     implementation project(':services:serviceutils')
+    implementation project(':validator:coordinator')
 
     implementation 'org.apache.tuweni:tuweni-crypto'
     implementation 'org.apache.tuweni:tuweni-units'

@@ -40,7 +40,6 @@ import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
-import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
@@ -81,7 +80,9 @@ public class ChainDataProvider {
 
     Optional<Bytes32> headBlockRoot = chainStorageClient.getBestBlockRoot();
     Optional<Bytes32> headStateRoot =
-        headBlockRoot.flatMap(chainStorageClient::getBlockByRoot).map(BeaconBlock::getState_root);
+        headBlockRoot
+            .flatMap(chainStorageClient::getBlockByRoot)
+            .map(tech.pegasys.artemis.datastructures.blocks.BeaconBlock::getState_root);
     if (headBlockRoot.isEmpty() || headStateRoot.isEmpty()) {
       return Optional.empty();
     }
@@ -188,7 +189,8 @@ public class ChainDataProvider {
       throw new IllegalArgumentException(
           String.format("Slot %s is finalized, no attestation will be created.", slot.toString()));
     }
-    Optional<BeaconBlock> block = chainStorageClient.getBlockBySlot(slot);
+    Optional<tech.pegasys.artemis.datastructures.blocks.BeaconBlock> block =
+        chainStorageClient.getBlockBySlot(slot);
     Optional<tech.pegasys.artemis.datastructures.state.BeaconState> state =
         chainStorageClient.getBestBlockRootState();
     if (block.isEmpty() || state.isEmpty()) {
