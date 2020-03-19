@@ -26,7 +26,6 @@ import java.util.function.Function;
 import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -82,11 +81,6 @@ public final class DataStructureUtil {
   public static Bytes32 randomBytes32(long seed) {
     final Random random = new Random(seed);
     return Bytes32.random(random);
-  }
-
-  public static Bytes48 randomBytes48(long seed) {
-    final Random random = new Random(seed);
-    return Bytes48.random(random);
   }
 
   public static <T> SSZList<T> randomSSZList(
