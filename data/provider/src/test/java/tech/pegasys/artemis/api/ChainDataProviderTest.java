@@ -155,10 +155,9 @@ public class ChainDataProviderTest {
   public void getBeaconHead_shouldReturnPopulatedBeaconHead() {
     ChainDataProvider provider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
 
-    Optional<BeaconHead> optionalBeaconHead = provider.getBeaconHead();
+    BeaconHead head = provider.getBeaconHead();
 
-    assertTrue(optionalBeaconHead.isPresent());
-    BeaconHead head = optionalBeaconHead.get();
+    assertThat(head).isNotNull();
     assertEquals(blockRoot, head.block_root);
     assertEquals(beaconStateInternal.hash_tree_root(), head.state_root);
     assertEquals(chainStorageClient.getBestSlot(), head.slot);

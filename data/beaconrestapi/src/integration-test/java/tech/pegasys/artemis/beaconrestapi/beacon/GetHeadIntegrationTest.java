@@ -21,9 +21,11 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.Optional;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store;
 
 public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
@@ -38,10 +40,21 @@ public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
   }
 
   @Test
-  public void shouldReturnNoContentIfBestBlockIsMissing() throws Exception {
+  public void shouldReturnNoContentIfBestBlockRootIsMissing() throws Exception {
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+
+    final Response response = get();
+    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
+    assertThat(response.body().string()).isEmpty();
+  }
+
+  @Test
+  public void shouldReturnNoContentIfBestBlockIsMissing() throws Exception {
+    final Bytes32 headRoot = DataStructureUtil.randomBytes32(1);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(chainStorageClient.getBlockByRoot(headRoot)).thenReturn(Optional.empty());
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_NO_CONTENT);

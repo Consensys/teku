@@ -66,24 +66,19 @@ public class ChainDataProvider {
     return chainStorageClient.getGenesisTime();
   }
 
-  public Optional<BeaconHead> getBeaconHead() {
+  public BeaconHead getBeaconHead() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
 
     Bytes32 headBlockRoot =
         chainStorageClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
-    Optional<Bytes32> headStateRoot =
+    tech.pegasys.artemis.datastructures.blocks.BeaconBlock headBlock =
         chainStorageClient
             .getBlockByRoot(headBlockRoot)
-            .map(tech.pegasys.artemis.datastructures.blocks.BeaconBlock::getState_root);
-    if (headBlockRoot.isEmpty() || headStateRoot.isEmpty()) {
-      return Optional.empty();
-    }
+            .orElseThrow(ChainDataUnavailableException::new);
 
-    BeaconHead result =
-        new BeaconHead(chainStorageClient.getBestSlot(), headBlockRoot, headStateRoot.get());
-    return Optional.of(result);
+    return new BeaconHead(headBlock.getSlot(), headBlockRoot, headBlock.getState_root());
   }
 
   public Fork getFork() {
