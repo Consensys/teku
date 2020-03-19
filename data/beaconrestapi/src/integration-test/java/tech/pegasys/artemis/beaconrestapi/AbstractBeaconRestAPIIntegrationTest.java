@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -67,6 +69,11 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient();
+  }
+
+  protected void assertNoContent(final Response response) throws IOException {
+    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
+    assertThat(response.body().string()).isEmpty();
   }
 
   protected Response getResponse(final String path) throws IOException {

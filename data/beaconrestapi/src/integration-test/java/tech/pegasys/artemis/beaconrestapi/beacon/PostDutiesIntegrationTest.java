@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -38,8 +36,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
     when(chainStorageClient.getStore()).thenReturn(null);
 
     final Response response = post(1, keys);
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.body().string()).isEmpty();
+    assertNoContent(response);
   }
 
   private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {

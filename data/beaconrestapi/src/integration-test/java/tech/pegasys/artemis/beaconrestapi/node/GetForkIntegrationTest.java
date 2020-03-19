@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.node;
 
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,8 +31,7 @@ public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
     when(chainStorageClient.getStore()).thenReturn(null);
 
     final Response response = get();
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.body().string()).isEmpty();
+    assertNoContent(response);
   }
 
   @Test
@@ -44,8 +41,7 @@ public class GetForkIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
     when(chainStorageClient.getBestBlockRootState()).thenReturn(Optional.empty());
 
     final Response response = get();
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.body().string()).isEmpty();
+    assertNoContent(response);
   }
 
   private Response get() throws IOException {

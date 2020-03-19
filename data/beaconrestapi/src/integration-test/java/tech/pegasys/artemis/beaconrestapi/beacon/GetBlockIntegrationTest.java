@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -33,8 +31,7 @@ public class GetBlockIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
     when(chainStorageClient.getStore()).thenReturn(null);
 
     final Response response = getByEpoch(1);
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.body().string()).isEmpty();
+    assertNoContent(response);
   }
 
   @Test
@@ -42,8 +39,7 @@ public class GetBlockIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
     when(chainStorageClient.getStore()).thenReturn(null);
 
     final Response response = getByRoot(Bytes32.ZERO);
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.body().string()).isEmpty();
+    assertNoContent(response);
   }
 
   @Test
@@ -51,8 +47,7 @@ public class GetBlockIntegrationTest extends AbstractBeaconRestAPIIntegrationTes
     when(chainStorageClient.getStore()).thenReturn(null);
 
     final Response response = getBySlot(1);
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
-    assertThat(response.body().string()).isEmpty();
+    assertNoContent(response);
   }
 
   private Response getByEpoch(final int epoch) throws IOException {
