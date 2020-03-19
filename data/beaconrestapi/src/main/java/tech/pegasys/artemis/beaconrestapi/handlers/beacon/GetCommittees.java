@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
@@ -72,10 +71,6 @@ public class GetCommittees implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      if (!provider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
-      }
       UnsignedLong epoch = getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH);
       ctx.result(
           provider

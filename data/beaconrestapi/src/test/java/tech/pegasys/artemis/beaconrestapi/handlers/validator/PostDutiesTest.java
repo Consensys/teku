@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -41,20 +40,12 @@ public class PostDutiesTest {
   final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   @Test
-  public void shouldReturnNoContentWhenNoBlockRoot() throws Exception {
-    PostDuties handler = new PostDuties(provider, jsonProvider);
-    handler.handle(context);
-    verify(context).status(SC_NO_CONTENT);
-  }
-
-  @Test
   public void shouldReturnBadRequestWhenNoEpochNumberInBody() throws Exception {
     PostDuties handler = new PostDuties(provider, jsonProvider);
     when(provider.isStoreAvailable()).thenReturn(true);
     when(context.body()).thenReturn("{\"epoch\":\"bob\"}");
     handler.handle(context);
     verify(context).status(SC_BAD_REQUEST);
-    verify(provider).isStoreAvailable();
   }
 
   @Test
@@ -64,7 +55,6 @@ public class PostDutiesTest {
     when(context.body()).thenReturn("{\"epoch\":\"-1\"}");
     handler.handle(context);
     verify(context).status(SC_BAD_REQUEST);
-    verify(provider).isStoreAvailable();
   }
 
   @Test
@@ -77,7 +67,6 @@ public class PostDutiesTest {
     when(provider.getValidatorDutiesByRequest(any()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
     handler.handle(context);
-    verify(provider).isStoreAvailable();
 
     verify(context).result(args.capture());
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);

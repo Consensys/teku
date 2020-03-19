@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -84,10 +83,6 @@ public class GetStateRoot implements Handler {
       SafeFuture<Optional<Bytes32>> future = null;
       if (parameters.size() == 0) {
         throw new IllegalArgumentException("No query parameters specified");
-      }
-      if (!provider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
       }
 
       if (parameters.containsKey(SLOT)) {

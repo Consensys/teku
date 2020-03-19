@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -60,14 +59,6 @@ public class GetValidatorsTest {
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
-
-  @Test
-  public void shouldReturnNoContentWhenNoBlockRoot() throws Exception {
-    GetValidators handler = new GetValidators(provider, jsonProvider);
-    when(provider.getBestBlockRoot()).thenReturn(Optional.empty());
-    handler.handle(context);
-    verify(context).status(SC_NO_CONTENT);
-  }
 
   @Test
   public void shouldReturnValidatorsWhenBlockRoot() throws Exception {

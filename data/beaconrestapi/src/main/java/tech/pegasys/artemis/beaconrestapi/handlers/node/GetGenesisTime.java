@@ -13,9 +13,7 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlers.node;
 
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_FINALIZED;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
@@ -30,7 +28,6 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 
@@ -57,13 +54,8 @@ public class GetGenesisTime implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    Optional<UnsignedLong> optionalResult = provider.getGenesisTime();
-    if (optionalResult.isPresent()) {
-      ctx.header(Header.CACHE_CONTROL, CACHE_FINALIZED);
-      ctx.result(jsonProvider.objectToJSON(optionalResult.get()));
-    } else {
-      ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.status(SC_NO_CONTENT);
-    }
+    UnsignedLong genesisTime = provider.getGenesisTime();
+    ctx.header(Header.CACHE_CONTROL, CACHE_FINALIZED);
+    ctx.result(jsonProvider.objectToJSON(genesisTime));
   }
 }
