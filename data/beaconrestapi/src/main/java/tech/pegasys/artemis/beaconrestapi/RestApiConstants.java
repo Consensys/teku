@@ -21,6 +21,7 @@ public class RestApiConstants {
   public static final String PAGE_SIZE = "pageSize";
   public static final String PAGE_TOKEN = "pageToken";
   public static final String COMMITTEE_INDEX = "committee_index";
+  public static final String RANDAO_REVEAL = "randao_reveal";
 
   public static final String TAG_BEACON = "Beacon";
   public static final String TAG_NODE = "Node";

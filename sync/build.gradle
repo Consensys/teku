@@ -12,15 +12,17 @@ dependencies {
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 
-    testImplementation 'org.mockito:mockito-core'
-    testImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
     testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
     testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
+    testImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
     testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
-    integrationTestImplementation 'org.mockito:mockito-core'
+    testImplementation 'org.mockito:mockito-core'
+
     integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
     integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
-    testSupportImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+    integrationTestImplementation 'org.mockito:mockito-core'
+
+    testSupportImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')    
 }
