@@ -73,14 +73,14 @@ public class DepositGenerateCommand implements Runnable {
   private int validatorCount = 1;
 
   @Option(
-      names = {"--output-path", "-o"},
+      names = {"--keys-output-path"},
       paramLabel = "<FILE|DIR>",
       description =
           "Path to output file for unencrypted keys or output directory for encrypted keystore files. If not set, unencrypted keys will be written on standard out and encrypted keystores will be created in current directory")
   private String outputPath;
 
   @Option(
-      names = {"--encrypted-keystore-enabled", "-e"},
+      names = {"--encrypted-keystore-enabled"},
       defaultValue = "true",
       paramLabel = "<true|false>",
       description = "Create encrypted keystores for validator and withdrawal keys. (Default: true)",

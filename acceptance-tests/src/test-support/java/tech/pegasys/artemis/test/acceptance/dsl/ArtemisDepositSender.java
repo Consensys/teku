@@ -31,6 +31,8 @@ public class ArtemisDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final String ENCRYPTED_KEYSTORE_ENABLED = FALSE.toString();
   private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
+  private static final String CONTAINER_KEYS_DIRECTORY = "/tmp/keys";
+  private static final String CONTAINER_KEYS_YAML = "keys.yaml";
 
   public ArtemisDepositSender(final Network network) {
     super(network, ArtemisNode.ARTEMIS_DOCKER_IMAGE, LOG);
@@ -41,13 +43,13 @@ public class ArtemisDepositSender extends Node {
         new TestContainerMountableFolder();
     final Path tempDirectory = testContainerMountableFolder.createTempDirectory();
 
-    container.withFileSystemBind(tempDirectory.toString(), "/tmp/test");
+    container.withFileSystemBind(tempDirectory.toString(), CONTAINER_KEYS_DIRECTORY);
 
     container.setCommand(
         "validator",
         "generate",
-        "--output-path",
-        "/tmp/test/keys.yaml",
+        "--keys-output-path",
+        CONTAINER_KEYS_DIRECTORY + "/" + CONTAINER_KEYS_YAML,
         "--deposit-amount-gwei",
         MINIMUM_REQUIRED_GWEI.toString(),
         "--encrypted-keystore-enabled",
@@ -64,7 +66,7 @@ public class ArtemisDepositSender extends Node {
     Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse());
     container.stop();
     try {
-      return Files.readString(tempDirectory.resolve("keys.yaml"));
+      return Files.readString(tempDirectory.resolve(CONTAINER_KEYS_YAML));
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
