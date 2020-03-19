@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
@@ -94,10 +93,6 @@ public class GetAttestation implements Handler {
       if (committeeIndex < 0) {
         throw new IllegalArgumentException(
             String.format("'%s' needs to be greater than or equal to 0.", COMMITTEE_INDEX));
-      }
-      if (!provider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
       }
 
       Optional<Attestation> optionalAttestation =

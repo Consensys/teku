@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.node;
 
 import static io.javalin.core.util.Header.CACHE_CONTROL;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -28,7 +27,6 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.Fork;
 import tech.pegasys.artemis.provider.JsonProvider;
@@ -61,12 +59,7 @@ public class GetFork implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     ctx.header(CACHE_CONTROL, CACHE_NONE);
-    Optional<Fork> optionalResult = provider.getFork();
-
-    if (optionalResult.isEmpty()) {
-      ctx.status(SC_NO_CONTENT);
-      return;
-    }
-    ctx.result(jsonProvider.objectToJSON(optionalResult.get()));
+    Fork result = provider.getFork();
+    ctx.result(jsonProvider.objectToJSON(result));
   }
 }

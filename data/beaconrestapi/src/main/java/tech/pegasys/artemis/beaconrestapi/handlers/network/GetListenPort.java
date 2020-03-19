@@ -43,11 +43,14 @@ public class GetListenPort implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Returns the TCP port that the client's libp2p service is listening on.",
+      summary = "Get the TCP listening port of the client's libp2p service.",
       tags = {TAG_NETWORK},
-      description = "Returns the TCP port that the client's libp2p service is listening on.",
+      description = "Returns the TCP listening port of the client's libp2p service.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = Integer.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = Integer.class),
+            description = "Client's TCP listening port."),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
