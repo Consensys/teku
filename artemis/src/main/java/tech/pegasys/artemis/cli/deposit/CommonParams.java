@@ -161,7 +161,8 @@ public class CommonParams implements Closeable {
       try {
         depositAmountGwei = UnsignedLong.valueOf(value);
       } catch (final NumberFormatException e) {
-        throw new TypeConversionException("Invalid format: must be a numeric value but was " + value);
+        throw new TypeConversionException(
+            "Invalid format: must be a numeric value but was " + value);
       }
 
       if (depositAmountGwei.compareTo(MINIMUM_REQUIRED_GWEI) < 0) {
