@@ -288,7 +288,12 @@ public class BeaconChainController extends Service {
     CombinedChainDataClient combinedChainDataClient =
         new CombinedChainDataClient(chainStorageClient, historicalChainData);
     DataProvider dataProvider =
-        new DataProvider(chainStorageClient, combinedChainDataClient, p2pNetwork, syncService);
+        new DataProvider(
+            chainStorageClient,
+            combinedChainDataClient,
+            p2pNetwork,
+            syncService,
+            validatorCoordinator);
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }
 

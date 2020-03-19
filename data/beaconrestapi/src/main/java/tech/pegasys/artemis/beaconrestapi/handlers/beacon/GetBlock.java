@@ -22,6 +22,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -66,7 +67,7 @@ public class GetBlock implements Handler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the beacon chain block that matches the criteria.",
-      tags = {"Beacon"},
+      tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(name = EPOCH, description = "Epoch number to query."),
         @OpenApiParam(name = SLOT, description = "Slot to query in the canonical chain."),
