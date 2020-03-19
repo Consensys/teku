@@ -1,16 +1,12 @@
-// See https://github.com/tbroyer/gradle-apt-plugin
-// TODO Determine if net.ltgt.apt is even necessary.
-
-plugins {
-  id 'net.ltgt.apt' version '0.21'
-}
-
 // we use this config to get the path of the JDK 9 javac jar, to
 // stick it in the bootclasspath when running tests
 configurations.maybeCreate("epJavac")
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+apply plugin: 'java'
+apply plugin: 'net.ltgt.errorprone'
+
+sourceCompatibility = 11
+targetCompatibility = 11
 
 dependencies {
   implementation 'com.google.errorprone:error_prone_annotation'

@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
@@ -86,6 +87,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   public LibP2PNetwork(
       final NetworkConfig config,
+      final ReputationManager reputationManager,
       final MetricsSystem metricsSystem,
       final List<RpcMethod> rpcMethods,
       final List<PeerHandler> peerHandlers) {
@@ -104,7 +106,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     rpcMethods.forEach(method -> rpcHandlers.put(method, new RpcHandler(asyncRunner, method)));
 
     // Setup peers
-    peerManager = new PeerManager(metricsSystem, peerHandlers, rpcHandlers);
+    peerManager = new PeerManager(metricsSystem, reputationManager, peerHandlers, rpcHandlers);
 
     host =
         BuilderJKt.hostJ(
@@ -192,7 +194,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public SafeFuture<Peer> connect(final PeerAddress peer) {
     return peer.as(MultiaddrPeerAddress.class)
-        .map(staticPeer -> peerManager.connect(staticPeer.getMultiaddr(), host.getNetwork()))
+        .map(staticPeer -> peerManager.connect(staticPeer, host.getNetwork()))
         .orElseGet(
             () ->
                 failedFuture(

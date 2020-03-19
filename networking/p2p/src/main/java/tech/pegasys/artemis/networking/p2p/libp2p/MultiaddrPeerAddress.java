@@ -16,6 +16,7 @@ package tech.pegasys.artemis.networking.p2p.libp2p;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Protocol;
+import java.util.Objects;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -50,5 +51,25 @@ public class MultiaddrPeerAddress extends PeerAddress {
 
   public Multiaddr getMultiaddr() {
     return multiaddr;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    final MultiaddrPeerAddress that = (MultiaddrPeerAddress) o;
+    return Objects.equals(multiaddr, that.multiaddr);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), multiaddr);
   }
 }

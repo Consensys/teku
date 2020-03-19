@@ -265,6 +265,7 @@ public class BeaconChainController extends Service {
               .eventBus(eventBus)
               .chainStorageClient(chainStorageClient)
               .metricsSystem(metricsSystem)
+              .timeProvider(timeProvider)
               .build();
     } else {
       throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
@@ -330,7 +331,7 @@ public class BeaconChainController extends Service {
   @Subscribe
   @SuppressWarnings("unused")
   private void onTick(Date date) {
-    if (chainStorageClient.isPreGenesis()) {
+    if (chainStorageClient.isPreGenesis() || syncService.getSyncStatus().isSyncing()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);

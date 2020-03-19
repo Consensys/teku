@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.bls;
+package tech.pegasys.teku.logging;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+public enum LoggingDestination {
+  CONSOLE_ONLY("consoleOnly"),
+  FILE_ONLY("fileOnly"),
+  BOTH("both");
 
-public class BLSKeyGenerator {
-  public static List<BLSKeyPair> generateKeyPairs(final int count) {
-    return Stream.generate(BLSKeyPair::random).limit(count).collect(Collectors.toList());
+  private final String key;
+
+  private LoggingDestination(final String key) {
+    this.key = key;
+  }
+
+  public static LoggingDestination get(final String destination) {
+    for (final LoggingDestination candidate : LoggingDestination.values()) {
+      if (candidate.key.equals(destination)) {
+        return candidate;
+      }
+    }
+
+    return LoggingDestination.BOTH;
   }
 }
