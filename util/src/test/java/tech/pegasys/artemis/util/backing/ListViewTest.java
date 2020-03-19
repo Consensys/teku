@@ -64,5 +64,11 @@ public class ListViewTest {
     lw2.clear();
     ListViewRead<SubContainer> lr2 = lw2.commitChanges();
     assertThat(lr1.hashTreeRoot()).isEqualTo(lr2.hashTreeRoot());
+
+    ListViewWrite<SubContainer> lw3 = lw1.commitChanges().createWritableCopy();
+    lw3.clear();
+    lw3.append(new SubContainer(UnsignedLong.valueOf(0x111), Bytes32.leftPad(Bytes.of(0x22))));
+    ListViewRead<SubContainer> lr3 = lw3.commitChanges();
+    assertThat(lr3.size()).isEqualTo(1);
   }
 }

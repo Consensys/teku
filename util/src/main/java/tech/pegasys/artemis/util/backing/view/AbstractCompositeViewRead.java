@@ -17,8 +17,8 @@ import tech.pegasys.artemis.util.backing.CompositeViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
+import tech.pegasys.artemis.util.cache.ArrayCache;
 import tech.pegasys.artemis.util.cache.Cache;
-import tech.pegasys.artemis.util.cache.HashMapCache;
 
 public abstract class AbstractCompositeViewRead<
         C extends AbstractCompositeViewRead<C, R>, R extends ViewRead>
@@ -42,7 +42,7 @@ public abstract class AbstractCompositeViewRead<
     this.type = type;
     this.backingNode = backingNode;
     sizeCache = sizeImpl();
-    childrenViewCache = cache;
+    childrenViewCache = cache == null ? createCache() : cache;
   }
 
   synchronized Cache<Integer, R> transferCache() {
@@ -50,7 +50,7 @@ public abstract class AbstractCompositeViewRead<
   }
 
   private Cache<Integer, R> createCache() {
-    return new HashMapCache<>();
+    return new ArrayCache<>();
   }
 
   @Override

@@ -40,6 +40,16 @@ public class HashMapCache<K, V> implements Cache<K, V> {
   }
 
   @Override
+  public synchronized void invalidate(K key) {
+    holder.remove(key);
+  }
+
+  @Override
+  public synchronized void invalidateWithNewValue(K key, V newValue) {
+    holder.put(key, newValue);
+  }
+
+  @Override
   public synchronized void clear() {
     holder.clear();
   }

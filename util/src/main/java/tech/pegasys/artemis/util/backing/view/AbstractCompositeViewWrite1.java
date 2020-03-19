@@ -36,7 +36,7 @@ public abstract class AbstractCompositeViewWrite1<
         C extends AbstractCompositeViewWrite1<C, R, W>, R extends ViewRead, W extends R>
     implements CompositeViewWriteRef<R, W> {
 
-  private AbstractCompositeViewRead<?, R> backingImmutableView;
+  protected AbstractCompositeViewRead<?, R> backingImmutableView;
   private Consumer<ViewWrite> invalidator;
   private final Map<Integer, R> childrenChanges = new HashMap<>();
   private final Map<Integer, W> childrenRefs = new HashMap<>();
@@ -131,7 +131,7 @@ public abstract class AbstractCompositeViewWrite1<
           .sorted(Entry.comparingByKey())
           .collect(Collectors.toList());
       // pre-fill the read cache with changed values
-      changesList.forEach(e -> cache.get(e.getKey(), i -> e.getValue()));
+      changesList.forEach(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
       TreeNode originalBackingTree = backingImmutableView.getBackingNode();
       TreeNodes changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);

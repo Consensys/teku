@@ -1,38 +1,62 @@
 package tech.pegasys.artemis.util.backing.view;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.function.Consumer;
-import tech.pegasys.artemis.util.backing.ContainerViewRead;
-import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
 import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.ListViewWrite;
 import tech.pegasys.artemis.util.backing.ListViewWriteRef;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
+import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ListViewReadImpl.ListContainerRead;
+import tech.pegasys.artemis.util.cache.Cache;
 
-public class ListViewWriteImpl<R extends ViewRead, W extends R>
-    implements ListViewWriteRef<R, W> {
+public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListViewWriteRef<R, W> {
 
-  private final ContainerViewWriteRef listContainer;
-  private final VectorViewWriteRef<R, W> vector;
-  private final ListViewType<R> type;
-  private int size;
+  static class ListContainerWrite<R extends ViewRead, W extends R> extends ContainerViewWriteImpl {
+    private final VectorViewType<R> vectorType;
 
-  @SuppressWarnings("unchecked")
-  public ListViewWriteImpl(ContainerViewRead listContainer) {
-    this.listContainer = (ContainerViewWriteRef) listContainer.createWritableCopy();
-    this.vector = (VectorViewWriteRef<R, W>) this.listContainer.getByRef(0);
-    this.type = new ListViewType<>((VectorViewType<R>)this.listContainer.getType().getChildType(0));
-    this.size = getSizeFromTree();
+    public ListContainerWrite(ListContainerRead<R> backingImmutableView) {
+      super(backingImmutableView);
+      vectorType = backingImmutableView.getVectorType();
+    }
+
+    public int getSize() {
+      return (int) ((UInt64View) get(1)).longValue();
+    }
+
+    public void setSize(int size) {
+      set(1, UInt64View.fromLong(size));
+    }
+
+    public VectorViewWriteRef<R, W> getData() {
+      return getAnyByRef(0);
+    }
+
+    @Override
+    protected AbstractCompositeViewRead<?, ViewRead> createViewRead(TreeNode backingNode,
+        Cache<Integer, ViewRead> viewCache) {
+      return new ListContainerRead<R>(vectorType, backingNode, viewCache);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public ListContainerRead<R> commitChanges() {
+      return (ListContainerRead<R>) super.commitChanges();
+    }
   }
 
-  private int getSizeFromTree() {
-    UInt64View sizeView = (UInt64View) listContainer.get(1);
-    return sizeView.get().intValue();
+  private final ListViewType<R> type;
+  private final ListContainerWrite<R, W> container;
+  private int cachedSize;
+
+  public ListViewWriteImpl(ListViewType<R> type, ListContainerWrite<R, W> container) {
+    this.type = type;
+    this.container = container;
+    this.cachedSize = this.container.getSize();
   }
 
   @Override
@@ -42,44 +66,45 @@ public class ListViewWriteImpl<R extends ViewRead, W extends R>
 
   @Override
   public int size() {
-    return size;
+    return cachedSize;
   }
 
   @Override
   public R get(int index) {
     checkIndex(index, false);
-    return vector.get(index);
+    return container.getData().get(index);
   }
 
   @Override
   public W getByRef(int index) {
     checkIndex(index, false);
-    return vector.getByRef(index);
+    return container.getData().getByRef(index);
   }
 
   @Override
   public ListViewRead<R> commitChanges() {
-    return new ListViewReadImpl<R>(listContainer.commitChanges());
+    return new ListViewReadImpl<R>(getType(), container.commitChanges());
   }
 
   @Override
   public void setInvalidator(Consumer<ViewWrite> listener) {
-    listContainer.setInvalidator(listener);
+    container.setInvalidator(listener);
   }
 
   @Override
   public void set(int index, R value) {
     checkIndex(index, true);
     if (index == size()) {
-      size++;
-      listContainer.set(1, new UInt64View(UnsignedLong.valueOf(size())));
+      cachedSize++;
+      container.setSize(cachedSize);
     }
-    vector.set(index, value);
+    container.getData().set(index, value);
   }
 
   @Override
   public void clear() {
-    listContainer.clear();
+    container.clear();
+    cachedSize = 0;
   }
 
   protected void checkIndex(int index, boolean set) {
