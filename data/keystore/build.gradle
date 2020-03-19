@@ -3,12 +3,12 @@ dependencies {
     implementation project(":util")
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'org.bouncycastle:bcprov-jdk15on'
     implementation 'com.google.guava:guava'
     implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.tuweni:tuweni-bytes'
     implementation 'org.apache.tuweni:tuweni-crypto'
 
     testImplementation 'org.assertj:assertj-core'
+
     testRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
 }
