@@ -17,9 +17,14 @@ import static java.lang.Boolean.FALSE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
+import tech.pegasys.artemis.test.acceptance.dsl.docker.TestContainerMountableFolder;
 import tech.pegasys.artemis.util.Waiter;
 
 public class ArtemisDepositSender extends Node {
@@ -32,9 +37,23 @@ public class ArtemisDepositSender extends Node {
   }
 
   public String sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
+    final Path tempDirectory;
+    try {
+      final TestContainerMountableFolder testContainerMountableFolder =
+          new TestContainerMountableFolder();
+      tempDirectory = testContainerMountableFolder.createTempDirectory();
+      testContainerMountableFolder.deleteOnExit(tempDirectory);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+
+    container.withFileSystemBind(tempDirectory.toString(), "/tmp/test");
+
     container.setCommand(
         "validator",
         "generate",
+        "--output-path",
+        "/tmp/test/keys.yaml",
         "--deposit-amount-gwei",
         MINIMUM_REQUIRED_GWEI.toString(),
         "--encrypted-keystore-enabled",
@@ -47,11 +66,13 @@ public class ArtemisDepositSender extends Node {
         eth1Node.getRichBenefactorKey(),
         "--eth1-endpoint",
         eth1Node.getInternalJsonRpcUrl());
-    final StringBuilder validatorKeys = new StringBuilder();
-    container.withLogConsumer(outputFrame -> validatorKeys.append(outputFrame.getUtf8String()));
     container.start();
     Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse());
     container.stop();
-    return validatorKeys.toString();
+    try {
+      return Files.readString(tempDirectory.resolve("keys.yaml"));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 }
