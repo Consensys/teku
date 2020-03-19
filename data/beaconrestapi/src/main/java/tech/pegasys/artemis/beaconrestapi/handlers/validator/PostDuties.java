@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -76,10 +75,6 @@ public class PostDuties implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      if (!provider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
-      }
       ValidatorDutiesRequest validatorDutiesRequest =
           jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
 
