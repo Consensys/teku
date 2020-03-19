@@ -272,8 +272,8 @@ public class ChainDataProvider {
       BLSPublicKey publicKey = blockCreator.getProposerForSlot(state, thisSlot);
       BLSPubKey pubkey = new BLSPubKey(publicKey.toBytes());
       if (proposers.containsKey(pubkey)) {
-        List<UnsignedLong> ps = proposers.get(pubkey);
-        ps.add(thisSlot);
+        List<UnsignedLong> proposalSlots = proposers.get(pubkey);
+        proposalSlots.add(thisSlot);
       } else {
         proposers.put(pubkey, List.of(thisSlot).stream().collect(Collectors.toList()));
       }
