@@ -5,18 +5,21 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
 
-  implementation 'org.apache.tuweni:tuweni-kv'
-  implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
   compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  runtime 'org.apache.logging.log4j:log4j-core'
-  implementation 'org.apache.commons:commons-lang3'
   compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
 
-  testImplementation 'org.mockito:mockito-core'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.google.guava:guava'
+  implementation 'org.apache.commons:commons-lang3'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.tuweni:tuweni-kv'
+  implementation 'org.apache.tuweni:tuweni-ssz'
+
+  runtime 'org.apache.logging.log4j:log4j-core'
+
   testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
+  testImplementation 'org.mockito:mockito-core'
 }
