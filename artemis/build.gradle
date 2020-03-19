@@ -19,7 +19,6 @@ dependencies {
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
 
-  
   api 'com.google.guava:guava'
 
   implementation 'com.google.code.gson:gson'
