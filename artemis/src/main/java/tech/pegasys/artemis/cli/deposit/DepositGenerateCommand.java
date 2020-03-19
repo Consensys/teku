@@ -166,6 +166,10 @@ public class DepositGenerateCommand implements Runnable {
               validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
+      if (isBlank(outputPath)) {
+        System.out.println(
+            "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
+      }
     }
     return keysWriter;
   }
