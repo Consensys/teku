@@ -24,11 +24,8 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.artemis.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.artemis.events.ChannelExceptionHandler;
@@ -39,6 +36,9 @@ import tech.pegasys.artemis.services.ServiceController;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.SystemTimeProvider;
+import tech.pegasys.teku.logging.LoggingConfiguration;
+import tech.pegasys.teku.logging.LoggingConfigurator;
+import tech.pegasys.teku.logging.LoggingDestination;
 import tech.pegasys.teku.logging.StatusLogger;
 
 public class BeaconNode {
@@ -54,7 +54,7 @@ public class BeaconNode {
   private final MetricsEndpoint metricsEndpoint;
   private final EventBus eventBus;
 
-  BeaconNode(final Optional<Level> loggingLevel, final ArtemisConfiguration config) {
+  BeaconNode(final ArtemisConfiguration config) {
 
     this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
@@ -75,12 +75,13 @@ public class BeaconNode {
 
     this.serviceController = new ServiceController(serviceConfig);
 
-    // set log level per CLI flags
-    loggingLevel.ifPresent(
-        level -> {
-          System.out.println("Setting logging level to " + level.name());
-          Configurator.setAllLevels("", level);
-        });
+    LoggingConfigurator.update(
+        new LoggingConfiguration(
+            config.isLoggingColorEnabled(),
+            config.isLoggingIncludeEventsEnabled(),
+            LoggingDestination.get(config.getLoggingDestination()),
+            config.getLoggingFile(),
+            config.getLoggingFileNamePattern()));
   }
 
   public void start() {
