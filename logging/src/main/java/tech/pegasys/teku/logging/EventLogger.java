@@ -14,6 +14,7 @@
 package tech.pegasys.teku.logging;
 
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
+import static tech.pegasys.teku.logging.LoggingConfigurator.EVENT_LOGGER_NAME;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
@@ -23,7 +24,7 @@ import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class EventLogger {
 
-  public static final EventLogger EVENT_LOG = new EventLogger("stdout");
+  public static final EventLogger EVENT_LOG = new EventLogger(EVENT_LOGGER_NAME);
 
   private final Logger log;
 
@@ -66,7 +67,6 @@ public class EventLogger {
         "New BeaconBlock with state root:  " + stateRoot.toHexString() + " detected.", Color.GREEN);
   }
 
-  // TODO only add colour when it is enabled vai the config
   private void info(String message, Color color) {
     log.info(print(message, color));
   }
