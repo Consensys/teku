@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlers.node;
 
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,7 +20,6 @@ import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.Fork;
@@ -35,18 +33,9 @@ public class GetForkTest {
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
 
   @Test
-  public void shouldReturnNoContentWhenBlockRootIsNotSet() throws Exception {
-    GetFork handler = new GetFork(provider, jsonProvider);
-    when(provider.getFork()).thenReturn(Optional.empty());
-    handler.handle(context);
-    verify(context).status(SC_NO_CONTENT);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-  }
-
-  @Test
   public void shouldReturnForkWhenSet() throws Exception {
     GetFork handler = new GetFork(provider, jsonProvider);
-    when(provider.getFork()).thenReturn(Optional.of(fork));
+    when(provider.getFork()).thenReturn(fork);
     handler.handle(context);
     verify(context).result(jsonProvider.objectToJSON(fork));
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
