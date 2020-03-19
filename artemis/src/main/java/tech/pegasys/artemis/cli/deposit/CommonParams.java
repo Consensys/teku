@@ -35,12 +35,15 @@ import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
+import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class CommonParams implements Closeable {
+  private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
+
   @Spec private CommandSpec spec;
 
   @Option(
@@ -61,11 +64,12 @@ public class CommonParams implements Closeable {
   private Eth1PrivateKeyOptions eth1PrivateKeyOptions;
 
   @Option(
-      names = {"-a", "--amount"},
+      names = {"--deposit-amount-gwei"},
+      required = true,
       paramLabel = "<GWEI>",
       converter = UnsignedLongConverter.class,
-      description = "Deposit amount in Gwei (default: ${DEFAULT-VALUE})")
-  private UnsignedLong amount = UnsignedLong.valueOf(32000000000L);
+      description = "Deposit amount in Gwei")
+  private UnsignedLong amount;
 
   private OkHttpClient httpClient;
   private ScheduledExecutorService executorService;
@@ -78,6 +82,7 @@ public class CommonParams implements Closeable {
       final CommandSpec commandSpec, final Eth1PrivateKeyOptions eth1PrivateKeyOptions) {
     this.spec = commandSpec;
     this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
+    this.amount = MINIMUM_REQUIRED_GWEI;
   }
 
   public DepositTransactionSender createTransactionSender() {
@@ -151,7 +156,21 @@ public class CommonParams implements Closeable {
   private static class UnsignedLongConverter implements CommandLine.ITypeConverter<UnsignedLong> {
     @Override
     public UnsignedLong convert(final String value) {
-      return UnsignedLong.valueOf(value);
+      final UnsignedLong depositAmountGwei;
+
+      try {
+        depositAmountGwei = UnsignedLong.valueOf(value);
+      } catch (final NumberFormatException e) {
+        throw new TypeConversionException("Invalid format: must be a numeric value but was " + value);
+      }
+
+      if (depositAmountGwei.compareTo(MINIMUM_REQUIRED_GWEI) < 0) {
+        throw new TypeConversionException(
+            String.format(
+                "The specified deposit amount [%s] does not match minimum deposit amount requirements [%s]",
+                depositAmountGwei.toString(), MINIMUM_REQUIRED_GWEI.toString()));
+      }
+      return depositAmountGwei;
     }
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.artemis.test.acceptance.dsl;
 import static java.lang.Boolean.FALSE;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.google.common.primitives.UnsignedLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -24,6 +25,7 @@ import tech.pegasys.artemis.util.Waiter;
 public class ArtemisDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
   private static final String ENCRYPTED_KEYSTORE_ENABLED = FALSE.toString();
+  private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
 
   public ArtemisDepositSender(final Network network) {
     super(network, ArtemisNode.ARTEMIS_DOCKER_IMAGE, LOG);
@@ -33,6 +35,8 @@ public class ArtemisDepositSender extends Node {
     container.setCommand(
         "validator",
         "generate",
+        "--deposit-amount-gwei",
+        MINIMUM_REQUIRED_GWEI.toString(),
         "--encrypted-keystore-enabled",
         ENCRYPTED_KEYSTORE_ENABLED,
         "--eth1-deposit-contract-address",
