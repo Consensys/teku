@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -262,11 +263,20 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_total_active_balance</a>
    */
   public static UnsignedLong get_total_active_balance(BeaconState state) {
+    return get_total_active_balance_with_root(state).getLeft();
+  }
+
+  public static Pair<UnsignedLong, UnsignedLong> get_total_active_balance_with_root(BeaconState state) {
     return BeaconStateCache.getTransitionCaches(state)
         .getTotalActiveBalance()
         .get(
             get_current_epoch(state),
-            epoch -> get_total_balance(state, get_active_validator_indices(state, epoch)));
+            epoch -> {
+              UnsignedLong total_balance =
+                  get_total_balance(state, get_active_validator_indices(state, epoch));
+              UnsignedLong squareroot = integer_squareroot(total_balance);
+              return Pair.of(total_balance, squareroot);
+            });
   }
 
   /**

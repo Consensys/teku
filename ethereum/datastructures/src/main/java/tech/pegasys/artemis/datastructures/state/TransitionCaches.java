@@ -59,7 +59,7 @@ public class TransitionCaches {
   private final Cache<UnsignedLong, List<Integer>> activeValidators;
   private final Cache<UnsignedLong, Integer> beaconProposerIndex;
   private final Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee;
-  private final Cache<UnsignedLong, UnsignedLong> totalActiveBalance;
+  private final Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> totalActiveBalance;
   private final Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys;
   private final Cache<Bytes32, List<Integer>> committeeShuffle;
 
@@ -76,7 +76,7 @@ public class TransitionCaches {
       Cache<UnsignedLong, List<Integer>> activeValidators,
       Cache<UnsignedLong, Integer> beaconProposerIndex,
       Cache<Pair<UnsignedLong, UnsignedLong>, List<Integer>> beaconCommittee,
-      Cache<UnsignedLong, UnsignedLong> totalActiveBalance,
+      Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> totalActiveBalance,
       Cache<UnsignedLong, BLSPublicKey> validatorsPubKeys,
       Cache<Bytes32, List<Integer>> committeeShuffle) {
     this.activeValidators = activeValidators;
@@ -103,7 +103,7 @@ public class TransitionCaches {
   }
 
   /** (epoch) -> (total active balance) cache */
-  public Cache<UnsignedLong, UnsignedLong> getTotalActiveBalance() {
+  public Cache<UnsignedLong, Pair<UnsignedLong, UnsignedLong>> getTotalActiveBalance() {
     return totalActiveBalance;
   }
 

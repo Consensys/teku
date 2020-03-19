@@ -24,10 +24,10 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_curre
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_active_balance;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_active_balance_with_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_total_balance;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.integer_squareroot;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
@@ -280,11 +280,11 @@ public final class EpochProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#rewards-and-penalties-1</a>
    */
   private static UnsignedLong get_base_reward(BeaconState state, int index) {
-    UnsignedLong total_balance = get_total_active_balance(state);
+    UnsignedLong total_balance_square_root = get_total_active_balance_with_root(state).getRight();
     UnsignedLong effective_balance = state.getValidators().get(index).getEffective_balance();
     return effective_balance
         .times(UnsignedLong.valueOf(BASE_REWARD_FACTOR))
-        .dividedBy(integer_squareroot(total_balance))
+        .dividedBy(total_balance_square_root)
         .dividedBy(UnsignedLong.valueOf(BASE_REWARDS_PER_EPOCH));
   }
 
