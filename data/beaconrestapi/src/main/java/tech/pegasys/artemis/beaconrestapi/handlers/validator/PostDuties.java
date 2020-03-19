@@ -33,7 +33,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
@@ -42,9 +42,9 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PostDuties implements Handler {
-  private final ChainDataProvider provider;
+  private final ValidatorDataProvider provider;
 
-  public PostDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public PostDuties(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }

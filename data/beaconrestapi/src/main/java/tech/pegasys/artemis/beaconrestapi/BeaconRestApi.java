@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
@@ -162,11 +163,12 @@ public class BeaconRestApi {
 
   private void addValidatorHandlers(DataProvider dataProvider) {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
+    ValidatorDataProvider validatorDataProvider = dataProvider.getValidatorDataProvider();
     app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
     app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
 
-    app.post(PostDuties.ROUTE, new PostDuties(provider, jsonProvider));
+    app.post(PostDuties.ROUTE, new PostDuties(validatorDataProvider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
