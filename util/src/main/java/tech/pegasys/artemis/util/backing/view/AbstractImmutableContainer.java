@@ -15,32 +15,29 @@ package tech.pegasys.artemis.util.backing.view;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import tech.pegasys.artemis.util.backing.ContainerViewRead;
+import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
-import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
+import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
+import tech.pegasys.artemis.util.cache.ArrayCache;
+import tech.pegasys.artemis.util.cache.Cache;
 
-public abstract class AbstractImmutableContainer<C extends AbstractImmutableContainer<C>>
-    implements ContainerViewRead {
-
-  private final ContainerViewType<? extends AbstractImmutableContainer<C>> type;
-  private TreeNode backingNode;
+public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
 
   public AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer<C>> type) {
+      ContainerViewType<? extends AbstractImmutableContainer> type) {
     this(type, type.getDefaultTree());
   }
 
   public AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer<C>> type, TreeNode backingNode) {
-    this.type = type;
-    this.backingNode = backingNode;
+      ContainerViewType<? extends AbstractImmutableContainer> type, TreeNode backingNode) {
+    super(type, backingNode);
   }
 
   public AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer<C>> type, ViewRead... memberValues) {
-    this(type, type.getDefaultTree());
+      ContainerViewType<? extends AbstractImmutableContainer> type, ViewRead... memberValues) {
+    super(type, createBackingTree(type, memberValues), createCache(memberValues));
     checkArgument(
         memberValues.length == getType().getMaxLength(),
         "Wrong number of member values: %s",
@@ -53,36 +50,26 @@ public abstract class AbstractImmutableContainer<C extends AbstractImmutableCont
           type.getChildType(i),
           memberValues[i].getType());
     }
+  }
 
+  private static Cache<Integer, ViewRead> createCache(ViewRead... memberValues) {
+    ArrayCache<ViewRead> cache = new ArrayCache<>(memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
-      backingNode =
-          backingNode.updated(type.getGeneralizedIndex(i), memberValues[i].getBackingNode());
+      cache.invalidateWithNewValue(i, memberValues[i]);
     }
+    return cache;
+  }
+
+  private static TreeNode createBackingTree(ContainerViewType<?> type, ViewRead... memberValues) {
+    TreeNodes nodes = new TreeNodes();
+    for (int i = 0; i < memberValues.length; i++) {
+      nodes.add(type.getGeneralizedIndex(i), memberValues[i].getBackingNode());
+    }
+    return type.getDefaultTree().updated(nodes);
   }
 
   @Override
-  public ContainerViewType<? extends AbstractImmutableContainer<C>> getType() {
-    return type;
-  }
-
-  @Override
-  public TreeNode getBackingNode() {
-    return backingNode;
-  }
-
-  @Override
-  public ViewRead get(int index) {
-    checkIndex(index);
-    TreeNode node = backingNode.get(type.getGeneralizedIndex(index));
-    return type.getChildType(index).createFromBackingNode(node);
-  }
-
-  private void checkIndex(int index) {
-    checkArgument(index >= 0 && index < type.getMaxLength(), "Index out of bounds: %s", index);
-  }
-
-  @Override
-  public ViewWrite createWritableCopy() {
+  public ContainerViewWrite createWritableCopy() {
     throw new UnsupportedOperationException("This container doesn't support mutable View");
   }
 }

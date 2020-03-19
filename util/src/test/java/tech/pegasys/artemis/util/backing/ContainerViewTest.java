@@ -120,7 +120,7 @@ public class ContainerViewTest {
   }
 
   public static class ImmutableSubContainerImpl
-      extends AbstractImmutableContainer<ImmutableSubContainerImpl>
+      extends AbstractImmutableContainer
       implements ImmutableSubContainer {
 
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =

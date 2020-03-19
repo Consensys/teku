@@ -29,7 +29,6 @@ import tech.pegasys.artemis.datastructures.Copyable;
 import tech.pegasys.artemis.datastructures.operations.AttestationData;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
-import tech.pegasys.artemis.util.backing.ListViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
@@ -43,7 +42,7 @@ import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @JsonAutoDetect(getterVisibility = Visibility.NONE)
-public class PendingAttestation extends AbstractImmutableContainer<PendingAttestation>
+public class PendingAttestation extends AbstractImmutableContainer
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -175,15 +174,14 @@ public class PendingAttestation extends AbstractImmutableContainer<PendingAttest
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  @SuppressWarnings("unchecked")
   @JsonProperty
   public Bitlist getAggregation_bits() {
-    return ViewUtils.getBitlist((ListViewRead<BitView>) get(0));
+    return ViewUtils.getBitlist(getAny(0));
   }
 
   @JsonProperty
   public AttestationData getData() {
-    return (AttestationData) get(1);
+    return getAny(1);
   }
 
   @JsonProperty
