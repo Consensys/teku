@@ -14,6 +14,7 @@
 package tech.pegasys.teku.logging;
 
 import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
+import static tech.pegasys.teku.logging.LoggingConfigurator.STATUS_LOGGER_NAME;
 
 import java.nio.file.Path;
 import java.util.function.Supplier;
@@ -23,16 +24,12 @@ import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class StatusLogger {
 
-  public static final StatusLogger STATUS_LOG = new StatusLogger("stdout");
+  public static final StatusLogger STATUS_LOG = new StatusLogger(STATUS_LOGGER_NAME);
 
   private final Logger log;
 
   private StatusLogger(final String name) {
     this.log = LogManager.getLogger(name);
-  }
-
-  public void startupFailure(final Throwable cause) {
-    log.fatal("Startup failed", cause);
   }
 
   public void sendDepositFailure(final Throwable cause) {
@@ -88,7 +85,6 @@ public class StatusLogger {
     log.error(message, file.toString(), cause);
   }
 
-  // TODO only add colour when it is enabled vai the config
   private void fatal(Supplier<String> message) {
     log.fatal(print(message.get(), Color.RED));
   }

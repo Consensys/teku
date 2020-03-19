@@ -26,16 +26,14 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
-import tech.pegasys.artemis.api.NetworkDataProvider;
-import tech.pegasys.artemis.api.SyncDataProvider;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   private static final String THE_CONFIG =
@@ -45,20 +43,20 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   protected final P2PNetwork<?> p2PNetwork = mock(P2PNetwork.class);
-  private final NetworkDataProvider networkDataProvider = new NetworkDataProvider(p2PNetwork);
-
   protected final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   protected final ChainStorageClient chainStorageClient = mock(ChainStorageClient.class);
   protected final CombinedChainDataClient combinedChainDataClient =
       new CombinedChainDataClient(chainStorageClient, historicalChainData);
-  private final ChainDataProvider chainDataProvider =
-      new ChainDataProvider(chainStorageClient, combinedChainDataClient);
-
   protected final SyncService syncService = mock(SyncService.class);
-  private final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
+  protected final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
 
   private final DataProvider dataProvider =
-      new DataProvider(networkDataProvider, chainDataProvider, syncDataProvider);
+      new DataProvider(
+          chainStorageClient,
+          combinedChainDataClient,
+          p2PNetwork,
+          syncService,
+          validatorCoordinator);
 
   private BeaconRestApi beaconRestApi;
   protected OkHttpClient client;

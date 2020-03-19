@@ -14,7 +14,6 @@
 package tech.pegasys.artemis;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine.Command;
@@ -23,6 +22,7 @@ import tech.pegasys.artemis.storage.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.teku.logging.LoggingConfigurator;
 
 @Command(
     name = "teku",
@@ -59,14 +59,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   private ArtemisConfiguration artemisConfiguration;
 
-  public Optional<Level> getLoggingLevel() {
-    return Optional.ofNullable(this.logLevel);
-  }
-
-  public String getConfigFile() {
-    return configFile;
-  }
-
   @VisibleForTesting
   public ArtemisConfiguration getArtemisConfiguration() {
     return artemisConfiguration;
@@ -75,10 +67,13 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Override
   public Integer call() {
     try {
-      artemisConfiguration = ArtemisConfiguration.fromFile(getConfigFile());
-      BeaconNode node = new BeaconNode(getLoggingLevel(), artemisConfiguration);
+
+      setLogLevels();
+
+      artemisConfiguration = ArtemisConfiguration.fromFile(configFile);
+      final BeaconNode node = new BeaconNode(artemisConfiguration);
       node.start();
-      // Detect SIGTERM
+
       Runtime.getRuntime()
           .addShutdownHook(
               new Thread(
@@ -87,14 +82,21 @@ public class BeaconNodeCommand implements Callable<Integer> {
                     node.stop();
                   }));
       return 0;
-    } catch (DatabaseStorageException ex) {
+    } catch (final DatabaseStorageException ex) {
       System.err.println(ex.getMessage());
       System.exit(1);
-    } catch (Throwable t) {
+    } catch (final Throwable t) {
       System.err.println("Teku failed to start.");
       t.printStackTrace();
       System.exit(1);
     }
     return 1;
+  }
+
+  private void setLogLevels() {
+    if (logLevel != null) {
+      // set log level per CLI flags
+      LoggingConfigurator.setAllLevels(logLevel);
+    }
   }
 }
