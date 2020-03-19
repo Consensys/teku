@@ -14,78 +14,135 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingList;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingListRef;
+import tech.pegasys.artemis.util.SSZTypes.SSZBackingVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
+import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
 
 public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
 
   static MutableBeaconState createBuilder() {
-    return new BeaconStateImpl(true);
+    return MutableBeaconStateImpl.createBuilder();
   }
 
   // Versioning
 
-  void setGenesis_time(UnsignedLong genesis_time);
+  default void setGenesis_time(UnsignedLong genesis_time) {
+    set(0, new UInt64View(genesis_time));
+  }
 
-  void setSlot(UnsignedLong slot);
+  default void setSlot(UnsignedLong slot) {
+    set(1, new UInt64View(slot));
+  }
 
-  void setFork(Fork fork);
+  default void setFork(Fork fork) {
+    set(2, fork);
+  }
 
   // History
-  void setLatest_block_header(BeaconBlockHeader latest_block_header);
+  default void setLatest_block_header(BeaconBlockHeader latest_block_header) {
+    set(3, latest_block_header);
+  }
 
   @Override
-  SSZMutableVector<Bytes32> getBlock_roots();
+  default SSZMutableVector<Bytes32> getBlock_roots() {
+    return new SSZBackingVector<>(
+        Bytes32.class, getAnyByRef(4), Bytes32View::new, AbstractBasicView::get);
+  }
 
   @Override
-  SSZMutableVector<Bytes32> getState_roots();
+  default SSZMutableVector<Bytes32> getState_roots() {
+    return new SSZBackingVector<>(
+        Bytes32.class, getAnyByRef(5), Bytes32View::new, AbstractBasicView::get);
+  }
 
   @Override
-  SSZMutableList<Bytes32> getHistorical_roots();
+  default SSZMutableList<Bytes32> getHistorical_roots() {
+    return new SSZBackingList<>(
+        Bytes32.class, getAnyByRef(6), Bytes32View::new, AbstractBasicView::get);
+  }
 
   // Eth1
-  void setEth1_data(Eth1Data eth1_data);
+  default void setEth1_data(Eth1Data eth1_data) {
+    set(7, eth1_data);
+  }
 
   @Override
-  SSZMutableList<Eth1Data> getEth1_data_votes();
+  default SSZMutableList<Eth1Data> getEth1_data_votes() {
+    return new SSZBackingList<>(
+        Eth1Data.class, getAnyByRef(8), Function.identity(), Function.identity());
+  }
 
-  void setEth1_deposit_index(UnsignedLong eth1_deposit_index);
+  default void setEth1_deposit_index(UnsignedLong eth1_deposit_index) {
+    set(9, new UInt64View(eth1_deposit_index));
+  }
 
   // Registry
   @Override
-  SSZMutableRefList<Validator, MutableValidator> getValidators();
+  default SSZMutableRefList<Validator, MutableValidator> getValidators() {
+    return new SSZBackingListRef<>(ValidatorImpl.class, getAnyByRef(10));
+  }
 
   @Override
-  SSZMutableList<UnsignedLong> getBalances();
+  default SSZMutableList<UnsignedLong> getBalances() {
+    return new SSZBackingList<>(
+        UnsignedLong.class, getAnyByRef(11), UInt64View::new, AbstractBasicView::get);
+  }
 
   @Override
-  SSZMutableVector<Bytes32> getRandao_mixes();
+  default SSZMutableVector<Bytes32> getRandao_mixes() {
+    return new SSZBackingVector<>(
+        Bytes32.class, getAnyByRef(12), Bytes32View::new, AbstractBasicView::get);
+  }
 
   // Slashings
   @Override
-  SSZMutableVector<UnsignedLong> getSlashings();
+  default SSZMutableVector<UnsignedLong> getSlashings() {
+    return new SSZBackingVector<>(
+        UnsignedLong.class, getAnyByRef(13), UInt64View::new, AbstractBasicView::get);
+  }
 
   // Attestations
   @Override
-  SSZMutableList<PendingAttestation> getPrevious_epoch_attestations();
+  default SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
+    return new SSZBackingList<>(
+        PendingAttestation.class, getAnyByRef(14), Function.identity(), Function.identity());
+  }
 
   @Override
-  SSZMutableList<PendingAttestation> getCurrent_epoch_attestations();
+  default SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
+    return new SSZBackingList<>(
+        PendingAttestation.class, getAnyByRef(15), Function.identity(), Function.identity());
+  }
 
   // Finality
-  void setJustification_bits(Bitvector justification_bits);
+  default void setJustification_bits(Bitvector justification_bits) {
+    set(16, ViewUtils.createBitvectorView(justification_bits));
+  }
 
-  void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint);
+  default void setPrevious_justified_checkpoint(Checkpoint previous_justified_checkpoint) {
+    set(17, previous_justified_checkpoint);
+  }
 
-  void setCurrent_justified_checkpoint(Checkpoint current_justified_checkpoint);
+  default void setCurrent_justified_checkpoint(Checkpoint current_justified_checkpoint) {
+    set(18, current_justified_checkpoint);
+  }
 
-  void setFinalized_checkpoint(Checkpoint finalized_checkpoint);
+  default void setFinalized_checkpoint(Checkpoint finalized_checkpoint) {
+    set(19, finalized_checkpoint);
+  }
 
   @Override
   BeaconState commitChanges();

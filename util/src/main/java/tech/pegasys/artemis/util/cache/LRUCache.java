@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util.cache;
+package tech.pegasys.artemis.util.cache;
 
 import java.util.Collections;
 import java.util.Map;

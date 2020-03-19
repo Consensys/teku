@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.util.backing.view;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +30,7 @@ import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
+import tech.pegasys.artemis.util.cache.Cache;
 
 public abstract class AbstractCompositeViewWrite1<
         C extends AbstractCompositeViewWrite1<C, R, W>, R extends ViewRead, W extends R>
@@ -105,7 +105,7 @@ public abstract class AbstractCompositeViewWrite1<
     childrenChanges.clear();
     childrenRefs.clear();
     childrenRefsChanged.clear();
-    sizeCache = 0;
+    sizeCache = backingImmutableView.size();
     invalidate();
   }
 
@@ -120,7 +120,7 @@ public abstract class AbstractCompositeViewWrite1<
     if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
       return backingImmutableView;
     } else {
-      ArrayList<R> cache = backingImmutableView.transferCache();
+      Cache<Integer, R> cache = backingImmutableView.transferCache();
       List<Entry<Integer, R>> changesList = Stream.concat(
           childrenChanges.entrySet().stream(),
           childrenRefsChanged.stream()
@@ -130,7 +130,8 @@ public abstract class AbstractCompositeViewWrite1<
                           idx, (R) ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
           .sorted(Entry.comparingByKey())
           .collect(Collectors.toList());
-      changesList.forEach(e -> cache.set(e.getKey(), e.getValue()));
+      // pre-fill the read cache with changed values
+      changesList.forEach(e -> cache.get(e.getKey(), i -> e.getValue()));
       TreeNode originalBackingTree = backingImmutableView.getBackingNode();
       TreeNodes changes = changesToNewNodes(changesList, originalBackingTree);
       TreeNode newBackingTree = originalBackingTree.updated(changes);
@@ -156,7 +157,7 @@ public abstract class AbstractCompositeViewWrite1<
   }
 
   protected abstract AbstractCompositeViewRead<?, R> createViewRead(
-      TreeNode backingNode, ArrayList<R> viewCache);
+      TreeNode backingNode, Cache<Integer, R> viewCache);
 
   @Override
   public void setInvalidator(Consumer<ViewWrite> listener) {

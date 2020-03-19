@@ -48,7 +48,7 @@ public class ProfilingRun {
     Constants.setConstants("mainnet");
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
 
-    int validatorsCount = 32 * 1024;
+    int validatorsCount = 16 * 1024;
 
     String blocksFile =
         "/blocks/blocks_epoch_"

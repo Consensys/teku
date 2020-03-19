@@ -1,12 +1,12 @@
 package tech.pegasys.artemis.util.backing.view;
 
-import java.util.ArrayList;
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.type.ViewType;
+import tech.pegasys.artemis.util.cache.Cache;
 
 public class VectorViewReadImpl<R extends ViewRead>
     extends AbstractCompositeViewRead<VectorViewReadImpl<R>, R> implements VectorViewRead<R> {
@@ -15,7 +15,7 @@ public class VectorViewReadImpl<R extends ViewRead>
     super(type, backingNode);
   }
 
-  public VectorViewReadImpl(CompositeViewType type, TreeNode backingNode, ArrayList<R> cache) {
+  public VectorViewReadImpl(CompositeViewType type, TreeNode backingNode, Cache<Integer, R> cache) {
     super(type, backingNode, cache);
   }
 
@@ -31,7 +31,7 @@ public class VectorViewReadImpl<R extends ViewRead>
 
   @Override
   protected int sizeImpl() {
-    return (int) getType().getMaxLength();
+    return (int) Long.min(Integer.MAX_VALUE, getType().getMaxLength());
   }
 
   @Override

@@ -104,11 +104,11 @@ public class GenesisGenerator {
     }
   }
 
-  public MutableBeaconState getGenesisState() {
+  public BeaconState getGenesisState() {
     return getGenesisStateIfValid(state -> true).orElseThrow();
   }
 
-  public Optional<MutableBeaconState> getGenesisStateIfValid(
+  public Optional<BeaconState> getGenesisStateIfValid(
       Predicate<BeaconState> validityCriteria) {
     if (!validityCriteria.test(state)) {
       return Optional.empty();
@@ -116,7 +116,7 @@ public class GenesisGenerator {
 
     finalizeState();
 
-    return Optional.of(state.createWritableCopy());
+    return Optional.of(state.commitChanges());
   }
 
   private void finalizeState() {

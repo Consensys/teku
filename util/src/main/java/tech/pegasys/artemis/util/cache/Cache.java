@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.datastructures.util.cache;
+package tech.pegasys.artemis.util.cache;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -40,6 +40,11 @@ public interface Cache<K, V> {
 
   /** Creates independent copy of this Cache instance */
   Cache<K, V> copy();
+
+  /** Creates independent copy of this Cache instance while possibly clearing this cache content */
+  default Cache<K, V> transfer() {
+    return copy();
+  }
 
   /** Clears all cached values */
   void clear();

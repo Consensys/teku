@@ -13,18 +13,18 @@
 
 package tech.pegasys.artemis.util.backing.view;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import tech.pegasys.artemis.util.backing.CompositeViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
+import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.HashMapCache;
 
 public abstract class AbstractCompositeViewRead<
         C extends AbstractCompositeViewRead<C, R>, R extends ViewRead>
     implements CompositeViewRead<R> {
 
-  private ArrayList<R> childrenViewCache;
+  private Cache<Integer, R> childrenViewCache;
   private final int sizeCache;
   private final CompositeViewType type;
   private final TreeNode backingNode;
@@ -38,34 +38,25 @@ public abstract class AbstractCompositeViewRead<
   }
 
   public AbstractCompositeViewRead(CompositeViewType type,
-      TreeNode backingNode, ArrayList<R> cache) {
+      TreeNode backingNode, Cache<Integer, R> cache) {
     this.type = type;
     this.backingNode = backingNode;
     sizeCache = sizeImpl();
     childrenViewCache = cache;
   }
 
-  synchronized ArrayList<R> transferCache() {
-    ArrayList<R> ret = childrenViewCache;
-    childrenViewCache = createCache();
-    return ret;
+  synchronized Cache<Integer, R> transferCache() {
+    return childrenViewCache.transfer();
   }
 
-  private ArrayList<R> createCache() {
-    return new ArrayList<>(Collections.nCopies(size(), null));
+  private Cache<Integer, R> createCache() {
+    return new HashMapCache<>();
   }
 
   @Override
   public final R get(int index) {
     checkIndex(index);
-    R ret = childrenViewCache.get(index);
-    if (ret == null) {
-      ret = getImpl(index);
-      synchronized (this) {
-        childrenViewCache.set(index, ret);
-      }
-    }
-    return ret;
+    return childrenViewCache.get(index, this::getImpl);
   }
 
   protected abstract R getImpl(int index);

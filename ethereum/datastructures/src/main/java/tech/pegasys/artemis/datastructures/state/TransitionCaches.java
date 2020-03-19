@@ -17,10 +17,10 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.util.cache.Cache;
-import tech.pegasys.artemis.datastructures.util.cache.LRUCache;
-import tech.pegasys.artemis.datastructures.util.cache.NoOpCache;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.LRUCache;
+import tech.pegasys.artemis.util.cache.NoOpCache;
 
 /** The container class for all transition caches. */
 public class TransitionCaches {

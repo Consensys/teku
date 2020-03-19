@@ -161,7 +161,7 @@ public class DeserializationTest {
   void BeaconStateTest() {
     BeaconState beaconState = randomBeaconState(100);
     Bytes bytes = SimpleOffsetSerializer.serialize(beaconState);
-    BeaconStateImpl state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
+    BeaconState state = SimpleOffsetSerializer.deserialize(bytes, BeaconStateImpl.class);
     assertEquals(beaconState, state);
   }
 

@@ -32,7 +32,6 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
-import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.TransitionCaches;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
@@ -107,7 +106,7 @@ class GenesisGeneratorTest {
     // Now we should have two validators, not the 1 that would have been cached before.
     genesisGenerator.addDepositsFromBlock(
         Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(1)));
-    final Optional<MutableBeaconState> state =
+    final Optional<BeaconState> state =
         genesisGenerator.getGenesisStateIfValid(validityCriteria);
     assertThat(state).isNotEmpty();
 
