@@ -37,15 +37,9 @@ public class ArtemisDepositSender extends Node {
   }
 
   public String sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
-    final Path tempDirectory;
-    try {
-      final TestContainerMountableFolder testContainerMountableFolder =
-          new TestContainerMountableFolder();
-      tempDirectory = testContainerMountableFolder.createTempDirectory();
-      testContainerMountableFolder.deleteOnExit(tempDirectory);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    final TestContainerMountableFolder testContainerMountableFolder =
+        new TestContainerMountableFolder();
+    final Path tempDirectory = testContainerMountableFolder.createTempDirectory();
 
     container.withFileSystemBind(tempDirectory.toString(), "/tmp/test");
 
@@ -60,7 +54,7 @@ public class ArtemisDepositSender extends Node {
         ENCRYPTED_KEYSTORE_ENABLED,
         "--eth1-deposit-contract-address",
         eth1Node.getDepositContractAddress(),
-        "--number-of-validators",
+        "--X-number-of-validators",
         Integer.toString(numberOfValidators),
         "--eth1-private-key",
         eth1Node.getRichBenefactorKey(),

@@ -30,18 +30,30 @@ public class TestContainerMountableFolder {
   // mountable in docker in Mac
   private static final String MAC_TEMP_DIR = "/tmp";
 
-  public Path createTempDirectory() throws IOException {
+  public Path createTempDirectory() {
     try {
       if (SystemUtils.IS_OS_MAC) {
-        return Files.createTempDirectory(Paths.get(MAC_TEMP_DIR), TEMP_DIR_PREFIX);
+        final Path tempDirectory =
+            Files.createTempDirectory(Paths.get(MAC_TEMP_DIR), TEMP_DIR_PREFIX);
+        deleteOnExit(tempDirectory);
+        return tempDirectory;
       }
-      return Files.createTempDirectory(TEMP_DIR_PREFIX);
-    } catch (IOException e) {
-      return Files.createTempDirectory(Path.of("."), TEMP_DIR_PREFIX);
+
+      final Path tempDirectory = Files.createTempDirectory(TEMP_DIR_PREFIX);
+      deleteOnExit(tempDirectory);
+      return tempDirectory;
+    } catch (final IOException e) {
+      try {
+        final Path tempDirectory = Files.createTempDirectory(Path.of("."), TEMP_DIR_PREFIX);
+        deleteOnExit(tempDirectory);
+        return tempDirectory;
+      } catch (final IOException ex) {
+        throw new UncheckedIOException(ex);
+      }
     }
   }
 
-  public void deleteOnExit(final Path path) {
+  private void deleteOnExit(final Path path) {
     Runtime.getRuntime()
         .addShutdownHook(
             new Thread(
