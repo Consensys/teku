@@ -15,7 +15,6 @@ package tech.pegasys.artemis.services.beaconchain;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.artemis.statetransition.util.ForkChoiceUtil.on_tick;
-import static tech.pegasys.artemis.util.config.Constants.DEPOSIT_TEST;
 import static tech.pegasys.artemis.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
@@ -26,6 +25,10 @@ import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -114,8 +117,7 @@ public class BeaconChainController extends Service {
     this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
-    this.setupInitialState =
-        config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
+    this.setupInitialState = config.isxInteropEnabled() || config.getxInteropStartState() != null;
   }
 
   @Override
@@ -272,10 +274,16 @@ public class BeaconChainController extends Service {
 
   public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
-    if ("mock".equals(config.getNetworkMode())) {
+    if (!config.isP2pEnabled()) {
       this.p2pNetwork = new MockP2PNetwork<>(eventBus);
-    } else if ("jvmlibp2p".equals(config.getNetworkMode())) {
-      Bytes bytes = Bytes.fromHexString(config.getInteropPrivateKey());
+    } else {
+      final Bytes bytes;
+      try {
+        bytes = Bytes.fromHexString(Files.readString(Paths.get(config.getP2pPrivateKeyFile())));
+      } catch (IOException e) {
+        throw new RuntimeException(
+            "p2p private key file not found - " + config.getP2pPrivateKeyFile());
+      }
       PrivKey pk =
           bytes.isEmpty()
               ? KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()
@@ -283,16 +291,14 @@ public class BeaconChainController extends Service {
       NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
-              config.getNetworkInterface(),
-              config.getAdvertisedIp(),
-              config.getPort(),
-              config.getAdvertisedPort(),
-              config.getStaticPeers(),
-              config.getDiscovery(),
-              config.getBootnodes(),
-              new TargetPeerRange(
-                  config.getTargetPeerCountRangeLowerBound(),
-                  config.getTargetPeerCountRangeUpperBound()),
+              config.getP2pInterface(),
+              config.getP2pAdvertisedIp(),
+              config.getP2pPort(),
+              config.getP2pAdvertisedPort(),
+              Collections.emptyList(), // FIXME config.getStaticPeers
+              config.isP2pDiscoveryEnabled(),
+              config.getP2pDiscoveryBootnodes(),
+              new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
               true,
               true,
               true);
@@ -304,8 +310,6 @@ public class BeaconChainController extends Service {
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .build();
-    } else {
-      throw new IllegalArgumentException("Unsupported network mode " + config.getNetworkMode());
     }
   }
 
@@ -334,7 +338,7 @@ public class BeaconChainController extends Service {
 
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
-    if ("mock".equals(config.getNetworkMode())) {
+    if (!config.isP2pEnabled()) {
       syncService = new NoopSyncService(null, null, null, null);
     } else {
       syncService =
@@ -349,9 +353,9 @@ public class BeaconChainController extends Service {
   private void setupInitialState() {
     StartupUtil.setupInitialState(
         chainStorageClient,
-        config.getGenesisTime(),
-        config.getStartState(),
-        config.getNumValidators());
+        config.getxInteropGenesisTime(),
+        config.getxInteropStartState(),
+        config.getxInteropNumberOfValidators());
   }
 
   private void onStoreInitialized() {

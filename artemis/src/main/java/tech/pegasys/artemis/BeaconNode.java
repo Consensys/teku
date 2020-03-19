@@ -54,7 +54,7 @@ public class BeaconNode {
   private final MetricsEndpoint metricsEndpoint;
   private final EventBus eventBus;
 
-  BeaconNode(final ArtemisConfiguration config) {
+  public BeaconNode(final ArtemisConfiguration config) {
 
     this.metricsEndpoint = new MetricsEndpoint(config, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
@@ -66,9 +66,9 @@ public class BeaconNode {
     this.serviceConfig =
         new ServiceConfig(new SystemTimeProvider(), eventBus, eventChannels, metricsSystem, config);
     this.serviceConfig.getConfig().validateConfig();
-    Constants.setConstants(config.getConstants());
+    Constants.setConstants(config.getNetwork());
 
-    final String transitionRecordDir = config.getTransitionRecordDir();
+    final String transitionRecordDir = config.getxTransactionRecordDirectory();
     if (transitionRecordDir != null) {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }
@@ -77,11 +77,11 @@ public class BeaconNode {
 
     LoggingConfigurator.update(
         new LoggingConfiguration(
-            config.isLoggingColorEnabled(),
-            config.isLoggingIncludeEventsEnabled(),
-            LoggingDestination.get(config.getLoggingDestination()),
-            config.getLoggingFile(),
-            config.getLoggingFileNamePattern()));
+            config.isLogColourEnabled(),
+            config.isLogIncludeEventsEnabled(),
+            LoggingDestination.get(config.getLogDestination()),
+            config.getLogFile(),
+            config.getLogFileNamePattern()));
   }
 
   public void start() {

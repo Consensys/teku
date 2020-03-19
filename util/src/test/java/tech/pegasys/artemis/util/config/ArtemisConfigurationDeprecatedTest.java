@@ -28,7 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
-final class ArtemisConfigurationTest {
+final class ArtemisConfigurationDeprecatedTest {
 
   @AfterEach
   public void tearDown() {
@@ -37,14 +37,15 @@ final class ArtemisConfigurationTest {
 
   @Test
   void validMinimum() {
-    ArtemisConfiguration.fromString("");
+    ArtemisConfigurationDeprecated.fromString("");
   }
 
   @Test
   void wrongPort() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ArtemisConfiguration.fromString("node.identity=\"2345\"\nnode.port=100000"));
+        () ->
+            ArtemisConfigurationDeprecated.fromString("node.identity=\"2345\"\nnode.port=100000"));
   }
 
   @Test
@@ -52,12 +53,14 @@ final class ArtemisConfigurationTest {
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            ArtemisConfiguration.fromString("node.identity=\"2345\"\nnode.advertisedPort=100000"));
+            ArtemisConfigurationDeprecated.fromString(
+                "node.identity=\"2345\"\nnode.advertisedPort=100000"));
   }
 
   @Test
   void advertisedPortDefaultsToPort() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("node.port=1234");
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("node.port=1234");
     assertThat(config.getAdvertisedPort()).isEqualTo(1234);
   }
 
@@ -66,28 +69,30 @@ final class ArtemisConfigurationTest {
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            ArtemisConfiguration.fromString(
+            ArtemisConfigurationDeprecated.fromString(
                 "node.identity=\"2345\"\nnode.networkMode=\"tcpblah\""));
   }
 
   @Test
   void invalidMinimalArtemisConfig() {
     Constants.setConstants("minimal");
-    ArtemisConfiguration config = ArtemisConfiguration.fromString("deposit.numValidators=7");
+    ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("deposit.numValidators=7");
     assertThrows(IllegalArgumentException.class, () -> config.validateConfig());
   }
 
   @Test
   void invalidMainnetArtemisConfig() {
     Constants.setConstants("mainnet");
-    ArtemisConfiguration config = ArtemisConfiguration.fromString("deposit.numValidators=31");
+    ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("deposit.numValidators=31");
     assertThrows(IllegalArgumentException.class, () -> config.validateConfig());
   }
 
   @Test
   void shouldReadRestApiSettings() {
-    ArtemisConfiguration config =
-        ArtemisConfiguration.fromString(
+    ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString(
             "beaconrestapi.portNumber=1\nbeaconrestapi.enableSwagger=false");
     assertEquals(config.getBeaconRestAPIPortNumber(), 1);
     assertEquals(config.getBeaconRestAPIEnableSwagger(), false);
@@ -96,7 +101,7 @@ final class ArtemisConfigurationTest {
   @Test
   void shouldDefaultRestApiSettings() {
 
-    ArtemisConfiguration config = ArtemisConfiguration.fromString(EMPTY);
+    ArtemisConfigurationDeprecated config = ArtemisConfigurationDeprecated.fromString(EMPTY);
 
     assertEquals(false, config.getBeaconRestAPIEnableSwagger());
     assertEquals(5051, config.getBeaconRestAPIPortNumber());
@@ -104,14 +109,15 @@ final class ArtemisConfigurationTest {
 
   @Test
   void dataPathCanBeSet() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("output.dataPath=\".\"");
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("output.dataPath=\".\"");
     assertThat(config.getDataPath()).isEqualTo(".");
   }
 
   @Test
   void validatorKeyStoreAndPasswordFileCanBeSet() {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString(
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString(
             "validator.keystoreFiles=["
                 + "\"/path/to/Keystore1.json\",\"/path/to/Keystore2.json\""
                 + "]\n"
@@ -127,8 +133,8 @@ final class ArtemisConfigurationTest {
 
   @Test
   void invalidKeystoreAndPasswordParametersThrowsException() {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString(
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString(
             "validator.keystoreFiles=["
                 + "\"/path/to/Keystore1.json\",\"/path/to/Keystore2.json\""
                 + "]\n"
@@ -148,21 +154,21 @@ final class ArtemisConfigurationTest {
     final Exception exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ArtemisConfiguration.fromString("logging.colorEnabled = \"2345\""));
+            () -> ArtemisConfigurationDeprecated.fromString("logging.colorEnabled = \"2345\""));
 
     assertThat(exception.getMessage()).contains("logging.colorEnabled' requires a boolean");
   }
 
   @Test
   void loggingColorEnableShouldDefaultToTrue() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    final ArtemisConfigurationDeprecated config = ArtemisConfigurationDeprecated.fromString("");
     assertThat(config.isLoggingColorEnabled()).isTrue();
   }
 
   @Test
   void loggingColorEnableShouldSet() {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString("logging.colorEnabled = false");
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("logging.colorEnabled = false");
     assertThat(config.isLoggingColorEnabled()).isFalse();
   }
 
@@ -171,21 +177,23 @@ final class ArtemisConfigurationTest {
     final Exception exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ArtemisConfiguration.fromString("logging.includeEventsEnabled = \"2345\""));
+            () ->
+                ArtemisConfigurationDeprecated.fromString(
+                    "logging.includeEventsEnabled = \"2345\""));
 
     assertThat(exception.getMessage()).contains("logging.includeEventsEnabled' requires a boolean");
   }
 
   @Test
   void loggingIncludeEventsEnableShouldDefaultToTrue() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    final ArtemisConfigurationDeprecated config = ArtemisConfigurationDeprecated.fromString("");
     assertThat(config.isLoggingIncludeEventsEnabled()).isTrue();
   }
 
   @Test
   void loggingIncludeEventsEnableShouldSet() {
-    final ArtemisConfiguration config =
-        ArtemisConfiguration.fromString("logging.includeEventsEnabled = false");
+    final ArtemisConfigurationDeprecated config =
+        ArtemisConfigurationDeprecated.fromString("logging.includeEventsEnabled = false");
     assertThat(config.isLoggingIncludeEventsEnabled()).isFalse();
   }
 
@@ -194,7 +202,7 @@ final class ArtemisConfigurationTest {
     final Exception exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ArtemisConfiguration.fromString("logging.destination = false"));
+            () -> ArtemisConfigurationDeprecated.fromString("logging.destination = false"));
 
     assertThat(exception.getMessage()).contains("logging.destination' requires a string");
   }
@@ -204,7 +212,9 @@ final class ArtemisConfigurationTest {
     final Exception exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ArtemisConfiguration.fromString("logging.destination = \"Not acceptable\""));
+            () ->
+                ArtemisConfigurationDeprecated.fromString(
+                    "logging.destination = \"Not acceptable\""));
 
     assertThat(exception.getMessage())
         .contains("logging.destination' should be \"consoleOnly\", \"fileOnly\", or \"both\"");
@@ -212,22 +222,22 @@ final class ArtemisConfigurationTest {
 
   @Test
   void loggingDestinationShouldDefaultToBoth() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    final ArtemisConfigurationDeprecated config = ArtemisConfigurationDeprecated.fromString("");
     assertThat(config.getLoggingDestination()).isEqualTo("both");
   }
 
   @Test
   void loggingDestinationShouldSet() {
-    final ArtemisConfiguration configBoth =
-        ArtemisConfiguration.fromString("logging.destination = \"both\"");
+    final ArtemisConfigurationDeprecated configBoth =
+        ArtemisConfigurationDeprecated.fromString("logging.destination = \"both\"");
     assertThat(configBoth.getLoggingDestination()).isEqualTo("both");
 
-    final ArtemisConfiguration configCondole =
-        ArtemisConfiguration.fromString("logging.destination = \"consoleOnly\"");
+    final ArtemisConfigurationDeprecated configCondole =
+        ArtemisConfigurationDeprecated.fromString("logging.destination = \"consoleOnly\"");
     assertThat(configCondole.getLoggingDestination()).isEqualTo("consoleOnly");
 
-    final ArtemisConfiguration configFile =
-        ArtemisConfiguration.fromString("logging.destination = \"fileOnly\"");
+    final ArtemisConfigurationDeprecated configFile =
+        ArtemisConfigurationDeprecated.fromString("logging.destination = \"fileOnly\"");
     assertThat(configFile.getLoggingDestination()).isEqualTo("fileOnly");
   }
 
@@ -236,14 +246,14 @@ final class ArtemisConfigurationTest {
     final Exception exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ArtemisConfiguration.fromString("logging.file = false"));
+            () -> ArtemisConfigurationDeprecated.fromString("logging.file = false"));
 
     assertThat(exception.getMessage()).contains("logging.file' requires a string");
   }
 
   @Test
   void loggingFileShouldDefaultToTekuLog() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    final ArtemisConfigurationDeprecated config = ArtemisConfigurationDeprecated.fromString("");
     assertThat(config.getLoggingFile()).isEqualTo("teku.log");
   }
 
@@ -252,14 +262,14 @@ final class ArtemisConfigurationTest {
     final Exception exception =
         assertThrows(
             IllegalArgumentException.class,
-            () -> ArtemisConfiguration.fromString("logging.fileNamePattern = false"));
+            () -> ArtemisConfigurationDeprecated.fromString("logging.fileNamePattern = false"));
 
     assertThat(exception.getMessage()).contains("logging.fileNamePattern' requires a string");
   }
 
   @Test
   void loggingFileNamePatternShouldDefault() {
-    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    final ArtemisConfigurationDeprecated config = ArtemisConfigurationDeprecated.fromString("");
     assertThat(config.getLoggingFileNamePattern()).isEqualTo("teku_%d{yyyy-MM-dd}.log");
   }
 

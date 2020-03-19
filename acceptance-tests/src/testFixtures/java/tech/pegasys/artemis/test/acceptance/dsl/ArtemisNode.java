@@ -83,7 +83,7 @@ public class ArtemisNode extends Node {
         .withWorkingDirectory(ARTIFACTS_PATH)
         .withExposedPorts(REST_API_PORT)
         .waitingFor(new HttpWaitStrategy().forPort(REST_API_PORT).forPath("/network/peer_id"))
-        .withCommand("--config", CONFIG_FILE_PATH);
+        .withCommand("--config-file", CONFIG_FILE_PATH);
   }
 
   public static ArtemisNode create(

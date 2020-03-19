@@ -15,11 +15,11 @@ package tech.pegasys.artemis;
 
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import picocli.CommandLine;
+import tech.pegasys.artemis.cli.BeaconNodeCommand;
 
 public final class Artemis {
   public static void main(final String... args) {
     Security.addProvider(new BouncyCastleProvider());
-    new CommandLine(new BeaconNodeCommand()).execute(args);
+    new BeaconNodeCommand().parse(args);
   }
 }
