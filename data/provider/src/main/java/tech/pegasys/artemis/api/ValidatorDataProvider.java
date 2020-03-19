@@ -15,19 +15,22 @@ package tech.pegasys.artemis.api;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProvider {
   private volatile ValidatorCoordinator validatorCoordinator;
+  private static final Logger LOG = LogManager.getLogger();
 
   public ValidatorDataProvider(ValidatorCoordinator validatorCoordinator) {
     this.validatorCoordinator = validatorCoordinator;
   }
 
-  public Optional<BeaconBlock> getUnsignedBeaconBlockAtSlot(
-      UnsignedLong slot, BLSSignature randao) {
+  public Optional<BeaconBlock> getUnsignedBeaconBlockAtSlot(UnsignedLong slot, BLSSignature randao)
+      throws DataProviderException {
     if (slot == null) {
       throw new IllegalArgumentException("no slot provided.");
     }
@@ -43,7 +46,8 @@ public class ValidatorDataProvider {
         return Optional.of(new BeaconBlock(newBlock.get()));
       }
     } catch (Exception ex) {
-      return Optional.empty();
+      LOG.error("Failed to generate a new unsigned block", ex);
+      throw new DataProviderException(ex.getMessage());
     }
     return Optional.empty();
   }

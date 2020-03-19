@@ -15,7 +15,7 @@ package tech.pegasys.artemis.api;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,25 +36,40 @@ public class ValidatorDataProviderTest {
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
       DataStructureUtil.randomBeaconBlock(123, 456);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
+  private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
+      tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
+  private final BLSSignature signature = new BLSSignature(signatureInternal);
 
   @Test
   void getUnsignedBeaconBlockAtSlot_throwsWithoutSlotDefined() {
-    assertThrows(
-        IllegalArgumentException.class, () -> provider.getUnsignedBeaconBlockAtSlot(null, null));
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(null, null));
   }
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowWithoutRandaoDefined() {
-    assertThrows(
-        IllegalArgumentException.class, () -> provider.getUnsignedBeaconBlockAtSlot(ONE, null));
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, null));
+  }
+
+  @Test
+  void getUnsignedBeaconBlockAtSlot_shouldThrowDataProviderExceptionIfStateTransitionException() {
+    shouldThrowDataProviderExceptionAfterGettingException(new StateTransitionException(null));
+  }
+
+  @Test
+  void getUnsignedBeaconBlockAtSlot_shouldThrowDataProviderExceptionIfSlotProcessingException() {
+    shouldThrowDataProviderExceptionAfterGettingException(new SlotProcessingException("TEST"));
+  }
+
+  @Test
+  void getUnsignedBeaconBlockAtSlot_shouldThrowDataProviderExceptionIfEpochProcessingException() {
+    shouldThrowDataProviderExceptionAfterGettingException(new EpochProcessingException("TEST"));
   }
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock()
       throws SlotProcessingException, EpochProcessingException, StateTransitionException {
-    tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
-        tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
-    BLSSignature signature = new BLSSignature(signatureInternal);
     when(validatorCoordinator.createUnsignedBlock(ONE, signatureInternal))
         .thenReturn(Optional.of(blockInternal));
 
@@ -62,5 +77,18 @@ public class ValidatorDataProviderTest {
     verify(validatorCoordinator).createUnsignedBlock(ONE, signatureInternal);
     assertThat(data.isPresent()).isTrue();
     assertThat(data.get()).usingRecursiveComparison().isEqualTo(block);
+  }
+
+  private void shouldThrowDataProviderExceptionAfterGettingException(Exception ex) {
+    tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
+        tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
+    BLSSignature signature = new BLSSignature(signatureInternal);
+    try {
+      when(validatorCoordinator.createUnsignedBlock(ONE, signatureInternal)).thenThrow(ex);
+    } catch (Exception ignored) {
+    }
+
+    assertThatExceptionOfType(DataProviderException.class)
+        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, signature));
   }
 }

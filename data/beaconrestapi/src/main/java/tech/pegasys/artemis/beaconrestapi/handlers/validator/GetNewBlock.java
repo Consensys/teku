@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
@@ -38,23 +39,24 @@ import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.api.DataProvider;
+import tech.pegasys.artemis.api.DataProviderException;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class GetBlock implements Handler {
+public class GetNewBlock implements Handler {
   public static final String ROUTE = "/validator/block";
   private final JsonProvider jsonProvider;
   private final ValidatorDataProvider provider;
 
-  public GetBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.provider = dataProvider.getValidatorDataProvider();
   }
 
-  GetBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+  GetNewBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.provider = provider;
   }
@@ -92,6 +94,8 @@ public class GetBlock implements Handler {
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+    } catch (DataProviderException e) {
+      ctx.status(SC_INTERNAL_SERVER_ERROR);
     }
   }
 }

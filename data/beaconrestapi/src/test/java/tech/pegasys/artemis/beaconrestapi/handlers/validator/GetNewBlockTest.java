@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -28,13 +29,14 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.DataProviderException;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 
-public class GetBlockTest {
+public class GetNewBlockTest {
 
   private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
       tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
@@ -42,11 +44,11 @@ public class GetBlockTest {
   private Context context = mock(Context.class);
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private GetBlock handler;
+  private GetNewBlock handler;
 
   @BeforeEach
   public void setup() {
-    handler = new GetBlock(provider, jsonProvider);
+    handler = new GetNewBlock(provider, jsonProvider);
   }
 
   @Test
@@ -70,6 +72,19 @@ public class GetBlockTest {
   void shouldRequireThatSlotIsSet() throws Exception {
     badRequestParamsTest(
         Map.of(RANDAO_REVEAL, List.of(signature.toHexString())), "'slot' cannot be null or empty.");
+  }
+
+  @Test
+  void shouldReturnServerErrorWhenDataProviderErrorReceived() throws Exception {
+    final Map<String, List<String>> params =
+        Map.of(
+            RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
+    when(context.queryParamMap()).thenReturn(params);
+    when(provider.getUnsignedBeaconBlockAtSlot(ONE, signature))
+        .thenThrow(new DataProviderException("TEST"));
+    handler.handle(context);
+
+    verify(context).status(SC_INTERNAL_SERVER_ERROR);
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)

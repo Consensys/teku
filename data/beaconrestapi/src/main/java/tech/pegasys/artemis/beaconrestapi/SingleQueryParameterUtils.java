@@ -22,10 +22,10 @@ import tech.pegasys.artemis.api.schema.BLSSignature;
 
 public class SingleQueryParameterUtils {
 
-  public static final String INVALID_BYTES96_DATA =
-      "Unable to read Bytes96 data from query parameter.";
   public static final String INVALID_BYTES32_DATA =
       "Unable to read Bytes32 data from query parameter.";
+  public static final String INVALID_BYTES96_DATA =
+      "Unable to read Bytes96 data from query parameter.";
   public static final String INVALID_NUMERIC_VALUE =
       "Unable to read a numeric value from query parameter.";
   public static final String NULL_OR_EMPTY_FORMAT = "'%s' cannot be null or empty.";
@@ -103,7 +103,7 @@ public class SingleQueryParameterUtils {
     try {
       return BLSSignature.fromHexString(stringValue);
     } catch (IllegalArgumentException ex) {
-      throw new IllegalArgumentException(INVALID_BYTES32_DATA);
+      throw new IllegalArgumentException(INVALID_BYTES96_DATA);
     }
   }
 }

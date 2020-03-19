@@ -123,7 +123,7 @@ public class SingleQueryParameterUtilsTest {
   @Test
   public void getParameterAsBLSSignature_shouldThrowIfCannotParse() {
     assertThrows(
-        IllegalArgumentException.class, () -> getParameterValueAsBytes32(INVALID_DATA, KEY));
+        IllegalArgumentException.class, () -> getParameterValueAsBLSSignature(INVALID_DATA, KEY));
   }
 
   @Test
