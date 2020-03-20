@@ -28,8 +28,6 @@ import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 class JsonProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -54,22 +52,6 @@ class JsonProviderTest {
   }
 
   @Test
-  public void vectorShouldSerializeToJson() throws JsonProcessingException {
-    SSZVector<String> data = SSZVector.createMutable(List.of("One", "Two"), String.class);
-    String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, "[" + Q + "One" + Q + "," + Q + "Two" + Q + "]");
-  }
-
-  @Test
-  public void sszVectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    SSZVector<UnsignedLong> data =
-        SSZVector.createMutable(
-            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
-    String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, "[1,18446744073709551615]");
-  }
-
-  @Test
   public void bitListShouldSerializeAndDeserialize() throws JsonProcessingException {
     String hexString = "0xf22e4ec2";
     Bytes bytes = Bytes.fromHexString(hexString);
@@ -79,15 +61,6 @@ class JsonProviderTest {
 
     Bitlist asData = jsonProvider.jsonToObject(asJson, Bitlist.class);
     assertEquals(data, asData);
-  }
-
-  @Test
-  public void sszListOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    SSZList<UnsignedLong> data =
-        SSZList.createMutable(
-            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
-    String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, "[1,18446744073709551615]");
   }
 
   @Test

@@ -18,10 +18,6 @@ dependencies {
 
   testImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-
-  testImplementation 'com.fasterxml.jackson.core:jackson-databind'
-  testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-
   test {
     testLogging.showStandardStreams = true
   }

@@ -13,8 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,7 +26,6 @@ import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public interface BeaconState
     extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
