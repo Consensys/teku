@@ -37,7 +37,7 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
 import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
 import tech.pegasys.artemis.util.backing.view.MutableContainerImpl1;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ContainerViewTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -209,7 +209,7 @@ public class ContainerViewTest {
     }
 
     public ContainerReadImpl(
-        CompositeViewType type, TreeNode backingNode, Cache<Integer, ViewRead> cache) {
+        CompositeViewType type, TreeNode backingNode, IntCache<ViewRead> cache) {
       super(type, backingNode, cache);
     }
 
@@ -229,7 +229,7 @@ public class ContainerViewTest {
 
     @Override
     protected AbstractCompositeViewRead<?, ViewRead> createViewRead(TreeNode backingNode,
-        Cache<Integer, ViewRead> viewCache) {
+        IntCache<ViewRead> viewCache) {
       return new ContainerReadImpl(getType(), backingNode, viewCache);
     }
 

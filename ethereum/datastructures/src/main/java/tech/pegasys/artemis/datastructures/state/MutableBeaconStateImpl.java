@@ -5,7 +5,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 class MutableBeaconStateImpl extends ContainerViewWriteImpl
     implements MutableBeaconState, BeaconStateCache {
@@ -32,7 +32,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   }
 
   @Override
-  protected BeaconStateImpl createViewRead(TreeNode backingNode, Cache<Integer, ViewRead> viewCache) {
+  protected BeaconStateImpl createViewRead(TreeNode backingNode, IntCache<ViewRead> viewCache) {
     return new BeaconStateImpl(
         backingNode, viewCache, builder ? TransitionCaches.createNewEmpty() : transitionCaches);
   }

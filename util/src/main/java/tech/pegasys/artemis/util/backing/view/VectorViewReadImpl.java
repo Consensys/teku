@@ -6,7 +6,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.type.ViewType;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public class VectorViewReadImpl<R extends ViewRead>
     extends AbstractCompositeViewRead<VectorViewReadImpl<R>, R> implements VectorViewRead<R> {
@@ -15,7 +15,7 @@ public class VectorViewReadImpl<R extends ViewRead>
     super(type, backingNode);
   }
 
-  public VectorViewReadImpl(CompositeViewType type, TreeNode backingNode, Cache<Integer, R> cache) {
+  public VectorViewReadImpl(CompositeViewType type, TreeNode backingNode, IntCache<R> cache) {
     super(type, backingNode, cache);
   }
 

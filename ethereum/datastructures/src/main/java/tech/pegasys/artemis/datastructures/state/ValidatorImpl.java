@@ -30,7 +30,7 @@ import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.ByteView;
 import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ValidatorImpl extends ContainerViewReadImpl
     implements Validator {
@@ -86,7 +86,7 @@ public class ValidatorImpl extends ContainerViewReadImpl
     super(type, backingNode);
   }
 
-  public ValidatorImpl(TreeNode backingNode, Cache<Integer, ViewRead> cache) {
+  public ValidatorImpl(TreeNode backingNode, IntCache<ViewRead> cache) {
     super(TYPE, backingNode, cache);
   }
 

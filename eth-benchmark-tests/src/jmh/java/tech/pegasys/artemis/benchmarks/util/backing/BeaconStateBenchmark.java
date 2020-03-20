@@ -25,8 +25,8 @@ public class BeaconStateBenchmark {
   }
 
   @Benchmark
-  @Warmup(iterations = 2, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void iterateValidators(Blackhole bh) {
     for (Validator validator : beaconState.getValidators()) {
       bh.consume(validator);
@@ -34,8 +34,8 @@ public class BeaconStateBenchmark {
   }
 
   @Benchmark
-  @Warmup(iterations = 2, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void iterateValidatorsWithMethods(Blackhole bh) {
     for (Validator validator : beaconState.getValidators()) {
       bh.consume(validator.isSlashed());
@@ -48,8 +48,8 @@ public class BeaconStateBenchmark {
   }
 
   @Benchmark
-  @Warmup(iterations = 2, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void iterateBalances(Blackhole bh) {
     for (UnsignedLong balance : beaconState.getBalances()) {
       bh.consume(balance);

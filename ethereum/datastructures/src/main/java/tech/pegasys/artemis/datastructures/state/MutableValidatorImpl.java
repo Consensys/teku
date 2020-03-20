@@ -3,7 +3,7 @@ package tech.pegasys.artemis.datastructures.state;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 class MutableValidatorImpl extends ContainerViewWriteImpl implements MutableValidator {
 
@@ -12,7 +12,7 @@ class MutableValidatorImpl extends ContainerViewWriteImpl implements MutableVali
   }
 
   @Override
-  protected ValidatorImpl createViewRead(TreeNode backingNode, Cache<Integer, ViewRead> viewCache) {
+  protected ValidatorImpl createViewRead(TreeNode backingNode, IntCache<ViewRead> viewCache) {
     return new ValidatorImpl(backingNode, viewCache);
   }
 

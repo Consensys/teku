@@ -6,7 +6,7 @@ import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ContainerViewReadImpl extends AbstractCompositeViewRead<ContainerViewReadImpl, ViewRead>
     implements ContainerViewRead {
@@ -20,7 +20,7 @@ public class ContainerViewReadImpl extends AbstractCompositeViewRead<ContainerVi
   }
 
   public ContainerViewReadImpl(
-      CompositeViewType type, TreeNode backingNode, Cache<Integer, ViewRead> cache) {
+      CompositeViewType type, TreeNode backingNode, IntCache<ViewRead> cache) {
     super(type, backingNode, cache);
   }
 
