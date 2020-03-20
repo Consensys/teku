@@ -78,6 +78,8 @@ public class CommonParams implements Closeable {
 
   @Option(
       names = {"--X-confirm-enabled"},
+      arity = "1",
+      defaultValue = "true",
       hidden = true)
   private boolean displayConfirmation = true;
 
