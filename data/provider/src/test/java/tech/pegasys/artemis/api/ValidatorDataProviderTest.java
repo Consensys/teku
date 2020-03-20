@@ -264,10 +264,9 @@ public class ValidatorDataProviderTest {
     assertThat(validatorDuties.get(0))
         .usingRecursiveComparison()
         .isEqualTo(new ValidatorDuties(alteredState.validators.get(0).pubkey, 0, 0, List.of()));
-    // even though we used key 11 it will come out as 0 since the default keys are all equal
     assertThat(validatorDuties.get(1))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 0, 0, List.of()));
+        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 11, 1, List.of()));
     assertThat(validatorDuties.get(2))
         .usingRecursiveComparison()
         .isEqualTo(
