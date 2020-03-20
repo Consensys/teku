@@ -47,6 +47,7 @@ import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class Eth2OutgoingRequestHandlerTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StubAsyncRunner asyncRequestRunner = new StubAsyncRunner();
   private final StubAsyncRunner timeoutRunner = new StubAsyncRunner();
 
@@ -266,7 +267,7 @@ public class Eth2OutgoingRequestHandlerTest {
   }
 
   private Bytes chunkBytes(final int chunk) {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(chunk, chunk);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(chunk);
     return rpcEncoder.encodeSuccessfulResponse(block);
   }
 

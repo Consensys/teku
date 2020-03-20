@@ -15,25 +15,24 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class AttestationDataTest {
-  private int seed = 100;
-  private UnsignedLong slot = randomUnsignedLong(seed++);
-  private UnsignedLong index = randomUnsignedLong(seed++);
-  private Bytes32 beaconBlockRoot = randomBytes32(seed++);
-  private UnsignedLong source_epoch = randomUnsignedLong(seed++);
-  private Bytes32 source_root = randomBytes32(seed++);
-  private UnsignedLong target_epoch = randomUnsignedLong(seed++);
-  private Bytes32 target_root = randomBytes32(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
+  private UnsignedLong index = dataStructureUtil.randomUnsignedLong();
+  private Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
+  private UnsignedLong source_epoch = dataStructureUtil.randomUnsignedLong();
+  private Bytes32 source_root = dataStructureUtil.randomBytes32();
+  private UnsignedLong target_epoch = dataStructureUtil.randomUnsignedLong();
+  private Bytes32 target_root = dataStructureUtil.randomBytes32();
   private Checkpoint source = new Checkpoint(source_epoch, source_root);
   private Checkpoint target = new Checkpoint(target_epoch, target_root);
 
@@ -65,7 +64,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenSourceEpochsAreDifferent() {
-    Checkpoint newSource = new Checkpoint(randomUnsignedLong(seed++), source.getRoot());
+    Checkpoint newSource = new Checkpoint(dataStructureUtil.randomUnsignedLong(), source.getRoot());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, newSource, target);
 
@@ -83,7 +82,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenTargetEpochsAreDifferent() {
-    Checkpoint newTarget = new Checkpoint(randomUnsignedLong(seed++), target.getRoot());
+    Checkpoint newTarget = new Checkpoint(dataStructureUtil.randomUnsignedLong(), target.getRoot());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, source, newTarget);
 

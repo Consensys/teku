@@ -29,11 +29,12 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class PostAttestationTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
   private ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
   private ValidatorDataProvider provider = new ValidatorDataProvider(validatorCoordinator);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private Attestation attestation = new Attestation(DataStructureUtil.randomAttestation(1111));
+  private Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
   private PostAttestation handler;
 
   @BeforeEach

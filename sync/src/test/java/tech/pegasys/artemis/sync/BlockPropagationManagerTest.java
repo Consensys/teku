@@ -39,6 +39,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BlockPropagationManagerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = new EventBus();
   private final EventBus remoteEventBus = new EventBus();
@@ -177,7 +178,7 @@ public class BlockPropagationManagerTest {
     for (int i = 0; i < invalidChainDepth; i++) {
       final UnsignedLong nextSlot = incrementSlot();
       final SignedBeaconBlock block =
-          DataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot, i);
+          dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
       parentBlockRoot = block.getMessage().hash_tree_root();
     }
@@ -209,7 +210,7 @@ public class BlockPropagationManagerTest {
     for (int i = 0; i < invalidChainDepth; i++) {
       final UnsignedLong nextSlot = incrementSlot();
       final SignedBeaconBlock block =
-          DataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot, i);
+          dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
       parentBlockRoot = block.getMessage().hash_tree_root();
     }

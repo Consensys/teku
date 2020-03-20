@@ -54,7 +54,7 @@ public class PeerSyncTest {
   private BlockImporter blockImporter = mock(BlockImporter.class);
   private ChainStorageClient storageClient = mock(ChainStorageClient.class);
 
-  private static final SignedBeaconBlock BLOCK = DataStructureUtil.randomSignedBeaconBlock(1, 100);
+  private static final SignedBeaconBlock BLOCK = new DataStructureUtil().randomSignedBeaconBlock(1);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(30);
   private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
@@ -68,6 +68,7 @@ public class PeerSyncTest {
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private PeerSync peerSync;
 
@@ -436,7 +437,7 @@ public class PeerSyncTest {
       final ResponseStream.ResponseListener<SignedBeaconBlock> responseListener, int... slots) {
     List<SignedBeaconBlock> blocks = new ArrayList<>();
     for (int slot : slots) {
-      final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot, slot);
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
       blocks.add(block);
       responseListener.onResponse(block);
     }
