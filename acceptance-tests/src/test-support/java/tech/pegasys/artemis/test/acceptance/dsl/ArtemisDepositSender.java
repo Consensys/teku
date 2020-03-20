@@ -48,6 +48,8 @@ public class ArtemisDepositSender extends Node {
     container.setCommand(
         "validator",
         "generate",
+        "--X-confirm-enabled",
+        "false",
         "--keys-output-path",
         CONTAINER_KEYS_DIRECTORY + "/" + CONTAINER_KEYS_YAML,
         "--deposit-amount-gwei",

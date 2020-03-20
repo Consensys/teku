@@ -127,7 +127,10 @@ public class DepositGenerateCommand implements Runnable {
   @Override
   public void run() {
     final KeysWriter keysWriter = getKeysWriter();
+
     final CommonParams _params = params; // making it effective final as it gets injected by PicoCLI
+    _params.displayConfirmation();
+
     final SecureRandom srng = SecureRandomProvider.createSecureRandom();
     try (_params) {
       final DepositTransactionSender sender = params.createTransactionSender();

@@ -20,8 +20,11 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.web3j.crypto.CipherException;
@@ -34,6 +37,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
@@ -43,7 +47,8 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class CommonParams implements Closeable {
   private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
-
+  private final Consumer<Integer> shutdownFunction;
+  private final ConsoleAdapter consoleAdapter;
   @Spec private CommandSpec spec;
 
   @Option(
@@ -71,18 +76,57 @@ public class CommonParams implements Closeable {
       description = "Deposit amount in Gwei")
   private UnsignedLong amount;
 
+  @Option(
+      names = {"--X-confirm-enabled"},
+      hidden = true)
+  private boolean displayConfirmation = true;
+
   private OkHttpClient httpClient;
   private ScheduledExecutorService executorService;
   private Web3j web3j;
 
-  CommonParams() {}
+  CommonParams() {
+    this.shutdownFunction = System::exit;
+    this.consoleAdapter = new ConsoleAdapter();
+  }
 
   @VisibleForTesting
   public CommonParams(
-      final CommandSpec commandSpec, final Eth1PrivateKeyOptions eth1PrivateKeyOptions) {
+      final CommandSpec commandSpec,
+      final Eth1PrivateKeyOptions eth1PrivateKeyOptions,
+      final Consumer<Integer> shutdownFunction,
+      final ConsoleAdapter consoleAdapter) {
     this.spec = commandSpec;
     this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
     this.amount = MINIMUM_REQUIRED_GWEI;
+    this.shutdownFunction = shutdownFunction;
+    this.consoleAdapter = consoleAdapter;
+  }
+
+  public void displayConfirmation() {
+    if (!displayConfirmation) {
+      return;
+    }
+
+    if (!consoleAdapter.isConsoleAvailable()) {
+      throw new ParameterException(spec.commandLine(), "Console not available");
+    }
+
+    // gwei to eth
+    final String eth =
+        new BigDecimal(amount.bigIntegerValue())
+            .divide(BigDecimal.TEN.pow(9), 9, RoundingMode.HALF_UP)
+            .toString();
+
+    final String reply =
+        consoleAdapter.readLine(
+            "You are about to submit a transaction of %s Eth. This is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
+            eth);
+    if ("y".equalsIgnoreCase(reply)) {
+      return;
+    }
+    System.out.println("Transaction cancelled.");
+    shutdownFunction.accept(0);
   }
 
   public DepositTransactionSender createTransactionSender() {
@@ -127,10 +171,10 @@ public class CommonParams implements Closeable {
     try {
       return WalletUtils.loadCredentials(keystorePassword, eth1KeystoreFile);
     } catch (final FileNotFoundException e) {
-      throw new CommandLine.ParameterException(
+      throw new ParameterException(
           spec.commandLine(), "Error: File not found: " + eth1KeystoreFile, e);
     } catch (final IOException e) {
-      throw new CommandLine.ParameterException(
+      throw new ParameterException(
           spec.commandLine(),
           "Error: Unexpected IO Error while reading Eth1 keystore ["
               + eth1KeystoreFile
@@ -138,7 +182,7 @@ public class CommonParams implements Closeable {
               + e.getMessage(),
           e);
     } catch (CipherException e) {
-      throw new CommandLine.ParameterException(
+      throw new ParameterException(
           spec.commandLine(),
           "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
           e);
