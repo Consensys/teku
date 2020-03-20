@@ -68,6 +68,10 @@ public class BLSPubKey {
     return bytes.toHexString();
   }
 
+  public Bytes toBytes() {
+    return bytes;
+  }
+
   public static BLSPubKey empty() {
     return new BLSPubKey(Bytes.wrap(new byte[SIZE]));
   }

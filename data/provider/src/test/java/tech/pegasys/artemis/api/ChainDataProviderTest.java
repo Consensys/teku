@@ -431,26 +431,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
-    BLSPubKey pubKey = new BLSPubKey(dataStructureUtil.randomPublicKey().toBytes());
-    Integer validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
-    assertThat(validatorIndex).isEqualTo(null);
-  }
-
-  @Test
-  void getValidatorIndex_shouldReturnIndexIfFound() {
-    tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
-        dataStructureUtil.randomBeaconState();
-    BeaconState state = new BeaconState(beaconStateInternal);
-    // all the validators are the same so the first one will match
-    int expectedValidatorIndex = 0;
-    BLSPubKey pubKey = state.validators.get(expectedValidatorIndex).pubkey;
-    int actualValidatorIndex =
-        ChainDataProvider.getValidatorIndex(beaconStateInternal.getValidators().asList(), pubKey);
-    assertThat(actualValidatorIndex).isEqualTo(expectedValidatorIndex);
-  }
-
-  @Test
   void getCommitteeIndex_shouldReturnNotFoundIfNotFound() {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
