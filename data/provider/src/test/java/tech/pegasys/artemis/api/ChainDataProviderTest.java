@@ -463,9 +463,7 @@ public class ChainDataProviderTest {
     List<ValidatorDuties> dutiesList =
         provider.getValidatorDutiesFromState(
             beaconStateInternal,
-            List.of(pubKey1, pubKey2).stream()
-                .map(k -> new BLSPubKey(k.toBytes()))
-                .collect(Collectors.toList()));
+            List.of(pubKey1, pubKey2).stream().map(BLSPubKey::new).collect(Collectors.toList()));
     assertThat(dutiesList.size()).isEqualTo(2);
   }
 
@@ -474,9 +472,9 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
+    final BLSPubKey publicKey = new BLSPubKey(dataStructureUtil.randomPublicKey());
     ValidatorDutiesRequest smallRequest =
-        new ValidatorDutiesRequest(
-            compute_epoch_at_slot(beaconState.slot), List.of(BLSPubKey.empty()));
+        new ValidatorDutiesRequest(compute_epoch_at_slot(beaconState.slot), List.of(publicKey));
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(mockCombinedChainDataClient.getStateAtSlot(any(), any()))
@@ -488,7 +486,7 @@ public class ChainDataProviderTest {
     List<ValidatorDuties> validatorDuties = future.get();
 
     assertThat(validatorDuties.size()).isEqualTo(1);
-    ValidatorDuties expected = new ValidatorDuties(BLSPubKey.empty(), null, null);
+    ValidatorDuties expected = new ValidatorDuties(publicKey, null, null);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
