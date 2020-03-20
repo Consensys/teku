@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
@@ -82,7 +83,7 @@ public class ValidatorDataProvider {
       final ValidatorDutiesRequest validatorDutiesRequest) {
 
     if (validatorDutiesRequest == null || !combinedChainDataClient.isStoreAvailable()) {
-      return completedFuture(List.of());
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     final Optional<Bytes32> optionalBlockRoot = combinedChainDataClient.getBestBlockRoot();
     if (optionalBlockRoot.isEmpty()) {
