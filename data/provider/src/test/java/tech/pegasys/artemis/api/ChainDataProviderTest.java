@@ -424,13 +424,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
-    BLSPubKey pubKey = new BLSPubKey(dataStructureUtil.randomPublicKey().toBytes());
-    Integer validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
-    assertThat(validatorIndex).isEqualTo(null);
-  }
-
-  @Test
   public void getFork_shouldThrowIfNoBlockRoot() {
     ChainDataProvider provider =
         new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
