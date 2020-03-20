@@ -16,23 +16,22 @@ package tech.pegasys.artemis.datastructures.blocks;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconBlockBody;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
-import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class BeaconBlockTest {
 
-  private UnsignedLong slot = randomUnsignedLong(100);
-  private Bytes32 previous_root = Bytes32.random(new Random(100));
-  private Bytes32 state_root = Bytes32.random(new Random(101));
-  private BeaconBlockBody body = randomBeaconBlockBody(100);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
+  private Bytes32 previous_root = dataStructureUtil.randomBytes32();
+  private Bytes32 state_root = dataStructureUtil.randomBytes32();
+  private BeaconBlockBody body = dataStructureUtil.randomBeaconBlockBody();
 
   private BeaconBlock beaconBlock = new BeaconBlock(slot, previous_root, state_root, body);
 
@@ -77,9 +76,9 @@ class BeaconBlockTest {
     // BeaconBlockBody is rather involved to create. Just create a random one until it is not the
     // same
     // as the original.
-    BeaconBlockBody otherBody = randomBeaconBlockBody(100);
+    BeaconBlockBody otherBody = dataStructureUtil.randomBeaconBlockBody();
     while (Objects.equals(otherBody, body)) {
-      otherBody = randomBeaconBlockBody(101);
+      otherBody = dataStructureUtil.randomBeaconBlockBody();
     }
 
     BeaconBlock testBeaconBlock = new BeaconBlock(slot, previous_root, state_root, otherBody);

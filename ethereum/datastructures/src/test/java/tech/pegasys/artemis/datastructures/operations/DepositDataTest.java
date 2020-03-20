@@ -15,22 +15,21 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class DepositDataTest {
-  private int seed = 100;
-  private BLSPublicKey pubkey = BLSPublicKey.random(seed++);
-  private Bytes32 withdrawalCredentials = randomBytes32(seed++);
-  private UnsignedLong amount = randomUnsignedLong(seed++);
-  private BLSSignature signature = BLSSignature.random(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
+  private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
+  private UnsignedLong amount = dataStructureUtil.randomUnsignedLong();
+  private BLSSignature signature = dataStructureUtil.randomSignature();
 
   private DepositData depositData =
       new DepositData(pubkey, withdrawalCredentials, amount, signature);
@@ -52,7 +51,7 @@ class DepositDataTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
-    BLSPublicKey differentPublicKey = BLSPublicKey.random(99);
+    BLSPublicKey differentPublicKey = dataStructureUtil.randomPublicKey();
     DepositData testDepositInput =
         new DepositData(differentPublicKey, withdrawalCredentials, amount, signature);
 
@@ -70,7 +69,7 @@ class DepositDataTest {
 
   @Test
   void equalsReturnsFalseWhenProofsOfPosessionAreDifferent() {
-    BLSSignature differentSignature = BLSSignature.random(99);
+    BLSSignature differentSignature = dataStructureUtil.randomSignature();
     DepositData testDepositInput =
         new DepositData(pubkey, withdrawalCredentials, amount, differentSignature);
 

@@ -39,10 +39,11 @@ public class ValidatorDataProviderTest {
   private final ArgumentCaptor<tech.pegasys.artemis.datastructures.operations.Attestation> args =
       ArgumentCaptor.forClass(tech.pegasys.artemis.datastructures.operations.Attestation.class);
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
   private ValidatorDataProvider provider = new ValidatorDataProvider(validatorCoordinator);;
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
-      DataStructureUtil.randomBeaconBlock(123, 456);
+      dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
   private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
       tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
@@ -103,7 +104,7 @@ public class ValidatorDataProviderTest {
   @Test
   void submitAttestation_shouldSubmitAnInternalAttestationStructure() {
     tech.pegasys.artemis.datastructures.operations.Attestation internalAttestation =
-        DataStructureUtil.randomAttestation(1234);
+        dataStructureUtil.randomAttestation();
     Attestation attestation = new Attestation(internalAttestation);
 
     provider.submitAttestation(attestation);

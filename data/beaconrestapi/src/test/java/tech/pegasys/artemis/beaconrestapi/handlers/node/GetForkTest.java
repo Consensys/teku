@@ -27,8 +27,9 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetForkTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
-  private final Fork fork = new Fork(DataStructureUtil.randomFork(51234));
+  private final Fork fork = new Fork(dataStructureUtil.randomFork());
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
 

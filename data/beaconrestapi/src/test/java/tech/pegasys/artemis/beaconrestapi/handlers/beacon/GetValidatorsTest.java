@@ -47,12 +47,13 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class GetValidatorsTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
-  private final UnsignedLong epoch = DataStructureUtil.randomUnsignedLong(99);
+  private final UnsignedLong epoch = dataStructureUtil.randomUnsignedLong();
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final Bytes32 blockRoot = DataStructureUtil.randomBytes32(99);
+  private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
   private final tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
-      DataStructureUtil.randomBeaconState(98);
+      dataStructureUtil.randomBeaconState();
   private final BeaconState beaconState = new BeaconState(beaconStateInternal);
 
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
@@ -305,7 +306,7 @@ public class GetValidatorsTest {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
     // create an ACTIVE validator and add it to the list
-    MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
+    MutableValidator v = dataStructureUtil.randomValidator().createWritableCopy();
     v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
     v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
     assertThat(

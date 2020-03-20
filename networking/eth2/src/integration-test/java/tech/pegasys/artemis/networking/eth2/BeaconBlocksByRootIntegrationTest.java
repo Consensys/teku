@@ -41,8 +41,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRootIntegrationTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
-  private int seed = 1000;
   private Eth2Peer peer1;
   private ChainStorageClient storageClient1;
 
@@ -180,7 +180,7 @@ public class BeaconBlocksByRootIntegrationTest {
   }
 
   private SignedBeaconBlock addBlock() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(seed, seed++);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Transaction transaction = storageClient1.startStoreTransaction();
     transaction.putBlock(blockRoot, block);
