@@ -41,6 +41,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerChainValidatorTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
@@ -68,13 +69,13 @@ public class PeerChainValidatorTest {
   private final UnsignedLong laterBlockSlot = laterEpochSlot.minus(UnsignedLong.ONE);
 
   private final SignedBeaconBlock genesisBlock =
-      DataStructureUtil.randomSignedBeaconBlock(genesisSlot.longValue(), 1);
+      dataStructureUtil.randomSignedBeaconBlock(genesisSlot.longValue());
   private final SignedBeaconBlock remoteFinalizedBlock =
-      DataStructureUtil.randomSignedBeaconBlock(remoteFinalizedBlockSlot.longValue(), 1);
+      dataStructureUtil.randomSignedBeaconBlock(remoteFinalizedBlockSlot.longValue());
   private final SignedBeaconBlock earlierBlock =
-      DataStructureUtil.randomSignedBeaconBlock(earlierBlockSlot.longValue(), 2);
+      dataStructureUtil.randomSignedBeaconBlock(earlierBlockSlot.longValue());
   private final SignedBeaconBlock laterBlock =
-      DataStructureUtil.randomSignedBeaconBlock(laterBlockSlot.longValue(), 3);
+      dataStructureUtil.randomSignedBeaconBlock(laterBlockSlot.longValue());
 
   private final Checkpoint genesisCheckpoint =
       new Checkpoint(genesisEpoch, genesisBlock.getMessage().hash_tree_root());
@@ -373,7 +374,7 @@ public class PeerChainValidatorTest {
   }
 
   private SignedBeaconBlock randomBlock(UnsignedLong slot) {
-    return DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), slot.intValue());
+    return dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
   }
 
   private Checkpoint getFinalizedCheckpoint(final PeerStatus status) {

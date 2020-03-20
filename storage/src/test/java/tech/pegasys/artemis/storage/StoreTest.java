@@ -16,9 +16,6 @@ package tech.pegasys.artemis.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSignedBeaconBlock;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
@@ -31,13 +28,13 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.storage.Store.Transaction;
 
 class StoreTest {
-
-  private static final int SEED = 12424242;
-  private static final Checkpoint INITIAL_JUSTIFIED_CHECKPOINT =
-      new Checkpoint(UnsignedLong.valueOf(50), randomBytes32(SEED - 1));
-  private static final Checkpoint INITIAL_BEST_JUSTIFIED_CHECKPOINT =
-      new Checkpoint(UnsignedLong.valueOf(33), randomBytes32(SEED - 2));
   private static final Checkpoint INITIAL_FINALIZED_CHECKPOINT = new Checkpoint();
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Checkpoint initialJustifiedCheckpoint =
+      new Checkpoint(UnsignedLong.valueOf(50), dataStructureUtil.randomBytes32());
+  private final Checkpoint initialBestJustifiedCheckpoint =
+      new Checkpoint(UnsignedLong.valueOf(33), dataStructureUtil.randomBytes32());
   private UnsignedLong INITIAL_GENESIS_TIME = UnsignedLong.ZERO;
   private UnsignedLong INITIAL_TIME = UnsignedLong.ONE;
   private final TransactionPrecommit transactionPrecommit = TransactionPrecommit.memoryOnly();
@@ -45,9 +42,9 @@ class StoreTest {
       new Store(
           INITIAL_TIME,
           INITIAL_GENESIS_TIME,
-          INITIAL_JUSTIFIED_CHECKPOINT,
+          initialJustifiedCheckpoint,
           INITIAL_FINALIZED_CHECKPOINT,
-          INITIAL_BEST_JUSTIFIED_CHECKPOINT,
+          initialBestJustifiedCheckpoint,
           new HashMap<>(),
           new HashMap<>(),
           new HashMap<>(),
@@ -56,12 +53,12 @@ class StoreTest {
   @Test
   public void shouldApplyChangesWhenTransactionCommits() {
     final Transaction transaction = store.startTransaction(transactionPrecommit);
-    final Bytes32 blockRoot = DataStructureUtil.randomBytes32(SEED);
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final Checkpoint justifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(2), blockRoot);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UnsignedLong.ONE, blockRoot);
     final Checkpoint bestJustifiedCheckpoint = new Checkpoint(UnsignedLong.valueOf(3), blockRoot);
-    final SignedBeaconBlock block = randomSignedBeaconBlock(10, 100);
-    final BeaconState state = randomBeaconState(100);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final UnsignedLong genesisTime = UnsignedLong.valueOf(1);
     final UnsignedLong time = UnsignedLong.valueOf(3);
     transaction.putBlock(blockRoot, block);
@@ -79,8 +76,8 @@ class StoreTest {
     assertEquals(INITIAL_TIME, store.getTime());
     assertEquals(INITIAL_GENESIS_TIME, store.getGenesisTime());
     assertEquals(INITIAL_FINALIZED_CHECKPOINT, store.getFinalizedCheckpoint());
-    assertEquals(INITIAL_JUSTIFIED_CHECKPOINT, store.getJustifiedCheckpoint());
-    assertEquals(INITIAL_BEST_JUSTIFIED_CHECKPOINT, store.getBestJustifiedCheckpoint());
+    assertEquals(initialJustifiedCheckpoint, store.getJustifiedCheckpoint());
+    assertEquals(initialBestJustifiedCheckpoint, store.getBestJustifiedCheckpoint());
 
     assertEquals(block, transaction.getSignedBlock(blockRoot));
     assertEquals(state, transaction.getBlockState(blockRoot));

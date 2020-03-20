@@ -35,11 +35,12 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetAttestationTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
   private ChainDataProvider provider = mock(ChainDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetAttestation handler;
-  private Attestation attestation = new Attestation(DataStructureUtil.randomAttestation(1111));
+  private Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
 
   @BeforeEach
   public void setup() {

@@ -23,7 +23,7 @@ import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 class SignedBeaconBlockTest {
   @Test
   public void shouldRoundTripViaSsz() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 1);
+    final SignedBeaconBlock block = new DataStructureUtil().randomSignedBeaconBlock(1);
     final Bytes ssz = SimpleOffsetSerializer.serialize(block);
     final SignedBeaconBlock result =
         SimpleOffsetSerializer.deserialize(ssz, SignedBeaconBlock.class);

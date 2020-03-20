@@ -27,8 +27,9 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 public class CacheControlUtilsTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   SignedBeaconBlock signedBlock =
-      new SignedBeaconBlock(DataStructureUtil.randomSignedBeaconBlock(1, 1));
+      new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(1));
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
 
   @Test
