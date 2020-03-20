@@ -18,6 +18,9 @@ dependencies {
 
   testImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
+  testImplementation 'com.googlecode.json-simple:json-simple'
+
   test {
     testLogging.showStandardStreams = true
   }
