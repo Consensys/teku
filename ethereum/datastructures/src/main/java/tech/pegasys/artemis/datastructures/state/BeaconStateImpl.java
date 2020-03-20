@@ -38,7 +38,7 @@ import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class BeaconStateImpl extends ContainerViewReadImpl
@@ -199,7 +199,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   BeaconStateImpl(
       TreeNode backingNode,
-      Cache<Integer, ViewRead> cache,
+      IntCache<ViewRead> cache,
       TransitionCaches transitionCaches) {
     super(getSSZType(), backingNode, cache);
     this.transitionCaches = transitionCaches;

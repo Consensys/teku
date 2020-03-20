@@ -21,7 +21,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.cache.ArrayCache;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
 
@@ -52,7 +52,7 @@ public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
     }
   }
 
-  private static Cache<Integer, ViewRead> createCache(ViewRead... memberValues) {
+  private static IntCache<ViewRead> createCache(ViewRead... memberValues) {
     ArrayCache<ViewRead> cache = new ArrayCache<>(memberValues.length);
     for (int i = 0; i < memberValues.length; i++) {
       cache.invalidateWithNewValue(i, memberValues[i]);

@@ -12,7 +12,7 @@ import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ListViewReadImpl.ListContainerRead;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListViewWriteRef<R, W> {
 
@@ -38,7 +38,7 @@ public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListV
 
     @Override
     protected AbstractCompositeViewRead<?, ViewRead> createViewRead(TreeNode backingNode,
-        Cache<Integer, ViewRead> viewCache) {
+        IntCache<ViewRead> viewCache) {
       return new ListContainerRead<R>(vectorType, backingNode, viewCache);
     }
 

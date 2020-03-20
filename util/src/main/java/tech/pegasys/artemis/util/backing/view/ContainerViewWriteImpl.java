@@ -5,7 +5,7 @@ import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ContainerViewWriteImpl
     extends AbstractCompositeViewWrite1<ContainerViewWriteImpl, ViewRead, ViewWrite>
@@ -17,7 +17,7 @@ public class ContainerViewWriteImpl
 
   @Override
   protected AbstractCompositeViewRead<?, ViewRead> createViewRead(
-      TreeNode backingNode, Cache<Integer, ViewRead> viewCache) {
+      TreeNode backingNode, IntCache<ViewRead> viewCache) {
     return new ContainerViewReadImpl(getType(), backingNode, viewCache);
   }
 

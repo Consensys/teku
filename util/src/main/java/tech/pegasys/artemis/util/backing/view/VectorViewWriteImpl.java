@@ -11,7 +11,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.type.ViewType;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public class VectorViewWriteImpl<R extends ViewRead, W extends R>
     extends AbstractCompositeViewWrite1<VectorViewWriteImpl<R, W>, R, W>
@@ -24,7 +24,7 @@ public class VectorViewWriteImpl<R extends ViewRead, W extends R>
 
   @Override
   protected AbstractCompositeViewRead<?, R> createViewRead(
-      TreeNode backingNode, Cache<Integer, R> viewCache) {
+      TreeNode backingNode, IntCache<R> viewCache) {
     return new VectorViewReadImpl<>(getType(), backingNode, viewCache);
   }
 

@@ -30,7 +30,7 @@ import tech.pegasys.artemis.util.backing.ViewWrite;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
-import tech.pegasys.artemis.util.cache.Cache;
+import tech.pegasys.artemis.util.cache.IntCache;
 
 public abstract class AbstractCompositeViewWrite1<
         C extends AbstractCompositeViewWrite1<C, R, W>, R extends ViewRead, W extends R>
@@ -120,7 +120,7 @@ public abstract class AbstractCompositeViewWrite1<
     if (childrenChanges.isEmpty() && childrenRefsChanged.isEmpty()) {
       return backingImmutableView;
     } else {
-      Cache<Integer, R> cache = backingImmutableView.transferCache();
+      IntCache<R> cache = backingImmutableView.transferCache();
       List<Entry<Integer, R>> changesList = Stream.concat(
           childrenChanges.entrySet().stream(),
           childrenRefsChanged.stream()
@@ -157,7 +157,7 @@ public abstract class AbstractCompositeViewWrite1<
   }
 
   protected abstract AbstractCompositeViewRead<?, R> createViewRead(
-      TreeNode backingNode, Cache<Integer, R> viewCache);
+      TreeNode backingNode, IntCache<R> viewCache);
 
   @Override
   public void setInvalidator(Consumer<ViewWrite> listener) {
