@@ -10,7 +10,6 @@ dependencies {
   implementation project(':storage')
   implementation project(':util')
 
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
   implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
