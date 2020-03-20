@@ -17,7 +17,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 
 public class BeaconState {
