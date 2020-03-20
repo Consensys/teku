@@ -47,9 +47,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
+import tech.pegasys.artemis.api.schema.BeaconChainHead;
+import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconChainHead;
-import tech.pegasys.artemis.test.acceptance.dsl.data.BeaconHead;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
 import tech.pegasys.artemis.util.network.NetworkUtility;
@@ -139,9 +139,8 @@ public class ArtemisNode extends Node {
   }
 
   public void waitForNewBlock() {
-    final Bytes32 startingBlockRoot = waitForBeaconHead().getBlockRoot();
-    waitFor(
-        () -> assertThat(fetchBeaconHead().get().getBlockRoot()).isNotEqualTo(startingBlockRoot));
+    final Bytes32 startingBlockRoot = waitForBeaconHead().block_root;
+    waitFor(() -> assertThat(fetchBeaconHead().get().block_root).isNotEqualTo(startingBlockRoot));
   }
 
   public void waitForNewFinalization() {

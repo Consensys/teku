@@ -1,5 +1,4 @@
 dependencies {
-  implementation 'com.fasterxml.jackson.core:jackson-databind' // TODO: Ideally we wouldn't need Jackson annotations here
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-ssz'
 }
