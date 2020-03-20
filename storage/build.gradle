@@ -5,7 +5,7 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
 
-  compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
+  compile 'org.mapdb:mapdb'
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.commons:commons-lang3'
