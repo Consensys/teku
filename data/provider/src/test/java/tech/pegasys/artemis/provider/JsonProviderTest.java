@@ -32,6 +32,7 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 class JsonProviderTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final String Q = "\"";
 
@@ -47,7 +48,7 @@ class JsonProviderTest {
 
   @Test
   public void unsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    UnsignedLong data = DataStructureUtil.randomUnsignedLong(1111);
+    UnsignedLong data = dataStructureUtil.randomUnsignedLong();
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, data.toString());
   }
@@ -98,7 +99,7 @@ class JsonProviderTest {
   @Test
   void beaconStateJsonTest() throws JsonProcessingException {
     tech.pegasys.artemis.datastructures.state.BeaconState stateInternal =
-        DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
+        dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16));
     BeaconState state = new BeaconState(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);

@@ -39,10 +39,11 @@ import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 class HistoricalChainDataTest {
+  private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil();
   private static final Optional<SignedBeaconBlock> BLOCK =
-      Optional.of(DataStructureUtil.randomSignedBeaconBlock(1, 100));
+      Optional.of(DATA_STRUCTURE_UTIL.randomSignedBeaconBlock(1));
   private static final Optional<BeaconState> STATE =
-      Optional.of(DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1), 100));
+      Optional.of(DATA_STRUCTURE_UTIL.randomBeaconState(UnsignedLong.valueOf(1)));
   private final EventBus eventBus = mock(EventBus.class);
   private final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
 

@@ -31,10 +31,11 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProviderTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
   private ValidatorDataProvider provider = new ValidatorDataProvider(validatorCoordinator);;
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
-      DataStructureUtil.randomBeaconBlock(123, 456);
+      dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
   private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
       tech.pegasys.artemis.util.bls.BLSSignature.random(1234);

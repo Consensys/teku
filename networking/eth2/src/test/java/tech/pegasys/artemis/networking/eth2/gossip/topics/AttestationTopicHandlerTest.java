@@ -33,6 +33,7 @@ import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
 public class AttestationTopicHandlerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
   private final EventBus eventBus = mock(EventBus.class);
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
@@ -83,7 +84,7 @@ public class AttestationTopicHandlerTest {
 
     // Set up state to be missing
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
-    storageClient.initializeFromGenesis(DataStructureUtil.randomBeaconState(1));
+    storageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final AttestationTopicHandler topicHandler =
         new AttestationTopicHandler(eventBus, storageClient, 1);
 

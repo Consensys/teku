@@ -44,6 +44,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.async.StubAsyncRunner;
 
 public class Eth2IncomingRequestHandlerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   private final CombinedChainDataClient combinedChainDataClient =
@@ -71,7 +72,7 @@ public class Eth2IncomingRequestHandlerTest {
   private final BeaconState state = mock(BeaconState.class);
   private final BeaconBlocksByRangeRequestMessage request =
       new BeaconBlocksByRangeRequestMessage(
-          DataStructureUtil.randomBytes32(1), UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.ONE);
+          dataStructureUtil.randomBytes32(), UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.ONE);
   private final Bytes requestData = blocksByRangeMethod.encodeRequest(request);
 
   @BeforeEach
@@ -90,8 +91,7 @@ public class Eth2IncomingRequestHandlerTest {
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlot(final UnsignedLong slot) {
-    final SignedBeaconBlock block =
-        DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), slot.intValue());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     return SafeFuture.completedFuture(Optional.of(block));
   }
 
