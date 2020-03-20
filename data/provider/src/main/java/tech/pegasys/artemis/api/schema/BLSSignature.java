@@ -75,4 +75,8 @@ public class BLSSignature {
   public final Bytes getBytes() {
     return bytes;
   }
+
+  public tech.pegasys.artemis.util.bls.BLSSignature asInternalBLSSignature() {
+    return tech.pegasys.artemis.util.bls.BLSSignature.fromBytes(bytes);
+  }
 }
