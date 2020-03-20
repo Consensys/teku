@@ -66,12 +66,11 @@ public class ProfilingRun {
         BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-100k-seed-0.txt.gz")
             .readAll(validatorsCount);
 
-    EventBus localEventBus = mock(EventBus.class);
     BeaconState initialState =
         StartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, false);
 
     while (true) {
-
+      EventBus localEventBus = mock(EventBus.class);
       ChainStorageClient localStorage = ChainStorageClient.memoryOnlyClient(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(localStorage, validatorKeys, false);
       localStorage.initializeFromGenesis(initialState);

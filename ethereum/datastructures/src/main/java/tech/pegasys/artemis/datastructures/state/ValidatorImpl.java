@@ -21,23 +21,19 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.artemis.datastructures.Copyable;
-import tech.pegasys.artemis.util.backing.ContainerViewWrite;
-import tech.pegasys.artemis.util.backing.VectorViewRead;
+import tech.pegasys.artemis.util.backing.ContainerViewRead;
+import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
-import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
 import tech.pegasys.artemis.util.backing.view.BasicViews.ByteView;
-import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
-import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
-import tech.pegasys.artemis.util.backing.view.ViewUtils;
+import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.cache.Cache;
 
-public class ValidatorImpl extends MutableContainerImpl<ValidatorImpl>
-    implements MutableValidator, Copyable<ValidatorImpl> {
+public class ValidatorImpl extends ContainerViewReadImpl
+    implements Validator {
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 8;
   public static final ContainerViewType<ValidatorImpl> TYPE =
@@ -86,8 +82,12 @@ public class ValidatorImpl extends MutableContainerImpl<ValidatorImpl>
   private final UnsignedLong withdrawable_epoch = null;
 
   private ValidatorImpl(
-      ContainerViewType<? extends ContainerViewWrite> type, TreeNode backingNode) {
+      ContainerViewType<? extends ContainerViewRead> type, TreeNode backingNode) {
     super(type, backingNode);
+  }
+
+  public ValidatorImpl(TreeNode backingNode, Cache<Integer, ViewRead> cache) {
+    super(TYPE, backingNode, cache);
   }
 
   public ValidatorImpl(
@@ -101,14 +101,15 @@ public class ValidatorImpl extends MutableContainerImpl<ValidatorImpl>
       UnsignedLong withdrawable_epoch) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toBytes()),
-        new Bytes32View(withdrawal_credentials),
-        new UInt64View(effective_balance),
-        new BitView(slashed),
-        new UInt64View(activation_eligibility_epoch),
-        new UInt64View(activation_epoch),
-        new UInt64View(exit_epoch),
-        new UInt64View(withdrawable_epoch));
+        Validator.create(
+            pubkey,
+            withdrawal_credentials,
+            effective_balance,
+            slashed,
+            activation_eligibility_epoch,
+            activation_epoch,
+            exit_epoch,
+            withdrawable_epoch).getBackingNode());
   }
 
   public ValidatorImpl(ValidatorImpl validator) {
@@ -120,8 +121,8 @@ public class ValidatorImpl extends MutableContainerImpl<ValidatorImpl>
   }
 
   @Override
-  public ValidatorImpl copy() {
-    return new ValidatorImpl(this);
+  public MutableValidator createWritableCopy() {
+    return new MutableValidatorImpl(this);
   }
 
   @Override
@@ -166,88 +167,6 @@ public class ValidatorImpl extends MutableContainerImpl<ValidatorImpl>
 
     ValidatorImpl other = (ValidatorImpl) obj;
     return hashTreeRoot().equals(other.hashTreeRoot());
-  }
-
-  @Override
-  public BLSPublicKey getPubkey() {
-    @SuppressWarnings("unchecked")
-    VectorViewRead<ByteView> bytesView = (VectorViewRead<ByteView>) get(0);
-    return BLSPublicKey.fromBytes(ViewUtils.getAllBytes(bytesView));
-  }
-
-  @Override
-  public void setPubkey(BLSPublicKey pubkey) {
-    set(0, ViewUtils.createVectorFromBytes(pubkey.toBytes()));
-  }
-
-  @Override
-  public Bytes32 getWithdrawal_credentials() {
-    return ((Bytes32View) get(1)).get();
-  }
-
-  @Override
-  public UnsignedLong getEffective_balance() {
-    return ((UInt64View) get(2)).get();
-  }
-
-  @Override
-  public void setEffective_balance(UnsignedLong effective_balance) {
-    set(2, new UInt64View(effective_balance));
-  }
-
-  @Override
-  public boolean isSlashed() {
-    return ((BitView) get(3)).get();
-  }
-
-  @Override
-  public void setSlashed(boolean slashed) {
-    set(3, new BitView(slashed));
-  }
-
-  @Override
-  public UnsignedLong getActivation_eligibility_epoch() {
-    return ((UInt64View) get(4)).get();
-  }
-
-  @Override
-  public void setActivation_eligibility_epoch(UnsignedLong activation_eligibility_epoch) {
-    set(4, new UInt64View(activation_eligibility_epoch));
-  }
-
-  @Override
-  public UnsignedLong getActivation_epoch() {
-    return ((UInt64View) get(5)).get();
-  }
-
-  @Override
-  public void setActivation_epoch(UnsignedLong activation_epoch) {
-    set(5, new UInt64View(activation_epoch));
-  }
-
-  @Override
-  public UnsignedLong getExit_epoch() {
-    return ((UInt64View) get(6)).get();
-  }
-
-  @Override
-  public void setExit_epoch(UnsignedLong exit_epoch) {
-    set(6, new UInt64View(exit_epoch));
-  }
-
-  @Override
-  public UnsignedLong getWithdrawable_epoch() {
-    return ((UInt64View) get(7)).get();
-  }
-
-  @Override
-  public void setWithdrawable_epoch(UnsignedLong withdrawable_epoch) {
-    set(7, new UInt64View(withdrawable_epoch));
-  }
-
-  @Override
-  public Bytes32 hash_tree_root() {
-    return hashTreeRoot();
   }
 
   @Override

@@ -20,13 +20,21 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
+import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 @JsonAutoDetect(getterVisibility = Visibility.NONE)
 public interface Validator
-    extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
+    extends ContainerViewRead, SimpleOffsetSerializable, Merkleizable, SSZContainer {
+
+  static Validator createEmpty() {
+    return new ValidatorImpl();
+  }
 
   static Validator create(
       BLSPublicKey pubkey,
@@ -37,41 +45,63 @@ public interface Validator
       UnsignedLong activation_epoch,
       UnsignedLong exit_epoch,
       UnsignedLong withdrawable_epoch) {
-    return new ValidatorImpl(
-        pubkey,
-        withdrawal_credentials,
-        effective_balance,
-        slashed,
-        activation_eligibility_epoch,
-        activation_epoch,
-        exit_epoch,
-        withdrawable_epoch);
+    MutableValidator validator = createEmpty().createWritableCopy();
+    validator.setPubkey(pubkey);
+    validator.setWithdrawal_credentials(withdrawal_credentials);
+    validator.setEffective_balance(effective_balance);
+    validator.setSlashed(slashed);
+    validator.setActivation_eligibility_epoch(activation_eligibility_epoch);
+    validator.setActivation_epoch(activation_epoch);
+    validator.setExit_epoch(exit_epoch);
+    validator.setWithdrawable_epoch(withdrawable_epoch);
+    return validator.commitChanges();
   }
 
   @JsonProperty
-  BLSPublicKey getPubkey();
+  default BLSPublicKey getPubkey() {
+    return BLSPublicKey.fromBytes(ViewUtils.getAllBytes(getAny(0)));
+  }
 
   @JsonProperty
-  Bytes32 getWithdrawal_credentials();
+  default Bytes32 getWithdrawal_credentials() {
+    return ((Bytes32View) get(1)).get();
+  }
 
   @JsonProperty
-  UnsignedLong getEffective_balance();
+  default UnsignedLong getEffective_balance() {
+    return ((UInt64View) get(2)).get();
+  }
 
   @JsonProperty
-  boolean isSlashed();
+  default boolean isSlashed() {
+    return ((BitView) get(3)).get();
+  }
 
   @JsonProperty
-  UnsignedLong getActivation_eligibility_epoch();
+  default UnsignedLong getActivation_eligibility_epoch() {
+    return ((UInt64View) get(4)).get();
+  }
 
   @JsonProperty
-  UnsignedLong getActivation_epoch();
+  default UnsignedLong getActivation_epoch() {
+    return ((UInt64View) get(5)).get();
+  }
 
   @JsonProperty
-  UnsignedLong getExit_epoch();
+  default UnsignedLong getExit_epoch() {
+    return ((UInt64View) get(6)).get();
+  }
 
   @JsonProperty
-  UnsignedLong getWithdrawable_epoch();
+  default UnsignedLong getWithdrawable_epoch() {
+    return ((UInt64View) get(7)).get();
+  }
 
   @Override
-  ValidatorImpl createWritableCopy();
+  default Bytes32 hash_tree_root() {
+    return hashTreeRoot();
+  }
+
+  @Override
+  MutableValidator createWritableCopy();
 }

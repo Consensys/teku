@@ -60,6 +60,6 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
 
   @Override
   public MutableBeaconState createWritableCopy() {
-    throw new UnsupportedOperationException();
+    return (MutableBeaconState) super.createWritableCopy();
   }
 }

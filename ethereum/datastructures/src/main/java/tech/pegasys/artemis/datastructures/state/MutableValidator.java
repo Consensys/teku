@@ -14,22 +14,49 @@
 package tech.pegasys.artemis.datastructures.state;
 
 import com.google.common.primitives.UnsignedLong;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
+import tech.pegasys.artemis.util.backing.view.BasicViews.BitView;
+import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
+import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
+import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public interface MutableValidator extends Validator, ContainerViewWrite {
 
-  void setPubkey(BLSPublicKey pubkey);
+  default void setPubkey(BLSPublicKey pubkey) {
+    set(0, ViewUtils.createVectorFromBytes(pubkey.toBytes()));
+  }
 
-  void setEffective_balance(UnsignedLong effective_balance);
+  default void setWithdrawal_credentials(Bytes32 withdrawal_credentials) {
+    set(1, new Bytes32View(withdrawal_credentials));
+  }
 
-  void setSlashed(boolean slashed);
 
-  void setActivation_eligibility_epoch(UnsignedLong activation_eligibility_epoch);
+  default void setEffective_balance(UnsignedLong effective_balance) {
+    set(2, new UInt64View(effective_balance));
+  }
 
-  void setActivation_epoch(UnsignedLong activation_epoch);
+  default void setSlashed(boolean slashed) {
+    set(3, new BitView(slashed));
+  }
 
-  void setExit_epoch(UnsignedLong exit_epoch);
+  default void setActivation_eligibility_epoch(UnsignedLong activation_eligibility_epoch) {
+    set(4, new UInt64View(activation_eligibility_epoch));
+  }
 
-  void setWithdrawable_epoch(UnsignedLong withdrawable_epoch);
+  default void setActivation_epoch(UnsignedLong activation_epoch) {
+    set(5, new UInt64View(activation_epoch));
+  }
+
+  default void setExit_epoch(UnsignedLong exit_epoch) {
+    set(6, new UInt64View(exit_epoch));
+  }
+
+  default void setWithdrawable_epoch(UnsignedLong withdrawable_epoch) {
+    set(7, new UInt64View(withdrawable_epoch));
+  }
+
+  @Override
+  Validator commitChanges();
 }
