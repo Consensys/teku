@@ -15,19 +15,18 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 class Eth1DataVoteTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
-  private int seed = 100;
-  private Eth1Data eth1Data = randomEth1Data(seed);
-  private UnsignedLong voteCount = randomUnsignedLong(seed++);
+  private Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
+  private UnsignedLong voteCount = dataStructureUtil.randomUnsignedLong();
 
   private Eth1DataVote eth1DataVote = new Eth1DataVote(eth1Data, voteCount);
 
@@ -49,9 +48,9 @@ class Eth1DataVoteTest {
   void equalsReturnsFalseWhenEth1DataIsDifferent() {
     // Eth1Data is rather involved to create. Just create a random one until it is not the same
     // as the original.
-    Eth1Data otherEth1Data = randomEth1Data(seed++);
+    Eth1Data otherEth1Data = dataStructureUtil.randomEth1Data();
     while (Objects.equals(otherEth1Data, eth1Data)) {
-      otherEth1Data = randomEth1Data(seed++);
+      otherEth1Data = dataStructureUtil.randomEth1Data();
     }
     Eth1DataVote testEth1DataVote = new Eth1DataVote(otherEth1Data, voteCount);
 
@@ -61,7 +60,7 @@ class Eth1DataVoteTest {
   @Test
   void equalsReturnsFalseWhenVoteCountsAreDifferent() {
     Eth1DataVote testEth1DataVote =
-        new Eth1DataVote(eth1Data, voteCount.plus(randomUnsignedLong(seed++)));
+        new Eth1DataVote(eth1Data, voteCount.plus(dataStructureUtil.randomUnsignedLong()));
 
     assertNotEquals(eth1DataVote, testEth1DataVote);
   }

@@ -55,6 +55,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetNewBlock;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostAttestation;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.cli.VersionProvider;
@@ -190,6 +191,7 @@ public class BeaconRestApi {
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
     app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
 
+    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
     app.post(PostDuties.ROUTE, new PostDuties(validatorDataProvider, jsonProvider));
   }
 

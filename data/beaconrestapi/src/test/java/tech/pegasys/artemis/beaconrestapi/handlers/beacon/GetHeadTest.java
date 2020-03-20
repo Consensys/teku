@@ -30,10 +30,11 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetHeadTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
   private final Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private BeaconState rootState = DataStructureUtil.randomBeaconState(1);
+  private BeaconState rootState = dataStructureUtil.randomBeaconState();
   private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);
 
   @Test

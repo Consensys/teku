@@ -15,16 +15,16 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomIndexedAttestation;
 
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 
 class AttesterSlashingTest {
 
-  private int seed = 100;
-  private IndexedAttestation indexedAttestation1 = randomIndexedAttestation(seed);
-  private IndexedAttestation indexedAttestation2 = randomIndexedAttestation(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private IndexedAttestation indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
+  private IndexedAttestation indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
 
   private AttesterSlashing attesterSlashing =
       new AttesterSlashing(indexedAttestation1, indexedAttestation2);
@@ -48,9 +48,9 @@ class AttesterSlashingTest {
   void equalsReturnsFalseWhenIndexedAttestation1IsDifferent() {
     // IndexedAttestation is rather involved to create. Just create a random one until it is not
     // the same as the original.
-    IndexedAttestation otherIndexedAttestation1 = randomIndexedAttestation(seed++);
+    IndexedAttestation otherIndexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
     while (Objects.equals(otherIndexedAttestation1, indexedAttestation1)) {
-      otherIndexedAttestation1 = randomIndexedAttestation(seed++);
+      otherIndexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
     }
 
     AttesterSlashing testAttesterSlashing =
@@ -63,9 +63,9 @@ class AttesterSlashingTest {
   void equalsReturnsFalseWhenIndexedAttestation2IsDifferent() {
     // IndexedAttestation is rather involved to create. Just create a random one until it is not
     // the ame as the original.
-    IndexedAttestation otherIndexedAttestation2 = randomIndexedAttestation(seed++);
+    IndexedAttestation otherIndexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
     while (Objects.equals(otherIndexedAttestation2, indexedAttestation2)) {
-      otherIndexedAttestation2 = randomIndexedAttestation(seed++);
+      otherIndexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
     }
 
     AttesterSlashing testAttesterSlashing =

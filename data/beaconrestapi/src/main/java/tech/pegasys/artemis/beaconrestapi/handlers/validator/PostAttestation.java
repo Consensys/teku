@@ -14,17 +14,14 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
-import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -32,63 +29,54 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
+import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
-import tech.pegasys.artemis.api.schema.ValidatorDuties;
-import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
-import tech.pegasys.artemis.api.schema.ValidatorsRequest;
+import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class PostDuties implements Handler {
+public class PostAttestation implements Handler {
+  public static final String ROUTE = "/validator/attestation";
+
   private final ValidatorDataProvider provider;
+  private final JsonProvider jsonProvider;
 
-  public PostDuties(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    this.provider = provider;
+  public PostAttestation(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
+    this.provider = dataProvider.getValidatorDataProvider();
   }
 
-  public static final String ROUTE = "/validator/duties";
-  private final JsonProvider jsonProvider;
+  public PostAttestation(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+    this.jsonProvider = jsonProvider;
+    this.provider = provider;
+  }
 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Returns validator duties that match the specified query.",
+      summary = "Submit a signed attestation.",
       tags = {TAG_VALIDATOR},
+      requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Attestation.class)}),
       description =
-          "Takes a list of validator public keys and an epoch, and returns validator duties for them.\n\n"
-              + "Any pubkeys that were not found in the list of validators will be returned without any associated duties.",
-      requestBody =
-          @OpenApiRequestBody(
-              content = @OpenApiContent(from = ValidatorsRequest.class),
-              description =
-                  "```\n{\n  \"epoch\": (uint64),\n  \"pubkeys\": [(Bytes48 as Hex String)]\n}\n```"),
+          "Submit a signed attestation to the beacon node, which will be validated and then submitted if valid.\n\n"
+              + "Submissions should already have been checked to ensure they are not going to result in slashings, "
+              + "only data validations are performed.",
       responses = {
         @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = ValidatorDuties.class, isArray = true)),
-        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
+            status = RES_NO_CONTENT,
+            description = "The Attestation was accepted, validated, and submitted"),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = INVALID_BODY_SUPPLIED),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
+
     try {
-      ValidatorDutiesRequest validatorDutiesRequest =
-          jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
-
-      SafeFuture<List<ValidatorDuties>> future =
-          provider.getValidatorDutiesByRequest(validatorDutiesRequest);
-      ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
-
-    } catch (final IllegalArgumentException e) {
+      Attestation attestation = jsonProvider.jsonToObject(ctx.body(), Attestation.class);
+      provider.submitAttestation(attestation);
+      ctx.status(SC_NO_CONTENT);
+    } catch (final IllegalArgumentException | JsonMappingException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-      ctx.status(SC_BAD_REQUEST);
-    } catch (final JsonMappingException ex) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }

@@ -34,6 +34,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
@@ -54,12 +56,18 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProviderTest {
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<tech.pegasys.artemis.datastructures.operations.Attestation> args =
+      ArgumentCaptor.forClass(tech.pegasys.artemis.datastructures.operations.Attestation.class);
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
   private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   private ValidatorDataProvider provider =
       new ValidatorDataProvider(validatorCoordinator, combinedChainDataClient);;
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
-      DataStructureUtil.randomBeaconBlock(123, 456);
+      dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
   private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
       tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
@@ -288,5 +296,16 @@ public class ValidatorDataProviderTest {
     v.setActivation_epoch(ONE);
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
+  }
+
+  void submitAttestation_shouldSubmitAnInternalAttestationStructure() {
+    tech.pegasys.artemis.datastructures.operations.Attestation internalAttestation =
+        dataStructureUtil.randomAttestation();
+    Attestation attestation = new Attestation(internalAttestation);
+
+    provider.submitAttestation(attestation);
+
+    verify(validatorCoordinator).postSignedAttestation(args.capture(), eq(true));
+    assertThat(args.getValue()).usingRecursiveComparison().isEqualTo(internalAttestation);
   }
 }

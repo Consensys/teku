@@ -30,6 +30,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 class BlockAttestationsPoolTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private BlockAttestationsPool pool;
 
   @BeforeEach
@@ -116,7 +117,7 @@ class BlockAttestationsPoolTest {
   @Test
   void getAggregatedAttestations_DoesNotReturnAttestationsMoreThanMaxAttestations() {
     for (int i = 0; i < MAX_ATTESTATIONS + 1; i++) {
-      Attestation attestation = DataStructureUtil.randomAttestation(i);
+      Attestation attestation = dataStructureUtil.randomAttestation();
       attestation.setData(diffSlotAttestationData(UnsignedLong.valueOf(i), attestation.getData()));
       pool.addUnprocessedAggregateAttestationToQueue(attestation);
     }
@@ -128,7 +129,7 @@ class BlockAttestationsPoolTest {
   void getAggregatedAttestations_DoesNotReturnAttestationsWithSlotsHigherThanGivenSlot() {
     int SLOT = 10;
     for (int i = 0; i < SLOT; i++) {
-      Attestation attestation = DataStructureUtil.randomAttestation(i);
+      Attestation attestation = dataStructureUtil.randomAttestation();
       attestation.setData(diffSlotAttestationData(UnsignedLong.valueOf(i), attestation.getData()));
       pool.addUnprocessedAggregateAttestationToQueue(attestation);
     }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,7 +52,6 @@ public final class Eth1DataVote
   }
 
   @Override
-  @JsonIgnore
   public int getSSZFieldCount() {
     return eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }

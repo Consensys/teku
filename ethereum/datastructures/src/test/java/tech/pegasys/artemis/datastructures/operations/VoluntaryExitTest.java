@@ -15,17 +15,17 @@ package tech.pegasys.artemis.datastructures.operations;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 
 class VoluntaryExitTest {
-  private int seed = 100;
-  private UnsignedLong epoch = randomUnsignedLong(seed);
-  private UnsignedLong validatorIndex = randomUnsignedLong(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private UnsignedLong epoch = dataStructureUtil.randomUnsignedLong();
+  private UnsignedLong validatorIndex = dataStructureUtil.randomUnsignedLong();
 
   private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex);
 
@@ -46,7 +46,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch.plus(randomUnsignedLong(seed++)), validatorIndex);
+        new VoluntaryExit(epoch.plus(dataStructureUtil.randomUnsignedLong()), validatorIndex);
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
@@ -54,7 +54,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch, validatorIndex.plus(randomUnsignedLong(seed++)));
+        new VoluntaryExit(epoch, validatorIndex.plus(dataStructureUtil.randomUnsignedLong()));
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }

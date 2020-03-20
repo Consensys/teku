@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
+import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
@@ -167,5 +168,9 @@ public class ValidatorDataProvider {
     } else {
       return null;
     }
+  }
+
+  public void submitAttestation(Attestation attestation) {
+    validatorCoordinator.postSignedAttestation(attestation.asInternalAttestation(), true);
   }
 }

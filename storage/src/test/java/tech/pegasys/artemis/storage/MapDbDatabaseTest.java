@@ -53,8 +53,9 @@ import tech.pegasys.artemis.util.config.Constants;
 @ExtendWith(TempDirectoryExtension.class)
 class MapDbDatabaseTest {
   private static final BeaconState GENESIS_STATE =
-      DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, 1);
+      new DataStructureUtil().randomBeaconState(UnsignedLong.ZERO);
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private SignedBeaconBlock checkpoint1Block;
   private SignedBeaconBlock checkpoint2Block;
   private SignedBeaconBlock checkpoint3Block;
@@ -79,8 +80,6 @@ class MapDbDatabaseTest {
           .findFirst()
           .get();
   private final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
-
-  private int seed = 498242;
 
   @BeforeEach
   public void recordGenesis(@TempDirectory final Path tempDir) {
@@ -140,8 +139,8 @@ class MapDbDatabaseTest {
   @Test
   public void shouldGetHotStateByRoot() {
     final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
-    final BeaconState state1 = DataStructureUtil.randomBeaconState(seed++);
-    final BeaconState state2 = DataStructureUtil.randomBeaconState(seed++);
+    final BeaconState state1 = dataStructureUtil.randomBeaconState();
+    final BeaconState state2 = dataStructureUtil.randomBeaconState();
     final Bytes32 block1Root = Bytes32.fromHexString("0x1234");
     final Bytes32 block2Root = Bytes32.fromHexString("0x5822");
     transaction.putBlockState(block1Root, state1);
@@ -247,8 +246,8 @@ class MapDbDatabaseTest {
 
   @Test
   public void shouldStoreSingleValue_singleBlockState() {
-    final BeaconState newState = DataStructureUtil.randomBeaconState(999);
-    final Bytes32 blockRoot = DataStructureUtil.randomBytes32(999L);
+    final BeaconState newState = dataStructureUtil.randomBeaconState();
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     // Sanity check
     assertThat(store.getBlockState(blockRoot)).isNull();
 
@@ -263,7 +262,7 @@ class MapDbDatabaseTest {
   @Test
   public void shouldStoreSingleValue_singleCheckpointState() {
     final Checkpoint checkpoint = checkpoint3;
-    final BeaconState newState = DataStructureUtil.randomBeaconState(999);
+    final BeaconState newState = dataStructureUtil.randomBeaconState();
     // Sanity check
     assertThat(store.getCheckpointState(checkpoint)).isNull();
 
@@ -329,8 +328,8 @@ class MapDbDatabaseTest {
     final Checkpoint forkCheckpoint =
         new Checkpoint(checkpoint1.getEpoch(), Bytes32.fromHexString("0x88677727"));
     transaction.putCheckpointState(checkpoint1, GENESIS_STATE);
-    transaction.putCheckpointState(checkpoint2, DataStructureUtil.randomBeaconState(seed++));
-    transaction.putCheckpointState(forkCheckpoint, DataStructureUtil.randomBeaconState(seed++));
+    transaction.putCheckpointState(checkpoint2, dataStructureUtil.randomBeaconState());
+    transaction.putCheckpointState(forkCheckpoint, dataStructureUtil.randomBeaconState());
 
     commit(transaction);
 
@@ -351,9 +350,9 @@ class MapDbDatabaseTest {
 
     // First store the initial checkpoints.
     final Transaction transaction1 = store.startTransaction(databaseTransactionPrecommit);
-    transaction1.putCheckpointState(earlyCheckpoint, DataStructureUtil.randomBeaconState(seed++));
-    transaction1.putCheckpointState(middleCheckpoint, DataStructureUtil.randomBeaconState(seed++));
-    transaction1.putCheckpointState(laterCheckpoint, DataStructureUtil.randomBeaconState(seed++));
+    transaction1.putCheckpointState(earlyCheckpoint, dataStructureUtil.randomBeaconState());
+    transaction1.putCheckpointState(middleCheckpoint, dataStructureUtil.randomBeaconState());
+    transaction1.putCheckpointState(laterCheckpoint, dataStructureUtil.randomBeaconState());
     commit(transaction1);
     assertLatestUpdateResultPrunedCollectionsAreEmpty();
 
@@ -387,8 +386,8 @@ class MapDbDatabaseTest {
     final Transaction transaction = store.startTransaction(databaseTransactionPrecommit);
     final SignedBeaconBlock block1 = blockAtSlot(1);
     final SignedBeaconBlock block2 = blockAtSlot(2);
-    final BeaconState state1 = DataStructureUtil.randomBeaconState(seed++);
-    final BeaconState state2 = DataStructureUtil.randomBeaconState(seed++);
+    final BeaconState state1 = dataStructureUtil.randomBeaconState();
+    final BeaconState state2 = dataStructureUtil.randomBeaconState();
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     transaction.putBlock(block1Root, block1);
@@ -415,11 +414,10 @@ class MapDbDatabaseTest {
     final SignedBeaconBlock unfinalizedBlock =
         blockAtSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)).longValue());
 
-    final BeaconState state1 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1), seed++);
-    final BeaconState state2 = DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(2), seed++);
+    final BeaconState state1 = dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1));
+    final BeaconState state2 = dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(2));
     final BeaconState unfinalizedState =
-        DataStructureUtil.randomBeaconState(
-            compute_start_slot_at_epoch(UnsignedLong.valueOf(2)), seed++);
+        dataStructureUtil.randomBeaconState(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)));
 
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
@@ -476,12 +474,10 @@ class MapDbDatabaseTest {
 
     // Create States
     final Map<Bytes32, BeaconState> states = new HashMap<>();
-    final BeaconState block3State = DataStructureUtil.randomBeaconState(block3.getSlot(), 3);
-    final BeaconState block7State = DataStructureUtil.randomBeaconState(block7.getSlot(), 7);
-    final BeaconState forkBlock6State =
-        DataStructureUtil.randomBeaconState(forkBlock6.getSlot(), 16);
-    final BeaconState forkBlock7State =
-        DataStructureUtil.randomBeaconState(forkBlock7.getSlot(), 17);
+    final BeaconState block3State = dataStructureUtil.randomBeaconState(block3.getSlot());
+    final BeaconState block7State = dataStructureUtil.randomBeaconState(block7.getSlot());
+    final BeaconState forkBlock6State = dataStructureUtil.randomBeaconState(forkBlock6.getSlot());
+    final BeaconState forkBlock7State = dataStructureUtil.randomBeaconState(forkBlock7.getSlot());
     // Store states in map
     states.put(block3.getMessage().hash_tree_root(), block3State);
     states.put(block7.getMessage().hash_tree_root(), block7State);
@@ -577,12 +573,10 @@ class MapDbDatabaseTest {
 
       // Create States
       final Map<Bytes32, BeaconState> states = new HashMap<>();
-      final BeaconState block3State = DataStructureUtil.randomBeaconState(block3.getSlot(), 3);
-      final BeaconState block7State = DataStructureUtil.randomBeaconState(block7.getSlot(), 7);
-      final BeaconState forkBlock6State =
-          DataStructureUtil.randomBeaconState(forkBlock6.getSlot(), 16);
-      final BeaconState forkBlock7State =
-          DataStructureUtil.randomBeaconState(forkBlock7.getSlot(), 17);
+      final BeaconState block3State = dataStructureUtil.randomBeaconState(block3.getSlot());
+      final BeaconState block7State = dataStructureUtil.randomBeaconState(block7.getSlot());
+      final BeaconState forkBlock6State = dataStructureUtil.randomBeaconState(forkBlock6.getSlot());
+      final BeaconState forkBlock7State = dataStructureUtil.randomBeaconState(forkBlock7.getSlot());
       // Store states in map
       states.put(block3.getMessage().hash_tree_root(), block3State);
       states.put(block7.getMessage().hash_tree_root(), block7State);
@@ -791,7 +785,7 @@ class MapDbDatabaseTest {
 
   private SignedBeaconBlock blockAtEpoch(final long epoch) {
     final UnsignedLong slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(epoch));
-    return blockAtSlot(slot.longValue(), DataStructureUtil.randomBytes32(epoch));
+    return blockAtSlot(slot.longValue(), dataStructureUtil.randomBytes32());
   }
 
   private SignedBeaconBlock blockAtSlot(final long slot) {

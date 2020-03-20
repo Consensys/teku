@@ -56,13 +56,13 @@ class GenesisGeneratorTest {
           .collect(toList());
   public static final UnsignedLong GENESIS_EPOCH = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
 
-  private int seed = 2489232;
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
 
   @Test
   public void shouldGenerateSameGenesisAsSpecMethodForSingleDeposit() {
-    final Bytes32 eth1BlockHash1 = DataStructureUtil.randomBytes32(seed++);
-    final Bytes32 eth1BlockHash2 = DataStructureUtil.randomBytes32(seed++);
+    final Bytes32 eth1BlockHash1 = dataStructureUtil.randomBytes32();
+    final Bytes32 eth1BlockHash2 = dataStructureUtil.randomBytes32();
 
     final UnsignedLong genesisTime = UnsignedLong.valueOf(982928293223232L);
 
