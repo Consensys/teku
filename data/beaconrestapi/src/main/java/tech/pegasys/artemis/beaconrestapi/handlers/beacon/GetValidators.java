@@ -67,33 +67,31 @@ public class GetValidators implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Returns validators that match the specified query.",
+      summary = "Get validators that match the specified query.",
       tags = {TAG_BEACON},
       description =
-          "Returns validator information. If no parameters specified, the first page of validators as of the current epoch are returned.",
+          "Returns validator information. Returns the first page of validators in the current epoch if you do not specify any parameters.",
       queryParams = {
-        @OpenApiParam(
-            name = EPOCH,
-            description = "Epoch to query. If not specified, current epoch is used."),
+        @OpenApiParam(name = EPOCH, description = "Epoch to query. Defaults to the current epoch."),
         @OpenApiParam(
             name = ACTIVE,
             description =
-                "If specified, return only validators which are active in the specified epoch."),
+                "Only return validators that are active in the specified `epoch`. By default, returns inactive and active validators.\n\n**Note**: This field accepts any value when specifying active validators."),
         @OpenApiParam(
             name = PAGE_SIZE,
             description =
-                "If specified, return only this many results. If not specified, defaults to "
+                "The amount of results to return per page. Defaults to "
                     + PAGE_SIZE_DEFAULT
                     + " results."),
         @OpenApiParam(
             name = PAGE_TOKEN,
-            description =
-                "If specified, return only this page of results. If not specified, defaults to page "
-                    + PAGE_TOKEN_DEFAULT
-                    + ".")
+            description = "Page number to return. Defaults to page " + PAGE_TOKEN_DEFAULT + ".")
       },
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconValidators.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = BeaconValidators.class),
+            description = "List of validator objects."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
