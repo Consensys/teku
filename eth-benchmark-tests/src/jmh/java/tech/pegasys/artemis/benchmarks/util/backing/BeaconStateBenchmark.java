@@ -18,7 +18,8 @@ import tech.pegasys.artemis.util.config.Constants;
 @State(Scope.Thread)
 public class BeaconStateBenchmark {
 
-  private static BeaconState beaconState = DataStructureUtil.randomBeaconState(0, 32 * 1024);
+  private static BeaconState beaconState = DataStructureUtil.randomBeaconState(0, 32 * 1024).createWritableCopy();
+//  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
 
   public BeaconStateBenchmark() {
     Constants.setConstants("mainnet");

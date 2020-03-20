@@ -49,7 +49,7 @@ public abstract class AbstractCompositeViewRead<
     return childrenViewCache.transfer();
   }
 
-  private IntCache<R> createCache() {
+  protected IntCache<R> createCache() {
     return new ArrayCache<>();
   }
 

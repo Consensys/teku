@@ -103,7 +103,7 @@ public abstract class TransitionBenchmark {
     }
     localChain.setSlot(block.getSlot());
     lastResult = blockImporter.importBlock(block);
-    System.out.println("Imported: " + lastResult);
+//    System.out.println("Imported: " + lastResult);
     if (!lastResult.isSuccessful()) {
       throw new RuntimeException("Unable to import block: " + lastResult);
     }
@@ -151,7 +151,7 @@ public abstract class TransitionBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 4)
+    @Warmup(iterations = 10)
     @Measurement(iterations = 20)
     public void importBlock() throws Exception {
       importNextBlock();

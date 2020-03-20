@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.IntFunction;
 
-public class ArrayCache<V> implements IntCache<V> {
+public final class ArrayCache<V> implements IntCache<V> {
   private V[] values;
 
   public ArrayCache() {
