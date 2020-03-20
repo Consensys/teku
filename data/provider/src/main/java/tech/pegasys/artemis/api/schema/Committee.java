@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 
@@ -26,5 +28,15 @@ public class Committee {
     this.slot = committeeAssignment.getSlot();
     this.index = committeeAssignment.getCommitteeIndex();
     this.committee = committeeAssignment.getCommittee();
+  }
+
+  @JsonCreator
+  public Committee(
+      @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("index") final UnsignedLong index,
+      @JsonProperty("committee") final List<Integer> committee) {
+    this.slot = slot;
+    this.index = index;
+    this.committee = committee;
   }
 }

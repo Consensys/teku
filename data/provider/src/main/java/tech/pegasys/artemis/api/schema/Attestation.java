@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 public class Attestation {
@@ -26,10 +28,18 @@ public class Attestation {
     this.signature = new BLSSignature(attestation.getAggregate_signature());
   }
 
+  @JsonCreator
   public Attestation(
-      final Bitlist aggregation_bits, final AttestationData data, final BLSSignature signature) {
+      @JsonProperty("aggregation_bits") final Bitlist aggregation_bits,
+      @JsonProperty("data") final AttestationData data,
+      @JsonProperty("signature") final BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;
     this.data = data;
     this.signature = signature;
+  }
+
+  public tech.pegasys.artemis.datastructures.operations.Attestation asInternalAttestation() {
+    return new tech.pegasys.artemis.datastructures.operations.Attestation(
+        aggregation_bits, data.asInternalAttestationData(), signature.asInternalBLSSignature());
   }
 }
