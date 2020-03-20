@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
@@ -33,6 +35,7 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
@@ -67,6 +70,7 @@ public class BeaconRestApi {
       final DataProvider dataProvider, final ArtemisConfiguration configuration) {
     app.server().setServerPort(configuration.getBeaconRestAPIPortNumber());
 
+    addExceptionHandlers();
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
@@ -94,6 +98,20 @@ public class BeaconRestApi {
     return Resources.toString(Resources.getResource(fileName), charset);
   }
 
+  private void addExceptionHandlers() {
+    app.exception(
+        ChainDataUnavailableException.class,
+        (e, ctx) -> {
+          ctx.status(SC_NO_CONTENT);
+        });
+    // Add catch-all handler
+    app.exception(
+        Exception.class,
+        (e, ctx) -> {
+          ctx.status(SC_INTERNAL_SERVER_ERROR);
+        });
+  }
+
   public BeaconRestApi(final DataProvider dataProvider, final ArtemisConfiguration configuration) {
     this.app =
         Javalin.create(
@@ -115,6 +133,10 @@ public class BeaconRestApi {
 
   public void start() {
     app.start();
+  }
+
+  public int getListenPort() {
+    return app.server().getServerPort();
   }
 
   private static OpenApiOptions getOpenApiOptions(

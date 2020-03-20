@@ -1,24 +1,26 @@
 dependencies {
     implementation project(':bls')
-    implementation project(':util')
     implementation project(':data')
-    implementation project(':networking:p2p')
-    implementation project(':ssz')
-    implementation project(':sync')
-    implementation project(':services:serviceutils')
-    implementation project(':storage')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
+    implementation project(':networking:p2p')
+    implementation project(':services:serviceutils')
+    implementation project(':ssz')
+    implementation project(':storage')
+    implementation project(':sync')
+    implementation project(':util')
     implementation project(':validator:coordinator')
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.google.code.gson:gson'
     implementation 'com.google.guava:guava'
     implementation 'org.apache.logging.log4j:log4j-api'
+    implementation 'org.apache.tuweni:tuweni-units'
+
     runtime 'org.apache.logging.log4j:log4j-core'
 
     testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+
     testImplementation 'org.mockito:mockito-core'
 }
 
