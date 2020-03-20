@@ -20,10 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDeposits;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 import static tech.pegasys.artemis.util.hashtree.HashTreeUtil.is_power_of_two;
 
 import com.google.common.primitives.UnsignedLong;
@@ -54,6 +50,8 @@ import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BeaconStateUtilTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
   @Test
   void minReturnsMin() {
     UnsignedLong actual = BeaconStateUtil.min(UnsignedLong.valueOf(13L), UnsignedLong.valueOf(12L));
@@ -105,7 +103,7 @@ class BeaconStateUtilTest {
 
   @Test
   void validateProofOfPossessionReturnsTrueIfTheBLSSignatureIsValidForGivenDepositInputData() {
-    Deposit deposit = newDeposits(1).get(0);
+    Deposit deposit = dataStructureUtil.newDeposits(1).get(0);
     BLSPublicKey pubkey = deposit.getData().getPubkey();
     DepositData depositData = deposit.getData();
     DepositMessage depositMessage =
@@ -125,7 +123,7 @@ class BeaconStateUtilTest {
 
   @Test
   void validateProofOfPossessionReturnsFalseIfTheBLSSignatureIsNotValidForGivenDepositInputData() {
-    Deposit deposit = newDeposits(1).get(0);
+    Deposit deposit = dataStructureUtil.newDeposits(1).get(0);
     BLSPublicKey pubkey = BLSPublicKey.random(42);
     DepositData depositData = deposit.getData();
     DepositMessage depositMessage =
@@ -282,7 +280,7 @@ class BeaconStateUtilTest {
   private BeaconState createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
     MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
-    beaconState.setSlot(randomUnsignedLong(100));
+    beaconState.setSlot(dataStructureUtil.randomUnsignedLong());
     beaconState.setFork(
         new Fork(
             Constants.GENESIS_FORK_VERSION,
@@ -291,7 +289,10 @@ class BeaconStateUtilTest {
 
     List<Validator> validatorList =
         new ArrayList<>(
-            Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)));
+            Arrays.asList(
+                dataStructureUtil.randomValidator(),
+                dataStructureUtil.randomValidator(),
+                dataStructureUtil.randomValidator()));
     List<UnsignedLong> balanceList =
         new ArrayList<>(
             Collections.nCopies(3, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE)));
@@ -348,7 +349,7 @@ class BeaconStateUtilTest {
 
   @Test
   void processDepositsShouldIgnoreInvalidSignedDeposits() {
-    ArrayList<DepositWithIndex> deposits = randomDeposits(3, 100);
+    ArrayList<DepositWithIndex> deposits = dataStructureUtil.randomDeposits(3);
     deposits.get(1).getData().setSignature(BLSSignature.empty());
     BeaconState state =
         initialize_beacon_state_from_eth1(Bytes32.ZERO, UnsignedLong.ZERO, deposits);

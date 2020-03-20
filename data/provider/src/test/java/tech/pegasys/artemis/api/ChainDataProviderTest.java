@@ -64,6 +64,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ChainDataProviderTest {
+  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private static CombinedChainDataClient combinedChainDataClient;
   private static HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   private static tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal;
@@ -73,7 +74,7 @@ public class ChainDataProviderTest {
   private static EventBus localEventBus;
   private static ChainStorageClient chainStorageClient;
   private final tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
-      DataStructureUtil.randomSignedBeaconBlock(999, 999);
+      dataStructureUtil.randomSignedBeaconBlock(999);
   private CombinedChainDataClient mockCombinedChainDataClient = mock(CombinedChainDataClient.class);
   private ChainStorageClient mockChainStorageClient = mock(ChainStorageClient.class);
 
@@ -81,7 +82,7 @@ public class ChainDataProviderTest {
   public static void setup() {
     localEventBus = new EventBus();
     chainStorageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
-    beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
+    beaconStateInternal = dataStructureUtil.randomBeaconState();
     beaconState = new BeaconState(beaconStateInternal);
     chainStorageClient.initializeFromGenesis(beaconStateInternal);
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
@@ -431,7 +432,7 @@ public class ChainDataProviderTest {
 
   @Test
   void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
-    BLSPubKey pubKey = new BLSPubKey(DataStructureUtil.randomPublicKey(88).toBytes());
+    BLSPubKey pubKey = new BLSPubKey(dataStructureUtil.randomPublicKey().toBytes());
     Integer validatorIndex = ChainDataProvider.getValidatorIndex(List.of(), pubKey);
     assertThat(validatorIndex).isEqualTo(null);
   }
@@ -439,7 +440,7 @@ public class ChainDataProviderTest {
   @Test
   void getValidatorIndex_shouldReturnIndexIfFound() {
     tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
-        DataStructureUtil.randomBeaconState(99);
+        dataStructureUtil.randomBeaconState();
     BeaconState state = new BeaconState(beaconStateInternal);
     // all the validators are the same so the first one will match
     int expectedValidatorIndex = 0;
@@ -461,7 +462,7 @@ public class ChainDataProviderTest {
   void getCommitteeIndex_shouldReturnIndexIfFound() {
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    UnsignedLong committeeIndex = DataStructureUtil.randomUnsignedLong(888);
+    UnsignedLong committeeIndex = dataStructureUtil.randomUnsignedLong();
     CommitteeAssignment committeeAssignment1 =
         new CommitteeAssignment(List.of(4, 5, 6), committeeIndex, slot);
     CommitteeAssignment committeeAssignment2 =
@@ -474,11 +475,11 @@ public class ChainDataProviderTest {
   @Test
   void getValidatorDutiesFromState() {
     tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
-        DataStructureUtil.randomBeaconState(77);
+        dataStructureUtil.randomBeaconState();
     ChainDataProvider provider =
         new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-    BLSPublicKey pubKey1 = DataStructureUtil.randomPublicKey(99);
-    BLSPublicKey pubKey2 = DataStructureUtil.randomPublicKey(98);
+    BLSPublicKey pubKey1 = dataStructureUtil.randomPublicKey();
+    BLSPublicKey pubKey2 = dataStructureUtil.randomPublicKey();
     List<ValidatorDuties> dutiesList =
         provider.getValidatorDutiesFromState(
             beaconStateInternal,
@@ -550,10 +551,9 @@ public class ChainDataProviderTest {
     assertThat(validatorDuties.get(0))
         .usingRecursiveComparison()
         .isEqualTo(new ValidatorDuties(alteredState.validators.get(0).pubkey, 0, 0));
-    // even though we used key 11 it will come out as 0 since the default keys are all equal
     assertThat(validatorDuties.get(1))
         .usingRecursiveComparison()
-        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 0, 0));
+        .isEqualTo(new ValidatorDuties(alteredState.validators.get(11).pubkey, 11, 1));
     assertThat(validatorDuties.get(2))
         .usingRecursiveComparison()
         .isEqualTo(
@@ -599,7 +599,7 @@ public class ChainDataProviderTest {
       final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
     // create a validator and add it to the list
-    MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
+    MutableValidator v = dataStructureUtil.randomValidator().createWritableCopy();
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
   }

@@ -47,6 +47,7 @@ import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetCommitteesTest {
+  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
   private static UnsignedLong slot;
@@ -66,7 +67,7 @@ public class GetCommitteesTest {
   public static void setup() {
     final EventBus localEventBus = new EventBus();
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
-    beaconState = DataStructureUtil.randomBeaconState(11233);
+    beaconState = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconState);
     combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
     blockRoot = storageClient.getBestBlockRoot().orElseThrow();

@@ -33,6 +33,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AggregateGossipManagerTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -46,7 +47,7 @@ public class AggregateGossipManagerTest {
 
   @Test
   public void onNewAggregate() {
-    final AggregateAndProof aggregate = DataStructureUtil.randomAggregateAndProof(1);
+    final AggregateAndProof aggregate = dataStructureUtil.randomAggregateAndProof();
     final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
 
     eventBus.post(aggregate);

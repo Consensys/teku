@@ -28,6 +28,8 @@ import tech.pegasys.artemis.storage.Store;
 
 public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
@@ -48,7 +50,7 @@ public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
 
   @Test
   public void shouldReturnNoContentIfBestBlockIsMissing() throws Exception {
-    final Bytes32 headRoot = DataStructureUtil.randomBytes32(1);
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
     when(chainStorageClient.getBlockByRoot(headRoot)).thenReturn(Optional.empty());
 
