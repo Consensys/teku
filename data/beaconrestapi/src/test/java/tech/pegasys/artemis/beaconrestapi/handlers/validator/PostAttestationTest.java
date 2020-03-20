@@ -26,13 +26,16 @@ import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class PostAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
   private ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
-  private ValidatorDataProvider provider = new ValidatorDataProvider(validatorCoordinator);
+  private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
+  private ValidatorDataProvider provider =
+      new ValidatorDataProvider(validatorCoordinator, combinedChainDataClient);
   private final JsonProvider jsonProvider = new JsonProvider();
   private Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
   private PostAttestation handler;
