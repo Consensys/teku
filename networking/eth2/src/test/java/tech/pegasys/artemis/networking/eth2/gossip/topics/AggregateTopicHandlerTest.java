@@ -29,6 +29,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AggregateTopicHandlerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final AggregateTopicHandler topicHandler =
@@ -42,7 +43,7 @@ public class AggregateTopicHandlerTest {
 
   @Test
   public void handleMessage_invalidAttestation_badState() throws Exception {
-    final AggregateAndProof aggregate = DataStructureUtil.randomAggregateAndProof(1);
+    final AggregateAndProof aggregate = dataStructureUtil.randomAggregateAndProof();
     final Bytes serialized = SimpleOffsetSerializer.serialize(aggregate);
 
     final boolean result = topicHandler.handleMessage(serialized);

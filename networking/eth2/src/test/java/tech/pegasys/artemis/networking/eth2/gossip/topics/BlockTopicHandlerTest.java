@@ -31,6 +31,7 @@ import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockTopicHandlerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(2, storageClient);
@@ -67,7 +68,7 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_invalidBlock_unknownPreState() {
-    SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 100);
+    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
 
     final boolean result = topicHandler.handleMessage(serialized);
