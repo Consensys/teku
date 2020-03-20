@@ -15,6 +15,7 @@ package tech.pegasys.artemis.datastructures.util;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -22,6 +23,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 public class ValidatorsUtil {
@@ -89,6 +91,29 @@ public class ValidatorsUtil {
                   .boxed()
                   .collect(Collectors.toList());
             });
+  }
+
+  public static Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
+    final Integer validatorIndex =
+        BeaconStateCache.getTransitionCaches(state)
+            .getValidatorIndex()
+            .get(
+                publicKey,
+                key -> {
+                  SSZList<Validator> validators = state.getValidators();
+                  for (int i = 0; i < validators.size(); i++) {
+                    final Validator validator = validators.get(i);
+                    if (validator.getPubkey().equals(publicKey)) {
+                      return i;
+                    }
+                  }
+                  // TODO this ain't right but it will be filtered out by the line below
+                  return Integer.MAX_VALUE;
+                });
+    return Optional.ofNullable(validatorIndex)
+        // The cache is shared between all states, so filter out any cached responses for validators
+        // that are only added into later states
+        .filter(index -> index < state.getValidators().size());
   }
 
   /**

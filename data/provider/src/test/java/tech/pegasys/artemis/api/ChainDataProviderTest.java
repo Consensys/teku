@@ -423,7 +423,6 @@ public class ChainDataProviderTest {
         .isEqualTo(new ValidatorWithIndex(beaconState.validators.get(99), beaconState));
   }
 
-  @Test
   public void getFork_shouldThrowIfNoBlockRoot() {
     ChainDataProvider provider =
         new ChainDataProvider(mockChainStorageClient, mockCombinedChainDataClient);
