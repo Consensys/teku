@@ -73,12 +73,12 @@ public class ValidatorDataProviderTest {
       tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
   private final BLSSignature signature = new BLSSignature(signatureInternal);
   private final tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
-      DataStructureUtil.randomBeaconState(11233);
+      dataStructureUtil.randomBeaconState();
   private final BeaconState beaconState = new BeaconState(beaconStateInternal);
-  private static Bytes32 blockRoot = DataStructureUtil.randomBytes32(6789);
-  private static UnsignedLong slot = DataStructureUtil.randomUnsignedLong(2345);
-  private final BLSPublicKey pubKey1 = DataStructureUtil.randomPublicKey(99);
-  private final BLSPublicKey pubKey2 = DataStructureUtil.randomPublicKey(98);
+  private Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+  private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
+  private final BLSPublicKey pubKey1 = dataStructureUtil.randomPublicKey();
+  private final BLSPublicKey pubKey2 = dataStructureUtil.randomPublicKey();
 
   @Test
   void getUnsignedBeaconBlockAtSlot_throwsWithoutSlotDefined() {
@@ -134,7 +134,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getValidatorIndex_shouldReturnNotFoundIfNotFound() {
-    BLSPubKey pubKey = new BLSPubKey(DataStructureUtil.randomPublicKey(88).toBytes());
+    BLSPubKey pubKey = new BLSPubKey(dataStructureUtil.randomPublicKey().toBytes());
     Integer validatorIndex = ValidatorDataProvider.getValidatorIndex(List.of(), pubKey);
     assertThat(validatorIndex).isEqualTo(null);
   }
@@ -142,7 +142,7 @@ public class ValidatorDataProviderTest {
   @Test
   void getValidatorIndex_shouldReturnIndexIfFound() {
     tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
-        DataStructureUtil.randomBeaconState(99);
+        dataStructureUtil.randomBeaconState();
     BeaconState state = new BeaconState(beaconStateInternal);
     // all the validators are the same so the first one will match
     int expectedValidatorIndex = 0;
@@ -165,7 +165,7 @@ public class ValidatorDataProviderTest {
   void getCommitteeIndex_shouldReturnIndexIfFound() {
     ValidatorDataProvider provider =
         new ValidatorDataProvider(validatorCoordinator, combinedChainDataClient);
-    UnsignedLong committeeIndex = DataStructureUtil.randomUnsignedLong(888);
+    UnsignedLong committeeIndex = dataStructureUtil.randomUnsignedLong();
     CommitteeAssignment committeeAssignment1 =
         new CommitteeAssignment(List.of(4, 5, 6), committeeIndex, slot);
     CommitteeAssignment committeeAssignment2 =
@@ -178,7 +178,7 @@ public class ValidatorDataProviderTest {
   @Test
   void getValidatorDutiesFromState() {
     tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal =
-        DataStructureUtil.randomBeaconState(77);
+        dataStructureUtil.randomBeaconState();
     ValidatorDataProvider provider =
         new ValidatorDataProvider(validatorCoordinator, combinedChainDataClient);
     List<CommitteeAssignment> committees = List.of();
@@ -291,7 +291,7 @@ public class ValidatorDataProviderTest {
       final tech.pegasys.artemis.datastructures.state.BeaconState beaconState) {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
     // create a validator and add it to the list
-    MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
+    MutableValidator v = dataStructureUtil.randomValidator().createWritableCopy();
     v.setActivation_eligibility_epoch(ZERO);
     v.setActivation_epoch(ONE);
     beaconStateW.getValidators().add(v);
