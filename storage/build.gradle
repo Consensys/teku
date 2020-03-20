@@ -6,7 +6,7 @@ dependencies {
   implementation project(':util')
 
   compile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  compile group: 'org.mapdb', name: 'mapdb', version: '3.0.7'
+  compile 'org.mapdb:mapdb'
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
