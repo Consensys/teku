@@ -87,8 +87,8 @@ class BLSPublicKeyTest {
   @Test
   public void succeedsWhenEqualsReturnsTrueForEquivalentPublicKeysCreatedFromDifferentRawBytes() {
     BLSPublicKey publicKey1 = BLSPublicKey.random(1);
-    final Bytes expandedBytes = publicKey1.getPublicKey().g1Point().toBytes();
-    final Bytes compressedBytes = publicKey1.toBytesCompressed();
+    Bytes expandedBytes = publicKey1.getPublicKey().g1Point().toBytes();
+    Bytes compressedBytes = publicKey1.toBytesCompressed();
     assertNotEquals(expandedBytes, compressedBytes);
 
     BLSPublicKey publicKey2 = new BLSPublicKey(PublicKey.fromBytesCompressed(expandedBytes));
