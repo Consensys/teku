@@ -183,7 +183,7 @@ public class CommonParams implements Closeable {
               + "] : "
               + e.getMessage(),
           e);
-    } catch (CipherException e) {
+    } catch (final CipherException e) {
       throw new ParameterException(
           spec.commandLine(),
           "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
