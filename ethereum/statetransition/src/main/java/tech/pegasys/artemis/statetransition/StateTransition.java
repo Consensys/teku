@@ -89,7 +89,8 @@ public class StateTransition {
       // Process_block
       process_block(state, signed_block.getMessage(), validateStateRootAndSignatures);
 
-      Bytes32 stateRoot = state.hash_tree_root();
+      BeaconState postState = state.commitChanges();
+      Bytes32 stateRoot = postState.hash_tree_root();
       // Validate state root (`validate_state_root == True` in production)
       if (validateStateRootAndSignatures) {
         checkArgument(
@@ -101,7 +102,7 @@ public class StateTransition {
                 + stateRoot.toHexString());
       }
 
-      return state.commitChanges();
+      return postState;
     } catch (SlotProcessingException
         | BlockProcessingException
         | EpochProcessingException
