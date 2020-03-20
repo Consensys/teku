@@ -75,11 +75,8 @@ public class PostAttestation implements Handler {
       Attestation attestation = jsonProvider.jsonToObject(ctx.body(), Attestation.class);
       provider.submitAttestation(attestation);
       ctx.status(SC_NO_CONTENT);
-    } catch (final IllegalArgumentException e) {
+    } catch (final IllegalArgumentException | JsonMappingException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-      ctx.status(SC_BAD_REQUEST);
-    } catch (JsonMappingException ex) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
