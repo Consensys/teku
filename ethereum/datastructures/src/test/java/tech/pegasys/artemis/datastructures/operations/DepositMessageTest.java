@@ -14,21 +14,20 @@
 package tech.pegasys.artemis.datastructures.operations;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class DepositMessageTest {
-  private int seed = 94385;
-  private BLSPublicKey pubkey = BLSPublicKey.random(seed++);
-  private Bytes32 withdrawalCredentials = randomBytes32(seed++);
-  private UnsignedLong amount = randomUnsignedLong(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
+  private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
+  private UnsignedLong amount = dataStructureUtil.randomUnsignedLong();
 
   @Test
   public void shouldRoundTripViaSsz() {

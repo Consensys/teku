@@ -239,6 +239,17 @@ public class ValidatorCoordinator extends Service {
     attestationAggregator.reset();
   }
 
+  public void postSignedAttestation(final Attestation attestation, boolean validate) {
+    // TODO extra validation for the attestation we're posting?
+    if (validate) {
+      if (attestation.getAggregate_signature().equals(BLSSignature.empty())) {
+        throw new IllegalArgumentException("Signed attestations must have a non zero signature");
+      }
+    }
+    attestationAggregator.addOwnValidatorAttestation(attestation);
+    this.eventBus.post(attestation);
+  }
+
   private void produceAttestations(
       BeaconState state,
       BLSPublicKey attester,
@@ -255,8 +266,7 @@ public class ValidatorCoordinator extends Service {
 
     BLSSignature signature = validators.get(attester).sign(signing_root).join();
     Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
-    attestationAggregator.addOwnValidatorAttestation(new Attestation(attestation));
-    this.eventBus.post(attestation);
+    postSignedAttestation(attestation, false);
   }
 
   private void createBlockIfNecessary(

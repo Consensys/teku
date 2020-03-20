@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -23,11 +25,34 @@ public class AttestationData {
   public final Checkpoint source;
   public final Checkpoint target;
 
+  @JsonCreator
+  public AttestationData(
+      @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("index") final UnsignedLong index,
+      @JsonProperty("beacon_block_root") final Bytes32 beacon_block_root,
+      @JsonProperty("source") final Checkpoint source,
+      @JsonProperty("target") final Checkpoint target) {
+    this.slot = slot;
+    this.index = index;
+    this.beacon_block_root = beacon_block_root;
+    this.source = source;
+    this.target = target;
+  }
+
   public AttestationData(tech.pegasys.artemis.datastructures.operations.AttestationData data) {
     this.slot = data.getSlot();
     this.index = data.getIndex();
     this.beacon_block_root = data.getBeacon_block_root();
     this.source = new Checkpoint(data.getSource());
     this.target = new Checkpoint(data.getTarget());
+  }
+
+  public tech.pegasys.artemis.datastructures.operations.AttestationData
+      asInternalAttestationData() {
+    tech.pegasys.artemis.datastructures.state.Checkpoint src = source.asInternalCheckpoint();
+    tech.pegasys.artemis.datastructures.state.Checkpoint tgt = target.asInternalCheckpoint();
+
+    return new tech.pegasys.artemis.datastructures.operations.AttestationData(
+        slot, index, beacon_block_root, src, tgt);
   }
 }

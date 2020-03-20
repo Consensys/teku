@@ -69,7 +69,9 @@ public class LRUCache<K, V> implements Cache<K, V> {
 
     if (result == null) {
       result = fallback.apply(key);
-      cacheData.put(key, result);
+      if (result != null) {
+        cacheData.put(key, result);
+      }
     }
 
     return result;

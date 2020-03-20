@@ -48,6 +48,8 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetBlockTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
@@ -58,7 +60,7 @@ public class GetBlockTest {
   private GetBlock handler;
   private Bytes32 blockRoot = Bytes32.random();
   private tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
-      DataStructureUtil.randomSignedBeaconBlock(1, 1);
+      dataStructureUtil.randomSignedBeaconBlock(1);
 
   @BeforeEach
   public void setup() {

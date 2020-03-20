@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -35,19 +37,20 @@ public class BeaconChainHead {
   public final UnsignedLong previous_justified_epoch;
   public final Bytes32 previous_justified_block_root;
 
+  @JsonCreator
   public BeaconChainHead(
-      UnsignedLong head_slot,
-      UnsignedLong head_epoch,
-      Bytes32 head_block_root,
-      UnsignedLong finalized_slot,
-      UnsignedLong finalized_epoch,
-      Bytes32 finalized_block_root,
-      UnsignedLong justified_slot,
-      UnsignedLong justified_epoch,
-      Bytes32 justified_block_root,
-      UnsignedLong previous_justified_slot,
-      UnsignedLong previous_justified_epoch,
-      Bytes32 previous_justified_block_root) {
+      @JsonProperty("head_slot") final UnsignedLong head_slot,
+      @JsonProperty("head_epoch") final UnsignedLong head_epoch,
+      @JsonProperty("head_block_root") final Bytes32 head_block_root,
+      @JsonProperty("finalized_slot") final UnsignedLong finalized_slot,
+      @JsonProperty("finalized_epoch") final UnsignedLong finalized_epoch,
+      @JsonProperty("finalized_block_root") final Bytes32 finalized_block_root,
+      @JsonProperty("justified_slot") final UnsignedLong justified_slot,
+      @JsonProperty("justified_epoch") final UnsignedLong justified_epoch,
+      @JsonProperty("justified_block_root") final Bytes32 justified_block_root,
+      @JsonProperty("previous_justified_slot") final UnsignedLong previous_justified_slot,
+      @JsonProperty("previous_justified_epoch") final UnsignedLong previous_justified_epoch,
+      @JsonProperty("previous_justified_block_root") final Bytes32 previous_justified_block_root) {
     this.head_slot = head_slot;
     this.head_epoch = head_epoch;
     this.head_block_root = head_block_root;
