@@ -17,6 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
@@ -50,5 +51,9 @@ public class ValidatorDataProvider {
       throw new DataProviderException(ex.getMessage());
     }
     return Optional.empty();
+  }
+
+  public void submitAttestation(Attestation attestation) {
+    validatorCoordinator.postSignedAttestation(attestation.asInternalAttestation(), true);
   }
 }
