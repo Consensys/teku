@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
@@ -42,10 +41,12 @@ import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
+import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -252,32 +253,16 @@ public class ChainDataProvider {
         combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
 
     for (final BLSPubKey pubKey : pubKeys) {
-      final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
-      if (validatorIndex == null) {
-        dutiesList.add(new ValidatorDuties(pubKey, null, null));
-      } else {
-        dutiesList.add(
-            new ValidatorDuties(
-                pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)));
-      }
+      final ValidatorDuties validatorDuties =
+          ValidatorsUtil.getValidatorIndex(state, BLSPublicKey.fromBytes(pubKey.toBytes()))
+              .map(
+                  validatorIndex ->
+                      new ValidatorDuties(
+                          pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)))
+              .orElseGet(() -> new ValidatorDuties(pubKey, null, null));
+      dutiesList.add(validatorDuties);
     }
     return dutiesList;
-  }
-
-  @VisibleForTesting
-  protected static Integer getValidatorIndex(
-      final List<tech.pegasys.artemis.datastructures.state.Validator> validators,
-      final BLSPubKey publicKey) {
-    Optional<tech.pegasys.artemis.datastructures.state.Validator> optionalValidator =
-        validators.stream()
-            .filter(
-                v -> Bytes48.fromHexString(publicKey.toHexString()).equals(v.getPubkey().toBytes()))
-            .findFirst();
-    if (optionalValidator.isPresent()) {
-      return validators.indexOf(optionalValidator.get());
-    } else {
-      return null;
-    }
   }
 
   @VisibleForTesting
