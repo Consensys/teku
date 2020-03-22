@@ -14,10 +14,12 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
-  runtime 'org.apache.logging.log4j:log4j-core'
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':util'))
+
+  testImplementation 'com.googlecode.json-simple:json-simple'
 
   testFixturesApi project(':pow')
   testFixturesApi project(':ssz')

@@ -23,7 +23,7 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.xerial.snappy:snappy-java'
 
-  runtime 'org.apache.logging.log4j:log4j-core'
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))

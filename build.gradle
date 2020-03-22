@@ -598,7 +598,7 @@ startScripts {
 }
 
 dependencies {
-  compile project(':artemis')
+  implementation project(':artemis')
   errorprone 'com.google.errorprone:error_prone_core'
 }
 
