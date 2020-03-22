@@ -15,10 +15,10 @@ dependencies {
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(':ethereum:datastructures')
-
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
+
+  testFixturesApi project(':storage')
 }
