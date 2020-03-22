@@ -13,18 +13,18 @@
 
 package tech.pegasys.artemis.benchmarks;
 
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBeaconState;
 import static tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer.serialize;
 
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
 public class SSZBenchmark {
 
-  private static SimpleOffsetSerializable state = randomBeaconState(100);
+  private static SimpleOffsetSerializable state = new DataStructureUtil().randomBeaconState();
 
   @Benchmark
   @Warmup(iterations = 2, time = 100, timeUnit = TimeUnit.MILLISECONDS)

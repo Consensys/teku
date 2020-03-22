@@ -28,10 +28,9 @@ import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
-import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 
 class JsonProviderTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final String Q = "\"";
 
@@ -47,25 +46,9 @@ class JsonProviderTest {
 
   @Test
   public void unsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    UnsignedLong data = DataStructureUtil.randomUnsignedLong(1111);
+    UnsignedLong data = dataStructureUtil.randomUnsignedLong();
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, data.toString());
-  }
-
-  @Test
-  public void vectorShouldSerializeToJson() throws JsonProcessingException {
-    SSZVector<String> data = SSZVector.createMutable(List.of("One", "Two"), String.class);
-    String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, "[" + Q + "One" + Q + "," + Q + "Two" + Q + "]");
-  }
-
-  @Test
-  public void sszVectorOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    SSZVector<UnsignedLong> data =
-        SSZVector.createMutable(
-            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), UnsignedLong.class);
-    String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, "[1,18446744073709551615]");
   }
 
   @Test
@@ -81,15 +64,6 @@ class JsonProviderTest {
   }
 
   @Test
-  public void sszListOfUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    SSZList<UnsignedLong> data =
-        SSZList.createMutable(
-            List.of(UnsignedLong.ONE, UnsignedLong.MAX_VALUE), 3, UnsignedLong.class);
-    String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(serialized, "[1,18446744073709551615]");
-  }
-
-  @Test
   public void stringShouldSerializeToJson() throws JsonProcessingException {
     String data = "test";
     assertEquals(Q + data + Q, jsonProvider.objectToJSON(data));
@@ -98,7 +72,7 @@ class JsonProviderTest {
   @Test
   void beaconStateJsonTest() throws JsonProcessingException {
     tech.pegasys.artemis.datastructures.state.BeaconState stateInternal =
-        DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16), 100);
+        dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16));
     BeaconState state = new BeaconState(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);

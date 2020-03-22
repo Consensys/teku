@@ -45,8 +45,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class DepositProviderTest {
 
-  private int seed = 0;
-
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private List<tech.pegasys.artemis.pow.event.Deposit> allSeenDepositsList;
   private DepositProvider depositProvider;
   private ChainStorageClient chainStorageClient;
@@ -136,7 +135,7 @@ public class DepositProviderTest {
   private void createDepositEvents(int n) {
     allSeenDepositsList =
         IntStream.range(0, n)
-            .mapToObj(i -> DataStructureUtil.randomDepositEvent(seed++, UnsignedLong.valueOf(i)))
+            .mapToObj(i -> dataStructureUtil.randomDepositEvent(UnsignedLong.valueOf(i)))
             .collect(Collectors.toList());
   }
 

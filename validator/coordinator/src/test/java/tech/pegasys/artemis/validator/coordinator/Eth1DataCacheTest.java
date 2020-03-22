@@ -39,6 +39,7 @@ import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class Eth1DataCacheTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final BeaconStateImpl genesisState = mock(BeaconStateImpl.class);
 
@@ -228,7 +229,7 @@ public class Eth1DataCacheTest {
     eth1DataCache.startBeaconChainMode(genesisState);
     eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
-    Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
+    Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
 
     SSZMutableList<Eth1Data> eth1DataVotes =
         SSZList.createMutable(List.of(eth1Data), 10, Eth1Data.class);
@@ -316,12 +317,11 @@ public class Eth1DataCacheTest {
   }
 
   private CacheEth1BlockEvent createRandomCacheEth1BlockEvent(UnsignedLong timestamp) {
-    long seed = 0;
     return new CacheEth1BlockEvent(
-        DataStructureUtil.randomUnsignedLong(++seed),
-        DataStructureUtil.randomBytes32(++seed),
+        dataStructureUtil.randomUnsignedLong(),
+        dataStructureUtil.randomBytes32(),
         timestamp,
-        DataStructureUtil.randomBytes32(++seed),
-        DataStructureUtil.randomUnsignedLong(++seed));
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomUnsignedLong());
   }
 }

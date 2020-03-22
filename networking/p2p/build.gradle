@@ -11,36 +11,35 @@ dependencies {
   implementation project(':validator:coordinator')
 
   implementation 'com.google.guava:guava'
+  implementation 'de.undercouch:bson4jackson'
   implementation 'io.libp2p:jvm-libp2p-minimal'
+  implementation 'io.projectreactor:reactor-core'
   implementation 'io.vertx:vertx-core'
-
+  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-rlpx'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-units'
-
-  implementation 'io.projectreactor:reactor-core'
-
-  implementation 'tech.pegasys.discovery:discovery'
-
-  implementation 'org.apache.logging.log4j:log4j-api'
-  runtime 'org.apache.logging.log4j:log4j-core'
-
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
-  implementation 'de.undercouch:bson4jackson'
   implementation 'org.xerial.snappy:snappy-java'
   implementation 'org.hyperledger.besu:plugin-api'
+  implementation 'tech.pegasys.discovery:discovery'
 
-  testImplementation 'org.mockito:mockito-core'
+  runtime 'org.apache.logging.log4j:log4j-core'
+
   testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testImplementation 'org.mockito:mockito-core'
 
   integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
   integrationTestImplementation 'org.assertj:assertj-core'
 
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+
   testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
+
   testSupportCompile 'org.assertj:assertj-core'
 }

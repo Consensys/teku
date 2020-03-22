@@ -68,7 +68,7 @@ public class AttestationGenerator {
   }
 
   public static Attestation aggregateAttestation(int numAttesters) {
-    Attestation attestation = DataStructureUtil.randomAttestation(1);
+    Attestation attestation = new DataStructureUtil(1).randomAttestation();
     withNewAttesterBits(attestation, numAttesters);
     return attestation;
   }

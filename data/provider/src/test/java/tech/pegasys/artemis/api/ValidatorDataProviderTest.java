@@ -16,12 +16,15 @@ package tech.pegasys.artemis.api;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -31,10 +34,16 @@ import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProviderTest {
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<tech.pegasys.artemis.datastructures.operations.Attestation> args =
+      ArgumentCaptor.forClass(tech.pegasys.artemis.datastructures.operations.Attestation.class);
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ValidatorCoordinator validatorCoordinator = mock(ValidatorCoordinator.class);
   private ValidatorDataProvider provider = new ValidatorDataProvider(validatorCoordinator);;
   private final tech.pegasys.artemis.datastructures.blocks.BeaconBlock blockInternal =
-      DataStructureUtil.randomBeaconBlock(123, 456);
+      dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
   private final tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
       tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
@@ -90,5 +99,17 @@ public class ValidatorDataProviderTest {
 
     assertThatExceptionOfType(DataProviderException.class)
         .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, signature));
+  }
+
+  @Test
+  void submitAttestation_shouldSubmitAnInternalAttestationStructure() {
+    tech.pegasys.artemis.datastructures.operations.Attestation internalAttestation =
+        dataStructureUtil.randomAttestation();
+    Attestation attestation = new Attestation(internalAttestation);
+
+    provider.submitAttestation(attestation);
+
+    verify(validatorCoordinator).postSignedAttestation(args.capture(), eq(true));
+    assertThat(args.getValue()).usingRecursiveComparison().isEqualTo(internalAttestation);
   }
 }

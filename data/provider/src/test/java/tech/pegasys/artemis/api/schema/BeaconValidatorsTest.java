@@ -30,10 +30,11 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.config.Constants;
 
 class BeaconValidatorsTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @Test
   public void validatorsResponseShouldConformToDefaults() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(99);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     SSZList<Validator> validatorList = beaconState.getValidators();
     BeaconValidators response = new BeaconValidators(beaconState);
     assertThat(response.total_size).isEqualTo(beaconState.getValidators().size());
@@ -49,7 +50,7 @@ class BeaconValidatorsTest {
 
   @Test
   public void activeValidatorsResponseShouldConformToDefaults() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(98);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     BeaconValidators validators =
         new BeaconValidators(
             beaconState,
@@ -72,7 +73,7 @@ class BeaconValidatorsTest {
 
   @Test
   public void suppliedPageSizeParamIsUsed() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     final int suppliedPageSizeParam = 10;
 
     BeaconValidators beaconValidators =
@@ -89,7 +90,7 @@ class BeaconValidatorsTest {
 
   @Test
   public void suppliedPageParamsAreUsed() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     final int suppliedPageSizeParam = 9;
     final int suppliedPageTokenParam = 2;
 
@@ -107,7 +108,7 @@ class BeaconValidatorsTest {
 
   @Test
   public void returnEmptyListIfPageParamsOutOfBounds() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     final int suppliedPageSizeParam = 1000;
     final int suppliedPageTokenParam = 1000;
 
@@ -127,7 +128,7 @@ class BeaconValidatorsTest {
 
   @Test
   public void returnRemainderIfEdgeCasePageParams() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(97);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     final SSZList<Validator> validators = beaconState.getValidators();
     final int validatorsSize = validators.size();
     final int suppliedPageSizeParam = validatorsSize / 10 - 1;
@@ -151,7 +152,7 @@ class BeaconValidatorsTest {
 
   @Test
   public void getActiveValidatorsCount() {
-    BeaconState beaconState = DataStructureUtil.randomBeaconState(23);
+    BeaconState beaconState = dataStructureUtil.randomBeaconState();
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
     SSZList<Validator> allValidators = beaconState.getValidators();
@@ -166,7 +167,7 @@ class BeaconValidatorsTest {
         .isLessThanOrEqualTo(beaconStateW.getValidators().size());
 
     // create one validator which IS active and add it to the list
-    MutableValidator v = DataStructureUtil.randomValidator(77).createWritableCopy();
+    MutableValidator v = dataStructureUtil.randomValidator().createWritableCopy();
     v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
     v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
     beaconStateW.getValidators().add(v);

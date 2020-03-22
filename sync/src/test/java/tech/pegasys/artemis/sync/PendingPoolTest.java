@@ -31,6 +31,7 @@ import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 
 public class PendingPoolTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final UnsignedLong historicalTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureTolerance = UnsignedLong.valueOf(2);
@@ -66,7 +67,7 @@ public class PendingPoolTest {
   @Test
   public void add_blockForCurrentSlot() {
     final SignedBeaconBlock block =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     pendingPool.add(block);
 
     assertThat(pendingPool.contains(block)).isTrue();
@@ -80,7 +81,7 @@ public class PendingPoolTest {
   @Test
   public void add_historicalBlockWithinWindow() {
     final UnsignedLong slot = currentSlot.minus(historicalTolerance);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
     assertThat(pendingPool.contains(block)).isTrue();
@@ -94,7 +95,7 @@ public class PendingPoolTest {
   @Test
   public void add_historicalBlockOutsideWindow() {
     final UnsignedLong slot = currentSlot.minus(historicalTolerance).minus(UnsignedLong.ONE);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
     assertThat(pendingPool.contains(block)).isFalse();
@@ -107,7 +108,7 @@ public class PendingPoolTest {
   @Test
   public void add_futureBlockWithinWindow() {
     final UnsignedLong slot = currentSlot.plus(futureTolerance);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
     assertThat(pendingPool.contains(block)).isTrue();
@@ -121,7 +122,7 @@ public class PendingPoolTest {
   @Test
   public void add_futureBlockOutsideWindow() {
     final UnsignedLong slot = currentSlot.plus(futureTolerance).plus(UnsignedLong.ONE);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
     assertThat(pendingPool.contains(block)).isFalse();
@@ -133,13 +134,13 @@ public class PendingPoolTest {
 
   @Test
   public void add_nonFinalizedBlock() {
-    final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     eventBus.post(new FinalizedCheckpointEvent(checkpoint));
 
     final UnsignedLong slot = checkpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
     setSlot(slot);
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
 
     pendingPool.add(block);
     assertThat(pendingPool.contains(block)).isTrue();
@@ -152,14 +153,14 @@ public class PendingPoolTest {
 
   @Test
   public void add_finalizedBlock() {
-    final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     eventBus.post(new FinalizedCheckpointEvent(checkpoint));
     final long slot = checkpoint.getEpochStartSlot().longValue() + 10;
     setSlot(slot);
 
     final long blockSlot = checkpoint.getEpochStartSlot().longValue();
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(blockSlot, 1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(blockSlot);
 
     pendingPool.add(block);
     assertThat(pendingPool.contains(block)).isFalse();
@@ -179,7 +180,7 @@ public class PendingPoolTest {
   @Test
   public void add_duplicateBlock() {
     final SignedBeaconBlock block =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     final Bytes32 parentRoot = block.getParent_root();
     pendingPool.add(block);
     pendingPool.add(block);
@@ -195,10 +196,10 @@ public class PendingPoolTest {
   @Test
   public void add_siblingBlocks() {
     final SignedBeaconBlock blockA =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     final Bytes32 parentRoot = blockA.getParent_root();
     final SignedBeaconBlock blockB =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot, 3);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot);
     pendingPool.add(blockA);
     pendingPool.add(blockB);
 
@@ -214,7 +215,7 @@ public class PendingPoolTest {
   @Test
   public void remove_existingBlock() {
     final SignedBeaconBlock block =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     pendingPool.add(block);
     pendingPool.remove(block);
 
@@ -228,7 +229,7 @@ public class PendingPoolTest {
   @Test
   public void remove_unknownBlock() {
     final SignedBeaconBlock block =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     pendingPool.remove(block);
 
     assertThat(pendingPool.contains(block)).isFalse();
@@ -241,10 +242,10 @@ public class PendingPoolTest {
   @Test
   public void remove_siblingBlock() {
     final SignedBeaconBlock blockA =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     final Bytes32 parentRoot = blockA.getParent_root();
     final SignedBeaconBlock blockB =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot, 3);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), parentRoot);
     pendingPool.add(blockA);
     pendingPool.add(blockB);
     pendingPool.remove(blockA);
@@ -259,19 +260,17 @@ public class PendingPoolTest {
 
   @Test
   public void getItemsDependingOn_includeIndirect() {
-    int seed = 9248294;
     final int chainDepth = 2;
     final int descendentChainCount = 2;
     final List<SignedBeaconBlock> directDescendents = new ArrayList<>();
     final List<SignedBeaconBlock> indirectDescendents = new ArrayList<>();
 
-    final Bytes32 commonAncestorRoot = DataStructureUtil.randomBytes32(1);
+    final Bytes32 commonAncestorRoot = dataStructureUtil.randomBytes32();
     for (int chainIndex = 0; chainIndex < descendentChainCount; chainIndex++) {
       Bytes32 parentRoot = commonAncestorRoot;
       for (int depth = 0; depth < chainDepth; depth++) {
         final long slot = currentSlot.longValue() + 1 + depth;
-        final SignedBeaconBlock block =
-            DataStructureUtil.randomSignedBeaconBlock(slot, parentRoot, seed++);
+        final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot, parentRoot);
         final List<SignedBeaconBlock> blockSet =
             depth == 0 ? directDescendents : indirectDescendents;
         blockSet.add(block);
@@ -293,19 +292,17 @@ public class PendingPoolTest {
 
   @Test
   public void getItemsDependingOn_directOnly() {
-    int seed = 48929482;
     final int chainDepth = 2;
     final int descendentChainCount = 2;
     final List<SignedBeaconBlock> directDescendents = new ArrayList<>();
     final List<SignedBeaconBlock> indirectDescendents = new ArrayList<>();
 
-    final Bytes32 commonAncestorRoot = DataStructureUtil.randomBytes32(1);
+    final Bytes32 commonAncestorRoot = dataStructureUtil.randomBytes32();
     for (int chainIndex = 0; chainIndex < descendentChainCount; chainIndex++) {
       Bytes32 parentRoot = commonAncestorRoot;
       for (int depth = 0; depth < chainDepth; depth++) {
         final long slot = currentSlot.longValue() + 1 + depth;
-        final SignedBeaconBlock block =
-            DataStructureUtil.randomSignedBeaconBlock(slot, parentRoot, seed++);
+        final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot, parentRoot);
         final List<SignedBeaconBlock> blockSet =
             depth == 0 ? directDescendents : indirectDescendents;
         blockSet.add(block);
@@ -324,18 +321,18 @@ public class PendingPoolTest {
 
   @Test
   public void prune_finalizedBlocks() {
-    final SignedBeaconBlock finalizedBlock = DataStructureUtil.randomSignedBeaconBlock(10, 1);
+    final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     final long finalizedSlot = checkpoint.getEpochStartSlot().longValue();
     setSlot(finalizedSlot);
 
     // Add a bunch of blocks
     List<SignedBeaconBlock> nonFinalBlocks =
-        List.of(DataStructureUtil.randomSignedBeaconBlock(finalizedSlot + 1, 1));
+        List.of(dataStructureUtil.randomSignedBeaconBlock(finalizedSlot + 1));
     List<SignedBeaconBlock> finalizedBlocks =
         List.of(
-            DataStructureUtil.randomSignedBeaconBlock(finalizedSlot, 2),
-            DataStructureUtil.randomSignedBeaconBlock(finalizedSlot - 1, 3));
+            dataStructureUtil.randomSignedBeaconBlock(finalizedSlot),
+            dataStructureUtil.randomSignedBeaconBlock(finalizedSlot - 1));
     List<SignedBeaconBlock> allBlocks = new ArrayList<>();
     allBlocks.addAll(nonFinalBlocks);
     allBlocks.addAll(finalizedBlocks);
@@ -362,9 +359,9 @@ public class PendingPoolTest {
   @Test
   public void onSlot_prunesOldBlocks() {
     final SignedBeaconBlock blockA =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L, 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L);
     final SignedBeaconBlock blockB =
-        DataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue(), 1);
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     pendingPool.add(blockA);
     pendingPool.add(blockB);
 
