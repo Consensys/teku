@@ -516,7 +516,7 @@ subprojects {
 
   dependencies {
     implementation 'org.apache.logging.log4j:log4j-core'
-    runtime 'org.apache.logging.log4j:log4j-slf4j-impl'
+    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
 
     testImplementation sourceSets.testSupport.output
     integrationTestImplementation sourceSets.testSupport.output
@@ -617,7 +617,7 @@ startScripts {
 }
 
 dependencies {
-  compile project(':artemis')
+  implementation project(':artemis')
   errorprone 'com.google.errorprone:error_prone_core'
 }
 
