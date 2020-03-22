@@ -12,7 +12,7 @@ dependencies {
     implementation 'org.hyperledger.besu.internal:metrics-core'
     implementation 'org.hyperledger.besu:plugin-api'
 
-    runtime 'org.apache.logging.log4j:log4j-core'
+    runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
     test {
         testLogging.showStandardStreams = true
