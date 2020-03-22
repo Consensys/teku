@@ -70,13 +70,16 @@ public class GetValidators implements Handler {
       summary = "Get validators that match the specified query.",
       tags = {TAG_BEACON},
       description =
-          "Returns validator information. Returns the first page of validators in the current epoch if you do not specify any parameters.",
+          "Returns validator information.\n\n"
+              + "Returns the first page of validators in the current epoch if you do not specify any parameters.",
       queryParams = {
         @OpenApiParam(name = EPOCH, description = "Epoch to query. Defaults to the current epoch."),
         @OpenApiParam(
             name = ACTIVE,
             description =
-                "Only return validators that are active in the specified `epoch`. By default, returns inactive and active validators.\n\n**Note**: This field accepts any value when specifying active validators."),
+                "Only return validators that are active in the specified `epoch`. "
+                    + "By default, returns inactive and active validators.\n\n"
+                    + "**Note**: The field accepts any value to return active validators."),
         @OpenApiParam(
             name = PAGE_SIZE,
             description =
