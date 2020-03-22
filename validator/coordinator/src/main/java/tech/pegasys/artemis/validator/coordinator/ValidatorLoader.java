@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
+import static com.google.common.base.Functions.identity;
+
 import com.google.common.collect.Streams;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -24,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.validator.client.ExternalMessageSignerService;
 import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
 
 class ValidatorLoader {
@@ -33,12 +36,29 @@ class ValidatorLoader {
   static Map<BLSPublicKey, ValidatorInfo> initializeValidators(ArtemisConfiguration config) {
     // Get validator connection info and create a new ValidatorInfo object and put it into the
     // Validators map
-    final Map<BLSPublicKey, ValidatorInfo> validators =
-        loadValidatorKeys(config).stream()
-            .collect(
-                Collectors.toMap(
-                    BLSKeyPair::getPublicKey,
-                    blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
+
+    final Map<BLSPublicKey, ValidatorInfo> validators;
+
+    if (!config.getValidatorExternalSigningPublicKeys().isEmpty()) {
+      validators =
+          config.getValidatorExternalSigningPublicKeys().stream()
+              .collect(
+                  Collectors.toMap(
+                      identity(),
+                      publicKey ->
+                          new ValidatorInfo(
+                              new ExternalMessageSignerService(
+                                  config.getValidatorExternalSigningUrl(),
+                                  publicKey,
+                                  config.getValidatorExternalSigningTimeout()))));
+    } else {
+      validators =
+          loadValidatorKeys(config).stream()
+              .collect(
+                  Collectors.toMap(
+                      BLSKeyPair::getPublicKey,
+                      blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
+    }
 
     if (LOG.isDebugEnabled()) {
       Streams.mapWithIndex(

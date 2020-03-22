@@ -10,6 +10,7 @@ dependencies {
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
 
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 }
