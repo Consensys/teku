@@ -9,9 +9,8 @@ dependencies {
   implementation project(':util')
 
   api 'org.web3j:core'
-
-  compile 'com.googlecode.json-simple:json-simple'
-
+  
+  implementation 'com.googlecode.json-simple:json-simple'
   implementation 'com.google.code.gson:gson'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.commons:commons-lang3'
@@ -19,7 +18,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
 
-  runtime 'org.apache.logging.log4j:log4j-core'
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
   testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
