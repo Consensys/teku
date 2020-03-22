@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -128,18 +127,15 @@ public class Eth1Data extends AbstractImmutableContainer<Eth1Data>
   }
 
   /** @return the deposit_root */
-  @JsonProperty
   public Bytes32 getDeposit_root() {
     return ((Bytes32View) get(0)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getDeposit_count() {
     return ((UInt64View) get(1)).get();
   }
 
   /** @return the block_hash */
-  @JsonProperty
   public Bytes32 getBlock_hash() {
     return ((Bytes32View) get(2)).get();
   }
