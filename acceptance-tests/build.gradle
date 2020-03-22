@@ -1,7 +1,7 @@
 dependencies {
-  testSupportImplementation project(path: ':data:provider')
-  testSupportImplementation project(path: ':util')
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportImplementation project(':data:provider')
+  testSupportImplementation project(':util')
+  testSupportImplementation testFixtures(project(':util'))
 
   testSupportImplementation 'com.google.code.gson:gson'
   testSupportImplementation 'com.squareup.okhttp3:okhttp'

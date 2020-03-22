@@ -16,8 +16,10 @@ dependencies {
 
   runtime 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation project(':ethereum:datastructures')
+
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
 }

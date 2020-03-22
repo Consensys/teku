@@ -27,19 +27,24 @@ dependencies {
 
   runtime 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation testFixtures(project(':ethereum:statetransition'))
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
   testImplementation 'org.mockito:mockito-core'
 
-  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  integrationTestImplementation testFixtures(project(':util'))
 
   integrationTestImplementation 'org.assertj:assertj-core'
 
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testFixturesApi 'org.apache.tuweni:tuweni-bytes'
 
-  testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testFixturesImplementation testFixtures(project(':util'))
 
-  testSupportCompile 'org.assertj:assertj-core'
+  testFixturesImplementation 'org.hyperledger.besu:plugin-api'
+  testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
+  testFixturesImplementation 'io.projectreactor:reactor-core'
+
+  testFixturesCompileOnly 'org.assertj:assertj-core'
 }

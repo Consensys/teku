@@ -23,16 +23,17 @@ dependencies {
 
     runtime 'org.apache.logging.log4j:log4j-core'
 
-    testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+    testImplementation testFixtures(project(':ethereum:datastructures'))
 
     testImplementation 'org.mockito:mockito-core'
     testImplementation 'org.assertj:assertj-core'
     testCompile 'io.libp2p:jvm-libp2p-minimal'
 
-    integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-    integrationTestImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
+    integrationTestImplementation testFixtures(project(':bls'))
+    integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
+
     integrationTestImplementation 'org.mockito:mockito-core'
-    integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+
     integrationTestImplementation 'org.assertj:assertj-core'
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
 

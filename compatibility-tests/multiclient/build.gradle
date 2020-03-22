@@ -1,10 +1,10 @@
 dependencies {
   compatibilityTestImplementation project(":networking:eth2")
-  compatibilityTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+  compatibilityTestImplementation testFixtures(project('::networking:eth2'))
   compatibilityTestImplementation project(":networking:p2p")
-  compatibilityTestImplementation project(path: ':networking:p2p', configuration: 'testSupportArtifacts')
+  compatibilityTestImplementation testFixtures(project('::networking:p2p'))
   compatibilityTestImplementation project(":util")
-  compatibilityTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  compatibilityTestImplementation testFixtures(project(':util'))
 
   compatibilityTestImplementation 'io.libp2p:jvm-libp2p-minimal'
   compatibilityTestImplementation 'org.apache.tuweni:tuweni-ssz'

@@ -25,25 +25,25 @@ dependencies {
 
   runtime 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:statetransition'))
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
-  integrationTestImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-  integrationTestImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
-  integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
+  integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
+  integrationTestImplementation testFixtures(project(':networking:eth2'))
+  integrationTestImplementation testFixtures(project(':util'))
 
   integrationTestImplementation 'org.mockito:mockito-core'
 
-  testSupportImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':networking:p2p', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+  testFixturesImplementation testFixtures(project(':networking:p2p'))
+  testFixturesImplementation testFixtures(project(':util'))
 
-  testSupportImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
 
-  testSupportCompile 'org.assertj:assertj-core'
+  testFixturesCompileOnly 'org.assertj:assertj-core'
 }
