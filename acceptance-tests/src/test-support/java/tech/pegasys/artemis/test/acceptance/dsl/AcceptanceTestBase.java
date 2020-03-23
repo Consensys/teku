@@ -74,28 +74,26 @@ public class AcceptanceTestBase {
 
     @Override
     public void afterTestExecution(final ExtensionContext context) {
-      if (context.getExecutionException().isPresent()) {
-        context
-            .getTestInstance()
-            .filter(test -> test instanceof AcceptanceTestBase)
-            .map(test -> (AcceptanceTestBase) test)
-            .filter(test -> !test.nodes.isEmpty())
-            .ifPresent(
-                test -> {
-                  final String artifactDir =
-                      System.getProperty(TEST_ARTIFACT_DIR_PROPERTY, "build/test-artifacts");
-                  final String dirName =
-                      context.getRequiredTestClass().getName()
-                          + "."
-                          + context.getRequiredTestMethod().getName();
-                  final File captureDir = new File(artifactDir, dirName);
-                  if (!captureDir.mkdirs() && !captureDir.isDirectory()) {
-                    LOG.error("Failed to create test artifact directory to capture transitions");
-                  }
-                  LOG.info("Capturing debug artifacts to " + captureDir.getAbsolutePath());
-                  test.nodes.forEach(node -> node.captureDebugArtifacts(captureDir));
-                });
-      }
+      context
+              .getTestInstance()
+              .filter(test -> test instanceof AcceptanceTestBase)
+              .map(test -> (AcceptanceTestBase) test)
+              .filter(test -> !test.nodes.isEmpty())
+              .ifPresent(
+                      test -> {
+                        final String artifactDir =
+                                System.getProperty(TEST_ARTIFACT_DIR_PROPERTY, "build/test-artifacts");
+                        final String dirName =
+                                context.getRequiredTestClass().getName()
+                                        + "."
+                                        + context.getRequiredTestMethod().getName();
+                        final File captureDir = new File(artifactDir, dirName);
+                        if (!captureDir.mkdirs() && !captureDir.isDirectory()) {
+                          LOG.error("Failed to create test artifact directory to capture transitions");
+                        }
+                        LOG.info("Capturing debug artifacts to " + captureDir.getAbsolutePath());
+                        test.nodes.forEach(node -> node.captureDebugArtifacts(captureDir));
+                      });
     }
   }
 }
