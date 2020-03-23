@@ -1,9 +1,8 @@
 dependencies {
-  compatibilityTestImplementation project(":networking:eth2")
+  compatibilityTestImplementation project('::networking:p2p')
+  compatibilityTestImplementation project(':ssz')
+
   compatibilityTestImplementation testFixtures(project('::networking:eth2'))
-  compatibilityTestImplementation project(":networking:p2p")
-  compatibilityTestImplementation testFixtures(project('::networking:p2p'))
-  compatibilityTestImplementation project(":util")
   compatibilityTestImplementation testFixtures(project(':util'))
 
   compatibilityTestImplementation 'io.libp2p:jvm-libp2p-minimal'

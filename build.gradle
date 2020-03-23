@@ -112,7 +112,6 @@ allprojects {
         exclude '**/proto'
       }
 
-
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
       endWithNewline()

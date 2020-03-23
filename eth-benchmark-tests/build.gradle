@@ -14,9 +14,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.junit.jupiter:junit-jupiter-api'
   implementation 'org.junit.jupiter:junit-jupiter-params'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
@@ -25,6 +23,7 @@ dependencies {
   implementation project(':bls')
 
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'
+  jmh 'org.apache.tuweni:tuweni-ssz'
 }
 
 jmh {
