@@ -13,7 +13,14 @@
 
 package tech.pegasys.artemis.storage.rocksdb;
 
-import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.*;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.CHECKPOINT_STATES;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.DEFAULT;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.FINALIZED_BLOCKS_BY_ROOT;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.FINALIZED_ROOTS_BY_SLOT;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.FINALIZED_STATES_BY_ROOT;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.HOT_BLOCKS_BY_ROOT;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.HOT_STATES_BY_ROOT;
+import static tech.pegasys.artemis.storage.rocksdb.RocksDbColumn.LATEST_MESSAGES;
 import static tech.pegasys.artemis.storage.rocksdb.RocksDbDefaultColumnKey.BEST_JUSTIFIED_CHECKPOINT_KEY;
 import static tech.pegasys.artemis.storage.rocksdb.RocksDbDefaultColumnKey.FINALIZED_CHECKPOINT_KEY;
 import static tech.pegasys.artemis.storage.rocksdb.RocksDbDefaultColumnKey.GENESIS_TIME_KEY;
