@@ -6,6 +6,7 @@ dependencies {
   testFixturesImplementation 'com.google.code.gson:gson'
   testFixturesImplementation 'com.squareup.okhttp3:okhttp'
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
+  testFixturesImplementation 'org.apache.commons:commons-lang'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
   testFixturesImplementation 'org.apache.tuweni:tuweni-toml'
   testFixturesImplementation 'org.assertj:assertj-core'
