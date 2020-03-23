@@ -23,11 +23,8 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
-
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
@@ -136,11 +133,12 @@ public class BeaconNodeCommandTest {
     assertArtemisConfiguration(
         artemisConfiguration, expectedConfigurationBuilder(dataPath).build());
   }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.toml");
     final String updatedConfig =
-            Resources.toString(configFile, UTF_8)
-                    .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
+        Resources.toString(configFile, UTF_8)
+            .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
     return createTempFile("toml", updatedConfig.getBytes(UTF_8));
   }
 
@@ -185,7 +183,6 @@ public class BeaconNodeCommandTest {
         .setRestApiInterface("127.0.0.1");
   }
 
-  @SuppressWarnings("unused")
   private void assertArtemisConfiguration(
       final ArtemisConfiguration actual, final ArtemisConfiguration expected) {
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);

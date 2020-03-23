@@ -133,12 +133,6 @@ public class CommonParams implements Closeable {
         Executors.newScheduledThreadPool(
             1, new ThreadFactoryBuilder().setDaemon(true).setNameFormat("web3j-%d").build());
     web3j = Web3j.build(new HttpService(eth1NodeUrl, httpClient), 1000, executorService);
-    try {
-      System.out.println(
-          "-----------  GOT HERE 1 " + web3j.web3ClientVersion().send().getWeb3ClientVersion());
-    } catch (IOException e) {
-      System.out.println("-----------  GOT HERE 2 " + e);
-    }
     return new DepositTransactionSender(web3j, contractAddress, getEth1Credentials());
   }
 
