@@ -17,6 +17,7 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
@@ -142,6 +144,7 @@ public class ValidatorDataProviderTest {
   @Test
   void getValidatorsDutiesByRequest_shouldIncludeMissingValidators()
       throws ExecutionException, InterruptedException {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     ValidatorDutiesRequest smallRequest =
         new ValidatorDutiesRequest(
@@ -166,6 +169,7 @@ public class ValidatorDataProviderTest {
   @Test
   void getValidatorDutiesByRequest_shouldIncludeValidatorDuties()
       throws ExecutionException, InterruptedException {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     ValidatorDutiesRequest smallRequest =
         new ValidatorDutiesRequest(
@@ -198,6 +202,17 @@ public class ValidatorDataProviderTest {
             attestationCommitteeIndex,
             blockProposalSlots);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
+  }
+
+  @Test
+  void getValidatorDutiesByRequest_shouldReturnChainDataUnavailableExceptionWhenStoreIsNotSet() {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(false);
+
+    final SafeFuture<List<ValidatorDuties>> result =
+        provider.getValidatorDutiesByRequest(new ValidatorDutiesRequest(ONE, emptyList()));
+
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test

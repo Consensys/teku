@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
@@ -81,6 +82,9 @@ public class ValidatorDataProvider {
 
   public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
       final ValidatorDutiesRequest validatorDutiesRequest) {
+    if (validatorDutiesRequest == null || !combinedChainDataClient.isStoreAvailable()) {
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+    }
     return SafeFuture.of(
             () -> {
               final List<BLSPublicKey> publicKeys =
