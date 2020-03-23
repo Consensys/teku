@@ -31,6 +31,7 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.TimeEventsChannel;
 
 public class PowchainService extends Service {
 
@@ -59,6 +60,7 @@ public class PowchainService extends Service {
             asyncRunner);
 
     eth1DepositManager = depositsObjectFactory.createEth1DepositsManager();
+
     eth1DataManager =
         new Eth1DataManager(
             eth1Provider,
@@ -66,6 +68,7 @@ public class PowchainService extends Service {
             depositContractAccessor,
             asyncRunner,
             config.getTimeProvider());
+    eth1DataManager.registerToEvents(config.getEventChannels());
   }
 
   @Override

@@ -14,36 +14,15 @@
 package tech.pegasys.artemis.util.time;
 
 import com.google.common.eventbus.EventBus;
+
+import java.sql.Time;
 import java.util.Date;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
-public class ScheduledEvent implements Runnable, Job {
-
-  private EventBus eventBus;
-
-  public ScheduledEvent() {}
-
-  public ScheduledEvent(EventBus eventBus) {
-    this.eventBus = eventBus;
-  }
-
-  /**
-   * When an object implementing interface <code>Runnable</code> is used to create a thread,
-   * starting the thread causes the object's <code>run</code> method to be called in that separately
-   * executing thread.
-   *
-   * <p>The general contract of the method <code>run</code> is that it may take any action
-   * whatsoever.
-   *
-   * @see Thread#run()
-   */
-  @Override
-  public void run() {
-    this.eventBus.post(new Date());
-  }
+public class ScheduledTimeEvent implements Job {
 
   /**
    * Called by the <code>{@link Scheduler}</code> when a <code>{@link Trigger}</code> fires that is
@@ -60,7 +39,7 @@ public class ScheduledEvent implements Runnable, Job {
   @Override
   public void execute(JobExecutionContext context) throws JobExecutionException {
     JobDataMap data = context.getJobDetail().getJobDataMap();
-    this.eventBus = (EventBus) data.get(EventBus.class.getSimpleName());
-    this.eventBus.post(new Date());
+    TimeEventsChannel timeEventsChannel = (TimeEventsChannel) data.get(Timer.TIME_EVENTS_CHANNEL);
+    timeEventsChannel.onTick(new Date());
   }
 }

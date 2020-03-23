@@ -56,6 +56,7 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
@@ -80,6 +81,7 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.TimeEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
@@ -107,6 +109,7 @@ public class ValidatorCoordinator extends Service {
   public ValidatorCoordinator(
       TimeProvider timeProvider,
       EventBus eventBus,
+      EventChannels eventChannels,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
@@ -120,7 +123,10 @@ public class ValidatorCoordinator extends Service {
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.depositProvider = depositProvider;
+
     this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
+    eth1DataCache.registerToEvents(eventChannels);
+
     this.eventBus.register(this);
   }
 

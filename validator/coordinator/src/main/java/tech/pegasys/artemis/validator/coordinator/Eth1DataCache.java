@@ -32,14 +32,15 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
-public class Eth1DataCache {
+public class Eth1DataCache implements TimeEventsChannel {
 
-  private final EventBus eventBus;
   private final TimeProvider timeProvider;
   private volatile Optional<UnsignedLong> genesisTime = Optional.empty();
 
@@ -48,8 +49,12 @@ public class Eth1DataCache {
 
   public Eth1DataCache(EventBus eventBus, TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
-    this.eventBus = eventBus;
-    this.eventBus.register(this);
+    eventBus.register(this);
+  }
+
+  public void registerToEvents(EventChannels eventChannels) {
+    eventChannels.subscribe(TimeEventsChannel.class, this);
+    // TODO: eventChannels.subscribe(CacheEth1BlockEventsChannel.class, this);
   }
 
   public void startBeaconChainMode(BeaconState genesisState) {
@@ -64,7 +69,7 @@ public class Eth1DataCache {
         cacheEth1BlockEvent.getBlockTimestamp(), createEth1Data(cacheEth1BlockEvent));
   }
 
-  @Subscribe
+  @Override
   public void onTick(Date date) {
     if (genesisTime.isPresent()
         || !hasBeenApproximately(SECONDS_PER_ETH1_BLOCK, timeProvider.getTimeInSeconds())) {

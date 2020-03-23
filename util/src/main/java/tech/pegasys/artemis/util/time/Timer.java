@@ -17,8 +17,6 @@ import static org.quartz.JobBuilder.newJob;
 import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
 import static org.quartz.TriggerBuilder.newTrigger;
 
-import com.google.common.eventbus.EventBus;
-import java.util.UUID;
 import org.quartz.DateBuilder;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -28,25 +26,26 @@ import org.quartz.SimpleTrigger;
 import org.quartz.impl.StdSchedulerFactory;
 
 public class Timer {
+
+  static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
+
   private final Scheduler sched;
   private final JobDetail job;
-  private final UUID uuid;
   private int startDelay;
   private int interval;
 
-  public Timer(EventBus eventBus, Integer startDelay, Integer interval)
+  public Timer(TimeEventsChannel timeEventsChannel, Integer startDelay, Integer interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
     this.startDelay = startDelay;
     this.interval = interval;
     try {
       sched = sf.getScheduler();
-      uuid = UUID.randomUUID();
       job =
-          newJob(ScheduledEvent.class)
-              .withIdentity(EventBus.class.getSimpleName() + uuid.toString(), "group")
+          newJob(ScheduledTimeEvent.class)
+              .withIdentity("Timer")
               .build();
-      job.getJobDataMap().put(EventBus.class.getSimpleName(), eventBus);
+      job.getJobDataMap().put(TIME_EVENTS_CHANNEL, timeEventsChannel);
 
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(
@@ -58,7 +57,7 @@ public class Timer {
     try {
       SimpleTrigger trigger =
           newTrigger()
-              .withIdentity("trigger-" + EventBus.class.getSimpleName() + uuid.toString(), "group")
+              .withIdentity("TimerTrigger")
               .startAt(DateBuilder.futureDate(startDelay, DateBuilder.IntervalUnit.MILLISECOND))
               .withSchedule(simpleSchedule().withIntervalInMilliseconds(interval).repeatForever())
               .build();

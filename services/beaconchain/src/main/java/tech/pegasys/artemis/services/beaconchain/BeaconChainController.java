@@ -65,12 +65,13 @@ import tech.pegasys.artemis.sync.util.NoopSyncService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
-public class BeaconChainController extends Service {
+public class BeaconChainController extends Service implements TimeEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
@@ -108,6 +109,8 @@ public class BeaconChainController extends Service {
     this.metricsSystem = metricsSystem;
     this.setupInitialState =
         config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
+
+    eventChannels.subscribe(TimeEventsChannel.class, this);
   }
 
   @Override
@@ -173,7 +176,11 @@ public class BeaconChainController extends Service {
     LOG.debug("BeaconChainController.initTimer()");
     int timerPeriodInMilliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
-      this.timer = new Timer(eventBus, 0, timerPeriodInMilliseconds);
+      this.timer = new Timer(
+              eventChannels.getPublisher(TimeEventsChannel.class),
+              0,
+              timerPeriodInMilliseconds
+      );
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
@@ -209,6 +216,7 @@ public class BeaconChainController extends Service {
         new ValidatorCoordinator(
             timeProvider,
             eventBus,
+            eventChannels,
             chainStorageClient,
             attestationAggregator,
             blockAttestationsPool,
@@ -333,9 +341,8 @@ public class BeaconChainController extends Service {
     nodeSlot = currentSlot;
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onTick(Date date) {
+  @Override
+  public void onTick(Date date) {
     if (chainStorageClient.isPreGenesis() || syncService.getSyncStatus().isSyncing()) {
       return;
     }

@@ -34,10 +34,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.artemis.events.EventChannels;
+import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.TimeEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 /*
@@ -90,7 +93,7 @@ Search Eth1 Blocks to find blocks in the cache range:
 
  */
 
-public class Eth1DataManager {
+public class Eth1DataManager implements TimeEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -102,7 +105,7 @@ public class Eth1DataManager {
 
   private AtomicReference<EthBlock.Block> latestBlockReference = new AtomicReference<>();
   private AtomicInteger cacheStartupRetry = new AtomicInteger(0);
-  private AtomicBoolean cacheStartupDone = new AtomicBoolean(false);
+  private AtomicBoolean subscriptionModeOn = new AtomicBoolean(false);
 
   public Eth1DataManager(
       Eth1Provider eth1Provider,
@@ -117,22 +120,28 @@ public class Eth1DataManager {
     this.timeProvider = timeProvider;
   }
 
+  public void registerToEvents(EventChannels eventChannels) {
+    eventChannels.subscribe(TimeEventsChannel.class, this);
+  }
+
   public void start() {
     doCacheStartup()
         .finish(
             () -> {
               LOG.info("Eth1DataManager successfully ran cache startup logic");
-              cacheStartupDone.set(true);
-              eventBus.register(this);
+              subscriptionModeOn.set(true);
             });
   }
 
   public void stop() {
-    eventBus.unregister(this);
+    subscriptionModeOn.set(false);
   }
 
-  @Subscribe
+  @Override
   public void onTick(Date date) {
+    if (!subscriptionModeOn.get()) {
+      return;
+    }
 
     // Fetch new Eth1 blocks every SECONDS_PER_ETH1_BLOCK seconds
     // (can't use slot events here as an approximation due to this needing to be run pre-genesis)

@@ -252,7 +252,7 @@ public class Eth1DataCacheTest {
 
     eventBus.post(cacheEth1BlockEvent1);
     eventBus.post(cacheEth1BlockEvent2);
-    eventBus.post(new Date());
+    eth1DataCache.onTick(new Date());
 
     Eth1Data eth1Data1 = Eth1DataCache.createEth1Data(cacheEth1BlockEvent1);
 

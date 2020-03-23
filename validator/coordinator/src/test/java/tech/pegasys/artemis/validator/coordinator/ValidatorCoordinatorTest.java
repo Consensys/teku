@@ -30,6 +30,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
@@ -123,10 +124,12 @@ public class ValidatorCoordinatorTest {
 
   private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
     when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
+    EventChannels eventChannels = mock(EventChannels.class);
     ValidatorCoordinator vc =
         new ValidatorCoordinator(
             timeProvider,
             eventBus,
+            eventChannels,
             storageClient,
             attestationAggregator,
             blockAttestationsPool,

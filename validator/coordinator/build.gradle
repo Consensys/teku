@@ -10,6 +10,7 @@ dependencies {
   implementation project(':pow')
   implementation project(':data:keystore')
   implementation project(':ssz')
+  implementation project(':events')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3'
