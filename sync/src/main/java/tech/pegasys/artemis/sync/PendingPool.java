@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.sync;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
@@ -32,14 +31,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.events.Subscribers;
 import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.util.time.SlotEventsChannel;
 
-class PendingPool<T> extends Service {
+class PendingPool<T> extends Service implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final UnsignedLong DEFAULT_FUTURE_SLOT_TOLERANCE = UnsignedLong.valueOf(2);
@@ -47,7 +48,6 @@ class PendingPool<T> extends Service {
       UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 10);
   private static final UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
-  private final EventBus eventBus;
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
@@ -68,13 +68,11 @@ class PendingPool<T> extends Service {
   private volatile UnsignedLong latestFinalizedSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
   PendingPool(
-      final EventBus eventBus,
       final UnsignedLong historicalSlotTolerance,
       final UnsignedLong futureSlotTolerance,
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UnsignedLong> targetSlotFunction) {
-    this.eventBus = eventBus;
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
     this.hashTreeRootFunction = hashTreeRootFunction;
@@ -82,17 +80,17 @@ class PendingPool<T> extends Service {
     this.targetSlotFunction = targetSlotFunction;
   }
 
-  public static PendingPool<SignedBeaconBlock> createForBlocks(final EventBus eventBus) {
-    return createForBlocks(
-        eventBus, DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
+  public void registerToEvents(EventChannels eventChannels) {
+    eventChannels.subscribe(SlotEventsChannel.class, this);
+  }
+
+  public static PendingPool<SignedBeaconBlock> createForBlocks() {
+    return createForBlocks(DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
   }
 
   static PendingPool<SignedBeaconBlock> createForBlocks(
-      final EventBus eventBus,
-      final UnsignedLong historicalBlockTolerance,
-      final UnsignedLong futureBlockTolerance) {
+      final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
     return new PendingPool<>(
-        eventBus,
         historicalBlockTolerance,
         futureBlockTolerance,
         block -> block.getMessage().hash_tree_root(),
@@ -100,9 +98,8 @@ class PendingPool<T> extends Service {
         SignedBeaconBlock::getSlot);
   }
 
-  public static PendingPool<DelayableAttestation> createForAttestations(final EventBus eventBus) {
+  public static PendingPool<DelayableAttestation> createForAttestations() {
     return new PendingPool<>(
-        eventBus,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         DEFAULT_FUTURE_SLOT_TOLERANCE,
         DelayableAttestation::hash_tree_root,
@@ -112,7 +109,6 @@ class PendingPool<T> extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventBus.register(this);
     return SafeFuture.completedFuture(null);
   }
 
@@ -266,8 +262,8 @@ class PendingPool<T> extends Service {
     return requiredBlockRootDroppedSubscribers.unsubscribe(subscriberId);
   }
 
-  @Subscribe
-  void onSlot(final SlotEvent slotEvent) {
+  @Override
+  public void onSlot(final SlotEvent slotEvent) {
     currentSlot = slotEvent.getSlot();
     if (currentSlot.mod(historicalSlotTolerance).equals(UnsignedLong.ZERO)) {
       // Purge old items
@@ -333,7 +329,6 @@ class PendingPool<T> extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    eventBus.unregister(this);
     return SafeFuture.completedFuture(null);
   }
 

@@ -74,7 +74,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
       final P2PNetwork<Eth2Peer> eth2Network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks(eventBus);
+    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =
@@ -92,6 +92,7 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   @Override
   public SafeFuture<?> doStart() {
     registerToEvents();
+    pendingBlocks.registerToEvents(eventChannels);
     this.eventBus.register(this);
     recentBlockFetcher.subscribeBlockFetched(this::importBlock);
     return SafeFuture.allOfFailFast(recentBlockFetcher.start(), pendingBlocks.start());

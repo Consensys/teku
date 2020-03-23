@@ -56,7 +56,7 @@ public class PendingPoolTest {
 
   private void setSlot(final UnsignedLong slot) {
     currentSlot = slot;
-    eventBus.post(new SlotEvent(slot));
+    pendingPool.onSlot(new SlotEvent(slot));
   }
 
   @AfterEach

@@ -65,6 +65,7 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.DateEventsChannel;
 import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.util.time.SlotEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
@@ -364,7 +365,7 @@ public class BeaconChainController extends Service implements DateEventsChannel 
         EVENT_LOG.epochEvent();
       }
 
-      this.eventBus.post(new SlotEvent(nodeSlot));
+      eventChannels.getPublisher(SlotEventsChannel.class).onSlot(new SlotEvent(nodeSlot));
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);

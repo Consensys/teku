@@ -284,8 +284,7 @@ public class BlockPropagationManagerTest {
   private UnsignedLong incrementSlot() {
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
     localChain.setSlot(currentSlot);
-    // TODO: comeback to this
-    localEventBus.post(new SlotEvent(currentSlot));
+    //    localEventBus.post(new SlotEvent(currentSlot));
     blockPropagationManager.onSlot(new SlotEvent(currentSlot));
     return currentSlot;
   }
