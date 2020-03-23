@@ -170,6 +170,7 @@ public class BeaconChainController extends Service {
     initAttestationPropagationManager();
     initP2PNetwork();
     initSyncManager();
+    initValidatorApiHandler();
     initValidatorCoordinator();
     initRestAPI();
   }
@@ -306,6 +307,7 @@ public class BeaconChainController extends Service {
             combinedChainDataClient,
             p2pNetwork,
             syncService,
+            eventChannels.getPublisher(ValidatorApiChannel.class),
             validatorCoordinator);
     beaconRestAPI = new BeaconRestApi(dataProvider, config);
   }

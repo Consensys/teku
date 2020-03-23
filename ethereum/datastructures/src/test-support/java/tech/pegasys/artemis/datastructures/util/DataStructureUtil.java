@@ -352,7 +352,7 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState() {
-    return randomBeaconState(1000);
+    return randomBeaconState(100);
   }
 
   public BeaconState randomBeaconState(final int validatorCount) {
@@ -369,11 +369,7 @@ public final class DataStructureUtil {
         randomUnsignedLong(),
 
         // Can't use the actual maxSize cause it is too big
-        randomSSZList(
-            ValidatorImpl.class,
-            validatorCount,
-            1000,
-            this::randomValidator),
+        randomSSZList(ValidatorImpl.class, validatorCount, 1000, this::randomValidator),
         randomSSZList(UnsignedLong.class, validatorCount, 1000, this::randomUnsignedLong),
         randomSSZVector(Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, this::randomBytes32),
         randomSSZVector(

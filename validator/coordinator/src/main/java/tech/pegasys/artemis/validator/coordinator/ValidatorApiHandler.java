@@ -50,6 +50,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<ValidatorDuties>> getDuties(
       final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
+    System.out.println("Get duties");
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
     return combinedChainDataClient
         .getStateAtSlot(slot)
@@ -59,8 +60,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     .map(state -> getValidatorDutiesFromState(state, publicKeys))
                     .orElseGet(
                         () -> {
-                          // TODO: Handle skipped slots correctly.
-                          // We may need to get an earlier state and process_slots
                           LOG.warn(
                               "Unable to calculate validator duties for epoch {} because state was unavailable",
                               epoch);

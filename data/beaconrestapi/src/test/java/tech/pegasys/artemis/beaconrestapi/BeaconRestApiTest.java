@@ -66,7 +66,7 @@ class BeaconRestApiTest {
     ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
-        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null),
+        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null, null),
         config,
         app);
   }

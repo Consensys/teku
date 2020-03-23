@@ -63,8 +63,7 @@ public class ValidatorDuties {
       return false;
     }
     final ValidatorDuties that = (ValidatorDuties) o;
-    return Objects.equals(publicKey, that.publicKey) &&
-        Objects.equals(duties, that.duties);
+    return Objects.equals(publicKey, that.publicKey) && Objects.equals(duties, that.duties);
   }
 
   @Override
@@ -122,19 +121,16 @@ public class ValidatorDuties {
         return false;
       }
       final Duties duties = (Duties) o;
-      return validatorIndex == duties.validatorIndex &&
-          attestationCommitteeIndex == duties.attestationCommitteeIndex &&
-          Objects.equals(blockProposalSlots, duties.blockProposalSlots) &&
-          Objects.equals(attestationSlot, duties.attestationSlot);
+      return validatorIndex == duties.validatorIndex
+          && attestationCommitteeIndex == duties.attestationCommitteeIndex
+          && Objects.equals(blockProposalSlots, duties.blockProposalSlots)
+          && Objects.equals(attestationSlot, duties.attestationSlot);
     }
 
     @Override
     public int hashCode() {
       return Objects.hash(
-          validatorIndex,
-          attestationCommitteeIndex,
-          blockProposalSlots,
-          attestationSlot);
+          validatorIndex, attestationCommitteeIndex, blockProposalSlots, attestationSlot);
     }
 
     @Override
