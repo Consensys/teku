@@ -39,6 +39,8 @@ dependencies {
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
 
+  testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
+
   testFixturesImplementation testFixtures(project(':util'))
 
   testFixturesImplementation 'org.assertj:assertj-core'
