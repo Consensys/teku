@@ -107,7 +107,9 @@ public class ValidatorsUtil {
                       return i;
                     }
                   }
-                  return null;
+                  // TODO would be nice to clean this up but it will be filtered out by the line
+                  // below
+                  return Integer.MAX_VALUE;
                 });
     return Optional.ofNullable(validatorIndex)
         // The cache is shared between all states, so filter out any cached responses for validators

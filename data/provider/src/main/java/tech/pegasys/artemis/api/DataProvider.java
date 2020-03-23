@@ -34,7 +34,8 @@ public class DataProvider {
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     chainDataProvider = new ChainDataProvider(chainStorageClient, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
-    this.validatorDataProvider = new ValidatorDataProvider(validatorCoordinator);
+    this.validatorDataProvider =
+        new ValidatorDataProvider(validatorCoordinator, combinedChainDataClient);
   }
 
   public NetworkDataProvider getNetworkDataProvider() {
