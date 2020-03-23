@@ -99,8 +99,12 @@ public final class DataStructureUtil {
 
   public <T> SSZList<T> randomSSZList(
       Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
+    return randomSSZList(classInfo, maxSize / 10, maxSize, valueGenerator);
+  }
+
+  public <T> SSZList<T> randomSSZList(
+      Class<? extends T> classInfo, final long numItems, long maxSize, Supplier<T> valueGenerator) {
     SSZMutableList<T> sszList = SSZList.createMutable(classInfo, maxSize);
-    long numItems = maxSize / 10;
     LongStream.range(0, numItems).forEach(i -> sszList.add(valueGenerator.get()));
     return sszList;
   }
@@ -348,6 +352,10 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState() {
+    return randomBeaconState(100);
+  }
+
+  public BeaconState randomBeaconState(final int validatorCount) {
     return BeaconState.create(
         randomUnsignedLong(),
         randomUnsignedLong(),
@@ -361,8 +369,8 @@ public final class DataStructureUtil {
         randomUnsignedLong(),
 
         // Can't use the actual maxSize cause it is too big
-        randomSSZList(ValidatorImpl.class, 1000, this::randomValidator),
-        randomSSZList(UnsignedLong.class, 1000, this::randomUnsignedLong),
+        randomSSZList(ValidatorImpl.class, validatorCount, 1000, this::randomValidator),
+        randomSSZList(UnsignedLong.class, validatorCount, 1000, this::randomUnsignedLong),
         randomSSZVector(Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, this::randomBytes32),
         randomSSZVector(
             UnsignedLong.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, this::randomUnsignedLong),

@@ -82,7 +82,7 @@ public class PostDuties implements Handler {
       SafeFuture<List<ValidatorDuties>> future =
           provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
+      ctx.result(future.thenApplyChecked(jsonProvider::objectToJSON));
 
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));

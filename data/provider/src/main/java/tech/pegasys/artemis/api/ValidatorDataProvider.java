@@ -13,18 +13,15 @@
 
 package tech.pegasys.artemis.api;
 
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.Attestation;
@@ -34,22 +31,25 @@ import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
-import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
-import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.artemis.validator.api.ValidatorDuties.Duties;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class ValidatorDataProvider {
-  private volatile ValidatorCoordinator validatorCoordinator;
+  private final ValidatorCoordinator validatorCoordinator;
+  private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
   private static final Logger LOG = LogManager.getLogger();
 
   public ValidatorDataProvider(
       final ValidatorCoordinator validatorCoordinator,
+      final ValidatorApiChannel validatorApiChannel,
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorCoordinator = validatorCoordinator;
+    this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
   }
 
@@ -82,58 +82,33 @@ public class ValidatorDataProvider {
 
   public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
       final ValidatorDutiesRequest validatorDutiesRequest) {
-
     if (validatorDutiesRequest == null || !combinedChainDataClient.isStoreAvailable()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
-    final Optional<Bytes32> optionalBlockRoot = combinedChainDataClient.getBestBlockRoot();
-    if (optionalBlockRoot.isEmpty()) {
-      return completedFuture(List.of());
-    }
-
-    UnsignedLong epoch = validatorDutiesRequest.epoch;
-    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    final Bytes32 headBlockRoot = optionalBlockRoot.get();
-    return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
-        .thenApply(
-            state -> getValidatorDutiesFromState(state.get(), validatorDutiesRequest.pubkeys))
-        .exceptionally(err -> List.of());
+    return SafeFuture.of(
+            () -> {
+              final List<BLSPublicKey> publicKeys =
+                  validatorDutiesRequest.pubkeys.stream()
+                      .map(key -> BLSPublicKey.fromBytes(key.toBytes()))
+                      .collect(toList());
+              return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
+            })
+        .thenApply(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList()));
   }
 
-  @VisibleForTesting
-  protected List<ValidatorDuties> getValidatorDutiesFromState(
-      final tech.pegasys.artemis.datastructures.state.BeaconState state,
-      final List<BLSPubKey> pubKeys) {
-    final List<ValidatorDuties> dutiesList = new ArrayList<>();
-
-    final List<CommitteeAssignment> committees =
-        combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
-    final UnsignedLong firstSlot = state.getSlot();
-    Map<BLSPubKey, List<UnsignedLong>> proposers = new HashMap<>();
-
-    for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
-      final UnsignedLong thisSlot = firstSlot.plus(UnsignedLong.valueOf(i));
-      BLSPublicKey publicKey = validatorCoordinator.getProposerForSlot(state, thisSlot);
-      BLSPubKey pubkey = new BLSPubKey(publicKey.toBytes());
-      proposers.computeIfAbsent(pubkey, key -> new ArrayList<>()).add(thisSlot);
+  private ValidatorDuties mapToSchemaDuties(
+      final tech.pegasys.artemis.validator.api.ValidatorDuties duty) {
+    final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
+    if (duty.getDuties().isEmpty()) {
+      return new ValidatorDuties(pubKey, null, null, emptyList(), null);
     }
-
-    for (final BLSPubKey pubKey : pubKeys) {
-      final Integer validatorIndex = getValidatorIndex(state.getValidators().asList(), pubKey);
-      if (validatorIndex == null) {
-        dutiesList.add(new ValidatorDuties(pubKey, null, null, List.of()));
-      } else {
-        List<UnsignedLong> proposedSlots = proposers.getOrDefault(pubKey, List.of());
-        dutiesList.add(
-            new ValidatorDuties(
-                pubKey,
-                validatorIndex,
-                getCommitteeIndex(committees, validatorIndex),
-                proposedSlots));
-      }
-    }
-    return dutiesList;
+    final Duties duties = duty.getDuties().get();
+    return new ValidatorDuties(
+        pubKey,
+        duties.getValidatorIndex(),
+        duties.getAttestationCommitteeIndex(),
+        duties.getBlockProposalSlots(),
+        duties.getAttestationSlot());
   }
 
   @VisibleForTesting
