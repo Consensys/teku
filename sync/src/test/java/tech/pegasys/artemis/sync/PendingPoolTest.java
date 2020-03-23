@@ -36,7 +36,7 @@ public class PendingPoolTest {
   private final UnsignedLong historicalTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureTolerance = UnsignedLong.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingPool =
-      PendingPool.createForBlocks(eventBus, historicalTolerance, futureTolerance);
+      PendingPool.createForBlocks(historicalTolerance, futureTolerance);
   private UnsignedLong currentSlot = historicalTolerance.times(UnsignedLong.valueOf(2));
   private List<Bytes32> requiredRootEvents = new ArrayList<>();
   private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
