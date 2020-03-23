@@ -13,17 +13,20 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 
@@ -32,8 +35,18 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   private static final List<BLSKeyPair> keys = BLSKeyGenerator.generateKeyPairs(1);
 
   @Test
-  public void shouldReturnNoContentIfStoreNotDefined_queryByEpoch() throws Exception {
+  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
+
+    final Response response = post(1, keys);
+    assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
     final Response response = post(1, keys);
     assertNoContent(response);

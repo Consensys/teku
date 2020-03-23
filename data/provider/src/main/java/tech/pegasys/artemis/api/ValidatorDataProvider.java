@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.api;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
@@ -68,9 +69,11 @@ public class ValidatorDataProvider {
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 
-  public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
+  public SafeFuture<Optional<List<ValidatorDuties>>> getValidatorDutiesByRequest(
       final ValidatorDutiesRequest validatorDutiesRequest) {
-    if (validatorDutiesRequest == null || !combinedChainDataClient.isStoreAvailable()) {
+    checkArgument(validatorDutiesRequest != null, "Must supply a valid request");
+    if (!combinedChainDataClient.isStoreAvailable()
+        || combinedChainDataClient.getBestBlockRoot().isEmpty()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
     return SafeFuture.of(
@@ -81,7 +84,9 @@ public class ValidatorDataProvider {
                       .collect(toList());
               return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
             })
-        .thenApply(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList()));
+        .thenApply(
+            res ->
+                res.map(duties -> duties.stream().map(this::mapToSchemaDuties).collect(toList())));
   }
 
   private ValidatorDuties mapToSchemaDuties(

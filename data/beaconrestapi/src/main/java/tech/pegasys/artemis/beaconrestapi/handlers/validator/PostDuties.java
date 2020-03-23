@@ -33,24 +33,25 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
+import tech.pegasys.artemis.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class PostDuties implements Handler {
+public class PostDuties extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/validator/duties";
+
   private final ValidatorDataProvider provider;
 
   public PostDuties(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.provider = provider;
-    this.jsonProvider = jsonProvider;
   }
-
-  public static final String ROUTE = "/validator/duties";
-  private final JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,
@@ -82,11 +83,10 @@ public class PostDuties implements Handler {
       ValidatorDutiesRequest validatorDutiesRequest =
           jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
 
-      SafeFuture<List<ValidatorDuties>> future =
+      SafeFuture<Optional<List<ValidatorDuties>>> future =
           provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(future.thenApplyChecked(jsonProvider::objectToJSON));
-
+      handlePossiblyMissingResult(ctx, future);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);

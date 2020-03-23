@@ -26,8 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
@@ -45,7 +43,6 @@ import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
-  private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockFactory blockFactory;
 
@@ -56,22 +53,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<List<ValidatorDuties>> getDuties(
+  public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
     return combinedChainDataClient
         .getStateAtSlot(slot)
         .thenApply(
             optionalState ->
-                optionalState
-                    .map(state -> getValidatorDutiesFromState(state, publicKeys))
-                    .orElseGet(
-                        () -> {
-                          LOG.warn(
-                              "Unable to calculate validator duties for epoch {} because state was unavailable",
-                              epoch);
-                          return emptyList();
-                        }));
+                optionalState.map(state -> getValidatorDutiesFromState(state, publicKeys)));
   }
 
   @Override
