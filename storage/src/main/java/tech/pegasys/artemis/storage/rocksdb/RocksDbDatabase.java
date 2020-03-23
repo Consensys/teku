@@ -51,6 +51,7 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.Statistics;
 import org.rocksdb.Transaction;
+import org.rocksdb.Transaction.TransactionState;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 import org.rocksdb.WriteOptions;
@@ -143,65 +144,81 @@ public class RocksDbDatabase implements Database {
     throwIfClosed();
     final WriteOptions options = new WriteOptions();
     try (Transaction transaction = db.beginTransaction(options)) {
-      ColumnFamilyHandle defaultColumn = columnHandlesByName.get(DEFAULT);
-      db.put(
-          defaultColumn,
-          GENESIS_TIME_KEY.getId(),
-          Longs.toByteArray(store.getGenesisTime().longValue()));
-      db.put(
-          defaultColumn,
-          RocksDbDefaultColumnKey.JUSTIFIED_CHECKPOINT_KEY.getId(),
-          serialize(store.getJustifiedCheckpoint()));
-      db.put(
-          defaultColumn,
-          RocksDbDefaultColumnKey.BEST_JUSTIFIED_CHECKPOINT_KEY.getId(),
-          serialize(store.getBestJustifiedCheckpoint()));
-      db.put(
-          defaultColumn,
-          FINALIZED_CHECKPOINT_KEY.getId(),
-          serialize(store.getFinalizedCheckpoint()));
-      store
-          .getBlockRoots()
-          .forEach(
-              root -> {
-                final SignedBeaconBlock block = store.getSignedBlock(root);
-                final BeaconState state = store.getBlockState(root);
-                try {
-                  addHotBlock(root, block);
-                  byte[] rootArray = root.toArrayUnsafe();
-                  db.put(columnHandlesByName.get(HOT_STATES_BY_ROOT), rootArray, serialize(state));
-                  db.put(
-                      columnHandlesByName.get(FINALIZED_ROOTS_BY_SLOT),
-                      Longs.toByteArray(block.getSlot().longValue()),
-                      rootArray);
-                  db.put(
-                      columnHandlesByName.get(FINALIZED_BLOCKS_BY_ROOT),
-                      rootArray,
-                      serialize(block));
-                  putFinalizedState(root, state);
-                } catch (RocksDBException e) {
-                  throw new DatabaseStorageException("Error Storing Genesis", e);
-                }
-              });
-      db.put(
-          columnHandlesByName.get(CHECKPOINT_STATES),
-          serialize(store.getJustifiedCheckpoint()),
-          serialize(store.getBlockState(store.getJustifiedCheckpoint().getRoot())));
-      db.put(
-          columnHandlesByName.get(CHECKPOINT_STATES),
-          serialize(store.getBestJustifiedCheckpoint()),
-          serialize(store.getBlockState(store.getBestJustifiedCheckpoint().getRoot())));
-      transaction.commit();
-    } catch (RocksDBException e) {
-      throw new DatabaseStorageException("Error Storing Genesis", e);
+      try {
+        ColumnFamilyHandle defaultColumn = columnHandlesByName.get(DEFAULT);
+        transaction.put(
+            defaultColumn,
+            GENESIS_TIME_KEY.getId(),
+            Longs.toByteArray(store.getGenesisTime().longValue()));
+        transaction.put(
+            defaultColumn,
+            RocksDbDefaultColumnKey.JUSTIFIED_CHECKPOINT_KEY.getId(),
+            serialize(store.getJustifiedCheckpoint()));
+        transaction.put(
+            defaultColumn,
+            RocksDbDefaultColumnKey.BEST_JUSTIFIED_CHECKPOINT_KEY.getId(),
+            serialize(store.getBestJustifiedCheckpoint()));
+        transaction.put(
+            defaultColumn,
+            FINALIZED_CHECKPOINT_KEY.getId(),
+            serialize(store.getFinalizedCheckpoint()));
+        store
+            .getBlockRoots()
+            .forEach(
+                root -> {
+                  final SignedBeaconBlock block = store.getSignedBlock(root);
+                  final BeaconState state = store.getBlockState(root);
+                  try {
+                    addHotBlock(transaction, root, block);
+                    byte[] rootArray = root.toArrayUnsafe();
+                    transaction.put(
+                        columnHandlesByName.get(HOT_STATES_BY_ROOT), rootArray, serialize(state));
+                    transaction.put(
+                        columnHandlesByName.get(FINALIZED_ROOTS_BY_SLOT),
+                        Longs.toByteArray(block.getSlot().longValue()),
+                        rootArray);
+                    transaction.put(
+                        columnHandlesByName.get(FINALIZED_BLOCKS_BY_ROOT),
+                        rootArray,
+                        serialize(block));
+                    putFinalizedState(transaction, root, state);
+                  } catch (RocksDBException e) {
+                    rollback(transaction);
+                    throw new DatabaseStorageException("Error Storing Genesis", e);
+                  }
+                });
+        transaction.put(
+            columnHandlesByName.get(CHECKPOINT_STATES),
+            serialize(store.getJustifiedCheckpoint()),
+            serialize(store.getBlockState(store.getJustifiedCheckpoint().getRoot())));
+        transaction.put(
+            columnHandlesByName.get(CHECKPOINT_STATES),
+            serialize(store.getBestJustifiedCheckpoint()),
+            serialize(store.getBlockState(store.getBestJustifiedCheckpoint().getRoot())));
+        transaction.commit();
+      } catch (RocksDBException e) {
+        rollback(transaction);
+        throw new DatabaseStorageException("Error Storing Genesis", e);
+      }
     }
   }
 
-  private void putFinalizedState(final Bytes32 blockRoot, final BeaconState state)
+  private void rollback(final Transaction transaction) {
+    try {
+      if (transaction.getState() != TransactionState.ROLLEDBACK) {
+        transaction.rollback();
+      }
+    } catch (RocksDBException ex) {
+      throw new DatabaseStorageException("Error Rolling Back Tx Storing Genesis", ex);
+    }
+  }
+
+  private void putFinalizedState(
+      Transaction transaction, final Bytes32 blockRoot, final BeaconState state)
       throws RocksDBException {
     switch (stateStorageMode) {
       case ARCHIVE:
-        db.put(
+        transaction.put(
             columnHandlesByName.get(FINALIZED_BLOCKS_BY_ROOT),
             blockRoot.toArrayUnsafe(),
             serialize(state));
@@ -212,9 +229,11 @@ public class RocksDbDatabase implements Database {
     }
   }
 
-  private void addHotBlock(final Bytes32 root, final SignedBeaconBlock block) {
+  private void addHotBlock(
+      Transaction transaction, final Bytes32 root, final SignedBeaconBlock block) {
     try {
-      db.put(columnHandlesByName.get(HOT_BLOCKS_BY_ROOT), root.toArrayUnsafe(), serialize(block));
+      transaction.put(
+          columnHandlesByName.get(HOT_BLOCKS_BY_ROOT), root.toArrayUnsafe(), serialize(block));
       addToHotRootsBySlotCache(root, block);
     } catch (RocksDBException e) {
       throw new DatabaseStorageException("Error storing a hotBlock", e);
@@ -237,100 +256,104 @@ public class RocksDbDatabase implements Database {
   }
 
   private DatabaseUpdateResult doUpdate(final StoreDiskUpdateEvent event) {
-    Transaction transaction = db.beginTransaction(new WriteOptions());
-    try {
-      ColumnFamilyHandle defaultColumn = columnHandlesByName.get(DEFAULT);
-      final Checkpoint previousFinalizedCheckpoint =
-          deserialize(db.get(defaultColumn, FINALIZED_CHECKPOINT_KEY.getId()), Checkpoint.class);
-
-      final Checkpoint newFinalizedCheckpoint =
-          event.getFinalizedCheckpoint().orElse(previousFinalizedCheckpoint);
-      event
-          .getGenesisTime()
-          .ifPresent(
-              time ->
-                  storeDefaultValue(
-                      transaction, GENESIS_TIME_KEY, Longs.toByteArray(time.longValue())));
-      event
-          .getFinalizedCheckpoint()
-          .ifPresent(
-              (finalizedCheckpoint) ->
-                  storeDefaultValue(
-                      transaction, FINALIZED_CHECKPOINT_KEY, serialize(finalizedCheckpoint)));
-      event
-          .getJustifiedCheckpoint()
-          .ifPresent(
-              (justifiedCheckpoint) ->
-                  storeDefaultValue(
-                      transaction, JUSTIFIED_CHECKPOINT_KEY, serialize(justifiedCheckpoint)));
-      event
-          .getBestJustifiedCheckpoint()
-          .ifPresent(
-              (justifiedCheckpoint) ->
-                  storeDefaultValue(
-                      transaction, BEST_JUSTIFIED_CHECKPOINT_KEY, serialize(justifiedCheckpoint)));
-      event
-          .getCheckpointStates()
-          .forEach(
-              (checkpoint, beaconState) -> {
-                store(
-                    transaction, CHECKPOINT_STATES, serialize(checkpoint), serialize(beaconState));
-              });
-      event
-          .getLatestMessages()
-          .forEach(
-              (stateId, checkpoint) -> {
-                store(
-                    transaction,
-                    LATEST_MESSAGES,
-                    Longs.toByteArray(stateId.longValue()),
-                    serialize(checkpoint));
-              });
-
-      event.getBlocks().forEach(this::addHotBlock);
-      event
-          .getBlockStates()
-          .forEach(
-              (blockNo, beaconState) -> {
-                store(
-                    transaction,
-                    HOT_STATES_BY_ROOT,
-                    blockNo.toArrayUnsafe(),
-                    serialize(beaconState));
-              });
-
-      final DatabaseUpdateResult result;
-      if (previousFinalizedCheckpoint == null
-          || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
-        recordFinalizedBlocks(newFinalizedCheckpoint);
-        final Set<Checkpoint> prunedCheckpoints = pruneCheckpointStates(newFinalizedCheckpoint);
-        final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(newFinalizedCheckpoint);
-        result = DatabaseUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
-      } else {
-        result = DatabaseUpdateResult.successfulWithNothingPruned();
-      }
-      transaction.commit();
-      return result;
-    } catch (final RuntimeException | Error | RocksDBException e) {
+    try (Transaction transaction = db.beginTransaction(new WriteOptions())) {
       try {
-        transaction.rollback();
-      } catch (RocksDBException ex) {
-        LOG.error("exception rolling back transaction", ex);
+        ColumnFamilyHandle defaultColumn = columnHandlesByName.get(DEFAULT);
+        final Checkpoint previousFinalizedCheckpoint =
+            deserialize(db.get(defaultColumn, FINALIZED_CHECKPOINT_KEY.getId()), Checkpoint.class);
+
+        final Checkpoint newFinalizedCheckpoint =
+            event.getFinalizedCheckpoint().orElse(previousFinalizedCheckpoint);
+        event
+            .getGenesisTime()
+            .ifPresent(
+                time ->
+                    storeDefaultValue(
+                        transaction, GENESIS_TIME_KEY, Longs.toByteArray(time.longValue())));
+        event
+            .getFinalizedCheckpoint()
+            .ifPresent(
+                (finalizedCheckpoint) ->
+                    storeDefaultValue(
+                        transaction, FINALIZED_CHECKPOINT_KEY, serialize(finalizedCheckpoint)));
+        event
+            .getJustifiedCheckpoint()
+            .ifPresent(
+                (justifiedCheckpoint) ->
+                    storeDefaultValue(
+                        transaction, JUSTIFIED_CHECKPOINT_KEY, serialize(justifiedCheckpoint)));
+        event
+            .getBestJustifiedCheckpoint()
+            .ifPresent(
+                (justifiedCheckpoint) ->
+                    storeDefaultValue(
+                        transaction,
+                        BEST_JUSTIFIED_CHECKPOINT_KEY,
+                        serialize(justifiedCheckpoint)));
+        event
+            .getCheckpointStates()
+            .forEach(
+                (checkpoint, beaconState) ->
+                    store(
+                        transaction,
+                        CHECKPOINT_STATES,
+                        serialize(checkpoint),
+                        serialize(beaconState)));
+        event
+            .getLatestMessages()
+            .forEach(
+                (stateId, checkpoint) ->
+                    store(
+                        transaction,
+                        LATEST_MESSAGES,
+                        Longs.toByteArray(stateId.longValue()),
+                        serialize(checkpoint)));
+
+        event.getBlocks().forEach((root, block) -> addHotBlock(transaction, root, block));
+        event
+            .getBlockStates()
+            .forEach(
+                (blockNo, beaconState) ->
+                    store(
+                        transaction,
+                        HOT_STATES_BY_ROOT,
+                        blockNo.toArrayUnsafe(),
+                        serialize(beaconState)));
+
+        final DatabaseUpdateResult result;
+        if (previousFinalizedCheckpoint == null
+            || !previousFinalizedCheckpoint.equals(newFinalizedCheckpoint)) {
+          recordFinalizedBlocks(newFinalizedCheckpoint, transaction);
+          final Set<Checkpoint> prunedCheckpoints =
+              pruneCheckpointStates(newFinalizedCheckpoint, transaction);
+          final Set<Bytes32> prunedBlockRoots = pruneHotBlocks(newFinalizedCheckpoint, transaction);
+          result = DatabaseUpdateResult.successful(prunedBlockRoots, prunedCheckpoints);
+        } else {
+          result = DatabaseUpdateResult.successfulWithNothingPruned();
+        }
+        transaction.commit();
+        return result;
+      } catch (final RuntimeException | Error | RocksDBException e) {
+        try {
+          transaction.rollback();
+        } catch (RocksDBException ex) {
+          LOG.error("exception rolling back transaction", ex);
+        }
+        return DatabaseUpdateResult.failed(new RuntimeException(e));
       }
-      return DatabaseUpdateResult.failed(new RuntimeException(e));
     }
   }
 
-  private Set<Checkpoint> pruneCheckpointStates(final Checkpoint newFinalizedCheckpoint) {
+  private Set<Checkpoint> pruneCheckpointStates(
+      final Checkpoint newFinalizedCheckpoint, final Transaction transaction) {
     ColumnFamilyHandle checkpointStates = columnHandlesByName.get(CHECKPOINT_STATES);
-    Set<Checkpoint> prunedCheckpoints = new HashSet();
-    try (final RocksIterator rocksIterator = db.newIterator(checkpointStates)) {
-      rocksIterator.seekToFirst();
-      while (rocksIterator.isValid()) {
+    Set<Checkpoint> prunedCheckpoints = new HashSet<>();
+    try (RocksIterator rocksIterator = db.newIterator(checkpointStates)) {
+      for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
         final byte[] key = rocksIterator.key();
         Checkpoint checkpoint = deserialize(key, Checkpoint.class);
         if (checkpoint.getEpoch().compareTo(newFinalizedCheckpoint.getEpoch()) < 0) {
-          db.delete(checkpointStates, key);
+          transaction.delete(checkpointStates, key);
           prunedCheckpoints.add(checkpoint);
         }
         rocksIterator.next();
@@ -341,7 +364,8 @@ public class RocksDbDatabase implements Database {
     return prunedCheckpoints;
   }
 
-  private Set<Bytes32> pruneHotBlocks(final Checkpoint newFinalizedCheckpoint)
+  private Set<Bytes32> pruneHotBlocks(
+      final Checkpoint newFinalizedCheckpoint, final Transaction transaction)
       throws RocksDBException {
     SignedBeaconBlock newlyFinalizedBlock =
         deserialize(
@@ -365,41 +389,64 @@ public class RocksDbDatabase implements Database {
     toRemove
         .values()
         .forEach(
-            roots -> {
-              roots.forEach(
-                  root -> {
-                    try {
-                      db.delete(columnHandlesByName.get(HOT_STATES_BY_ROOT), root.toArrayUnsafe());
-                      db.delete(columnHandlesByName.get(HOT_BLOCKS_BY_ROOT), root.toArrayUnsafe());
-                    } catch (RocksDBException e) {
-                      throw new DatabaseStorageException("Error deleting hot value by root", e);
-                    }
-                  });
-            });
+            roots ->
+                roots.forEach(
+                    root -> {
+                      try {
+                        transaction.delete(
+                            columnHandlesByName.get(HOT_STATES_BY_ROOT), root.toArrayUnsafe());
+                        transaction.delete(
+                            columnHandlesByName.get(HOT_BLOCKS_BY_ROOT), root.toArrayUnsafe());
+                      } catch (RocksDBException e) {
+                        throw new DatabaseStorageException("Error deleting hot value by root", e);
+                      }
+                    }));
     hotRootsBySlotCache.keySet().removeAll(toRemove.keySet());
     return prunedRoots;
   }
 
-  private void recordFinalizedBlocks(final Checkpoint newFinalizedCheckpoint) {
+  private void recordFinalizedBlocks(
+      final Checkpoint newFinalizedCheckpoint, Transaction transaction) throws RocksDBException {
     LOG.debug(
         "Record finalized blocks for epoch {} starting at block {}",
         newFinalizedCheckpoint.getEpoch(),
         newFinalizedCheckpoint.getRoot());
-    final UnsignedLong highestFinalizedSlot =
-        finalizedRootsBySlot.isEmpty() ? UnsignedLong.ZERO : finalizedRootsBySlot.lastKey();
+    final UnsignedLong highestFinalizedSlot;
+    try (RocksIterator rocksIterator =
+        db.newIterator(columnHandlesByName.get(FINALIZED_ROOTS_BY_SLOT))) {
+      rocksIterator.seekToLast();
+
+      highestFinalizedSlot =
+          rocksIterator.isValid()
+              ? UnsignedLong.valueOf(Longs.fromByteArray(rocksIterator.key()))
+              : UnsignedLong.ZERO;
+    }
     Bytes32 newlyFinalizedBlockRoot = newFinalizedCheckpoint.getRoot();
-    SignedBeaconBlock newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
+    SignedBeaconBlock newlyFinalizedBlock =
+        deserialize(
+            db.get(
+                columnHandlesByName.get(HOT_BLOCKS_BY_ROOT),
+                newlyFinalizedBlockRoot.toArrayUnsafe()),
+            SignedBeaconBlock.class);
     while (newlyFinalizedBlock != null
         && newlyFinalizedBlock.getSlot().compareTo(highestFinalizedSlot) > 0) {
       LOG.debug(
           "Recording finalized block {} at slot {}",
           newlyFinalizedBlock.getSlot(),
           newlyFinalizedBlockRoot);
-      finalizedRootsBySlot.put(newlyFinalizedBlock.getSlot(), newlyFinalizedBlockRoot);
-      finalizedBlocksByRoot.put(newlyFinalizedBlockRoot, newlyFinalizedBlock);
+      store(
+          transaction,
+          FINALIZED_ROOTS_BY_SLOT,
+          Longs.toByteArray(newlyFinalizedBlock.getSlot().longValue()),
+          newlyFinalizedBlockRoot.toArrayUnsafe());
+      store(
+          transaction,
+          FINALIZED_BLOCKS_BY_ROOT,
+          newlyFinalizedBlockRoot.toArrayUnsafe(),
+          serialize(newlyFinalizedBlock));
       final Optional<BeaconState> finalizedState = getState(newlyFinalizedBlockRoot);
       if (finalizedState.isPresent()) {
-        putFinalizedState(newlyFinalizedBlockRoot, finalizedState.get());
+        putFinalizedState(transaction, newlyFinalizedBlockRoot, finalizedState.get());
       } else {
         LOG.error(
             "Missing finalized state {} for epoch {}",
@@ -407,7 +454,13 @@ public class RocksDbDatabase implements Database {
             newFinalizedCheckpoint.getEpoch());
       }
       newlyFinalizedBlockRoot = newlyFinalizedBlock.getMessage().getParent_root();
-      newlyFinalizedBlock = hotBlocksByRoot.get(newlyFinalizedBlockRoot);
+
+      newlyFinalizedBlock =
+          deserialize(
+              db.get(
+                  columnHandlesByName.get(HOT_BLOCKS_BY_ROOT),
+                  newlyFinalizedBlockRoot.toArrayUnsafe()),
+              SignedBeaconBlock.class);
     }
 
     if (newlyFinalizedBlock == null) {
@@ -483,28 +536,30 @@ public class RocksDbDatabase implements Database {
 
   private <K, V> Map<K, V> allValues(
       final RocksDbColumn column, final Class<K> keyClass, final Class<V> valueClass) {
-    RocksIterator rocksIterator = db.newIterator(columnHandlesByName.get(column));
-    rocksIterator.seekToFirst();
-    Map<K, V> result = new HashMap<>();
-    while (rocksIterator.isValid()) {
-      K key = deserialize(rocksIterator.key(), keyClass);
-      V value = deserialize(rocksIterator.value(), valueClass);
-      result.put(key, value);
+    try (RocksIterator rocksIterator = db.newIterator(columnHandlesByName.get(column))) {
+      rocksIterator.seekToFirst();
+      Map<K, V> result = new HashMap<>();
+      for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
+        K key = deserialize(rocksIterator.key(), keyClass);
+        V value = deserialize(rocksIterator.value(), valueClass);
+        result.put(key, value);
+        rocksIterator.next();
+      }
+      return result;
     }
-    return result;
   }
 
   private <V> Map<UnsignedLong, V> allUnsignedLongValues(
       final RocksDbColumn column, final Class<V> valueClass) {
-    RocksIterator rocksIterator = db.newIterator(columnHandlesByName.get(column));
-    rocksIterator.seekToFirst();
-    Map<UnsignedLong, V> result = new HashMap<>();
-    while (rocksIterator.isValid()) {
-      UnsignedLong key = UnsignedLong.valueOf(Longs.fromByteArray(rocksIterator.key()));
-      V value = deserialize(rocksIterator.value(), valueClass);
-      result.put(key, value);
+    try (RocksIterator rocksIterator = db.newIterator(columnHandlesByName.get(column))) {
+      Map<UnsignedLong, V> result = new HashMap<>();
+      for (rocksIterator.seekToFirst(); rocksIterator.isValid(); rocksIterator.next()) {
+        UnsignedLong key = UnsignedLong.valueOf(Longs.fromByteArray(rocksIterator.key()));
+        V value = deserialize(rocksIterator.value(), valueClass);
+        result.put(key, value);
+      }
+      return result;
     }
-    return result;
   }
 
   @Override
@@ -522,7 +577,16 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public Optional<Bytes32> getLatestFinalizedRootAtSlot(final UnsignedLong slot) {
-    throw new UnsupportedOperationException();
+    try (RocksIterator rocksIterator =
+        db.newIterator(columnHandlesByName.get(FINALIZED_ROOTS_BY_SLOT))) {
+      rocksIterator.seekForPrev(Longs.toByteArray(slot.longValue()));
+      if (rocksIterator.isValid()) {
+        rocksIterator.prev();
+      }
+      return rocksIterator.isValid()
+          ? Optional.of(Bytes32.wrap(rocksIterator.value()))
+          : Optional.empty();
+    }
   }
 
   @Override
