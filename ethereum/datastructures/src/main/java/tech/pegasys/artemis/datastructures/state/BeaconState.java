@@ -171,7 +171,7 @@ public interface BeaconState
   @JsonProperty
   default SSZList<Validator> getValidators() {
     return new SSZBackingList<>(
-        ValidatorImpl.class, getAny(10), Function.identity(), Function.identity());
+        Validator.class, getAny(10), Function.identity(), Function.identity());
   }
 
   @JsonProperty

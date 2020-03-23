@@ -44,7 +44,6 @@ import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
@@ -301,7 +300,7 @@ class BeaconStateUtilTest {
         .getValidators()
         .addAll(
             SSZList.createMutable(
-                validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, ValidatorImpl.class));
+                validatorList, Constants.VALIDATOR_REGISTRY_LIMIT, Validator.class));
     beaconState
         .getBalances()
         .addAll(

@@ -68,12 +68,11 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.config.Constants;
 
 public final class EpochProcessorUtil {
@@ -466,13 +465,15 @@ public final class EpochProcessorUtil {
     try {
 
       // Process activation eligibility and ejections
-      SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
+      SSZMutableList<Validator> validators = state.getValidators();
       for (int index = 0; index < validators.size(); index++) {
-        MutableValidator validator = validators.get(index);
+        Validator validator = validators.get(index);
 
         if (is_eligible_for_activation_queue(validator)) {
-          validator.setActivation_eligibility_epoch(
-              get_current_epoch(state).plus(UnsignedLong.ONE));
+          validators.set(
+              index,
+              validator.withActivation_eligibility_epoch(
+                  get_current_epoch(state).plus(UnsignedLong.ONE)));
         }
 
         if (is_active_validator(validator, get_current_epoch(state))
@@ -516,8 +517,11 @@ public final class EpochProcessorUtil {
       int churn_limit = get_validator_churn_limit(state).intValue();
       int sublist_size = Math.min(churn_limit, activation_queue.size());
       for (Integer index : activation_queue.subList(0, sublist_size)) {
-        MutableValidator validator = state.getValidators().get(index);
-        validator.setActivation_epoch(compute_activation_exit_epoch(get_current_epoch(state)));
+        state.getValidators().update(
+            index,
+            validator ->
+                validator.withActivation_epoch(
+                    compute_activation_exit_epoch(get_current_epoch(state))));
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);
@@ -580,10 +584,10 @@ public final class EpochProcessorUtil {
     }
 
     // Update effective balances with hysteresis
-    SSZMutableRefList<Validator, MutableValidator> validators = state.getValidators();
+    SSZMutableList<Validator> validators = state.getValidators();
     SSZList<UnsignedLong> balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
-      MutableValidator validator = validators.get(index);
+      Validator validator = validators.get(index);
       UnsignedLong balance = balances.get(index);
       long HALF_INCREMENT = Constants.EFFECTIVE_BALANCE_INCREMENT / 2;
       if (balance.compareTo(validator.getEffective_balance()) < 0
@@ -592,10 +596,16 @@ public final class EpochProcessorUtil {
                   .plus(UnsignedLong.valueOf(3 * HALF_INCREMENT))
                   .compareTo(balance)
               < 0) {
-        validator.setEffective_balance(
-            min(
-                balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
-                UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)));
+
+        state
+            .getValidators()
+            .set(
+                index,
+                validator.withEffective_balance(
+                    min(
+                        balance.minus(
+                            balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
+                        UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))));
       }
     }
 

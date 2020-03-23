@@ -47,7 +47,6 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.HistoricalBatch;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -90,7 +89,7 @@ public class MapObjectUtil {
     else if (classtype.equals(SecretKey.class)) return getSecretKey(object.toString());
     else if (classtype.equals(Signature.class)) return getSignature(object.toString());
     else if (classtype.equals(Signature[].class)) return getSignatureArray((List) object);
-    else if (classtype.equals(ValidatorImpl.class)) return getValidator((Map) object);
+    else if (classtype.equals(Validator.class)) return getValidator((Map) object);
     else if (classtype.equals(VoluntaryExit.class)) return getVoluntaryExit((Map) object);
     else if (classtype.equals(SignedVoluntaryExit.class))
       return getSignedVoluntaryExit((Map) object);
@@ -261,7 +260,7 @@ public class MapObjectUtil {
             ((List<Map>) map.get("validators"))
                 .stream().map(e -> getValidator(e)).collect(Collectors.toList()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
-            ValidatorImpl.class);
+            Validator.class);
     SSZList<UnsignedLong> balances =
         SSZList.createMutable(
             new ArrayList<>(

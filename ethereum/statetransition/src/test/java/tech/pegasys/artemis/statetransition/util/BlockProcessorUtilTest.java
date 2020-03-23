@@ -33,7 +33,6 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -147,7 +146,7 @@ class BlockProcessorUtilTest {
         SSZList.createMutable(
             Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
             Constants.VALIDATOR_REGISTRY_LIMIT,
-            ValidatorImpl.class);
+            Validator.class);
     SSZMutableList<UnsignedLong> balanceList =
         SSZList.createMutable(
             Arrays.asList(

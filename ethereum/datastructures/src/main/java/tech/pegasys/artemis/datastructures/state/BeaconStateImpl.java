@@ -62,7 +62,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
             Eth1Data.TYPE,
             new ListViewType<>(Eth1Data.TYPE, Constants.SLOTS_PER_ETH1_VOTING_PERIOD),
             BasicViewTypes.UINT64_TYPE,
-            new ListViewType<>(ValidatorImpl.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
+            new ListViewType<>(Validator.TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
             new ListViewType<>(BasicViewTypes.UINT64_TYPE, Constants.VALIDATOR_REGISTRY_LIMIT),
             new VectorViewType<>(
                 BasicViewTypes.BYTES32_TYPE, Constants.EPOCHS_PER_HISTORICAL_VECTOR),
@@ -138,9 +138,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   // Validator registry
   @SuppressWarnings("unused")
-  private final SSZList<ValidatorImpl> validators =
+  private final SSZList<Validator> validators =
       SSZList.createMutable(
-          ValidatorImpl.class,
+          Validator.class,
           Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
   @SuppressWarnings("unused")

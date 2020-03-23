@@ -20,10 +20,8 @@ import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.SSZBackingList;
-import tech.pegasys.artemis.util.SSZTypes.SSZBackingListRef;
 import tech.pegasys.artemis.util.SSZTypes.SSZBackingVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
 import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
@@ -91,8 +89,9 @@ public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
 
   // Registry
   @Override
-  default SSZMutableRefList<Validator, MutableValidator> getValidators() {
-    return new SSZBackingListRef<>(ValidatorImpl.class, getAnyByRef(10));
+  default SSZMutableList<Validator> getValidators() {
+    return new SSZBackingList<>(
+        Validator.class, getAnyByRef(10), Function.identity(), Function.identity());
   }
 
   @Override

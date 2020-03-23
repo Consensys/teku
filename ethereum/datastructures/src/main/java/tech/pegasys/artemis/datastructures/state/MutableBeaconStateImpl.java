@@ -5,7 +5,6 @@ import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
@@ -25,7 +24,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   @Label("sos-ignore")
   private final boolean builder;
 
-  private SSZMutableRefList<Validator, MutableValidator> validators;
+  private SSZMutableList<Validator> validators;
   private SSZMutableList<UnsignedLong> balances;
   private SSZMutableVector<Bytes32> blockRoots;
   private SSZMutableVector<Bytes32> stateRoots;
@@ -78,7 +77,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   }
 
   @Override
-  public SSZMutableRefList<Validator, MutableValidator> getValidators() {
+  public SSZMutableList<Validator> getValidators() {
     return validators != null
         ? validators
         : (validators = MutableBeaconState.super.getValidators());

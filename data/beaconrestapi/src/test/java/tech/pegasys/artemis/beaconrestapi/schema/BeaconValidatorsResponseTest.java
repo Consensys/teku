@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -165,9 +164,11 @@ class BeaconValidatorsResponseTest {
         .isLessThanOrEqualTo(beaconStateW.getValidators().size());
 
     // create one validator which IS active and add it to the list
-    MutableValidator v = DataStructureUtil.randomValidator(77).createWritableCopy();
-    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+    Validator v =
+        DataStructureUtil.randomValidator(77)
+            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
+            .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+
     beaconStateW.getValidators().add(v);
     beaconStateW.commitChanges();
 

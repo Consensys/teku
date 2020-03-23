@@ -46,7 +46,6 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -389,7 +388,7 @@ public final class DataStructureUtil {
         randomUnsignedLong(seed++),
 
         // Can't use the actual maxSize cause it is too big
-        randomSSZList(ValidatorImpl.class, numValidators, DataStructureUtil::randomValidator, seed++),
+        randomSSZList(Validator.class, numValidators, DataStructureUtil::randomValidator, seed++),
         randomSSZList(UnsignedLong.class, numValidators, DataStructureUtil::randomUnsignedLong, seed++),
         randomSSZVector(
             Bytes32.ZERO,

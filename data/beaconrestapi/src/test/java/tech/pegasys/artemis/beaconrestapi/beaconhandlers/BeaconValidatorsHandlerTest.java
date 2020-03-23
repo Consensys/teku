@@ -41,7 +41,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.artemis.beaconrestapi.schema.BeaconValidatorsResponse;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
@@ -294,15 +293,16 @@ public class BeaconValidatorsHandlerTest {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
     // create an ACTIVE validator and add it to the list
-    MutableValidator v = DataStructureUtil.randomValidator(88).createWritableCopy();
-    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+    Validator v =
+        DataStructureUtil.randomValidator(88)
+            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
+            .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 
     assertThat(
             ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(beaconState)))
         .isTrue();
 
-    v.setActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch());
+    v = v.withActivation_epoch(beaconState.getFinalized_checkpoint().getEpoch());
     beaconStateW.getValidators().add(v);
     return beaconStateW.commitChanges();
   }

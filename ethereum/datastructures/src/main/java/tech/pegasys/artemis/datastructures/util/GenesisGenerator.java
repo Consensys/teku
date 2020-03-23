@@ -38,7 +38,7 @@ import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -90,18 +90,23 @@ public class GenesisGenerator {
       // Could be null if the deposit was invalid
       return;
     }
-    MutableValidator validator = state.getValidators().get(index);
+    Validator validator = state.getValidators().get(index);
     UnsignedLong balance = state.getBalances().get(index);
     UnsignedLong effective_balance =
         BeaconStateUtil.min(
             balance.minus(balance.mod(UnsignedLong.valueOf(EFFECTIVE_BALANCE_INCREMENT))),
             UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
-    validator.setEffective_balance(effective_balance);
 
-    if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
-      validator.setActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
-      validator.setActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
+    Validator modifiedValidator = validator.withEffective_balance(effective_balance);
+
+    if (validator.getEffective_balance()
+        .equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
+      modifiedValidator =
+          modifiedValidator
+              .withActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH))
+              .withActivation_epoch(UnsignedLong.valueOf(GENESIS_EPOCH));
     }
+    state.getValidators().set(index, modifiedValidator);
   }
 
   public BeaconState getGenesisState() {
