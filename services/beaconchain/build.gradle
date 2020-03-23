@@ -15,6 +15,7 @@ dependencies {
   implementation project(':storage')
   implementation project(':sync')
   implementation project(':util')
+  implementation project(':validator:api')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
 
