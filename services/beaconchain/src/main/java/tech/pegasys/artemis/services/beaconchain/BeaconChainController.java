@@ -96,7 +96,7 @@ public class BeaconChainController extends Service {
   private volatile SyncService syncService;
   private volatile AttestationManager attestationManager;
   private volatile ValidatorCoordinator validatorCoordinator;
-  private CombinedChainDataClient combinedChainDataClient;
+  private volatile CombinedChainDataClient combinedChainDataClient;
 
   public BeaconChainController(
       TimeProvider timeProvider,
@@ -176,6 +176,7 @@ public class BeaconChainController extends Service {
   }
 
   private void initCombinedChainDataClient() {
+    LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
     combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
   }

@@ -29,7 +29,7 @@ public class ValidatorDuties {
     this.duties = duties;
   }
 
-  public static ValidatorDuties forKnownValidator(
+  public static ValidatorDuties withDuties(
       final BLSPublicKey publicKey,
       final int validatorIndex,
       final int attestationCommitteeIndex,
@@ -42,7 +42,7 @@ public class ValidatorDuties {
                 validatorIndex, attestationCommitteeIndex, blockProposalSlots, attestationSlot)));
   }
 
-  public static ValidatorDuties forUnknownValidator(final BLSPublicKey publicKey) {
+  public static ValidatorDuties noDuties(final BLSPublicKey publicKey) {
     return new ValidatorDuties(publicKey, Optional.empty());
   }
 

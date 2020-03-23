@@ -81,7 +81,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex) {
     return ValidatorsUtil.getValidatorIndex(state, key)
         .map(index -> createValidatorDuties(proposalSlotsByValidatorIndex, key, state, index))
-        .orElseGet(() -> ValidatorDuties.forUnknownValidator(key));
+        .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
   private ValidatorDuties createValidatorDuties(
@@ -95,7 +95,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         CommitteeAssignmentUtil.get_committee_assignment(
                 state, compute_epoch_at_slot(state.getSlot()), validatorIndex)
             .orElseThrow();
-    return ValidatorDuties.forKnownValidator(
+    return ValidatorDuties.withDuties(
         key,
         validatorIndex,
         Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),

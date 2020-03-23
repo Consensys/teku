@@ -63,7 +63,7 @@ class ValidatorApiHandlerTest {
     final SafeFuture<List<ValidatorDuties>> result =
         validatorApiHandler.getDuties(EPOCH, List.of(unknownPublicKey));
     final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
-    assertThat(duties).containsExactly(ValidatorDuties.forUnknownValidator(unknownPublicKey));
+    assertThat(duties).containsExactly(ValidatorDuties.noDuties(unknownPublicKey));
   }
 
   @Test
@@ -79,7 +79,7 @@ class ValidatorApiHandlerTest {
     final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties)
         .containsExactly(
-            ValidatorDuties.forKnownValidator(
+            ValidatorDuties.withDuties(
                 publicKey, validatorIndex, 0, emptyList(), UnsignedLong.valueOf(110)));
   }
 
@@ -97,12 +97,10 @@ class ValidatorApiHandlerTest {
             EPOCH, List.of(validator3Key, unknownPublicKey, validator31Key));
     final List<ValidatorDuties> duties = assertCompletedSuccessfully(result);
     final ValidatorDuties validator3Duties =
-        ValidatorDuties.forKnownValidator(
-            validator3Key, 3, 0, emptyList(), UnsignedLong.valueOf(110));
-    final ValidatorDuties unknownValidatorDuties =
-        ValidatorDuties.forUnknownValidator(unknownPublicKey);
+        ValidatorDuties.withDuties(validator3Key, 3, 0, emptyList(), UnsignedLong.valueOf(110));
+    final ValidatorDuties unknownValidatorDuties = ValidatorDuties.noDuties(unknownPublicKey);
     final ValidatorDuties validator6Duties =
-        ValidatorDuties.forKnownValidator(
+        ValidatorDuties.withDuties(
             validator31Key,
             31,
             0,

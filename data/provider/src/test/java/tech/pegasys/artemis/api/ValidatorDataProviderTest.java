@@ -153,9 +153,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
-                List.of(
-                    tech.pegasys.artemis.validator.api.ValidatorDuties.forUnknownValidator(
-                        publicKey))));
+                List.of(tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey))));
 
     SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(smallRequest);
     List<ValidatorDuties> validatorDuties = future.get();
@@ -184,7 +182,7 @@ public class ValidatorDataProviderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 List.of(
-                    tech.pegasys.artemis.validator.api.ValidatorDuties.forKnownValidator(
+                    tech.pegasys.artemis.validator.api.ValidatorDuties.withDuties(
                         publicKey,
                         validatorIndex,
                         attestationCommitteeIndex,
