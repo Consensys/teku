@@ -52,8 +52,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.DBOptions;
+import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
-import org.rocksdb.Options;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.Statistics;
@@ -83,7 +85,7 @@ public class RocksDbDatabase implements Database {
     RocksDbUtil.loadNativeLibrary();
   }
 
-  private final Options options;
+  private final DBOptions options;
   private final TransactionDBOptions txOptions;
   private final AtomicBoolean closed = new AtomicBoolean(false);
   private final TransactionDB db;
@@ -105,17 +107,20 @@ public class RocksDbDatabase implements Database {
     final Statistics stats = new Statistics();
 
     options =
-        new Options()
+        new DBOptions()
             .setCreateIfMissing(true)
             .setMaxOpenFiles(configuration.getMaxOpenFiles())
-            .setTableFormatConfig(createBlockBasedTableConfig(configuration))
             .setMaxBackgroundCompactions(configuration.getMaxBackgroundCompactions())
-            .setStatistics(stats);
-    options.getEnv().setBackgroundThreads(configuration.getBackgroundThreadCount());
+            .setStatistics(stats)
+            .setCreateMissingColumnFamilies(true)
+            .setEnv(
+                Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()));
 
+    final ColumnFamilyOptions columnFamilyOptions =
+        new ColumnFamilyOptions().setTableFormatConfig(createBlockBasedTableConfig(configuration));
     List<ColumnFamilyDescriptor> columnDescriptors =
         EnumSet.allOf(RocksDbColumn.class).stream()
-            .map(col -> new ColumnFamilyDescriptor(col.getId()))
+            .map(col -> new ColumnFamilyDescriptor(col.getId(), columnFamilyOptions))
             .collect(Collectors.toList());
 
     final List<ColumnFamilyHandle> columnHandles = new ArrayList<>(columnDescriptors.size());
@@ -125,7 +130,13 @@ public class RocksDbDatabase implements Database {
             .collect(Collectors.toMap(col -> Bytes.wrap(col.getId()), Function.identity()));
     txOptions = new TransactionDBOptions();
     try {
-      db = TransactionDB.open(options, txOptions, configuration.getDatabaseDir().toString());
+      db =
+          TransactionDB.open(
+              options,
+              txOptions,
+              configuration.getDatabaseDir().toString(),
+              columnDescriptors,
+              columnHandles);
 
       final ImmutableMap.Builder<RocksDbColumn, ColumnFamilyHandle> builder =
           ImmutableMap.builder();
