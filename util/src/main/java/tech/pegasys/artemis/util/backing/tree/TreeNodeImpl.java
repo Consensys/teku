@@ -14,10 +14,8 @@
 package tech.pegasys.artemis.util.backing.tree;
 
 import java.util.Objects;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.util.backing.ViewRead;
 
 abstract class TreeNodeImpl implements TreeNode {
 
@@ -95,17 +93,5 @@ abstract class TreeNodeImpl implements TreeNode {
     public String toString() {
       return "(" + (left == right ? "default" : left + ", " + right) + ')';
     }
-  }
-
-  private ViewRead cachedValue;
-
-  @Override
-  public <C extends ViewRead> C cachedValue(Supplier<C> supplier) {
-    if (cachedValue == null) {
-      cachedValue = supplier.get();
-    } else if (cachedValue.getBackingNode() != this) {
-      cachedValue = supplier.get();
-    }
-    return (C) cachedValue;
   }
 }

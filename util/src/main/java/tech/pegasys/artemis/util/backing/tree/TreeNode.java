@@ -16,12 +16,10 @@ package tech.pegasys.artemis.util.backing.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /**
@@ -174,6 +172,4 @@ public interface TreeNode {
   default TreeNode updated(long generalizedIndex, TreeNode node) {
     return updated(generalizedIndex, oldNode -> node);
   }
-
-  <C extends ViewRead> C cachedValue(Supplier<C> supplier);
 }
