@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.web3j.crypto.CipherException;
@@ -39,12 +40,15 @@ class CommonParamsTest {
       ECKeyPair.create(Numeric.toBigInt(ETH1_PRIVATE_KEY));
   private static final String PASSWORD = "test123";
   private CommandSpec commandSpec = mock(CommandSpec.class);
+  private static final Consumer<Integer> shutdownFunction = status -> {};
+  private ConsoleAdapter consoleAdapter = mock(ConsoleAdapter.class);
 
   @Test
   void eth1PrivateKeyReturnsCredential() {
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.eth1PrivateKey = ETH1_PRIVATE_KEY;
-    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams =
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
     final Credentials eth1Credentials = commonParams.getEth1Credentials();
     assertThat(eth1Credentials.getEcKeyPair()).isEqualTo(EXPECTED_EC_KEYPAIR);
   }
@@ -68,7 +72,8 @@ class CommonParamsTest {
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams =
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
     final Credentials eth1Credentials = commonParams.getEth1Credentials();
     assertThat(eth1Credentials.getEcKeyPair()).isEqualTo(EXPECTED_EC_KEYPAIR);
   }
@@ -83,7 +88,8 @@ class CommonParamsTest {
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams =
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
@@ -104,7 +110,8 @@ class CommonParamsTest {
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams =
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)
@@ -126,7 +133,8 @@ class CommonParamsTest {
     final Eth1PrivateKeyOptions eth1PrivateKeyOptions = new Eth1PrivateKeyOptions();
     eth1PrivateKeyOptions.keystoreOptions = keystoreOptions;
 
-    final CommonParams commonParams = new CommonParams(commandSpec, eth1PrivateKeyOptions);
+    final CommonParams commonParams =
+        new CommonParams(commandSpec, eth1PrivateKeyOptions, shutdownFunction, consoleAdapter);
 
     when(commandSpec.commandLine()).thenReturn(mock(CommandLine.class));
     assertThatExceptionOfType(CommandLine.ParameterException.class)

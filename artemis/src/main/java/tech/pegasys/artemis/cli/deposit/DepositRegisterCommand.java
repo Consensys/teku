@@ -60,7 +60,7 @@ public class DepositRegisterCommand implements Runnable {
   private ValidatorKeyOptions validatorKeyOptions;
 
   @Option(
-      names = {"-w", "--withdrawal-key"},
+      names = {"--withdrawal-public-key"},
       paramLabel = "<PUBLIC_KEY>",
       required = true,
       description = "Public withdrawal key for the validator")
@@ -93,6 +93,7 @@ public class DepositRegisterCommand implements Runnable {
     final BLSKeyPair validatorKey = getValidatorKey();
 
     final CommonParams _params = params; // making it effective final as it gets injected by PicoCLI
+    _params.displayConfirmation();
     try (_params) {
       final DepositTransactionSender sender = params.createTransactionSender();
       sendDeposit(
@@ -156,7 +157,7 @@ public class DepositRegisterCommand implements Runnable {
 
   static class ValidatorKeyOptions {
     @Option(
-        names = {"-s", "--signing-key"},
+        names = {"--validator-private-key"},
         paramLabel = "<PRIVATE_KEY>",
         required = true,
         description = "Private signing key for the validator")
@@ -168,7 +169,7 @@ public class DepositRegisterCommand implements Runnable {
 
   static class ValidatorKeyStoreOptions {
     @Option(
-        names = {"--signing-keystore-file"},
+        names = {"--encrypted-keystore-validator-file"},
         paramLabel = "<FILE>",
         required = true,
         description =
@@ -181,14 +182,14 @@ public class DepositRegisterCommand implements Runnable {
 
   static class ValidatorPasswordOptions implements KeystorePasswordOptions {
     @Option(
-        names = {"--signing-keystore-password-file"},
+        names = {"--encrypted-keystore-validator-password-file"},
         paramLabel = "<FILE>",
         required = true,
         description = "Read password from the file to decrypt the validator keystore")
     File validatorKeystorePasswordFile;
 
     @Option(
-        names = {"--signing-keystore-password-env"},
+        names = {"--encrypted-keystore-validator-password-env"},
         paramLabel = "<ENV_VAR>",
         required = true,
         description = "Read password from environment variable to decrypt the validator keystore")
