@@ -50,7 +50,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<ValidatorDuties>> getDuties(
       final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
-    System.out.println("Get duties");
     final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
     return combinedChainDataClient
         .getStateAtSlot(slot)

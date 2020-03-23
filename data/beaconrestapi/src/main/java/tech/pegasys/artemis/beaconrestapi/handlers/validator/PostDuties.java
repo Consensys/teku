@@ -75,7 +75,6 @@ public class PostDuties implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    System.out.println("Check 1");
     try {
       ValidatorDutiesRequest validatorDutiesRequest =
           jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
@@ -83,14 +82,7 @@ public class PostDuties implements Handler {
       SafeFuture<List<ValidatorDuties>> future =
           provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(
-          future
-              .thenApply(
-                  duties -> {
-                    System.out.println("Responding with: " + duties);
-                    return duties;
-                  })
-              .thenApplyChecked(jsonProvider::objectToJSON));
+      ctx.result(future.thenApplyChecked(jsonProvider::objectToJSON));
 
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
