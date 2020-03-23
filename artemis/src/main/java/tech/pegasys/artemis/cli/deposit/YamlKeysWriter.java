@@ -54,6 +54,7 @@ public class YamlKeysWriter implements KeysWriter {
             StandardOpenOption.WRITE,
             StandardOpenOption.APPEND);
       } catch (IOException e) {
+        e.printStackTrace();
         STATUS_LOG.validatorDepositYamlKeyWriterFailure(outputPath);
         throw new UncheckedIOException(e);
       }

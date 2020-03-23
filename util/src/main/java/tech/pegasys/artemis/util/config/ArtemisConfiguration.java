@@ -34,6 +34,7 @@ public class ArtemisConfiguration {
   private final String p2pPrivateKeyFile;
   private final int p2pPeerLowerBound;
   private final int p2pPeerUpperBound;
+  private final List<String> p2pStaticPeers;
 
   // Interop
   private final Integer xInteropGenesisTime;
@@ -95,6 +96,7 @@ public class ArtemisConfiguration {
       final String p2pPrivateKeyFile,
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
+      final List<String> p2pStaticPeers,
       final Integer xInteropGenesisTime,
       final int xInteropOwnedValidatorStartIndex,
       final int xInteropOwnedValidatorCount,
@@ -133,6 +135,7 @@ public class ArtemisConfiguration {
     this.p2pPrivateKeyFile = p2pPrivateKeyFile;
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     this.p2pPeerUpperBound = p2pPeerUpperBound;
+    this.p2pStaticPeers = p2pStaticPeers;
     this.xInteropGenesisTime = xInteropGenesisTime;
     this.xInteropOwnedValidatorStartIndex = xInteropOwnedValidatorStartIndex;
     this.xInteropOwnedValidatorCount = xInteropOwnedValidatorCount;
@@ -206,8 +209,16 @@ public class ArtemisConfiguration {
     return p2pPeerUpperBound;
   }
 
+  public List<String> getP2pStaticPeers() {
+    return p2pStaticPeers;
+  }
+
   public Integer getxInteropGenesisTime() {
-    return xInteropGenesisTime;
+    if (xInteropGenesisTime == 0) {
+      return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
+    } else {
+      return xInteropGenesisTime;
+    }
   }
 
   public int getxInteropOwnedValidatorStartIndex() {

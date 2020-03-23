@@ -16,7 +16,6 @@ package tech.pegasys.artemis.cli;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.logging.log4j.Level;
@@ -116,7 +115,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       description = "ENR of the bootnode",
       split = ",",
       arity = "0..*")
-  private List<String> p2pDiscoveryBootnodes = DEFAULT_P2P_DISCOVERY_BOOTNODES;
+  private ArrayList<String> p2pDiscoveryBootnodes = DEFAULT_P2P_DISCOVERY_BOOTNODES;
 
   @Option(
       names = {P2P_ADVERTISED_IP_OPTION_NAME},
@@ -152,6 +151,13 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       description = "Upper bound on the target number of peers",
       arity = "1")
   private int p2pUpperBound = DEFAULT_P2P_PEER_UPPER_BOUND;
+
+  @Option(
+      names = {P2P_STATIC_PEERS_OPTION_NAME},
+      paramLabel = "<PEER_ADDRESSES>",
+      description = "Static peers",
+      arity = "1")
+  private ArrayList<String> p2pStaticPeers = DEFAULT_P2P_STATIC_PEERS;
 
   // Interop
 
@@ -207,19 +213,20 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   @Option(
       names = {VALIDATORS_KEYSTORE_FILES_OPTION_NAME},
-      paramLabel = "<FILENAME>",
+      paramLabel = "<FILENAMES>",
       description = "The list of encrypted keystore files to load the validator keys from",
       split = ",",
       arity = "0..*")
-  private List<String> validatorsKeystoreFiles = DEFAULT_VALIDATORS_KEYSTORE_FILES;
+  private ArrayList<String> validatorsKeystoreFiles = DEFAULT_VALIDATORS_KEYSTORE_FILES;
 
   @Option(
       names = {VALIDATORS_KEYSTORE_PASSWORD_FILES_OPTION_NAME},
-      paramLabel = "<FILENAME>",
+      paramLabel = "<FILENAMES>",
       description = "The list of password files to decrypt the validator keystore files",
       split = ",",
       arity = "0..*")
-  private List<String> validatorsKeystorePasswordFiles = DEFAULT_VALIDATORS_KEYSTORE_PASSWORD_FILES;
+  private ArrayList<String> validatorsKeystorePasswordFiles =
+      DEFAULT_VALIDATORS_KEYSTORE_PASSWORD_FILES;
 
   // Deposit
 
@@ -459,6 +466,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
         .setP2pPrivateKeyFile(p2pPrivateKeyFile)
         .setP2pPeerLowerBound(p2pLowerBound)
         .setP2pPeerUpperBound(p2pUpperBound)
+        .setP2pStaticPeers(p2pStaticPeers)
         .setxInteropGenesisTime(xInteropGenesisTime)
         .setxInteropOwnedValidatorStartIndex(xInteropOwnerValidatorStartIndex)
         .setxInteropOwnedValidatorCount(xInteropOwnerValidatorCount)
@@ -475,7 +483,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
         .setLogDestination(logDestination)
         .setLogFile(logFile)
         .setLogFileNamePattern(logFileNamePattern)
-        .setxTransactionRecordDirectory(xTransactionRecordDirectory)
+        .setxTransitionRecordDirectory(xTransactionRecordDirectory)
         .setMetricsEnabled(metricsEnabled)
         .setMetricsPort(metricsPort)
         .setMetricsInterface(metricsInterface)

@@ -27,13 +27,13 @@ import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
@@ -52,6 +52,8 @@ import tech.pegasys.artemis.api.schema.BeaconHead;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.artemis.test.acceptance.dsl.tools.GenesisStateGenerator;
+import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 import tech.pegasys.artemis.util.network.NetworkUtility;
 
 public class ArtemisNode extends Node {
@@ -278,59 +280,41 @@ public class ArtemisNode extends Node {
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
-
-    private static final String DATABASE_SECTION = "database";
-    private static final String BEACONRESTAPI_SECTION = "beaconrestapi";
-    private static final String DEPOSIT_SECTION = "deposit";
-    private static final String INTEROP_SECTION = "interop";
-    private static final String NODE_SECTION = "node";
-    private static final String VALIDATOR_SECTION = "validator";
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
-    private static final String OUTPUT_SECTION = "output";
-    private Map<String, Map<String, Object>> options = new HashMap<>();
+    private static final String P2P_PRIVATE_KEY_FILE_PATH = "/p2p-private-key.key";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
+
+    private ArtemisConfigurationBuilder artemisConfigurationBuilder;
 
     private Optional<String> validatorKeys = Optional.empty();
     private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
+    private boolean p2pEnabled = false;
 
     public Config() {
-      final Map<String, Object> node = getSection(NODE_SECTION);
-      setNetworkMode("mock");
-      node.put("networkInterface", NetworkUtility.INADDR_ANY);
-      node.put("port", P2P_PORT);
-      node.put("discovery", "static");
-      node.put("constants", "minimal");
-
-      final Map<String, Object> interop = getSection(INTEROP_SECTION);
-      interop.put("genesisTime", 0);
-      interop.put("ownedValidatorStartIndex", 0);
-      interop.put("ownedValidatorCount", DEFAULT_VALIDATOR_COUNT);
-
-      final Map<String, Object> deposit = getSection(DEPOSIT_SECTION);
-      setDepositMode("test");
-      deposit.put("numValidators", DEFAULT_VALIDATOR_COUNT);
-
-      final Map<String, Object> beaconRestApi = getSection(BEACONRESTAPI_SECTION);
-      beaconRestApi.put("portNumber", REST_API_PORT);
-      beaconRestApi.put("enableSwagger", false);
-
-      final Map<String, Object> output = getSection(OUTPUT_SECTION);
-      output.put("transitionRecordDir", ARTIFACTS_PATH + "transitions/");
-
-      final Map<String, Object> database = getSection(DATABASE_SECTION);
-      database.put("dataDir", ARTIFACTS_PATH + "data/");
+      artemisConfigurationBuilder =
+          ArtemisConfiguration.builder()
+              .setNetwork("minimal")
+              .setP2pEnabled(false)
+              .setP2pDiscoveryEnabled(false)
+              .setP2pPort(P2P_PORT)
+              .setP2pAdvertisedPort(P2P_PORT)
+              .setP2pInterface(NetworkUtility.INADDR_ANY)
+              .setxInteropGenesisTime(0)
+              .setxInteropOwnedValidatorStartIndex(0)
+              .setxInteropOwnedValidatorCount(DEFAULT_VALIDATOR_COUNT)
+              .setxInteropNumberOfValidators(DEFAULT_VALIDATOR_COUNT)
+              .setxInteropEnabled(true)
+              .setRestApiEnabled(true)
+              .setRestApiPort(REST_API_PORT)
+              .setRestApiDocsEnabled(false)
+              .setxTransitionRecordDirectory(ARTIFACTS_PATH + "transitions/")
+              .setDataPath(ARTIFACTS_PATH + "data/");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
-      setDepositMode("normal");
-      final Map<String, Object> depositSection = getSection(DEPOSIT_SECTION);
-      depositSection.put("contractAddr", eth1Node.getDepositContractAddress());
-      depositSection.put("nodeUrl", eth1Node.getInternalJsonRpcUrl());
-      return this;
-    }
-
-    public Config startFromDisk() {
-      getSection(DATABASE_SECTION).put("startFromDisk", true);
+      artemisConfigurationBuilder
+          .setEth1DepositContractAddress(eth1Node.getDepositContractAddress())
+          .setEth1Endpoint(eth1Node.getInternalJsonRpcUrl());
       return this;
     }
 
@@ -340,20 +324,21 @@ public class ArtemisNode extends Node {
     }
 
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
-      getSection(INTEROP_SECTION).put("ownedValidatorStartIndex", startIndex);
-      getSection(INTEROP_SECTION).put("ownedValidatorCount", validatorCount);
+      artemisConfigurationBuilder
+          .setxInteropOwnedValidatorStartIndex(startIndex)
+          .setxInteropOwnedValidatorCount(validatorCount);
       return this;
     }
 
     public Config withRealNetwork() {
-      setNetworkMode("jvmlibp2p");
-      getSection(INTEROP_SECTION).put("privateKey", Bytes.wrap(privateKey.bytes()).toHexString());
+      p2pEnabled = true;
+      artemisConfigurationBuilder.setP2pEnabled(true);
       return this;
     }
 
     public Config withGenesisState(String pathToGenesisState) {
       checkNotNull(pathToGenesisState);
-      getSection(INTEROP_SECTION).put("startState", pathToGenesisState);
+      artemisConfigurationBuilder.setxInteropStartState(pathToGenesisState);
       return this;
     }
 
@@ -373,21 +358,21 @@ public class ArtemisNode extends Node {
       final List<String> peers =
           asList(nodes).stream().map(ArtemisNode::getMultiAddr).collect(toList());
       LOG.debug("Set peers: {}", peers.stream().collect(Collectors.joining(", ")));
-      getSection(NODE_SECTION).put("peers", peers);
+      artemisConfigurationBuilder.setP2pStaticPeers(peers);
       return this;
     }
 
-    private void setDepositMode(final String mode) {
-      getSection(DEPOSIT_SECTION).put("mode", mode);
-    }
+    //    private void setDepositMode(final String mode) {
+    //      getSection(DEPOSIT_SECTION).put("mode", mode);
+    //    }
 
-    private void setNetworkMode(final String mode) {
-      getSection(NODE_SECTION).put("networkMode", mode);
-    }
+    //    private void setNetworkMode(final String mode) {
+    //      getSection(NODE_SECTION).put("networkMode", mode);
+    //    }
 
-    private Map<String, Object> getSection(final String interop) {
-      return options.computeIfAbsent(interop, key -> new HashMap<>());
-    }
+    //    private Map<String, Object> getSection(final String interop) {
+    //      return options.computeIfAbsent(interop, key -> new HashMap<>());
+    //    }
 
     public String getPeerId() {
       return peerId.toBase58();
@@ -404,7 +389,15 @@ public class ArtemisNode extends Node {
         validatorsFile.deleteOnExit();
         Files.writeString(validatorsFile.toPath(), validatorKeys.get());
         configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-        getSection(VALIDATOR_SECTION).put("validatorsKeyFile", VALIDATORS_FILE_PATH);
+        artemisConfigurationBuilder.setValidatorsKeyFile(VALIDATORS_FILE_PATH);
+      }
+
+      if (p2pEnabled) {
+        final File p2pPrivateKeyFile = Files.createTempFile("p2p-private-key", ".key").toFile();
+        p2pPrivateKeyFile.deleteOnExit();
+        Files.writeString(p2pPrivateKeyFile.toPath(), Bytes.wrap(privateKey.bytes()).toHexString());
+        configFiles.put(p2pPrivateKeyFile, P2P_PRIVATE_KEY_FILE_PATH);
+        artemisConfigurationBuilder.setP2pPrivateKeyFile(P2P_PRIVATE_KEY_FILE_PATH);
       }
 
       final File configFile = File.createTempFile("config", ".toml");
@@ -417,17 +410,26 @@ public class ArtemisNode extends Node {
     private void writeTo(final File configFile) throws Exception {
       try (PrintWriter out =
           new PrintWriter(Files.newBufferedWriter(configFile.toPath(), StandardCharsets.UTF_8))) {
-        for (Entry<String, Map<String, Object>> entry : options.entrySet()) {
-          String sectionName = entry.getKey();
-          Map<String, Object> section = entry.getValue();
-          out.println("[" + tomlEscape(sectionName) + "]");
-
-          for (Entry<String, Object> e : section.entrySet()) {
-            out.print(e.getKey() + "=");
-            writeValue(e.getValue(), out);
+        final ArtemisConfiguration artemisConfiguration = artemisConfigurationBuilder.build();
+        for (final Field field : ArtemisConfiguration.class.getDeclaredFields()) {
+          field.setAccessible(true);
+          if (field.get(artemisConfiguration) != null) {
+            writeName(field.getName(), out);
+            out.print("=");
+            writeValue(field.get(artemisConfiguration), out);
             out.println();
           }
-          out.println();
+        }
+      }
+      System.out.println();
+    }
+
+    private void writeName(final String name, final PrintWriter out) {
+      final String[] splitName = name.split("(?=\\p{Lu})", -1);
+      for (int i = 0; i < splitName.length; i++) {
+        out.write(splitName[i].toLowerCase());
+        if (i < splitName.length - 1) {
+          out.print("-");
         }
       }
     }

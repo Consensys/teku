@@ -149,9 +149,13 @@ public class DepositGenerateCommand implements Runnable {
 
       SafeFuture.allOf(futures.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
+      System.out.println("-----------  FAILED");
+
       STATUS_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);
     }
+    System.out.println("-----------  GOT HERE 6");
+
     shutdownFunction.accept(0);
   }
 

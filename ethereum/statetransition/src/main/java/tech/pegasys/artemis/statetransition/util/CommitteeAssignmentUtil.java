@@ -43,7 +43,10 @@ public class CommitteeAssignmentUtil {
       BeaconState state, UnsignedLong epoch, int validator_index) {
     UnsignedLong next_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
     checkArgument(
-        epoch.compareTo(next_epoch) <= 0, "get_committee_assignment: Epoch number too high");
+        epoch.compareTo(next_epoch) <= 0,
+        "get_committee_assignment: Epoch number too high - epoch {} - next_epoch {}",
+        epoch,
+        next_epoch);
 
     UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
 

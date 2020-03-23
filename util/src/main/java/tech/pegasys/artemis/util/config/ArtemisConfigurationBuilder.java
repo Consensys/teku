@@ -27,6 +27,7 @@ public class ArtemisConfigurationBuilder {
   private String p2pPrivateKeyFile;
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
+  private List<String> p2pStaticPeers;
   private Integer xInteropGenesisTime;
   private int xInteropOwnedValidatorStartIndex;
   private int xInteropOwnedValidatorCount;
@@ -108,6 +109,11 @@ public class ArtemisConfigurationBuilder {
 
   public ArtemisConfigurationBuilder setP2pPeerUpperBound(final int p2pPeerUpperBound) {
     this.p2pPeerUpperBound = p2pPeerUpperBound;
+    return this;
+  }
+
+  public ArtemisConfigurationBuilder setP2pStaticPeers(final List<String> p2pStaticPeers) {
+    this.p2pStaticPeers = p2pStaticPeers;
     return this;
   }
 
@@ -198,7 +204,7 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxTransactionRecordDirectory(
+  public ArtemisConfigurationBuilder setxTransitionRecordDirectory(
       final String xTransactionRecordDirectory) {
     this.xTransactionRecordDirectory = xTransactionRecordDirectory;
     return this;
@@ -267,6 +273,7 @@ public class ArtemisConfigurationBuilder {
         p2pPrivateKeyFile,
         p2pPeerLowerBound,
         p2pPeerUpperBound,
+        p2pStaticPeers,
         xInteropGenesisTime,
         xInteropOwnedValidatorStartIndex,
         xInteropOwnedValidatorCount,

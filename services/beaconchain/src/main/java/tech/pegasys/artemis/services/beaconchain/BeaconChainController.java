@@ -28,7 +28,6 @@ import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Date;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -295,7 +294,7 @@ public class BeaconChainController extends Service {
               config.getP2pAdvertisedIp(),
               config.getP2pPort(),
               config.getP2pAdvertisedPort(),
-              Collections.emptyList(), // FIXME config.getStaticPeers
+              config.getP2pStaticPeers(),
               config.isP2pDiscoveryEnabled(),
               config.getP2pDiscoveryBootnodes(),
               new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
@@ -362,6 +361,11 @@ public class BeaconChainController extends Service {
     UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = UnsignedLong.ZERO;
+    LOG.info(
+        "genesis time is {}, current time is {}, current slot is {}",
+        genesisTime.longValue(),
+        currentTime.longValue(),
+        currentSlot.longValue());
     if (currentTime.compareTo(genesisTime) > 0) {
       UnsignedLong deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));

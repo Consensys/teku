@@ -30,6 +30,7 @@ public interface OptionNames {
   String P2P_PRIVATE_KEY_FILE_OPTION_NAME = "--p2p-private-key-file";
   String P2P_PEER_LOWER_BOUND_OPTION_NAME = "--p2p-peer-lower-bound";
   String P2P_PEER_UPPER_BOUND_OPTION_NAME = "--p2p-peer-upper-bound";
+  String P2P_STATIC_PEERS_OPTION_NAME = "--p2p-static-peers";
 
   // Interop
   String X_INTEROP_GENESIS_TIME_OPTION_NAME = "--x-interop-genesis-time";

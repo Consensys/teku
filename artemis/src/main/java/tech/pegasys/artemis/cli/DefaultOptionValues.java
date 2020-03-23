@@ -33,6 +33,7 @@ public interface DefaultOptionValues {
   String DEFAULT_P2P_PRIVATE_KEY_FILE = null;
   int DEFAULT_P2P_PEER_LOWER_BOUND = 20;
   int DEFAULT_P2P_PEER_UPPER_BOUND = 30;
+  ArrayList<String> DEFAULT_P2P_STATIC_PEERS = new ArrayList<>();
 
   // Interop
   Integer DEFAULT_X_INTEROP_GENESIS_TIME = null;

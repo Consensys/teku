@@ -46,6 +46,30 @@ public class BeaconNodeCommandTest {
     beaconNodeCommand.stop();
   }
 
+  //  @Test
+  //  public void test() {
+  //    final String[] args = {
+  //      "validator", "generate",
+  //      "--X-confirm-enabled", "false",
+  //      "--keys-output-path", "/tmp/keys.yaml",
+  //      "--deposit-amount-gwei", "32000000000",
+  //      "--encrypted-keystore-enabled", "false",
+  //      "--eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd",
+  //      "--X-number-of-validators", "64",
+  //      "--eth1-private-key",
+  // "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63",
+  //      "--eth1-endpoint", "http://localhost:8545"
+  //    };
+  //
+  //    beaconNodeCommand.parse(args);
+  //
+  //    //    final ArtemisConfiguration artemisConfiguration =
+  //    //            beaconNodeCommand.getArtemisConfigurationDeprecated();
+  //    //
+  //    //    assertArtemisConfiguration(
+  //    //            artemisConfiguration, expectedConfigurationBuilder(dataPath).build());
+  //  }
+
   @Test
   public void overrideConfigFileValuesIfKeyIsPresentInCLIOptions() throws IOException {
     final URL configFile = this.getClass().getResource("/complete_config.toml");
