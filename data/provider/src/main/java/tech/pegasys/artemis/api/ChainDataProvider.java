@@ -14,11 +14,8 @@
 package tech.pegasys.artemis.api;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -26,7 +23,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.AttestationData;
-import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconChainHead;
 import tech.pegasys.artemis.api.schema.BeaconHead;
@@ -35,18 +31,13 @@ import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.Committee;
 import tech.pegasys.artemis.api.schema.Fork;
 import tech.pegasys.artemis.api.schema.SignedBeaconBlock;
-import tech.pegasys.artemis.api.schema.ValidatorDuties;
-import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
-import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
-import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -197,85 +188,32 @@ public class ChainDataProvider {
     return Optional.of(attestation);
   }
 
-  public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {
-    return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
-  }
-
-  public boolean isFinalized(UnsignedLong slot) {
-    return combinedChainDataClient.isFinalized(slot);
-  }
-
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
       final ValidatorsRequest request) {
     UnsignedLong slot =
         request.epoch == null
-            ? chainStorageClient.getBestSlot()
+            ? combinedChainDataClient.getBestSlot()
             : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
 
-    return getStateAtSlot(slot)
+    return combinedChainDataClient
+        .getStateAtSlot(slot)
         .thenApply(
             optionalBeaconState -> {
               if (optionalBeaconState.isEmpty()) {
                 return Optional.empty();
               }
-              return Optional.of(new BeaconValidators(optionalBeaconState.get(), request.pubkeys));
+              return Optional.of(
+                  new BeaconValidators(
+                      new BeaconState(optionalBeaconState.get()), request.pubkeys));
             });
   }
 
-  public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
-      final ValidatorDutiesRequest validatorDutiesRequest) {
-
-    if (validatorDutiesRequest == null || !isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
-    final Optional<Bytes32> optionalBlockRoot = getBestBlockRoot();
-    if (optionalBlockRoot.isEmpty()) {
-      return completedFuture(List.of());
-    }
-
-    UnsignedLong epoch = validatorDutiesRequest.epoch;
-    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
-    final Bytes32 headBlockRoot = optionalBlockRoot.get();
-    return combinedChainDataClient
-        .getStateAtSlot(slot, headBlockRoot)
-        .thenApply(
-            state -> getValidatorDutiesFromState(state.get(), validatorDutiesRequest.pubkeys))
-        .exceptionally(err -> List.of());
+  public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
+    return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
   }
 
-  @VisibleForTesting
-  protected List<ValidatorDuties> getValidatorDutiesFromState(
-      final tech.pegasys.artemis.datastructures.state.BeaconState state,
-      final List<BLSPubKey> pubKeys) {
-    final List<ValidatorDuties> dutiesList = new ArrayList<>();
-
-    final List<CommitteeAssignment> committees =
-        combinedChainDataClient.getCommitteesFromState(state, state.getSlot());
-
-    for (final BLSPubKey pubKey : pubKeys) {
-      final ValidatorDuties validatorDuties =
-          ValidatorsUtil.getValidatorIndex(state, BLSPublicKey.fromBytes(pubKey.toBytes()))
-              .map(
-                  validatorIndex ->
-                      new ValidatorDuties(
-                          pubKey, validatorIndex, getCommitteeIndex(committees, validatorIndex)))
-              .orElseGet(() -> new ValidatorDuties(pubKey, null, null));
-      dutiesList.add(validatorDuties);
-    }
-    return dutiesList;
-  }
-
-  @VisibleForTesting
-  protected Integer getCommitteeIndex(List<CommitteeAssignment> committees, int validatorIndex) {
-    Optional<CommitteeAssignment> matchingCommittee =
-        committees.stream()
-            .filter(committee -> committee.getCommittee().contains(validatorIndex))
-            .findFirst();
-    if (matchingCommittee.isPresent()) {
-      return committees.indexOf(matchingCommittee.get());
-    } else {
-      return null;
-    }
+  public boolean isFinalized(final UnsignedLong slot) {
+    return combinedChainDataClient.isFinalized(slot);
   }
 
   public Optional<BeaconChainHead> getHeadState() {
