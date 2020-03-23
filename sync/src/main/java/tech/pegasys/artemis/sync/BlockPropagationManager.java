@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -31,15 +32,17 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImportResult.Failur
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
+import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.util.time.SlotEventsChannel;
 
-public class BlockPropagationManager extends Service {
+public class BlockPropagationManager extends Service implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventBus eventBus;
+  private final EventChannels eventChannels;
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
@@ -50,12 +53,14 @@ public class BlockPropagationManager extends Service {
 
   BlockPropagationManager(
       final EventBus eventBus,
+      final EventChannels eventChannels,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final FetchRecentBlocksService recentBlockFetcher) {
     this.eventBus = eventBus;
+    this.eventChannels = eventChannels;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
@@ -65,6 +70,7 @@ public class BlockPropagationManager extends Service {
 
   public static BlockPropagationManager create(
       final EventBus eventBus,
+      final EventChannels eventChannels,
       final P2PNetwork<Eth2Peer> eth2Network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
@@ -74,14 +80,25 @@ public class BlockPropagationManager extends Service {
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(eth2Network, pendingBlocks);
     return new BlockPropagationManager(
-        eventBus, storageClient, blockImporter, pendingBlocks, futureBlocks, recentBlockFetcher);
+        eventBus,
+        eventChannels,
+        storageClient,
+        blockImporter,
+        pendingBlocks,
+        futureBlocks,
+        recentBlockFetcher);
   }
 
   @Override
   public SafeFuture<?> doStart() {
+    registerToEvents();
     this.eventBus.register(this);
     recentBlockFetcher.subscribeBlockFetched(this::importBlock);
     return SafeFuture.allOfFailFast(recentBlockFetcher.start(), pendingBlocks.start());
+  }
+
+  public void registerToEvents() {
+    eventChannels.subscribe(SlotEventsChannel.class, this);
   }
 
   @Override
@@ -96,8 +113,8 @@ public class BlockPropagationManager extends Service {
     importBlock(gossipedBlockEvent.getBlock());
   }
 
-  @Subscribe
-  void onSlot(final SlotEvent slotEvent) {
+  @Override
+  public void onSlot(final SlotEvent slotEvent) {
     futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
   }
 

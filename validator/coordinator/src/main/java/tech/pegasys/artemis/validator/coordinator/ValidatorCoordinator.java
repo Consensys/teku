@@ -73,7 +73,6 @@ import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.Store;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
@@ -81,10 +80,12 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.util.time.SlotEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
-public class ValidatorCoordinator extends Service {
+public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -126,6 +127,7 @@ public class ValidatorCoordinator extends Service {
     this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
     eth1DataCache.registerToEvents(eventChannels);
 
+    eventChannels.subscribe(SlotEventsChannel.class, this);
     this.eventBus.register(this);
   }
 
@@ -160,9 +162,8 @@ public class ValidatorCoordinator extends Service {
         headState, genesisEpoch.plus(UnsignedLong.ONE), eventBus);
   }
 
-  @Subscribe
-  // TODO: make sure blocks that are produced right even after new slot to be pushed.
-  public void onNewSlot(SlotEvent slotEvent) {
+  @Override
+  public void onSlot(SlotEvent slotEvent) {
     UnsignedLong slot = slotEvent.getSlot();
     eth1DataCache.onSlot(slotEvent);
 

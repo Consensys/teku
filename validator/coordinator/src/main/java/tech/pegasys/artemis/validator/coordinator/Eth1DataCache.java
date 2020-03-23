@@ -34,12 +34,12 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.TimeEventsChannel;
+import tech.pegasys.artemis.util.time.DateEventsChannel;
+import tech.pegasys.artemis.util.time.SlotEvent;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
-public class Eth1DataCache implements TimeEventsChannel {
+public class Eth1DataCache implements DateEventsChannel {
 
   private final TimeProvider timeProvider;
   private volatile Optional<UnsignedLong> genesisTime = Optional.empty();
@@ -53,7 +53,7 @@ public class Eth1DataCache implements TimeEventsChannel {
   }
 
   public void registerToEvents(EventChannels eventChannels) {
-    eventChannels.subscribe(TimeEventsChannel.class, this);
+    eventChannels.subscribe(DateEventsChannel.class, this);
     // TODO: eventChannels.subscribe(CacheEth1BlockEventsChannel.class, this);
   }
 

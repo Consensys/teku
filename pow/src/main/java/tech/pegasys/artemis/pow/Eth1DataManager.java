@@ -38,7 +38,7 @@ import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.TimeEventsChannel;
+import tech.pegasys.artemis.util.time.DateEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
 
 /*
@@ -91,7 +91,7 @@ Search Eth1 Blocks to find blocks in the cache range:
 
  */
 
-public class Eth1DataManager implements TimeEventsChannel {
+public class Eth1DataManager implements DateEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -119,7 +119,7 @@ public class Eth1DataManager implements TimeEventsChannel {
   }
 
   public void registerToEvents(EventChannels eventChannels) {
-    eventChannels.subscribe(TimeEventsChannel.class, this);
+    eventChannels.subscribe(DateEventsChannel.class, this);
   }
 
   public void start() {

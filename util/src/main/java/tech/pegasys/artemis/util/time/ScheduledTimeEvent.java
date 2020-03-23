@@ -36,7 +36,7 @@ public class ScheduledTimeEvent implements Job {
   @Override
   public void execute(JobExecutionContext context) throws JobExecutionException {
     JobDataMap data = context.getJobDetail().getJobDataMap();
-    TimeEventsChannel timeEventsChannel = (TimeEventsChannel) data.get(Timer.TIME_EVENTS_CHANNEL);
-    timeEventsChannel.onTick(new Date());
+    DateEventsChannel dateEventsChannel = (DateEventsChannel) data.get(Timer.TIME_EVENTS_CHANNEL);
+    dateEventsChannel.onTick(new Date());
   }
 }

@@ -34,7 +34,7 @@ public class Timer {
   private int startDelay;
   private int interval;
 
-  public Timer(TimeEventsChannel timeEventsChannel, Integer startDelay, Integer interval)
+  public Timer(DateEventsChannel dateEventsChannel, Integer startDelay, Integer interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
     this.startDelay = startDelay;
@@ -42,7 +42,7 @@ public class Timer {
     try {
       sched = sf.getScheduler();
       job = newJob(ScheduledTimeEvent.class).withIdentity("Timer").build();
-      job.getJobDataMap().put(TIME_EVENTS_CHANNEL, timeEventsChannel);
+      job.getJobDataMap().put(TIME_EVENTS_CHANNEL, dateEventsChannel);
 
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(

@@ -30,6 +30,10 @@ public class EventChannels {
             EventChannel.createAsync(channelInterface, exceptionHandler, metricsSystem));
   }
 
+  public EventChannels(final MetricsSystem metricsSystem) {
+    this(channelInterface -> EventChannel.createAsync(channelInterface, metricsSystem));
+  }
+
   EventChannels(final Function<Class<?>, EventChannel<?>> eventChannelFactory) {
     this.eventChannelFactory = eventChannelFactory;
   }

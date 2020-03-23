@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
@@ -29,10 +30,11 @@ import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAggregat
 import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
+import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.util.time.SlotEventsChannel;
 
-public class AttestationManager extends Service {
+public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -50,6 +52,10 @@ public class AttestationManager extends Service {
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
+  }
+
+  public void registerToEvents(EventChannels eventChannels) {
+    eventChannels.subscribe(SlotEventsChannel.class, this);
   }
 
   public static AttestationManager create(
@@ -82,9 +88,8 @@ public class AttestationManager extends Service {
             aggregate, () -> eventBus.post(new ProcessedAggregateEvent(aggregate))));
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onSlot(final SlotEvent slotEvent) {
+  @Override
+  public void onSlot(final SlotEvent slotEvent) {
     futureAttestations.prune(slotEvent.getSlot()).forEach(this::processAttestation);
   }
 

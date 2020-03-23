@@ -37,11 +37,11 @@ import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.artemis.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.SlotEvent;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class ValidatorCoordinatorTest {
@@ -100,25 +100,25 @@ public class ValidatorCoordinatorTest {
 
   @Test
   void createBlockAfterNormalSlot() {
-    createValidatorCoordinator(NUM_VALIDATORS);
+    ValidatorCoordinator vc = createValidatorCoordinator(NUM_VALIDATORS);
     UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.ONE);
-    eventBus.post(new SlotEvent(newBlockSlot));
+    vc.onSlot(new SlotEvent(newBlockSlot));
     assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
   }
 
   @Test
   void createBlockAfterSkippedSlot() {
-    createValidatorCoordinator(NUM_VALIDATORS);
+    ValidatorCoordinator vc = createValidatorCoordinator(NUM_VALIDATORS);
     UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(2));
-    eventBus.post(new SlotEvent(newBlockSlot));
+    vc.onSlot(new SlotEvent(newBlockSlot));
     assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
   }
 
   @Test
   void createBlockAfterMultipleSkippedSlots() {
-    createValidatorCoordinator(NUM_VALIDATORS);
+    ValidatorCoordinator vc = createValidatorCoordinator(NUM_VALIDATORS);
     UnsignedLong newBlockSlot = storageClient.getBestSlot().plus(UnsignedLong.valueOf(10));
-    eventBus.post(new SlotEvent(newBlockSlot));
+    vc.onSlot(new SlotEvent(newBlockSlot));
     assertThat(proposedBlockEvents.get(0).getBlock().getSlot()).isEqualTo(newBlockSlot);
   }
 

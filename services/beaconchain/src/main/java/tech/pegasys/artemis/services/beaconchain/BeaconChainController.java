@@ -57,20 +57,20 @@ import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.storage.api.FinalizedCheckpointEventChannel;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.sync.AttestationManager;
 import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.TimeEventsChannel;
+import tech.pegasys.artemis.util.time.DateEventsChannel;
+import tech.pegasys.artemis.util.time.SlotEvent;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
-public class BeaconChainController extends Service implements TimeEventsChannel {
+public class BeaconChainController extends Service implements DateEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventChannels eventChannels;
@@ -109,7 +109,7 @@ public class BeaconChainController extends Service implements TimeEventsChannel 
     this.setupInitialState =
         config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
 
-    eventChannels.subscribe(TimeEventsChannel.class, this);
+    eventChannels.subscribe(DateEventsChannel.class, this);
   }
 
   @Override
@@ -177,7 +177,7 @@ public class BeaconChainController extends Service implements TimeEventsChannel 
     try {
       this.timer =
           new Timer(
-              eventChannels.getPublisher(TimeEventsChannel.class), 0, timerPeriodInMilliseconds);
+              eventChannels.getPublisher(DateEventsChannel.class), 0, timerPeriodInMilliseconds);
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }
@@ -236,6 +236,7 @@ public class BeaconChainController extends Service implements TimeEventsChannel 
 
   private void initAttestationPropagationManager() {
     attestationManager = AttestationManager.create(eventBus, chainStorageClient);
+    attestationManager.registerToEvents(eventChannels);
   }
 
   public void initP2PNetwork() {
@@ -305,11 +306,12 @@ public class BeaconChainController extends Service implements TimeEventsChannel 
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
     if ("mock".equals(config.getNetworkMode())) {
-      syncService = new NoopSyncService(null, null, null, null);
+      syncService = new NoopSyncService(null, null, null, null, null);
     } else {
       syncService =
           new SyncService(
               eventBus,
+              eventChannels,
               p2pNetwork,
               chainStorageClient,
               new BlockImporter(chainStorageClient, eventBus));

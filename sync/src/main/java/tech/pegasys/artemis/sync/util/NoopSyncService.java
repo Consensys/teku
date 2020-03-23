@@ -16,6 +16,7 @@ package tech.pegasys.artemis.sync.util;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 
 import com.google.common.eventbus.EventBus;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.Eth2Network;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
@@ -28,10 +29,11 @@ public class NoopSyncService extends SyncService {
 
   public NoopSyncService(
       final EventBus eventBus,
+      final EventChannels eventChannels,
       final Eth2Network network,
       final ChainStorageClient storageClient,
       final BlockImporter blockImporter) {
-    super(eventBus, network, storageClient, blockImporter);
+    super(eventBus, eventChannels, network, storageClient, blockImporter);
   }
 
   @Override

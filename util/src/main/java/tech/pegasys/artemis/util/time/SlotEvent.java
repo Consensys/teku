@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,8 +13,18 @@
 
 package tech.pegasys.artemis.util.time;
 
-import java.util.Date;
+import com.google.common.primitives.UnsignedLong;
 
-public interface TimeEventsChannel {
-  void onTick(Date event);
+public class SlotEvent {
+
+  private final UnsignedLong slot;
+
+  public SlotEvent(UnsignedLong slot) {
+    this.slot = slot;
+  }
+
+  /** ******************* * GETTERS & SETTERS * * ******************* */
+  public UnsignedLong getSlot() {
+    return slot;
+  }
 }

@@ -27,22 +27,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.ImportedBlocks;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.time.SlotEvent;
 
 public class BlockPropagationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = new EventBus();
   private final EventBus remoteEventBus = new EventBus();
+  private final EventChannels eventChannels = mock(EventChannels.class);
   private final UnsignedLong historicalBlockTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureBlockTolerance = UnsignedLong.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
@@ -63,6 +65,7 @@ public class BlockPropagationManagerTest {
   private final BlockPropagationManager blockPropagationManager =
       new BlockPropagationManager(
           localEventBus,
+          eventChannels,
           localStorage,
           blockImporter,
           pendingBlocks,
@@ -281,7 +284,9 @@ public class BlockPropagationManagerTest {
   private UnsignedLong incrementSlot() {
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
     localChain.setSlot(currentSlot);
+    // TODO: comeback to this
     localEventBus.post(new SlotEvent(currentSlot));
+    blockPropagationManager.onSlot(new SlotEvent(currentSlot));
     return currentSlot;
   }
 }
