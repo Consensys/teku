@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis;
+package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,11 +23,13 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.artemis.cli.BeaconNodeCommand;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.ArtemisConfigurationBuilder;
 
@@ -72,17 +74,12 @@ public class BeaconNodeCommandTest {
 
   @Test
   public void overrideConfigFileValuesIfKeyIsPresentInCLIOptions() throws IOException {
-    final URL configFile = this.getClass().getResource("/complete_config.toml");
-    final String updatedConfig =
-        Resources.toString(configFile, UTF_8)
-            .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
-    final Path toml = createTempFile("toml", updatedConfig.getBytes(UTF_8));
+    final Path toml = createConfigFile();
     final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString(), "--p2p-interface", "1.2.3.5"};
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration =
-        beaconNodeCommand.getArtemisConfigurationDeprecated();
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
         artemisConfiguration,
@@ -121,8 +118,7 @@ public class BeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration =
-        beaconNodeCommand.getArtemisConfigurationDeprecated();
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
         artemisConfiguration, expectedConfigurationBuilder(dataPath).build());
@@ -130,20 +126,22 @@ public class BeaconNodeCommandTest {
 
   @Test
   public void overrideDefaultValuesIfKeyIsPresentInConfigFile() throws IOException {
-    final URL configFile = this.getClass().getResource("/complete_config.toml");
-    final String updatedConfig =
-        Resources.toString(configFile, UTF_8)
-            .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
-    final Path toml = createTempFile("toml", updatedConfig.getBytes(UTF_8));
+    final Path toml = createConfigFile();
     final String[] args = {CONFIG_FILE_OPTION_NAME, toml.toString()};
 
     beaconNodeCommand.parse(args);
 
-    final ArtemisConfiguration artemisConfiguration =
-        beaconNodeCommand.getArtemisConfigurationDeprecated();
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
 
     assertArtemisConfiguration(
         artemisConfiguration, expectedConfigurationBuilder(dataPath).build());
+  }
+  private Path createConfigFile() throws IOException {
+    final URL configFile = this.getClass().getResource("/complete_config.toml");
+    final String updatedConfig =
+            Resources.toString(configFile, UTF_8)
+                    .replace("data-path=\".\"", "data-path=\"" + dataPath.toString() + "\"");
+    return createTempFile("toml", updatedConfig.getBytes(UTF_8));
   }
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder(final Path dataPath) {
@@ -159,6 +157,7 @@ public class BeaconNodeCommandTest {
         .setP2pPrivateKeyFile("path/to/file")
         .setP2pPeerLowerBound(20)
         .setP2pPeerUpperBound(30)
+        .setP2pStaticPeers(Collections.emptyList())
         .setxInteropGenesisTime(1)
         .setxInteropStartState("")
         .setxInteropOwnedValidatorStartIndex(0)

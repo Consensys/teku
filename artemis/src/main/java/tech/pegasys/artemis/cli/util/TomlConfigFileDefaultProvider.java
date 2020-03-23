@@ -117,28 +117,30 @@ public class TomlConfigFileDefaultProvider implements IDefaultValueProvider {
 
   private void loadConfigurationFromFile() {
 
-    if (result == null) {
-      try {
-        final TomlParseResult result = Toml.parse(configFile.toPath());
+    if (result != null) {
+      return;
+    }
 
-        if (result.hasErrors()) {
-          final String errors =
-              result.errors().stream()
-                  .map(TomlParseError::toString)
-                  .collect(Collectors.joining("%n"));
+    try {
+      final TomlParseResult result = Toml.parse(configFile.toPath());
 
-          throw new ParameterException(
-              commandLine, String.format("Invalid TOML configuration: %s", errors));
-        }
+      if (result.hasErrors()) {
+        final String errors =
+            result.errors().stream()
+                .map(TomlParseError::toString)
+                .collect(Collectors.joining("%n"));
 
-        checkUnknownOptions(result);
-
-        this.result = result;
-
-      } catch (final IOException e) {
         throw new ParameterException(
-            commandLine, "Unable to read TOML configuration, file not found.");
+            commandLine, String.format("Invalid TOML configuration: %s", errors));
       }
+
+      checkUnknownOptions(result);
+
+      this.result = result;
+
+    } catch (final IOException e) {
+      throw new ParameterException(
+          commandLine, "Unable to read TOML configuration, file not found.");
     }
 
     checkConfigurationValidity();

@@ -28,7 +28,6 @@ import tech.pegasys.artemis.cli.subcommand.GenesisCommand;
 import tech.pegasys.artemis.cli.subcommand.PeerCommand;
 import tech.pegasys.artemis.cli.subcommand.TransitionCommand;
 import tech.pegasys.artemis.cli.util.CascadingDefaultProvider;
-import tech.pegasys.artemis.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.artemis.cli.util.TomlConfigFileDefaultProvider;
 import tech.pegasys.artemis.storage.DatabaseStorageException;
 import tech.pegasys.artemis.util.cli.LogTypeConverter;
@@ -162,6 +161,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
   // Interop
 
   @Option(
+      hidden = true,
       names = {X_INTEROP_GENESIS_TIME_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Time of mocked genesis",
@@ -169,6 +169,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
   private Integer xInteropGenesisTime = DEFAULT_X_INTEROP_GENESIS_TIME;
 
   @Option(
+      hidden = true,
       names = {X_INTEROP_OWNED_VALIDATOR_START_INDEX_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Index of first validator owned by this node",
@@ -176,6 +177,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
   private int xInteropOwnerValidatorStartIndex = DEFAULT_X_INTEROP_OWNED_VALIDATOR_START_INDEX;
 
   @Option(
+      hidden = true,
       names = {X_INTEROP_OWNED_VALIDATOR_COUNT_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Number of validators owned by this node",
@@ -183,6 +185,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
   private int xInteropOwnerValidatorCount = DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
 
   @Option(
+      hidden = true,
       names = {X_INTEROP_START_STATE_OPTION_NAME},
       paramLabel = "<STRING>",
       description = "Initial BeaconState to load",
@@ -190,12 +193,14 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
   private String xInteropStartState = DEFAULT_X_INTEROP_START_STATE;
 
   @Option(
+      hidden = true,
       names = {X_INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Represents the total number of validators in the network")
   private int xInteropNumberOfValidators = DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS;
 
   @Option(
+      hidden = true,
       names = {X_INTEROP_ENABLED_OPTION_NAME},
       paramLabel = "<BOOLEAN>",
       description = "Enables developer options for testing",
@@ -378,19 +383,15 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
 
   public void parse(final String[] args) {
     final CommandLine commandLine = new CommandLine(this).setCaseInsensitiveEnumValuesAllowed(true);
-    final EnvironmentVariableDefaultProvider environmentVariableDefaultProvider =
-        new EnvironmentVariableDefaultProvider(System.getenv());
-    final CommandLine.IDefaultValueProvider defaultValueProvider;
+
     final Optional<File> maybeConfigFile = maybeFindConfigFile(commandLine, args);
     if (maybeConfigFile.isPresent()) {
-      defaultValueProvider =
+      final CommandLine.IDefaultValueProvider defaultValueProvider =
           new CascadingDefaultProvider(
-              environmentVariableDefaultProvider,
               new TomlConfigFileDefaultProvider(commandLine, maybeConfigFile.get()));
-    } else {
-      defaultValueProvider = environmentVariableDefaultProvider;
+      commandLine.setDefaultValueProvider(defaultValueProvider);
     }
-    commandLine.setDefaultValueProvider(defaultValueProvider).execute(args);
+    commandLine.execute(args);
   }
 
   @Override
