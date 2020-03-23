@@ -107,7 +107,8 @@ public class ValidatorsUtil {
                       return i;
                     }
                   }
-                  // TODO this ain't right but it will be filtered out by the line below
+                  // TODO would be nice to clean this up but it will be filtered out by the line
+                  // below
                   return Integer.MAX_VALUE;
                 });
     return Optional.ofNullable(validatorIndex)
