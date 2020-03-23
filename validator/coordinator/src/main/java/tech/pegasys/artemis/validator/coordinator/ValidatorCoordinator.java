@@ -362,6 +362,10 @@ public class ValidatorCoordinator extends Service {
     return slashingsForBlock;
   }
 
+  public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
+    return blockCreator.getProposerForSlot(preState, slot);
+  }
+
   private MessageSignerService getSigner(BLSPublicKey signer) {
     return validators.get(signer).getSignerService();
   }

@@ -26,14 +26,14 @@ import io.javalin.http.Context;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PostDutiesTest {
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final ChainDataProvider provider = mock(ChainDataProvider.class);
+  private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private String EMPTY_LIST = "[]";
 
   @SuppressWarnings("unchecked")
