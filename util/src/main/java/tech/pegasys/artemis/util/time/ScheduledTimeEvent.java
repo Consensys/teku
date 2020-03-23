@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.util.time;
 
-import com.google.common.eventbus.EventBus;
-
-import java.sql.Time;
 import java.util.Date;
 import org.quartz.Job;
 import org.quartz.JobDataMap;

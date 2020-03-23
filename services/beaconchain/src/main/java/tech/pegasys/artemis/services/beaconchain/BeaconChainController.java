@@ -21,7 +21,6 @@ import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
@@ -176,11 +175,9 @@ public class BeaconChainController extends Service implements TimeEventsChannel 
     LOG.debug("BeaconChainController.initTimer()");
     int timerPeriodInMilliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
     try {
-      this.timer = new Timer(
-              eventChannels.getPublisher(TimeEventsChannel.class),
-              0,
-              timerPeriodInMilliseconds
-      );
+      this.timer =
+          new Timer(
+              eventChannels.getPublisher(TimeEventsChannel.class), 0, timerPeriodInMilliseconds);
     } catch (IllegalArgumentException e) {
       System.exit(1);
     }

@@ -41,10 +41,7 @@ public class Timer {
     this.interval = interval;
     try {
       sched = sf.getScheduler();
-      job =
-          newJob(ScheduledTimeEvent.class)
-              .withIdentity("Timer")
-              .build();
+      job = newJob(ScheduledTimeEvent.class).withIdentity("Timer").build();
       job.getJobDataMap().put(TIME_EVENTS_CHANNEL, timeEventsChannel);
 
     } catch (SchedulerException e) {
