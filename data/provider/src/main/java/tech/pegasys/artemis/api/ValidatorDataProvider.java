@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -117,12 +116,7 @@ public class ValidatorDataProvider {
       final UnsignedLong thisSlot = firstSlot.plus(UnsignedLong.valueOf(i));
       BLSPublicKey publicKey = validatorCoordinator.getProposerForSlot(state, thisSlot);
       BLSPubKey pubkey = new BLSPubKey(publicKey.toBytes());
-      if (proposers.containsKey(pubkey)) {
-        List<UnsignedLong> proposalSlots = proposers.get(pubkey);
-        proposalSlots.add(thisSlot);
-      } else {
-        proposers.put(pubkey, List.of(thisSlot).stream().collect(Collectors.toList()));
-      }
+      proposers.computeIfAbsent(pubkey, key -> new ArrayList<>()).add(thisSlot);
     }
 
     for (final BLSPubKey pubKey : pubKeys) {
