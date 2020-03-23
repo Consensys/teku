@@ -47,7 +47,9 @@ public class GetListenAddresses implements Handler {
       description =
           "Returns the list of MultiAddr that the client's libp2p service is listening on.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = String.class, isArray = true)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
