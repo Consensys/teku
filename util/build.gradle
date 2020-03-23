@@ -28,6 +28,7 @@ dependencies {
 
   testImplementation 'org.mockito:mockito-core'
 
-  testFixturesImplementation 'com.google.guava:guava'
+  testFixturesApi 'com.google.guava:guava'
+
   testFixturesImplementation 'org.awaitility:awaitility'
 }
