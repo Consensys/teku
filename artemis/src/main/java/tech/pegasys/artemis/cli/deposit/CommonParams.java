@@ -20,8 +20,11 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.web3j.crypto.CipherException;
@@ -34,24 +37,29 @@ import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
+import picocli.CommandLine.TypeConversionException;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class CommonParams implements Closeable {
+  private static final UnsignedLong MINIMUM_REQUIRED_GWEI = UnsignedLong.valueOf(32_000_000_000L);
+  private final Consumer<Integer> shutdownFunction;
+  private final ConsoleAdapter consoleAdapter;
   @Spec private CommandSpec spec;
 
   @Option(
-      names = {"-u", "--node-url"},
+      names = {"--eth1-endpoint"},
       required = true,
       paramLabel = "<URL>",
       description = "JSON-RPC endpoint URL for the Ethereum 1 node to send transactions via")
   private String eth1NodeUrl;
 
   @Option(
-      names = {"-c", "--contract-address"},
+      names = {"--eth1-deposit-contract-address"},
       required = true,
       paramLabel = "<ADDRESS>",
       description = "Address of the deposit contract")
@@ -61,23 +69,66 @@ public class CommonParams implements Closeable {
   private Eth1PrivateKeyOptions eth1PrivateKeyOptions;
 
   @Option(
-      names = {"-a", "--amount"},
+      names = {"--deposit-amount-gwei"},
+      required = true,
       paramLabel = "<GWEI>",
       converter = UnsignedLongConverter.class,
-      description = "Deposit amount in Gwei (default: ${DEFAULT-VALUE})")
-  private UnsignedLong amount = UnsignedLong.valueOf(32000000000L);
+      description = "Deposit amount in Gwei")
+  private UnsignedLong amount;
+
+  @Option(
+      names = {"--X-confirm-enabled"},
+      arity = "1",
+      defaultValue = "true",
+      hidden = true)
+  private boolean displayConfirmation = true;
 
   private OkHttpClient httpClient;
   private ScheduledExecutorService executorService;
   private Web3j web3j;
 
-  CommonParams() {}
+  CommonParams() {
+    this.shutdownFunction = System::exit;
+    this.consoleAdapter = new ConsoleAdapter();
+  }
 
   @VisibleForTesting
   public CommonParams(
-      final CommandSpec commandSpec, final Eth1PrivateKeyOptions eth1PrivateKeyOptions) {
+      final CommandSpec commandSpec,
+      final Eth1PrivateKeyOptions eth1PrivateKeyOptions,
+      final Consumer<Integer> shutdownFunction,
+      final ConsoleAdapter consoleAdapter) {
     this.spec = commandSpec;
     this.eth1PrivateKeyOptions = eth1PrivateKeyOptions;
+    this.amount = MINIMUM_REQUIRED_GWEI;
+    this.shutdownFunction = shutdownFunction;
+    this.consoleAdapter = consoleAdapter;
+  }
+
+  public void displayConfirmation() {
+    if (!displayConfirmation) {
+      return;
+    }
+
+    if (!consoleAdapter.isConsoleAvailable()) {
+      throw new ParameterException(spec.commandLine(), "Console not available");
+    }
+
+    // gwei to eth
+    final String eth =
+        new BigDecimal(amount.bigIntegerValue())
+            .divide(BigDecimal.TEN.pow(9), 9, RoundingMode.HALF_UP)
+            .toString();
+
+    final String reply =
+        consoleAdapter.readLine(
+            "You are about to submit a transaction of %s Eth. This is irreversible, please make sure you understand the consequences. Are you sure you want to continue? [y/n]",
+            eth);
+    if ("y".equalsIgnoreCase(reply)) {
+      return;
+    }
+    System.out.println("Transaction cancelled.");
+    shutdownFunction.accept(0);
   }
 
   public DepositTransactionSender createTransactionSender() {
@@ -122,18 +173,18 @@ public class CommonParams implements Closeable {
     try {
       return WalletUtils.loadCredentials(keystorePassword, eth1KeystoreFile);
     } catch (final FileNotFoundException e) {
-      throw new CommandLine.ParameterException(
+      throw new ParameterException(
           spec.commandLine(), "Error: File not found: " + eth1KeystoreFile, e);
     } catch (final IOException e) {
-      throw new CommandLine.ParameterException(
+      throw new ParameterException(
           spec.commandLine(),
           "Error: Unexpected IO Error while reading Eth1 keystore ["
               + eth1KeystoreFile
               + "] : "
               + e.getMessage(),
           e);
-    } catch (CipherException e) {
-      throw new CommandLine.ParameterException(
+    } catch (final CipherException e) {
+      throw new ParameterException(
           spec.commandLine(),
           "Error: Unable to decrypt Eth1 keystore [" + eth1KeystoreFile + "] : " + e.getMessage(),
           e);
@@ -151,7 +202,22 @@ public class CommonParams implements Closeable {
   private static class UnsignedLongConverter implements CommandLine.ITypeConverter<UnsignedLong> {
     @Override
     public UnsignedLong convert(final String value) {
-      return UnsignedLong.valueOf(value);
+      final UnsignedLong depositAmountGwei;
+
+      try {
+        depositAmountGwei = UnsignedLong.valueOf(value);
+      } catch (final NumberFormatException e) {
+        throw new TypeConversionException(
+            "Invalid format: must be a numeric value but was " + value);
+      }
+
+      if (depositAmountGwei.compareTo(MINIMUM_REQUIRED_GWEI) < 0) {
+        throw new TypeConversionException(
+            String.format(
+                "The specified deposit amount [%s] does not match minimum deposit amount requirements [%s]",
+                depositAmountGwei.toString(), MINIMUM_REQUIRED_GWEI.toString()));
+      }
+      return depositAmountGwei;
     }
   }
 }
