@@ -160,7 +160,8 @@ public class ValidatorDataProviderTest {
 
     assertThat(validatorDuties.size()).isEqualTo(1);
     ValidatorDuties expected =
-        new ValidatorDuties(new BLSPubKey(publicKey.toBytesCompressed()), null, null, emptyList());
+        new ValidatorDuties(
+            new BLSPubKey(publicKey.toBytesCompressed()), null, null, emptyList(), null);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
@@ -198,7 +199,8 @@ public class ValidatorDataProviderTest {
             new BLSPubKey(publicKey.toBytesCompressed()),
             validatorIndex,
             attestationCommitteeIndex,
-            blockProposalSlots);
+            blockProposalSlots,
+            attestationSlot);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
   }
 
