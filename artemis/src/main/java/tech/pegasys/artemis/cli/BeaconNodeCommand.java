@@ -421,7 +421,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
   }
 
   @VisibleForTesting
-  public ArtemisConfiguration getArtemisConfigurationDeprecated() {
+  ArtemisConfiguration getArtemisConfiguration() {
     return artemisConfiguration;
   }
 
