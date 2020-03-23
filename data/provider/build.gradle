@@ -9,6 +9,7 @@ dependencies {
     implementation project(':storage')
     implementation project(':sync')
     implementation project(':util')
+    implementation project(':validator:api')
     implementation project(':validator:coordinator')
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
