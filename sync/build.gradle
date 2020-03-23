@@ -19,10 +19,19 @@ dependencies {
 
     testImplementation 'org.mockito:mockito-core'
 
+    integrationTestImplementation testFixtures(project(':bls'))
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
     integrationTestImplementation testFixtures(project('::networking:eth2'))
     integrationTestImplementation testFixtures(project(':util'))
 
     integrationTestImplementation 'org.mockito:mockito-core'
 
+    testFixturesImplementation project(':services:serviceutils')
+    testFixturesImplementation project(':util')
+
+    testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
     testFixturesImplementation testFixtures(project('::networking:eth2'))
+    testFixturesImplementation testFixtures(project('::networking:p2p'))
+
+    testFixturesImplementation 'com.google.guava:guava'
 }

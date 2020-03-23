@@ -41,10 +41,11 @@ dependencies {
 
   testFixturesImplementation testFixtures(project(':util'))
 
+  testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
+
+  testFixturesImplementation 'org.assertj:assertj-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
   testFixturesImplementation 'io.projectreactor:reactor-core'
-
-  testFixturesCompileOnly 'org.assertj:assertj-core'
 }

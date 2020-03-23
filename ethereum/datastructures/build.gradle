@@ -20,6 +20,7 @@ dependencies {
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'com.googlecode.json-simple:json-simple'
+  testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
   testFixturesApi project(':pow')
   testFixturesApi project(':ssz')
