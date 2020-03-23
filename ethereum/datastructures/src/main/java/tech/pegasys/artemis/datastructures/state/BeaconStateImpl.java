@@ -194,23 +194,30 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   @Label("sos-ignore")
   private SSZList<Validator> validatorsCache;
+
   @Label("sos-ignore")
   private SSZList<UnsignedLong> balancesCache;
+
   @Label("sos-ignore")
   private SSZVector<Bytes32> blockRootsCache;
+
   @Label("sos-ignore")
   private SSZVector<Bytes32> stateRootsCache;
+
   @Label("sos-ignore")
   private SSZList<Bytes32> historicalRootsCache;
+
   @Label("sos-ignore")
   private SSZList<Eth1Data> eth1DataVotesCache;
+
   @Label("sos-ignore")
   private SSZVector<Bytes32> randaoMixesCache;
+
   @Label("sos-ignore")
   private SSZList<PendingAttestation> previousEpochAttestationsCache;
+
   @Label("sos-ignore")
   private SSZList<PendingAttestation> currentEpochAttestationsCache;
-
 
   public BeaconStateImpl() {
     super(getSSZType());
@@ -218,14 +225,13 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   }
 
   BeaconStateImpl(
-      TreeNode backingNode,
-      IntCache<ViewRead> cache,
-      TransitionCaches transitionCaches) {
+      TreeNode backingNode, IntCache<ViewRead> cache, TransitionCaches transitionCaches) {
     super(getSSZType(), backingNode, cache);
     this.transitionCaches = transitionCaches;
   }
 
-  private BeaconStateImpl(ContainerViewType<? extends ContainerViewRead> type, TreeNode backingNode) {
+  private BeaconStateImpl(
+      ContainerViewType<? extends ContainerViewRead> type, TreeNode backingNode) {
     super(type, backingNode);
     transitionCaches = TransitionCaches.createNewEmpty();
   }
@@ -267,27 +273,30 @@ public class BeaconStateImpl extends ContainerViewReadImpl
       Checkpoint current_justified_checkpoint,
       Checkpoint finalized_checkpoint) {
 
-    super(getSSZType(), BeaconState.create(
-        genesis_time,
-        slot,
-        fork,
-        latest_block_header,
-        block_roots,
-        state_roots,
-        historical_roots,
-        eth1_data,
-        eth1_data_votes,
-        eth1_deposit_index,
-        validators,
-        balances,
-        randao_mixes,
-        slashings,
-        previous_epoch_attestations,
-        current_epoch_attestations,
-        justification_bits,
-        previous_justified_checkpoint,
-        current_justified_checkpoint,
-        finalized_checkpoint).getBackingNode());
+    super(
+        getSSZType(),
+        BeaconState.create(
+                genesis_time,
+                slot,
+                fork,
+                latest_block_header,
+                block_roots,
+                state_roots,
+                historical_roots,
+                eth1_data,
+                eth1_data_votes,
+                eth1_deposit_index,
+                validators,
+                balances,
+                randao_mixes,
+                slashings,
+                previous_epoch_attestations,
+                current_epoch_attestations,
+                justification_bits,
+                previous_justified_checkpoint,
+                current_justified_checkpoint,
+                finalized_checkpoint)
+            .getBackingNode());
 
     transitionCaches = TransitionCaches.createNewEmpty();
   }
@@ -335,8 +344,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   @Override
   public List<Bytes> get_variable_parts() {
-    List<Bytes> variablePartsList = new ArrayList<>(
-        List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
+    List<Bytes> variablePartsList =
+        new ArrayList<>(
+            List.of(Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY, Bytes.EMPTY));
     variablePartsList.add(
         SSZ.encode(writer -> writer.writeFixedBytesVector(getHistorical_roots().asList())));
     variablePartsList.add(Bytes.EMPTY);
@@ -444,7 +454,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   @Override
   public SSZVector<Bytes32> getBlock_roots() {
-    return blockRootsCache != null ? blockRootsCache : (blockRootsCache = BeaconState.super.getBlock_roots());
+    return blockRootsCache != null
+        ? blockRootsCache
+        : (blockRootsCache = BeaconState.super.getBlock_roots());
   }
 
   @Override

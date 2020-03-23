@@ -25,8 +25,7 @@ import tech.pegasys.artemis.util.cache.IntCache;
 
 public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
 
-  public AbstractImmutableContainer(
-      ContainerViewType<? extends AbstractImmutableContainer> type) {
+  public AbstractImmutableContainer(ContainerViewType<? extends AbstractImmutableContainer> type) {
     this(type, type.getDefaultTree());
   }
 

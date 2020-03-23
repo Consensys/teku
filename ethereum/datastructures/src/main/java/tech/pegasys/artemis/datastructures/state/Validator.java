@@ -91,8 +91,7 @@ public class Validator extends AbstractImmutableContainer
   @SuppressWarnings("unused")
   private final UnsignedLong withdrawable_epoch = null;
 
-  private Validator(
-      ContainerViewType<Validator> type, TreeNode backingNode) {
+  private Validator(ContainerViewType<Validator> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 

@@ -56,7 +56,10 @@ public abstract class TransitionBenchmark {
   BlockImportResult lastResult;
   SignedBeaconBlock prefetchedBlock;
 
-  @Param({/*"16384", */"32768"})
+  @Param({
+    /*"16384", */
+    "32768"
+  })
   int validatorsCount;
 
   @Setup(Level.Trial)
@@ -103,7 +106,7 @@ public abstract class TransitionBenchmark {
     }
     localChain.setSlot(block.getSlot());
     lastResult = blockImporter.importBlock(block);
-//    System.out.println("Imported: " + lastResult);
+    //    System.out.println("Imported: " + lastResult);
     if (!lastResult.isSuccessful()) {
       throw new RuntimeException("Unable to import block: " + lastResult);
     }

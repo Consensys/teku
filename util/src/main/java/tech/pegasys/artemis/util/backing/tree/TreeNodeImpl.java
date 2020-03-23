@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.util.backing.ViewRead;
 
-abstract class TreeNodeImpl implements TreeNode{
+abstract class TreeNodeImpl implements TreeNode {
 
   static class LeafNodeImpl extends TreeNodeImpl implements LeafNode {
     private final Bytes32 root;
@@ -98,11 +98,12 @@ abstract class TreeNodeImpl implements TreeNode{
   }
 
   private ViewRead cachedValue;
+
   @Override
   public <C extends ViewRead> C cachedValue(Supplier<C> supplier) {
     if (cachedValue == null) {
       cachedValue = supplier.get();
-    } else if (cachedValue.getBackingNode() != this){
+    } else if (cachedValue.getBackingNode() != this) {
       cachedValue = supplier.get();
     }
     return (C) cachedValue;

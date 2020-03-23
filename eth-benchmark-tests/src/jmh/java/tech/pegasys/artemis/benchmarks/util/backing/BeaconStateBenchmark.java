@@ -1,3 +1,16 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.artemis.benchmarks.util.backing;
 
 import com.google.common.primitives.UnsignedLong;
@@ -18,8 +31,9 @@ import tech.pegasys.artemis.util.config.Constants;
 @State(Scope.Thread)
 public class BeaconStateBenchmark {
 
-  private static BeaconState beaconState = DataStructureUtil.randomBeaconState(0, 32 * 1024).createWritableCopy();
-//  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
+  private static BeaconState beaconState =
+      DataStructureUtil.randomBeaconState(0, 32 * 1024).createWritableCopy();
+  //  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
 
   public BeaconStateBenchmark() {
     Constants.setConstants("mainnet");
@@ -40,7 +54,7 @@ public class BeaconStateBenchmark {
   public void iterateValidatorsWithMethods(Blackhole bh) {
     for (Validator validator : beaconState.getValidators()) {
       bh.consume(validator.isSlashed());
-//      bh.consume(validator.getPubkey());
+      //      bh.consume(validator.getPubkey());
       bh.consume(validator.getEffective_balance());
       bh.consume(validator.getActivation_epoch());
       bh.consume(validator.getExit_epoch());

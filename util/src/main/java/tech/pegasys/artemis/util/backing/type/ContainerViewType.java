@@ -62,7 +62,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   @Override
   public C createFromBackingNode(TreeNode node) {
     return instanceCtor.apply(this, node);
-//    return node.cachedValue(() -> instanceCtor.apply(this, node));
+    //    return node.cachedValue(() -> instanceCtor.apply(this, node));
   }
 
   @Override

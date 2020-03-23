@@ -131,14 +131,14 @@ public final class BlockProcessorUtil {
       Bytes32 messageHash =
           HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
       /* zzz */
-//      checkArgument(
-//          !validateRandao
-//              || bls_verify(
-//                  proposer.getPubkey(),
-//                  messageHash,
-//                  body.getRandao_reveal(),
-//                  get_domain(state, DOMAIN_RANDAO)),
-//          "process_randao: Verify that the provided randao value is valid");
+      //      checkArgument(
+      //          !validateRandao
+      //              || bls_verify(
+      //                  proposer.getPubkey(),
+      //                  messageHash,
+      //                  body.getRandao_reveal(),
+      //                  get_domain(state, DOMAIN_RANDAO)),
+      //          "process_randao: Verify that the provided randao value is valid");
       // Mix in RANDAO reveal
       Bytes32 mix =
           get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toBytes()));
@@ -394,16 +394,17 @@ public final class BlockProcessorUtil {
         }
       }
 
-//      attestations.stream()
-//          .parallel()
-//          // zzz
-//          .filter(a -> !is_valid_indexed_attestation(state, get_indexed_attestation(state, a)))
-//          .findAny()
-//          .ifPresent(
-//              invalidAttestation -> {
-//                throw new IllegalArgumentException(
-//                    "Invalid attestation signature: " + invalidAttestation);
-//              });
+      //      attestations.stream()
+      //          .parallel()
+      //          // zzz
+      //          .filter(a -> !is_valid_indexed_attestation(state, get_indexed_attestation(state,
+      // a)))
+      //          .findAny()
+      //          .ifPresent(
+      //              invalidAttestation -> {
+      //                throw new IllegalArgumentException(
+      //                    "Invalid attestation signature: " + invalidAttestation);
+      //              });
     } catch (IllegalArgumentException e) {
       STDOUT.log(Level.WARN, e.getMessage());
       throw new BlockProcessingException(e);

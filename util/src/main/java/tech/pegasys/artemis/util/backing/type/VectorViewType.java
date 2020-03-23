@@ -44,7 +44,7 @@ public class VectorViewType<C> extends CollectionViewType {
   @SuppressWarnings({"rawtypes", "unchecked"})
   @Override
   public VectorViewRead<C> createFromBackingNode(TreeNode node) {
-//    return node.cachedValue(() -> new VectorViewImpl(this, node));
+    //    return node.cachedValue(() -> new VectorViewImpl(this, node));
     return new VectorViewReadImpl(this, node);
   }
 }

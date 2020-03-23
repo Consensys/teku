@@ -29,16 +29,15 @@ public abstract class AbstractCompositeViewRead<
   private final CompositeViewType type;
   private final TreeNode backingNode;
 
-  public AbstractCompositeViewRead(CompositeViewType type,
-      TreeNode backingNode) {
+  public AbstractCompositeViewRead(CompositeViewType type, TreeNode backingNode) {
     this.type = type;
     this.backingNode = backingNode;
     sizeCache = sizeImpl();
     childrenViewCache = createCache();
   }
 
-  public AbstractCompositeViewRead(CompositeViewType type,
-      TreeNode backingNode, IntCache<R> cache) {
+  public AbstractCompositeViewRead(
+      CompositeViewType type, TreeNode backingNode, IntCache<R> cache) {
     this.type = type;
     this.backingNode = backingNode;
     sizeCache = sizeImpl();

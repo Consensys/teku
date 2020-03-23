@@ -517,11 +517,13 @@ public final class EpochProcessorUtil {
       int churn_limit = get_validator_churn_limit(state).intValue();
       int sublist_size = Math.min(churn_limit, activation_queue.size());
       for (Integer index : activation_queue.subList(0, sublist_size)) {
-        state.getValidators().update(
-            index,
-            validator ->
-                validator.withActivation_epoch(
-                    compute_activation_exit_epoch(get_current_epoch(state))));
+        state
+            .getValidators()
+            .update(
+                index,
+                validator ->
+                    validator.withActivation_epoch(
+                        compute_activation_exit_epoch(get_current_epoch(state))));
       }
     } catch (IllegalArgumentException e) {
       throw new EpochProcessingException(e);

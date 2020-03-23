@@ -44,8 +44,11 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     container = containerViewType.getDefault();
     size = new AtomicInteger(0);
     viewCache =
-        (R[]) new ViewRead[
-            vectorType.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) vectorType.getMaxLength()];
+        (R[])
+            new ViewRead
+                [vectorType.getMaxLength() > 1024 * 1024
+                    ? 32 * 1024
+                    : (int) vectorType.getMaxLength()];
   }
 
   public ListViewImpl(ListViewType<R> type, TreeNode node) {
@@ -56,9 +59,8 @@ public class ListViewImpl<R extends ViewRead, W extends R>
     container = containerViewType.createFromBackingNode(node);
     size = new AtomicInteger(getSizeFromTree());
     viewCache =
-        (R[]) new ViewRead[
-            type.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) type.getMaxLength()];
-
+        (R[])
+            new ViewRead[type.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) type.getMaxLength()];
   }
 
   @Override
@@ -72,6 +74,7 @@ public class ListViewImpl<R extends ViewRead, W extends R>
   }
 
   private final R[] viewCache;
+
   @Override
   public R get(int index) {
     checkPositionIndex(index, size() - 1);
@@ -103,7 +106,8 @@ public class ListViewImpl<R extends ViewRead, W extends R>
 
   @Override
   public void set(int index, R value) {
-    if (!((index >= 0 && index < size()) || (index == size() && index < getType().getMaxLength()))) {
+    if (!((index >= 0 && index < size())
+        || (index == size() && index < getType().getMaxLength()))) {
       throw new IndexOutOfBoundsException("Index out of bounds: " + index + ", size=" + size);
     }
 

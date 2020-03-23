@@ -99,8 +99,7 @@ public class GenesisGenerator {
 
     Validator modifiedValidator = validator.withEffective_balance(effective_balance);
 
-    if (validator.getEffective_balance()
-        .equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
+    if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
       modifiedValidator =
           modifiedValidator
               .withActivation_eligibility_epoch(UnsignedLong.valueOf(GENESIS_EPOCH))
@@ -113,8 +112,7 @@ public class GenesisGenerator {
     return getGenesisStateIfValid(state -> true).orElseThrow();
   }
 
-  public Optional<BeaconState> getGenesisStateIfValid(
-      Predicate<BeaconState> validityCriteria) {
+  public Optional<BeaconState> getGenesisStateIfValid(Predicate<BeaconState> validityCriteria) {
     if (!validityCriteria.test(state)) {
       return Optional.empty();
     }

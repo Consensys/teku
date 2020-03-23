@@ -115,14 +115,14 @@ public class StateTransition {
   private static boolean verify_block_signature(
       final BeaconState state, SignedBeaconBlock signed_block) {
     return true;
-//    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
-//    final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
-//    // zzz
-//    return BLSVerify.bls_verify(
-//        proposer.getPubkey(),
-//        signed_block.getMessage().hash_tree_root(),
-//        signed_block.getSignature(),
-//        domain);
+    //    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+    //    final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
+    //    // zzz
+    //    return BLSVerify.bls_verify(
+    //        proposer.getPubkey(),
+    //        signed_block.getMessage().hash_tree_root(),
+    //        signed_block.getSignature(),
+    //        domain);
   }
 
   public BeaconState initiate(BeaconState state, SignedBeaconBlock block)

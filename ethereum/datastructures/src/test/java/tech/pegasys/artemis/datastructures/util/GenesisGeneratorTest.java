@@ -106,8 +106,7 @@ class GenesisGeneratorTest {
     // Now we should have two validators, not the 1 that would have been cached before.
     genesisGenerator.addDepositsFromBlock(
         Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(1)));
-    final Optional<BeaconState> state =
-        genesisGenerator.getGenesisStateIfValid(validityCriteria);
+    final Optional<BeaconState> state = genesisGenerator.getGenesisStateIfValid(validityCriteria);
     assertThat(state).isNotEmpty();
 
     // And caching should be enabled on the final generated state.

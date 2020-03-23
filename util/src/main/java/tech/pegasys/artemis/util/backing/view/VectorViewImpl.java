@@ -36,8 +36,8 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
     cachedRoot = type.maxChunks() >= Constants.VALIDATOR_REGISTRY_LIMIT /*/ 8*/;
     setBackingNode(backingNode);
     viewCache =
-        (R[]) new ViewRead[
-            type.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) type.getMaxLength()];
+        (R[])
+            new ViewRead[type.getMaxLength() > 1024 * 1024 ? 32 * 1024 : (int) type.getMaxLength()];
   }
 
   public boolean cachedRoot = false;
@@ -62,7 +62,8 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
   }
 
   private void setBackingNode(TreeNode backingNode) {
-    this.backingNode = cachedRoot ? CachedBranchNode.cacheNode(getType(), backingNode) : backingNode;
+    this.backingNode =
+        cachedRoot ? CachedBranchNode.cacheNode(getType(), backingNode) : backingNode;
   }
 
   private final R[] viewCache;
@@ -75,12 +76,12 @@ public class VectorViewImpl<R extends ViewRead, W extends R>
     if (ret == null) {
       TreeNode node = getNode(index / type.getElementsPerChunk());
       @SuppressWarnings("unchecked")
-      R t = (R) type.getElementType().createFromBackingNode(node, index % type.getElementsPerChunk());
+      R t =
+          (R) type.getElementType().createFromBackingNode(node, index % type.getElementsPerChunk());
       ret = t;
       viewCache[index] = ret;
     }
     return ret;
-
   }
 
   @Override

@@ -51,7 +51,7 @@ public abstract class AbstractCompositeViewWrite1<
   @Override
   public void set(int index, R value) {
     checkIndex(index, true);
-    if (childrenRefs.containsKey(index)){
+    if (childrenRefs.containsKey(index)) {
       throw new IllegalStateException(
           "A child couldn't be simultaneously modified by value and accessed by ref");
     }
@@ -66,7 +66,7 @@ public abstract class AbstractCompositeViewWrite1<
     R ret = childrenChanges.get(index);
     if (ret != null) {
       return ret;
-    } else if (childrenRefs.containsKey(index)){
+    } else if (childrenRefs.containsKey(index)) {
       return childrenRefs.get(index);
     } else {
       return backingImmutableView.get(index);
@@ -121,15 +121,16 @@ public abstract class AbstractCompositeViewWrite1<
       return backingImmutableView;
     } else {
       IntCache<R> cache = backingImmutableView.transferCache();
-      List<Entry<Integer, R>> changesList = Stream.concat(
-          childrenChanges.entrySet().stream(),
-          childrenRefsChanged.stream()
-              .map(
-                  idx ->
-                      new SimpleImmutableEntry<>(
-                          idx, (R) ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
-          .sorted(Entry.comparingByKey())
-          .collect(Collectors.toList());
+      List<Entry<Integer, R>> changesList =
+          Stream.concat(
+                  childrenChanges.entrySet().stream(),
+                  childrenRefsChanged.stream()
+                      .map(
+                          idx ->
+                              new SimpleImmutableEntry<>(
+                                  idx, (R) ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
+              .sorted(Entry.comparingByKey())
+              .collect(Collectors.toList());
       // pre-fill the read cache with changed values
       changesList.forEach(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
       TreeNode originalBackingTree = backingImmutableView.getBackingNode();
@@ -142,7 +143,7 @@ public abstract class AbstractCompositeViewWrite1<
   protected TreeNodes changesToNewNodes(List<Entry<Integer, R>> newChildValues, TreeNode original) {
     CompositeViewType type = getType();
     int elementsPerChunk = type.getElementsPerChunk();
-    if  (elementsPerChunk == 1) {
+    if (elementsPerChunk == 1) {
       TreeNodes ret = new TreeNodes();
       newChildValues.forEach(
           e -> ret.add(type.getGeneralizedIndex(e.getKey()), e.getValue().getBackingNode()));
@@ -177,7 +178,8 @@ public abstract class AbstractCompositeViewWrite1<
 
   @Override
   public ViewWrite createWritableCopy() {
-    throw new UnsupportedOperationException("createWritableCopy() is now implemented for immutable views only");
+    throw new UnsupportedOperationException(
+        "createWritableCopy() is now implemented for immutable views only");
   }
 
   protected abstract void checkIndex(int index, boolean set);

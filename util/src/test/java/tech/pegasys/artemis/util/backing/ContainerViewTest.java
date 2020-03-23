@@ -119,8 +119,7 @@ public class ContainerViewTest {
     ContainerRead commitChanges();
   }
 
-  public static class ImmutableSubContainerImpl
-      extends AbstractImmutableContainer
+  public static class ImmutableSubContainerImpl extends AbstractImmutableContainer
       implements ImmutableSubContainer {
 
     public static final ContainerViewType<ImmutableSubContainerImpl> TYPE =
@@ -148,15 +147,15 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerImpl extends MutableContainerImpl1<SubContainerImpl, SubContainerRead, SubContainerWrite>
+  public static class SubContainerImpl
+      extends MutableContainerImpl1<SubContainerImpl, SubContainerRead, SubContainerWrite>
       implements SubContainerWrite {
 
     public static final ContainerViewType<SubContainerImpl> TYPE =
         new ContainerViewType<>(
             List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE), SubContainerImpl::new);
 
-    public SubContainerImpl(ContainerViewRead readDelegate,
-        ContainerViewWriteRef writeDelegate) {
+    public SubContainerImpl(ContainerViewRead readDelegate, ContainerViewWriteRef writeDelegate) {
       super(readDelegate, writeDelegate);
     }
 
@@ -219,17 +218,15 @@ public class ContainerViewTest {
     }
   }
 
-
-  public static class ContainerWriteImpl extends ContainerViewWriteImpl
-      implements ContainerWrite {
+  public static class ContainerWriteImpl extends ContainerViewWriteImpl implements ContainerWrite {
 
     public ContainerWriteImpl(ContainerReadImpl backingImmutableView) {
       super(backingImmutableView);
     }
 
     @Override
-    protected AbstractCompositeViewRead<?, ViewRead> createViewRead(TreeNode backingNode,
-        IntCache<ViewRead> viewCache) {
+    protected AbstractCompositeViewRead<?, ViewRead> createViewRead(
+        TreeNode backingNode, IntCache<ViewRead> viewCache) {
       return new ContainerReadImpl(getType(), backingNode, viewCache);
     }
 

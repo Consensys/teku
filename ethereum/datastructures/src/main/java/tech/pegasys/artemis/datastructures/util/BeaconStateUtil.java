@@ -436,13 +436,16 @@ public class BeaconStateUtil {
 
     Validator validator = state.getValidators().get(slashed_index);
 
-    state.getValidators().set(slashed_index, validator
-        .withSlashed(true)
-        .withWithdrawable_epoch(
-            max(
-                validator.getWithdrawable_epoch(),
-                epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)))));
-
+    state
+        .getValidators()
+        .set(
+            slashed_index,
+            validator
+                .withSlashed(true)
+                .withWithdrawable_epoch(
+                    max(
+                        validator.getWithdrawable_epoch(),
+                        epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)))));
 
     int index = epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
     state
