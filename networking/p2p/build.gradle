@@ -39,7 +39,7 @@ dependencies {
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
 
-  testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
+  testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 
   testFixturesImplementation testFixtures(project(':util'))
 
