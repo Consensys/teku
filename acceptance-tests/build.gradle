@@ -1,6 +1,6 @@
 dependencies {
   testFixturesImplementation project(':data:provider')
-  testFixturesImplementation project(':util')
+
   testFixturesImplementation testFixtures(project(':util'))
 
   testFixturesImplementation 'com.google.code.gson:gson'
