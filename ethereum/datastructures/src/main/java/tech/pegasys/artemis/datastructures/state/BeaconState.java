@@ -26,7 +26,6 @@ import tech.pegasys.artemis.util.SSZTypes.SSZBackingList;
 import tech.pegasys.artemis.util.SSZTypes.SSZBackingVector;
 import tech.pegasys.artemis.util.SSZTypes.SSZContainer;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
-import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.view.AbstractBasicView;
@@ -147,7 +146,7 @@ public interface BeaconState
   }
 
   @JsonProperty
-  default SSZMutableList<Bytes32> getHistorical_roots() {
+  default SSZList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>(Bytes32.class, getAny(6), Bytes32View::new, AbstractBasicView::get);
   }
 

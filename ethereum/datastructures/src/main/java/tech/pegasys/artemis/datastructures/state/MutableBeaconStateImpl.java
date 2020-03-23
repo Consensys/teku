@@ -1,7 +1,12 @@
 package tech.pegasys.artemis.datastructures.state;
 
+import com.google.common.primitives.UnsignedLong;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
+import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
@@ -19,6 +24,16 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
 
   @Label("sos-ignore")
   private final boolean builder;
+
+  private SSZMutableRefList<Validator, MutableValidator> validators;
+  private SSZMutableList<UnsignedLong> balances;
+  private SSZMutableVector<Bytes32> blockRoots;
+  private SSZMutableVector<Bytes32> stateRoots;
+  private SSZMutableList<Bytes32> historicalRoots;
+  private SSZMutableList<Eth1Data> eth1DataVotes;
+  private SSZMutableVector<Bytes32> randaoMixes;
+  private SSZMutableList<PendingAttestation> previousEpochAttestations;
+  private SSZMutableList<PendingAttestation> currentEpochAttestations;
 
   MutableBeaconStateImpl(BeaconStateImpl backingImmutableView) {
     this(backingImmutableView, false);
@@ -49,7 +64,6 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
 
   @Override
   public Bytes32 hash_tree_root() {
-    // TODO optimize
     return commitChanges().hash_tree_root();
   }
 
@@ -61,5 +75,64 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   @Override
   public MutableBeaconState createWritableCopy() {
     return (MutableBeaconState) super.createWritableCopy();
+  }
+
+  @Override
+  public SSZMutableRefList<Validator, MutableValidator> getValidators() {
+    return validators != null
+        ? validators
+        : (validators = MutableBeaconState.super.getValidators());
+  }
+
+  @Override
+  public SSZMutableList<UnsignedLong> getBalances() {
+    return balances != null ? balances : (balances = MutableBeaconState.super.getBalances());
+  }
+
+  @Override
+  public SSZMutableVector<Bytes32> getBlock_roots() {
+    return blockRoots != null ? blockRoots : (blockRoots = MutableBeaconState.super.getBlock_roots());
+  }
+
+  @Override
+  public SSZMutableVector<Bytes32> getState_roots() {
+    return stateRoots != null
+        ? stateRoots
+        : (stateRoots = MutableBeaconState.super.getState_roots());
+  }
+
+  @Override
+  public SSZMutableList<Bytes32> getHistorical_roots() {
+    return historicalRoots != null
+        ? historicalRoots
+        : (historicalRoots = MutableBeaconState.super.getHistorical_roots());
+  }
+
+  @Override
+  public SSZMutableList<Eth1Data> getEth1_data_votes() {
+    return eth1DataVotes != null
+        ? eth1DataVotes
+        : (eth1DataVotes = MutableBeaconState.super.getEth1_data_votes());
+  }
+
+  @Override
+  public SSZMutableVector<Bytes32> getRandao_mixes() {
+    return randaoMixes != null
+        ? randaoMixes
+        : (randaoMixes = MutableBeaconState.super.getRandao_mixes());
+  }
+
+  @Override
+  public SSZMutableList<PendingAttestation> getPrevious_epoch_attestations() {
+    return previousEpochAttestations != null
+        ? previousEpochAttestations
+        : (previousEpochAttestations = MutableBeaconState.super.getPrevious_epoch_attestations());
+  }
+
+  @Override
+  public SSZMutableList<PendingAttestation> getCurrent_epoch_attestations() {
+    return currentEpochAttestations != null
+        ? currentEpochAttestations
+        : (currentEpochAttestations = MutableBeaconState.super.getCurrent_epoch_attestations());
   }
 }
