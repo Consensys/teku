@@ -25,4 +25,8 @@ public class ConsoleAdapter {
   public char[] readPassword(final String fmt, final Object... args) {
     return console.readPassword(fmt, args);
   }
+
+  public String readLine(final String fmt, final Object... args) {
+    return console.readLine(fmt, args);
+  }
 }
