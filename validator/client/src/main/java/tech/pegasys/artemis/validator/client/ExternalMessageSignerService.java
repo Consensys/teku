@@ -19,10 +19,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -30,7 +29,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ExternalMessageSignerService implements MessageSignerService {
-  private static final Logger LOG = LogManager.getLogger();
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private URI signingService;
   private BLSPublicKey blsPublicKey;
@@ -45,7 +43,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
-    return sign(signingRoot, "/signer/block");
+    return sign(signingRoot, "/signer/blocka");
   }
 
   @Override
@@ -59,21 +57,8 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot, final String path) {
-    final HttpClient httpClient = HttpClient.newHttpClient();
-
-    final String publicKey = blsPublicKey.getPublicKey().toString();
-    final SigningRequestBody signingRequest =
-        new SigningRequestBody(publicKey, signingRoot.toHexString());
-    final String requestBody;
-    try {
-      requestBody = MAPPER.writeValueAsString(signingRequest);
-    } catch (JsonProcessingException e) {
-      LOG.error("Unable to create external signing request", e);
-      return SafeFuture.failedFuture(e);
-    }
-
-    final HttpRequest request;
-    request =
+    final String requestBody = createSigningRequest(signingRoot);
+    final HttpRequest request =
         HttpRequest.newBuilder()
             .uri(signingService.resolve(path))
             .timeout(Duration.ofSeconds(timeoutMs))
@@ -81,8 +66,36 @@ public class ExternalMessageSignerService implements MessageSignerService {
             .build();
 
     return SafeFuture.of(
-        httpClient
+        HttpClient.newHttpClient()
             .sendAsync(request, BodyHandlers.ofString())
-            .thenApply(response -> BLSSignature.fromBytes(Bytes.fromHexString(response.body()))));
+            .thenApply(this::getBlsSignature));
+  }
+
+  private String createSigningRequest(final Bytes signingRoot) {
+    final String publicKey = blsPublicKey.getPublicKey().toString();
+    final SigningRequestBody signingRequest =
+        new SigningRequestBody(publicKey, signingRoot.toHexString());
+    final String requestBody;
+    try {
+      requestBody = MAPPER.writeValueAsString(signingRequest);
+    } catch (JsonProcessingException e) {
+      throw new ExternalSignerException("Unable to create external signing request", e);
+    }
+    return requestBody;
+  }
+
+  private BLSSignature getBlsSignature(final HttpResponse<String> response) {
+    if (response.statusCode() != 200) {
+      throw new ExternalSignerException(
+          "External signer failed to sign, received status code: " + response.statusCode());
+    }
+
+    try {
+      final Bytes signature = Bytes.fromHexString(response.body());
+      return BLSSignature.fromBytes(signature);
+    } catch (IllegalArgumentException e) {
+      throw new ExternalSignerException(
+          "External signer returned an invalid signature: " + e.getMessage(), e);
+    }
   }
 }
