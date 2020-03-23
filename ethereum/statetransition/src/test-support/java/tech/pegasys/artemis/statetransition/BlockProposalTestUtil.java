@@ -50,10 +50,8 @@ public class BlockProposalTestUtil {
       throws StateTransitionException {
 
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
-    final BLSSignature randaoReveal = blockProposalUtil.get_epoch_signature(
-        state,
-        newEpoch,
-        signer);
+    final BLSSignature randaoReveal =
+        blockProposalUtil.get_epoch_signature(state, newEpoch, signer);
 
     final BeaconBlock newBlock =
         blockProposalUtil.createNewUnsignedBlock(
