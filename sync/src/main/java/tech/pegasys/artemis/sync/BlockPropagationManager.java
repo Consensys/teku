@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.sync;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.HashSet;
@@ -45,7 +46,9 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   private final EventChannels eventChannels;
   private final ChainStorageClient storageClient;
   private final BlockImporter blockImporter;
-  private final PendingPool<SignedBeaconBlock> pendingBlocks;
+
+  @VisibleForTesting final PendingPool<SignedBeaconBlock> pendingBlocks;
+
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final FetchRecentBlocksService recentBlockFetcher;
   private final Set<Bytes32> invalidBlockRoots =
