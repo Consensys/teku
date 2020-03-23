@@ -67,7 +67,9 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
+import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
+import tech.pegasys.artemis.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
 public class BeaconChainController extends Service {
@@ -94,6 +96,7 @@ public class BeaconChainController extends Service {
   private volatile SyncService syncService;
   private volatile AttestationManager attestationManager;
   private volatile ValidatorCoordinator validatorCoordinator;
+  private CombinedChainDataClient combinedChainDataClient;
 
   public BeaconChainController(
       TimeProvider timeProvider,
@@ -155,6 +158,7 @@ public class BeaconChainController extends Service {
   }
 
   public void initAll() {
+    initCombinedChainDataClient();
     initTimer();
     initMetrics();
     initAttestationAggregator();
@@ -166,7 +170,13 @@ public class BeaconChainController extends Service {
     initAttestationPropagationManager();
     initP2PNetwork();
     initSyncManager();
+    initValidatorCoordinator();
     initRestAPI();
+  }
+
+  private void initCombinedChainDataClient() {
+    HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
+    combinedChainDataClient = new CombinedChainDataClient(chainStorageClient, historicalChainData);
   }
 
   public void initTimer() {
@@ -214,6 +224,12 @@ public class BeaconChainController extends Service {
             blockAttestationsPool,
             depositProvider,
             config);
+  }
+
+  public void initValidatorApiHandler() {
+    LOG.debug("BeaconChainController.initValidatorApiHandler()");
+    eventChannels.subscribe(
+        ValidatorApiChannel.class, new ValidatorApiHandler(combinedChainDataClient));
   }
 
   public void initStateProcessor() {
@@ -284,9 +300,6 @@ public class BeaconChainController extends Service {
 
   public void initRestAPI() {
     LOG.debug("BeaconChainController.initRestAPI()");
-    HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
-    CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(chainStorageClient, historicalChainData);
     DataProvider dataProvider =
         new DataProvider(
             chainStorageClient,
