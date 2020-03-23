@@ -48,7 +48,7 @@ public class BlockPropagationManagerTest {
   private final UnsignedLong historicalBlockTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureBlockTolerance = UnsignedLong.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance);
+      PendingPool.createForBlocks(localEventBus, historicalBlockTolerance, futureBlockTolerance);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       new FutureItems<>(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);

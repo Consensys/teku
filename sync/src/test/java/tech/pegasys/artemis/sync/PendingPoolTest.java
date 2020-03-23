@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.eventbus.EventBus;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.time.SlotEvent;
 
@@ -36,7 +38,7 @@ public class PendingPoolTest {
   private final UnsignedLong historicalTolerance = UnsignedLong.valueOf(5);
   private final UnsignedLong futureTolerance = UnsignedLong.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingPool =
-      PendingPool.createForBlocks(historicalTolerance, futureTolerance);
+      PendingPool.createForBlocks(eventBus, historicalTolerance, futureTolerance);
   private UnsignedLong currentSlot = historicalTolerance.times(UnsignedLong.valueOf(2));
   private List<Bytes32> requiredRootEvents = new ArrayList<>();
   private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
@@ -48,6 +50,7 @@ public class PendingPoolTest {
     pendingPool.subscribeRequiredBlockRoot(requiredRootEvents::add);
     pendingPool.subscribeRequiredBlockRootDropped(requiredRootDroppedEvents::add);
     setSlot(currentSlot);
+    pendingPool.registerToEvents(mock(EventChannels.class));
   }
 
   private void setSlot(final long slot) {

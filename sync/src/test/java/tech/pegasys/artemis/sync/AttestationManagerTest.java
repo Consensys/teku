@@ -50,7 +50,7 @@ class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final PendingPool<DelayableAttestation> pendingAttestations =
-      PendingPool.createForAttestations();
+      PendingPool.createForAttestations(eventBus);
   private final FutureItems<DelayableAttestation> futureAttestations =
       new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
 

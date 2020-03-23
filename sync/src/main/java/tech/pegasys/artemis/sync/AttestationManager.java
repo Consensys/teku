@@ -61,7 +61,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   public static AttestationManager create(
       final EventBus eventBus, final ChainStorageClient storageClient) {
     final PendingPool<DelayableAttestation> pendingAttestations =
-        PendingPool.createForAttestations();
+        PendingPool.createForAttestations(eventBus);
     final FutureItems<DelayableAttestation> futureAttestations =
         new FutureItems<>(DelayableAttestation::getEarliestSlotForProcessing);
     return new AttestationManager(
