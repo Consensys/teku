@@ -65,21 +65,22 @@ public class DepositGenerateCommand implements Runnable {
   @Mixin private CommonParams params;
 
   @Option(
-      names = {"-n", "--number-of-validators"},
+      names = {"--X-number-of-validators"},
       paramLabel = "<NUMBER>",
       description = "The number of validators to create keys for and register",
+      hidden = true,
       defaultValue = "1")
   private int validatorCount = 1;
 
   @Option(
-      names = {"--output-path", "-o"},
+      names = {"--keys-output-path"},
       paramLabel = "<FILE|DIR>",
       description =
           "Path to output file for unencrypted keys or output directory for encrypted keystore files. If not set, unencrypted keys will be written on standard out and encrypted keystores will be created in current directory")
   private String outputPath;
 
   @Option(
-      names = {"--encrypted-keystore-enabled", "-e"},
+      names = {"--encrypted-keystore-enabled"},
       defaultValue = "true",
       paramLabel = "<true|false>",
       description = "Create encrypted keystores for validator and withdrawal keys. (Default: true)",
@@ -126,7 +127,10 @@ public class DepositGenerateCommand implements Runnable {
   @Override
   public void run() {
     final KeysWriter keysWriter = getKeysWriter();
+
     final CommonParams _params = params; // making it effective final as it gets injected by PicoCLI
+    _params.displayConfirmation();
+
     final SecureRandom srng = SecureRandomProvider.createSecureRandom();
     try (_params) {
       final DepositTransactionSender sender = params.createTransactionSender();
@@ -165,6 +169,10 @@ public class DepositGenerateCommand implements Runnable {
               validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
+      if (isBlank(outputPath)) {
+        System.out.println(
+            "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
+      }
     }
     return keysWriter;
   }
@@ -217,14 +225,14 @@ public class DepositGenerateCommand implements Runnable {
 
   static class ValidatorPasswordOptions implements KeystorePasswordOptions {
     @Option(
-        names = {"--validator-keystore-password-file"},
+        names = {"--encrypted-keystore-validator-password-file"},
         paramLabel = "<FILE>",
         required = true,
         description = "Read password from the file to encrypt the validator keys")
     File validatorPasswordFile;
 
     @Option(
-        names = {"--validator-keystore-password-env"},
+        names = {"--encrypted-keystore-validator-password-env"},
         paramLabel = "<ENV_VAR>",
         required = true,
         description = "Read password from environment variable to encrypt the validator keys")
@@ -243,13 +251,13 @@ public class DepositGenerateCommand implements Runnable {
 
   static class WithdrawalPasswordOptions implements KeystorePasswordOptions {
     @Option(
-        names = {"--withdrawal-keystore-password-file"},
+        names = {"--encrypted-keystore-withdrawal-password-file"},
         paramLabel = "<FILE>",
         description = "Read password from the file to encrypt the withdrawal keys")
     File withdrawalPasswordFile;
 
     @Option(
-        names = {"--withdrawal-keystore-password-env"},
+        names = {"--encrypted-keystore-withdrawal-password-env"},
         paramLabel = "<ENV_VAR>",
         description = "Read password from environment variable to encrypt the withdrawal keys")
     String withdrawalPasswordEnv;
