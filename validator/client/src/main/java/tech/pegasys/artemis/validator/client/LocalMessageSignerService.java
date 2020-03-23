@@ -28,18 +28,18 @@ public class LocalMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signBlock(final Bytes signing_root) {
-    return sign(signing_root);
+  public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
+    return sign(signingRoot);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAttestation(final Bytes signing_root) {
-    return sign(signing_root);
+  public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
+    return sign(signingRoot);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signing_root) {
-    return sign(signing_root);
+  public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
+    return sign(signingRoot);
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signing_root) {
