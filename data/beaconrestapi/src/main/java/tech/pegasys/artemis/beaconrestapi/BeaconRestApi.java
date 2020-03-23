@@ -45,6 +45,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenAddresses;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
@@ -198,6 +199,7 @@ public class BeaconRestApi {
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
     app.get(
         GetEthereumNameRecord.ROUTE, new GetEthereumNameRecord(networkDataProvider, jsonProvider));
+    app.get(GetListenAddresses.ROUTE, new GetListenAddresses(networkDataProvider, jsonProvider));
     app.get(GetPeerId.ROUTE, new GetPeerId(networkDataProvider, jsonProvider));
     app.get(GetPeers.ROUTE, new GetPeers(networkDataProvider, jsonProvider));
     app.get(GetPeerCount.ROUTE, new GetPeerCount(networkDataProvider, jsonProvider));
