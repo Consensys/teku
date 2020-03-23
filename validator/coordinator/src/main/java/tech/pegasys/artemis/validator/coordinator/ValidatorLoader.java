@@ -37,28 +37,10 @@ class ValidatorLoader {
     // Get validator connection info and create a new ValidatorInfo object and put it into the
     // Validators map
 
-    final Map<BLSPublicKey, ValidatorInfo> validators;
-
-    if (!config.getValidatorExternalSigningPublicKeys().isEmpty()) {
-      validators =
-          config.getValidatorExternalSigningPublicKeys().stream()
-              .collect(
-                  Collectors.toMap(
-                      identity(),
-                      publicKey ->
-                          new ValidatorInfo(
-                              new ExternalMessageSignerService(
-                                  config.getValidatorExternalSigningUrl(),
-                                  publicKey,
-                                  config.getValidatorExternalSigningTimeout()))));
-    } else {
-      validators =
-          loadValidatorKeys(config).stream()
-              .collect(
-                  Collectors.toMap(
-                      BLSKeyPair::getPublicKey,
-                      blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
-    }
+    final Map<BLSPublicKey, ValidatorInfo> validators =
+        config.getValidatorExternalSigningPublicKeys().isEmpty()
+            ? createLocalSignerValidatorInfo(config)
+            : createExternalSignerValidatorInfo(config);
 
     if (LOG.isDebugEnabled()) {
       Streams.mapWithIndex(
@@ -67,6 +49,29 @@ class ValidatorLoader {
           .forEach(LOG::debug);
     }
     return validators;
+  }
+
+  private static Map<BLSPublicKey, ValidatorInfo> createLocalSignerValidatorInfo(
+      final ArtemisConfiguration config) {
+    return loadValidatorKeys(config).stream()
+        .collect(
+            Collectors.toMap(
+                BLSKeyPair::getPublicKey,
+                blsKeyPair -> new ValidatorInfo(new LocalMessageSignerService(blsKeyPair))));
+  }
+
+  private static Map<BLSPublicKey, ValidatorInfo> createExternalSignerValidatorInfo(
+      final ArtemisConfiguration config) {
+    return config.getValidatorExternalSigningPublicKeys().stream()
+        .collect(
+            Collectors.toMap(
+                identity(),
+                publicKey ->
+                    new ValidatorInfo(
+                        new ExternalMessageSignerService(
+                            config.getValidatorExternalSigningUrl(),
+                            publicKey,
+                            config.getValidatorExternalSigningTimeout()))));
   }
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
