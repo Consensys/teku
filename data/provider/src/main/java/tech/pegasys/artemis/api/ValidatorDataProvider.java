@@ -48,7 +48,8 @@ public class ValidatorDataProvider {
   private static final Logger LOG = LogManager.getLogger();
 
   public ValidatorDataProvider(
-      ValidatorCoordinator validatorCoordinator, CombinedChainDataClient combinedChainDataClient) {
+      final ValidatorCoordinator validatorCoordinator,
+      final CombinedChainDataClient combinedChainDataClient) {
     this.validatorCoordinator = validatorCoordinator;
     this.combinedChainDataClient = combinedChainDataClient;
   }

@@ -208,11 +208,11 @@ public class ChainDataProvider {
             });
   }
 
-  public boolean isFinalized(SignedBeaconBlock signedBeaconBlock) {
+  public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
     return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
   }
 
-  public boolean isFinalized(UnsignedLong slot) {
+  public boolean isFinalized(final UnsignedLong slot) {
     return combinedChainDataClient.isFinalized(slot);
   }
 
