@@ -22,13 +22,14 @@ dependencyManagement {
 
     dependency 'de.undercouch:bson4jackson:2.9.2'
 
-    dependency 'info.picocli:picocli:4.0.4'
+    dependency 'info.picocli:picocli:4.2.0'
 
     dependency 'io.javalin:javalin:3.7.0'
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.3.2-RELEASE'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
@@ -47,7 +48,7 @@ dependencyManagement {
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
-    dependencySet(group: 'org.apache.tuweni', version: '0.9.0') {
+    dependencySet(group: 'org.apache.tuweni', version: '0.10.0') {
       entry 'tuweni-bytes'
       entry 'tuweni-config'
       entry 'tuweni-crypto' 
@@ -77,6 +78,8 @@ dependencyManagement {
 
     dependency 'org.java-websocket:Java-WebSocket:1.3.8'
 
+    dependency 'org.mapdb:mapdb:3.0.7'
+
     dependencySet(group: 'org.junit.jupiter', version: '5.5.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
@@ -84,7 +87,7 @@ dependencyManagement {
     }
 
     dependency 'org.mockito:mockito-core:3.1.0'
-    
+
     dependency 'org.openjdk.jmh:jmh-core:1.21'
     dependency 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
     dependency 'org.miracl.milagro.amcl:milagro-crypto-java:0.4.0'
@@ -105,6 +108,6 @@ dependencyManagement {
     dependency "org.testcontainers:testcontainers:1.12.3"
     dependency "org.testcontainers:junit-jupiter:1.12.3"
 
-    dependency 'tech.pegasys.discovery:discovery:0.3.0'
+    dependency 'tech.pegasys.discovery:discovery:0.3.1'
   }
 }

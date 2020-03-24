@@ -23,6 +23,7 @@ import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public interface P2PNetwork<T extends Peer> extends GossipNetwork {
+
   enum State {
     IDLE,
     RUNNING,
@@ -34,35 +35,51 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
    * implementation. If a connection already exists for this peer, the future completes with the
    * existing peer.
    *
+   * <p>The {@link PeerAddress} must have been created using the {@link #createPeerAddress(String)}
+   * method of this same implementation.
+   *
    * @param peer Peer to connect to.
    * @return A future which completes when the connection is establish, containing the newly
    *     connected peer.
    */
-  SafeFuture<Peer> connect(String peer);
+  SafeFuture<Peer> connect(PeerAddress peer);
 
   /**
-   * Connects to a peer identified via discovery. If a connection already exists for this peer, the
-   * future completes with the existing peer.
+   * Parses a peer address in any of this networks supported formats.
    *
-   * @param peer the peer to connect to.
-   * @return A future which completes when the connection is establish, containing the newly
-   *     connected peer.
+   * @param peerAddress the address to parse
+   * @return a {@link PeerAddress} which is supported by {@link #connect(PeerAddress)} for
+   *     initiating connections
    */
-  SafeFuture<Peer> connect(DiscoveryPeer peer);
+  PeerAddress createPeerAddress(String peerAddress);
+
+  /**
+   * Converts a {@link DiscoveryPeer} to a {@link PeerAddress} which can be used with this network's
+   * {@link #connect(PeerAddress)} method.
+   *
+   * @param discoveryPeer the discovery peer to convert
+   * @return a {@link PeerAddress} which is supported by {@link #connect(PeerAddress)} for
+   *     initiating connections
+   */
+  PeerAddress createPeerAddress(DiscoveryPeer discoveryPeer);
 
   long subscribeConnect(PeerConnectedSubscriber<T> subscriber);
 
   void unsubscribeConnect(long subscriptionId);
 
+  boolean isConnected(PeerAddress peerAddress);
+
   Optional<T> getPeer(NodeId id);
 
   Stream<T> streamPeers();
 
-  long getPeerCount();
+  int getPeerCount();
 
   String getNodeAddress();
 
   NodeId getNodeId();
+
+  int getListenPort();
 
   /**
    * Get the Ethereum Node Record (ENR) for the local node, if one exists.
@@ -80,4 +97,11 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   /** Stops the P2P network layer. */
   void stop();
+
+  /**
+   * Get the network configuration for this network.
+   *
+   * @return A NetworkConfig object with the configuration of this network.
+   */
+  NetworkConfig getConfig();
 }

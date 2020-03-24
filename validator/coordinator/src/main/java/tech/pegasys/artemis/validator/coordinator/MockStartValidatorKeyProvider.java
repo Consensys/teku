@@ -13,23 +13,23 @@
 
 package tech.pegasys.artemis.validator.coordinator;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import java.util.List;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.util.alogger.ALogger.Color;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
-    STDOUT.log(
-        Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex, Color.GREEN);
+    LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);
     return new MockStartValidatorKeyPairFactory().generateKeyPairs(startIndex, endIndex);
   }
 }

@@ -1,12 +1,16 @@
 dependencies {
+  implementation project(':bls')
+  implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':storage')
   implementation project(':services:serviceutils')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
   implementation project(':util')
+  implementation project(':logging')
   implementation project(':pow')
   implementation project(':data:keystore')
+  implementation project(':ssz')
 
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.commons:commons-lang3'
@@ -15,14 +19,14 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  // implementation files('../../lib/tuweni-ssz-0.9.0-SNAPSHOT.jar')
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
-  runtime 'org.apache.logging.log4j:log4j-core'
+
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
+
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:statetransition'))
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
 }
-

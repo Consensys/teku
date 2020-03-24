@@ -23,9 +23,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.message.BouncyCastleMessageDigestFactory;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class MockStartValidatorKeyPairFactory {
   private static final int KEY_LENGTH = 48;
@@ -44,7 +43,7 @@ public class MockStartValidatorKeyPairFactory {
     final BigInteger privKey = hash.reverse().toUnsignedBigInteger().mod(CURVE_ORDER);
     final Bytes privKeyBytes = padLeft(Bytes.of(privKey.toByteArray()), KEY_LENGTH);
 
-    return new BLSKeyPair(new KeyPair(SecretKey.fromBytes(privKeyBytes)));
+    return new BLSKeyPair(BLSSecretKey.fromBytes(privKeyBytes));
   }
 
   private Bytes sha256(final Bytes indexBytes) {

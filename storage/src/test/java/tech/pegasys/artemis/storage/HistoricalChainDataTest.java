@@ -26,6 +26,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.storage.events.GetBlockByBlockRootRequest;
+import tech.pegasys.artemis.storage.events.GetBlockByBlockRootResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotRequest;
 import tech.pegasys.artemis.storage.events.GetFinalizedBlockAtSlotResponse;
 import tech.pegasys.artemis.storage.events.GetFinalizedStateAtSlotRequest;
@@ -37,10 +39,11 @@ import tech.pegasys.artemis.storage.events.GetLatestFinalizedBlockAtSlotResponse
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 class HistoricalChainDataTest {
+  private static final DataStructureUtil DATA_STRUCTURE_UTIL = new DataStructureUtil();
   private static final Optional<SignedBeaconBlock> BLOCK =
-      Optional.of(DataStructureUtil.randomSignedBeaconBlock(1, 100));
+      Optional.of(DATA_STRUCTURE_UTIL.randomSignedBeaconBlock(1));
   private static final Optional<BeaconState> STATE =
-      Optional.of(DataStructureUtil.randomBeaconState(UnsignedLong.valueOf(1), 100));
+      Optional.of(DATA_STRUCTURE_UTIL.randomBeaconState(UnsignedLong.valueOf(1)));
   private final EventBus eventBus = mock(EventBus.class);
   private final HistoricalChainData historicalChainData = new HistoricalChainData(eventBus);
 
@@ -160,6 +163,18 @@ class HistoricalChainDataTest {
     historicalChainData.onStateByBlockRootResponse(
         new GetFinalizedStateByBlockRootResponse(data, STATE));
     assertThat(result).isCompletedWithValue(STATE);
+  }
+
+  @Test
+  public void getBlockByBlockRoot() {
+    final Bytes32 data = BLOCK.get().getParent_root();
+    final SafeFuture<Optional<SignedBeaconBlock>> result =
+        historicalChainData.getBlockByBlockRoot(data);
+    verify(eventBus).post(new GetBlockByBlockRootRequest(data));
+    assertThat(result).isNotDone();
+
+    historicalChainData.onBlockByBlockRootResponse(new GetBlockByBlockRootResponse(data, BLOCK));
+    assertThat(result).isCompletedWithValue(BLOCK);
   }
 
   @Test

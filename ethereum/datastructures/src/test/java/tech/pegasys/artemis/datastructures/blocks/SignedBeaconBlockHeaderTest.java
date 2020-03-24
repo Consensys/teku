@@ -14,23 +14,22 @@
 package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class SignedBeaconBlockHeaderTest {
-  private int seed = 100;
-  private UnsignedLong slot = randomUnsignedLong(seed);
-  private Bytes32 previous_block_root = randomBytes32(seed++);
-  private Bytes32 state_root = randomBytes32(seed++);
-  private Bytes32 block_body_root = randomBytes32(seed++);
-  private BLSSignature signature = BLSSignature.random(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
+  private Bytes32 previous_block_root = dataStructureUtil.randomBytes32();
+  private Bytes32 state_root = dataStructureUtil.randomBytes32();
+  private Bytes32 block_body_root = dataStructureUtil.randomBytes32();
+  private BLSSignature signature = dataStructureUtil.randomSignature();
 
   private SignedBeaconBlockHeader signedBlockHeader =
       new SignedBeaconBlockHeader(

@@ -13,10 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +31,6 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class Fork extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -73,7 +69,6 @@ public class Fork extends AbstractImmutableContainer
   }
 
   @Override
-  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }
@@ -110,17 +105,14 @@ public class Fork extends AbstractImmutableContainer
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  @JsonProperty
   public Bytes4 getPrevious_version() {
     return ((Bytes4View) get(0)).get();
   }
 
-  @JsonProperty
   public Bytes4 getCurrent_version() {
     return ((Bytes4View) get(1)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getEpoch() {
     return ((UInt64View) get(2)).get();
   }
@@ -132,13 +124,10 @@ public class Fork extends AbstractImmutableContainer
 
   @Override
   public String toString() {
-    return "Fork{"
-        + "previous_version="
-        + getPrevious_version()
-        + ", current_version="
-        + getCurrent_version()
-        + ", epoch="
-        + getEpoch()
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("previous_version", previous_version)
+        .add("current_version", current_version)
+        .add("epoch", epoch)
+        .toString();
   }
 }

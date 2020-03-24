@@ -13,11 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.newDeposits;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomValidator;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
@@ -33,6 +29,7 @@ import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -40,12 +37,14 @@ import tech.pegasys.artemis.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
 class BlockProcessorUtilTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+
   @Test
   @Disabled
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup
-    SSZList<DepositWithIndex> deposits = newDeposits(1);
+    SSZList<DepositWithIndex> deposits = dataStructureUtil.newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();
@@ -85,7 +84,7 @@ class BlockProcessorUtilTest {
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
       throws BlockProcessingException {
     // Data Setup
-    SSZList<DepositWithIndex> deposits = newDeposits(1);
+    SSZList<DepositWithIndex> deposits = dataStructureUtil.newDeposits(1);
     Deposit deposit = deposits.get(0);
     DepositData depositInput = deposit.getData();
     BLSPublicKey pubkey = depositInput.getPubkey();
@@ -135,7 +134,7 @@ class BlockProcessorUtilTest {
   private BeaconState createBeaconState(
       boolean addToList, UnsignedLong amount, Validator knownValidator) {
     MutableBeaconState beaconState = BeaconState.createEmpty().createWritableCopy();
-    beaconState.setSlot(randomUnsignedLong(100));
+    beaconState.setSlot(dataStructureUtil.randomUnsignedLong());
     beaconState.setFork(
         new Fork(
             Constants.GENESIS_FORK_VERSION,
@@ -144,13 +143,18 @@ class BlockProcessorUtilTest {
 
     SSZMutableList<Validator> validatorList =
         SSZList.createMutable(
-            Arrays.asList(randomValidator(101), randomValidator(102), randomValidator(103)),
+            Arrays.asList(
+                dataStructureUtil.randomValidator(),
+                dataStructureUtil.randomValidator(),
+                dataStructureUtil.randomValidator()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             Validator.class);
     SSZMutableList<UnsignedLong> balanceList =
         SSZList.createMutable(
             Arrays.asList(
-                randomUnsignedLong(104), randomUnsignedLong(105), randomUnsignedLong(106)),
+                dataStructureUtil.randomUnsignedLong(),
+                dataStructureUtil.randomUnsignedLong(),
+                dataStructureUtil.randomUnsignedLong()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             UnsignedLong.class);
 

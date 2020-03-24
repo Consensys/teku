@@ -1,23 +1,24 @@
 jar { enabled = false }
 
 dependencies {
-  referenceTestImplementation project(':util')
-  referenceTestImplementation project(':eth-tests')
+  referenceTestImplementation project(':bls')
   referenceTestImplementation project(':ethereum:datastructures')
   referenceTestImplementation project(':ethereum:statetransition')
+  referenceTestImplementation project(':eth-tests')
+  referenceTestImplementation project(':ssz')
   referenceTestImplementation project(':storage')
+  referenceTestImplementation project(':util')
 
-  referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  referenceTestImplementation 'org.assertj:assertj-core'
-  referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
-  referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
-  referenceTestImplementation 'org.apache.commons:commons-lang3'
-  referenceTestImplementation 'org.mockito:mockito-core'
   referenceTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
   referenceTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  referenceTestImplementation 'org.apache.commons:commons-lang3'
+  referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
+  referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
+  referenceTestImplementation 'org.assertj:assertj-core'
   referenceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
   referenceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
+  referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
+  referenceTestImplementation 'org.mockito:mockito-core'
 
   referenceTestRuntime 'org.junit.jupiter:junit-jupiter-engine'
 }

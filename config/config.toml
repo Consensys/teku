@@ -5,6 +5,7 @@
 networkMode = "mock"
 networkInterface = "0.0.0.0"
 port = 9000
+advertisedIp = "127.0.0.1"
 # discovery options:
 # "static" - no discovery, only connect to static peers
 # "discv5" - Enable discovery v5
@@ -26,9 +27,8 @@ privateKey = "0x08021221008166B8EF20C11F3A18F8774BF834173B07F64BAEDA981766896B4A
 #validatorsKeyFile = "keys.yaml"
 
 [deposit]
-# normal, test, simulation
+# normal, test
 # "test" pre-production
-# "simulation" to run a simulation of deposits with ganache-cli, if a inputFile is included the file will replay the deposits
 # "normal" production, must include contractAddr and nodeUrl
 mode = "test"
 inputFile = "" #"validator_test_data.json"
@@ -39,6 +39,13 @@ nodeUrl = "http://localhost:8545"
 [output]
 #transitionRecordDir = "/tmp/teku"
 
+[logging]
+#colorEnabled = false
+#includeEventsEnabled = false
+#destination =  'fileOnly' or 'consoleOnly'
+#file = 'teku.log'
+#fileNamePattern = 'tekuL_%d{yyyy-MM-dd}.log'
+
 [metrics]
 enabled = false
 port = 8008
@@ -48,6 +55,7 @@ metricsNetworkInterface = "127.0.0.1"
 [database]
 dataPath="."
 startFromDisk = false
+stateStorageMode = "prune"
 
 [beaconrestapi]
 portNumber = 5051

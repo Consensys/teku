@@ -19,7 +19,9 @@ import java.util.stream.Stream;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.artemis.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.PeerAddress;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.Peer;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
@@ -34,13 +36,18 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public SafeFuture<Peer> connect(String peer) {
+  public SafeFuture<Peer> connect(PeerAddress peer) {
     return SafeFuture.failedFuture(new UnsupportedOperationException());
   }
 
   @Override
-  public SafeFuture<Peer> connect(final DiscoveryPeer peer) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  public PeerAddress createPeerAddress(final String peerAddress) {
+    return new PeerAddress(new MockNodeId(peerAddress.hashCode()));
+  }
+
+  @Override
+  public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
+    throw new UnsupportedOperationException();
   }
 
   @Override
@@ -54,6 +61,11 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
+  public boolean isConnected(final PeerAddress peerAddress) {
+    return false;
+  }
+
+  @Override
   public Optional<P> getPeer(final NodeId id) {
     return Optional.empty();
   }
@@ -64,8 +76,8 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
-  public long getPeerCount() {
-    return 0L;
+  public int getPeerCount() {
+    return 0;
   }
 
   @Override
@@ -83,9 +95,19 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
     return Optional.empty();
   }
 
+  @Override
+  public int getListenPort() {
+    return 0;
+  };
+
   /** Stops the P2P network layer. */
   @Override
   public void stop() {}
+
+  @Override
+  public NetworkConfig getConfig() {
+    throw new UnsupportedOperationException();
+  }
 
   @Override
   public SafeFuture<?> start() {

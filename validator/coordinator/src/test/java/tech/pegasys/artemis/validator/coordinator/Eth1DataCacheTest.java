@@ -40,6 +40,7 @@ import tech.pegasys.artemis.util.time.StubTimeProvider;
 
 public class Eth1DataCacheTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final BeaconState genesisState = mock(BeaconState.class);
 
@@ -228,7 +229,7 @@ public class Eth1DataCacheTest {
     eth1DataCache.startBeaconChainMode(genesisState);
     eth1DataCache.onSlot(new SlotEvent(START_SLOT));
 
-    Eth1Data eth1Data = DataStructureUtil.randomEth1Data(10);
+    Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
 
     SSZMutableList<Eth1Data> eth1DataVotes =
         SSZList.createMutable(List.of(eth1Data), 10, Eth1Data.class);
@@ -289,17 +290,38 @@ public class Eth1DataCacheTest {
   }
 
   @Test
+  void pruneAllBlockData() {
+    eth1DataCache.startBeaconChainMode(genesisState);
+    eth1DataCache.onSlot(new SlotEvent(START_SLOT));
+
+    // All Eth1Data timestamps inside the spec range for this voting period
+    CacheEth1BlockEvent cacheEth1BlockEvent1 =
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(359));
+    CacheEth1BlockEvent cacheEth1BlockEvent2 =
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(360));
+    CacheEth1BlockEvent cacheEth1BlockEvent3 =
+        createRandomCacheEth1BlockEvent(UnsignedLong.valueOf(361));
+
+    eventBus.post(cacheEth1BlockEvent1);
+    eventBus.post(cacheEth1BlockEvent2);
+    eventBus.post(cacheEth1BlockEvent3);
+
+    eth1DataCache.onSlot(new SlotEvent(NEXT_VOTING_PERIOD_SLOT));
+
+    assertThat(eth1DataCache.getMapForTesting().values()).isEmpty();
+  }
+
+  @Test
   void onSlotBeingCalled_withoutGenesisTimeBeingSet() {
     assertDoesNotThrow(() -> eth1DataCache.onSlot(new SlotEvent(START_SLOT)));
   }
 
   private CacheEth1BlockEvent createRandomCacheEth1BlockEvent(UnsignedLong timestamp) {
-    long seed = 0;
     return new CacheEth1BlockEvent(
-        DataStructureUtil.randomUnsignedLong(++seed),
-        DataStructureUtil.randomBytes32(++seed),
+        dataStructureUtil.randomUnsignedLong(),
+        dataStructureUtil.randomBytes32(),
         timestamp,
-        DataStructureUtil.randomBytes32(++seed),
-        DataStructureUtil.randomUnsignedLong(++seed));
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomUnsignedLong());
   }
 }

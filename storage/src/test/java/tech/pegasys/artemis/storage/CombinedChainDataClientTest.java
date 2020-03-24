@@ -40,13 +40,12 @@ import tech.pegasys.artemis.util.config.Constants;
 
 class CombinedChainDataClientTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ChainStorageClient recentChainData = mock(ChainStorageClient.class);
   private final HistoricalChainData historicalChainData = mock(HistoricalChainData.class);
   private final Store store = mock(Store.class);
   private final CombinedChainDataClient client =
       spy(new CombinedChainDataClient(recentChainData, historicalChainData));
-
-  private int seed = 242842;
 
   @BeforeEach
   public void setUp() {
@@ -243,7 +242,7 @@ class CombinedChainDataClientTest {
 
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
-    BeaconState state = DataStructureUtil.randomBeaconState(11233);
+    BeaconState state = dataStructureUtil.randomBeaconState();
     List<CommitteeAssignment> data = client.getCommitteesFromState(state, state.getSlot());
     assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
   }
@@ -252,14 +251,15 @@ class CombinedChainDataClientTest {
   public void getBlockBySlot_blockByBlockRoot() throws ExecutionException, InterruptedException {
     final UnsignedLong slotParam = UnsignedLong.ONE;
     final SignedBeaconBlock signedBeaconBlock =
-        DataStructureUtil.randomSignedBeaconBlock(slotParam.longValue(), 7);
+        dataStructureUtil.randomSignedBeaconBlock(slotParam.longValue());
 
     doReturn(Optional.of(signedBeaconBlock.getParent_root()))
         .when(client)
         .getBlockRootBySlot(any());
     doReturn(Optional.empty()).when(client).getBestBlockRoot();
-    doReturn(store).when(client).getStore();
-    doReturn(signedBeaconBlock).when(store).getSignedBlock(any());
+    doReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
+        .when(client)
+        .getBlockByBlockRoot(any());
 
     assertThat(client.getBlockBySlot(slotParam)).isInstanceOf(SafeFuture.class);
     assertThat(client.getBlockBySlot(slotParam).get())
@@ -273,7 +273,7 @@ class CombinedChainDataClientTest {
       throws ExecutionException, InterruptedException {
     final UnsignedLong slotParam = UnsignedLong.ONE;
     final SignedBeaconBlock signedBeaconBlock =
-        DataStructureUtil.randomSignedBeaconBlock(slotParam.longValue(), 7);
+        dataStructureUtil.randomSignedBeaconBlock(slotParam.longValue());
 
     doReturn(Optional.empty()).when(client).getBlockRootBySlot(any());
     doReturn(Optional.of(signedBeaconBlock.getParent_root())).when(client).getBestBlockRoot();
@@ -299,10 +299,10 @@ class CombinedChainDataClientTest {
   }
 
   private SignedBeaconBlock block(final UnsignedLong slot) {
-    return DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), seed++);
+    return dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
   }
 
   private BeaconState beaconState(final UnsignedLong slot) {
-    return DataStructureUtil.randomBeaconState(slot, seed++);
+    return dataStructureUtil.randomBeaconState(slot);
   }
 }

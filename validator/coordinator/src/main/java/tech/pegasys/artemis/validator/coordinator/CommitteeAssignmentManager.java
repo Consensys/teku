@@ -16,6 +16,7 @@ package tech.pegasys.artemis.validator.coordinator;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.bytes_to_int;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.get_beacon_committee;
@@ -33,9 +34,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Committee;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
@@ -45,7 +44,6 @@ import tech.pegasys.artemis.statetransition.events.committee.CommitteeDismissalE
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
 
 public class CommitteeAssignmentManager {
 
@@ -56,9 +54,9 @@ public class CommitteeAssignmentManager {
 
   CommitteeAssignmentManager(
       Map<BLSPublicKey, ValidatorInfo> validators,
-      Map<UnsignedLong, List<AttesterInformation>> commiteeAssignments) {
+      Map<UnsignedLong, List<AttesterInformation>> committeeAssignments) {
     this.validators = validators;
-    this.committeeAssignments = commiteeAssignments;
+    this.committeeAssignments = committeeAssignments;
   }
 
   void updateCommitteeAssignments(
@@ -127,7 +125,7 @@ public class CommitteeAssignmentManager {
                 UnsignedLong slot = assignment.getSlot();
                 UnsignedLong committeeIndex = assignment.getCommitteeIndex();
                 committeeIndicesToSubscribe.add(toIntExact(committeeIndex.longValue()));
-                BLSSignature slot_signature = slot_signature(state, slot, pubKey);
+                BLSSignature slot_signature = get_slot_signature(state, slot, pubKey);
                 boolean is_aggregator = is_aggregator(state, slot, committeeIndex, slot_signature);
 
                 List<AttesterInformation> attesterInformationInSlot =
@@ -151,12 +149,10 @@ public class CommitteeAssignmentManager {
     return committeeIndicesToSubscribe;
   }
 
-  BLSSignature slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
+  BLSSignature get_slot_signature(BeaconState state, UnsignedLong slot, BLSPublicKey signer) {
     Bytes domain = get_domain(state, DOMAIN_BEACON_ATTESTER, compute_epoch_at_slot(slot));
-    Bytes32 slot_hash =
-        HashTreeUtil.hash_tree_root(
-            HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue()));
-    return validators.get(signer).sign(slot_hash, domain).join();
+    Bytes signing_root = compute_signing_root(slot.longValue(), domain);
+    return validators.get(signer).sign(signing_root).join();
   }
 
   boolean is_aggregator(

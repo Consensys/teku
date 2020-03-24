@@ -19,8 +19,6 @@ import static tech.pegasys.artemis.datastructures.util.CommitteeUtil.compute_pro
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.artemis.datastructures.util.ValidatorsUtil.increase_balance;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-import static tech.pegasys.artemis.util.bls.BLSVerify.bls_verify;
 import static tech.pegasys.artemis.util.config.Constants.CHURN_LIMIT_QUOTIENT;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.DOMAIN_DEPOSIT;
@@ -28,6 +26,7 @@ import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_HISTORICAL_V
 import static tech.pegasys.artemis.util.config.Constants.EPOCHS_PER_SLASHINGS_VECTOR;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.artemis.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.artemis.util.config.Constants.MAX_COMMITTEES_PER_SLOT;
 import static tech.pegasys.artemis.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.artemis.util.config.Constants.MAX_SEED_LOOKAHEAD;
@@ -54,25 +53,34 @@ import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
+import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.DepositData;
 import tech.pegasys.artemis.datastructures.operations.DepositMessage;
+import tech.pegasys.artemis.datastructures.operations.DepositWithIndex;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.BeaconStateCache;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.SigningRoot;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZVector;
+import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
+import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
+import tech.pegasys.artemis.util.hashtree.Merkleizable;
 
 public class BeaconStateUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
@@ -83,7 +91,7 @@ public class BeaconStateUtil {
   public static BeaconState initialize_beacon_state_from_eth1(
       Bytes32 eth1_block_hash, UnsignedLong eth1_timestamp, List<? extends Deposit> deposits) {
     final GenesisGenerator genesisGenerator = new GenesisGenerator();
-    genesisGenerator.addDepositsFromBlock(eth1_block_hash, eth1_timestamp, deposits);
+    genesisGenerator.updateCandidateState(eth1_block_hash, eth1_timestamp, deposits);
     return genesisGenerator.getGenesisState();
   }
 
@@ -100,7 +108,7 @@ public class BeaconStateUtil {
         is_valid_merkle_branch(
             deposit.getData().hash_tree_root(),
             deposit.getProof(),
-            Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the `List` length mix-in
+            Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, // Add 1 for the List length mix-in
             toIntExact(state.getEth1_deposit_index().longValue()),
             state.getEth1_data().getDeposit_root()),
         "process_deposit: Verify the Merkle branch");
@@ -131,21 +139,25 @@ public class BeaconStateUtil {
 
     if (existingIndex.isEmpty()) {
 
-      // Verify the deposit signature (proof of possession) for new validators.
-      // Note: Deposits are valid across forks, thus the deposit
-      // domain is retrieved directly from `compute_domain`
+      // Verify the deposit signature (proof of possession) which is not checked by the deposit
+      // contract
       if (BLS_VERIFY_DEPOSIT) {
         final DepositMessage deposit_message =
             new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
+        final Bytes domain = compute_domain(DOMAIN_DEPOSIT);
+        final Bytes signing_root = compute_signing_root(deposit_message, domain);
         boolean proof_is_valid =
             !BLS_VERIFY_DEPOSIT
-                || bls_verify(
-                    pubkey,
-                    deposit_message.hash_tree_root(),
-                    deposit.getData().getSignature(),
-                    compute_domain(DOMAIN_DEPOSIT));
+                || BLS.verify(pubkey, signing_root, deposit.getData().getSignature());
         if (!proof_is_valid) {
-          STDOUT.log(Level.DEBUG, "Skipping invalid deposit");
+          if (deposit instanceof DepositWithIndex) {
+            LOG.warn(
+                "Skipping invalid deposit with index {} of pubkey {}",
+                ((DepositWithIndex) deposit).getIndex(),
+                pubkey);
+          } else {
+            LOG.warn("Skipping invalid deposit with of pubkey {}", pubkey);
+          }
           if (pubKeyToIndexMap != null) {
             // The validator won't be created so the calculated index won't be correct
             pubKeyToIndexMap.remove(pubkey);
@@ -155,7 +167,7 @@ public class BeaconStateUtil {
       }
 
       if (pubKeyToIndexMap == null) {
-        STDOUT.log(Level.DEBUG, "Adding new validator to state: " + state.getValidators().size());
+        LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
       state
           .getValidators()
@@ -179,14 +191,16 @@ public class BeaconStateUtil {
   }
 
   public static boolean is_valid_genesis_state(BeaconState state) {
-    return !(state.getGenesis_time().compareTo(MIN_GENESIS_TIME) < 0)
-        && !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-            < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+    return isItMinGenesisTimeYet(state) && isThereEnoughNumberOfValidators(state);
   }
 
-  public static boolean is_valid_genesis_stateSim(BeaconState state) {
-    return !(get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
-        < MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+  public static boolean isThereEnoughNumberOfValidators(BeaconState state) {
+    return get_active_validator_indices(state, UnsignedLong.valueOf(GENESIS_EPOCH)).size()
+        >= MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
+  }
+
+  public static boolean isItMinGenesisTimeYet(BeaconState state) {
+    return state.getGenesis_time().compareTo(MIN_GENESIS_TIME) >= 0;
   }
 
   /**
@@ -303,7 +317,54 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
   public static Bytes compute_domain(Bytes4 domain_type) {
-    return compute_domain(domain_type, new Bytes4(Bytes.wrap(new byte[4])));
+    return compute_domain(domain_type, GENESIS_FORK_VERSION);
+  }
+
+  /**
+   * Return the signing root of an object by calculating the root of the object-domain tree.
+   *
+   * @param object An object implementing the Merkleizable interface
+   * @param domain
+   * @return the signing root
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
+   */
+  public static Bytes compute_signing_root(Merkleizable object, Bytes domain) {
+    SigningRoot domain_wrapped_object = new SigningRoot(object.hash_tree_root(), domain);
+    return domain_wrapped_object.hash_tree_root();
+  }
+
+  /**
+   * Return the signing root of a 64-bit integer by calculating the root of the object-domain tree.
+   *
+   * @param number A long value
+   * @param domain
+   * @return the signing root
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
+   */
+  public static Bytes compute_signing_root(long number, Bytes domain) {
+    SigningRoot domain_wrapped_object =
+        new SigningRoot(
+            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(number)),
+            domain);
+    return domain_wrapped_object.hash_tree_root();
+  }
+
+  /**
+   * Return the signing root of a Bytes object by calculating the root of the object-domain tree.
+   *
+   * @param bytes Bytes string
+   * @param domain
+   * @return the signing root
+   * @see
+   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
+   */
+  public static Bytes compute_signing_root(Bytes bytes, Bytes domain) {
+    SigningRoot domain_wrapped_object =
+        new SigningRoot(
+            HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.VECTOR_OF_BASIC, bytes), domain);
+    return domain_wrapped_object.hash_tree_root();
   }
 
   /**
@@ -612,17 +673,21 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_beacon_proposer_index</a>
    */
   public static int get_beacon_proposer_index(BeaconState state) {
+    return get_beacon_proposer_index(state, state.getSlot());
+  }
+
+  public static int get_beacon_proposer_index(BeaconState state, UnsignedLong requestedSlot) {
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconProposerIndex()
         .get(
-            state.getSlot(),
+            requestedSlot,
             slot -> {
-              UnsignedLong epoch = get_current_epoch(state);
+              UnsignedLong epoch = compute_epoch_at_slot(slot);
               Bytes32 seed =
                   Hash.sha2_256(
                       Bytes.concatenate(
                           get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
-                          int_to_bytes(state.getSlot().longValue(), 8)));
+                          int_to_bytes(slot.longValue(), 8)));
               List<Integer> indices = get_active_validator_indices(state, epoch);
               return compute_proposer_index(state, indices, seed);
             });
@@ -741,7 +806,7 @@ public class BeaconStateUtil {
   public static UnsignedLong integer_squareroot(UnsignedLong n) {
     checkArgument(
         n.compareTo(UnsignedLong.ZERO) >= 0,
-        "checkArgument threw and exception in integer_squareroot()");
+        "checkArgument threw an exception in integer_squareroot()");
     UnsignedLong TWO = UnsignedLong.valueOf(2L);
     UnsignedLong x = n;
     UnsignedLong y = x.plus(UnsignedLong.ONE).dividedBy(TWO);

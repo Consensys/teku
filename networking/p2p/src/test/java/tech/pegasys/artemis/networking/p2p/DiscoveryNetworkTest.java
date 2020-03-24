@@ -23,7 +23,9 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.networking.p2p.discovery.ConnectionManager;
+import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
+import tech.pegasys.artemis.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
@@ -33,6 +35,8 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 class DiscoveryNetworkTest {
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
+
+  private final ReputationManager reputationManager = mock(ReputationManager.class);
 
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
   private final ConnectionManager connectionManager = mock(ConnectionManager.class);
@@ -109,14 +113,17 @@ class DiscoveryNetworkTest {
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
             p2pNetwork,
+            reputationManager,
             new NetworkConfig(
                 null,
+                "127.0.0.1",
                 "127.0.0.1",
                 0,
                 0,
                 Collections.emptyList(),
                 "static",
                 Collections.emptyList(),
+                new TargetPeerRange(20, 30),
                 false,
                 false,
                 false));

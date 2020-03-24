@@ -19,11 +19,11 @@ public class NoopService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 }

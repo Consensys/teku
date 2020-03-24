@@ -1,27 +1,32 @@
 dependencies {
   implementation project(':events')
-  implementation project(':networking:p2p')
-  implementation project(':networking:eth2')
-  implementation project(':validator:coordinator')
-  implementation project(':validator:client')
-  implementation project(':storage')
-  implementation project(':sync')
-  implementation project(':data:metrics')
   implementation project(':data:beaconrestapi')
+  implementation project(':data:metrics')
+  implementation project(':data:provider')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
+  implementation project(':networking:p2p')
+  implementation project(':networking:eth2')
+  implementation project(':logging')
+  implementation project(':pow')
   implementation project(':services:serviceutils')
   implementation project(':services:powchain')
-  implementation project(':pow')
+  implementation project(':ssz')
+  implementation project(':storage')
+  implementation project(':sync')
   implementation project(':util')
+  implementation project(':validator:api')
+  implementation project(':validator:coordinator')
+  implementation project(':validator:client')
 
   implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  runtime 'org.apache.logging.log4j:log4j-core'
-  implementation 'org.apache.tuweni:tuweni-config'
-  implementation 'org.apache.tuweni:tuweni-crypto'
-  implementation 'org.hyperledger.besu:plugin-api'
   implementation 'io.libp2p:jvm-libp2p-minimal'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.hyperledger.besu:plugin-api'
+
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 }

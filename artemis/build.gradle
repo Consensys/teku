@@ -1,43 +1,48 @@
 dependencies {
-  implementation project(':events')
-  implementation project(':networking:p2p')
-  implementation project(':services:powchain')
-  implementation project(':services:beaconchain')
-  implementation project(':services:chainstorage')
-  implementation project(':services:serviceutils')
-  implementation project(':storage')
-  implementation project(':util')
+  implementation project(':bls')
   implementation project(':data')
+  implementation project(':data:keystore')
   implementation project(':data:metrics')
   implementation project(':data:recorder')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':events')
+  implementation project(':logging')
+  implementation project(':networking:p2p')
   implementation project(':pow')
+  implementation project(':services:beaconchain')
+  implementation project(':services:chainstorage')
+  implementation project(':services:powchain')
+  implementation project(':services:serviceutils')
+  implementation project(':storage')
+  implementation project(':util')
   implementation project(':validator:coordinator')
   implementation project(':validator:client')
 
-  
   api 'com.google.guava:guava'
+
   implementation 'com.google.code.gson:gson'
+  implementation 'info.picocli:picocli'
+  implementation 'io.libp2p:jvm-libp2p-minimal'
+  implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-web'
+  implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-crypto'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
   implementation 'org.apache.tuweni:tuweni-plumtree'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-toml'
   implementation 'org.apache.tuweni:tuweni-units'
-  implementation 'info.picocli:picocli'
-  implementation 'com.google.guava:guava'
-  implementation 'io.libp2p:jvm-libp2p-minimal'
-  implementation 'io.vertx:vertx-core'
-  implementation 'io.vertx:vertx-web'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  implementation 'org.apache.logging.log4j:log4j-slf4j-impl'
   implementation 'org.hyperledger.besu:plugin-api'
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
+  testImplementation testFixtures(project(':util'))
+
   testImplementation 'com.squareup.okhttp3:okhttp'
   testImplementation 'org.awaitility:awaitility'
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation 'org.mockito:mockito-core'
 
   test {
     testLogging.showStandardStreams = true

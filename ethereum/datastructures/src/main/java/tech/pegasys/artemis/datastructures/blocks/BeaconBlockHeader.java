@@ -13,11 +13,7 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
@@ -34,7 +30,6 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class BeaconBlockHeader extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -66,7 +61,6 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
     super(type, backingNode);
   }
 
-  @JsonCreator
   public BeaconBlockHeader(
       UnsignedLong slot, Bytes32 parent_root, Bytes32 state_root, Bytes32 body_root) {
     super(
@@ -86,13 +80,11 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   }
 
   @Override
-  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }
 
   @Override
-  @JsonIgnore
   public List<Bytes> get_fixed_parts() {
     return List.of(
         SSZ.encodeUInt64(getSlot().longValue()),
@@ -146,22 +138,18 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   }
 
   /** *************** * GETTERS & SETTERS * * ******************* */
-  @JsonProperty
   public UnsignedLong getSlot() {
     return ((UInt64View) get(0)).get();
   }
 
-  @JsonProperty
   public Bytes32 getParent_root() {
     return ((Bytes32View) get(1)).get();
   }
 
-  @JsonProperty
   public Bytes32 getState_root() {
     return ((Bytes32View) get(2)).get();
   }
 
-  @JsonProperty
   public Bytes32 getBody_root() {
     return ((Bytes32View) get(3)).get();
   }
@@ -173,15 +161,11 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
 
   @Override
   public String toString() {
-    return "BeaconBlockHeader{"
-        + "slot="
-        + getSlot()
-        + ", parent_root="
-        + getParent_root()
-        + ", state_root="
-        + getState_root()
-        + ", body_root="
-        + getBody_root()
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("parent_root", parent_root)
+        .add("state_root", state_root)
+        .add("body_root", body_root)
+        .toString();
   }
 }

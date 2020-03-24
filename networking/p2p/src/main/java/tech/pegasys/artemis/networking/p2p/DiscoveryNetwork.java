@@ -13,12 +13,15 @@
 
 package tech.pegasys.artemis.networking.p2p;
 
+import static java.util.stream.Collectors.toList;
+
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.artemis.networking.p2p.discovery.ConnectionManager;
+import tech.pegasys.artemis.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.artemis.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.artemis.networking.p2p.discovery.noop.NoOpDiscoveryService;
@@ -48,14 +51,20 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public static <P extends Peer> DiscoveryNetwork<P> create(
-      final P2PNetwork<P> p2pNetwork, final NetworkConfig p2pConfig) {
+      final P2PNetwork<P> p2pNetwork,
+      final ReputationManager reputationManager,
+      final NetworkConfig p2pConfig) {
     final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
     final ConnectionManager connectionManager =
         new ConnectionManager(
             discoveryService,
+            reputationManager,
             DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
-            p2pConfig.getStaticPeers());
+            p2pConfig.getStaticPeers().stream()
+                .map(p2pNetwork::createPeerAddress)
+                .collect(toList()),
+            p2pConfig.getTargetPeerRange());
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
 
@@ -82,7 +91,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   @Override
   public SafeFuture<?> start() {
-    return SafeFuture.allOf(p2pNetwork.start(), discoveryService.start())
+    return SafeFuture.allOfFailFast(p2pNetwork.start(), discoveryService.start())
         .thenCompose(__ -> connectionManager.start());
   }
 
@@ -102,8 +111,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             });
   }
 
-  public void addStaticPeer(final String peer) {
-    connectionManager.addStaticPeer(peer);
+  @Override
+  public NetworkConfig getConfig() {
+    return p2pNetwork.getConfig();
+  }
+
+  public void addStaticPeer(final String peerAddress) {
+    connectionManager.addStaticPeer(p2pNetwork.createPeerAddress(peerAddress));
   }
 
   @Override

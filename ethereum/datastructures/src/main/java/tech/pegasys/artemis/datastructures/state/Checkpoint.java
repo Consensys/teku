@@ -15,10 +15,6 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -36,12 +32,11 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class Checkpoint extends AbstractImmutableContainer
     implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
-  @JsonIgnore public static final int SSZ_FIELD_COUNT = 2;
+  public static final int SSZ_FIELD_COUNT = 2;
 
   public static final ContainerViewType<Checkpoint> TYPE =
       new ContainerViewType<>(
@@ -66,7 +61,6 @@ public class Checkpoint extends AbstractImmutableContainer
   }
 
   @Override
-  @JsonIgnore
   public int getSSZFieldCount() {
     return SSZ_FIELD_COUNT;
   }
@@ -118,18 +112,15 @@ public class Checkpoint extends AbstractImmutableContainer
   }
 
   /** ****************** * GETTERS & SETTERS * * ******************* */
-  @JsonProperty
   public UnsignedLong getEpoch() {
     return ((UInt64View) get(0)).get();
   }
 
-  @JsonProperty
   public Bytes32 getRoot() {
     return ((Bytes32View) get(1)).get();
   }
 
-  @JsonIgnore
-  public UnsignedLong getEpochSlot() {
+  public UnsignedLong getEpochStartSlot() {
     return compute_start_slot_at_epoch(getEpoch());
   }
 

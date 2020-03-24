@@ -89,7 +89,7 @@ public class ValidatorCoordinatorTest {
     ValidatorCoordinator vc = spy(createValidatorCoordinator(0));
     eventBus.post(
         new BroadcastAttestationEvent(
-            storageClient.getBestBlockRoot(), storageClient.getBestSlot()));
+            storageClient.getBestBlockRoot().orElseThrow(), storageClient.getBestSlot()));
 
     ensureConditionRemainsMet(
         () -> verify(attestationAggregator, never()).updateAggregatorInformations(any()));
@@ -134,6 +134,7 @@ public class ValidatorCoordinatorTest {
             config);
 
     chainUtil.initializeStorage();
+    vc.start().reportExceptions();
     return vc;
   }
 }

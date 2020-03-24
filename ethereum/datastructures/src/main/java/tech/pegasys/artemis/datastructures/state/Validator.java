@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -40,7 +37,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class Validator extends AbstractImmutableContainer
     implements ContainerViewRead, SimpleOffsetSerializable, Merkleizable, SSZContainer {
 
@@ -202,42 +198,34 @@ public class Validator extends AbstractImmutableContainer
         withdrawable_epoch);
   }
 
-  @JsonProperty
   public BLSPublicKey getPubkey() {
     return BLSPublicKey.fromBytes(ViewUtils.getAllBytes(getAny(0)));
   }
 
-  @JsonProperty
   public Bytes32 getWithdrawal_credentials() {
     return ((Bytes32View) get(1)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getEffective_balance() {
     return ((UInt64View) get(2)).get();
   }
 
-  @JsonProperty
   public boolean isSlashed() {
     return ((BitView) get(3)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getActivation_eligibility_epoch() {
     return ((UInt64View) get(4)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getActivation_epoch() {
     return ((UInt64View) get(5)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getExit_epoch() {
     return ((UInt64View) get(6)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getWithdrawable_epoch() {
     return ((UInt64View) get(7)).get();
   }

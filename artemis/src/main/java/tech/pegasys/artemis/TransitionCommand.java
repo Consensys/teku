@@ -109,7 +109,7 @@ public class TransitionCommand implements Runnable {
             targetSlot = state.getSlot().plus(targetSlot);
           }
           MutableBeaconState stateWrite = state.createWritableCopy();
-          stateTransition.process_slots(stateWrite, targetSlot, false);
+          stateTransition.process_slots(stateWrite, targetSlot);
           return stateWrite.commitChanges();
         });
   }
@@ -122,7 +122,7 @@ public class TransitionCommand implements Runnable {
       final Bytes inData = Bytes.wrap(ByteStreams.toByteArray(in));
       BeaconState state = SimpleOffsetSerializer.deserialize(inData, BeaconStateImpl.class);
 
-      final StateTransition stateTransition = new StateTransition(false);
+      final StateTransition stateTransition = new StateTransition();
       try {
         BeaconState result = transition.applyTransition(state, stateTransition);
         out.write(SimpleOffsetSerializer.serialize(result).toArrayUnsafe());

@@ -14,13 +14,12 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.util.Waiter;
 
 public class GoodbyeIntegrationTest {
@@ -42,8 +41,8 @@ public class GoodbyeIntegrationTest {
   }
 
   @Test
-  public void shouldCloseConnectionAfterGoodbyeReceived() throws Exception {
-    waitFor(peer1.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN));
+  public void shouldCloseConnectionAfterGoodbyeReceived() {
+    peer1.disconnectCleanly(DisconnectReason.SHUTTING_DOWN);
     Waiter.waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     Waiter.waitFor(() -> assertThat(peer2.isConnected()).isFalse());
   }

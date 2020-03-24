@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.statetransition;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.diffSlotAttestationData;
@@ -30,6 +29,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 
 class BlockAttestationsPoolTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private BlockAttestationsPool pool;
 
   @BeforeEach
@@ -42,7 +42,7 @@ class BlockAttestationsPoolTest {
   void unprocessedAggregate_NewData() {
     Attestation attestation = AttestationGenerator.aggregateAttestation(10);
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
-    assertTrue(pool.aggregateAttesationsQueue.contains(attestation));
+    assertTrue(pool.aggregateAttestationsQueue.contains(attestation));
     assertTrue(
         pool.unprocessedAttestationsBitlist.containsValue(attestation.getAggregation_bits()));
   }
@@ -62,7 +62,7 @@ class BlockAttestationsPoolTest {
               | newAttestation.getAggregation_bits().getBit(i);
       assertEquals(bitlist.getBit(i), expected);
     }
-    assert (pool.aggregateAttesationsQueue.size() == 2);
+    assert (pool.aggregateAttestationsQueue.size() == 2);
   }
 
   @Test
@@ -71,7 +71,7 @@ class BlockAttestationsPoolTest {
     pool.addUnprocessedAggregateAttestationToQueue(attestation);
     Attestation newAttestation = new Attestation(attestation);
     pool.addUnprocessedAggregateAttestationToQueue(newAttestation);
-    assert (pool.aggregateAttesationsQueue.size() == 1);
+    assert (pool.aggregateAttestationsQueue.size() == 1);
   }
 
   @Test
@@ -116,7 +116,7 @@ class BlockAttestationsPoolTest {
   @Test
   void getAggregatedAttestations_DoesNotReturnAttestationsMoreThanMaxAttestations() {
     for (int i = 0; i < MAX_ATTESTATIONS + 1; i++) {
-      Attestation attestation = DataStructureUtil.randomAttestation(i);
+      Attestation attestation = dataStructureUtil.randomAttestation();
       attestation.setData(diffSlotAttestationData(UnsignedLong.valueOf(i), attestation.getData()));
       pool.addUnprocessedAggregateAttestationToQueue(attestation);
     }
@@ -128,7 +128,7 @@ class BlockAttestationsPoolTest {
   void getAggregatedAttestations_DoesNotReturnAttestationsWithSlotsHigherThanGivenSlot() {
     int SLOT = 10;
     for (int i = 0; i < SLOT; i++) {
-      Attestation attestation = DataStructureUtil.randomAttestation(i);
+      Attestation attestation = dataStructureUtil.randomAttestation();
       attestation.setData(diffSlotAttestationData(UnsignedLong.valueOf(i), attestation.getData()));
       pool.addUnprocessedAggregateAttestationToQueue(attestation);
     }

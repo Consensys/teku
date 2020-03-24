@@ -27,6 +27,10 @@ public interface Eth1Provider {
 
   SafeFuture<Block> getEth1BlockFuture(String blockHash);
 
+  SafeFuture<Block> getGuaranteedEth1BlockFuture(String blockHash);
+
+  SafeFuture<Block> getGuaranteedEth1BlockFuture(UnsignedLong blockNumber);
+
   SafeFuture<Block> getLatestEth1BlockFuture();
 
   SafeFuture<EthCall> ethCall(String from, String to, String data, UnsignedLong blockNumber);

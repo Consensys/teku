@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,7 +32,6 @@ import tech.pegasys.artemis.util.backing.view.ViewUtils;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public interface BeaconState
     extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -112,117 +108,97 @@ public interface BeaconState
   }
 
   // Versioning
-  @JsonProperty
   default UnsignedLong getGenesis_time() {
     return ((UInt64View) get(0)).get();
   }
 
-  @JsonProperty
   default UnsignedLong getSlot() {
     return ((UInt64View) get(1)).get();
   }
 
-  @JsonProperty
   default Fork getFork() {
     return getAny(2);
   }
 
   // History
-  @JsonProperty
   default BeaconBlockHeader getLatest_block_header() {
     return getAny(3);
   }
 
-  @JsonProperty
   default SSZVector<Bytes32> getBlock_roots() {
     return new SSZBackingVector<>(
         Bytes32.class, getAny(4), Bytes32View::new, AbstractBasicView::get);
   }
 
-  @JsonProperty
   default SSZVector<Bytes32> getState_roots() {
     return new SSZBackingVector<>(
         Bytes32.class, getAny(5), Bytes32View::new, AbstractBasicView::get);
   }
 
-  @JsonProperty
   default SSZList<Bytes32> getHistorical_roots() {
     return new SSZBackingList<>(Bytes32.class, getAny(6), Bytes32View::new, AbstractBasicView::get);
   }
 
   // Eth1
-  @JsonProperty
   default Eth1Data getEth1_data() {
     return getAny(7);
   }
 
-  @JsonProperty
   default SSZList<Eth1Data> getEth1_data_votes() {
     return new SSZBackingList<>(
         Eth1Data.class, getAny(8), Function.identity(), Function.identity());
   }
 
-  @JsonProperty
   default UnsignedLong getEth1_deposit_index() {
     return ((UInt64View) get(9)).get();
   }
 
   // Registry
-  @JsonProperty
   default SSZList<Validator> getValidators() {
     return new SSZBackingList<>(
         Validator.class, getAny(10), Function.identity(), Function.identity());
   }
 
-  @JsonProperty
   default SSZList<UnsignedLong> getBalances() {
     return new SSZBackingList<>(
         UnsignedLong.class, getAny(11), UInt64View::new, AbstractBasicView::get);
   }
 
-  @JsonProperty
   default SSZVector<Bytes32> getRandao_mixes() {
     return new SSZBackingVector<>(
         Bytes32.class, getAny(12), Bytes32View::new, AbstractBasicView::get);
   }
 
   // Slashings
-  @JsonProperty
   default SSZVector<UnsignedLong> getSlashings() {
     return new SSZBackingVector<>(
         UnsignedLong.class, getAny(13), UInt64View::new, AbstractBasicView::get);
   }
 
   // Attestations
-  @JsonProperty
   default SSZList<PendingAttestation> getPrevious_epoch_attestations() {
     return new SSZBackingList<>(
         PendingAttestation.class, getAny(14), Function.identity(), Function.identity());
   }
 
-  @JsonProperty
   default SSZList<PendingAttestation> getCurrent_epoch_attestations() {
     return new SSZBackingList<>(
         PendingAttestation.class, getAny(15), Function.identity(), Function.identity());
   }
 
   // Finality
-  @JsonProperty
   default Bitvector getJustification_bits() {
     return ViewUtils.getBitvector(getAny(16));
   }
 
-  @JsonProperty
   default Checkpoint getPrevious_justified_checkpoint() {
     return getAny(17);
   }
 
-  @JsonProperty
   default Checkpoint getCurrent_justified_checkpoint() {
     return getAny(18);
   }
 
-  @JsonProperty
   default Checkpoint getFinalized_checkpoint() {
     return getAny(19);
   }

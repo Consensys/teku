@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.artemis.util.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
@@ -26,8 +27,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.artemis.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.storage.ChainStorageClient;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class BeaconBlocksByRangeIntegrationTest {
 
@@ -66,7 +70,8 @@ public class BeaconBlocksByRangeIntegrationTest {
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
     beaconChainUtil.initializeStorage();
-    final List<SignedBeaconBlock> response = requestBlocks(storageClient1.getBestBlockRoot());
+    final List<SignedBeaconBlock> response =
+        requestBlocks(storageClient1.getBestBlockRoot().orElseThrow());
     assertThat(response).isEmpty();
   }
 
@@ -102,6 +107,84 @@ public class BeaconBlocksByRangeIntegrationTest {
 
     final List<SignedBeaconBlock> response = requestBlocks(block2Root);
     assertThat(response).containsExactly(block1, block2);
+  }
+
+  @Test
+  public void requestBlocksByRangeAfterPeerDisconnectedImmediately() throws Exception {
+    // Setup chain
+    beaconChainUtil.initializeStorage();
+    beaconChainUtil.createAndImportBlockAtSlot(1);
+    final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
+    final Bytes32 block2Root = block2.getMessage().hash_tree_root();
+    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+
+    peer1.disconnectImmediately();
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    final SafeFuture<Void> res =
+        peer1.requestBlocksByRange(
+            block2Root, UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+
+    waitFor(() -> assertThat(res).isDone());
+    assertThat(res).isCompletedExceptionally();
+    assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
+    assertThat(blocks).isEmpty();
+  }
+
+  @Test
+  public void requestBlocksByRangeAfterPeerDisconnected() throws Exception {
+    // Setup chain
+    beaconChainUtil.initializeStorage();
+    beaconChainUtil.createAndImportBlockAtSlot(1);
+    final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
+    final Bytes32 block2Root = block2.getMessage().hash_tree_root();
+    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+
+    peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    final SafeFuture<Void> res =
+        peer1.requestBlocksByRange(
+            block2Root, UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+
+    waitFor(() -> assertThat(res).isDone());
+    assertThat(res).isCompletedExceptionally();
+    assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
+    assertThat(blocks).isEmpty();
+  }
+
+  @Test
+  public void requestBlockBySlotAfterPeerDisconnectedImmediately() throws Exception {
+    // Setup chain
+    beaconChainUtil.initializeStorage();
+    beaconChainUtil.createAndImportBlockAtSlot(1);
+    final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
+    final Bytes32 block2Root = block2.getMessage().hash_tree_root();
+    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+
+    peer1.disconnectImmediately();
+    final SafeFuture<SignedBeaconBlock> res =
+        peer1.requestBlockBySlot(block2Root, UnsignedLong.ONE);
+
+    waitFor(() -> assertThat(res).isDone());
+    assertThat(res).isCompletedExceptionally();
+    assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
+  }
+
+  @Test
+  public void requestBlockByRootAfterPeerDisconnected() throws Exception {
+    // Setup chain
+    beaconChainUtil.initializeStorage();
+    beaconChainUtil.createAndImportBlockAtSlot(1);
+    final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
+    final Bytes32 block2Root = block2.getMessage().hash_tree_root();
+    storageClient1.updateBestBlock(block2Root, block2.getSlot());
+
+    peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
+    final SafeFuture<SignedBeaconBlock> res =
+        peer1.requestBlockBySlot(block2Root, UnsignedLong.ONE);
+
+    waitFor(() -> assertThat(res).isDone());
+    assertThat(res).isCompletedExceptionally();
+    assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
   }
 
   private List<SignedBeaconBlock> requestBlocks(final Bytes32 headBlockRoot)

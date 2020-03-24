@@ -13,25 +13,22 @@
 
 package tech.pegasys.artemis.networking.p2p.libp2p;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.ConnectionHandler;
 import io.libp2p.core.Network;
-import io.libp2p.core.multiformats.Multiaddr;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.artemis.networking.p2p.connection.ReputationManager;
 import tech.pegasys.artemis.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.artemis.networking.p2p.network.PeerHandler;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
@@ -42,11 +39,13 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
 
   private ConcurrentHashMap<NodeId, Peer> connectedPeerMap = new ConcurrentHashMap<>();
+  private final ReputationManager reputationManager;
   private final List<PeerHandler> peerHandlers;
 
   private final Subscribers<PeerConnectedSubscriber<Peer>> connectSubscribers =
@@ -54,8 +53,10 @@ public class PeerManager implements ConnectionHandler {
 
   public PeerManager(
       final MetricsSystem metricsSystem,
+      final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
       final Map<RpcMethod, RpcHandler> rpcHandlers) {
+    this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;
     this.rpcHandlers = rpcHandlers;
     // TODO - add metrics
@@ -75,9 +76,10 @@ public class PeerManager implements ConnectionHandler {
     connectSubscribers.unsubscribe(subscriptionId);
   }
 
-  public SafeFuture<Peer> connect(final Multiaddr peer, final Network network) {
+  public SafeFuture<Peer> connect(final MultiaddrPeerAddress peer, final Network network) {
     LOG.debug("Connecting to {}", peer);
-    return SafeFuture.of(network.connect(peer))
+
+    return SafeFuture.of(() -> network.connect(peer.getMultiaddr()))
         .thenApply(
             connection -> {
               final LibP2PNodeId nodeId =
@@ -95,9 +97,11 @@ public class PeerManager implements ConnectionHandler {
                       "No peer registered for established connection to " + nodeId);
                 }
               }
+              reputationManager.reportInitiatedConnectionSuccessful(peer);
               return connectedPeer;
             })
-        .exceptionallyCompose(this::handleConcurrentConnectionInitiation);
+        .exceptionallyCompose(this::handleConcurrentConnectionInitiation)
+        .catchAndRethrow(error -> reputationManager.reportInitiatedConnectionFailed(peer));
   }
 
   private CompletionStage<Peer> handleConcurrentConnectionInitiation(final Throwable error) {
@@ -115,7 +119,7 @@ public class PeerManager implements ConnectionHandler {
   void onConnectedPeer(Peer peer) {
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), peer) == null;
     if (wasAdded) {
-      STDOUT.log(Level.DEBUG, "onConnectedPeer() " + peer.getId());
+      LOG.debug("onConnectedPeer() {}", peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
       connectSubscribers.forEach(c -> c.onConnected(peer));
       peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
@@ -128,7 +132,7 @@ public class PeerManager implements ConnectionHandler {
   @VisibleForTesting
   void onDisconnectedPeer(Peer peer) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
-      STDOUT.log(Level.DEBUG, "Peer disconnected: " + peer.getId());
+      LOG.debug("Peer disconnected: {}", peer.getId());
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
   }

@@ -13,6 +13,11 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+
+import com.google.common.io.Resources;
 import io.javalin.Javalin;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -20,51 +25,96 @@ import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconBlockHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconChainHeadHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconCommitteesHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconHeadHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconStateHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.BeaconValidatorsHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.GenesisTimeHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.NodeSyncingHandler;
-import tech.pegasys.artemis.beaconrestapi.beaconhandlers.VersionHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.ENRHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeerIdHandler;
-import tech.pegasys.artemis.beaconrestapi.networkhandlers.PeersHandler;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.DataProvider;
+import tech.pegasys.artemis.api.NetworkDataProvider;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetHead;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetState;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenAddresses;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeers;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetFork;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
+import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetAttestation;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetNewBlock;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostAttestation;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.artemis.provider.JsonProvider;
-import tech.pegasys.artemis.storage.ChainStorageClient;
-import tech.pegasys.artemis.storage.CombinedChainDataClient;
-import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.util.cli.VersionProvider;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 
 public class BeaconRestApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
+  private static final Logger LOG = LogManager.getLogger();
+  public static final String FILE_NOT_FOUND_HTML = "404.html";
 
   private void initialise(
-      final ChainStorageClient chainStorageClient,
-      final P2PNetwork<?> p2pNetwork,
-      final CombinedChainDataClient combinedChainDataClient,
-      final SyncService syncService,
-      final int requestedPortNumber) {
-    app.server().setServerPort(requestedPortNumber);
+      final DataProvider dataProvider, final ArtemisConfiguration configuration) {
+    app.server().setServerPort(configuration.getBeaconRestAPIPortNumber());
 
-    addNodeHandlers(chainStorageClient, syncService);
-    addBeaconHandlers(chainStorageClient, combinedChainDataClient);
-    addNetworkHandlers(p2pNetwork);
-    addValidatorHandlers(combinedChainDataClient);
+    addExceptionHandlers();
+    addBeaconHandlers(dataProvider);
+    addNetworkHandlers(dataProvider.getNetworkDataProvider());
+    addNodeHandlers(dataProvider);
+    addValidatorHandlers(dataProvider);
+    addCustomErrorPages(configuration);
   }
 
-  public BeaconRestApi(
-      final ChainStorageClient chainStorageClient,
-      final P2PNetwork<?> p2pNetwork,
-      final CombinedChainDataClient combinedChainDataClient,
-      final SyncService syncService,
-      final ArtemisConfiguration configuration) {
+  private void addCustomErrorPages(final ArtemisConfiguration configuration) {
+    if (configuration.getBeaconRestAPIEnableSwagger()) {
+      try {
+        String content = readResource(FILE_NOT_FOUND_HTML, Charsets.UTF_8);
+        app.error(
+            SC_NOT_FOUND,
+            ctx -> {
+              ctx.result(content);
+              ctx.contentType("text/html");
+            });
+      } catch (IOException ex) {
+        LOG.error("Could not read custom " + FILE_NOT_FOUND_HTML, ex.getMessage());
+      }
+    }
+  }
+
+  private String readResource(final String fileName, Charset charset) throws IOException {
+    return Resources.toString(Resources.getResource(fileName), charset);
+  }
+
+  private void addExceptionHandlers() {
+    app.exception(
+        ChainDataUnavailableException.class,
+        (e, ctx) -> {
+          ctx.status(SC_NO_CONTENT);
+        });
+    // Add catch-all handler
+    app.exception(
+        Exception.class,
+        (e, ctx) -> {
+          ctx.status(SC_INTERNAL_SERVER_ERROR);
+        });
+  }
+
+  public BeaconRestApi(final DataProvider dataProvider, final ArtemisConfiguration configuration) {
     this.app =
         Javalin.create(
             config -> {
@@ -72,40 +122,31 @@ public class BeaconRestApi {
                   new OpenApiPlugin(getOpenApiOptions(jsonProvider, configuration)));
               config.defaultContentType = "application/json";
             });
-    initialise(
-        chainStorageClient,
-        p2pNetwork,
-        combinedChainDataClient,
-        syncService,
-        configuration.getBeaconRestAPIPortNumber());
+    initialise(dataProvider, configuration);
   }
 
   BeaconRestApi(
-      final ChainStorageClient chainStorageClient,
-      final P2PNetwork<?> p2pNetwork,
-      final CombinedChainDataClient combinedChainDataClient,
-      final SyncService syncService,
+      final DataProvider dataProvider,
       final ArtemisConfiguration configuration,
       final Javalin app) {
     this.app = app;
-    initialise(
-        chainStorageClient,
-        p2pNetwork,
-        combinedChainDataClient,
-        syncService,
-        configuration.getBeaconRestAPIPortNumber());
+    initialise(dataProvider, configuration);
   }
 
   public void start() {
     app.start();
   }
 
+  public int getListenPort() {
+    return app.server().getServerPort();
+  }
+
   private static OpenApiOptions getOpenApiOptions(
-      JsonProvider jsonProvider, ArtemisConfiguration config) {
-    JacksonModelConverterFactory factory =
+      final JsonProvider jsonProvider, final ArtemisConfiguration config) {
+    final JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
-    Info applicationInfo =
+    final Info applicationInfo =
         new Info()
             .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
             .version(VersionProvider.IMPLEMENTATION_VERSION)
@@ -124,36 +165,45 @@ public class BeaconRestApi {
     return options;
   }
 
-  private void addNodeHandlers(ChainStorageClient chainStorageClient, SyncService syncService) {
-    app.get(GenesisTimeHandler.ROUTE, new GenesisTimeHandler(chainStorageClient, jsonProvider));
-    app.get(VersionHandler.ROUTE, new VersionHandler(jsonProvider));
-    app.get(NodeSyncingHandler.ROUTE, new NodeSyncingHandler(syncService, jsonProvider));
+  private void addNodeHandlers(final DataProvider provider) {
+    app.get(GetFork.ROUTE, new GetFork(provider.getChainDataProvider(), jsonProvider));
+    app.get(
+        GetGenesisTime.ROUTE, new GetGenesisTime(provider.getChainDataProvider(), jsonProvider));
+    app.get(GetSyncing.ROUTE, new GetSyncing(provider.getSyncDataProvider(), jsonProvider));
+    app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
   }
 
-  private void addBeaconHandlers(
-      ChainStorageClient chainStorageClient, CombinedChainDataClient combinedChainDataClient) {
-    app.get(
-        BeaconBlockHandler.ROUTE, new BeaconBlockHandler(combinedChainDataClient, jsonProvider));
-    app.get(
-        BeaconChainHeadHandler.ROUTE, new BeaconChainHeadHandler(chainStorageClient, jsonProvider));
-    app.get(BeaconHeadHandler.ROUTE, new BeaconHeadHandler(chainStorageClient, jsonProvider));
-    app.get(
-        BeaconCommitteesHandler.ROUTE,
-        new BeaconCommitteesHandler(combinedChainDataClient, jsonProvider));
-    app.get(
-        BeaconStateHandler.ROUTE, new BeaconStateHandler(combinedChainDataClient, jsonProvider));
+  private void addBeaconHandlers(final DataProvider dataProvider) {
+    final ChainDataProvider provider = dataProvider.getChainDataProvider();
+    app.get(GetBlock.ROUTE, new GetBlock(provider, jsonProvider));
+    app.get(GetChainHead.ROUTE, new GetChainHead(provider, jsonProvider));
+    app.get(GetHead.ROUTE, new GetHead(provider, jsonProvider));
+    app.get(GetCommittees.ROUTE, new GetCommittees(provider, jsonProvider));
+    app.get(GetState.ROUTE, new GetState(provider, jsonProvider));
+    app.get(GetStateRoot.ROUTE, new GetStateRoot(provider, jsonProvider));
+
+    app.post(PostValidators.ROUTE, new PostValidators(provider, jsonProvider));
   }
 
-  private void addValidatorHandlers(CombinedChainDataClient combinedChainDataClient) {
-    app.get(
-        BeaconValidatorsHandler.ROUTE,
-        new BeaconValidatorsHandler(combinedChainDataClient, jsonProvider));
+  private void addValidatorHandlers(DataProvider dataProvider) {
+    ChainDataProvider provider = dataProvider.getChainDataProvider();
+    ValidatorDataProvider validatorDataProvider = dataProvider.getValidatorDataProvider();
+    app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
+    app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
+    app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
+
+    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
+    app.post(PostDuties.ROUTE, new PostDuties(validatorDataProvider, jsonProvider));
   }
 
-  private void addNetworkHandlers(P2PNetwork<?> p2pNetwork) {
-    app.get(ENRHandler.ROUTE, new ENRHandler(p2pNetwork, jsonProvider));
-    app.get(PeerIdHandler.ROUTE, new PeerIdHandler(p2pNetwork, jsonProvider));
-    app.get(PeersHandler.ROUTE, new PeersHandler(p2pNetwork, jsonProvider));
+  private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
+    app.get(
+        GetEthereumNameRecord.ROUTE, new GetEthereumNameRecord(networkDataProvider, jsonProvider));
+    app.get(GetListenAddresses.ROUTE, new GetListenAddresses(networkDataProvider, jsonProvider));
+    app.get(GetPeerId.ROUTE, new GetPeerId(networkDataProvider, jsonProvider));
+    app.get(GetPeers.ROUTE, new GetPeers(networkDataProvider, jsonProvider));
+    app.get(GetPeerCount.ROUTE, new GetPeerCount(networkDataProvider, jsonProvider));
+    app.get(GetListenPort.ROUTE, new GetListenPort(networkDataProvider, jsonProvider));
   }
 
   public void stop() {

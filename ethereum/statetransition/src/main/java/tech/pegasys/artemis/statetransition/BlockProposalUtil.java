@@ -14,14 +14,14 @@
 package tech.pegasys.artemis.statetransition;
 
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockBodyLists;
@@ -41,17 +41,51 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil;
-import tech.pegasys.artemis.util.hashtree.HashTreeUtil.SSZTypes;
 
 public class BlockProposalUtil {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final StateTransition stateTransition;
 
   public BlockProposalUtil(final StateTransition stateTransition) {
     this.stateTransition = stateTransition;
   }
 
-  public SignedBeaconBlock createNewBlock(
+  public BeaconBlock createNewUnsignedBlock(
+      final UnsignedLong newSlot,
+      final BLSSignature randaoReveal,
+      final BeaconState state,
+      final Bytes32 parentBlockSigningRoot,
+      final Eth1Data eth1Data,
+      final SSZList<Attestation> attestations,
+      final SSZList<ProposerSlashing> slashings,
+      final SSZList<Deposit> deposits)
+      throws StateTransitionException {
+    // Create block body
+    BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
+    beaconBlockBody.setEth1_data(eth1Data);
+    beaconBlockBody.setDeposits(deposits);
+    beaconBlockBody.setAttestations(attestations);
+    beaconBlockBody.setProposer_slashings(slashings);
+    beaconBlockBody.setRandao_reveal(randaoReveal);
+
+    // Create initial block with some stubs
+    final Bytes32 tmpStateRoot = Bytes32.ZERO;
+    BeaconBlock newBlock =
+        new BeaconBlock(newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody);
+
+    // Run state transition and set state root
+    Bytes32 stateRoot =
+        stateTransition
+            .initiate(state, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false)
+            .hash_tree_root();
+    newBlock.setState_root(stateRoot);
+
+    return newBlock;
+  }
+
+  public BeaconBlock createNewUnsignedBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState state,
@@ -73,7 +107,7 @@ public class BlockProposalUtil {
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
-    final BeaconBlock newBlock =
+    BeaconBlock newBlock =
         new BeaconBlock(newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody);
 
     // Run state transition and set state root
@@ -83,8 +117,32 @@ public class BlockProposalUtil {
             .hash_tree_root();
     newBlock.setState_root(stateRoot);
 
+    return newBlock;
+  }
+
+  public SignedBeaconBlock createNewBlock(
+      final MessageSignerService signer,
+      final UnsignedLong newSlot,
+      final BeaconState state,
+      final Bytes32 parentBlockSigningRoot,
+      final Eth1Data eth1Data,
+      final SSZList<Attestation> attestations,
+      final SSZList<ProposerSlashing> slashings,
+      final SSZList<Deposit> deposits)
+      throws StateTransitionException {
+    final BeaconBlock newBlock =
+        createNewUnsignedBlock(
+            signer,
+            newSlot,
+            state,
+            parentBlockSigningRoot,
+            eth1Data,
+            attestations,
+            slashings,
+            deposits);
+
     // Sign block and set block signature
-    BLSSignature blockSignature = getBlockSignature(state, newBlock, signer);
+    BLSSignature blockSignature = get_block_signature(state, newBlock, signer);
 
     return new SignedBeaconBlock(newBlock, blockSignature);
   }
@@ -134,9 +192,9 @@ public class BlockProposalUtil {
   public int getProposerIndexForSlot(final BeaconState preState, final UnsignedLong slot) {
     MutableBeaconState state = preState.createWritableCopy();
     try {
-      stateTransition.process_slots(state, slot, false);
+      stateTransition.process_slots(state, slot);
     } catch (SlotProcessingException | EpochProcessingException e) {
-      STDOUT.log(Level.FATAL, "Coordinator checking proposer index exception");
+      LOG.fatal("Coordinator checking proposer index exception", e);
     }
     return BeaconStateUtil.get_beacon_proposer_index(state);
   }
@@ -151,17 +209,12 @@ public class BlockProposalUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/validator/0_beacon-chain-validator.md#signature</a>
    */
-  private BLSSignature getBlockSignature(
+  private BLSSignature get_block_signature(
       final BeaconState state, final BeaconBlock block, final MessageSignerService signer) {
     final Bytes domain =
-        get_domain(
-            state,
-            Constants.DOMAIN_BEACON_PROPOSER,
-            BeaconStateUtil.compute_epoch_at_slot(block.getSlot()));
-
-    final Bytes32 blockRoot = block.hash_tree_root();
-
-    return signer.sign(blockRoot, domain).join();
+        get_domain(state, Constants.DOMAIN_BEACON_PROPOSER, compute_epoch_at_slot(block.getSlot()));
+    final Bytes signing_root = compute_signing_root(block, domain);
+    return signer.sign(signing_root).join();
   }
 
   /**
@@ -176,9 +229,8 @@ public class BlockProposalUtil {
    */
   public BLSSignature get_epoch_signature(
       final BeaconState state, final UnsignedLong epoch, final MessageSignerService signer) {
-    Bytes32 messageHash =
-        HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(epoch.longValue()));
     Bytes domain = get_domain(state, Constants.DOMAIN_RANDAO, epoch);
-    return signer.sign(messageHash, domain).join();
+    Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
+    return signer.sign(signing_root).join();
   }
 }

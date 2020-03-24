@@ -13,10 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,7 +37,6 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public class PendingAttestation extends AbstractImmutableContainer
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -105,7 +100,6 @@ public class PendingAttestation extends AbstractImmutableContainer
   }
 
   @Override
-  @JsonIgnore
   public int getSSZFieldCount() {
     return getData().getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
@@ -174,22 +168,18 @@ public class PendingAttestation extends AbstractImmutableContainer
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  @JsonProperty
   public Bitlist getAggregation_bits() {
     return ViewUtils.getBitlist(getAny(0));
   }
 
-  @JsonProperty
   public AttestationData getData() {
     return getAny(1);
   }
 
-  @JsonProperty
   public UnsignedLong getInclusion_delay() {
     return ((UInt64View) get(2)).get();
   }
 
-  @JsonProperty
   public UnsignedLong getProposer_index() {
     return ((UInt64View) get(3)).get();
   }

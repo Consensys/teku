@@ -18,7 +18,6 @@ import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 
 import com.google.common.io.Files;
 import java.io.FileNotFoundException;
@@ -27,18 +26,17 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.Level;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.artemis.bls.keystore.KeyStore;
 import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
 import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
+import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.mikuli.KeyPair;
-import tech.pegasys.artemis.util.mikuli.SecretKey;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
+
   static final int KEY_LENGTH = 48;
 
   @Override
@@ -51,7 +49,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     return keystorePasswordFilePairs.stream()
         .map(pair -> padLeft(loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()))))
         .distinct()
-        .map(privKey -> new BLSKeyPair(new KeyPair(SecretKey.fromBytes(privKey))))
+        .map(privKey -> new BLSKeyPair(BLSSecretKey.fromBytes(privKey)))
         .collect(toList());
   }
 
@@ -81,7 +79,6 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
           format(
               "Unexpected IO error while reading keystore password file [%s]: %s",
               passwordFile, e.getMessage());
-      STDOUT.log(Level.FATAL, errorMessage);
       throw new UncheckedIOException(errorMessage, e);
     }
     return password;

@@ -15,17 +15,17 @@ package tech.pegasys.artemis.datastructures.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomUnsignedLong;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 class ValidatorTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   public static Validator validatorFromBytes(Bytes bytes) {
     return SSZ.decode(
@@ -58,13 +58,13 @@ class ValidatorTest {
 
   private int seed = 100;
   private BLSPublicKey pubkey = BLSPublicKey.random(seed);
-  private Bytes32 withdrawalCredentials = randomBytes32(seed++);
-  private UnsignedLong activationEligibilityEpoch = randomUnsignedLong(seed++);
-  private UnsignedLong activationEpoch = randomUnsignedLong(seed++);
-  private UnsignedLong exitEpoch = randomUnsignedLong(seed++);
-  private UnsignedLong withdrawalEpoch = randomUnsignedLong(seed++);
+  private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
+  private UnsignedLong activationEligibilityEpoch = dataStructureUtil.randomUnsignedLong();
+  private UnsignedLong activationEpoch = dataStructureUtil.randomUnsignedLong();
+  private UnsignedLong exitEpoch = dataStructureUtil.randomUnsignedLong();
+  private UnsignedLong withdrawalEpoch = dataStructureUtil.randomUnsignedLong();
   private boolean slashed = false;
-  private UnsignedLong effectiveBalance = randomUnsignedLong(seed++);
+  private UnsignedLong effectiveBalance = dataStructureUtil.randomUnsignedLong();
 
   private Validator validator =
       Validator.create(
@@ -102,10 +102,7 @@ class ValidatorTest {
 
   @Test
   void equalsReturnsFalseWhenPubkeysAreDifferent() {
-    BLSPublicKey differentPublicKey = BLSPublicKey.random();
-    while (pubkey.equals(differentPublicKey)) {
-      differentPublicKey = BLSPublicKey.random();
-    }
+    BLSPublicKey differentPublicKey = BLSPublicKey.random(99);
     Validator testValidator =
         Validator.create(
             differentPublicKey,
@@ -117,6 +114,7 @@ class ValidatorTest {
             exitEpoch,
             withdrawalEpoch);
 
+    assertNotEquals(pubkey, differentPublicKey);
     assertNotEquals(validator, testValidator);
   }
 
@@ -145,7 +143,7 @@ class ValidatorTest {
             effectiveBalance,
             slashed,
             activationEligibilityEpoch,
-            activationEpoch.plus(randomUnsignedLong(seed++)),
+            activationEpoch.plus(dataStructureUtil.randomUnsignedLong()),
             exitEpoch,
             withdrawalEpoch);
 
@@ -162,7 +160,7 @@ class ValidatorTest {
             slashed,
             activationEligibilityEpoch,
             activationEpoch,
-            exitEpoch.plus(randomUnsignedLong(seed++)),
+            exitEpoch.plus(dataStructureUtil.randomUnsignedLong()),
             withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
@@ -179,7 +177,7 @@ class ValidatorTest {
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch.plus(randomUnsignedLong(seed++)));
+            withdrawalEpoch.plus(dataStructureUtil.randomUnsignedLong()));
 
     assertNotEquals(validator, testValidator);
   }

@@ -3,26 +3,27 @@ plugins {
 }
 
 dependencies {
-  implementation project(':util')
-  implementation project(':storage')
-  implementation project(':ethereum:statetransition')
-  implementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-  implementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  implementation project(':eth-tests')
+  implementation project(':bls')
   implementation project(':ethereum:datastructures')
-  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation project(':ethereum:statetransition')
+  implementation project(':eth-tests')
+  implementation project(':storage')
+  implementation project(':util')
 
-  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
-  implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.mockito:mockito-core'
+  implementation testFixtures(project(':ethereum:datastructures'))
+  implementation testFixtures(project(':ethereum:statetransition'))
+
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  implementation 'org.apache.tuweni:tuweni-bytes'
+  implementation 'org.apache.commons:commons-lang3'
   implementation 'org.junit.jupiter:junit-jupiter-api'
   implementation 'org.junit.jupiter:junit-jupiter-params'
+  implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
+  implementation 'org.mockito:mockito-core'
 
   jmh 'org.openjdk.jmh:jmh-generator-annprocess'
+  jmh 'org.apache.tuweni:tuweni-ssz'
 }
 
 jmh {

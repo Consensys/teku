@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.blocks;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -82,13 +81,11 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
   }
 
   @Override
-  @JsonIgnore
   public int getSSZFieldCount() {
     return randao_reveal.getSSZFieldCount() + eth1_data.getSSZFieldCount() + SSZ_FIELD_COUNT;
   }
 
   @Override
-  @JsonIgnore
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
     fixedPartsList.addAll(randao_reveal.get_fixed_parts());
@@ -99,7 +96,6 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer {
   }
 
   @Override
-  @JsonIgnore
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(Collections.nCopies(randao_reveal.getSSZFieldCount(), Bytes.EMPTY));

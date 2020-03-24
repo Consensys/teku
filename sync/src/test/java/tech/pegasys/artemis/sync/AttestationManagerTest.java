@@ -47,6 +47,7 @@ import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class AttestationManagerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final PendingPool<DelayableAttestation> pendingAttestations =
       PendingPool.createForAttestations(eventBus);
@@ -64,8 +65,6 @@ class AttestationManagerTest {
       new AttestationManager(
           eventBus, attestationProcessor, pendingAttestations, futureAttestations);
 
-  private int seed = 482942;
-
   @BeforeEach
   public void setup() {
     assertThat(attestationManager.start()).isCompleted();
@@ -78,7 +77,7 @@ class AttestationManagerTest {
 
   @Test
   public void shouldProcessAttestationsThatAreReadyImmediately() {
-    final Attestation attestation = DataStructureUtil.randomAttestation(seed++);
+    final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationProcessor.processAttestation(attestation)).thenReturn(SUCCESSFUL);
     eventBus.post(attestation);
 
@@ -92,7 +91,7 @@ class AttestationManagerTest {
 
   @Test
   public void shouldProcessAggregatesThatAreReadyImmediately() {
-    final AggregateAndProof aggregateAndProof = DataStructureUtil.randomAggregateAndProof(seed++);
+    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     when(attestationProcessor.processAttestation(aggregateAndProof.getAggregate()))
         .thenReturn(SUCCESSFUL);
     eventBus.post(aggregateAndProof);
@@ -134,7 +133,7 @@ class AttestationManagerTest {
 
   @Test
   public void shouldDeferProcessingForAttestationsThatAreMissingBlockDependencies() {
-    final SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, seed++);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
     final Attestation attestation = attestationFromSlot(1, requiredBlockRoot);
     when(attestationProcessor.processAttestation(attestation))
@@ -155,7 +154,7 @@ class AttestationManagerTest {
     assertNoProcessedEvents();
 
     // Importing a different block shouldn't cause the attestation to be processed
-    eventBus.post(new ImportedBlockEvent(DataStructureUtil.randomSignedBeaconBlock(2, seed++)));
+    eventBus.post(new ImportedBlockEvent(dataStructureUtil.randomSignedBeaconBlock(2)));
     verifyNoMoreInteractions(attestationProcessor);
     assertNoProcessedEvents();
 
@@ -169,7 +168,7 @@ class AttestationManagerTest {
 
   @Test
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
-    final Attestation attestation = DataStructureUtil.randomAttestation(seed++);
+    final Attestation attestation = dataStructureUtil.randomAttestation();
     when(attestationProcessor.processAttestation(attestation))
         .thenReturn(AttestationProcessingResult.invalid("Seems fishy"));
 
@@ -183,7 +182,7 @@ class AttestationManagerTest {
 
   @Test
   public void shouldNotPublishProcessedAggregationEventWhenAttestationIsInvalid() {
-    final AggregateAndProof aggregateAndProof = DataStructureUtil.randomAggregateAndProof(seed++);
+    final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
     final Attestation attestation = aggregateAndProof.getAggregate();
     when(attestationProcessor.processAttestation(attestation))
         .thenReturn(AttestationProcessingResult.invalid("Seems fishy"));

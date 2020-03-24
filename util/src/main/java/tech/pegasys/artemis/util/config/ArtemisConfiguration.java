@@ -47,12 +47,23 @@ public class ArtemisConfiguration {
 
     builder.addString("node.networkInterface", "0.0.0.0", "Peer to peer network interface", null);
     builder.addInteger("node.port", 9000, "Peer to peer port", PropertyValidator.inRange(0, 65535));
+    builder.addString("node.advertisedIp", "127.0.0.1", "Peer to peer advertised ip", null);
     builder.addInteger(
         "node.advertisedPort",
         NO_VALUE,
         "Peer to peer advertised port",
         PropertyValidator.inRange(0, 65535));
     builder.addString("node.discovery", "", "static or discv5", null);
+    builder.addInteger(
+        "node.targetPeerCountRangeLowerBound",
+        20,
+        "Lower bound on the target number of peers",
+        null);
+    builder.addInteger(
+        "node.targetPeerCountRangeUpperBound",
+        30,
+        "Upper bound on the target number of peers",
+        null);
     builder.addListOfString("node.bootnodes", Collections.emptyList(), "ENR of the bootnode", null);
     builder.addString(
         "validator.validatorsKeyFile", "", "The file to load validator keys from", null);
@@ -112,6 +123,34 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
+
+    // Logging
+    builder.addBoolean(
+        "logging.colorEnabled",
+        true,
+        "Whether Status and Event log messages include a console color display code",
+        PropertyValidator.isPresent());
+    builder.addBoolean(
+        "logging.includeEventsEnabled",
+        true,
+        "Whether the frequent update events are logged (e.g. every slot event, with validators and attestations))",
+        PropertyValidator.isPresent());
+    builder.addString(
+        "logging.destination",
+        "both",
+        "Whether all logs go only to the console, only to the log file, or both",
+        PropertyValidator.anyOf("consoleOnly", "fileOnly", "both"));
+    builder.addString(
+        "logging.file",
+        "teku.log",
+        "Path containing the location (relative or absolute) and the log filename.",
+        PropertyValidator.isPresent());
+    builder.addString(
+        "logging.fileNamePattern",
+        "teku_%d{yyyy-MM-dd}.log",
+        "Pattern for the filename to apply to rolled over logs files.",
+        PropertyValidator.isPresent());
+
     // Outputs
     builder.addString(
         "output.transitionRecordDir",
@@ -120,9 +159,13 @@ public class ArtemisConfiguration {
         null);
 
     // Database
-    builder.addBoolean("database.startFromDisk", false, "Start from the disk if set to true", null);
     builder.addString(
         "database.dataPath", ".", "Path to output data files", PropertyValidator.isPresent());
+    builder.addString(
+        "database.stateStorageMode",
+        "prune",
+        "Sets the strategy for handling historical chain state.  Supported values include: 'prune', and 'archive'",
+        null);
 
     // Beacon Rest API
     builder.addInteger("beaconrestapi.portNumber", 5051, "Port number of Beacon Rest API", null);
@@ -194,6 +237,14 @@ public class ArtemisConfiguration {
     return config.getListOfString("node.bootnodes");
   }
 
+  public int getTargetPeerCountRangeLowerBound() {
+    return config.getInteger("node.targetPeerCountRangeLowerBound");
+  }
+
+  public int getTargetPeerCountRangeUpperBound() {
+    return config.getInteger("node.targetPeerCountRangeUpperBound");
+  }
+
   /** @return the port this node will advertise as its own */
   public int getAdvertisedPort() {
     final int advertisedPort = config.getInteger("node.advertisedPort");
@@ -203,6 +254,11 @@ public class ArtemisConfiguration {
   /** @return the network interface this node will bind to */
   public String getNetworkInterface() {
     return config.getString("node.networkInterface");
+  }
+
+  /** @return the ip this node will advertise to peers */
+  public String getAdvertisedIp() {
+    return config.getString("node.advertisedIp");
   }
 
   public String getConstants() {
@@ -282,7 +338,9 @@ public class ArtemisConfiguration {
   /** @return the Deposit simulation flag, w/ optional input file */
   public String getInputFile() {
     String inputFile = config.getString("deposit.inputFile");
-    if (inputFile == null || inputFile.equals("")) return null;
+    if (inputFile == null || inputFile.equals("")) {
+      return null;
+    }
     return inputFile;
   }
 
@@ -344,8 +402,8 @@ public class ArtemisConfiguration {
     return config.getString("database.dataPath");
   }
 
-  public boolean startFromDisk() {
-    return config.getBoolean("database.startFromDisk");
+  public String getStateStorageMode() {
+    return config.getString("database.stateStorageMode");
   }
 
   public void validateConfig() throws IllegalArgumentException {
@@ -374,5 +432,25 @@ public class ArtemisConfiguration {
 
   public boolean getBeaconRestAPIEnableSwagger() {
     return config.getBoolean("beaconrestapi.enableSwagger");
+  }
+
+  public boolean isLoggingColorEnabled() {
+    return config.getBoolean("logging.colorEnabled");
+  }
+
+  public boolean isLoggingIncludeEventsEnabled() {
+    return config.getBoolean("logging.includeEventsEnabled");
+  }
+
+  public String getLoggingFile() {
+    return config.getString("logging.file");
+  }
+
+  public String getLoggingFileNamePattern() {
+    return config.getString("logging.fileNamePattern");
+  }
+
+  public String getLoggingDestination() {
+    return config.getString("logging.destination");
   }
 }

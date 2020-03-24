@@ -1,18 +1,20 @@
 dependencies {
-  implementation project(':util')
   implementation project(':data')
   implementation project(':ethereum:datastructures')
+  implementation project(':logging')
   implementation project(':pow')
+  implementation project(':ssz')
   implementation project(':storage')
+  implementation project(':util')
 
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
-  runtime 'org.apache.logging.log4j:log4j-core'
+
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
   test {
     testLogging.showStandardStreams = true

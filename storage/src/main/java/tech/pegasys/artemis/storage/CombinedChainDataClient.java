@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.storage;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
@@ -23,6 +24,7 @@ import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +100,7 @@ public class CombinedChainDataClient {
     }
     if (headState.getSlot().equals(slot)) {
       LOG.trace("Block root at slot {} is the specified head block root", slot);
-      return completedFuture(Optional.ofNullable(store.getSignedBlock(headBlockRoot)));
+      return getBlockByBlockRoot(headBlockRoot);
     }
     if (isFinalized(slot)) {
       LOG.trace("Block at slot {} is in a finalized epoch. Retrieving from historical data", slot);
@@ -123,11 +125,10 @@ public class CombinedChainDataClient {
           earliestAvailableSlot);
       state = store.getBlockState(get_block_root_at_slot(state, earliestAvailableSlot));
     }
-    return completedFuture(
-        Optional.ofNullable(store.getSignedBlock(get_block_root_at_slot(state, slot))));
+    return getBlockByBlockRoot(get_block_root_at_slot(state, slot));
   }
 
-  private boolean isFinalized(final UnsignedLong slot) {
+  public boolean isFinalized(final UnsignedLong slot) {
     final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     return finalizedSlot.compareTo(slot) >= 0;
@@ -138,6 +139,17 @@ public class CombinedChainDataClient {
   }
 
   /**
+   * Returns the state at the given slot on the current canonical chain.
+   *
+   * @param slot the slot to get the state for
+   * @return the State at slot
+   */
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
+    final Optional<Bytes32> headRoot = getBestBlockRoot();
+    return headRoot.map(root -> getStateAtSlot(slot, root)).orElse(STATE_NOT_AVAILABLE);
+  }
+
+  /**
    * Returns the state on the chain specified by <code>headBlockRoot</code>.
    *
    * @param slot the slot to get the state for
@@ -145,7 +157,7 @@ public class CombinedChainDataClient {
    */
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(
       final UnsignedLong slot, final Bytes32 headBlockRoot) {
-
+    checkNotNull(headBlockRoot);
     final Store store = getStore();
     if (store == null) {
       LOG.trace("No state at slot {} because the store is not set", slot);
@@ -178,16 +190,21 @@ public class CombinedChainDataClient {
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
   }
 
-  public Optional<Bytes32> getBestBlockRoot() {
-    if (getStore() == null) {
-      LOG.trace("No block found because the store is not set");
+  public Optional<BeaconState> getHeadStateFromStore() {
+    final Store store = getStore();
+    if (store == null) {
+      LOG.trace("No state at head because the store is not set");
       return Optional.empty();
     }
-    return Optional.ofNullable(recentChainData.getBestBlockRoot());
+    return getBestBlockRoot().map(store::getBlockState);
+  }
+
+  public Optional<Bytes32> getBestBlockRoot() {
+    return recentChainData.getBestBlockRoot();
   }
 
   public boolean isStoreAvailable() {
-    return (getStore() != null);
+    return recentChainData != null && getStore() != null;
   }
 
   /**
@@ -203,8 +220,7 @@ public class CombinedChainDataClient {
     final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
     final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
 
-    SafeFuture<Optional<BeaconState>> future =
-        getStateAtSlot(startingSlot, recentChainData.getBestBlockRoot());
+    SafeFuture<Optional<BeaconState>> future = getStateAtSlot(startingSlot);
 
     return future
         .thenApply(
@@ -212,7 +228,8 @@ public class CombinedChainDataClient {
         .exceptionally(err -> List.of());
   }
 
-  List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UnsignedLong startingSlot) {
+  public List<CommitteeAssignment> getCommitteesFromState(
+      BeaconState state, UnsignedLong startingSlot) {
     List<CommitteeAssignment> result = new ArrayList<>();
     for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
       UnsignedLong slot = startingSlot.plus(UnsignedLong.valueOf(i));
@@ -223,10 +240,14 @@ public class CombinedChainDataClient {
         result.add(new CommitteeAssignment(committee, idx, slot));
       }
     }
-
     return result;
   }
 
+  public UnsignedLong getBestSlot() {
+    return this.recentChainData.getBestSlot();
+  }
+
+  @VisibleForTesting
   public Store getStore() {
     return recentChainData.getStore();
   }
@@ -240,12 +261,24 @@ public class CombinedChainDataClient {
     final Optional<Bytes32> bestBlockRoot = getBestBlockRoot();
 
     if (blockRootBySlot.isPresent()) {
-      return SafeFuture.completedFuture(
-          Optional.ofNullable(getStore().getSignedBlock(blockRootBySlot.get())));
+      return getBlockByBlockRoot(blockRootBySlot.get());
     } else if (bestBlockRoot.isPresent()) {
       return getBlockAtSlotExact(slot, bestBlockRoot.get());
     } else {
       return SafeFuture.completedFuture(Optional.empty());
     }
+  }
+
+  @VisibleForTesting
+  public Optional<SignedBeaconBlock> getBlockFromStore(final Bytes32 blockRoot) {
+    return isStoreAvailable()
+        ? Optional.ofNullable(recentChainData.getStore().getSignedBlock(blockRoot))
+        : Optional.empty();
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
+    return getBlockFromStore(blockRoot)
+        .map(value -> SafeFuture.completedFuture(Optional.of(value)))
+        .orElseGet(() -> historicalChainData.getBlockByBlockRoot(blockRoot));
   }
 }

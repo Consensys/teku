@@ -15,7 +15,6 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -71,9 +70,9 @@ class CommitteeAssignmentManagerTest {
     committeeAssignments = new HashMap<>();
     committeeAssignmentManager =
         spy(new CommitteeAssignmentManager(validators, committeeAssignments));
-    doReturn(BLSSignature.random())
+    doReturn(BLSSignature.random(42))
         .when(committeeAssignmentManager)
-        .slot_signature(any(), any(), any());
+        .get_slot_signature(any(), any(), any());
   }
 
   @Test
@@ -105,8 +104,8 @@ class CommitteeAssignmentManagerTest {
   void someAlreadyRegistered_someToRegister_someToDeregister() throws Exception {
     // Set TARGET_COMMITTEE_SIZE to 1 in order to make sure there are more than 1 committees per
     // slot
-    // and our Validotor will be assigned to a different committee at epoch 3
-    int oldTargetCommiteeSize = TARGET_COMMITTEE_SIZE;
+    // and our Validator will be assigned to a different committee at epoch 3
+    int oldTargetCommitteeSize = TARGET_COMMITTEE_SIZE;
     TARGET_COMMITTEE_SIZE = 1;
 
     EventBus eventBus = mock(EventBus.class);
@@ -126,7 +125,7 @@ class CommitteeAssignmentManagerTest {
     Waiter.waitFor(() -> verify(eventBus, atLeastOnce()).post(any(CommitteeAssignmentEvent.class)));
     Waiter.waitFor(() -> verify(eventBus, times(1)).post(any(CommitteeDismissalEvent.class)));
 
-    TARGET_COMMITTEE_SIZE = oldTargetCommiteeSize;
+    TARGET_COMMITTEE_SIZE = oldTargetCommitteeSize;
   }
 
   @Test

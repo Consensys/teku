@@ -70,9 +70,10 @@ class AsyncResponseProcessor<TResponse> {
   }
 
   /** Stop processing and clear any pending requests */
-  private void cancel() {
+  private void cancel(Throwable error) {
     cancelled.set(true);
     queuedResponses.clear();
+    finishedProcessing.completeExceptionally(error);
   }
 
   /**
@@ -110,7 +111,7 @@ class AsyncResponseProcessor<TResponse> {
         .exceptionally(
             (err) -> {
               LOG.trace("Failed to process response: " + response, err);
-              cancel();
+              cancel(err);
               onError.accept(err);
               return null;
             })

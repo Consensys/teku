@@ -1,10 +1,12 @@
 dependencies {
+  implementation project(':logging')
   implementation project(':services:serviceutils')
   implementation project(':storage')
   implementation project(':util')
 
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
-  runtime 'org.apache.logging.log4j:log4j-core'
   implementation 'org.apache.tuweni:tuweni-config'
-}
+
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
+ }

@@ -28,10 +28,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.networking.p2p.mock.MockNodeId;
+import tech.pegasys.artemis.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
 import tech.pegasys.artemis.storage.Store;
@@ -41,6 +41,7 @@ import tech.pegasys.artemis.util.config.Constants;
 
 public class PeerChainValidatorTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient = mock(ChainStorageClient.class);
@@ -68,13 +69,13 @@ public class PeerChainValidatorTest {
   private final UnsignedLong laterBlockSlot = laterEpochSlot.minus(UnsignedLong.ONE);
 
   private final SignedBeaconBlock genesisBlock =
-      DataStructureUtil.randomSignedBeaconBlock(genesisSlot.longValue(), 1);
+      dataStructureUtil.randomSignedBeaconBlock(genesisSlot.longValue());
   private final SignedBeaconBlock remoteFinalizedBlock =
-      DataStructureUtil.randomSignedBeaconBlock(remoteFinalizedBlockSlot.longValue(), 1);
+      dataStructureUtil.randomSignedBeaconBlock(remoteFinalizedBlockSlot.longValue());
   private final SignedBeaconBlock earlierBlock =
-      DataStructureUtil.randomSignedBeaconBlock(earlierBlockSlot.longValue(), 2);
+      dataStructureUtil.randomSignedBeaconBlock(earlierBlockSlot.longValue());
   private final SignedBeaconBlock laterBlock =
-      DataStructureUtil.randomSignedBeaconBlock(laterBlockSlot.longValue(), 3);
+      dataStructureUtil.randomSignedBeaconBlock(laterBlockSlot.longValue());
 
   private final Checkpoint genesisCheckpoint =
       new Checkpoint(genesisEpoch, genesisBlock.getMessage().hash_tree_root());
@@ -93,7 +94,6 @@ public class PeerChainValidatorTest {
     setupRemoteStatusAndValidator(remoteFinalizedCheckpoint);
     when(peer.getId()).thenReturn(new MockNodeId());
     when(peer.hasStatus()).thenReturn(true);
-    when(peer.sendGoodbye(any())).thenReturn(SafeFuture.completedFuture(null));
 
     when(store.getGenesisTime()).thenReturn(genesisTime);
     when(store.getTime())
@@ -163,7 +163,7 @@ public class PeerChainValidatorTest {
     remoteCheckpointIsAtCurrentEpoch();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
-    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
   }
 
   @Test
@@ -173,7 +173,7 @@ public class PeerChainValidatorTest {
     remoteCheckpointIsAtFutureEpoch();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
-    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
   }
 
   @Test
@@ -183,7 +183,7 @@ public class PeerChainValidatorTest {
     remoteChainIsBehindOnDifferentChain();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
-    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
   }
 
   @Test
@@ -193,7 +193,7 @@ public class PeerChainValidatorTest {
     remoteChainIsAheadOnDifferentChain();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
-    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
   }
 
   @Test
@@ -203,7 +203,7 @@ public class PeerChainValidatorTest {
     remoteChainIsAheadAndUnresponsive();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
-    assertPeerChainRejected(result, GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK);
+    assertPeerChainRejected(result, DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
   }
 
   @Test
@@ -246,7 +246,7 @@ public class PeerChainValidatorTest {
     forksDontMatch();
 
     final SafeFuture<Boolean> result = peerChainValidator.run();
-    assertPeerChainRejected(result, GoodbyeMessage.REASON_IRRELEVANT_NETWORK);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
     // Verify other checks were skipped when fork mismatch was detected
     verify(peer, never()).requestBlockBySlot(any(), any());
     verify(historicalChainData, never()).getLatestFinalizedBlockAtSlot(any());
@@ -254,16 +254,17 @@ public class PeerChainValidatorTest {
   }
 
   private void assertPeerChainRejected(
-      final SafeFuture<Boolean> result, UnsignedLong goodbyeReason) {
+      final SafeFuture<Boolean> result, DisconnectReason goodbyeReason) {
     assertThat(result).isCompletedWithValue(false);
     verify(peer, never()).markChainValidated();
-    verify(peer).sendGoodbye(goodbyeReason);
+    verify(peer).disconnectCleanly(goodbyeReason);
   }
 
   private void assertPeerChainVerified(final SafeFuture<Boolean> result) {
     assertThat(result).isCompletedWithValue(true);
     verify(peer).markChainValidated();
     verify(peer, never()).sendGoodbye(any());
+    verify(peer, never()).disconnectCleanly(any());
   }
 
   private void forksMatch() {
@@ -286,7 +287,7 @@ public class PeerChainValidatorTest {
     final UnsignedLong currentTime =
         genesisTime.plus(
             remoteFinalizedCheckpoint
-                .getEpochSlot()
+                .getEpochStartSlot()
                 .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     when(store.getTime()).thenReturn(currentTime);
   }
@@ -298,7 +299,7 @@ public class PeerChainValidatorTest {
     final UnsignedLong currentTime =
         genesisTime.plus(
             remoteFinalizedCheckpoint
-                .getEpochSlot()
+                .getEpochStartSlot()
                 .minus(UnsignedLong.ONE)
                 .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
     when(store.getTime()).thenReturn(currentTime);
@@ -373,7 +374,7 @@ public class PeerChainValidatorTest {
   }
 
   private SignedBeaconBlock randomBlock(UnsignedLong slot) {
-    return DataStructureUtil.randomSignedBeaconBlock(slot.longValue(), slot.intValue());
+    return dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
   }
 
   private Checkpoint getFinalizedCheckpoint(final PeerStatus status) {

@@ -13,12 +13,9 @@
 
 package tech.pegasys.artemis.storage;
 
-import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
-
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map.Entry;
@@ -29,7 +26,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,7 +44,9 @@ import tech.pegasys.artemis.storage.utils.MapDBSerializer;
 import tech.pegasys.artemis.storage.utils.UnsignedLongSerializer;
 
 public class MapDbDatabase implements Database {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private final DB db;
   private final Var<UnsignedLong> genesisTime;
   private final Atomic.Var<Checkpoint> justifiedCheckpoint;
@@ -67,24 +65,21 @@ public class MapDbDatabase implements Database {
   // In memory only
   private final ConcurrentNavigableMap<UnsignedLong, Set<Bytes32>> hotRootsBySlotCache =
       new ConcurrentSkipListMap<>();
+  private final StateStorageMode stateStorageMode;
 
-  public static Database createOnDisk(final File directory, final boolean startFromDisk) {
+  public static Database createOnDisk(
+      final File directory, final StateStorageMode stateStorageMode) {
     final File databaseFile = new File(directory, "teku.db");
-    try {
-      if (!startFromDisk) {
-        Files.deleteIfExists(databaseFile.toPath());
-      }
-    } catch (IOException e) {
-      STDOUT.log(Level.ERROR, "Failed to clear old database");
-    }
-    return new MapDbDatabase(DBMaker.fileDB(databaseFile));
+    return new MapDbDatabase(DBMaker.fileDB(databaseFile), stateStorageMode);
   }
 
-  public static Database createInMemory() {
-    return new MapDbDatabase(DBMaker.memoryDB());
+  @VisibleForTesting
+  static Database createInMemory(final StateStorageMode stateStorageMode) {
+    return new MapDbDatabase(DBMaker.memoryDB(), stateStorageMode);
   }
 
-  private MapDbDatabase(final Maker dbMaker) {
+  private MapDbDatabase(final Maker dbMaker, final StateStorageMode stateStorageMode) {
+    this.stateStorageMode = stateStorageMode;
     db = dbMaker.transactionEnable().make();
     genesisTime = db.atomicVar("genesisTime", new UnsignedLongSerializer()).createOrOpen();
     justifiedCheckpoint =
@@ -159,7 +154,7 @@ public class MapDbDatabase implements Database {
                 hotStatesByRoot.put(root, state);
                 finalizedRootsBySlot.put(block.getSlot(), root);
                 finalizedBlocksByRoot.put(root, block);
-                finalizedStatesByRoot.put(root, state);
+                putFinalizedState(root, state);
               });
       checkpointStates.put(
           store.getJustifiedCheckpoint(),
@@ -215,6 +210,17 @@ public class MapDbDatabase implements Database {
     }
   }
 
+  private void putFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
+    switch (stateStorageMode) {
+      case ARCHIVE:
+        finalizedStatesByRoot.put(blockRoot, state);
+        break;
+      case PRUNE:
+        // Don't persist finalized state
+        break;
+    }
+  }
+
   private void addHotBlock(final Bytes32 root, final SignedBeaconBlock block) {
     hotBlocksByRoot.put(root, block);
     addToHotRootsBySlotCache(root, block);
@@ -239,7 +245,7 @@ public class MapDbDatabase implements Database {
       finalizedBlocksByRoot.put(newlyFinalizedBlockRoot, newlyFinalizedBlock);
       final Optional<BeaconState> finalizedState = getState(newlyFinalizedBlockRoot);
       if (finalizedState.isPresent()) {
-        finalizedStatesByRoot.put(newlyFinalizedBlockRoot, finalizedState.get());
+        putFinalizedState(newlyFinalizedBlockRoot, finalizedState.get());
       } else {
         LOG.error(
             "Missing finalized state {} for epoch {}",
@@ -304,17 +310,23 @@ public class MapDbDatabase implements Database {
   }
 
   @Override
-  public Store createMemoryStore() {
-    return new Store(
-        UnsignedLong.valueOf(Instant.now().getEpochSecond()),
-        genesisTime.get(),
-        justifiedCheckpoint.get(),
-        finalizedCheckpoint.get(),
-        bestJustifiedCheckpoint.get(),
-        hotBlocksByRoot,
-        hotStatesByRoot,
-        checkpointStates,
-        latestMessages);
+  public Optional<Store> createMemoryStore() {
+    if (genesisTime.get() == null) {
+      // If genesis time hasn't been set, genesis hasn't happened and we have no data
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        new Store(
+            UnsignedLong.valueOf(Instant.now().getEpochSecond()),
+            genesisTime.get(),
+            justifiedCheckpoint.get(),
+            finalizedCheckpoint.get(),
+            bestJustifiedCheckpoint.get(),
+            hotBlocksByRoot,
+            hotStatesByRoot,
+            checkpointStates,
+            latestMessages));
   }
 
   @Override
