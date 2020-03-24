@@ -414,7 +414,7 @@ subprojects {
     return result
   }
 
-  if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testSupport")) {
+  if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testFixtures")) {
     apply plugin: 'com.jfrog.bintray'
     apply plugin: 'maven-publish'
 
@@ -428,9 +428,6 @@ subprojects {
             artifact sourcesJar
           }
 
-          if (sourceSetIsPopulated("testSupport")) {
-            artifact testSupportJar
-          }
           versionMapping {
             usage('java-api') { fromResolutionOf('runtimeClasspath') }
             usage('java-runtime') { fromResolutionResult() }
