@@ -469,6 +469,11 @@ subprojects {
     acceptanceTestImplementation.extendsFrom testImplementation
     compatibilityTestImplementation.extendsFrom testImplementation
     referenceTestImplementation.extendsFrom testImplementation
+
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+    acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
+    compatibilityTestRuntimeOnly.extendsFrom testRuntimeOnly
+    referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
   }
 
   def jarName = project.name
