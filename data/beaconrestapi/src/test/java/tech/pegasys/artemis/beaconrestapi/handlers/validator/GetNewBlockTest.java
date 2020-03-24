@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -56,7 +55,7 @@ public class GetNewBlockTest {
   }
 
   @Test
-  void shouldGetNoContentIfBlockCreationFailsWithChainDataUnavailableException() throws Exception {
+  void shouldPropagateChainDataUnavailableExceptionToGlobalExceptionHandler() throws Exception {
     final Map<String, List<String>> params =
         Map.of(
             RestApiConstants.SLOT, List.of("1"), RANDAO_REVEAL, List.of(signature.toHexString()));
@@ -65,7 +64,11 @@ public class GetNewBlockTest {
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
-    verify(context).status(SC_NO_CONTENT);
+    // Exeception should just be propagated up via the future
+    verify(context, never()).status(anyInt());
+    verify(context)
+        .result(
+            argThat((ArgumentMatcher<SafeFuture<?>>) CompletableFuture::isCompletedExceptionally));
   }
 
   @Test
