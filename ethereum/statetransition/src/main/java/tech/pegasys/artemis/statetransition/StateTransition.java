@@ -14,7 +14,9 @@
 package tech.pegasys.artemis.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_block_header;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_eth1_data;
 import static tech.pegasys.artemis.statetransition.util.BlockProcessorUtil.process_operations;
@@ -26,6 +28,7 @@ import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.proce
 import static tech.pegasys.artemis.statetransition.util.EpochProcessorUtil.process_slashings;
 import static tech.pegasys.artemis.util.alogger.ALogger.STDOUT;
 import static tech.pegasys.artemis.util.async.SafeFuture.reportExceptions;
+import static tech.pegasys.artemis.util.config.Constants.DOMAIN_BEACON_PROPOSER;
 import static tech.pegasys.artemis.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.artemis.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
@@ -35,17 +38,20 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.apache.logging.log4j.Level;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.metrics.EpochMetrics;
 import tech.pegasys.artemis.statetransition.util.BlockProcessingException;
 import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
 import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.util.alogger.ALogger;
+import tech.pegasys.artemis.util.bls.BLSVerify;
 
 public class StateTransition {
 
@@ -114,15 +120,13 @@ public class StateTransition {
 
   private static boolean verify_block_signature(
       final BeaconState state, SignedBeaconBlock signed_block) {
-    return true;
-    //    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
-    //    final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
-    //    // zzz
-    //    return BLSVerify.bls_verify(
-    //        proposer.getPubkey(),
-    //        signed_block.getMessage().hash_tree_root(),
-    //        signed_block.getSignature(),
-    //        domain);
+    final Validator proposer = state.getValidators().get(get_beacon_proposer_index(state));
+    final Bytes domain = get_domain(state, DOMAIN_BEACON_PROPOSER);
+    return BLSVerify.bls_verify(
+        proposer.getPubkey(),
+        signed_block.getMessage().hash_tree_root(),
+        signed_block.getSignature(),
+        domain);
   }
 
   public BeaconState initiate(BeaconState state, SignedBeaconBlock block)
