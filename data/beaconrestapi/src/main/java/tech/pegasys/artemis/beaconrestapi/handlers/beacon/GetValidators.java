@@ -29,7 +29,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -46,23 +45,22 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
+import tech.pegasys.artemis.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class GetValidators implements Handler {
+public class GetValidators extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/beacon/validators";
 
   private final ChainDataProvider chainDataProvider;
 
   public GetValidators(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
-    this.jsonProvider = jsonProvider;
   }
-
-  public static final String ROUTE = "/beacon/validators";
-  private final JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,
@@ -111,9 +109,15 @@ public class GetValidators implements Handler {
 
       final SafeFuture<Optional<BeaconState>> future = getStateFuture(parameters);
 
-      ctx.result(
-          future.thenApplyChecked(
-              state -> handleResponseContext(ctx, state, activeOnly, pageSize, pageToken)));
+      this.handlePossiblyMissingResult(
+          ctx,
+          future,
+          (__, state) -> {
+            final BeaconValidators result =
+                new BeaconValidators(state, activeOnly, pageSize, pageToken);
+            ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(chainDataProvider, state));
+            return Optional.of(jsonProvider.objectToJSON(result));
+          });
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
@@ -146,23 +150,5 @@ public class GetValidators implements Handler {
       }
     }
     return intValue;
-  }
-
-  private String handleResponseContext(
-      Context ctx,
-      Optional<BeaconState> optionalState,
-      final boolean activeOnly,
-      final int pageSize,
-      final int pageToken)
-      throws JsonProcessingException {
-    if (optionalState.isEmpty()) {
-      return jsonProvider.objectToJSON(List.of());
-    } else {
-      final BeaconState state = optionalState.get();
-      final BeaconValidators result = new BeaconValidators(state, activeOnly, pageSize, pageToken);
-
-      ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(chainDataProvider, state));
-      return jsonProvider.objectToJSON(result);
-    }
   }
 }

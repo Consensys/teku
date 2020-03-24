@@ -13,15 +13,22 @@
 
 package tech.pegasys.artemis.beaconrestapi.beacon;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Optional;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.artemis.beaconrestapi.RestApiConstants;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
+import tech.pegasys.artemis.storage.Store;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
 
@@ -34,11 +41,62 @@ public class GetValidatorsIntegrationTest extends AbstractBeaconRestAPIIntegrati
   }
 
   @Test
+  public void shouldReturnNoContentIfHeadRootMissing_implicitlyQueryLatest() throws Exception {
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+
+    final Response response = getLatest();
+    assertNoContent(response);
+  }
+
+  @Test
+  public void handleMissingState_implicitlyQueryLatest() throws Exception {
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(chainStorageClient.getBlockState(headRoot)).thenReturn(Optional.empty());
+    when(historicalChainData.getFinalizedStateByBlockRoot(headRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final Response response = getLatest();
+    assertGone(response);
+  }
+
+  @Test
   public void shouldReturnNoContentIfStoreNotDefined_queryByEpoch() throws Exception {
     when(chainStorageClient.getStore()).thenReturn(null);
 
     final Response response = getByEpoch(1);
     assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnNoContentIfHeadRootMissing_queryByEpoch() throws Exception {
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+
+    final Response response = getByEpoch(1);
+    assertNoContent(response);
+  }
+
+  @Test
+  public void handleMissingState_queryByEpoch() throws Exception {
+    final int epoch = 1;
+    final Bytes32 headRoot = dataStructureUtil.randomBytes32();
+
+    final Store store = mock(Store.class);
+    when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.valueOf(epoch));
+    when(historicalChainData.getFinalizedStateAtSlot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final Response response = getByEpoch(epoch);
+    assertGone(response);
   }
 
   private Response getLatest() throws IOException {
