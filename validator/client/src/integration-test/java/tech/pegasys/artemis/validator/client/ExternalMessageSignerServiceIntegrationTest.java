@@ -15,6 +15,8 @@ package tech.pegasys.artemis.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.JsonBody.json;
 
 import java.net.URI;
@@ -27,8 +29,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -48,6 +48,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
   private ClientAndServer client;
   private BLSSignature expectedSignature;
   private ExternalMessageSignerService externalMessageSignerService;
+  private BLSKeyPair keyPair;
 
   @BeforeEach
   void setup(final ClientAndServer client) throws URISyntaxException {
@@ -55,7 +56,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     signingServiceUri = new URI("http://127.0.0.1:" + client.getLocalPort());
 
     final Bytes privateKey = padLeft(Bytes.fromHexString(PRIVATE_KEY));
-    final BLSKeyPair keyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKey));
+    keyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKey));
     expectedSignature = BLS.sign(keyPair.getSecretKey(), SIGNING_ROOT);
 
     externalMessageSignerService =
@@ -84,19 +85,15 @@ public class ExternalMessageSignerServiceIntegrationTest {
         new SigningRequestBody(UNKNOWN_PUBLIC_KEY, SIGNING_ROOT.toHexString());
 
     client.verify(
-        HttpRequest.request()
-            .withMethod("POST")
-            .withBody(json(signingRequestBody))
-            .withPath("/signer/block"));
+        request().withMethod("POST").withBody(json(signingRequestBody)).withPath("/signer/block"));
   }
 
   @Test
   void failsSigningWhenSigningServiceTimesOut() {
     final int ensureTimeout = 5;
     client
-        .when(HttpRequest.request().withMethod("POST").withPath("/signer/block"))
-        .respond(
-            HttpResponse.response().withDelay(TimeUnit.MILLISECONDS, TIMEOUT_MS + ensureTimeout));
+        .when(request())
+        .respond(response().withDelay(TimeUnit.MILLISECONDS, TIMEOUT_MS + ensureTimeout));
 
     assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
@@ -106,9 +103,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
 
   @Test
   void failsSigningWhenSigningServiceReturnsInvalidSignatureResponse() {
-    client
-        .when(HttpRequest.request().withMethod("POST").withPath("/signer/block"))
-        .respond(HttpResponse.response().withBody("INVALID_RESPONSE"));
+    client.when(request()).respond(response().withBody("INVALID_RESPONSE"));
 
     assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
@@ -119,33 +114,50 @@ public class ExternalMessageSignerServiceIntegrationTest {
   @Test
   void signsBlockWhenSigningServiceReturnsSuccessfulResponse() {
     client
-        .when(HttpRequest.request().withMethod("POST").withPath("/signer/block"))
-        .respond(HttpResponse.response().withBody(expectedSignature.getSignature().toString()));
+        .when(request())
+        .respond(response().withBody(expectedSignature.getSignature().toString()));
 
     final BLSSignature signature = externalMessageSignerService.signBlock(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);
+
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(keyPair.getPublicKey().toString(), SIGNING_ROOT.toHexString());
+    client.verify(
+        request().withMethod("POST").withBody(json(signingRequestBody)).withPath("/signer/block"));
   }
 
   @Test
   void signsAttestationWhenSigningServiceReturnsSuccessfulResponse() {
-    client
-        .when(HttpRequest.request().withMethod("POST").withPath("/signer/attestation"))
-        .respond(HttpResponse.response().withBody(expectedSignature.getSignature().toString()));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature =
         externalMessageSignerService.signAttestation(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);
+
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(keyPair.getPublicKey().toString(), SIGNING_ROOT.toHexString());
+    client.verify(
+        request()
+            .withMethod("POST")
+            .withBody(json(signingRequestBody))
+            .withPath("/signer/attestation"));
   }
 
   @Test
   void signsRandaoRevealWhenSigningServiceReturnsSuccessfulResponse() {
-    client
-        .when(HttpRequest.request().withMethod("POST").withPath("/signer/randao_reveal"))
-        .respond(HttpResponse.response().withBody(expectedSignature.getSignature().toString()));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature =
         externalMessageSignerService.signRandaoReveal(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);
+
+    final SigningRequestBody signingRequestBody =
+        new SigningRequestBody(keyPair.getPublicKey().toString(), SIGNING_ROOT.toHexString());
+    client.verify(
+        request()
+            .withMethod("POST")
+            .withBody(json(signingRequestBody))
+            .withPath("/signer/randao_reveal"));
   }
 
   private Bytes padLeft(Bytes input) {
