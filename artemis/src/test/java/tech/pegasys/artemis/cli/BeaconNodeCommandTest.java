@@ -15,6 +15,18 @@ package tech.pegasys.artemis.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_DATA_PATH;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_ETH1_ENDPOINT;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_METRICS_CATEGORIES;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_P2P_ADVERTISED_PORT;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_P2P_DISCOVERY_ENABLED;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_P2P_INTERFACE;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_P2P_PORT;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_P2P_PRIVATE_KEY_FILE;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_X_INTEROP_ENABLED;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_X_INTEROP_GENESIS_TIME;
+import static tech.pegasys.artemis.cli.DefaultOptionValues.DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
 import static tech.pegasys.artemis.cli.OptionNames.CONFIG_FILE_OPTION_NAME;
 
 import com.google.common.io.Resources;
@@ -45,29 +57,31 @@ public class BeaconNodeCommandTest {
     beaconNodeCommand.stop();
   }
 
-  //  @Test
-  //  public void test() {
-  //    final String[] args = {
-  //      "validator", "generate",
-  //      "--X-confirm-enabled", "false",
-  //      "--keys-output-path", "/tmp/keys.yaml",
-  //      "--deposit-amount-gwei", "32000000000",
-  //      "--encrypted-keystore-enabled", "false",
-  //      "--eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd",
-  //      "--X-number-of-validators", "64",
-  //      "--eth1-private-key",
-  // "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63",
-  //      "--eth1-endpoint", "http://localhost:8545"
-  //    };
-  //
-  //    beaconNodeCommand.parse(args);
-  //
-  //    //    final ArtemisConfiguration artemisConfiguration =
-  //    //            beaconNodeCommand.getArtemisConfigurationDeprecated();
-  //    //
-  //    //    assertArtemisConfiguration(
-  //    //            artemisConfiguration, expectedConfigurationBuilder(dataPath).build());
-  //  }
+  @Test
+  public void loadDefaultsWhenNoArgsArePassed() {
+    // p2p-enabled default is "true" which require p2p-private-key-file to be non-null
+    final String[] args = {"--p2p-enabled", "false"};
+
+    beaconNodeCommand.parse(args);
+
+    final ArtemisConfiguration artemisConfiguration = beaconNodeCommand.getArtemisConfiguration();
+
+    assertArtemisConfiguration(
+        artemisConfiguration,
+        expectedConfigurationBuilder(DEFAULT_DATA_PATH)
+            .setEth1DepositContractAddress(DEFAULT_ETH1_DEPOSIT_CONTRACT_ADDRESS)
+            .setEth1Endpoint(DEFAULT_ETH1_ENDPOINT)
+            .setMetricsCategories(DEFAULT_METRICS_CATEGORIES)
+            .setP2pAdvertisedPort(DEFAULT_P2P_ADVERTISED_PORT)
+            .setP2pDiscoveryEnabled(DEFAULT_P2P_DISCOVERY_ENABLED)
+            .setP2pInterface(DEFAULT_P2P_INTERFACE)
+            .setP2pPort(DEFAULT_P2P_PORT)
+            .setP2pPrivateKeyFile(DEFAULT_P2P_PRIVATE_KEY_FILE)
+            .setxInteropEnabled(DEFAULT_X_INTEROP_ENABLED)
+            .setxInteropGenesisTime(DEFAULT_X_INTEROP_GENESIS_TIME)
+            .setxInteropOwnedValidatorCount(DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT)
+            .build());
+  }
 
   @Test
   public void overrideConfigFileValuesIfKeyIsPresentInCLIOptions() throws IOException {
@@ -143,6 +157,10 @@ public class BeaconNodeCommandTest {
   }
 
   private ArtemisConfigurationBuilder expectedConfigurationBuilder(final Path dataPath) {
+    return expectedConfigurationBuilder(dataPath.toString());
+  }
+
+  private ArtemisConfigurationBuilder expectedConfigurationBuilder(final String dataPath) {
     return ArtemisConfiguration.builder()
         .setNetwork("minimal")
         .setP2pEnabled(false)
@@ -175,7 +193,7 @@ public class BeaconNodeCommandTest {
         .setLogIncludeEventsEnabled(true)
         .setValidatorsKeystoreFiles(Collections.emptyList())
         .setValidatorsKeystorePasswordFiles(Collections.emptyList())
-        .setDataPath(dataPath.toString())
+        .setDataPath(dataPath)
         .setDataStorageMode("prune")
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
