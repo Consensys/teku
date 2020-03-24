@@ -52,7 +52,40 @@ public class BlockProposalUtil {
     this.stateTransition = stateTransition;
   }
 
-  public SignedBeaconBlock createNewBlock(
+  public BeaconBlock createNewUnsignedBlock(
+      final UnsignedLong newSlot,
+      final BLSSignature randaoReveal,
+      final BeaconState state,
+      final Bytes32 parentBlockSigningRoot,
+      final Eth1Data eth1Data,
+      final SSZList<Attestation> attestations,
+      final SSZList<ProposerSlashing> slashings,
+      final SSZList<Deposit> deposits)
+      throws StateTransitionException {
+    // Create block body
+    BeaconBlockBody beaconBlockBody = new BeaconBlockBody();
+    beaconBlockBody.setEth1_data(eth1Data);
+    beaconBlockBody.setDeposits(deposits);
+    beaconBlockBody.setAttestations(attestations);
+    beaconBlockBody.setProposer_slashings(slashings);
+    beaconBlockBody.setRandao_reveal(randaoReveal);
+
+    // Create initial block with some stubs
+    final Bytes32 tmpStateRoot = Bytes32.ZERO;
+    BeaconBlock newBlock =
+        new BeaconBlock(newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody);
+
+    // Run state transition and set state root
+    Bytes32 stateRoot =
+        stateTransition
+            .initiate(state, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false)
+            .hash_tree_root();
+    newBlock.setState_root(stateRoot);
+
+    return newBlock;
+  }
+
+  public BeaconBlock createNewUnsignedBlock(
       final MessageSignerService signer,
       final UnsignedLong newSlot,
       final BeaconState state,
@@ -74,7 +107,7 @@ public class BlockProposalUtil {
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
-    final BeaconBlock newBlock =
+    BeaconBlock newBlock =
         new BeaconBlock(newSlot, parentBlockSigningRoot, tmpStateRoot, beaconBlockBody);
 
     // Run state transition and set state root
@@ -83,6 +116,30 @@ public class BlockProposalUtil {
             .initiate(state, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false)
             .hash_tree_root();
     newBlock.setState_root(stateRoot);
+
+    return newBlock;
+  }
+
+  public SignedBeaconBlock createNewBlock(
+      final MessageSignerService signer,
+      final UnsignedLong newSlot,
+      final BeaconState state,
+      final Bytes32 parentBlockSigningRoot,
+      final Eth1Data eth1Data,
+      final SSZList<Attestation> attestations,
+      final SSZList<ProposerSlashing> slashings,
+      final SSZList<Deposit> deposits)
+      throws StateTransitionException {
+    final BeaconBlock newBlock =
+        createNewUnsignedBlock(
+            signer,
+            newSlot,
+            state,
+            parentBlockSigningRoot,
+            eth1Data,
+            attestations,
+            slashings,
+            deposits);
 
     // Sign block and set block signature
     BLSSignature blockSignature = get_block_signature(state, newBlock, signer);

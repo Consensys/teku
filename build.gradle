@@ -68,6 +68,7 @@ def bintrayPackage = bintray.pkg {
 
 allprojects {
   apply plugin: 'java-library'
+  apply plugin: 'java-test-fixtures'
   apply plugin: 'io.spring.dependency-management'
   apply plugin: 'jacoco'
   apply plugin: 'net.ltgt.errorprone'
@@ -110,7 +111,6 @@ allprojects {
         exclude '**/src/main/java/tech/pegasys/artemis/Constants.java'
         exclude '**/proto'
       }
-
 
       importOrder 'tech.pegasys', 'net.consensys', 'java', ''
       trimTrailingWhitespace()
@@ -376,15 +376,6 @@ subprojects {
   }
 
   sourceSets {
-    // test-support can be consumed as a library by other projects in their tests
-    testSupport {
-      java {
-        compileClasspath += main.output
-        runtimeClasspath += main.output
-        srcDir file('src/test-support/java')
-      }
-      resources.srcDir file('src/test-support/resources')
-    }
     integrationTest {
       java {
         compileClasspath += main.output
@@ -415,12 +406,6 @@ subprojects {
       }
       resources.srcDir file('src/referenceTest/resources')
     }
-  }
-
-  task testSupportJar(type: Jar) {
-    archiveBaseName = "${project.name}-support-test"
-    classifier = 'test-support'
-    from sourceSets.testSupport.output
   }
 
   def sourceSetIsPopulated = { sourceSetName ->
@@ -483,15 +468,12 @@ subprojects {
   }
 
   configurations {
-    testSupportImplementation.extendsFrom implementation
     integrationTestImplementation.extendsFrom implementation
     acceptanceTestImplementation.extendsFrom implementation
     compatibilityTestImplementation.extendsFrom implementation
     referenceTestImplementation.extendsFrom implementation
     testSupportArtifacts.extendsFrom testSupportImplementation
   }
-
-  artifacts { testSupportArtifacts testSupportJar }
 
   def jarName = project.name
   def parent = project.parent
@@ -516,10 +498,7 @@ subprojects {
 
   dependencies {
     implementation 'org.apache.logging.log4j:log4j-core'
-    runtime 'org.apache.logging.log4j:log4j-slf4j-impl'
-
-    testImplementation sourceSets.testSupport.output
-    integrationTestImplementation sourceSets.testSupport.output
+    runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.apache.tuweni:tuweni-junit'
@@ -527,23 +506,24 @@ subprojects {
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    testRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
+    testRuntimeOnly testFixtures(project(':logging'))
 
+    integrationTestImplementation sourceSets.testFixtures.output
     integrationTestImplementation 'org.assertj:assertj-core'
     integrationTestImplementation 'org.apache.tuweni:tuweni-junit'
     integrationTestImplementation 'org.junit.jupiter:junit-jupiter-api'
     integrationTestImplementation 'org.junit.jupiter:junit-jupiter-params'
 
     integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    integrationTestRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
+    integrationTestRuntimeOnly testFixtures(project(':logging'))
 
-    acceptanceTestImplementation sourceSets.testSupport.output
-    acceptanceTestImplementation sourceSets.testSupport.runtimeClasspath
+    acceptanceTestImplementation sourceSets.testFixtures.output
+    acceptanceTestImplementation sourceSets.testFixtures.runtimeClasspath
     acceptanceTestImplementation 'org.assertj:assertj-core'
     acceptanceTestImplementation 'org.junit.jupiter:junit-jupiter-api'
     acceptanceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
     acceptanceTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    acceptanceTestRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
+    acceptanceTestRuntimeOnly testFixtures(project(':logging'))
     acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-core'
     acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
 
@@ -551,14 +531,14 @@ subprojects {
     compatibilityTestImplementation 'org.junit.jupiter:junit-jupiter-api'
     compatibilityTestImplementation 'org.junit.jupiter:junit-jupiter-params'
     compatibilityTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    compatibilityTestRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
+    compatibilityTestRuntimeOnly testFixtures(project(':logging'))
     compatibilityTestRuntimeOnly 'org.apache.logging.log4j:log4j-core'
     compatibilityTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
     group = "verification"
-    description = "Runs the Artemis integration tests"
+    description = "Runs the Teku integration tests"
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -566,7 +546,7 @@ subprojects {
 
   task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.distDocker]){
     group = "verification"
-    description = "Runs the Artemis acceptance tests"
+    description = "Runs the Teku acceptance tests"
 
     systemProperty "artemis.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
@@ -575,7 +555,7 @@ subprojects {
 
   task compatibilityTest(type: Test, dependsOn:["compileCompatibilityTestJava"]){
     group = "verification"
-    description = "Runs the Artemis compatibility tests"
+    description = "Runs the Teku compatibility tests"
 
     testClassesDirs = sourceSets.compatibilityTest.output.classesDirs
     classpath = sourceSets.compatibilityTest.runtimeClasspath
@@ -583,7 +563,7 @@ subprojects {
 
   task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){
     group = "verification"
-    description = "Runs the reference tests"
+    description = "Runs the Teku reference tests"
 
     testClassesDirs = sourceSets.referenceTest.output.classesDirs
     classpath = sourceSets.referenceTest.runtimeClasspath
@@ -617,7 +597,7 @@ startScripts {
 }
 
 dependencies {
-  compile project(':artemis')
+  implementation project(':artemis')
   errorprone 'com.google.errorprone:error_prone_core'
 }
 

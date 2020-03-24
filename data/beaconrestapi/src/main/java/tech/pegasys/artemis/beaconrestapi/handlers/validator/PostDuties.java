@@ -14,8 +14,8 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -33,7 +33,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
@@ -42,9 +42,9 @@ import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class PostDuties implements Handler {
-  private final ChainDataProvider provider;
+  private final ValidatorDataProvider provider;
 
-  public PostDuties(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+  public PostDuties(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
   }
@@ -70,23 +70,19 @@ public class PostDuties implements Handler {
             status = RES_OK,
             content = @OpenApiContent(from = ValidatorDuties.class, isArray = true)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid body supplied"),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = INVALID_BODY_SUPPLIED),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      if (!provider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
-      }
       ValidatorDutiesRequest validatorDutiesRequest =
           jsonProvider.jsonToObject(ctx.body(), ValidatorDutiesRequest.class);
 
       SafeFuture<List<ValidatorDuties>> future =
           provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
+      ctx.result(future.thenApplyChecked(jsonProvider::objectToJSON));
 
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));

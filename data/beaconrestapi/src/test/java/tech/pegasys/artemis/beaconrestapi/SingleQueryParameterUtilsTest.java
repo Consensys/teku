@@ -15,6 +15,7 @@ package tech.pegasys.artemis.beaconrestapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsLong;
@@ -24,8 +25,10 @@ import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.valid
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.artemis.api.schema.BLSSignature;
 
 public class SingleQueryParameterUtilsTest {
 
@@ -115,5 +118,19 @@ public class SingleQueryParameterUtilsTest {
     Map<String, List<String>> data = Map.of(KEY, List.of(bytes32.toHexString()));
     Bytes32 result = getParameterValueAsBytes32(data, KEY);
     assertEquals(bytes32, result);
+  }
+
+  @Test
+  public void getParameterAsBLSSignature_shouldThrowIfCannotParse() {
+    assertThrows(
+        IllegalArgumentException.class, () -> getParameterValueAsBLSSignature(INVALID_DATA, KEY));
+  }
+
+  @Test
+  public void getParameterAsBLSSignature_shouldParseBytes96Data() {
+    BLSSignature signature = new BLSSignature(Bytes.random(96));
+    Map<String, List<String>> data = Map.of(KEY, List.of(signature.toHexString()));
+    BLSSignature result = getParameterValueAsBLSSignature(data, KEY);
+    assertEquals(signature, result);
   }
 }

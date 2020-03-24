@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,11 +35,12 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetAttestationTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
   private ChainDataProvider provider = mock(ChainDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private GetAttestation handler;
-  private Attestation attestation = new Attestation(DataStructureUtil.randomAttestation(1111));
+  private Attestation attestation = new Attestation(dataStructureUtil.randomAttestation());
 
   @BeforeEach
   public void setup() {
@@ -79,8 +79,6 @@ public class GetAttestationTest {
     when(context.queryParamMap()).thenReturn(params);
     when(provider.isStoreAvailable()).thenReturn(false);
     handler.handle(context);
-
-    verify(provider).isStoreAvailable();
   }
 
   @Test
@@ -93,21 +91,7 @@ public class GetAttestationTest {
         .thenReturn(Optional.of(attestation));
     handler.handle(context);
 
-    verify(provider).isStoreAvailable();
     verify(context).result(jsonProvider.objectToJSON(attestation));
-  }
-
-  @Test
-  void shouldReturnNoAttestationIfNotFound() throws Exception {
-    Map<String, List<String>> params = Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("1"));
-
-    when(context.queryParamMap()).thenReturn(params);
-    when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.getUnsignedAttestationAtSlot(UnsignedLong.ONE, 1)).thenReturn(Optional.empty());
-    handler.handle(context);
-
-    verify(provider).isStoreAvailable();
-    verify(context).status(SC_NOT_FOUND);
   }
 
   private void badRequestParamsTest(final Map<String, List<String>> params, String message)

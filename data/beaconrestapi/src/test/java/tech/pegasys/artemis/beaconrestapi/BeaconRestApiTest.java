@@ -34,6 +34,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenAddresses;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
@@ -66,7 +67,9 @@ class BeaconRestApiTest {
     ArtemisConfiguration config = ArtemisConfiguration.fromString(THE_CONFIG);
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
-        new DataProvider(storageClient, combinedChainDataClient, null, syncService), config, app);
+        new DataProvider(storageClient, combinedChainDataClient, null, syncService, null, null),
+        config,
+        app);
   }
 
   @Test
@@ -132,6 +135,11 @@ class BeaconRestApiTest {
   @Test
   public void RestApiShouldHaveNetworkEnrEndpoint() {
     verify(app).get(eq(GetEthereumNameRecord.ROUTE), any(GetEthereumNameRecord.class));
+  }
+
+  @Test
+  public void RestApiShouldHaveNetworkListenAddressesEndpoint() {
+    verify(app).get(eq(GetListenAddresses.ROUTE), any(GetListenAddresses.class));
   }
 
   @Test

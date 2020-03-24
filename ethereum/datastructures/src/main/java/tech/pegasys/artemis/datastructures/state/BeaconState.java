@@ -13,9 +13,6 @@
 
 package tech.pegasys.artemis.datastructures.state;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.BeaconBlockHeader;
@@ -28,7 +25,6 @@ import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.hashtree.Merkleizable;
 import tech.pegasys.artemis.util.sos.SimpleOffsetSerializable;
 
-@JsonAutoDetect(getterVisibility = Visibility.NONE)
 public interface BeaconState
     extends ContainerViewRead, Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -102,70 +98,50 @@ public interface BeaconState
   }
 
   // Versioning
-  @JsonProperty
   UnsignedLong getGenesis_time();
 
-  @JsonProperty
   UnsignedLong getSlot();
 
-  @JsonProperty
   Fork getFork();
 
   // History
-  @JsonProperty
   BeaconBlockHeader getLatest_block_header();
 
-  @JsonProperty
   SSZVector<Bytes32> getBlock_roots();
 
-  @JsonProperty
   SSZVector<Bytes32> getState_roots();
 
-  @JsonProperty
   SSZList<Bytes32> getHistorical_roots();
 
   // Eth1
-  @JsonProperty
   Eth1Data getEth1_data();
 
-  @JsonProperty
   SSZList<Eth1Data> getEth1_data_votes();
 
-  @JsonProperty
   UnsignedLong getEth1_deposit_index();
 
   // Registry
-  @JsonProperty
   SSZList<Validator> getValidators();
 
-  @JsonProperty
   SSZList<UnsignedLong> getBalances();
 
-  @JsonProperty
   SSZVector<Bytes32> getRandao_mixes();
 
   // Slashings
-  @JsonProperty
   SSZVector<UnsignedLong> getSlashings();
 
   // Attestations
-  @JsonProperty
   SSZList<PendingAttestation> getPrevious_epoch_attestations();
 
-  @JsonProperty
   SSZList<PendingAttestation> getCurrent_epoch_attestations();
 
   // Finality
-  @JsonProperty
   Bitvector getJustification_bits();
 
-  @JsonProperty
   Checkpoint getPrevious_justified_checkpoint();
 
-  @JsonProperty
   Checkpoint getCurrent_justified_checkpoint();
 
-  @JsonProperty
   Checkpoint getFinalized_checkpoint();
 
   @Override

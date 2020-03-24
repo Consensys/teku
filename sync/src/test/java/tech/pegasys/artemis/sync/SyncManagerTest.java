@@ -208,7 +208,7 @@ public class SyncManagerTest {
     UnsignedLong currentSlot = UnsignedLong.valueOf(17);
     when(storageClient.getBestSlot()).thenReturn(currentSlot);
 
-    SyncStatus syncStatus = syncManager.getSyncStatus().sync_status;
+    SyncStatus syncStatus = syncManager.getSyncStatus().getSyncStatus();
     assertThat(syncStatus.getCurrent_slot()).isEqualTo(currentSlot);
     assertThat(syncStatus.getStarting_slot()).isEqualTo(startingSlot);
     assertThat(syncStatus.getHighest_slot()).isEqualTo(PEER_HEAD_SLOT);
@@ -228,7 +228,7 @@ public class SyncManagerTest {
     verifyNoInteractions(peerSync);
 
     // verify that getSyncStatus completes even when no peers
-    assertThat(syncManager.getSyncStatus().sync_status).isNull();
+    assertThat(syncManager.getSyncStatus().getSyncStatus()).isNull();
     assertThat(syncManager.isSyncQueued()).isFalse();
   }
 }

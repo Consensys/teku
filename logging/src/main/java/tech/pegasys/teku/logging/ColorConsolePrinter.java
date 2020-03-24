@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.logging;
 
+import static tech.pegasys.teku.logging.LoggingConfigurator.isColorEnabled;
+
 public class ColorConsolePrinter {
 
   private static final String resetCode = "\u001B[0m";
@@ -26,7 +28,7 @@ public class ColorConsolePrinter {
   }
 
   public static String print(final String message, final Color color) {
-    return colorCode(color) + message + resetCode;
+    return isColorEnabled() ? colorCode(color) + message + resetCode : message;
   }
 
   private static String colorCode(final Color color) {

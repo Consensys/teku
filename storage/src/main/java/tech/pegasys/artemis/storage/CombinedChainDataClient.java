@@ -240,8 +240,11 @@ public class CombinedChainDataClient {
         result.add(new CommitteeAssignment(committee, idx, slot));
       }
     }
-
     return result;
+  }
+
+  public UnsignedLong getBestSlot() {
+    return this.recentChainData.getBestSlot();
   }
 
   @VisibleForTesting

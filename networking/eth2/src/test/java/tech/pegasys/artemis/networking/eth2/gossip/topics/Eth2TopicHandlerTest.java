@@ -32,11 +32,12 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 public class Eth2TopicHandlerTest {
   private static final String TOPIC = "testing";
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final MockTopicHandler topicHandler = spy(new MockTopicHandler(eventBus));
   private final Bytes message = Bytes.fromHexString("0x01");
 
-  private final Attestation deserialized = DataStructureUtil.randomAttestation(1);
+  private final Attestation deserialized = dataStructureUtil.randomAttestation();
   private Supplier<Attestation> deserializer = Suppliers.ofInstance(deserialized);
   private Supplier<Boolean> validator = Suppliers.ofInstance(true);
 

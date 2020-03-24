@@ -144,6 +144,126 @@ final class ArtemisConfigurationTest {
   }
 
   @Test
+  void loggingColorEnabledShouldExceptionWhenIsNotBoolean() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.colorEnabled = \"2345\""));
+
+    assertThat(exception.getMessage()).contains("logging.colorEnabled' requires a boolean");
+  }
+
+  @Test
+  void loggingColorEnableShouldDefaultToTrue() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isLoggingColorEnabled()).isTrue();
+  }
+
+  @Test
+  void loggingColorEnableShouldSet() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("logging.colorEnabled = false");
+    assertThat(config.isLoggingColorEnabled()).isFalse();
+  }
+
+  @Test
+  void loggingIncludeEventsEnabledShouldExceptionWhenIsNotBoolean() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.includeEventsEnabled = \"2345\""));
+
+    assertThat(exception.getMessage()).contains("logging.includeEventsEnabled' requires a boolean");
+  }
+
+  @Test
+  void loggingIncludeEventsEnableShouldDefaultToTrue() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.isLoggingIncludeEventsEnabled()).isTrue();
+  }
+
+  @Test
+  void loggingIncludeEventsEnableShouldSet() {
+    final ArtemisConfiguration config =
+        ArtemisConfiguration.fromString("logging.includeEventsEnabled = false");
+    assertThat(config.isLoggingIncludeEventsEnabled()).isFalse();
+  }
+
+  @Test
+  void loggingDestinationShouldExceptionWhenIsNotString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.destination = false"));
+
+    assertThat(exception.getMessage()).contains("logging.destination' requires a string");
+  }
+
+  @Test
+  void loggingDestinationShouldExceptionWhenIsNotAcceptableString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.destination = \"Not acceptable\""));
+
+    assertThat(exception.getMessage())
+        .contains("logging.destination' should be \"consoleOnly\", \"fileOnly\", or \"both\"");
+  }
+
+  @Test
+  void loggingDestinationShouldDefaultToBoth() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.getLoggingDestination()).isEqualTo("both");
+  }
+
+  @Test
+  void loggingDestinationShouldSet() {
+    final ArtemisConfiguration configBoth =
+        ArtemisConfiguration.fromString("logging.destination = \"both\"");
+    assertThat(configBoth.getLoggingDestination()).isEqualTo("both");
+
+    final ArtemisConfiguration configCondole =
+        ArtemisConfiguration.fromString("logging.destination = \"consoleOnly\"");
+    assertThat(configCondole.getLoggingDestination()).isEqualTo("consoleOnly");
+
+    final ArtemisConfiguration configFile =
+        ArtemisConfiguration.fromString("logging.destination = \"fileOnly\"");
+    assertThat(configFile.getLoggingDestination()).isEqualTo("fileOnly");
+  }
+
+  @Test
+  void loggingFileShouldExceptionWhenIsNotString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.file = false"));
+
+    assertThat(exception.getMessage()).contains("logging.file' requires a string");
+  }
+
+  @Test
+  void loggingFileShouldDefaultToTekuLog() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.getLoggingFile()).isEqualTo("teku.log");
+  }
+
+  @Test
+  void loggingFileNamePatternShouldExceptionWhenIsNotString() {
+    final Exception exception =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> ArtemisConfiguration.fromString("logging.fileNamePattern = false"));
+
+    assertThat(exception.getMessage()).contains("logging.fileNamePattern' requires a string");
+  }
+
+  @Test
+  void loggingFileNamePatternShouldDefault() {
+    final ArtemisConfiguration config = ArtemisConfiguration.fromString("");
+    assertThat(config.getLoggingFileNamePattern()).isEqualTo("teku_%d{yyyy-MM-dd}.log");
+  }
+
+  @Test
   void validatorExternalSignerPublicKeysCanBeSet() {
     final String publicKey1 =
         "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";

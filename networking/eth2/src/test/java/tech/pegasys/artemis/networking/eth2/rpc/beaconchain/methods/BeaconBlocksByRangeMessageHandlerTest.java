@@ -41,11 +41,12 @@ import tech.pegasys.artemis.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 
 class BeaconBlocksByRangeMessageHandlerTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
   private static final List<SignedBeaconBlock> BLOCKS =
       IntStream.rangeClosed(0, 10)
-          .mapToObj(slot -> DataStructureUtil.randomSignedBeaconBlock(slot, slot))
+          .mapToObj(slot -> new DataStructureUtil(slot).randomSignedBeaconBlock(slot))
           .collect(Collectors.toList());
 
   @SuppressWarnings("unchecked")
@@ -310,7 +311,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private void withCanonicalHeadBlock(
       final SignedBeaconBlock headBlock, final UnsignedLong bestSlot) {
     when(storageClient.getNonfinalizedBlockState(headBlock.getMessage().hash_tree_root()))
-        .thenReturn(Optional.of(DataStructureUtil.randomBeaconState(bestSlot, 1)));
+        .thenReturn(Optional.of(dataStructureUtil.randomBeaconState(bestSlot)));
   }
 
   private void withBlockAtSlot(final int slot, final Bytes32 headBlockRoot) {

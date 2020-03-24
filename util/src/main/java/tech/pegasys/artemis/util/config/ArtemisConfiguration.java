@@ -136,6 +136,34 @@ public class ArtemisConfiguration {
         asList("JVM", "PROCESS", "BEACONCHAIN", "EVENTBUS", "NETWORK"),
         "Metric categories to enable",
         null);
+
+    // Logging
+    builder.addBoolean(
+        "logging.colorEnabled",
+        true,
+        "Whether Status and Event log messages include a console color display code",
+        PropertyValidator.isPresent());
+    builder.addBoolean(
+        "logging.includeEventsEnabled",
+        true,
+        "Whether the frequent update events are logged (e.g. every slot event, with validators and attestations))",
+        PropertyValidator.isPresent());
+    builder.addString(
+        "logging.destination",
+        "both",
+        "Whether all logs go only to the console, only to the log file, or both",
+        PropertyValidator.anyOf("consoleOnly", "fileOnly", "both"));
+    builder.addString(
+        "logging.file",
+        "teku.log",
+        "Path containing the location (relative or absolute) and the log filename.",
+        PropertyValidator.isPresent());
+    builder.addString(
+        "logging.fileNamePattern",
+        "teku_%d{yyyy-MM-dd}.log",
+        "Pattern for the filename to apply to rolled over logs files.",
+        PropertyValidator.isPresent());
+
     // Outputs
     builder.addString(
         "output.transitionRecordDir",
@@ -349,7 +377,9 @@ public class ArtemisConfiguration {
   /** @return the Deposit simulation flag, w/ optional input file */
   public String getInputFile() {
     String inputFile = config.getString("deposit.inputFile");
-    if (inputFile == null || inputFile.equals("")) return null;
+    if (inputFile == null || inputFile.equals("")) {
+      return null;
+    }
     return inputFile;
   }
 
@@ -441,5 +471,25 @@ public class ArtemisConfiguration {
 
   public boolean getBeaconRestAPIEnableSwagger() {
     return config.getBoolean("beaconrestapi.enableSwagger");
+  }
+
+  public boolean isLoggingColorEnabled() {
+    return config.getBoolean("logging.colorEnabled");
+  }
+
+  public boolean isLoggingIncludeEventsEnabled() {
+    return config.getBoolean("logging.includeEventsEnabled");
+  }
+
+  public String getLoggingFile() {
+    return config.getString("logging.file");
+  }
+
+  public String getLoggingFileNamePattern() {
+    return config.getString("logging.fileNamePattern");
+  }
+
+  public String getLoggingDestination() {
+    return config.getString("logging.destination");
   }
 }

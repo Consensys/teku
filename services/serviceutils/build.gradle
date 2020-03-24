@@ -5,11 +5,12 @@ dependencies {
   implementation project(':util')
 
   implementation 'com.google.guava:guava'
-  implementation 'org.apache.logging.log4j:log4j-api'
-  runtime 'org.apache.logging.log4j:log4j-core'
-  implementation 'org.apache.tuweni:tuweni-crypto'
-  implementation 'org.apache.tuweni:tuweni-config'
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-web'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.tuweni:tuweni-config'
+  implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.hyperledger.besu:plugin-api'
+
+  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 }

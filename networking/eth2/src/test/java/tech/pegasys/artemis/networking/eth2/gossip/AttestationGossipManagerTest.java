@@ -40,6 +40,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class AttestationGossipManagerTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final String topicRegex = "/eth2/index\\d+_beacon_attestation/ssz";
   private final EventBus eventBus = new EventBus();
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
@@ -64,7 +65,7 @@ public class AttestationGossipManagerTest {
     eventBus.post(assignment);
 
     // Post new attestation
-    final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    final Attestation attestation = dataStructureUtil.randomAttestation();
     attestation.setData(attestation.getData().withIndex(UnsignedLong.valueOf(committeeIndex)));
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
     eventBus.post(attestation);
@@ -81,7 +82,7 @@ public class AttestationGossipManagerTest {
     eventBus.post(assignment);
 
     // Post new attestation
-    final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    final Attestation attestation = dataStructureUtil.randomAttestation();
     attestation.setData(attestation.getData().withIndex(UnsignedLong.valueOf(committeeIndex + 1)));
     eventBus.post(attestation);
 
@@ -103,14 +104,14 @@ public class AttestationGossipManagerTest {
     eventBus.post(dismissalEvent);
 
     // Attestation for dismissed assignment should be ignored
-    final Attestation attestation = DataStructureUtil.randomAttestation(1);
+    final Attestation attestation = dataStructureUtil.randomAttestation();
     attestation.setData(attestation.getData().withIndex(UnsignedLong.valueOf(dismissedIndex)));
     final Bytes serialized = SimpleOffsetSerializer.serialize(attestation);
     eventBus.post(attestation);
     verify(topicChannel, never()).gossip(serialized);
 
     // Attestation for remaining assignment should be processed
-    final Attestation attestation2 = DataStructureUtil.randomAttestation(1);
+    final Attestation attestation2 = dataStructureUtil.randomAttestation();
     attestation2.setData(attestation.getData().withIndex(UnsignedLong.valueOf(committeeIndex)));
     final Bytes serialized2 = SimpleOffsetSerializer.serialize(attestation2);
     eventBus.post(attestation2);

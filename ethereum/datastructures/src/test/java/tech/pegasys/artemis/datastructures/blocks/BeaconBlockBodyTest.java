@@ -15,13 +15,6 @@ package tech.pegasys.artemis.datastructures.blocks;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttestation;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomAttesterSlashing;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomBytes32;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomDeposits;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomEth1Data;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomProposerSlashing;
-import static tech.pegasys.artemis.datastructures.util.DataStructureUtil.randomSignedVoluntaryExit;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_ATTESTER_SLASHINGS;
 import static tech.pegasys.artemis.util.config.Constants.MAX_DEPOSITS;
@@ -35,15 +28,16 @@ import tech.pegasys.artemis.datastructures.operations.AttesterSlashing;
 import tech.pegasys.artemis.datastructures.operations.Deposit;
 import tech.pegasys.artemis.datastructures.operations.ProposerSlashing;
 import tech.pegasys.artemis.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 
 class BeaconBlockBodyTest {
-  private int seed = 100;
-  private BLSSignature blsSignature = BLSSignature.random(seed);
-  private Eth1Data eth1Data = randomEth1Data(seed++);
-  private Bytes32 graffiti = randomBytes32(seed++);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private BLSSignature blsSignature = dataStructureUtil.randomSignature();
+  private Eth1Data eth1Data = dataStructureUtil.randomEth1Data();
+  private Bytes32 graffiti = dataStructureUtil.randomBytes32();
   private SSZMutableList<ProposerSlashing> proposerSlashings =
       SSZList.createMutable(ProposerSlashing.class, MAX_PROPOSER_SLASHINGS);
   private SSZMutableList<AttesterSlashing> attesterSlashings =
@@ -55,17 +49,17 @@ class BeaconBlockBodyTest {
       SSZList.createMutable(SignedVoluntaryExit.class, MAX_VOLUNTARY_EXITS);
 
   {
-    proposerSlashings.add(randomProposerSlashing(seed++));
-    proposerSlashings.add(randomProposerSlashing(seed++));
-    proposerSlashings.add(randomProposerSlashing(seed++));
-    attesterSlashings.add(randomAttesterSlashing(seed++));
-    attestations.add(randomAttestation(seed++));
-    attestations.add(randomAttestation(seed++));
-    attestations.add(randomAttestation(seed++));
-    deposits.addAll(randomDeposits(MAX_DEPOSITS, seed++));
-    voluntaryExits.add(randomSignedVoluntaryExit(seed++));
-    voluntaryExits.add(randomSignedVoluntaryExit(seed++));
-    voluntaryExits.add(randomSignedVoluntaryExit(seed++));
+    proposerSlashings.add(dataStructureUtil.randomProposerSlashing());
+    proposerSlashings.add(dataStructureUtil.randomProposerSlashing());
+    proposerSlashings.add(dataStructureUtil.randomProposerSlashing());
+    attesterSlashings.add(dataStructureUtil.randomAttesterSlashing());
+    attestations.add(dataStructureUtil.randomAttestation());
+    attestations.add(dataStructureUtil.randomAttestation());
+    attestations.add(dataStructureUtil.randomAttestation());
+    deposits.addAll(dataStructureUtil.randomDeposits(MAX_DEPOSITS));
+    voluntaryExits.add(dataStructureUtil.randomSignedVoluntaryExit());
+    voluntaryExits.add(dataStructureUtil.randomSignedVoluntaryExit());
+    voluntaryExits.add(dataStructureUtil.randomSignedVoluntaryExit());
   }
 
   private BeaconBlockBody beaconBlockBody =
@@ -125,7 +119,8 @@ class BeaconBlockBodyTest {
   void equalsReturnsFalseWhenAttesterSlashingsAreDifferent() {
     // Create copy of attesterSlashings and change the element to ensure it is different.
     SSZMutableList<AttesterSlashing> otherAttesterSlashings =
-        SSZList.concat(SSZList.singleton(randomAttesterSlashing(seed++)), attesterSlashings);
+        SSZList.concat(
+            SSZList.singleton(dataStructureUtil.randomAttesterSlashing()), attesterSlashings);
 
     BeaconBlockBody testBeaconBlockBody =
         new BeaconBlockBody(

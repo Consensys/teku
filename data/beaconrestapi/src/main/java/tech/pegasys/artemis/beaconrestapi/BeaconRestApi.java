@@ -13,7 +13,9 @@
 
 package tech.pegasys.artemis.beaconrestapi;
 
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
@@ -32,6 +34,8 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.DataProvider;
 import tech.pegasys.artemis.api.NetworkDataProvider;
+import tech.pegasys.artemis.api.ValidatorDataProvider;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetBlock;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetChainHead;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetCommittees;
@@ -41,6 +45,7 @@ import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetStateRoot;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.GetValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.beacon.PostValidators;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetEthereumNameRecord;
+import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenAddresses;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.artemis.beaconrestapi.handlers.network.GetPeerId;
@@ -50,6 +55,8 @@ import tech.pegasys.artemis.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.artemis.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetAttestation;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.GetNewBlock;
+import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostAttestation;
 import tech.pegasys.artemis.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.cli.VersionProvider;
@@ -65,6 +72,7 @@ public class BeaconRestApi {
       final DataProvider dataProvider, final ArtemisConfiguration configuration) {
     app.server().setServerPort(configuration.getBeaconRestAPIPortNumber());
 
+    addExceptionHandlers();
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
@@ -92,6 +100,20 @@ public class BeaconRestApi {
     return Resources.toString(Resources.getResource(fileName), charset);
   }
 
+  private void addExceptionHandlers() {
+    app.exception(
+        ChainDataUnavailableException.class,
+        (e, ctx) -> {
+          ctx.status(SC_NO_CONTENT);
+        });
+    // Add catch-all handler
+    app.exception(
+        Exception.class,
+        (e, ctx) -> {
+          ctx.status(SC_INTERNAL_SERVER_ERROR);
+        });
+  }
+
   public BeaconRestApi(final DataProvider dataProvider, final ArtemisConfiguration configuration) {
     this.app =
         Javalin.create(
@@ -113,6 +135,10 @@ public class BeaconRestApi {
 
   public void start() {
     app.start();
+  }
+
+  public int getListenPort() {
+    return app.server().getServerPort();
   }
 
   private static OpenApiOptions getOpenApiOptions(
@@ -161,15 +187,19 @@ public class BeaconRestApi {
 
   private void addValidatorHandlers(DataProvider dataProvider) {
     ChainDataProvider provider = dataProvider.getChainDataProvider();
+    ValidatorDataProvider validatorDataProvider = dataProvider.getValidatorDataProvider();
     app.get(GetAttestation.ROUTE, new GetAttestation(provider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
+    app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
 
-    app.post(PostDuties.ROUTE, new PostDuties(provider, jsonProvider));
+    app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
+    app.post(PostDuties.ROUTE, new PostDuties(validatorDataProvider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {
     app.get(
         GetEthereumNameRecord.ROUTE, new GetEthereumNameRecord(networkDataProvider, jsonProvider));
+    app.get(GetListenAddresses.ROUTE, new GetListenAddresses(networkDataProvider, jsonProvider));
     app.get(GetPeerId.ROUTE, new GetPeerId(networkDataProvider, jsonProvider));
     app.get(GetPeers.ROUTE, new GetPeers(networkDataProvider, jsonProvider));
     app.get(GetPeerCount.ROUTE, new GetPeerCount(networkDataProvider, jsonProvider));

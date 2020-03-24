@@ -15,7 +15,6 @@ package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -45,6 +44,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetStateTest {
+  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private static tech.pegasys.artemis.datastructures.state.BeaconState beaconStateInternal;
   private static BeaconState beaconState;
   private static Bytes32 blockRoot;
@@ -59,7 +59,7 @@ public class GetStateTest {
   public static void setup() {
     final EventBus localEventBus = new EventBus();
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(localEventBus);
-    beaconStateInternal = DataStructureUtil.randomBeaconState(11233);
+    beaconStateInternal = dataStructureUtil.randomBeaconState();
     storageClient.initializeFromGenesis(beaconStateInternal);
     blockRoot = storageClient.getBestBlockRoot().orElseThrow();
     slot = beaconStateInternal.getSlot();
@@ -199,17 +199,5 @@ public class GetStateTest {
     handler.handle(context);
 
     verify(context).status(SC_NOT_FOUND);
-  }
-
-  @Test
-  public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    final GetState handler = new GetState(dataProvider, jsonProvider);
-
-    when(dataProvider.isStoreAvailable()).thenReturn(false);
-    when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
-
-    handler.handle(context);
-
-    verify(context).status(SC_NO_CONTENT);
   }
 }

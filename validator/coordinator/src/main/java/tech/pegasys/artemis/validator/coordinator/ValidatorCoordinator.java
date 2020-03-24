@@ -239,6 +239,17 @@ public class ValidatorCoordinator extends Service {
     attestationAggregator.reset();
   }
 
+  public void postSignedAttestation(final Attestation attestation, boolean validate) {
+    // TODO extra validation for the attestation we're posting?
+    if (validate) {
+      if (attestation.getAggregate_signature().equals(BLSSignature.empty())) {
+        throw new IllegalArgumentException("Signed attestations must have a non zero signature");
+      }
+    }
+    attestationAggregator.addOwnValidatorAttestation(attestation);
+    this.eventBus.post(attestation);
+  }
+
   private void produceAttestations(
       BeaconState state,
       BLSPublicKey attester,
@@ -255,8 +266,7 @@ public class ValidatorCoordinator extends Service {
 
     BLSSignature signature = getSigner(attester).signAttestation(signing_root).join();
     Attestation attestation = new Attestation(aggregationBitfield, attestationData, signature);
-    attestationAggregator.addOwnValidatorAttestation(new Attestation(attestation));
-    this.eventBus.post(attestation);
+    postSignedAttestation(attestation, false);
   }
 
   private void createBlockIfNecessary(
@@ -303,6 +313,39 @@ public class ValidatorCoordinator extends Service {
     }
   }
 
+  public Optional<BeaconBlock> createUnsignedBlock(UnsignedLong newSlot, BLSSignature randao_reveal)
+      throws EpochProcessingException, SlotProcessingException, StateTransitionException {
+    Store store = chainStorageClient.getStore();
+    final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
+    if (headRoot.isEmpty() || store == null) {
+      return Optional.empty();
+    }
+    BeaconState previousState = store.getBlockState(headRoot.get());
+    BeaconBlock previousBlock = store.getBlock(headRoot.get());
+
+    MutableBeaconState newState = previousState.createWritableCopy();
+    // Process empty slots up to the new slot
+    stateTransition.process_slots(newState, newSlot);
+    Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
+    SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
+    // Collect slashing to include
+    final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(newState);
+    // Collect deposits
+    final SSZList<Deposit> deposits = depositProvider.getDeposits(newState);
+    final Bytes32 parentRoot = previousBlock.hash_tree_root();
+
+    return Optional.of(
+        blockCreator.createNewUnsignedBlock(
+            newSlot,
+            randao_reveal,
+            newState,
+            parentRoot,
+            eth1Data,
+            attestations,
+            slashingsInBlock,
+            deposits));
+  }
+
   private SSZList<ProposerSlashing> getSlashingsForBlock(final BeaconState state) {
     SSZMutableList<ProposerSlashing> slashingsForBlock =
         BeaconBlockBodyLists.createProposerSlashings();
@@ -317,6 +360,10 @@ public class ValidatorCoordinator extends Service {
       slashing = slashings.poll();
     }
     return slashingsForBlock;
+  }
+
+  public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
+    return blockCreator.getProposerForSlot(preState, slot);
   }
 
   private MessageSignerService getSigner(BLSPublicKey signer) {

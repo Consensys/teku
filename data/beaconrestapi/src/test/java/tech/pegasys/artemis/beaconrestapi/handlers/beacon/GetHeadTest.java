@@ -13,7 +13,6 @@
 
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,7 +21,6 @@ import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.api.ChainDataProvider;
@@ -32,10 +30,11 @@ import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.provider.JsonProvider;
 
 public class GetHeadTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
   private final Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private BeaconState rootState = DataStructureUtil.randomBeaconState(1);
+  private BeaconState rootState = dataStructureUtil.randomBeaconState();
   private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);
 
   @Test
@@ -43,21 +42,11 @@ public class GetHeadTest {
     GetHead handler = new GetHead(provider, jsonProvider);
     Bytes32 blockRoot = Bytes32.random();
     BeaconHead head = new BeaconHead(bestSlot, blockRoot, rootState.hash_tree_root());
-    when(provider.getBeaconHead()).thenReturn(Optional.of(head));
+    when(provider.getBeaconHead()).thenReturn(head);
 
     handler.handle(context);
 
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
     verify(context).result(jsonProvider.objectToJSON(head));
-  }
-
-  @Test
-  public void shouldReturnNoContentIfBlockRootNotSet() throws Exception {
-    GetHead handler = new GetHead(provider, jsonProvider);
-    when(provider.getBeaconHead()).thenReturn(Optional.empty());
-    handler.handle(context);
-
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(context).status(SC_NO_CONTENT);
   }
 }

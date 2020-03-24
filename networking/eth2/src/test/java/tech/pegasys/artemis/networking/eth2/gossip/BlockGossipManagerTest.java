@@ -34,6 +34,7 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 
 public class BlockGossipManagerTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
   private final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -48,7 +49,7 @@ public class BlockGossipManagerTest {
   @Test
   public void onBlockProposed() {
     // Should gossip new blocks received from event bus
-    SignedBeaconBlock block = DataStructureUtil.randomSignedBeaconBlock(1, 100);
+    SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = SimpleOffsetSerializer.serialize(block);
     eventBus.post(new ProposedBlockEvent(block));
 

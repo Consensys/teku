@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.artemis.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
@@ -29,7 +28,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
-import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.primitives.UnsignedLong;
@@ -46,6 +44,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.api.ChainDataProvider;
+import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
@@ -68,33 +67,34 @@ public class GetValidators implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Returns validators that match the specified query.",
+      summary = "Get validators that match the specified query.",
       tags = {TAG_BEACON},
       description =
-          "Returns validator information. If no parameters specified, the first page of validators as of the current epoch are returned.",
+          "Returns validator information.\n\n"
+              + "Returns the first page of validators in the current epoch if you do not specify any parameters.",
       queryParams = {
-        @OpenApiParam(
-            name = EPOCH,
-            description = "Epoch to query. If not specified, current epoch is used."),
+        @OpenApiParam(name = EPOCH, description = "Epoch to query. Defaults to the current epoch."),
         @OpenApiParam(
             name = ACTIVE,
             description =
-                "If specified, return only validators which are active in the specified epoch."),
+                "Only return validators that are active in the specified `epoch`. "
+                    + "By default, returns inactive and active validators.\n\n"
+                    + "**Note**: The field accepts any value to return active validators."),
         @OpenApiParam(
             name = PAGE_SIZE,
             description =
-                "If specified, return only this many results. If not specified, defaults to "
+                "The amount of results to return per page. Defaults to "
                     + PAGE_SIZE_DEFAULT
                     + " results."),
         @OpenApiParam(
             name = PAGE_TOKEN,
-            description =
-                "If specified, return only this page of results. If not specified, defaults to page "
-                    + PAGE_TOKEN_DEFAULT
-                    + ".")
+            description = "Page number to return. Defaults to page " + PAGE_TOKEN_DEFAULT + ".")
       },
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconValidators.class)),
+        @OpenApiResponse(
+            status = RES_OK,
+            content = @OpenApiContent(from = BeaconValidators.class),
+            description = "List of validator objects."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
@@ -108,11 +108,6 @@ public class GetValidators implements Handler {
       int pageToken =
           getPositiveIntegerValueWithDefaultIfNotSupplied(
               parameters, PAGE_TOKEN, PAGE_TOKEN_DEFAULT);
-
-      if (!chainDataProvider.isStoreAvailable()) {
-        ctx.status(SC_NO_CONTENT);
-        return;
-      }
 
       final SafeFuture<Optional<BeaconState>> future = getStateFuture(parameters);
 
@@ -130,13 +125,11 @@ public class GetValidators implements Handler {
       UnsignedLong epoch = getParameterValueAsUnsignedLong(parameters, EPOCH);
       UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
       return chainDataProvider.getStateAtSlot(slot);
+    } else {
+      Bytes32 blockRoot =
+          chainDataProvider.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+      return chainDataProvider.getStateByBlockRoot(blockRoot);
     }
-    Optional<Bytes32> blockRoot = chainDataProvider.getBestBlockRoot();
-    if (blockRoot.isPresent()) {
-      return chainDataProvider.getStateByBlockRoot(blockRoot.get());
-    }
-
-    return completedFuture(Optional.empty());
   }
 
   private int getPositiveIntegerValueWithDefaultIfNotSupplied(

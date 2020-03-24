@@ -46,17 +46,18 @@ import tech.pegasys.artemis.util.config.Constants;
 class ChainStorageClientTest {
 
   private static final BeaconState INITIAL_STATE =
-      DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, 1);
+      new DataStructureUtil(3).randomBeaconState(UnsignedLong.ZERO);
   private static final Bytes32 BEST_BLOCK_ROOT = Bytes32.fromHexString("0x8462485245");
-  private static final BeaconBlock GENESIS_BLOCK = DataStructureUtil.randomBeaconBlock(0, 1);
+  private static final BeaconBlock GENESIS_BLOCK = new DataStructureUtil(7).randomBeaconBlock(0);
   private static final Bytes32 GENESIS_BLOCK_ROOT = GENESIS_BLOCK.hash_tree_root();
+
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
   private final Store store = mock(Store.class);
   private final ChainStorageClient storageClient =
       ChainStorageClient.memoryOnlyClientWithStore(eventBus, store);
   private final ChainStorageClient preGenesisStorageClient =
       ChainStorageClient.memoryOnlyClient(eventBus);
-  private int seed = 428942;
 
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
@@ -85,7 +86,7 @@ class ChainStorageClientTest {
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
 
     // Post store initialization event which should be ignored because we're already initialized
-    final BeaconState otherState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final BeaconState otherState = dataStructureUtil.randomBeaconState(UnsignedLong.ZERO);
     assertThat(otherState).isNotEqualTo(INITIAL_STATE);
     final Store otherStore = Store.get_genesis_store(otherState);
     eventBus.post(new StoreInitializedFromStorageEvent(Optional.of(otherStore)));
@@ -142,7 +143,7 @@ class ChainStorageClientTest {
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
 
     // Post getStore response - which shouldn't change the store
-    final BeaconState otherState = DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++);
+    final BeaconState otherState = dataStructureUtil.randomBeaconState(UnsignedLong.ZERO);
     assertThat(otherState).isNotEqualTo(INITIAL_STATE);
     final Store otherStore = Store.get_genesis_store(otherState);
     eventBus.post(new GetStoreResponse(getStoreRequests.get(0).getId(), Optional.of(otherStore)));
@@ -202,7 +203,7 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(UnsignedLong.ZERO).createWritableCopy();
     // At the start of the chain, the slot number is the index into historical roots
     bestState.getBlock_roots().set(0, GENESIS_BLOCK_ROOT);
     when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(bestState);
@@ -217,7 +218,7 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(bestSlot).createWritableCopy();
     final BeaconBlock genesisBlock = GENESIS_BLOCK;
     final Bytes32 genesisBlockHash = genesisBlock.hash_tree_root();
     // At the start of the chain, the slot number is the index into historical roots
@@ -236,10 +237,9 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(bestSlot).createWritableCopy();
     // Overwrite the genesis hash with a newer block.
-    final BeaconBlock newerBlock =
-        DataStructureUtil.randomBeaconBlock(bestSlot.longValue() - 1, seed++);
+    final BeaconBlock newerBlock = dataStructureUtil.randomBeaconBlock(bestSlot.longValue() - 1);
     final Bytes32 newerBlockRoot = newerBlock.hash_tree_root();
     bestState.getBlock_roots().set(0, newerBlockRoot);
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
@@ -265,9 +265,8 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
-    final BeaconBlock bestBlock =
-        DataStructureUtil.randomBeaconBlock(requestedSlot.longValue(), seed++);
+        dataStructureUtil.randomBeaconState(bestSlot).createWritableCopy();
+    final BeaconBlock bestBlock = dataStructureUtil.randomBeaconBlock(requestedSlot.longValue());
     final Bytes32 bestBlockHash = bestBlock.hash_tree_root();
     // Overwrite the genesis hash.
     bestState.getBlock_roots().set(historicalIndex, bestBlockHash);
@@ -286,7 +285,7 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(bestSlot).createWritableCopy();
     final Bytes32 block1Hash = GENESIS_BLOCK.hash_tree_root();
     // The root for BLOCK1 is copied over from it's slot to be the best block at the requested slot
     bestState.getBlock_roots().set(GENESIS_BLOCK.getSlot().intValue(), block1Hash);
@@ -307,7 +306,7 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(GENESIS_BLOCK_ROOT, UnsignedLong.ZERO);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(UnsignedLong.ZERO).createWritableCopy();
     bestState.getBlock_roots().set(0, GENESIS_BLOCK_ROOT);
     when(store.getBlockState(GENESIS_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
@@ -332,7 +331,7 @@ class ChainStorageClientTest {
 
     // bestState has no historical block roots so definitely nothing canonical at the block's slot
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(bestSlot).createWritableCopy();
     when(store.getBlockState(BEST_BLOCK_ROOT)).thenReturn(bestState);
     when(store.getBlock(GENESIS_BLOCK_ROOT)).thenReturn(GENESIS_BLOCK);
 
@@ -344,9 +343,9 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, UnsignedLong.ONE);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(UnsignedLong.ZERO, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(UnsignedLong.ZERO).createWritableCopy();
     final BeaconBlock canonicalBlock =
-        DataStructureUtil.randomBeaconBlock(GENESIS_BLOCK.getSlot().longValue(), seed++);
+        dataStructureUtil.randomBeaconBlock(GENESIS_BLOCK.getSlot().longValue());
     bestState
         .getBlock_roots()
         .set(GENESIS_BLOCK.getSlot().intValue(), canonicalBlock.hash_tree_root());
@@ -361,7 +360,7 @@ class ChainStorageClientTest {
     storageClient.updateBestBlock(BEST_BLOCK_ROOT, bestSlot);
 
     final MutableBeaconState bestState =
-        DataStructureUtil.randomBeaconState(bestSlot, seed++).createWritableCopy();
+        dataStructureUtil.randomBeaconState(bestSlot).createWritableCopy();
     bestState
         .getBlock_roots()
         .set(GENESIS_BLOCK.getSlot().intValue(), GENESIS_BLOCK.hash_tree_root());
@@ -373,11 +372,11 @@ class ChainStorageClientTest {
 
   @Test
   public void startStoreTransaction_mutateFinalizedCheckpoint() {
-    preGenesisStorageClient.initializeFromGenesis(DataStructureUtil.randomBeaconState(1));
+    preGenesisStorageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
 
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
-    final Checkpoint newCheckpoint = DataStructureUtil.randomCheckpoint(1);
+    final Checkpoint newCheckpoint = dataStructureUtil.randomCheckpoint();
     assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
 
     final Transaction tx = preGenesisStorageClient.startStoreTransaction();
@@ -395,7 +394,7 @@ class ChainStorageClientTest {
 
   @Test
   public void startStoreTransaction_doNotMutateFinalizedCheckpoint() {
-    preGenesisStorageClient.initializeFromGenesis(DataStructureUtil.randomBeaconState(1));
+    preGenesisStorageClient.initializeFromGenesis(dataStructureUtil.randomBeaconState());
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
 

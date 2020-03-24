@@ -13,12 +13,30 @@
 
 package tech.pegasys.artemis.sync;
 
-public class SyncingStatus {
-  public final boolean is_syncing;
-  public final SyncStatus sync_status;
+import com.google.common.base.MoreObjects;
 
-  public SyncingStatus(final boolean is_syncing, final SyncStatus sync_status) {
-    this.is_syncing = is_syncing;
-    this.sync_status = sync_status;
+public class SyncingStatus {
+  private final boolean syncing;
+  private final SyncStatus syncStatus;
+
+  public SyncingStatus(final boolean syncing, final SyncStatus syncStatus) {
+    this.syncing = syncing;
+    this.syncStatus = syncStatus;
+  }
+
+  public boolean isSyncing() {
+    return syncing;
+  }
+
+  public SyncStatus getSyncStatus() {
+    return syncStatus;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("syncing", syncing)
+        .add("syncStatus", syncStatus)
+        .toString();
   }
 }

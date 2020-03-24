@@ -34,8 +34,8 @@ public class BLSPubKey {
     this.bytes = bytes;
   }
 
-  public BLSPubKey(tech.pegasys.artemis.util.bls.BLSSignature signature) {
-    this(signature.toBytes());
+  public BLSPubKey(tech.pegasys.artemis.util.bls.BLSPublicKey publicKey) {
+    this(publicKey.toBytes());
   }
 
   @Override
@@ -66,6 +66,10 @@ public class BLSPubKey {
 
   public String toHexString() {
     return bytes.toHexString();
+  }
+
+  public Bytes toBytes() {
+    return bytes;
   }
 
   public static BLSPubKey empty() {
