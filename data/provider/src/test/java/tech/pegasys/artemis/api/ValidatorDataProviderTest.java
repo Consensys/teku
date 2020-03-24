@@ -28,6 +28,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
@@ -163,6 +164,40 @@ public class ValidatorDataProviderTest {
         new ValidatorDuties(
             new BLSPubKey(publicKey.toBytesCompressed()), null, null, emptyList(), null);
     assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
+  }
+
+  @Test
+  void getValidatorsDutiesByRequest_shouldExceptionIfCharChangedInKey()
+      throws ExecutionException, InterruptedException {
+    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    Bytes b =
+        Bytes.fromHexString(
+            "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c");
+    Bytes b2 =
+        Bytes.fromHexString(
+            "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44b");
+    final BLSPublicKey publicKey = BLSPublicKey.fromBytes(b);
+    ValidatorDutiesRequest smallRequest =
+        new ValidatorDutiesRequest(
+            compute_epoch_at_slot(beaconState.slot), List.of(new BLSPubKey(Bytes.wrap(b2))));
+    when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                List.of(tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey))));
+
+    SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(smallRequest);
+    try {
+      List<ValidatorDuties> validatorDuties = future.get();
+
+      assertThat(validatorDuties.size()).isEqualTo(1);
+      ValidatorDuties expected =
+          new ValidatorDuties(
+              new BLSPubKey(publicKey.toBytesCompressed()), null, null, emptyList(), null);
+      assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
+    } catch (Exception e) {
+      e.printStackTrace();
+      assertThat(e.getCause().getClass()).isEqualTo(IllegalArgumentException.class);
+    }
   }
 
   @Test
