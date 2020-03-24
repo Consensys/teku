@@ -12,5 +12,7 @@ dependencies {
   implementation 'org.apache.commons:commons-lang3'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+  integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
+
   testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 }

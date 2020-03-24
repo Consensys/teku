@@ -43,7 +43,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
-    return sign(signingRoot, "/signer/blocka");
+    return sign(signingRoot, "/signer/block");
   }
 
   @Override
@@ -57,18 +57,24 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot, final String path) {
-    final String requestBody = createSigningRequest(signingRoot);
-    final HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(signingService.resolve(path))
-            .timeout(Duration.ofSeconds(timeoutMs))
-            .POST(BodyPublishers.ofString(requestBody))
-            .build();
-
-    return SafeFuture.of(
-        HttpClient.newHttpClient()
-            .sendAsync(request, BodyHandlers.ofString())
-            .thenApply(this::getBlsSignature));
+    try {
+      final String requestBody = createSigningRequest(signingRoot);
+      final HttpRequest request =
+          HttpRequest.newBuilder()
+              .uri(signingService.resolve(path))
+              .timeout(Duration.ofMillis(timeoutMs))
+              .POST(BodyPublishers.ofString(requestBody))
+              .build();
+      return SafeFuture.of(
+          HttpClient.newHttpClient()
+              .sendAsync(request, BodyHandlers.ofString())
+              .handleAsync(this::getBlsSignature));
+    } catch (ExternalSignerException e) {
+      return SafeFuture.failedFuture(e);
+    } catch (Exception e) {
+      return SafeFuture.failedFuture(
+          new ExternalSignerException("External signer failed to sign", e));
+    }
   }
 
   private String createSigningRequest(final Bytes signingRoot) {
@@ -84,10 +90,17 @@ public class ExternalMessageSignerService implements MessageSignerService {
     return requestBody;
   }
 
-  private BLSSignature getBlsSignature(final HttpResponse<String> response) {
+  private BLSSignature getBlsSignature(
+      final HttpResponse<String> response, final Throwable throwable) {
+    if (throwable != null) {
+      throw new ExternalSignerException(
+          "External signer failed to sign due to " + throwable.getMessage(), throwable);
+    }
+
     if (response.statusCode() != 200) {
       throw new ExternalSignerException(
-          "External signer failed to sign, received status code: " + response.statusCode());
+          "External signer failed to sign and returned invalid response status code: "
+              + response.statusCode());
     }
 
     try {
