@@ -79,6 +79,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   private final Multiaddr advertisedAddr;
   private final Gossip gossip;
   private final GossipNetwork gossipNetwork;
+  private final NetworkConfig config;
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
   private final Map<RpcMethod, RpcHandler> rpcHandlers = new ConcurrentHashMap<>();
@@ -93,6 +94,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       final List<PeerHandler> peerHandlers) {
     this.privKey = config.getPrivateKey();
     this.nodeId = new LibP2PNodeId(PeerId.fromPubKey(privKey.publicKey()));
+    this.config = config;
 
     advertisedAddr = getAdvertisedAddr(config);
     this.listenPort = config.getListenPort();
@@ -168,7 +170,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             });
   }
 
-  public Multiaddr getAdvertisedAddr(NetworkConfig config) {
+  private static Multiaddr getAdvertisedAddr(NetworkConfig config) {
     try {
       String ip;
       if (config.getAdvertisedIp().isPresent()) {
@@ -184,6 +186,10 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
       throw new RuntimeException(
           "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
     }
+  }
+
+  public static String getAdvertisedAddrString(final NetworkConfig config) {
+    return getAdvertisedAddr(config).toString();
   }
 
   @Override
@@ -254,6 +260,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
     reportExceptions(host.stop());
+  }
+
+  @Override
+  public NetworkConfig getConfig() {
+    return this.config;
   }
 
   @Override

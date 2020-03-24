@@ -24,6 +24,7 @@ import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.artemis.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.artemis.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.artemis.networking.p2p.network.DelegatingP2PNetwork;
+import tech.pegasys.artemis.networking.p2p.network.NetworkConfig;
 import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.networking.p2p.peer.NodeId;
 import tech.pegasys.artemis.networking.p2p.peer.PeerConnectedSubscriber;
@@ -74,6 +75,11 @@ public class Eth2Network extends DelegatingP2PNetwork<Eth2Peer> implements P2PNe
     attestationGossipManager.shutdown();
     aggregateGossipManager.shutdown();
     super.stop();
+  }
+
+  @Override
+  public NetworkConfig getConfig() {
+    return network.getConfig();
   }
 
   @Override

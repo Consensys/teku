@@ -24,13 +24,15 @@ dependencies {
 
   testImplementation 'org.mockito:mockito-core'
 
-  testImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':util'))
 
-  testSupportImplementation project(path: ':bls', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testFixturesApi testFixtures(project(':bls'))
+  testFixturesApi testFixtures(project(':storage'))
+
+  testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
+  testFixturesImplementation testFixtures(project(':util'))
 
   test {
     testLogging.showStandardStreams = true

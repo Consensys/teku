@@ -10,5 +10,5 @@ dependencies {
 
     testImplementation 'org.assertj:assertj-core'
 
-    testRuntimeOnly project(path: ':logging', configuration: 'testSupportArtifacts')
+    testRuntimeOnly testFixtures(project(':logging'))
 }
