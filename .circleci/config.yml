@@ -240,11 +240,6 @@ jobs:
           command: |
             ./gradlew --no-daemon --parallel distDocker
 
-      - run:
-          name: DockerWhiteblock
-          command: |
-            ./gradlew --no-daemon --parallel distDockerWhiteblock
-
   publish:
     executor: medium_executor
     steps:

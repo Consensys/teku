@@ -328,38 +328,6 @@ task distDocker(type: Exec) {
   args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
 }
 
-task distDockerWhiteblock(type: Exec) {
-  dependsOn installDist
-
-  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "pegasyseng/teku:whiteblock"
-  def dockerBuildDir = "build/docker-teku-whiteblock/"
-  workingDir "${dockerBuildDir}"
-
-  doFirst {
-    new File(dockerBuildDir).mkdir()
-    copy {
-      from fileTree("${projectDir}/docker/whiteblock/")
-      into(workingDir)
-    }
-    copy {
-      from fileTree("${projectDir}/build/install/")
-      into(workingDir)
-    }
-    copy {
-      from fileTree("${projectDir}/scripts/")
-      into("${workingDir}/scripts")
-    }
-    copy {
-      from fileTree("${projectDir}/config/")
-      into("${workingDir}/config")
-    }
-  }
-
-  executable "sh"
-  args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
-}
-
 subprojects {
   tasks.withType(Test) {
     // If GRADLE_MAX_TEST_FORKS is not set, use half the available processors
@@ -698,13 +666,12 @@ bintrayUpload.mustRunAfter(distTar)
 bintrayUpload.mustRunAfter(distZip)
 
 task dockerUpload(type: Exec) {
-  dependsOn([distDocker, distDockerWhiteblock])
+  dependsOn([distDocker])
   def imageRepos = 'pegasyseng'
   def imageName = "${imageRepos}/teku"
   def image = "${imageName}:develop"
-  def cmd = "docker push ${imageName}:whiteblock"
+  def cmd = "docker push ${imageName}:${rootProject.version}"
   def additionalTags = []
-  additionalTags.add("${rootProject.version}")
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
   }
