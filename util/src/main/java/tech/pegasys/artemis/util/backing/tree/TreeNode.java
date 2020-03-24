@@ -67,6 +67,17 @@ public interface TreeNode {
       checkArgument(target == 1, "Invalid root index: %s", target);
       return nodeUpdater.apply(this);
     }
+
+    @Override
+    default TreeNode updated(TreeNodes newNodes) {
+      switch (newNodes.size()) {
+        case 0: return this;
+        case 1:
+          checkArgument(newNodes.getGIndex(0) == 1, "Invalid root index");
+          return newNodes.getNode(0);
+        default: throw new IllegalArgumentException("Number of new nodes for Root node > 1");
+      }
+    }
   }
 
   /**
@@ -130,6 +141,11 @@ public interface TreeNode {
           return rebind(false, newRightChild);
         }
       }
+    }
+
+    @Override
+    default TreeNode updated(TreeNodes newNodes) {
+      return null;
     }
   }
 
