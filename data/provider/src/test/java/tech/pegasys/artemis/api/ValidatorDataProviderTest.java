@@ -170,16 +170,19 @@ public class ValidatorDataProviderTest {
   void getValidatorsDutiesByRequest_shouldExceptionIfCharChangedInKey()
       throws ExecutionException, InterruptedException {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    Bytes b =
+    // valid key
+    Bytes validKey =
         Bytes.fromHexString(
             "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c");
-    Bytes b2 =
+    // invalid key
+    Bytes invalidKey =
         Bytes.fromHexString(
             "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44b");
-    final BLSPublicKey publicKey = BLSPublicKey.fromBytes(b);
+    final BLSPublicKey publicKey = BLSPublicKey.fromBytes(validKey);
     ValidatorDutiesRequest smallRequest =
         new ValidatorDutiesRequest(
-            compute_epoch_at_slot(beaconState.slot), List.of(new BLSPubKey(Bytes.wrap(b2))));
+            compute_epoch_at_slot(beaconState.slot),
+            List.of(new BLSPubKey(Bytes.wrap(invalidKey))));
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -195,7 +198,7 @@ public class ValidatorDataProviderTest {
               new BLSPubKey(publicKey.toBytesCompressed()), null, null, emptyList(), null);
       assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
     } catch (Exception e) {
-      e.printStackTrace();
+      //      e.printStackTrace();
       assertThat(e.getCause().getClass()).isEqualTo(IllegalArgumentException.class);
     }
   }

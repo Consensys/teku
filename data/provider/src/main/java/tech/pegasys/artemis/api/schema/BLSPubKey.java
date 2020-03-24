@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 
 public class BLSPubKey {
   /** The number of bytes in this value - i.e. 48 */
@@ -61,7 +62,10 @@ public class BLSPubKey {
   }
 
   public static BLSPubKey fromHexString(String value) {
-    return new BLSPubKey(Bytes.fromHexString(value));
+    BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(Bytes.fromHexString(value));
+    // force validation early - this will throw IllegalArgumentException if not valid
+    blsPublicKey.getPublicKey().g1Point();
+    return new BLSPubKey(blsPublicKey);
   }
 
   public String toHexString() {
