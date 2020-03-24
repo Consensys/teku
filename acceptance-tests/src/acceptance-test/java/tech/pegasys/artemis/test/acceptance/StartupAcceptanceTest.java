@@ -24,9 +24,6 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
-    final BesuNode eth1Node = createBesuNode();
-    eth1Node.start();
-
     final ArtemisNode node = createArtemisNode();
     node.start();
     node.waitForGenesis();

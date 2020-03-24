@@ -361,11 +361,6 @@ public class BeaconChainController extends Service {
     UnsignedLong genesisTime = chainStorageClient.getGenesisTime();
     UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
     UnsignedLong currentSlot = UnsignedLong.ZERO;
-    LOG.info(
-        "genesis time is {}, current time is {}, current slot is {}",
-        genesisTime.longValue(),
-        currentTime.longValue(),
-        currentSlot.longValue());
     if (currentTime.compareTo(genesisTime) > 0) {
       UnsignedLong deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
