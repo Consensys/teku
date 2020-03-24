@@ -15,7 +15,6 @@ package tech.pegasys.artemis.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.artemis.util.async.SafeFuture.completedFuture;
@@ -32,7 +31,6 @@ import tech.pegasys.artemis.datastructures.state.MutableValidator;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableRefList;
@@ -129,7 +127,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedBlock_shouldFailWithChainDataUnavailableWhenBestBlockNotSet() {
+  public void createUnsignedBlock_shouldReturnEmptyWhenBestBlockNotSet() {
     final Store store = mock(Store.class);
     when(chainDataClient.getStore()).thenReturn(store);
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
@@ -138,8 +136,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.createUnsignedBlock(
             UnsignedLong.ONE, dataStructureUtil.randomSignature());
 
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
+    assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
   @Test
