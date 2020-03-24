@@ -16,10 +16,16 @@ package tech.pegasys.artemis.validator.api;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public interface ValidatorApiChannel {
   SafeFuture<List<ValidatorDuties>> getDuties(
       UnsignedLong epoch, Collection<BLSPublicKey> publicKeys);
+
+  SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
+      UnsignedLong slot, BLSSignature randaoReveal);
 }
