@@ -133,18 +133,23 @@ public class ChainDataProvider {
     }
     return combinedChainDataClient
         .getStateByBlockRoot(blockRoot)
-        .thenApply(state -> state.map(BeaconState::new))
-        .exceptionally(err -> Optional.empty());
+        .thenApply(state -> state.map(BeaconState::new));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(UnsignedLong slot) {
-    if (!isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
-    return combinedChainDataClient
-        .getStateAtSlot(slot)
-        .thenApply(state -> state.map(BeaconState::new))
-        .exceptionally(err -> Optional.empty());
+    return SafeFuture.of(
+        () -> {
+          if (!isStoreAvailable()) {
+            return SafeFuture.failedFuture(new ChainDataUnavailableException());
+          }
+          final Bytes32 bestRoot =
+              combinedChainDataClient
+                  .getBestBlockRoot()
+                  .orElseThrow(ChainDataUnavailableException::new);
+          return combinedChainDataClient
+              .getStateAtSlot(slot, bestRoot)
+              .thenApply(state -> state.map(BeaconState::new));
+        });
   }
 
   public SafeFuture<Optional<Bytes32>> getHashTreeRootAtSlot(UnsignedLong slot) {

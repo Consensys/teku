@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.getMaxAgeForBeaconState;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -42,19 +41,19 @@ import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
+import tech.pegasys.artemis.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class GetState implements Handler {
+public class GetState extends AbstractHandler implements Handler {
   public static final String ROUTE = "/beacon/state";
 
   private final ChainDataProvider provider;
-  private final JsonProvider jsonProvider;
 
   public GetState(final ChainDataProvider provider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.provider = provider;
-    this.jsonProvider = jsonProvider;
   }
 
   @OpenApi(
@@ -96,21 +95,16 @@ public class GetState implements Handler {
         ctx.status(SC_BAD_REQUEST);
         return;
       }
-      ctx.result(future.thenApplyChecked(state -> handleResponseContext(ctx, state)));
+      this.handlePossiblyMissingResult(ctx, future, this::handleResult);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
 
-  private String handleResponseContext(Context ctx, final Optional<BeaconState> stateOptional)
+  private Optional<String> handleResult(Context ctx, final BeaconState beaconState)
       throws JsonProcessingException {
-    if (stateOptional.isEmpty()) {
-      ctx.status(SC_NOT_FOUND);
-      return null;
-    }
-    BeaconState beaconState = stateOptional.get();
     ctx.header(Header.CACHE_CONTROL, getMaxAgeForBeaconState(provider, beaconState));
-    return jsonProvider.objectToJSON(beaconState);
+    return Optional.of(jsonProvider.objectToJSON(beaconState));
   }
 }

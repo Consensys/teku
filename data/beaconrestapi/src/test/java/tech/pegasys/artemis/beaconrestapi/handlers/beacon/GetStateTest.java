@@ -14,7 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -77,7 +77,7 @@ public class GetStateTest {
 
     handler.handle(context);
 
-    verify(context).status(SC_NOT_FOUND);
+    verify(context).status(SC_GONE);
   }
 
   @Test
@@ -198,6 +198,6 @@ public class GetStateTest {
 
     handler.handle(context);
 
-    verify(context).status(SC_NOT_FOUND);
+    verify(context).status(SC_GONE);
   }
 }

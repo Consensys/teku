@@ -31,15 +31,27 @@ public abstract class AbstractHandler implements Handler {
 
   protected <T> void handlePossiblyMissingResult(
       final Context ctx, SafeFuture<Optional<T>> future) {
+    handlePossiblyMissingResult(
+        ctx, future, (context, r) -> Optional.of(jsonProvider.objectToJSON(r)));
+  }
+
+  protected <T> void handlePossiblyMissingResult(
+      final Context ctx, SafeFuture<Optional<T>> future, ResultProcessor<T> resultProcessor) {
     ctx.result(
         future.thenApplyChecked(
             result -> {
               if (result.isPresent()) {
-                return jsonProvider.objectToJSON(result.get());
+                return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
                 ctx.status(SC_GONE);
                 return null;
               }
             }));
+  }
+
+  @FunctionalInterface
+  public interface ResultProcessor<T> {
+    // Process result, returning an optional serialized response
+    Optional<String> process(final Context context, final T result) throws Exception;
   }
 }

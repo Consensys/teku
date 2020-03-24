@@ -54,6 +54,7 @@ import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.HistoricalChainData;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class ChainDataProviderTest {
@@ -264,26 +265,58 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getStateAtSlot_shouldThrowWhenStoreNotFound() {
-    ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+  public void getStateAtSlot_shouldThrowWhenStorageClientIsMissing() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
 
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
+  public void getStateAtSlot_shouldThrowWhenStoreNotFound() {
+    final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+    when(storageClient.getStore()).thenReturn(null);
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(storageClient, historicalChainData);
+    final ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, combinedChainDataClient);
+
+    SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
+    verify(storageClient).getStore();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
+  }
+
+  @Test
+  public void getStateAtSlot_shouldThrowWhenHeadRootMissing() {
+    final Store store = mock(Store.class);
+    final ChainStorageClient storageClient = mock(ChainStorageClient.class);
+    when(storageClient.getStore()).thenReturn(store);
+    when(storageClient.getBestBlockRoot()).thenReturn(Optional.empty());
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(storageClient, historicalChainData);
+    final ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, combinedChainDataClient);
+
+    SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
+    verify(storageClient).getBestBlockRoot();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
+  }
+
+  @Test
   void getStateBySlot_shouldReturnBeaconStateWhenFound()
       throws ExecutionException, InterruptedException {
-    ChainDataProvider provider =
-        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
-
+    final Bytes32 chainHead = dataStructureUtil.randomBytes32();
     SafeFuture<Optional<tech.pegasys.artemis.datastructures.state.BeaconState>> futureBeaconState =
         completedFuture(Optional.of(beaconStateInternal));
 
+    final ChainDataProvider provider =
+        new ChainDataProvider(chainStorageClient, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getStateAtSlot(ZERO)).thenReturn(futureBeaconState);
+    when(mockCombinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(chainHead));
+    when(mockCombinedChainDataClient.getStateAtSlot(ZERO, chainHead)).thenReturn(futureBeaconState);
+
     SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO);
+    verify(mockCombinedChainDataClient).getStateAtSlot(ZERO, chainHead);
 
     BeaconState result = future.get().get();
     assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
