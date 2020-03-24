@@ -301,10 +301,13 @@ public class ArtemisNode extends Node {
       configMap.put("rest-api-port", REST_API_PORT);
       configMap.put("rest-api-docs-enabled", false);
       configMap.put("x-transaction-record-directory", ARTIFACTS_PATH + "transitions/");
-      configMap.put("data-path", ARTIFACTS_PATH + "data/");
+      configMap.put("data-path", ARTIFACTS_PATH);
+      configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
+      configMap.put("eth1-endpoint", "http://notvalid.com");
     }
 
     public Config withDepositsFrom(final BesuNode eth1Node) {
+      configMap.put("x-interop-enabled", false);
       configMap.put("eth1-deposit-contract-address", eth1Node.getDepositContractAddress());
       configMap.put("eth1-endpoint", eth1Node.getInternalJsonRpcUrl());
       return this;
@@ -351,18 +354,6 @@ public class ArtemisNode extends Node {
       configMap.put("p2p-static-peers", peers);
       return this;
     }
-
-    //    private void setDepositMode(final String mode) {
-    //      getSection(DEPOSIT_SECTION).put("mode", mode);
-    //    }
-
-    //    private void setNetworkMode(final String mode) {
-    //      getSection(NODE_SECTION).put("networkMode", mode);
-    //    }
-
-    //    private Map<String, Object> getSection(final String interop) {
-    //      return options.computeIfAbsent(interop, key -> new HashMap<>());
-    //    }
 
     public String getPeerId() {
       return peerId.toBase58();

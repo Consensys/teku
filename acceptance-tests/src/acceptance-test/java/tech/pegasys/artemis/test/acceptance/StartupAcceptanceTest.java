@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.test.acceptance;
 
+import com.google.common.primitives.UnsignedLong;
+import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.artemis.test.acceptance.dsl.ArtemisNode;
@@ -25,28 +27,28 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    final ArtemisNode node = createArtemisNode(config -> config.withDepositsFrom(eth1Node));
+    final ArtemisNode node = createArtemisNode();
     node.start();
     node.waitForGenesis();
     node.waitForNewBlock();
   }
 
-  //  @Test
-  //  public void shouldProgressChainAfterStartingFromDisk() throws Exception {
-  //    final ArtemisNode node1 = createArtemisNode();
-  //    node1.start();
-  //    final UnsignedLong genesisTime = node1.getGenesisTime();
-  //    File tempDatabaseFile = node1.getDatabaseFileFromContainer();
-  //    File tempDatabaseVersionFile = node1.getDatabaseVersionFileFromContainer();
-  //    node1.stop();
-  //
-  //    final ArtemisNode node2 = createArtemisNode(ArtemisNode.Config::startFromDisk);
-  //    node2.copyDatabaseFileToContainer(tempDatabaseFile);
-  //    node2.copyDatabaseVersionFileToContainer(tempDatabaseVersionFile);
-  //    node2.start();
-  //    node2.waitForGenesisTime(genesisTime);
-  //    node2.waitForNewBlock();
-  //  }
+  @Test
+  public void shouldProgressChainAfterStartingFromDisk() throws Exception {
+    final ArtemisNode node1 = createArtemisNode();
+    node1.start();
+    final UnsignedLong genesisTime = node1.getGenesisTime();
+    File tempDatabaseFile = node1.getDatabaseFileFromContainer();
+    File tempDatabaseVersionFile = node1.getDatabaseVersionFileFromContainer();
+    node1.stop();
+
+    final ArtemisNode node2 = createArtemisNode();
+    node2.copyDatabaseFileToContainer(tempDatabaseFile);
+    node2.copyDatabaseVersionFileToContainer(tempDatabaseVersionFile);
+    node2.start();
+    node2.waitForGenesisTime(genesisTime);
+    node2.waitForNewBlock();
+  }
 
   @Test
   public void shouldStartChainFromDepositContract() throws Exception {
