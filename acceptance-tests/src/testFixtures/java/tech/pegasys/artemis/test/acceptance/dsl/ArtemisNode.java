@@ -59,9 +59,9 @@ public class ArtemisNode extends Node {
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.toml";
   protected static final String ARTIFACTS_PATH = "/artifacts/";
-  private static final String ARTIFACTS_DB_PATH = ARTIFACTS_PATH + "db/";
+  private static final String ARTIFACTS_DB_PATH = ARTIFACTS_PATH + "data/db/";
   private static final String DATABASE_PATH = ARTIFACTS_DB_PATH + "teku.db";
-  private static final String DATABASE_VERSION_PATH = ARTIFACTS_PATH + "db.version";
+  private static final String DATABASE_VERSION_PATH = ARTIFACTS_PATH + "data/db.version";
   private static final int P2P_PORT = 9000;
 
   private final SimpleHttpClient httpClient;
@@ -301,7 +301,7 @@ public class ArtemisNode extends Node {
       configMap.put("rest-api-port", REST_API_PORT);
       configMap.put("rest-api-docs-enabled", false);
       configMap.put("x-transaction-record-directory", ARTIFACTS_PATH + "transitions/");
-      configMap.put("data-path", ARTIFACTS_PATH);
+      configMap.put("data-path", ARTIFACTS_PATH + "data/");
       configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
       configMap.put("eth1-endpoint", "http://notvalid.com");
     }
@@ -397,7 +397,6 @@ public class ArtemisNode extends Node {
           out.println();
         }
       }
-      System.out.println();
     }
 
     private void writeValue(final Object value, final PrintWriter out) {

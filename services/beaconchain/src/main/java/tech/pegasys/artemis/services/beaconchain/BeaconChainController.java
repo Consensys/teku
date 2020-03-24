@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Date;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -276,17 +277,11 @@ public class BeaconChainController extends Service {
     if (!config.isP2pEnabled()) {
       this.p2pNetwork = new MockP2PNetwork<>(eventBus);
     } else {
-      final Bytes bytes;
-      try {
-        bytes = Bytes.fromHexString(Files.readString(Paths.get(config.getP2pPrivateKeyFile())));
-      } catch (IOException e) {
-        throw new RuntimeException(
-            "p2p private key file not found - " + config.getP2pPrivateKeyFile());
-      }
+      final Optional<Bytes> bytes = getP2pPrivateKeyBytes();
       PrivKey pk =
           bytes.isEmpty()
               ? KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()
-              : KeyKt.unmarshalPrivateKey(bytes.toArrayUnsafe());
+              : KeyKt.unmarshalPrivateKey(bytes.get().toArrayUnsafe());
       NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
@@ -310,6 +305,22 @@ public class BeaconChainController extends Service {
               .timeProvider(timeProvider)
               .build();
     }
+  }
+
+  private Optional<Bytes> getP2pPrivateKeyBytes() {
+    final Optional<Bytes> bytes;
+    final String p2pPrivateKeyFile = config.getP2pPrivateKeyFile();
+    if (p2pPrivateKeyFile != null) {
+      try {
+        bytes = Optional.of(Bytes.fromHexString(Files.readString(Paths.get(p2pPrivateKeyFile))));
+      } catch (IOException e) {
+        throw new RuntimeException("p2p private key file not found - " + p2pPrivateKeyFile);
+      }
+    } else {
+      LOG.info("Private key file not supplied. A private key will be generated");
+      bytes = Optional.empty();
+    }
+    return bytes;
   }
 
   public void initBlockAttestationsPool() {
