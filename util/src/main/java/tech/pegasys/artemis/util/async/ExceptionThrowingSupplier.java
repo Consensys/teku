@@ -11,6 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api.exceptions;
+package tech.pegasys.artemis.util.async;
 
-public class ChainDataUnavailableException extends RuntimeException {}
+public interface ExceptionThrowingSupplier<O> {
+  O get() throws Exception;
+}

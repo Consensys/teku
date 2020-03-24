@@ -11,17 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.api;
+package tech.pegasys.artemis.storage;
 
-public class DataProviderException extends RuntimeException {
-  private final String message;
-
-  public DataProviderException(String message) {
-    this.message = message;
-  }
-
-  @Override
-  public final String getMessage() {
-    return message;
-  }
-}
+public class ChainDataUnavailableException extends RuntimeException {}
