@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':bls')
+  implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':storage')
   implementation project(':services:serviceutils')

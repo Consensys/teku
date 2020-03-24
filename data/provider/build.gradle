@@ -11,6 +11,7 @@ dependencies {
     implementation project(':storage')
     implementation project(':sync')
     implementation project(':util')
+    implementation project(':validator:api')
     implementation project(':validator:coordinator')
 
     implementation 'com.google.code.gson:gson'

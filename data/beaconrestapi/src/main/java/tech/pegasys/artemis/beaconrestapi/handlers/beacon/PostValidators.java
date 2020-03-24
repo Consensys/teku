@@ -56,12 +56,12 @@ public class PostValidators implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Returns validators that match the information specified.",
+      summary = "Get validators that match specified public keys.",
       tags = {TAG_BEACON},
       description =
-          "Takes a list of validator public keys and optionally an epoch, and returns information about them.\n\n"
-              + "If no epoch is specified, the validators will be queried from the current state.\n\n"
-              + "Any pubkeys that were not found in the list of validators will be returned without an associated validator.",
+          "Returns information about validators that match the list of validator public keys and optional epoch.\n\n"
+              + "If no epoch is specified, the validators are queried from the current state.\n\n"
+              + "Public keys that do not match a validator are returned without validator information.",
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = ValidatorsRequest.class)},
@@ -70,7 +70,8 @@ public class PostValidators implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = ValidatorWithIndex.class, isArray = true)),
+            content = @OpenApiContent(from = ValidatorWithIndex.class, isArray = true),
+            description = "List of validator objects."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid body supplied"),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
