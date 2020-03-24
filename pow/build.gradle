@@ -21,7 +21,7 @@ dependencies {
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
 }

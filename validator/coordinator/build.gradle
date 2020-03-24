@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':bls')
+  implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':storage')
   implementation project(':services:serviceutils')
@@ -24,9 +25,9 @@ dependencies {
 
   runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
-  testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-  testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':ethereum:statetransition'))
+  testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
 }

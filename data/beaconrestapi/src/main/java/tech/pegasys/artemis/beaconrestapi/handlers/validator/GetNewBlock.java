@@ -14,8 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -26,6 +24,7 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
 import static tech.pegasys.artemis.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -36,15 +35,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.artemis.api.DataProvider;
-import tech.pegasys.artemis.api.DataProviderException;
 import tech.pegasys.artemis.api.ValidatorDataProvider;
 import tech.pegasys.artemis.api.schema.BLSSignature;
 import tech.pegasys.artemis.api.schema.BeaconBlock;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.storage.ChainDataUnavailableException;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
 public class GetNewBlock implements Handler {
   public static final String ROUTE = "/validator/block";
@@ -84,18 +83,29 @@ public class GetNewBlock implements Handler {
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
       UnsignedLong slot = getParameterValueAsUnsignedLong(queryParamMap, SLOT);
-      Optional<BeaconBlock> optional = provider.getUnsignedBeaconBlockAtSlot(slot, randao);
-      if (optional.isPresent()) {
-        ctx.result(jsonProvider.objectToJSON(optional.get()));
-      } else {
-        ctx.status(SC_NO_CONTENT);
-      }
-
+      ctx.result(
+          provider
+              .getUnsignedBeaconBlockAtSlot(slot, randao)
+              .thenApplyChecked(
+                  maybeBlock -> {
+                    if (maybeBlock.isEmpty()) {
+                      throw new ChainDataUnavailableException();
+                    }
+                    return jsonProvider.objectToJSON(maybeBlock);
+                  })
+              .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
-    } catch (DataProviderException e) {
-      ctx.status(SC_INTERNAL_SERVER_ERROR);
     }
+  }
+
+  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof IllegalArgumentException) {
+      ctx.status(SC_BAD_REQUEST);
+      return SafeFuture.of(() -> jsonProvider.objectToJSON(new BadRequest(error.getMessage())));
+    }
+    return SafeFuture.failedFuture(error);
   }
 }

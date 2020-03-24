@@ -11,5 +11,5 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
 
-  testSupportImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+  testSupportImplementation testFixtures(project(':util'))
 }

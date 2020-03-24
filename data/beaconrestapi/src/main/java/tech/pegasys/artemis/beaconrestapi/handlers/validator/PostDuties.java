@@ -55,11 +55,11 @@ public class PostDuties implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Returns validator duties that match the specified query.",
+      summary = "Get the validator duties for the specified epoch.",
       tags = {TAG_VALIDATOR},
       description =
-          "Takes a list of validator public keys and an epoch, and returns validator duties for them.\n\n"
-              + "Any pubkeys that were not found in the list of validators will be returned without any associated duties.",
+          "Returns the validator duties for validators that match the specified public keys and epoch.\n\n"
+              + "Public keys that do not match a validator are returned without validator information.",
       requestBody =
           @OpenApiRequestBody(
               content = @OpenApiContent(from = ValidatorsRequest.class),
@@ -68,7 +68,10 @@ public class PostDuties implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = ValidatorDuties.class, isArray = true)),
+            content = @OpenApiContent(from = ValidatorDuties.class, isArray = true),
+            description =
+                "List of validators, including information about a validator's attestation committee index"
+                    + " and block proposal slot."),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = INVALID_BODY_SUPPLIED),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
@@ -82,7 +85,7 @@ public class PostDuties implements Handler {
       SafeFuture<List<ValidatorDuties>> future =
           provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      ctx.result(future.thenApplyChecked(duties -> jsonProvider.objectToJSON(duties)));
+      ctx.result(future.thenApplyChecked(jsonProvider::objectToJSON));
 
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));

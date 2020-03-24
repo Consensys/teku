@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,6 +82,7 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.util.time.events.SlotEvent;
+import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
 public class ValidatorCoordinator extends Service implements SlotEventsChannel {
@@ -95,6 +97,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
   private final DepositProvider depositProvider;
+  private final ValidatorApiChannel validatorApiChannel;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
@@ -106,6 +109,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   public ValidatorCoordinator(
       EventBus eventBus,
+      ValidatorApiChannel validatorApiChannel,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
@@ -113,6 +117,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
+    this.validatorApiChannel = validatorApiChannel;
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
@@ -163,8 +168,7 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
     if (!isGenesis(slot) && headRoot.isPresent()) {
       BeaconState headState = chainStorageClient.getStore().getBlockState(headRoot.get());
-      BeaconBlock headBlock = chainStorageClient.getStore().getBlock(headRoot.get());
-      createBlockIfNecessary(headState, headBlock, slot);
+      createBlockIfNecessary(headState, slot);
     }
   }
 
@@ -268,10 +272,8 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     postSignedAttestation(attestation, false);
   }
 
-  private void createBlockIfNecessary(
-      BeaconState previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
+  private void createBlockIfNecessary(BeaconState previousState, UnsignedLong newSlot) {
     try {
-
       MutableBeaconState newState = previousState.createWritableCopy();
       // Process empty slots up to the new slot
       stateTransition.process_slots(newState, newSlot);
@@ -283,31 +285,24 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
         return;
       }
 
-      SignedBeaconBlock newBlock;
-      // Collect attestations to include
-      SSZList<Attestation> attestations = blockAttestationsPool.getAttestationsForSlot(newSlot);
-      // Collect slashing to include
-      final SSZList<ProposerSlashing> slashingsInBlock = getSlashingsForBlock(newState);
-      // Collect deposits
-      final SSZList<Deposit> deposits = depositProvider.getDeposits(newState);
-
       final MessageSignerService signer = getSigner(proposer);
-      Eth1Data eth1Data = eth1DataCache.get_eth1_vote(newState);
-      final Bytes32 parentRoot = previousBlock.hash_tree_root();
-      newBlock =
-          blockCreator.createNewBlock(
-              signer,
-              newSlot,
-              newState,
-              parentRoot,
-              eth1Data,
-              attestations,
-              slashingsInBlock,
-              deposits);
+      final BLSSignature randaoReveal =
+          blockCreator.get_epoch_signature(newState, compute_epoch_at_slot(newSlot), signer);
+      final BeaconBlock unsignedBlock =
+          validatorApiChannel
+              .createUnsignedBlock(newSlot, randaoReveal)
+              .orTimeout(10, TimeUnit.SECONDS)
+              .join()
+              .orElseThrow();
+
+      final BLSSignature blockSignature =
+          blockCreator.get_block_signature(newState, unsignedBlock, signer);
+
+      final SignedBeaconBlock newBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
 
       this.eventBus.post(new ProposedBlockEvent(newBlock));
       LOG.debug("Local validator produced a new block");
-    } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
+    } catch (final Exception e) {
       STATUS_LOG.blockCreationFailure(e);
     }
   }
@@ -359,10 +354,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
       slashing = slashings.poll();
     }
     return slashingsForBlock;
-  }
-
-  public BLSPublicKey getProposerForSlot(final BeaconState preState, final UnsignedLong slot) {
-    return blockCreator.getProposerForSlot(preState, slot);
   }
 
   private MessageSignerService getSigner(BLSPublicKey signer) {
