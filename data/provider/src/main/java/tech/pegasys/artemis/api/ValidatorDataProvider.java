@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
@@ -57,8 +56,8 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public Optional<BeaconBlock> getUnsignedBeaconBlockAtSlot(UnsignedLong slot, BLSSignature randao)
-      throws DataProviderException {
+  public SafeFuture<BeaconBlock> getUnsignedBeaconBlockAtSlot(
+      UnsignedLong slot, BLSSignature randao) {
     if (slot == null) {
       throw new IllegalArgumentException("no slot provided.");
     }
@@ -66,18 +65,10 @@ public class ValidatorDataProvider {
       throw new IllegalArgumentException("no randao_reveal provided.");
     }
 
-    try {
-      Optional<tech.pegasys.artemis.datastructures.blocks.BeaconBlock> newBlock =
-          validatorCoordinator.createUnsignedBlock(
-              slot, tech.pegasys.artemis.util.bls.BLSSignature.fromBytes(randao.getBytes()));
-      if (newBlock.isPresent()) {
-        return Optional.of(new BeaconBlock(newBlock.get()));
-      }
-    } catch (Exception ex) {
-      LOG.error("Failed to generate a new unsigned block", ex);
-      throw new DataProviderException(ex.getMessage());
-    }
-    return Optional.empty();
+    return validatorApiChannel
+        .createUnsignedBlock(
+            slot, tech.pegasys.artemis.util.bls.BLSSignature.fromBytes(randao.getBytes()))
+        .thenApply(BeaconBlock::new);
   }
 
   public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(
@@ -109,22 +100,6 @@ public class ValidatorDataProvider {
         duties.getAttestationCommitteeIndex(),
         duties.getBlockProposalSlots(),
         duties.getAttestationSlot());
-  }
-
-  @VisibleForTesting
-  protected static Integer getValidatorIndex(
-      final List<tech.pegasys.artemis.datastructures.state.Validator> validators,
-      final BLSPubKey publicKey) {
-    Optional<tech.pegasys.artemis.datastructures.state.Validator> optionalValidator =
-        validators.stream()
-            .filter(
-                v -> Bytes48.fromHexString(publicKey.toHexString()).equals(v.getPubkey().toBytes()))
-            .findFirst();
-    if (optionalValidator.isPresent()) {
-      return validators.indexOf(optionalValidator.get());
-    } else {
-      return null;
-    }
   }
 
   @VisibleForTesting

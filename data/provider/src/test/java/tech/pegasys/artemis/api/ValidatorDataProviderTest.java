@@ -26,7 +26,6 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -39,9 +38,6 @@ import tech.pegasys.artemis.api.schema.ValidatorDuties;
 import tech.pegasys.artemis.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.statetransition.StateTransitionException;
-import tech.pegasys.artemis.statetransition.util.EpochProcessingException;
-import tech.pegasys.artemis.statetransition.util.SlotProcessingException;
 import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -84,43 +80,14 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  void getUnsignedBeaconBlockAtSlot_shouldThrowDataProviderExceptionIfStateTransitionException() {
-    shouldThrowDataProviderExceptionAfterGettingException(new StateTransitionException(null));
-  }
+  void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
+    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal))
+        .thenReturn(SafeFuture.completedFuture(blockInternal));
 
-  @Test
-  void getUnsignedBeaconBlockAtSlot_shouldThrowDataProviderExceptionIfSlotProcessingException() {
-    shouldThrowDataProviderExceptionAfterGettingException(new SlotProcessingException("TEST"));
-  }
-
-  @Test
-  void getUnsignedBeaconBlockAtSlot_shouldThrowDataProviderExceptionIfEpochProcessingException() {
-    shouldThrowDataProviderExceptionAfterGettingException(new EpochProcessingException("TEST"));
-  }
-
-  @Test
-  void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock()
-      throws SlotProcessingException, EpochProcessingException, StateTransitionException {
-    when(validatorCoordinator.createUnsignedBlock(ONE, signatureInternal))
-        .thenReturn(Optional.of(blockInternal));
-
-    Optional<BeaconBlock> data = provider.getUnsignedBeaconBlockAtSlot(ONE, signature);
-    verify(validatorCoordinator).createUnsignedBlock(ONE, signatureInternal);
-    assertThat(data.isPresent()).isTrue();
-    assertThat(data.get()).usingRecursiveComparison().isEqualTo(block);
-  }
-
-  private void shouldThrowDataProviderExceptionAfterGettingException(Exception ex) {
-    tech.pegasys.artemis.util.bls.BLSSignature signatureInternal =
-        tech.pegasys.artemis.util.bls.BLSSignature.random(1234);
-    BLSSignature signature = new BLSSignature(signatureInternal);
-    try {
-      when(validatorCoordinator.createUnsignedBlock(ONE, signatureInternal)).thenThrow(ex);
-    } catch (Exception ignored) {
-    }
-
-    assertThatExceptionOfType(DataProviderException.class)
-        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, signature));
+    SafeFuture<BeaconBlock> data = provider.getUnsignedBeaconBlockAtSlot(ONE, signature);
+    verify(validatorApiChannel).createUnsignedBlock(ONE, signatureInternal);
+    assertThat(data).isCompleted();
+    assertThat(data.getNow(null)).usingRecursiveComparison().isEqualTo(block);
   }
 
   @Test
