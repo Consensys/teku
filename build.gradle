@@ -472,7 +472,6 @@ subprojects {
     acceptanceTestImplementation.extendsFrom implementation
     compatibilityTestImplementation.extendsFrom implementation
     referenceTestImplementation.extendsFrom implementation
-    testSupportArtifacts.extendsFrom testSupportImplementation
   }
 
   def jarName = project.name
