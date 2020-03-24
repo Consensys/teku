@@ -72,6 +72,14 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     }
   }
 
+  public static <U> SafeFuture<U> of(final ExceptionThrowingSupplier<U> supplier) {
+    try {
+      return SafeFuture.completedFuture(supplier.get());
+    } catch (final Exception e) {
+      return SafeFuture.failedFuture(e);
+    }
+  }
+
   @SuppressWarnings("FutureReturnValueIgnored")
   static <U> void propagateResult(final CompletionStage<U> stage, final SafeFuture<U> safeFuture) {
     stage.whenComplete(

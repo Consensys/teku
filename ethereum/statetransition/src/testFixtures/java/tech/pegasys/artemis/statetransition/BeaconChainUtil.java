@@ -41,7 +41,7 @@ import tech.pegasys.artemis.util.config.Constants;
 public class BeaconChainUtil {
 
   private final StateTransition stateTransition = new StateTransition();
-  private final BlockProposalUtil blockCreator = new BlockProposalUtil(stateTransition);
+  private final BlockProposalTestUtil blockCreator = new BlockProposalTestUtil(stateTransition);
   private final ChainStorageClient storageClient;
   private final List<BLSKeyPair> validatorKeys;
   private final boolean signDeposits;

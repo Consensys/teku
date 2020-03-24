@@ -47,7 +47,9 @@ import tech.pegasys.artemis.pow.api.Eth1EventsChannel;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
+import tech.pegasys.artemis.statetransition.BlockProposalUtil;
 import tech.pegasys.artemis.statetransition.StateProcessor;
+import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.artemis.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -68,7 +70,9 @@ import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
+import tech.pegasys.artemis.validator.coordinator.BlockFactory;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
+import tech.pegasys.artemis.validator.coordinator.Eth1DataCache;
 import tech.pegasys.artemis.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.artemis.validator.coordinator.ValidatorCoordinator;
 
@@ -97,6 +101,7 @@ public class BeaconChainController extends Service {
   private volatile AttestationManager attestationManager;
   private volatile ValidatorCoordinator validatorCoordinator;
   private volatile CombinedChainDataClient combinedChainDataClient;
+  private volatile Eth1DataCache eth1DataCache;
 
   public BeaconChainController(
       TimeProvider timeProvider,
@@ -164,6 +169,7 @@ public class BeaconChainController extends Service {
     initAttestationAggregator();
     initBlockAttestationsPool();
     initDepositProvider();
+    initEth1DataCache();
     initValidatorCoordinator();
     initPreGenesisDepositHandler();
     initStateProcessor();
@@ -214,23 +220,38 @@ public class BeaconChainController extends Service {
         .subscribe(FinalizedCheckpointEventChannel.class, depositProvider);
   }
 
+  private void initEth1DataCache() {
+    LOG.debug("BeaconChainController.initEth1DataCache");
+    eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
+  }
+
   public void initValidatorCoordinator() {
     LOG.debug("BeaconChainController.initValidatorCoordinator()");
     this.validatorCoordinator =
         new ValidatorCoordinator(
             timeProvider,
             eventBus,
+            eventChannels.getPublisher(ValidatorApiChannel.class),
             chainStorageClient,
             attestationAggregator,
             blockAttestationsPool,
             depositProvider,
+            eth1DataCache,
             config);
   }
 
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
+    final StateTransition stateTransition = new StateTransition();
+    final BlockFactory blockFactory =
+        new BlockFactory(
+            new BlockProposalUtil(stateTransition),
+            stateTransition,
+            blockAttestationsPool,
+            depositProvider,
+            eth1DataCache);
     eventChannels.subscribe(
-        ValidatorApiChannel.class, new ValidatorApiHandler(combinedChainDataClient));
+        ValidatorApiChannel.class, new ValidatorApiHandler(combinedChainDataClient, blockFactory));
   }
 
   public void initStateProcessor() {
