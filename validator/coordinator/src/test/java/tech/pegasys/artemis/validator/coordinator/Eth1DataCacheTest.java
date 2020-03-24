@@ -34,8 +34,8 @@ import tech.pegasys.artemis.util.SSZTypes.SSZList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.Waiter;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.SlotEvent;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class Eth1DataCacheTest {
 

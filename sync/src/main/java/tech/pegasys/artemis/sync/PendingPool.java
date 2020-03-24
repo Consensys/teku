@@ -32,14 +32,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.events.Subscribers;
-import tech.pegasys.artemis.util.time.SlotEvent;
-import tech.pegasys.artemis.util.time.SlotEventsChannel;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 class PendingPool<T> extends Service implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -84,11 +83,6 @@ class PendingPool<T> extends Service implements SlotEventsChannel {
     this.targetSlotFunction = targetSlotFunction;
   }
 
-  public void registerToEvents(EventChannels eventChannels) {
-    eventBus.register(this);
-    eventChannels.subscribe(SlotEventsChannel.class, this);
-  }
-
   public static PendingPool<SignedBeaconBlock> createForBlocks(EventBus eventBus) {
     return createForBlocks(
         eventBus, DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
@@ -119,6 +113,7 @@ class PendingPool<T> extends Service implements SlotEventsChannel {
 
   @Override
   protected SafeFuture<?> doStart() {
+    eventBus.register(this);
     return SafeFuture.completedFuture(null);
   }
 

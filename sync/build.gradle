@@ -21,9 +21,11 @@ dependencies {
     testImplementation 'org.mockito:mockito-core'
 
     integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
+    integrationTestImplementation project(path: ':sync', configuration: 'testSupportArtifacts')
     integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
 
     integrationTestImplementation 'org.mockito:mockito-core'
 
-    testSupportImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')    
+    testSupportImplementation project(path: ':events', configuration: 'testSupportArtifacts')
+    testSupportImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
 }

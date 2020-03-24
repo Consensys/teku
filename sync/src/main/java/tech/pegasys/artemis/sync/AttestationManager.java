@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.operations.AggregateAndProof;
 import tech.pegasys.artemis.datastructures.operations.Attestation;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.StateTransition;
 import tech.pegasys.artemis.statetransition.attestation.AttestationProcessingResult;
@@ -31,8 +30,8 @@ import tech.pegasys.artemis.statetransition.events.attestation.ProcessedAttestat
 import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
-import tech.pegasys.artemis.util.time.SlotEvent;
-import tech.pegasys.artemis.util.time.SlotEventsChannel;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -52,10 +51,6 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     this.attestationProcessor = attestationProcessor;
     this.pendingAttestations = pendingAttestations;
     this.futureAttestations = futureAttestations;
-  }
-
-  public void registerToEvents(EventChannels eventChannels) {
-    eventChannels.subscribe(SlotEventsChannel.class, this);
   }
 
   public static AttestationManager create(

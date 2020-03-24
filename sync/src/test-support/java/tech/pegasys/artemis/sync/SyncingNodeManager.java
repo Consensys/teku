@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.sync;
 
+import static tech.pegasys.artemis.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -29,8 +31,8 @@ import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
-import tech.pegasys.artemis.util.time.SlotEvent;
-import tech.pegasys.artemis.util.time.SlotEventsChannel;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class SyncingNodeManager {
   private final EventBus eventBus;
@@ -66,7 +68,8 @@ public class SyncingNodeManager {
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final EventBus eventBus = new EventBus();
-    final EventChannels eventChannels = new EventChannels(new NoOpMetricsSystem());
+    final EventChannels eventChannels =
+        EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final ChainStorageClient storageClient = ChainStorageClient.memoryOnlyClient(eventBus);
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory.builder().eventBus(eventBus).chainStorageClient(storageClient);
@@ -78,13 +81,14 @@ public class SyncingNodeManager {
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(storageClient, validatorKeys);
     chainUtil.initializeStorage();
 
-    SyncService syncService =
-        new SyncService(
-            eventBus,
-            eventChannels,
-            eth2Network,
-            storageClient,
-            new BlockImporter(storageClient, eventBus));
+    BlockImporter blockImporter = new BlockImporter(storageClient, eventBus);
+    BlockPropagationManager blockPropagationManager =
+        BlockPropagationManager.create(eventBus, eth2Network, storageClient, blockImporter);
+    SyncManager syncManager = SyncManager.create(eth2Network, storageClient, blockImporter);
+    SyncService syncService = new SyncService(blockPropagationManager, syncManager, storageClient);
+
+    eventChannels.subscribe(SlotEventsChannel.class, blockPropagationManager);
+
     syncService.start().join();
 
     return new SyncingNodeManager(

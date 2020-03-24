@@ -30,7 +30,6 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BeaconChainUtil;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
@@ -41,8 +40,8 @@ import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.SlotEvent;
 import tech.pegasys.artemis.util.time.StubTimeProvider;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class ValidatorCoordinatorTest {
 
@@ -124,16 +123,15 @@ public class ValidatorCoordinatorTest {
 
   private ValidatorCoordinator createValidatorCoordinator(final int ownedValidatorCount) {
     when(config.getInteropOwnedValidatorCount()).thenReturn(ownedValidatorCount);
-    EventChannels eventChannels = mock(EventChannels.class);
+    Eth1DataCache eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
     ValidatorCoordinator vc =
         new ValidatorCoordinator(
-            timeProvider,
             eventBus,
-            eventChannels,
             storageClient,
             attestationAggregator,
             blockAttestationsPool,
             depositProvider,
+            eth1DataCache,
             config);
 
     chainUtil.initializeStorage();

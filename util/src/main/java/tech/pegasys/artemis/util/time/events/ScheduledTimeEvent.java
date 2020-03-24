@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.time;
+package tech.pegasys.artemis.util.time.events;
 
 import java.util.Date;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
+import tech.pegasys.artemis.util.time.Timer;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
 public class ScheduledTimeEvent implements Job {
 
@@ -36,7 +38,7 @@ public class ScheduledTimeEvent implements Job {
   @Override
   public void execute(JobExecutionContext context) throws JobExecutionException {
     JobDataMap data = context.getJobDetail().getJobDataMap();
-    DateEventsChannel dateEventsChannel = (DateEventsChannel) data.get(Timer.TIME_EVENTS_CHANNEL);
-    dateEventsChannel.onTick(new Date());
+    TimeTickChannel timeTickChannel = (TimeTickChannel) data.get(Timer.TIME_EVENTS_CHANNEL);
+    timeTickChannel.onTick(new Date());
   }
 }

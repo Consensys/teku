@@ -11,6 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
+
 package tech.pegasys.artemis.services.powchain;
 
 import static tech.pegasys.artemis.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
@@ -31,6 +32,7 @@ import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
 public class PowchainService extends Service {
 
@@ -67,7 +69,8 @@ public class PowchainService extends Service {
             depositContractAccessor,
             asyncRunner,
             config.getTimeProvider());
-    eth1DataManager.registerToEvents(config.getEventChannels());
+
+    config.getEventChannels().subscribe(TimeTickChannel.class, eth1DataManager);
   }
 
   @Override

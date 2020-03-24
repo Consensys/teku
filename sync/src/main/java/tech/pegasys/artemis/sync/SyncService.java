@@ -13,12 +13,7 @@
 
 package tech.pegasys.artemis.sync;
 
-import com.google.common.eventbus.EventBus;
-import tech.pegasys.artemis.events.EventChannels;
-import tech.pegasys.artemis.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.artemis.networking.p2p.network.P2PNetwork;
 import tech.pegasys.artemis.service.serviceutils.Service;
-import tech.pegasys.artemis.statetransition.blockimport.BlockImporter;
 import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 
@@ -29,17 +24,12 @@ public class SyncService extends Service {
   private final ChainStorageClient storageClient;
 
   public SyncService(
-      final EventBus eventBus,
-      final EventChannels eventChannels,
-      final P2PNetwork<Eth2Peer> network,
-      final ChainStorageClient storageClient,
-      final BlockImporter blockImporter) {
-
+      final BlockPropagationManager blockPropagationManager,
+      final SyncManager syncManager,
+      final ChainStorageClient storageClient) {
     this.storageClient = storageClient;
-    this.syncManager = SyncManager.create(network, storageClient, blockImporter);
-    this.blockPropagationManager =
-        BlockPropagationManager.create(
-            eventBus, eventChannels, network, storageClient, blockImporter);
+    this.syncManager = syncManager;
+    this.blockPropagationManager = blockPropagationManager;
   }
 
   @Override

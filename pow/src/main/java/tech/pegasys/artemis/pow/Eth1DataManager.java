@@ -33,13 +33,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.async.AsyncRunner;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.DateEventsChannel;
 import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 
 /*
 
@@ -91,7 +90,7 @@ Search Eth1 Blocks to find blocks in the cache range:
 
  */
 
-public class Eth1DataManager implements DateEventsChannel {
+public class Eth1DataManager implements TimeTickChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -116,10 +115,6 @@ public class Eth1DataManager implements DateEventsChannel {
     this.depositContractAccessor = depositContractAccessor;
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
-  }
-
-  public void registerToEvents(EventChannels eventChannels) {
-    eventChannels.subscribe(DateEventsChannel.class, this);
   }
 
   public void start() {

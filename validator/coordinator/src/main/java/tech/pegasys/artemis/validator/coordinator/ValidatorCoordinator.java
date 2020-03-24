@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,6 @@ import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.AttestationUtil;
 import tech.pegasys.artemis.datastructures.validator.AttesterInformation;
 import tech.pegasys.artemis.datastructures.validator.MessageSignerService;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.statetransition.AttestationAggregator;
 import tech.pegasys.artemis.statetransition.BlockAttestationsPool;
@@ -80,12 +80,12 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.time.SlotEvent;
-import tech.pegasys.artemis.util.time.SlotEventsChannel;
-import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
-public class ValidatorCoordinator extends Service implements SlotEventsChannel {
+public class ValidatorCoordinator extends Service implements SlotEventsChannel, TimeTickChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -107,13 +107,12 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   private LinkedBlockingQueue<ProposerSlashing> slashings = new LinkedBlockingQueue<>();
 
   public ValidatorCoordinator(
-      TimeProvider timeProvider,
       EventBus eventBus,
-      EventChannels eventChannels,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
       DepositProvider depositProvider,
+      Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
     this.chainStorageClient = chainStorageClient;
@@ -123,16 +122,17 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.depositProvider = depositProvider;
+    this.eth1DataCache = eth1DataCache;
+  }
 
-    this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
-    eth1DataCache.registerToEvents(eventChannels);
-
-    eventChannels.subscribe(SlotEventsChannel.class, this);
-    this.eventBus.register(this);
+  @Override
+  public void onTick(Date date) {
+    eth1DataCache.onTick(date);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
+    this.eventBus.register(this);
     chainStorageClient.subscribeBestBlockInitialized(this::onBestBlockInitialized);
     return SafeFuture.COMPLETE;
   }

@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.eventbus.EventBus;
@@ -28,9 +27,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.Checkpoint;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
-import tech.pegasys.artemis.util.time.SlotEvent;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -50,7 +48,6 @@ public class PendingPoolTest {
     pendingPool.subscribeRequiredBlockRoot(requiredRootEvents::add);
     pendingPool.subscribeRequiredBlockRootDropped(requiredRootDroppedEvents::add);
     setSlot(currentSlot);
-    pendingPool.registerToEvents(mock(EventChannels.class));
   }
 
   private void setSlot(final long slot) {

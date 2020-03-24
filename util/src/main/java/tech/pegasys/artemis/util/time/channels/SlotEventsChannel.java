@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.time;
+package tech.pegasys.artemis.util.time.channels;
 
-import java.util.Date;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
-public interface DateEventsChannel {
-  void onTick(Date event);
+public interface SlotEventsChannel {
+  void onSlot(SlotEvent event);
 }

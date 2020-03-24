@@ -32,14 +32,13 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
-import tech.pegasys.artemis.events.EventChannels;
 import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.DateEventsChannel;
-import tech.pegasys.artemis.util.time.SlotEvent;
 import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
+import tech.pegasys.artemis.util.time.events.SlotEvent;
 
-public class Eth1DataCache implements DateEventsChannel {
+public class Eth1DataCache implements TimeTickChannel {
 
   private final TimeProvider timeProvider;
   private volatile Optional<UnsignedLong> genesisTime = Optional.empty();
@@ -50,11 +49,6 @@ public class Eth1DataCache implements DateEventsChannel {
   public Eth1DataCache(EventBus eventBus, TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
     eventBus.register(this);
-  }
-
-  public void registerToEvents(EventChannels eventChannels) {
-    eventChannels.subscribe(DateEventsChannel.class, this);
-    // TODO: eventChannels.subscribe(CacheEth1BlockEventsChannel.class, this);
   }
 
   public void startBeaconChainMode(BeaconState genesisState) {

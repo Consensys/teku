@@ -24,17 +24,19 @@ import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.quartz.SimpleTrigger;
 import org.quartz.impl.StdSchedulerFactory;
+import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
+import tech.pegasys.artemis.util.time.events.ScheduledTimeEvent;
 
 public class Timer {
 
-  static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
+  public static final String TIME_EVENTS_CHANNEL = "TimeEventsChannel";
 
   private final Scheduler sched;
   private final JobDetail job;
   private int startDelay;
   private int interval;
 
-  public Timer(DateEventsChannel dateEventsChannel, Integer startDelay, Integer interval)
+  public Timer(TimeTickChannel timeTickChannel, Integer startDelay, Integer interval)
       throws IllegalArgumentException {
     SchedulerFactory sf = new StdSchedulerFactory();
     this.startDelay = startDelay;
@@ -42,7 +44,7 @@ public class Timer {
     try {
       sched = sf.getScheduler();
       job = newJob(ScheduledTimeEvent.class).withIdentity("Timer").build();
-      job.getJobDataMap().put(TIME_EVENTS_CHANNEL, dateEventsChannel);
+      job.getJobDataMap().put(TIME_EVENTS_CHANNEL, timeTickChannel);
 
     } catch (SchedulerException e) {
       throw new IllegalArgumentException(
