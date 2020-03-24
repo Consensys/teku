@@ -59,7 +59,7 @@ public class PostAttestation implements Handler {
       requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Attestation.class)}),
       description =
           "Submit a signed attestation to the beacon node to be validated and submitted if valid.\n\n"
-              + "Ensure submissions do not result in slashings, since only data validations are performed.",
+              + "This endpoint does not protected against slashing. Signing the attestation can result in a slashable offence.",
       responses = {
         @OpenApiResponse(
             status = RES_NO_CONTENT,
