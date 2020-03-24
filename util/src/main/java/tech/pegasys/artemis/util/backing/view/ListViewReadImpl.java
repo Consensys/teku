@@ -64,6 +64,7 @@ public class ListViewReadImpl<C extends ViewRead> implements ListViewRead<C> {
       return new ListContainerWrite<>(this);
     }
 
+    @SuppressWarnings("unchecked")
     VectorViewType<C> getVectorType() {
       return (VectorViewType<C>) getType().getChildType(0);
     }

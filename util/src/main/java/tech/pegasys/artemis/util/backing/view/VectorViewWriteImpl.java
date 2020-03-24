@@ -41,15 +41,18 @@ public class VectorViewWriteImpl<R extends ViewRead, W extends R>
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public VectorViewType<R> getType() {
     return (VectorViewType<R>) super.getType();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public VectorViewReadImpl<R> commitChanges() {
     return (VectorViewReadImpl<R>) super.commitChanges();
   }
 
+  @Override
   protected TreeNodes packChanges(List<Entry<Integer, R>> newChildValues, TreeNode original) {
     VectorViewType<R> type = getType();
     ViewType elementType = type.getElementType();

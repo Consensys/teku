@@ -17,7 +17,9 @@ package tech.pegasys.artemis.util.backing;
 public interface ContainerViewWriteRef
     extends CompositeViewWriteRef<ViewRead, ViewWrite>, ContainerViewWrite {
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  // container is heterogeneous by its nature so making unsafe cast here
+  // is more convenient and is not less safe
   default <W extends ViewWrite> W getAnyByRef(int index) {
     return (W) getByRef(index);
   }

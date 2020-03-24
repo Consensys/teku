@@ -58,10 +58,12 @@ public interface IntCache<V> extends Cache<Integer, V> {
     getInt(key, k -> newValue);
   }
 
+  @Override
   default void invalidateWithNewValue(Integer key, V newValue) {
     invalidateWithNewValueInt(key, newValue);
   }
 
   /** Clears all cached values */
+  @Override
   void clear();
 }

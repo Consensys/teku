@@ -19,7 +19,9 @@ package tech.pegasys.artemis.util.backing;
  */
 public interface ContainerViewRead extends CompositeViewRead<ViewRead> {
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  // container is heterogeneous by its nature so making unsafe cast here
+  // is more convenient and is not less safe
   default <C extends ViewRead> C getAny(int index) {
     return (C) get(index);
   }
