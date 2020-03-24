@@ -53,7 +53,7 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<BeaconBlock> getUnsignedBeaconBlockAtSlot(
+  public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
       UnsignedLong slot, BLSSignature randao) {
     if (slot == null) {
       throw new IllegalArgumentException("no slot provided.");
@@ -65,7 +65,7 @@ public class ValidatorDataProvider {
     return validatorApiChannel
         .createUnsignedBlock(
             slot, tech.pegasys.artemis.util.bls.BLSSignature.fromBytes(randao.getBytes()))
-        .thenApply(BeaconBlock::new);
+        .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 
   public SafeFuture<List<ValidatorDuties>> getValidatorDutiesByRequest(

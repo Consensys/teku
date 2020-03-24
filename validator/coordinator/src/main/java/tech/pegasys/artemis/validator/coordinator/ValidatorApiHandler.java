@@ -35,7 +35,6 @@ import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
-import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
 import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
@@ -76,17 +75,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<BeaconBlock> createUnsignedBlock(
+  public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UnsignedLong slot, final BLSSignature randaoReveal) {
     Store store = combinedChainDataClient.getStore();
     final Optional<Bytes32> headRoot = combinedChainDataClient.getBestBlockRoot();
     if (headRoot.isEmpty() || store == null) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+      return SafeFuture.completedFuture(Optional.empty());
     }
     final BeaconState previousState = store.getBlockState(headRoot.get());
     final BeaconBlock previousBlock = store.getBlock(headRoot.get());
     return SafeFuture.of(
-        () -> blockFactory.createUnsignedBlock(previousState, previousBlock, slot, randaoReveal));
+        () ->
+            Optional.of(
+                blockFactory.createUnsignedBlock(
+                    previousState, previousBlock, slot, randaoReveal)));
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

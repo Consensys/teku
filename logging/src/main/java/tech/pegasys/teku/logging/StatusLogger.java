@@ -69,11 +69,11 @@ public class StatusLogger {
   }
 
   public void blockCreationFailure(final Exception cause) {
-    log.error("Error during block creation {}", cause.toString());
+    log.error("Error during block creation", cause);
   }
 
   public void attestationFailure(final IllegalArgumentException cause) {
-    log.warn("Cannot produce attestations or create a block {}", cause.toString());
+    log.warn("Cannot produce attestations or create a block", cause);
   }
 
   public void validatorDepositYamlKeyWriterFailure(final Path file) {

@@ -26,6 +26,7 @@ import static tech.pegasys.artemis.datastructures.util.BeaconStateUtil.compute_e
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -82,12 +83,12 @@ public class ValidatorDataProviderTest {
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal))
-        .thenReturn(SafeFuture.completedFuture(blockInternal));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockInternal)));
 
-    SafeFuture<BeaconBlock> data = provider.getUnsignedBeaconBlockAtSlot(ONE, signature);
+    SafeFuture<Optional<BeaconBlock>> data = provider.getUnsignedBeaconBlockAtSlot(ONE, signature);
     verify(validatorApiChannel).createUnsignedBlock(ONE, signatureInternal);
     assertThat(data).isCompleted();
-    assertThat(data.getNow(null)).usingRecursiveComparison().isEqualTo(block);
+    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(block);
   }
 
   @Test

@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -295,7 +294,8 @@ public class ValidatorCoordinator extends Service {
           validatorApiChannel
               .createUnsignedBlock(newSlot, randaoReveal)
               .orTimeout(10, TimeUnit.SECONDS)
-              .join();
+              .join()
+              .orElseThrow();
 
       final BLSSignature blockSignature =
           blockCreator.get_block_signature(newState, unsignedBlock, signer);
@@ -304,7 +304,7 @@ public class ValidatorCoordinator extends Service {
 
       this.eventBus.post(new ProposedBlockEvent(newBlock));
       LOG.debug("Local validator produced a new block");
-    } catch (SlotProcessingException | EpochProcessingException | CompletionException e) {
+    } catch (final Exception e) {
       STATUS_LOG.blockCreationFailure(e);
     }
   }

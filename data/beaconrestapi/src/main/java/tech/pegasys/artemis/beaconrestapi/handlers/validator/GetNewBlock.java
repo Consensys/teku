@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -87,7 +86,13 @@ public class GetNewBlock implements Handler {
       ctx.result(
           provider
               .getUnsignedBeaconBlockAtSlot(slot, randao)
-              .thenApplyChecked(jsonProvider::objectToJSON)
+              .thenApplyChecked(
+                  maybeBlock -> {
+                    if (maybeBlock.isEmpty()) {
+                      throw new ChainDataUnavailableException();
+                    }
+                    return jsonProvider.objectToJSON(maybeBlock);
+                  })
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
       ctx.status(SC_BAD_REQUEST);
@@ -97,10 +102,7 @@ public class GetNewBlock implements Handler {
 
   private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
     final Throwable rootCause = Throwables.getRootCause(error);
-    if (rootCause instanceof ChainDataUnavailableException) {
-      ctx.status(SC_NO_CONTENT);
-      return SafeFuture.completedFuture("");
-    } else if (rootCause instanceof IllegalArgumentException) {
+    if (rootCause instanceof IllegalArgumentException) {
       ctx.status(SC_BAD_REQUEST);
       return SafeFuture.of(() -> jsonProvider.objectToJSON(new BadRequest(error.getMessage())));
     }

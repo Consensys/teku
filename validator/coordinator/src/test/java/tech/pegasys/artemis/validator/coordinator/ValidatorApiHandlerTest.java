@@ -121,12 +121,11 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldFailWithChainDataUnavailableWhenStoreIsNotSet() {
     when(chainDataClient.getStore()).thenReturn(null);
 
-    final SafeFuture<BeaconBlock> result =
+    final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
             UnsignedLong.ONE, dataStructureUtil.randomSignature());
 
-    assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::join).hasRootCauseInstanceOf(ChainDataUnavailableException.class);
+    assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
   @Test
@@ -135,7 +134,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStore()).thenReturn(store);
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
-    final SafeFuture<BeaconBlock> result =
+    final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
             UnsignedLong.ONE, dataStructureUtil.randomSignature());
 
@@ -161,10 +160,10 @@ class ValidatorApiHandlerTest {
     when(blockFactory.createUnsignedBlock(previousState, previousBlock, newSlot, randaoReveal))
         .thenReturn(createdBlock);
 
-    final SafeFuture<BeaconBlock> result =
+    final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal);
 
-    assertThat(result).isCompletedWithValue(createdBlock);
+    assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
   private List<ValidatorDuties> assertCompletedSuccessfully(
