@@ -177,7 +177,6 @@ public class BeaconChainController extends Service {
     initP2PNetwork();
     initSyncManager();
     initValidatorApiHandler();
-    initValidatorCoordinator();
     initRestAPI();
   }
 
