@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.validator.client;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockserver.model.HttpRequest.request;
@@ -21,7 +22,7 @@ import static org.mockserver.model.JsonBody.json;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
+import org.mockserver.model.Delay;
 import tech.pegasys.artemis.util.bls.BLS;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
@@ -42,7 +44,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
   private static final int KEY_LENGTH = 48;
   private static final String UNKNOWN_PUBLIC_KEY =
       "0x989d34725a2bfc3f15105f3f5fc8741f436c25ee1ee4f948e425d6bcb8c56bce6e06c269635b7e985a7ffa639e2409bf";
-  private static final int TIMEOUT_MS = 500;
+  private static final Duration TIMEOUT = Duration.ofMillis(500);
   private static final Bytes SIGNING_ROOT = Bytes.fromHexString("0x42");
   private URL signingServiceUri;
   private ClientAndServer client;
@@ -60,7 +62,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     expectedSignature = BLS.sign(keyPair.getSecretKey(), SIGNING_ROOT);
 
     externalMessageSignerService =
-        new ExternalMessageSignerService(signingServiceUri, keyPair.getPublicKey(), TIMEOUT_MS);
+        new ExternalMessageSignerService(signingServiceUri, keyPair.getPublicKey(), TIMEOUT);
   }
 
   @AfterEach
@@ -74,7 +76,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
         new ExternalMessageSignerService(
             signingServiceUri,
             BLSPublicKey.fromBytes(Bytes.fromHexString(UNKNOWN_PUBLIC_KEY)),
-            TIMEOUT_MS);
+            TIMEOUT);
 
     assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
@@ -90,10 +92,9 @@ public class ExternalMessageSignerServiceIntegrationTest {
 
   @Test
   void failsSigningWhenSigningServiceTimesOut() {
-    final int ensureTimeout = 5;
-    client
-        .when(request())
-        .respond(response().withDelay(TimeUnit.MILLISECONDS, TIMEOUT_MS + ensureTimeout));
+    final long ensureTimeout = 5;
+    final Delay delay = new Delay(MILLISECONDS, TIMEOUT.plusMillis(ensureTimeout).toMillis());
+    client.when(request()).respond(response().withDelay(delay));
 
     assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
         .hasCauseInstanceOf(ExternalSignerException.class)

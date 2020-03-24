@@ -16,6 +16,7 @@ package tech.pegasys.artemis.validator.coordinator;
 import static com.google.common.base.Functions.identity;
 
 import com.google.common.collect.Streams;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -71,7 +72,7 @@ class ValidatorLoader {
                         new ExternalMessageSignerService(
                             config.getValidatorExternalSigningUrl(),
                             publicKey,
-                            config.getValidatorExternalSigningTimeout()))));
+                            Duration.ofMillis(config.getValidatorExternalSigningTimeout())))));
   }
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final ArtemisConfiguration config) {

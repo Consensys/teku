@@ -32,13 +32,13 @@ public class ExternalMessageSignerService implements MessageSignerService {
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
-  private final int timeoutMs;
+  private final Duration timeout;
 
   public ExternalMessageSignerService(
-      final URL signingServiceUrl, final BLSPublicKey blsPublicKey, final int timeoutMs) {
+      final URL signingServiceUrl, final BLSPublicKey blsPublicKey, final Duration timeout) {
     this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
-    this.timeoutMs = timeoutMs;
+    this.timeout = timeout;
   }
 
   @Override
@@ -62,7 +62,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
       final HttpRequest request =
           HttpRequest.newBuilder()
               .uri(signingServiceUrl.toURI().resolve(path))
-              .timeout(Duration.ofMillis(timeoutMs))
+              .timeout(timeout)
               .POST(BodyPublishers.ofString(requestBody))
               .build();
       return SafeFuture.of(
