@@ -20,8 +20,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.hyperledger.besu:plugin-api'
 
-  testImplementation 'org.mockito:mockito-core'
-
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))

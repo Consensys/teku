@@ -25,6 +25,4 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':util'))
-
-  testImplementation 'org.mockito:mockito-core'
 }

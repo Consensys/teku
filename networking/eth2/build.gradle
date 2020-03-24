@@ -27,15 +27,12 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':util'))
 
-  testImplementation 'org.mockito:mockito-core'
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
   integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
   integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
   integrationTestImplementation testFixtures(project(':networking:eth2'))
   integrationTestImplementation testFixtures(project(':util'))
-
-  integrationTestImplementation 'org.mockito:mockito-core'
 
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))

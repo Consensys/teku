@@ -24,7 +24,6 @@ dependencies {
     exclude group: 'com.mchange'
   }
 
-  testImplementation 'org.mockito:mockito-core'
   testImplementation 'org.apache.logging.log4j:log4j-core'
 
   testFixturesApi 'com.google.guava:guava'

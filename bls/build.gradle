@@ -10,6 +10,4 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
-
-  testImplementation 'org.mockito:mockito-core'
 }

@@ -20,8 +20,6 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-units'
 
     testImplementation testFixtures(project(':ethereum:datastructures'))
-
-    testImplementation 'org.mockito:mockito-core'
 }
 
 test {

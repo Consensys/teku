@@ -19,6 +19,4 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':util'))
-
-  testImplementation 'org.mockito:mockito-core'
 }

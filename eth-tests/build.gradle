@@ -11,7 +11,6 @@ dependencies {
   implementation 'org.apache.commons:commons-lang3'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
-  implementation 'org.mockito:mockito-core'
   implementation 'org.junit.jupiter:junit-jupiter-api'
   implementation 'org.junit.jupiter:junit-jupiter-params'
 }
