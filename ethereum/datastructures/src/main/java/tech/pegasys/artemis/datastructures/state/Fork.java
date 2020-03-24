@@ -125,9 +125,9 @@ public class Fork extends AbstractImmutableContainer<Fork>
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("previous_version", previous_version)
-        .add("current_version", current_version)
-        .add("epoch", epoch)
+        .add("previous_version", getPrevious_version())
+        .add("current_version", getCurrent_version())
+        .add("epoch", getEpoch())
         .toString();
   }
 }
