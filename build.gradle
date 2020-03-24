@@ -538,7 +538,7 @@ subprojects {
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
     group = "verification"
-    description = "Runs the Artemis integration tests"
+    description = "Runs the Teku integration tests"
 
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
@@ -546,7 +546,7 @@ subprojects {
 
   task acceptanceTest(type: Test, dependsOn:["compileAcceptanceTestJava", rootProject.distDocker]){
     group = "verification"
-    description = "Runs the Artemis acceptance tests"
+    description = "Runs the Teku acceptance tests"
 
     systemProperty "artemis.testArtifactDir", new File(project.buildDir, "test-artifacts").getAbsolutePath()
     testClassesDirs = sourceSets.acceptanceTest.output.classesDirs
@@ -555,7 +555,7 @@ subprojects {
 
   task compatibilityTest(type: Test, dependsOn:["compileCompatibilityTestJava"]){
     group = "verification"
-    description = "Runs the Artemis compatibility tests"
+    description = "Runs the Teku compatibility tests"
 
     testClassesDirs = sourceSets.compatibilityTest.output.classesDirs
     classpath = sourceSets.compatibilityTest.runtimeClasspath
@@ -563,7 +563,7 @@ subprojects {
 
   task referenceTest(type: Test, dependsOn:["compileReferenceTestJava"]){
     group = "verification"
-    description = "Runs the reference tests"
+    description = "Runs the Teku reference tests"
 
     testClassesDirs = sourceSets.referenceTest.output.classesDirs
     classpath = sourceSets.referenceTest.runtimeClasspath
