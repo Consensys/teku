@@ -20,8 +20,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.artemis.api.schema.Attestation;
 import tech.pegasys.artemis.api.schema.BLSPubKey;
 import tech.pegasys.artemis.api.schema.BLSSignature;
@@ -41,7 +39,6 @@ public class ValidatorDataProvider {
   private final ValidatorCoordinator validatorCoordinator;
   private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
-  private static final Logger LOG = LogManager.getLogger();
 
   public ValidatorDataProvider(
       final ValidatorCoordinator validatorCoordinator,
