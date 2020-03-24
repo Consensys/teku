@@ -12,17 +12,26 @@ dependencies {
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 
-    testImplementation project(path: ':ethereum:datastructures', configuration: 'testSupportArtifacts')
-    testImplementation project(path: ':ethereum:statetransition', configuration: 'testSupportArtifacts')
-    testImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
-    testImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+    testImplementation testFixtures(project(':ethereum:datastructures'))
+    testImplementation testFixtures(project(':ethereum:statetransition'))
+    testImplementation testFixtures(project('::networking:eth2'))
+    testImplementation testFixtures(project(':util'))
 
     testImplementation 'org.mockito:mockito-core'
 
-    integrationTestImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')
-    integrationTestImplementation project(path: ':util', configuration: 'testSupportArtifacts')
+    integrationTestImplementation testFixtures(project(':bls'))
+    integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
+    integrationTestImplementation testFixtures(project('::networking:eth2'))
+    integrationTestImplementation testFixtures(project(':util'))
 
     integrationTestImplementation 'org.mockito:mockito-core'
 
-    testSupportImplementation project(path: ':networking:eth2', configuration: 'testSupportArtifacts')    
+    testFixturesImplementation project(':services:serviceutils')
+    testFixturesImplementation project(':util')
+
+    testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+    testFixturesImplementation testFixtures(project('::networking:eth2'))
+    testFixturesImplementation testFixtures(project('::networking:p2p'))
+
+    testFixturesImplementation 'com.google.guava:guava'
 }
