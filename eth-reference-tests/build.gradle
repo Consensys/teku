@@ -15,7 +15,6 @@ dependencies {
   referenceTestImplementation 'org.apache.tuweni:tuweni-bytes'
   referenceTestImplementation 'org.apache.tuweni:tuweni-junit'
   referenceTestImplementation 'org.assertj:assertj-core'
-  referenceTestImplementation 'org.junit.jupiter:junit-jupiter-params'
   referenceTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
 
   referenceTestRuntime 'org.junit.jupiter:junit-jupiter-engine'
