@@ -37,12 +37,12 @@ public class ArtemisConfiguration {
   private final List<String> p2pStaticPeers;
 
   // Interop
-  private final Integer xInteropGenesisTime;
-  private final int xInteropOwnedValidatorStartIndex;
-  private final int xInteropOwnedValidatorCount;
-  private final String xInteropStartState;
-  private final int xInteropNumberOfValidators;
-  private final boolean xInteropEnabled;
+  private final Integer interopGenesisTime;
+  private final int interopOwnedValidatorStartIndex;
+  private final int interopOwnedValidatorCount;
+  private final String interopStartState;
+  private final int interopNumberOfValidators;
+  private final boolean interopEnabled;
 
   // Validator
   private final String validatorsKeyFile;
@@ -62,7 +62,7 @@ public class ArtemisConfiguration {
   private final String logFileNamePattern;
 
   // Output
-  private final String xTransitionRecordDirectory;
+  private final String transitionRecordDirectory;
 
   // Metrics
   private final boolean metricsEnabled;
@@ -97,12 +97,12 @@ public class ArtemisConfiguration {
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
       final List<String> p2pStaticPeers,
-      final Integer xInteropGenesisTime,
-      final int xInteropOwnedValidatorStartIndex,
-      final int xInteropOwnedValidatorCount,
-      final String xInteropStartState,
-      final int xInteropNumberOfValidators,
-      final boolean xInteropEnabled,
+      final Integer interopGenesisTime,
+      final int interopOwnedValidatorStartIndex,
+      final int interopOwnedValidatorCount,
+      final String interopStartState,
+      final int interopNumberOfValidators,
+      final boolean interopEnabled,
       final String validatorsKeyFile,
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles,
@@ -113,7 +113,7 @@ public class ArtemisConfiguration {
       final String logDestination,
       final String logFile,
       final String logFileNamePattern,
-      final String xTransitionRecordDirectory,
+      final String transitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
       final String metricsInterface,
@@ -136,12 +136,12 @@ public class ArtemisConfiguration {
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     this.p2pPeerUpperBound = p2pPeerUpperBound;
     this.p2pStaticPeers = p2pStaticPeers;
-    this.xInteropGenesisTime = xInteropGenesisTime;
-    this.xInteropOwnedValidatorStartIndex = xInteropOwnedValidatorStartIndex;
-    this.xInteropOwnedValidatorCount = xInteropOwnedValidatorCount;
-    this.xInteropStartState = xInteropStartState;
-    this.xInteropNumberOfValidators = xInteropNumberOfValidators;
-    this.xInteropEnabled = xInteropEnabled;
+    this.interopGenesisTime = interopGenesisTime;
+    this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
+    this.interopOwnedValidatorCount = interopOwnedValidatorCount;
+    this.interopStartState = interopStartState;
+    this.interopNumberOfValidators = interopNumberOfValidators;
+    this.interopEnabled = interopEnabled;
     this.validatorsKeyFile = validatorsKeyFile;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
@@ -152,7 +152,7 @@ public class ArtemisConfiguration {
     this.logDestination = logDestination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
-    this.xTransitionRecordDirectory = xTransitionRecordDirectory;
+    this.transitionRecordDirectory = transitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -213,32 +213,32 @@ public class ArtemisConfiguration {
     return p2pStaticPeers;
   }
 
-  public Integer getxInteropGenesisTime() {
-    if (xInteropGenesisTime == 0) {
+  public Integer getInteropGenesisTime() {
+    if (interopGenesisTime == 0) {
       return Math.toIntExact((System.currentTimeMillis() / 1000) + 5);
     } else {
-      return xInteropGenesisTime;
+      return interopGenesisTime;
     }
   }
 
-  public int getxInteropOwnedValidatorStartIndex() {
-    return xInteropOwnedValidatorStartIndex;
+  public int getInteropOwnedValidatorStartIndex() {
+    return interopOwnedValidatorStartIndex;
   }
 
-  public int getxInteropOwnedValidatorCount() {
-    return xInteropOwnedValidatorCount;
+  public int getInteropOwnedValidatorCount() {
+    return interopOwnedValidatorCount;
   }
 
-  public String getxInteropStartState() {
-    return xInteropStartState == null || xInteropStartState.isEmpty() ? null : xInteropStartState;
+  public String getInteropStartState() {
+    return interopStartState == null || interopStartState.isEmpty() ? null : interopStartState;
   }
 
-  public int getxInteropNumberOfValidators() {
-    return xInteropNumberOfValidators;
+  public int getInteropNumberOfValidators() {
+    return interopNumberOfValidators;
   }
 
-  public boolean isxInteropEnabled() {
-    return xInteropEnabled;
+  public boolean isInteropEnabled() {
+    return interopEnabled;
   }
 
   public String getValidatorsKeyFile() {
@@ -281,8 +281,8 @@ public class ArtemisConfiguration {
     return logFileNamePattern;
   }
 
-  public String getxTransitionRecordDirectory() {
-    return xTransitionRecordDirectory;
+  public String getTransitionRecordDirectory() {
+    return transitionRecordDirectory;
   }
 
   public boolean isMetricsEnabled() {
@@ -344,7 +344,7 @@ public class ArtemisConfiguration {
   }
 
   public void validateConfig() throws IllegalArgumentException {
-    if (getxInteropNumberOfValidators() < Constants.SLOTS_PER_EPOCH) {
+    if (getInteropNumberOfValidators() < Constants.SLOTS_PER_EPOCH) {
       throw new IllegalArgumentException("Invalid config.toml");
     }
     validateKeyStoreFilesAndPasswordFilesSize();

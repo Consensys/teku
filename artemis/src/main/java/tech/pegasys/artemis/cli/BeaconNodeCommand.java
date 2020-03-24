@@ -166,7 +166,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       paramLabel = "<INTEGER>",
       description = "Time of mocked genesis",
       arity = "1")
-  private Integer xInteropGenesisTime = DEFAULT_X_INTEROP_GENESIS_TIME;
+  private Integer interopGenesisTime = DEFAULT_X_INTEROP_GENESIS_TIME;
 
   @Option(
       hidden = true,
@@ -174,7 +174,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       paramLabel = "<INTEGER>",
       description = "Index of first validator owned by this node",
       arity = "1")
-  private int xInteropOwnerValidatorStartIndex = DEFAULT_X_INTEROP_OWNED_VALIDATOR_START_INDEX;
+  private int interopOwnerValidatorStartIndex = DEFAULT_X_INTEROP_OWNED_VALIDATOR_START_INDEX;
 
   @Option(
       hidden = true,
@@ -182,7 +182,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       paramLabel = "<INTEGER>",
       description = "Number of validators owned by this node",
       arity = "1")
-  private int xInteropOwnerValidatorCount = DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
+  private int interopOwnerValidatorCount = DEFAULT_X_INTEROP_OWNED_VALIDATOR_COUNT;
 
   @Option(
       hidden = true,
@@ -190,14 +190,14 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       paramLabel = "<STRING>",
       description = "Initial BeaconState to load",
       arity = "1")
-  private String xInteropStartState = DEFAULT_X_INTEROP_START_STATE;
+  private String interopStartState = DEFAULT_X_INTEROP_START_STATE;
 
   @Option(
       hidden = true,
       names = {X_INTEROP_NUMBER_OF_VALIDATORS_OPTION_NAME},
       paramLabel = "<INTEGER>",
       description = "Represents the total number of validators in the network")
-  private int xInteropNumberOfValidators = DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS;
+  private int interopNumberOfValidators = DEFAULT_X_INTEROP_NUMBER_OF_VALIDATORS;
 
   @Option(
       hidden = true,
@@ -205,7 +205,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       paramLabel = "<BOOLEAN>",
       description = "Enables developer options for testing",
       arity = "1")
-  private boolean xInteropEnabled = DEFAULT_X_INTEROP_ENABLED;
+  private boolean interopEnabled = DEFAULT_X_INTEROP_ENABLED;
 
   // Validator
 
@@ -295,7 +295,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       paramLabel = "<FILENAME>",
       description = "Directory to record transition pre and post states",
       arity = "1")
-  private String xTransitionRecordDirectory = DEFAULT_X_TRANSITION_RECORD_DIRECTORY;
+  private String transitionRecordDirectory = DEFAULT_X_TRANSITION_RECORD_DIRECTORY;
 
   // Metrics
 
@@ -469,12 +469,12 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
         .setP2pPeerLowerBound(p2pLowerBound)
         .setP2pPeerUpperBound(p2pUpperBound)
         .setP2pStaticPeers(p2pStaticPeers)
-        .setxInteropGenesisTime(xInteropGenesisTime)
-        .setxInteropOwnedValidatorStartIndex(xInteropOwnerValidatorStartIndex)
-        .setxInteropOwnedValidatorCount(xInteropOwnerValidatorCount)
-        .setxInteropStartState(xInteropStartState)
-        .setxInteropNumberOfValidators(xInteropNumberOfValidators)
-        .setxInteropEnabled(xInteropEnabled)
+        .setInteropGenesisTime(interopGenesisTime)
+        .setInteropOwnedValidatorStartIndex(interopOwnerValidatorStartIndex)
+        .setInteropOwnedValidatorCount(interopOwnerValidatorCount)
+        .setInteropStartState(interopStartState)
+        .setInteropNumberOfValidators(interopNumberOfValidators)
+        .setInteropEnabled(interopEnabled)
         .setValidatorsKeyFile(validatorsKeyFile)
         .setValidatorsKeystoreFiles(validatorsKeystoreFiles)
         .setValidatorsKeystorePasswordFiles(validatorsKeystorePasswordFiles)
@@ -485,7 +485,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
         .setLogDestination(logDestination)
         .setLogFile(logFile)
         .setLogFileNamePattern(logFileNamePattern)
-        .setxTransitionRecordDirectory(xTransitionRecordDirectory)
+        .setTransitionRecordDirectory(transitionRecordDirectory)
         .setMetricsEnabled(metricsEnabled)
         .setMetricsPort(metricsPort)
         .setMetricsInterface(metricsInterface)

@@ -28,12 +28,12 @@ public class ArtemisConfigurationBuilder {
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
   private List<String> p2pStaticPeers;
-  private Integer xInteropGenesisTime;
-  private int xInteropOwnedValidatorStartIndex;
-  private int xInteropOwnedValidatorCount;
-  private String xInteropStartState;
-  private int xInteropNumberOfValidators;
-  private boolean xInteropEnabled;
+  private Integer interopGenesisTime;
+  private int interopOwnedValidatorStartIndex;
+  private int interopOwnedValidatorCount;
+  private String interopStartState;
+  private int interopNumberOfValidators;
+  private boolean interopEnabled;
   private String validatorsKeyFile;
   private List<String> validatorKeystoreFiles;
   private List<String> validatorKeystorePasswordFiles;
@@ -44,7 +44,7 @@ public class ArtemisConfigurationBuilder {
   private String logDestination;
   private String logFile;
   private String logFileNamePattern;
-  private String xTransitionRecordDirectory;
+  private String transitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
   private String metricsInterface;
@@ -117,36 +117,36 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxInteropGenesisTime(final Integer xInteropGenesisTime) {
-    this.xInteropGenesisTime = xInteropGenesisTime;
+  public ArtemisConfigurationBuilder setInteropGenesisTime(final Integer interopGenesisTime) {
+    this.interopGenesisTime = interopGenesisTime;
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxInteropOwnedValidatorStartIndex(
-      final int xInteropOwnedValidatorStartIndex) {
-    this.xInteropOwnedValidatorStartIndex = xInteropOwnedValidatorStartIndex;
+  public ArtemisConfigurationBuilder setInteropOwnedValidatorStartIndex(
+      final int interopOwnedValidatorStartIndex) {
+    this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxInteropOwnedValidatorCount(
-      final int xInteropOwnedValidatorCount) {
-    this.xInteropOwnedValidatorCount = xInteropOwnedValidatorCount;
+  public ArtemisConfigurationBuilder setInteropOwnedValidatorCount(
+      final int interopOwnedValidatorCount) {
+    this.interopOwnedValidatorCount = interopOwnedValidatorCount;
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxInteropStartState(final String xInteropStartState) {
-    this.xInteropStartState = xInteropStartState;
+  public ArtemisConfigurationBuilder setInteropStartState(final String interopStartState) {
+    this.interopStartState = interopStartState;
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxInteropNumberOfValidators(
-      final int xInteropNumberOfValidators) {
-    this.xInteropNumberOfValidators = xInteropNumberOfValidators;
+  public ArtemisConfigurationBuilder setInteropNumberOfValidators(
+      final int interopNumberOfValidators) {
+    this.interopNumberOfValidators = interopNumberOfValidators;
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxInteropEnabled(final boolean xInteropEnabled) {
-    this.xInteropEnabled = xInteropEnabled;
+  public ArtemisConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
+    this.interopEnabled = interopEnabled;
     return this;
   }
 
@@ -204,9 +204,9 @@ public class ArtemisConfigurationBuilder {
     return this;
   }
 
-  public ArtemisConfigurationBuilder setxTransitionRecordDirectory(
-      final String xTransitionRecordDirectory) {
-    this.xTransitionRecordDirectory = xTransitionRecordDirectory;
+  public ArtemisConfigurationBuilder setTransitionRecordDirectory(
+      final String transitionRecordDirectory) {
+    this.transitionRecordDirectory = transitionRecordDirectory;
     return this;
   }
 
@@ -274,12 +274,12 @@ public class ArtemisConfigurationBuilder {
         p2pPeerLowerBound,
         p2pPeerUpperBound,
         p2pStaticPeers,
-        xInteropGenesisTime,
-        xInteropOwnedValidatorStartIndex,
-        xInteropOwnedValidatorCount,
-        xInteropStartState,
-        xInteropNumberOfValidators,
-        xInteropEnabled,
+        interopGenesisTime,
+        interopOwnedValidatorStartIndex,
+        interopOwnedValidatorCount,
+        interopStartState,
+        interopNumberOfValidators,
+        interopEnabled,
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,
@@ -290,7 +290,7 @@ public class ArtemisConfigurationBuilder {
         logDestination,
         logFile,
         logFileNamePattern,
-        xTransitionRecordDirectory,
+        transitionRecordDirectory,
         metricsEnabled,
         metricsPort,
         metricsInterface,

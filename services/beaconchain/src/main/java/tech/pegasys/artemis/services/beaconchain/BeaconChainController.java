@@ -116,7 +116,7 @@ public class BeaconChainController extends Service {
     this.eventChannels = eventChannels;
     this.config = config;
     this.metricsSystem = metricsSystem;
-    this.setupInitialState = config.isxInteropEnabled() || config.getxInteropStartState() != null;
+    this.setupInitialState = config.isInteropEnabled() || config.getInteropStartState() != null;
   }
 
   @Override
@@ -352,9 +352,9 @@ public class BeaconChainController extends Service {
   private void setupInitialState() {
     StartupUtil.setupInitialState(
         chainStorageClient,
-        config.getxInteropGenesisTime(),
-        config.getxInteropStartState(),
-        config.getxInteropNumberOfValidators());
+        config.getInteropGenesisTime(),
+        config.getInteropStartState(),
+        config.getInteropNumberOfValidators());
   }
 
   private void onStoreInitialized() {

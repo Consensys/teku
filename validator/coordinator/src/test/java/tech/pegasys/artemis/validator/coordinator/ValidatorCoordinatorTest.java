@@ -56,11 +56,11 @@ public class ValidatorCoordinatorTest {
   void setup() {
     Constants.GENESIS_SLOT = 0;
     Constants.MIN_ATTESTATION_INCLUSION_DELAY = 0;
-    when(config.getxInteropNumberOfValidators()).thenReturn(NUM_VALIDATORS);
+    when(config.getInteropNumberOfValidators()).thenReturn(NUM_VALIDATORS);
     when(config.getValidatorsKeyFile()).thenReturn(null);
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(null);
-    when(config.getxInteropOwnedValidatorStartIndex()).thenReturn(0);
-    when(config.getxInteropOwnedValidatorCount()).thenReturn(NUM_VALIDATORS);
+    when(config.getInteropOwnedValidatorStartIndex()).thenReturn(0);
+    when(config.getInteropOwnedValidatorCount()).thenReturn(NUM_VALIDATORS);
 
     when(blockAttestationsPool.getAttestationsForSlot(any())).thenReturn(createAttestations());
 
@@ -85,7 +85,7 @@ public class ValidatorCoordinatorTest {
   }
 
   private ValidatorCoordinator createValidatorCoordinator() {
-    when(config.getxInteropOwnedValidatorCount()).thenReturn(0);
+    when(config.getInteropOwnedValidatorCount()).thenReturn(0);
     ValidatorCoordinator vc =
         new ValidatorCoordinator(
             timeProvider,
