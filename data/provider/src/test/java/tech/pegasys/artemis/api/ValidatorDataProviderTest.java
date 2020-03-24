@@ -28,7 +28,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.artemis.api.exceptions.ChainDataUnavailableException;
@@ -174,9 +173,7 @@ public class ValidatorDataProviderTest {
     final BLSPubKey invalidPubKey = new BLSPubKey(publicKey.toBytes().shiftLeft(1));
 
     ValidatorDutiesRequest smallRequest =
-        new ValidatorDutiesRequest(
-            compute_epoch_at_slot(beaconState.slot),
-            List.of(invalidPubKey));
+        new ValidatorDutiesRequest(compute_epoch_at_slot(beaconState.slot), List.of(invalidPubKey));
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
