@@ -248,9 +248,10 @@ public class ValidatorCoordinator {
       BeaconState previousState, BeaconBlock previousBlock, UnsignedLong newSlot) {
     try {
 
-      MutableBeaconState newState = previousState.createWritableCopy();
+      MutableBeaconState mutableState = previousState.createWritableCopy();
       // Process empty slots up to the new slot
-      stateTransition.process_slots(newState, newSlot, false);
+      stateTransition.process_slots(mutableState, newSlot, false);
+      BeaconState newState = mutableState.commitChanges();
 
       // Check if we should be proposing
       final BLSPublicKey proposer = blockCreator.getProposerForSlot(newState, newSlot);
