@@ -167,40 +167,24 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  void getValidatorsDutiesByRequest_shouldExceptionIfCharChangedInKey()
-      throws ExecutionException, InterruptedException {
+  void getValidatorsDutiesByRequest_shouldThrowIllegalArgumentExceptionIfKeyIsNotOnTheCurve() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    // valid key
-    Bytes validKey =
-        Bytes.fromHexString(
-            "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c");
-    // invalid key
-    Bytes invalidKey =
-        Bytes.fromHexString(
-            "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44b");
-    final BLSPublicKey publicKey = BLSPublicKey.fromBytes(validKey);
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    // modify the bytes to make an invalid key that is the correct length
+    final BLSPubKey invalidPubKey = new BLSPubKey(publicKey.toBytes().shiftLeft(1));
+
     ValidatorDutiesRequest smallRequest =
         new ValidatorDutiesRequest(
             compute_epoch_at_slot(beaconState.slot),
-            List.of(new BLSPubKey(Bytes.wrap(invalidKey))));
+            List.of(invalidPubKey));
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
                 List.of(tech.pegasys.artemis.validator.api.ValidatorDuties.noDuties(publicKey))));
 
     SafeFuture<List<ValidatorDuties>> future = provider.getValidatorDutiesByRequest(smallRequest);
-    try {
-      List<ValidatorDuties> validatorDuties = future.get();
 
-      assertThat(validatorDuties.size()).isEqualTo(1);
-      ValidatorDuties expected =
-          new ValidatorDuties(
-              new BLSPubKey(publicKey.toBytesCompressed()), null, null, emptyList(), null);
-      assertThat(validatorDuties.get(0)).isEqualToComparingFieldByField(expected);
-    } catch (Exception e) {
-      //      e.printStackTrace();
-      assertThat(e.getCause().getClass()).isEqualTo(IllegalArgumentException.class);
-    }
+    assertThatThrownBy(() -> future.get()).hasCauseInstanceOf(IllegalArgumentException.class);
   }
 
   @Test

@@ -61,7 +61,7 @@ public class BLSPubKey {
     return bytes.toString();
   }
 
-  public static BLSPubKey fromHexString(String value) {
+  public static BLSPubKey fromHexString(String value) throws IllegalArgumentException {
     BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(Bytes.fromHexString(value));
     // force validation early - this will throw IllegalArgumentException if not valid
     blsPublicKey.getPublicKey().g1Point();
