@@ -25,16 +25,22 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
 import tech.pegasys.artemis.statetransition.util.CommitteeAssignmentUtil;
+import tech.pegasys.artemis.storage.ChainDataUnavailableException;
 import tech.pegasys.artemis.storage.CombinedChainDataClient;
+import tech.pegasys.artemis.storage.Store;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
+import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.api.ValidatorDuties;
@@ -42,9 +48,12 @@ import tech.pegasys.artemis.validator.api.ValidatorDuties;
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
+  private final BlockFactory blockFactory;
 
-  public ValidatorApiHandler(final CombinedChainDataClient combinedChainDataClient) {
+  public ValidatorApiHandler(
+      final CombinedChainDataClient combinedChainDataClient, final BlockFactory blockFactory) {
     this.combinedChainDataClient = combinedChainDataClient;
+    this.blockFactory = blockFactory;
   }
 
   @Override
@@ -64,6 +73,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                               epoch);
                           return emptyList();
                         }));
+  }
+
+  @Override
+  public SafeFuture<BeaconBlock> createUnsignedBlock(
+      final UnsignedLong slot, final BLSSignature randaoReveal) {
+    Store store = combinedChainDataClient.getStore();
+    final Optional<Bytes32> headRoot = combinedChainDataClient.getBestBlockRoot();
+    if (headRoot.isEmpty() || store == null) {
+      return SafeFuture.failedFuture(new ChainDataUnavailableException());
+    }
+    final BeaconState previousState = store.getBlockState(headRoot.get());
+    final BeaconBlock previousBlock = store.getBlock(headRoot.get());
+    return SafeFuture.of(
+        () -> blockFactory.createUnsignedBlock(previousState, previousBlock, slot, randaoReveal));
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

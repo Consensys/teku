@@ -34,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,6 +83,7 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.TimeProvider;
+import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
 public class ValidatorCoordinator extends Service {
@@ -95,6 +98,7 @@ public class ValidatorCoordinator extends Service {
   private final AttestationAggregator attestationAggregator;
   private final BlockAttestationsPool blockAttestationsPool;
   private final DepositProvider depositProvider;
+  private final ValidatorApiChannel validatorApiChannel;
   private Eth1DataCache eth1DataCache;
   private CommitteeAssignmentManager committeeAssignmentManager;
 
@@ -107,12 +111,15 @@ public class ValidatorCoordinator extends Service {
   public ValidatorCoordinator(
       TimeProvider timeProvider,
       EventBus eventBus,
+      ValidatorApiChannel validatorApiChannel,
       ChainStorageClient chainStorageClient,
       AttestationAggregator attestationAggregator,
       BlockAttestationsPool blockAttestationsPool,
       DepositProvider depositProvider,
+      Eth1DataCache eth1DataCache,
       ArtemisConfiguration config) {
     this.eventBus = eventBus;
+    this.validatorApiChannel = validatorApiChannel;
     this.chainStorageClient = chainStorageClient;
     this.stateTransition = new StateTransition();
     this.blockCreator = new BlockProposalUtil(stateTransition);
@@ -120,7 +127,7 @@ public class ValidatorCoordinator extends Service {
     this.attestationAggregator = attestationAggregator;
     this.blockAttestationsPool = blockAttestationsPool;
     this.depositProvider = depositProvider;
-    this.eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
+    this.eth1DataCache = eth1DataCache;
     this.eventBus.register(this);
   }
 
@@ -284,7 +291,11 @@ public class ValidatorCoordinator extends Service {
       final MessageSignerService signer = getSigner(proposer);
       final BLSSignature randaoReveal =
           blockCreator.get_epoch_signature(newState, compute_epoch_at_slot(newSlot), signer);
-      final BeaconBlock unsignedBlock = createUnsignedBlock(newSlot, randaoReveal).orElseThrow();
+      final BeaconBlock unsignedBlock =
+          validatorApiChannel
+              .createUnsignedBlock(newSlot, randaoReveal)
+              .orTimeout(10, TimeUnit.SECONDS)
+              .join();
 
       final BLSSignature blockSignature =
           blockCreator.get_block_signature(newState, unsignedBlock, signer);
@@ -293,7 +304,7 @@ public class ValidatorCoordinator extends Service {
 
       this.eventBus.post(new ProposedBlockEvent(newBlock));
       LOG.debug("Local validator produced a new block");
-    } catch (SlotProcessingException | EpochProcessingException | StateTransitionException e) {
+    } catch (SlotProcessingException | EpochProcessingException | CompletionException e) {
       STATUS_LOG.blockCreationFailure(e);
     }
   }
