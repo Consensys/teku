@@ -19,7 +19,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import org.jetbrains.annotations.NotNull;
 
 public class MockMessageApi implements MessageApi {
 
@@ -32,13 +31,11 @@ public class MockMessageApi implements MessageApi {
     topics = List.of(topic);
   }
 
-  @NotNull
   @Override
   public ByteBuf getData() {
     return data;
   }
 
-  @NotNull
   @Override
   public byte[] getFrom() {
     return from;
@@ -49,7 +46,6 @@ public class MockMessageApi implements MessageApi {
     return 1;
   }
 
-  @NotNull
   @Override
   public List<Topic> getTopics() {
     return topics;
