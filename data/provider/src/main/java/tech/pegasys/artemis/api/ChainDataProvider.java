@@ -153,13 +153,19 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<Bytes32>> getHashTreeRootAtSlot(UnsignedLong slot) {
-    if (!isStoreAvailable()) {
-      return SafeFuture.failedFuture(new ChainDataUnavailableException());
-    }
-    return combinedChainDataClient
-        .getStateAtSlot(slot)
-        .thenApply(state -> Optional.of(state.get().hash_tree_root()))
-        .exceptionally(err -> Optional.empty());
+    return SafeFuture.of(
+        () -> {
+          if (!isStoreAvailable()) {
+            return SafeFuture.failedFuture(new ChainDataUnavailableException());
+          }
+          final Bytes32 headRoot =
+              combinedChainDataClient
+                  .getBestBlockRoot()
+                  .orElseThrow(ChainDataUnavailableException::new);
+          return combinedChainDataClient
+              .getBlockAtSlotExact(slot, headRoot)
+              .thenApply(block -> block.map(b -> b.getMessage().getState_root()));
+        });
   }
 
   public Optional<Attestation> getUnsignedAttestationAtSlot(
