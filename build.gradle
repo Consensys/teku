@@ -508,21 +508,8 @@ subprojects {
 
     integrationTestImplementation sourceSets.testFixtures.output
 
-    integrationTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    integrationTestRuntimeOnly testFixtures(project(':logging'))
-
     acceptanceTestImplementation sourceSets.testFixtures.output
     acceptanceTestImplementation sourceSets.testFixtures.runtimeClasspath
-
-    acceptanceTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    acceptanceTestRuntimeOnly testFixtures(project(':logging'))
-    acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-core'
-    acceptanceTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
-
-    compatibilityTestRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    compatibilityTestRuntimeOnly testFixtures(project(':logging'))
-    compatibilityTestRuntimeOnly 'org.apache.logging.log4j:log4j-core'
-    compatibilityTestRuntimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
