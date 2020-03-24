@@ -81,13 +81,11 @@ public class ExternalMessageSignerService implements MessageSignerService {
     final String publicKey = blsPublicKey.getPublicKey().toString();
     final SigningRequestBody signingRequest =
         new SigningRequestBody(publicKey, signingRoot.toHexString());
-    final String requestBody;
     try {
-      requestBody = MAPPER.writeValueAsString(signingRequest);
+      return MAPPER.writeValueAsString(signingRequest);
     } catch (JsonProcessingException e) {
       throw new ExternalSignerException("Unable to create external signing request", e);
     }
-    return requestBody;
   }
 
   private BLSSignature getBlsSignature(
