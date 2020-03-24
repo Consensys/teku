@@ -29,8 +29,10 @@ import tech.pegasys.artemis.validator.client.LocalMessageSignerService;
 
 class ValidatorLoaderTest {
 
-  private static final String PUBLIC_KEY =
+  private static final String PUBLIC_KEY1 =
       "0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c";
+  private static final String PUBLIC_KEY2 =
+      "0xb89bebc699769726a318c8e9971bd3171297c61aea4a6578a7a4f94b547dcba5bac16a89108b6b6a1fe3695d1a874a0b";
   private static final String VALIDATOR_KEY_FILE =
       "- {privkey: '0x25295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866',\n"
           + "  pubkey: '0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c'}";
@@ -40,14 +42,14 @@ class ValidatorLoaderTest {
     final String config =
         "validator.externalSignerUrl=\"http://localhost:9000\"\n"
             + "validator.externalSignerPublicKeys=[\""
-            + PUBLIC_KEY
+            + PUBLIC_KEY1
             + "\"]";
     final ArtemisConfiguration artemisConfiguration = ArtemisConfiguration.fromString(config);
     final Map<BLSPublicKey, ValidatorInfo> blsPublicKeyValidatorInfoMap =
         ValidatorLoader.initializeValidators(artemisConfiguration);
 
     assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY));
+    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
     assertThat(blsPublicKeyValidatorInfoMap.get(key)).isNotNull();
     assertThat(blsPublicKeyValidatorInfoMap.get(key).getSignerService())
         .isInstanceOf(ExternalMessageSignerService.class);
@@ -66,9 +68,68 @@ class ValidatorLoaderTest {
         ValidatorLoader.initializeValidators(artemisConfiguration);
 
     assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY));
+    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
     assertThat(blsPublicKeyValidatorInfoMap.get(key)).isNotNull();
     assertThat(blsPublicKeyValidatorInfoMap.get(key).getSignerService())
         .isInstanceOf(LocalMessageSignerService.class);
+  }
+
+  @Test
+  void initializeValidatorsWithBothLocalAndExternalSigners(@TempDir Path tempDir)
+      throws IOException {
+    final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
+    Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
+    final String config =
+        "validator.externalSignerUrl=\"http://localhost:9000\"\n"
+            + "validator.externalSignerPublicKeys=[\""
+            + PUBLIC_KEY2
+            + "\"]\n"
+            + "validator.validatorsKeyFile=\""
+            + validatorKeyFile.toAbsolutePath()
+            + "\"";
+
+    final ArtemisConfiguration artemisConfiguration = ArtemisConfiguration.fromString(config);
+    final Map<BLSPublicKey, ValidatorInfo> blsPublicKeyValidatorInfoMap =
+        ValidatorLoader.initializeValidators(artemisConfiguration);
+
+    assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
+    assertThat(blsPublicKeyValidatorInfoMap).hasSize(2);
+
+    final BLSPublicKey key1 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    assertThat(blsPublicKeyValidatorInfoMap.get(key1)).isNotNull();
+    assertThat(blsPublicKeyValidatorInfoMap.get(key1).getSignerService())
+        .isInstanceOf(LocalMessageSignerService.class);
+
+    final BLSPublicKey key2 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY2));
+    assertThat(blsPublicKeyValidatorInfoMap.get(key2)).isNotNull();
+    assertThat(blsPublicKeyValidatorInfoMap.get(key2).getSignerService())
+        .isInstanceOf(ExternalMessageSignerService.class);
+  }
+
+  @Test
+  void initializeValidatorsWithDuplicateKeysInLocalAndExternalSignersTakesExternalAsPriority(
+      @TempDir Path tempDir) throws IOException {
+    final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
+    Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
+    final String config =
+        "validator.externalSignerUrl=\"http://localhost:9000\"\n"
+            + "validator.externalSignerPublicKeys=[\""
+            + PUBLIC_KEY1
+            + "\"]\n"
+            + "validator.validatorsKeyFile=\""
+            + validatorKeyFile.toAbsolutePath()
+            + "\"";
+
+    final ArtemisConfiguration artemisConfiguration = ArtemisConfiguration.fromString(config);
+    final Map<BLSPublicKey, ValidatorInfo> blsPublicKeyValidatorInfoMap =
+        ValidatorLoader.initializeValidators(artemisConfiguration);
+
+    assertThat(blsPublicKeyValidatorInfoMap).isNotEmpty();
+    assertThat(blsPublicKeyValidatorInfoMap).hasSize(1);
+
+    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    assertThat(blsPublicKeyValidatorInfoMap.get(key)).isNotNull();
+    assertThat(blsPublicKeyValidatorInfoMap.get(key).getSignerService())
+        .isInstanceOf(ExternalMessageSignerService.class);
   }
 }

@@ -18,6 +18,7 @@ import static com.google.common.base.Functions.identity;
 import com.google.common.collect.Streams;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -38,10 +39,9 @@ class ValidatorLoader {
     // Get validator connection info and create a new ValidatorInfo object and put it into the
     // Validators map
 
-    final Map<BLSPublicKey, ValidatorInfo> validators =
-        config.getValidatorExternalSigningPublicKeys().isEmpty()
-            ? createLocalSignerValidatorInfo(config)
-            : createExternalSignerValidatorInfo(config);
+    final Map<BLSPublicKey, ValidatorInfo> validators = new LinkedHashMap<>();
+    validators.putAll(createLocalSignerValidatorInfo(config));
+    validators.putAll(createExternalSignerValidatorInfo(config));
 
     if (LOG.isDebugEnabled()) {
       Streams.mapWithIndex(
