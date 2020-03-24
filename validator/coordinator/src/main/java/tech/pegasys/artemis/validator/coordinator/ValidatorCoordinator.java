@@ -29,7 +29,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,11 +80,10 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
-import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
-public class ValidatorCoordinator extends Service implements SlotEventsChannel, TimeTickChannel {
+public class ValidatorCoordinator extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -123,11 +121,6 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel, 
     this.blockAttestationsPool = blockAttestationsPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
-  }
-
-  @Override
-  public void onTick(Date date) {
-    eth1DataCache.onTick(date);
   }
 
   @Override

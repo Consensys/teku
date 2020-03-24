@@ -39,7 +39,7 @@ public class TimerService extends Service {
   private static int START_DELAY = 0;
   private int interval;
 
-  public TimerService(ServiceConfig config) throws IllegalArgumentException {
+  public TimerService(ServiceConfig config) {
     SchedulerFactory sf = new StdSchedulerFactory();
     this.interval = (int) ((1.0 / TIME_TICKER_REFRESH_RATE) * 1000); // Tick interval
     try {
@@ -49,8 +49,7 @@ public class TimerService extends Service {
           .put(TIME_EVENTS_CHANNEL, config.getEventChannels().getPublisher(TimeTickChannel.class));
 
     } catch (SchedulerException e) {
-      throw new IllegalArgumentException(
-          "In QuartzTimer a SchedulerException was thrown: " + e.toString());
+      throw new IllegalArgumentException("TimerService failed to initialize", e);
     }
   }
 
@@ -67,8 +66,7 @@ public class TimerService extends Service {
       sched.start();
       return SafeFuture.completedFuture(null);
     } catch (SchedulerException e) {
-      throw new IllegalArgumentException(
-          "In QuartzTimer a SchedulerException was thrown: " + e.toString());
+      throw new IllegalArgumentException("TimerService failed to start", e);
     }
   }
 
@@ -78,8 +76,7 @@ public class TimerService extends Service {
       sched.shutdown();
       return SafeFuture.completedFuture(null);
     } catch (SchedulerException e) {
-      throw new IllegalArgumentException(
-          "In QuartzTimer a SchedulerException was thrown: " + e.toString());
+      throw new IllegalArgumentException("TimerService failed to stop", e);
     }
   }
 }

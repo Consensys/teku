@@ -83,7 +83,7 @@ class PendingPool<T> extends Service implements SlotEventsChannel {
     this.targetSlotFunction = targetSlotFunction;
   }
 
-  public static PendingPool<SignedBeaconBlock> createForBlocks(EventBus eventBus) {
+  public static PendingPool<SignedBeaconBlock> createForBlocks(final EventBus eventBus) {
     return createForBlocks(
         eventBus, DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
   }
