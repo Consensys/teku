@@ -29,6 +29,7 @@ dependencyManagement {
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.3.2-RELEASE'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.3.61'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
