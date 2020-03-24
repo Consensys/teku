@@ -64,9 +64,7 @@ import tech.pegasys.artemis.sync.SyncService;
 import tech.pegasys.artemis.sync.util.NoopSyncService;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
-import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
-import tech.pegasys.artemis.util.time.Timer;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
 import tech.pegasys.artemis.util.time.events.SlotEvent;
@@ -85,7 +83,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final boolean setupInitialState;
   private final SlotEventsChannel slotEventsChannelPublisher;
 
-  private volatile Timer timer;
   private volatile ChainStorageClient chainStorageClient;
   private volatile P2PNetwork<Eth2Peer> p2pNetwork;
   private volatile SettableGauge currentSlotGauge;
@@ -130,7 +127,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     attestationManager.start(),
                     p2pNetwork.start(),
                     syncService.start(),
-                    SafeFuture.fromRunnable(timer::start),
                     SafeFuture.fromRunnable(beaconRestAPI::start)));
   }
 
@@ -140,7 +136,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
         SafeFuture.fromRunnable(beaconRestAPI::stop),
-        SafeFuture.fromRunnable(timer::stop),
         validatorCoordinator.stop(),
         syncService.stop(),
         attestationManager.stop(),
@@ -163,7 +158,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
-    initTimer();
     initMetrics();
     initAttestationAggregator();
     initBlockAttestationsPool();
@@ -175,18 +169,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initP2PNetwork();
     initSyncManager();
     initRestAPI();
-  }
-
-  public void initTimer() {
-    LOG.debug("BeaconChainController.initTimer()");
-    int timerPeriodInMilliseconds = (int) ((1.0 / Constants.TIME_TICKER_REFRESH_RATE) * 1000);
-    try {
-      this.timer =
-          new Timer(
-              eventChannels.getPublisher(TimeTickChannel.class), 0, timerPeriodInMilliseconds);
-    } catch (IllegalArgumentException e) {
-      System.exit(1);
-    }
   }
 
   public void initMetrics() {
