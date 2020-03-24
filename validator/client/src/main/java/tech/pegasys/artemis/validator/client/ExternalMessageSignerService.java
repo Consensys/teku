@@ -30,9 +30,9 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ExternalMessageSignerService implements MessageSignerService {
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private URL signingServiceUrl;
-  private BLSPublicKey blsPublicKey;
-  private int timeoutMs;
+  private final URL signingServiceUrl;
+  private final BLSPublicKey blsPublicKey;
+  private final int timeoutMs;
 
   public ExternalMessageSignerService(
       final URL signingServiceUrl, final BLSPublicKey blsPublicKey, final int timeoutMs) {
@@ -69,9 +69,9 @@ public class ExternalMessageSignerService implements MessageSignerService {
           HttpClient.newHttpClient()
               .sendAsync(request, BodyHandlers.ofString())
               .handleAsync(this::getBlsSignature));
-    } catch (ExternalSignerException e) {
+    } catch (final ExternalSignerException e) {
       return SafeFuture.failedFuture(e);
-    } catch (Exception e) {
+    } catch (final Exception e) {
       return SafeFuture.failedFuture(
           new ExternalSignerException("External signer failed to sign", e));
     }
@@ -83,7 +83,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
         new SigningRequestBody(publicKey, signingRoot.toHexString());
     try {
       return MAPPER.writeValueAsString(signingRequest);
-    } catch (JsonProcessingException e) {
+    } catch (final JsonProcessingException e) {
       throw new ExternalSignerException("Unable to create external signing request", e);
     }
   }
@@ -104,7 +104,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
     try {
       final Bytes signature = Bytes.fromHexString(response.body());
       return BLSSignature.fromBytes(signature);
-    } catch (IllegalArgumentException e) {
+    } catch (final IllegalArgumentException e) {
       throw new ExternalSignerException(
           "External signer returned an invalid signature: " + e.getMessage(), e);
     }
