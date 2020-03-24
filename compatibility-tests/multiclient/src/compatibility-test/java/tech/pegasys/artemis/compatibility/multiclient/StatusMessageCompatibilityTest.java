@@ -40,12 +40,14 @@ class StatusMessageCompatibilityTest {
 
   @BeforeEach
   public void setUp() throws Exception {
+    Constants.setConstants("mainnet");
     artemis = networkFactory.builder().startNetwork();
   }
 
   @AfterEach
   public void tearDown() {
     networkFactory.stopAll();
+    Constants.setConstants("minimal");
   }
 
   @Test
