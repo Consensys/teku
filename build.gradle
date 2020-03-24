@@ -510,11 +510,6 @@ subprojects {
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     testRuntimeOnly testFixtures(project(':logging'))
-
-    integrationTestImplementation sourceSets.testFixtures.output
-
-    acceptanceTestImplementation sourceSets.testFixtures.output
-    acceptanceTestImplementation sourceSets.testFixtures.runtimeClasspath
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
