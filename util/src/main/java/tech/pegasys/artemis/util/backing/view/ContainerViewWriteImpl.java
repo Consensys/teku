@@ -21,7 +21,7 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ContainerViewWriteImpl
-    extends AbstractCompositeViewWrite1<ContainerViewWriteImpl, ViewRead, ViewWrite>
+    extends AbstractCompositeViewWrite<ContainerViewWriteImpl, ViewRead, ViewWrite>
     implements ContainerViewWriteRef {
 
   public ContainerViewWriteImpl(AbstractCompositeViewRead<?, ViewRead> backingImmutableView) {

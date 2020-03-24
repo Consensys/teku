@@ -36,7 +36,6 @@ import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ContainerViewReadImpl;
 import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
-import tech.pegasys.artemis.util.backing.view.MutableContainerImpl1;
 import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ContainerViewTest {
@@ -51,16 +50,29 @@ public class ContainerViewTest {
 
   public interface SubContainerRead extends ContainerViewRead {
 
-    UnsignedLong getLong1();
+    ContainerViewType<SubContainerRead> TYPE =
+        new ContainerViewType<>(
+            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE),
+            SubContainerReadImpl::new);
 
-    UnsignedLong getLong2();
+    default UnsignedLong getLong1() {
+      return ((UInt64View) get(0)).get();
+    }
+
+    default UnsignedLong getLong2() {
+      return ((UInt64View) get(1)).get();
+    }
   }
 
   public interface SubContainerWrite extends SubContainerRead, ContainerViewWriteRef {
 
-    void setLong1(UnsignedLong val);
+    default void setLong1(UnsignedLong val) {
+      set(0, new UInt64View(val));
+    }
 
-    void setLong2(UnsignedLong val);
+    default void setLong2(UnsignedLong val) {
+      set(1, new UInt64View(val));
+    }
   }
 
   public interface ContainerRead extends ContainerViewRead {
@@ -82,15 +94,15 @@ public class ContainerViewTest {
     }
 
     default ListViewRead<UInt64View> getList1() {
-      return (ListViewRead<UInt64View>) get(3);
+      return getAny(3);
     }
 
     default ListViewRead<SubContainerRead> getList2() {
-      return (ListViewRead<SubContainerRead>) get(4);
+      return getAny(4);
     }
 
     default VectorViewRead<ImmutableSubContainer> getList3() {
-      return (VectorViewRead<ImmutableSubContainer>) get(5);
+      return getAny(5);
     }
 
     @Override
@@ -147,46 +159,39 @@ public class ContainerViewTest {
     }
   }
 
-  public static class SubContainerImpl
-      extends MutableContainerImpl1<SubContainerImpl, SubContainerRead, SubContainerWrite>
-      implements SubContainerWrite {
+  public static class SubContainerReadImpl extends ContainerViewReadImpl
+      implements SubContainerRead {
 
-    public static final ContainerViewType<SubContainerImpl> TYPE =
-        new ContainerViewType<>(
-            List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.UINT64_TYPE), SubContainerImpl::new);
-
-    public SubContainerImpl(ContainerViewRead readDelegate, ContainerViewWriteRef writeDelegate) {
-      super(readDelegate, writeDelegate);
+    public SubContainerReadImpl(TreeNode backingNode, IntCache<ViewRead> cache) {
+      super(TYPE, backingNode, cache);
     }
 
-    private SubContainerImpl(ContainerViewType<SubContainerImpl> type, TreeNode backingNode) {
+    private SubContainerReadImpl(ContainerViewType<SubContainerRead> type, TreeNode backingNode) {
       super(type, backingNode);
     }
 
     @Override
-    protected SubContainerImpl create(
-        ContainerViewRead readDelegate, ContainerViewWriteRef writeDelegate) {
-      return new SubContainerImpl(readDelegate, writeDelegate);
+    public SubContainerWrite createWritableCopy() {
+      return new SubContainerWriteImpl(this);
+    }
+  }
+
+  public static class SubContainerWriteImpl extends ContainerViewWriteImpl
+      implements SubContainerWrite {
+
+    public SubContainerWriteImpl(SubContainerReadImpl backingImmutableView) {
+      super(backingImmutableView);
     }
 
     @Override
-    public UnsignedLong getLong1() {
-      return ((UInt64View) get(0)).get();
+    protected AbstractCompositeViewRead<?, ViewRead> createViewRead(
+        TreeNode backingNode, IntCache<ViewRead> viewCache) {
+      return new SubContainerReadImpl(backingNode, viewCache);
     }
 
     @Override
-    public UnsignedLong getLong2() {
-      return ((UInt64View) get(1)).get();
-    }
-
-    @Override
-    public void setLong1(UnsignedLong val) {
-      set(0, new UInt64View(val));
-    }
-
-    @Override
-    public void setLong2(UnsignedLong val) {
-      set(1, new UInt64View(val));
+    public SubContainerRead commitChanges() {
+      return (SubContainerRead) super.commitChanges();
     }
   }
 
@@ -197,9 +202,9 @@ public class ContainerViewTest {
             List.of(
                 BasicViewTypes.UINT64_TYPE,
                 BasicViewTypes.UINT64_TYPE,
-                SubContainerImpl.TYPE,
+                SubContainerRead.TYPE,
                 new ListViewType<>(BasicViewTypes.UINT64_TYPE, 10),
-                new ListViewType<>(SubContainerImpl.TYPE, 2),
+                new ListViewType<>(SubContainerRead.TYPE, 2),
                 new VectorViewType<>(ImmutableSubContainerImpl.TYPE, 2)),
             ContainerReadImpl::new);
 

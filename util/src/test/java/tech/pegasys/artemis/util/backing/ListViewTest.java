@@ -24,13 +24,13 @@ import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.BasicViewTypes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
+import tech.pegasys.artemis.util.backing.view.AbstractImmutableContainer;
 import tech.pegasys.artemis.util.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
-import tech.pegasys.artemis.util.backing.view.MutableContainerImpl;
 
 public class ListViewTest {
 
-  public static class SubContainer extends MutableContainerImpl<SubContainer> {
+  public static class SubContainer extends AbstractImmutableContainer {
 
     public static final ContainerViewType<SubContainer> TYPE =
         new ContainerViewType<>(

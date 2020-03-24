@@ -27,7 +27,7 @@ import tech.pegasys.artemis.util.backing.type.ViewType;
 import tech.pegasys.artemis.util.cache.IntCache;
 
 public class VectorViewWriteImpl<R extends ViewRead, W extends R>
-    extends AbstractCompositeViewWrite1<VectorViewWriteImpl<R, W>, R, W>
+    extends AbstractCompositeViewWrite<VectorViewWriteImpl<R, W>, R, W>
     implements VectorViewWriteRef<R, W> {
 
   public VectorViewWriteImpl(AbstractCompositeViewRead<?, R> backingImmutableView) {
