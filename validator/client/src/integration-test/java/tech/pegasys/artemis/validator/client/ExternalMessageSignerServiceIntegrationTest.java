@@ -19,8 +19,8 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.JsonBody.json;
 
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
@@ -44,16 +44,16 @@ public class ExternalMessageSignerServiceIntegrationTest {
       "0x989d34725a2bfc3f15105f3f5fc8741f436c25ee1ee4f948e425d6bcb8c56bce6e06c269635b7e985a7ffa639e2409bf";
   private static final int TIMEOUT_MS = 500;
   private static final Bytes SIGNING_ROOT = Bytes.fromHexString("0x42");
-  private URI signingServiceUri;
+  private URL signingServiceUri;
   private ClientAndServer client;
   private BLSSignature expectedSignature;
   private ExternalMessageSignerService externalMessageSignerService;
   private BLSKeyPair keyPair;
 
   @BeforeEach
-  void setup(final ClientAndServer client) throws URISyntaxException {
+  void setup(final ClientAndServer client) throws MalformedURLException {
     this.client = client;
-    signingServiceUri = new URI("http://127.0.0.1:" + client.getLocalPort());
+    signingServiceUri = new URL("http://127.0.0.1:" + client.getLocalPort());
 
     final Bytes privateKey = padLeft(Bytes.fromHexString(PRIVATE_KEY));
     keyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKey));
