@@ -155,7 +155,8 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
       names = {P2P_STATIC_PEERS_OPTION_NAME},
       paramLabel = "<PEER_ADDRESSES>",
       description = "Static peers",
-      arity = "1")
+          split = ",",
+          arity = "0..*")
   private ArrayList<String> p2pStaticPeers = DEFAULT_P2P_STATIC_PEERS;
 
   // Interop
