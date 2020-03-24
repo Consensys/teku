@@ -15,7 +15,7 @@ package tech.pegasys.artemis.validator.client;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -30,13 +30,13 @@ import tech.pegasys.artemis.util.bls.BLSSignature;
 
 public class ExternalMessageSignerService implements MessageSignerService {
   private static final ObjectMapper MAPPER = new ObjectMapper();
-  private URI signingService;
+  private URL signingServiceUrl;
   private BLSPublicKey blsPublicKey;
   private int timeoutMs;
 
   public ExternalMessageSignerService(
-      final URI signingService, final BLSPublicKey blsPublicKey, final int timeoutMs) {
-    this.signingService = signingService;
+      final URL signingServiceUrl, final BLSPublicKey blsPublicKey, final int timeoutMs) {
+    this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
     this.timeoutMs = timeoutMs;
   }
@@ -61,7 +61,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
       final String requestBody = createSigningRequest(signingRoot);
       final HttpRequest request =
           HttpRequest.newBuilder()
-              .uri(signingService.resolve(path))
+              .uri(signingServiceUrl.toURI().resolve(path))
               .timeout(Duration.ofMillis(timeoutMs))
               .POST(BodyPublishers.ofString(requestBody))
               .build();

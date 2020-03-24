@@ -18,8 +18,8 @@ import static java.util.Arrays.asList;
 import com.google.common.base.Strings;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -89,7 +89,7 @@ public class ArtemisConfiguration {
     builder.addString(
         "validator.externalSignerUrl", null, "URL for the external signing service", null);
     builder.addInteger(
-        "validator.externalSignerTimeout", 2000, "Timeout for the external signing service", null);
+        "validator.externalSignerTimeout", 1000, "Timeout for the external signing service", null);
 
     builder.addInteger(
         "deposit.numValidators",
@@ -325,15 +325,19 @@ public class ArtemisConfiguration {
     if (publicKeys == null) {
       return Collections.emptyList();
     }
-    return publicKeys.stream()
-        .map(key -> BLSPublicKey.fromBytes(Bytes.fromHexString(key)))
-        .collect(Collectors.toList());
+    try {
+      return publicKeys.stream()
+          .map(key -> BLSPublicKey.fromBytes(Bytes.fromHexString(key)))
+          .collect(Collectors.toList());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException("Invalid configuration. Signer public key is invalid", e);
+    }
   }
 
-  public URI getValidatorExternalSigningUrl() {
+  public URL getValidatorExternalSigningUrl() {
     try {
-      return new URI(config.getString("validator.externalSignerUrl"));
-    } catch (URISyntaxException e) {
+      return new URL(config.getString("validator.externalSignerUrl"));
+    } catch (MalformedURLException e) {
       throw new IllegalArgumentException("Invalid configuration. Signer URL has invalid syntax", e);
     }
   }
