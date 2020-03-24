@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -114,8 +115,12 @@ class KeyStoreTest {
   }
 
   private KeyStoreData loadKeyStoreFromResource(final String resourcePath) {
-    final Path testKeyStorePath = Path.of(Resources.getResource(resourcePath).getPath());
-    return KeyStoreLoader.loadFromFile(testKeyStorePath);
+    try {
+      final Path testKeyStorePath = Path.of(Resources.getResource(resourcePath).toURI());
+      return KeyStoreLoader.loadFromFile(testKeyStorePath);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @ParameterizedTest
