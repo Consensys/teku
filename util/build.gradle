@@ -23,8 +23,6 @@ dependencies {
   implementation (group: 'org.quartz-scheduler', name: 'quartz') {
     exclude group: 'com.mchange'
   }
-  
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
   testImplementation 'org.mockito:mockito-core'
 

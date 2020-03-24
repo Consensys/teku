@@ -25,8 +25,6 @@ dependencies {
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'tech.pegasys.discovery:discovery'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':util'))
 

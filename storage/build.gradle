@@ -13,8 +13,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.mapdb:mapdb'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':util'))
 

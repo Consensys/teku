@@ -36,8 +36,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.hyperledger.besu:plugin-api'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'com.squareup.okhttp3:okhttp'

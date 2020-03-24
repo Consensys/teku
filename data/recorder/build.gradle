@@ -14,8 +14,6 @@ dependencies {
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.commons:commons-lang3'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   test {
     testLogging.showStandardStreams = true
   }

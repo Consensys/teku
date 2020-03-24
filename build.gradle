@@ -497,7 +497,9 @@ subprojects {
   }
 
   dependencies {
-    implementation 'org.apache.logging.log4j:log4j-core'
+    implementation 'org.apache.logging.log4j:log4j-api'
+
+    runtimeOnly 'org.apache.logging.log4j:log4j-core'
     runtimeOnly 'org.apache.logging.log4j:log4j-slf4j-impl'
 
     testImplementation 'org.assertj:assertj-core'

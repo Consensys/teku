@@ -18,8 +18,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
 
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
-
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.mockito:mockito-core'
