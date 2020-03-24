@@ -62,7 +62,7 @@ public class ArtemisConfiguration {
   private final String logFileNamePattern;
 
   // Output
-  private final String xTransactionRecordDirectory;
+  private final String xTransitionRecordDirectory;
 
   // Metrics
   private final boolean metricsEnabled;
@@ -113,7 +113,7 @@ public class ArtemisConfiguration {
       final String logDestination,
       final String logFile,
       final String logFileNamePattern,
-      final String xTransactionRecordDirectory,
+      final String xTransitionRecordDirectory,
       final boolean metricsEnabled,
       final int metricsPort,
       final String metricsInterface,
@@ -152,7 +152,7 @@ public class ArtemisConfiguration {
     this.logDestination = logDestination;
     this.logFile = logFile;
     this.logFileNamePattern = logFileNamePattern;
-    this.xTransactionRecordDirectory = xTransactionRecordDirectory;
+    this.xTransitionRecordDirectory = xTransitionRecordDirectory;
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -281,8 +281,8 @@ public class ArtemisConfiguration {
     return logFileNamePattern;
   }
 
-  public String getxTransactionRecordDirectory() {
-    return xTransactionRecordDirectory;
+  public String getxTransitionRecordDirectory() {
+    return xTransitionRecordDirectory;
   }
 
   public boolean isMetricsEnabled() {

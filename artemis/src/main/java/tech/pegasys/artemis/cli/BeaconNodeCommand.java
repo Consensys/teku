@@ -290,11 +290,12 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
   // Output
 
   @Option(
-      names = {X_TRANSACTION_RECORD_DIRECTORY_OPTION_NAME},
+      hidden = true,
+      names = {X_TRANSITION_RECORD_DIRECTORY_OPTION_NAME},
       paramLabel = "<FILENAME>",
       description = "Directory to record transition pre and post states",
       arity = "1")
-  private String xTransactionRecordDirectory = DEFAULT_X_TRANSACTION_RECORD_DIRECTORY;
+  private String xTransitionRecordDirectory = DEFAULT_X_TRANSITION_RECORD_DIRECTORY;
 
   // Metrics
 
@@ -484,7 +485,7 @@ public class BeaconNodeCommand implements Callable<Integer>, OptionNames, Defaul
         .setLogDestination(logDestination)
         .setLogFile(logFile)
         .setLogFileNamePattern(logFileNamePattern)
-        .setxTransitionRecordDirectory(xTransactionRecordDirectory)
+        .setxTransitionRecordDirectory(xTransitionRecordDirectory)
         .setMetricsEnabled(metricsEnabled)
         .setMetricsPort(metricsPort)
         .setMetricsInterface(metricsInterface)

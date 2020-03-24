@@ -61,7 +61,7 @@ public interface DefaultOptionValues {
   String DEFAULT_LOG_FILE_NAME_PATTERN = "teku_%d{yyyy-MM-dd}.log";
 
   // Output
-  String DEFAULT_X_TRANSACTION_RECORD_DIRECTORY = null;
+  String DEFAULT_X_TRANSITION_RECORD_DIRECTORY = null;
 
   // Metrics
   boolean DEFAULT_METRICS_ENABLED = false;

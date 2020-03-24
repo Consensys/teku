@@ -68,7 +68,7 @@ public class BeaconNode {
     this.serviceConfig.getConfig().validateConfig();
     Constants.setConstants(config.getNetwork());
 
-    final String transitionRecordDir = config.getxTransactionRecordDirectory();
+    final String transitionRecordDir = config.getxTransitionRecordDirectory();
     if (transitionRecordDir != null) {
       eventBus.register(new SSZTransitionRecorder(Path.of(transitionRecordDir)));
     }

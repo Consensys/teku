@@ -44,7 +44,7 @@ public class ArtemisConfigurationBuilder {
   private String logDestination;
   private String logFile;
   private String logFileNamePattern;
-  private String xTransactionRecordDirectory;
+  private String xTransitionRecordDirectory;
   private boolean metricsEnabled;
   private int metricsPort;
   private String metricsInterface;
@@ -205,8 +205,8 @@ public class ArtemisConfigurationBuilder {
   }
 
   public ArtemisConfigurationBuilder setxTransitionRecordDirectory(
-      final String xTransactionRecordDirectory) {
-    this.xTransactionRecordDirectory = xTransactionRecordDirectory;
+      final String xTransitionRecordDirectory) {
+    this.xTransitionRecordDirectory = xTransitionRecordDirectory;
     return this;
   }
 
@@ -290,7 +290,7 @@ public class ArtemisConfigurationBuilder {
         logDestination,
         logFile,
         logFileNamePattern,
-        xTransactionRecordDirectory,
+        xTransitionRecordDirectory,
         metricsEnabled,
         metricsPort,
         metricsInterface,
