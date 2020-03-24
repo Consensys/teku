@@ -32,6 +32,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.artemis.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.CommitteeAssignment;
@@ -110,6 +111,22 @@ public class CombinedChainDataClient {
     return getBlockAtSlotFormHistoricalBlockRoots(slot, store, headState);
   }
 
+  public SafeFuture<Optional<BeaconBlockAndState>> getBlockAndStateInEffectAtSlot(
+      final UnsignedLong slot, final Bytes32 headBlockRoot) {
+    return getBlockInEffectAtSlot(slot, headBlockRoot)
+        .thenCompose(
+            maybeBlock ->
+                maybeBlock
+                    .map(this::getStateForBlock)
+                    .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
+  }
+
+  private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(
+      final SignedBeaconBlock block) {
+    return getStateByBlockRoot(block.getMessage().hash_tree_root())
+        .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
+  }
+
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotFormHistoricalBlockRoots(
       final UnsignedLong slot, final Store store, final BeaconState headState) {
     final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
@@ -170,7 +187,7 @@ public class CombinedChainDataClient {
 
     final BeaconState headState = store.getBlockState(headBlockRoot);
     if (headState.getSlot().equals(slot)) {
-      return completedFuture(Optional.ofNullable(headState));
+      return completedFuture(Optional.of(headState));
     }
 
     return completedFuture(recentChainData.getStateBySlot(slot));
