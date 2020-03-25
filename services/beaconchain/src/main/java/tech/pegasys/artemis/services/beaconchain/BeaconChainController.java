@@ -362,7 +362,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   @Override
   public void onTick(Date date) {
-    if (chainStorageClient.isPreGenesis() || syncService.getSyncStatus().isSyncing()) {
+    if (chainStorageClient.isPreGenesis() || syncService.isSyncActive()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
