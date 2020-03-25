@@ -14,7 +14,6 @@
 package tech.pegasys.artemis.beaconrestapi.handlers.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.artemis.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -23,7 +22,6 @@ import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_NO_CONTENT
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.artemis.beaconrestapi.RestApiConstants.TAG_BEACON;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -38,20 +36,21 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.api.schema.ValidatorWithIndex;
 import tech.pegasys.artemis.api.schema.ValidatorsRequest;
+import tech.pegasys.artemis.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.artemis.beaconrestapi.schema.BadRequest;
 import tech.pegasys.artemis.provider.JsonProvider;
+import tech.pegasys.artemis.util.async.SafeFuture;
 
-public class PostValidators implements Handler {
+public class PostValidators extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/beacon/validators";
+
   private final ChainDataProvider chainDataProvider;
 
   public PostValidators(
       final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
-    this.jsonProvider = jsonProvider;
   }
-
-  public static final String ROUTE = "/beacon/validators";
-  private final JsonProvider jsonProvider;
 
   @OpenApi(
       path = ROUTE,
@@ -80,11 +79,12 @@ public class PostValidators implements Handler {
   public void handle(Context ctx) throws Exception {
     try {
       ValidatorsRequest request = jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
-      ctx.result(
-          chainDataProvider
-              .getValidatorsByValidatorsRequest(request)
-              .thenApplyChecked(validators -> handleResponseContext(ctx, validators)));
-
+      final SafeFuture<Optional<BeaconValidators>> validatorsFuture =
+          chainDataProvider.getValidatorsByValidatorsRequest(request);
+      handlePossiblyMissingResult(
+          ctx,
+          validatorsFuture,
+          (__, res) -> Optional.of(jsonProvider.objectToJSON(res.validators)));
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
@@ -93,14 +93,5 @@ public class PostValidators implements Handler {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
-  }
-
-  private String handleResponseContext(Context ctx, Optional<BeaconValidators> response)
-      throws JsonProcessingException {
-    if (response.isEmpty()) {
-      ctx.status(SC_NO_CONTENT);
-      return null;
-    }
-    return jsonProvider.objectToJSON(response.get().validators);
   }
 }

@@ -201,22 +201,22 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
       final ValidatorsRequest request) {
-    UnsignedLong slot =
-        request.epoch == null
-            ? combinedChainDataClient.getBestSlot()
-            : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
+    return SafeFuture.of(
+        () -> {
+          final Bytes32 bestBlockRoot =
+              chainStorageClient.getBestBlockRoot().orElseThrow(ChainDataUnavailableException::new);
+          UnsignedLong slot =
+              request.epoch == null
+                  ? combinedChainDataClient.getBestSlot()
+                  : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
 
-    return combinedChainDataClient
-        .getStateAtSlot(slot)
-        .thenApply(
-            optionalBeaconState -> {
-              if (optionalBeaconState.isEmpty()) {
-                return Optional.empty();
-              }
-              return Optional.of(
-                  new BeaconValidators(
-                      new BeaconState(optionalBeaconState.get()), request.pubkeys));
-            });
+          return combinedChainDataClient
+              .getStateAtSlot(slot, bestBlockRoot)
+              .thenApply(
+                  optionalState ->
+                      optionalState.map(
+                          state -> new BeaconValidators(new BeaconState(state), request.pubkeys)));
+        });
   }
 
   public boolean isFinalized(final SignedBeaconBlock signedBeaconBlock) {
