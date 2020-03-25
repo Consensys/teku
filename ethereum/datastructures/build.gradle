@@ -6,15 +6,10 @@ dependencies {
   implementation project(':util')
 
   implementation 'com.google.code.gson:gson'
-  implementation 'com.google.guava:guava'
-  implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.apache.tuweni:tuweni-ssz'
-
-  runtimeOnly 'org.apache.logging.log4j:log4j-core'
 
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':util'))
