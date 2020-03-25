@@ -361,7 +361,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   @Override
   public void onTick(Date date) {
-    if (chainStorageClient.isPreGenesis() || syncService.getSyncStatus().isSyncing()) {
+    if (chainStorageClient.isPreGenesis()) {
       return;
     }
     final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
@@ -372,7 +372,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         chainStorageClient
             .getGenesisTime()
             .plus(nodeSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0) {
+    if (chainStorageClient.getStore().getTime().compareTo(nextSlotStartTime) >= 0
+        || !syncService.isSyncActive()) {
       processSlot();
     }
   }
