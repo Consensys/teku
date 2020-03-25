@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.reference.general.phase0.bls;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import com.google.errorprone.annotations.MustBeClosed;
 import java.nio.file.Path;
 import java.nio.file.Paths;

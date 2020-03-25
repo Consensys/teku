@@ -38,7 +38,7 @@ import tech.pegasys.artemis.api.ChainDataProvider;
 import tech.pegasys.artemis.api.schema.BeaconState;
 import tech.pegasys.artemis.api.schema.BeaconValidators;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
-import tech.pegasys.artemis.datastructures.state.MutableValidator;
+import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.BeaconStateUtil;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
 import tech.pegasys.artemis.datastructures.util.ValidatorsUtil;
@@ -306,9 +306,11 @@ public class GetValidatorsTest {
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
     // create an ACTIVE validator and add it to the list
-    MutableValidator v = dataStructureUtil.randomValidator().createWritableCopy();
-    v.setActivation_eligibility_epoch(UnsignedLong.ZERO);
-    v.setActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+    Validator v =
+        dataStructureUtil
+            .randomValidator()
+            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
+            .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
     assertThat(
             ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(beaconState)))
         .isTrue();

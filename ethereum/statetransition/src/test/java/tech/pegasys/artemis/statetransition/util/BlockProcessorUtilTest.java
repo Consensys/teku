@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.primitives.UnsignedLong;

@@ -13,6 +13,7 @@
 
 package tech.pegasys.artemis.statetransition;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.artemis.statetransition.AttestationGenerator.diffSlotAttestationData;

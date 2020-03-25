@@ -50,7 +50,6 @@ import tech.pegasys.artemis.datastructures.state.Fork;
 import tech.pegasys.artemis.datastructures.state.MutableBeaconState;
 import tech.pegasys.artemis.datastructures.state.PendingAttestation;
 import tech.pegasys.artemis.datastructures.state.Validator;
-import tech.pegasys.artemis.datastructures.state.ValidatorImpl;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.SSZTypes.Bitvector;
 import tech.pegasys.artemis.util.SSZTypes.Bytes4;
@@ -363,19 +362,31 @@ public final class DataStructureUtil {
         randomBeaconBlockHeader(),
         randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
         randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
-        randomSSZList(Bytes32.class, 1000, this::randomBytes32),
+        randomSSZList(Bytes32.class, Constants.HISTORICAL_ROOTS_LIMIT, this::randomBytes32),
         randomEth1Data(),
         randomSSZList(Eth1Data.class, SLOTS_PER_ETH1_VOTING_PERIOD, this::randomEth1Data),
         randomUnsignedLong(),
-
-        // Can't use the actual maxSize cause it is too big
-        randomSSZList(ValidatorImpl.class, validatorCount, 1000, this::randomValidator),
-        randomSSZList(UnsignedLong.class, validatorCount, 1000, this::randomUnsignedLong),
+        randomSSZList(
+            Validator.class,
+            validatorCount,
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            this::randomValidator),
+        randomSSZList(
+            UnsignedLong.class,
+            validatorCount,
+            Constants.VALIDATOR_REGISTRY_LIMIT,
+            this::randomUnsignedLong),
         randomSSZVector(Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, this::randomBytes32),
         randomSSZVector(
             UnsignedLong.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, this::randomUnsignedLong),
-        randomSSZList(PendingAttestation.class, 1000, this::randomPendingAttestation),
-        randomSSZList(PendingAttestation.class, 1000, this::randomPendingAttestation),
+        randomSSZList(
+            PendingAttestation.class,
+            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            this::randomPendingAttestation),
+        randomSSZList(
+            PendingAttestation.class,
+            Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
+            this::randomPendingAttestation),
         randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH),
         randomCheckpoint(),
         randomCheckpoint(),

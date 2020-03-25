@@ -152,6 +152,9 @@ class BeaconValidatorsTest {
   @Test
   public void getActiveValidatorsCount() {
     BeaconState beaconState = dataStructureUtil.randomBeaconState();
+
+    System.out.println(beaconState.hashTreeRoot());
+
     MutableBeaconState beaconStateW = beaconState.createWritableCopy();
 
     SSZList<Validator> allValidators = beaconState.getValidators();
@@ -167,7 +170,8 @@ class BeaconValidatorsTest {
 
     // create one validator which IS active and add it to the list
     Validator v =
-        dataStructureUtil.randomValidator(77)
+        dataStructureUtil
+            .randomValidator()
             .withActivation_eligibility_epoch(UnsignedLong.ZERO)
             .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
 

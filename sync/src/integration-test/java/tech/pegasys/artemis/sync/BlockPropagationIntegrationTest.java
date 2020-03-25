@@ -13,6 +13,8 @@
 
 package tech.pegasys.artemis.sync;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
