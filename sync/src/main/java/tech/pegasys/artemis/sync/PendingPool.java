@@ -34,20 +34,20 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.artemis.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.artemis.service.serviceutils.Service;
 import tech.pegasys.artemis.storage.events.FinalizedCheckpointEvent;
-import tech.pegasys.artemis.storage.events.SlotEvent;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.events.Subscribers;
+import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 
-class PendingPool<T> extends Service {
+class PendingPool<T> extends Service implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final EventBus eventBus;
   private static final UnsignedLong DEFAULT_FUTURE_SLOT_TOLERANCE = UnsignedLong.valueOf(2);
   private static final UnsignedLong DEFAULT_HISTORICAL_SLOT_TOLERANCE =
       UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 10);
   private static final UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
 
-  private final EventBus eventBus;
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
@@ -266,9 +266,9 @@ class PendingPool<T> extends Service {
     return requiredBlockRootDroppedSubscribers.unsubscribe(subscriberId);
   }
 
-  @Subscribe
-  void onSlot(final SlotEvent slotEvent) {
-    currentSlot = slotEvent.getSlot();
+  @Override
+  public void onSlot(final UnsignedLong slot) {
+    currentSlot = slot;
     if (currentSlot.mod(historicalSlotTolerance).equals(UnsignedLong.ZERO)) {
       // Purge old items
       prune();
@@ -333,7 +333,6 @@ class PendingPool<T> extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    eventBus.unregister(this);
     return SafeFuture.completedFuture(null);
   }
 
