@@ -95,7 +95,7 @@ public class GetState extends AbstractHandler implements Handler {
         ctx.status(SC_BAD_REQUEST);
         return;
       }
-      this.handlePossiblyMissingResult(ctx, future, this::handleResult);
+      this.handlePossiblyGoneResult(ctx, future, this::handleResult);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);

@@ -86,7 +86,7 @@ public class PostDuties extends AbstractHandler implements Handler {
       SafeFuture<Optional<List<ValidatorDuties>>> future =
           provider.getValidatorDutiesByRequest(validatorDutiesRequest);
       ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
-      handlePossiblyMissingResult(ctx, future);
+      handlePossiblyGoneResult(ctx, future);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);

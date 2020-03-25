@@ -81,7 +81,7 @@ public class PostValidators extends AbstractHandler implements Handler {
       ValidatorsRequest request = jsonProvider.jsonToObject(ctx.body(), ValidatorsRequest.class);
       final SafeFuture<Optional<BeaconValidators>> validatorsFuture =
           chainDataProvider.getValidatorsByValidatorsRequest(request);
-      handlePossiblyMissingResult(
+      handlePossiblyGoneResult(
           ctx,
           validatorsFuture,
           (__, res) -> Optional.of(jsonProvider.objectToJSON(res.validators)));

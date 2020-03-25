@@ -74,9 +74,13 @@ public class GetCommittees extends AbstractHandler implements Handler {
     try {
       UnsignedLong epoch = getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH);
       final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(epoch);
-      handlePossiblyMissingResult(ctx, future);
       UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
       ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
+      if (provider.isFinalized(slot)) {
+        handlePossiblyGoneResult(ctx, future);
+      } else {
+        handlePossiblyMissingResult(ctx, future);
+      }
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);

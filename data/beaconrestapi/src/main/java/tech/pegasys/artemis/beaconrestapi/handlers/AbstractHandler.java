@@ -14,6 +14,7 @@
 package tech.pegasys.artemis.beaconrestapi.handlers;
 
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -31,19 +32,36 @@ public abstract class AbstractHandler implements Handler {
 
   protected <T> void handlePossiblyMissingResult(
       final Context ctx, SafeFuture<Optional<T>> future) {
-    handlePossiblyMissingResult(
-        ctx, future, (context, r) -> Optional.of(jsonProvider.objectToJSON(r)));
+    handleOptionalResult(ctx, future, SC_NOT_FOUND);
   }
 
-  protected <T> void handlePossiblyMissingResult(
+  protected <T> void handlePossiblyGoneResult(final Context ctx, SafeFuture<Optional<T>> future) {
+    handleOptionalResult(ctx, future, SC_GONE);
+  }
+
+  protected <T> void handlePossiblyGoneResult(
       final Context ctx, SafeFuture<Optional<T>> future, ResultProcessor<T> resultProcessor) {
+    handleOptionalResult(ctx, future, resultProcessor, SC_GONE);
+  }
+
+  protected <T> void handleOptionalResult(
+      final Context ctx, SafeFuture<Optional<T>> future, final int missingStatus) {
+    handleOptionalResult(
+        ctx, future, (context, r) -> Optional.of(jsonProvider.objectToJSON(r)), missingStatus);
+  }
+
+  protected <T> void handleOptionalResult(
+      final Context ctx,
+      SafeFuture<Optional<T>> future,
+      ResultProcessor<T> resultProcessor,
+      final int missingStatus) {
     ctx.result(
         future.thenApplyChecked(
             result -> {
               if (result.isPresent()) {
                 return resultProcessor.process(ctx, result.get()).orElse(null);
               } else {
-                ctx.status(SC_GONE);
+                ctx.status(missingStatus);
                 return null;
               }
             }));

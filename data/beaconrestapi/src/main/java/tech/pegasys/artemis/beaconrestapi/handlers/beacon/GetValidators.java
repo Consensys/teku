@@ -109,7 +109,7 @@ public class GetValidators extends AbstractHandler implements Handler {
 
       final SafeFuture<Optional<BeaconState>> future = getStateFuture(parameters);
 
-      this.handlePossiblyMissingResult(
+      this.handlePossiblyGoneResult(
           ctx,
           future,
           (__, state) -> {

@@ -34,19 +34,24 @@ public class GetCommitteesIntegrationTest extends AbstractBeaconRestAPIIntegrati
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
     when(chainStorageClient.getStore()).thenReturn(null);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
 
-    final Response response = getByEpoch(1);
+    final Response response = getByEpoch(epoch.intValue());
     assertNoContent(response);
   }
 
   @Test
   public void shouldReturnNoContentIfHeadRootUnavailable() throws Exception {
+    final UnsignedLong epoch = UnsignedLong.ONE;
+
     final Store store = mock(Store.class);
     when(chainStorageClient.getStore()).thenReturn(store);
+    when(chainStorageClient.getFinalizedEpoch()).thenReturn(epoch);
     when(chainStorageClient.getBestBlockRoot()).thenReturn(Optional.empty());
 
-    final Response response = getByEpoch(1);
+    final Response response = getByEpoch(epoch.intValue());
     assertNoContent(response);
   }
 
