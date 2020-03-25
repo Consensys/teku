@@ -17,11 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.cache.ArrayCache;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
 

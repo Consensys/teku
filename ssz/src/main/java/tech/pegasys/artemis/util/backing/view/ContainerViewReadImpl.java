@@ -16,11 +16,11 @@ package tech.pegasys.artemis.util.backing.view;
 import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ContainerViewWrite;
 import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.ContainerViewType;
-import tech.pegasys.artemis.util.cache.ArrayCache;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ContainerViewReadImpl
     extends AbstractCompositeViewRead<ContainerViewReadImpl, ViewRead>

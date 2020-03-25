@@ -76,8 +76,7 @@ public final class DataStructureUtil {
     this.seed = seed;
   }
 
-  public DataStructureUtil withPubKeyGenerator(
-      Supplier<BLSPublicKey> pubKeyGenerator) {
+  public DataStructureUtil withPubKeyGenerator(Supplier<BLSPublicKey> pubKeyGenerator) {
     this.pubKeyGenerator = pubKeyGenerator;
     return this;
   }

@@ -20,9 +20,9 @@ import tech.pegasys.artemis.datastructures.blocks.Eth1Data;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableList;
 import tech.pegasys.artemis.util.SSZTypes.SSZMutableVector;
 import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.view.ContainerViewWriteImpl;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 class MutableBeaconStateImpl extends ContainerViewWriteImpl
     implements MutableBeaconState, BeaconStateCache {

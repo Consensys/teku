@@ -20,12 +20,12 @@ import tech.pegasys.artemis.util.backing.ListViewWriteRef;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.ListViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.view.BasicViews.UInt64View;
 import tech.pegasys.artemis.util.backing.view.ListViewReadImpl.ListContainerRead;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ListViewWriteImpl<R extends ViewRead, W extends R> implements ListViewWriteRef<R, W> {
 

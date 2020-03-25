@@ -17,8 +17,8 @@ import tech.pegasys.artemis.util.backing.ContainerViewRead;
 import tech.pegasys.artemis.util.backing.ContainerViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public class ContainerViewWriteImpl
     extends AbstractCompositeViewWrite<ContainerViewWriteImpl, ViewRead, ViewWrite>

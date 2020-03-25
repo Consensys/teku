@@ -27,10 +27,10 @@ import tech.pegasys.artemis.util.backing.CompositeViewWrite;
 import tech.pegasys.artemis.util.backing.CompositeViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
 import tech.pegasys.artemis.util.backing.ViewWrite;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public abstract class AbstractCompositeViewWrite<
         C extends AbstractCompositeViewWrite<C, R, W>, R extends ViewRead, W extends R>

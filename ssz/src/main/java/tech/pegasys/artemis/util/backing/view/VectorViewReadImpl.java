@@ -15,12 +15,12 @@ package tech.pegasys.artemis.util.backing.view;
 
 import tech.pegasys.artemis.util.backing.VectorViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.type.ViewType;
-import tech.pegasys.artemis.util.cache.ArrayCache;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public class VectorViewReadImpl<R extends ViewRead>
     extends AbstractCompositeViewRead<VectorViewReadImpl<R>, R> implements VectorViewRead<R> {

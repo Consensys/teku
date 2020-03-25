@@ -11,17 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.cache;
+package tech.pegasys.artemis.util.backing.cache;
 
+import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 
 /**
  * Cache
  *
+ * @param <K> type of keys
  * @param <V> type of values
  */
-public interface IntCache<V> extends Cache<Integer, V> {
+public interface Cache<K, V> {
   /**
    * Queries value from the cache. If it's not found there, fallback function is used to calculate
    * value. After calculation result is put in cache and returned.
@@ -30,40 +31,29 @@ public interface IntCache<V> extends Cache<Integer, V> {
    * @param fallback Fallback function for calculation of the result in case of missed cache entry
    * @return expected value result for provided key
    */
-  V getInt(int key, IntFunction<V> fallback);
+  V get(K key, Function<K, V> fallback);
 
-  @Override
-  default V get(Integer key, Function<Integer, V> fallback) {
-    return getInt(key, value -> fallback.apply(key));
-  }
+  /**
+   * Optionally returns the value corresponding to the passed <code>key</code> is it's in the cache
+   */
+  Optional<V> getCached(K key);
 
-  @Override
-  IntCache<V> copy();
+  /** Creates independent copy of this Cache instance */
+  Cache<K, V> copy();
 
-  @Override
-  default IntCache<V> transfer() {
+  /** Creates independent copy of this Cache instance while possibly clearing this cache content */
+  default Cache<K, V> transfer() {
     return copy();
   }
 
   /** Removes cache entry */
-  void invalidateInt(int key);
+  void invalidate(K key);
 
-  @Override
-  default void invalidate(Integer key) {
-    invalidateInt(key);
-  }
-
-  default void invalidateWithNewValueInt(int key, V newValue) {
-    invalidateInt(key);
-    getInt(key, k -> newValue);
-  }
-
-  @Override
-  default void invalidateWithNewValue(Integer key, V newValue) {
-    invalidateWithNewValueInt(key, newValue);
+  default void invalidateWithNewValue(K key, V newValue) {
+    invalidate(key);
+    get(key, k -> newValue);
   }
 
   /** Clears all cached values */
-  @Override
   void clear();
 }

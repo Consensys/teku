@@ -15,10 +15,10 @@ package tech.pegasys.artemis.util.backing.view;
 
 import tech.pegasys.artemis.util.backing.CompositeViewRead;
 import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.cache.ArrayCache;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.type.CompositeViewType;
-import tech.pegasys.artemis.util.cache.ArrayCache;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public abstract class AbstractCompositeViewRead<
         C extends AbstractCompositeViewRead<C, R>, R extends ViewRead>

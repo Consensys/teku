@@ -19,12 +19,12 @@ import java.util.stream.Collectors;
 import tech.pegasys.artemis.util.backing.VectorViewWrite;
 import tech.pegasys.artemis.util.backing.VectorViewWriteRef;
 import tech.pegasys.artemis.util.backing.ViewRead;
+import tech.pegasys.artemis.util.backing.cache.IntCache;
 import tech.pegasys.artemis.util.backing.tree.TreeNode;
 import tech.pegasys.artemis.util.backing.tree.TreeNodes;
 import tech.pegasys.artemis.util.backing.tree.TreeUtil;
 import tech.pegasys.artemis.util.backing.type.VectorViewType;
 import tech.pegasys.artemis.util.backing.type.ViewType;
-import tech.pegasys.artemis.util.cache.IntCache;
 
 public class VectorViewWriteImpl<R extends ViewRead, W extends R>
     extends AbstractCompositeViewWrite<VectorViewWriteImpl<R, W>, R, W>

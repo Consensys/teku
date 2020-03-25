@@ -33,8 +33,8 @@ import tech.pegasys.artemis.util.config.Constants;
 public class BeaconStateBenchmark {
 
   private static final BLSPublicKey pubkey = BLSPublicKey.random(0);
-  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(0)
-      .withPubKeyGenerator(() -> pubkey);
+  private static final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(0).withPubKeyGenerator(() -> pubkey);
   private static final BeaconState beaconState =
       dataStructureUtil.randomBeaconState(32 * 1024).createWritableCopy();
   //  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
