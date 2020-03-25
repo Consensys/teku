@@ -16,6 +16,7 @@ package tech.pegasys.artemis.util.bls;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
@@ -23,6 +24,19 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.artemis.util.mikuli.PublicKey;
 
 class BLSPublicKeyTest {
+
+  @Test
+  void isValidReturnsTrueForValidKey() {
+    BLSPublicKey publicKey = BLSPublicKey.random(1);
+    assertTrue(BLSPublicKey.isValid(publicKey));
+  }
+
+  @Test
+  void isValidReturnsFalseForInvalidKey() {
+    BLSPublicKey publicKey = BLSPublicKey.random(1);
+    BLSPublicKey invalidPublicKey = BLSPublicKey.fromBytes(publicKey.toBytes().shiftLeft(1));
+    assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.isValid(invalidPublicKey));
+  }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameEmptyPublicKey() {

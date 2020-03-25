@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -28,15 +29,15 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
-import tech.pegasys.artemis.bls.keystore.KeyStore;
-import tech.pegasys.artemis.bls.keystore.KeyStoreLoader;
-import tech.pegasys.artemis.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.artemis.bls.keystore.model.KeyStoreData;
 import tech.pegasys.artemis.services.powchain.DepositTransactionSender;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSecretKey;
 import tech.pegasys.artemis.util.cli.VersionProvider;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 
 @Command(
     name = "register",
@@ -152,7 +153,7 @@ public class DepositRegisterCommand implements Runnable {
   }
 
   private BLSKeyPair privateKeyToKeyPair(final Bytes validatorKey) {
-    return new BLSKeyPair(BLSSecretKey.fromBytes(validatorKey));
+    return new BLSKeyPair(BLSSecretKey.fromBytes(Bytes48.leftPad(validatorKey)));
   }
 
   static class ValidatorKeyOptions {
