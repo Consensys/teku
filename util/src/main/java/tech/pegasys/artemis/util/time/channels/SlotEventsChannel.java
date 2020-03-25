@@ -13,8 +13,8 @@
 
 package tech.pegasys.artemis.util.time.channels;
 
-import tech.pegasys.artemis.util.time.events.SlotEvent;
+import com.google.common.primitives.UnsignedLong;
 
 public interface SlotEventsChannel {
-  void onSlot(SlotEvent event);
+  void onSlot(UnsignedLong slot);
 }

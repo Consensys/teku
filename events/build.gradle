@@ -13,5 +13,6 @@ dependencies {
   testImplementation 'org.junit.jupiter:junit-jupiter-params'
   testImplementation 'org.mockito:mockito-core'
 
-  testSupportCompile 'org.assertj:assertj-core'
+  testFixturesImplementation 'org.apache.logging.log4j:log4j-api'
+  testFixturesImplementation 'org.assertj:assertj-core'
 }

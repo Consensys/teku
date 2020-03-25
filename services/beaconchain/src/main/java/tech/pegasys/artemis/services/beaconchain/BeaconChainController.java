@@ -69,7 +69,6 @@ import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
 import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 import tech.pegasys.artemis.validator.coordinator.BlockFactory;
 import tech.pegasys.artemis.validator.coordinator.DepositProvider;
@@ -118,8 +117,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.setupInitialState =
         config.getDepositMode().equals(DEPOSIT_TEST) || config.getStartState() != null;
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
-
-    eventChannels.subscribe(TimeTickChannel.class, this);
   }
 
   @Override
@@ -153,6 +150,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return ChainStorageClient.storageBackedClient(eventBus)
         .thenAccept(
             client -> {
+              eventChannels.subscribe(TimeTickChannel.class, this);
               // Setup chain storage
               this.chainStorageClient = client;
               if (setupInitialState && chainStorageClient.getStore() == null) {
@@ -214,8 +212,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
     eth1DataCache = new Eth1DataCache(eventBus, timeProvider);
-    eventChannels
-        .subscribe(TimeTickChannel.class, eth1DataCache)
+    eventChannels.subscribe(TimeTickChannel.class, eth1DataCache);
   }
 
   public void initValidatorCoordinator() {
@@ -230,8 +227,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             depositProvider,
             eth1DataCache,
             config);
-    eventChannels
-        .subscribe(SlotEventsChannel.class, validatorCoordinator);
+    eventChannels.subscribe(SlotEventsChannel.class, validatorCoordinator);
   }
 
   public void initValidatorApiHandler() {
@@ -388,7 +384,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         EVENT_LOG.epochEvent();
       }
 
-      slotEventsChannelPublisher.onSlot(new SlotEvent(nodeSlot));
+      slotEventsChannelPublisher.onSlot(nodeSlot);
       this.currentSlotGauge.set(nodeSlot.longValue());
       this.currentEpochGauge.set(compute_epoch_at_slot(nodeSlot).longValue());
       Thread.sleep(SECONDS_PER_SLOT * 1000 / 3);

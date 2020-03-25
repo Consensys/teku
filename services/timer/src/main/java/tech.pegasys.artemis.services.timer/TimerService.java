@@ -64,9 +64,9 @@ public class TimerService extends Service {
               .build();
       sched.scheduleJob(job, trigger);
       sched.start();
-      return SafeFuture.completedFuture(null);
+      return SafeFuture.COMPLETE;
     } catch (SchedulerException e) {
-      throw new IllegalArgumentException("TimerService failed to start", e);
+      return SafeFuture.failedFuture(new RuntimeException("TimerService failed to start", e));
     }
   }
 
@@ -74,9 +74,9 @@ public class TimerService extends Service {
   public SafeFuture<?> doStop() {
     try {
       sched.shutdown();
-      return SafeFuture.completedFuture(null);
+      return SafeFuture.COMPLETE;
     } catch (SchedulerException e) {
-      throw new IllegalArgumentException("TimerService failed to stop", e);
+      return SafeFuture.failedFuture(new RuntimeException("TimerService failed to stop", e));
     }
   }
 }

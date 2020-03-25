@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.artemis.util.time.events;
+package tech.pegasys.artemis.events;
 
-import com.google.common.primitives.UnsignedLong;
+import java.lang.reflect.Method;
+import org.assertj.core.api.Assertions;
 
-public class SlotEvent {
+public enum TestExceptionHandler implements ChannelExceptionHandler {
+  TEST_EXCEPTION_HANDLER;
 
-  private final UnsignedLong slot;
-
-  public SlotEvent(UnsignedLong slot) {
-    this.slot = slot;
-  }
-
-  /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
-    return slot;
+  @Override
+  public void handleException(
+      final Throwable error,
+      final Object subscriber,
+      final Method invokedMethod,
+      final Object[] args) {
+    Assertions.fail("Unhandled error in subscriber ...", error);
   }
 }

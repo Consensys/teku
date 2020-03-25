@@ -15,6 +15,7 @@ package tech.pegasys.artemis.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.primitives.UnsignedLong;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +36,6 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.collections.LimitedSet;
 import tech.pegasys.artemis.util.collections.LimitedSet.Mode;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class BlockPropagationManager extends Service implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -99,9 +99,9 @@ public class BlockPropagationManager extends Service implements SlotEventsChanne
   }
 
   @Override
-  public void onSlot(final SlotEvent slotEvent) {
-    pendingBlocks.onSlot(slotEvent);
-    futureBlocks.prune(slotEvent.getSlot()).forEach(this::importBlock);
+  public void onSlot(final UnsignedLong slot) {
+    pendingBlocks.onSlot(slot);
+    futureBlocks.prune(slot).forEach(this::importBlock);
   }
 
   @Subscribe

@@ -32,7 +32,6 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class SyncingNodeManager {
   private final EventBus eventBus;
@@ -125,7 +124,7 @@ public class SyncingNodeManager {
   }
 
   public void setSlot(UnsignedLong slot) {
-    eventChannels().getPublisher(SlotEventsChannel.class).onSlot(new SlotEvent(slot));
+    eventChannels().getPublisher(SlotEventsChannel.class).onSlot(slot);
     chainUtil().setSlot(slot);
   }
 }

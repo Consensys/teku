@@ -38,7 +38,6 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.events.Subscribers;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 class PendingPool<T> extends Service implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -268,8 +267,8 @@ class PendingPool<T> extends Service implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(final SlotEvent slotEvent) {
-    currentSlot = slotEvent.getSlot();
+  public void onSlot(final UnsignedLong slot) {
+    currentSlot = slot;
     if (currentSlot.mod(historicalSlotTolerance).equals(UnsignedLong.ZERO)) {
       // Purge old items
       prune();

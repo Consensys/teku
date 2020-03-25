@@ -81,7 +81,6 @@ import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.bls.BLSSignature;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.time.channels.SlotEventsChannel;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 /** This class coordinates validator(s) to act correctly in the beacon chain */
@@ -161,15 +160,14 @@ public class ValidatorCoordinator extends Service implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(SlotEvent slotEvent) {
-    UnsignedLong slot = slotEvent.getSlot();
-    eth1DataCache.onSlot(slotEvent);
-
+  public void onSlot(UnsignedLong slot) {
     final Optional<Bytes32> headRoot = chainStorageClient.getBestBlockRoot();
     if (!isGenesis(slot) && headRoot.isPresent()) {
       BeaconState headState = chainStorageClient.getStore().getBlockState(headRoot.get());
       createBlockIfNecessary(headState, slot);
     }
+
+    eth1DataCache.onSlot(slot);
   }
 
   @Subscribe

@@ -44,7 +44,6 @@ import tech.pegasys.artemis.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.artemis.util.EventSink;
 import tech.pegasys.artemis.util.SSZTypes.Bitlist;
 import tech.pegasys.artemis.util.bls.BLSSignature;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 class AttestationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -119,11 +118,11 @@ class AttestationManagerTest {
     assertNoProcessedEvents();
 
     // Shouldn't try to process the attestation until after it's slot.
-    attestationManager.onSlot(new SlotEvent(UnsignedLong.valueOf(100)));
+    attestationManager.onSlot(UnsignedLong.valueOf(100));
     verifyNoMoreInteractions(attestationProcessor);
     assertNoProcessedEvents();
 
-    attestationManager.onSlot(new SlotEvent(UnsignedLong.valueOf(101)));
+    attestationManager.onSlot(UnsignedLong.valueOf(101));
     verify(attestationProcessor, times(2)).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
@@ -149,7 +148,7 @@ class AttestationManagerTest {
     assertNoProcessedEvents();
 
     // Slots progressing shouldn't cause the attestation to be processed
-    eventBus.post(new SlotEvent(UnsignedLong.valueOf(100)));
+    attestationManager.onSlot(UnsignedLong.valueOf(100));
     verifyNoMoreInteractions(attestationProcessor);
     assertNoProcessedEvents();
 
@@ -212,11 +211,11 @@ class AttestationManagerTest {
     assertNoProcessedEvents();
 
     // Shouldn't try to process the attestation until after it's slot.
-    attestationManager.onSlot(new SlotEvent(UnsignedLong.valueOf(100)));
+    attestationManager.onSlot(UnsignedLong.valueOf(100));
     verifyNoMoreInteractions(attestationProcessor);
     assertNoProcessedEvents();
 
-    attestationManager.onSlot(new SlotEvent(UnsignedLong.valueOf(101)));
+    attestationManager.onSlot(UnsignedLong.valueOf(101));
     verify(attestationProcessor, times(2)).processAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();

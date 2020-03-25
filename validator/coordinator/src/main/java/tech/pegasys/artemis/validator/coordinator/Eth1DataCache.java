@@ -36,7 +36,6 @@ import tech.pegasys.artemis.pow.event.CacheEth1BlockEvent;
 import tech.pegasys.artemis.util.config.Constants;
 import tech.pegasys.artemis.util.time.TimeProvider;
 import tech.pegasys.artemis.util.time.channels.TimeTickChannel;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class Eth1DataCache implements TimeTickChannel {
 
@@ -54,7 +53,7 @@ public class Eth1DataCache implements TimeTickChannel {
   public void startBeaconChainMode(BeaconState genesisState) {
     this.genesisTime = Optional.of(genesisState.getGenesis_time());
     this.currentVotingPeriodStartTime = getVotingPeriodStartTime(genesisState.getSlot());
-    this.onSlot(new SlotEvent(genesisState.getSlot()));
+    this.onSlot(genesisState.getSlot());
   }
 
   @Subscribe
@@ -73,12 +72,11 @@ public class Eth1DataCache implements TimeTickChannel {
   }
 
   // Called by ValidatorCoordinator not the event bus to ensure we process slot events in sync
-  public void onSlot(SlotEvent slotEvent) {
+  public void onSlot(UnsignedLong slot) {
     if (genesisTime.isEmpty()) {
       return;
     }
 
-    UnsignedLong slot = slotEvent.getSlot();
     UnsignedLong voting_period_start_time = getVotingPeriodStartTime(slot);
 
     if (voting_period_start_time.equals(currentVotingPeriodStartTime)) {

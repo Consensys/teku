@@ -36,7 +36,6 @@ import tech.pegasys.artemis.util.async.SafeFuture;
 import tech.pegasys.artemis.util.bls.BLSKeyGenerator;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.events.SlotEvent;
 
 public class BlockPropagationManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -281,7 +280,7 @@ public class BlockPropagationManagerTest {
   private UnsignedLong incrementSlot() {
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
     localChain.setSlot(currentSlot);
-    blockPropagationManager.onSlot(new SlotEvent(currentSlot));
+    blockPropagationManager.onSlot(currentSlot);
     return currentSlot;
   }
 }

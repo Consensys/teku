@@ -36,12 +36,10 @@ import tech.pegasys.artemis.storage.ChainStorageClient;
 import tech.pegasys.artemis.util.bls.BLSKeyPair;
 import tech.pegasys.artemis.util.config.ArtemisConfiguration;
 import tech.pegasys.artemis.util.config.Constants;
-import tech.pegasys.artemis.util.time.StubTimeProvider;
 import tech.pegasys.artemis.validator.api.ValidatorApiChannel;
 
 public class ValidatorCoordinatorTest {
 
-  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
   private final BlockAttestationsPool blockAttestationsPool = mock(BlockAttestationsPool.class);
