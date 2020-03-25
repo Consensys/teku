@@ -66,6 +66,7 @@ import tech.pegasys.artemis.util.config.Constants;
 public final class DataStructureUtil {
 
   private int seed;
+  private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSPublicKey.random(nextSeed());
 
   public DataStructureUtil() {
     this(92892824);
@@ -73,6 +74,12 @@ public final class DataStructureUtil {
 
   public DataStructureUtil(final int seed) {
     this.seed = seed;
+  }
+
+  public DataStructureUtil withPubKeyGenerator(
+      Supplier<BLSPublicKey> pubKeyGenerator) {
+    this.pubKeyGenerator = pubKeyGenerator;
+    return this;
   }
 
   private int nextSeed() {
@@ -142,7 +149,7 @@ public final class DataStructureUtil {
   }
 
   public BLSPublicKey randomPublicKey() {
-    return BLSPublicKey.random(nextSeed());
+    return pubKeyGenerator.get();
   }
 
   public Eth1Data randomEth1Data() {

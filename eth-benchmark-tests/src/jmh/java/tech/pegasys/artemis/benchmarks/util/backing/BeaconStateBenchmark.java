@@ -25,14 +25,17 @@ import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.artemis.datastructures.state.BeaconState;
 import tech.pegasys.artemis.datastructures.state.Validator;
 import tech.pegasys.artemis.datastructures.util.DataStructureUtil;
+import tech.pegasys.artemis.util.bls.BLSPublicKey;
 import tech.pegasys.artemis.util.config.Constants;
 
 @Fork(0)
 @State(Scope.Thread)
 public class BeaconStateBenchmark {
 
-  private static DataStructureUtil dataStructureUtil = new DataStructureUtil(0);
-  private static BeaconState beaconState =
+  private static final BLSPublicKey pubkey = BLSPublicKey.random(0);
+  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil(0)
+      .withPubKeyGenerator(() -> pubkey);
+  private static final BeaconState beaconState =
       dataStructureUtil.randomBeaconState(32 * 1024).createWritableCopy();
   //  private static MutableBeaconState mutableBeaconState = beaconState.createWritableCopy();
 
