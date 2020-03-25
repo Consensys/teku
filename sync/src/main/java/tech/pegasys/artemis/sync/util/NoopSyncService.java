@@ -46,4 +46,9 @@ public class NoopSyncService extends SyncService {
   public SyncingStatus getSyncStatus() {
     return new SyncingStatus(false, new SyncStatus(ZERO, ZERO, ZERO));
   }
+
+  @Override
+  public boolean isSyncActive() {
+    return false;
+  }
 }
