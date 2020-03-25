@@ -480,6 +480,8 @@ subprojects {
     testRuntimeOnly testFixtures(project(':logging'))
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+
+    testFixturesImplementation 'org.assertj:assertj-core'
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
