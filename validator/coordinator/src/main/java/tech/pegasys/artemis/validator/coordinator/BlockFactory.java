@@ -77,7 +77,7 @@ public class BlockFactory {
     return blockCreator.createNewUnsignedBlock(
         newSlot,
         randaoReveal,
-        newState,
+        newState.commitChanges(),
         parentRoot,
         eth1Data,
         attestations,
