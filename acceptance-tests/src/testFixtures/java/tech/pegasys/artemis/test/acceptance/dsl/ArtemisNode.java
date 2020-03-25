@@ -145,8 +145,9 @@ public class ArtemisNode extends Node {
 
   public void waitForNewBlock(int timeoutSeconds) {
     final Bytes32 startingBlockRoot = waitForBeaconHead().block_root;
-    waitFor(() -> assertThat(fetchBeaconHead().get().block_root).isNotEqualTo(startingBlockRoot),
-            timeoutSeconds);
+    waitFor(
+        () -> assertThat(fetchBeaconHead().get().block_root).isNotEqualTo(startingBlockRoot),
+        timeoutSeconds);
   }
 
   public void waitForNewFinalization() {
