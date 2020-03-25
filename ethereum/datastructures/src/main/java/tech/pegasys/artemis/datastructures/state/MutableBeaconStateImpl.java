@@ -76,7 +76,12 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
 
   @Override
   public Bytes32 hash_tree_root() {
-    return commitChanges().hash_tree_root();
+    return hashTreeRoot();
+  }
+
+  @Override
+  public Bytes32 hashTreeRoot() {
+    return commitChanges().hashTreeRoot();
   }
 
   @Override
@@ -148,5 +153,20 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
     return currentEpochAttestations != null
         ? currentEpochAttestations
         : (currentEpochAttestations = MutableBeaconState.super.getCurrent_epoch_attestations());
+  }
+
+  @Override
+  public String toString() {
+    return BeaconStateImpl.toString(this);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return BeaconStateImpl.equals(this, obj);
+  }
+
+  @Override
+  public int hashCode() {
+    return BeaconStateImpl.hashCode(this);
   }
 }

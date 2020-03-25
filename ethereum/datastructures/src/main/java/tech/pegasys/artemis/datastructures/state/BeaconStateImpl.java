@@ -376,25 +376,33 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   @Override
   public int hashCode() {
-    return hashTreeRoot().slice(0, 4).toInt();
+    return hashCode(this);
+  }
+
+  static int hashCode(BeaconState state) {
+    return state.hashTreeRoot().slice(0, 4).toInt();
   }
 
   @Override
   public boolean equals(Object obj) {
+    return equals(this, obj);
+  }
+
+  static boolean equals(BeaconState state, Object obj) {
     if (Objects.isNull(obj)) {
       return false;
     }
 
-    if (this == obj) {
+    if (state == obj) {
       return true;
     }
 
-    if (!(obj instanceof BeaconStateImpl)) {
+    if (!(obj instanceof BeaconState)) {
       return false;
     }
 
-    BeaconStateImpl other = (BeaconStateImpl) obj;
-    return hashTreeRoot().equals(other.hashTreeRoot());
+    BeaconState other = (BeaconState) obj;
+    return state.hashTreeRoot().equals(other.hashTreeRoot());
   }
 
   @Override
@@ -407,30 +415,34 @@ public class BeaconStateImpl extends ContainerViewReadImpl
     return transitionCaches;
   }
 
+  static String toString(BeaconState state) {
+    return MoreObjects.toStringHelper(state)
+        .add("genesis_time", state.getGenesis_time())
+        .add("slot", state.getSlot())
+        .add("fork", state.getFork())
+        .add("latest_block_header", state.getLatest_block_header())
+        .add("block_roots", state.getBlock_roots())
+        .add("state_roots", state.getState_roots())
+        .add("historical_roots", state.getHistorical_roots())
+        .add("eth1_data", state.getEth1_data())
+        .add("eth1_data_votes", state.getEth1_data_votes())
+        .add("eth1_deposit_index", state.getEth1_deposit_index())
+        .add("validators", state.getValidators())
+        .add("balances", state.getBalances())
+        .add("randao_mixes", state.getRandao_mixes())
+        .add("slashings", state.getSlashings())
+        .add("previous_epoch_attestations", state.getPrevious_epoch_attestations())
+        .add("current_epoch_attestations", state.getCurrent_epoch_attestations())
+        .add("justification_bits", state.getJustification_bits())
+        .add("previous_justified_checkpoint", state.getPrevious_justified_checkpoint())
+        .add("current_justified_checkpoint", state.getCurrent_justified_checkpoint())
+        .add("finalized_checkpoint", state.getFinalized_checkpoint())
+        .toString();
+  }
+
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("genesis_time", getGenesis_time())
-        .add("slot", getSlot())
-        .add("fork", getFork())
-        .add("latest_block_header", getLatest_block_header())
-        .add("block_roots", getBlock_roots())
-        .add("state_roots", getState_roots())
-        .add("historical_roots", getHistorical_roots())
-        .add("eth1_data", getEth1_data())
-        .add("eth1_data_votes", getEth1_data_votes())
-        .add("eth1_deposit_index", getEth1_deposit_index())
-        .add("validators", getValidators())
-        .add("balances", getBalances())
-        .add("randao_mixes", getRandao_mixes())
-        .add("slashings", getSlashings())
-        .add("previous_epoch_attestations", getPrevious_epoch_attestations())
-        .add("current_epoch_attestations", getCurrent_epoch_attestations())
-        .add("justification_bits", getJustification_bits())
-        .add("previous_justified_checkpoint", getPrevious_justified_checkpoint())
-        .add("current_justified_checkpoint", getCurrent_justified_checkpoint())
-        .add("finalized_checkpoint", getFinalized_checkpoint())
-        .toString();
+    return toString(this);
   }
 
   @Override
